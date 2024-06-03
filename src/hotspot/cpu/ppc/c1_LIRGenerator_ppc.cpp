@@ -578,7 +578,7 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
        is_power_of_2(int_or_long_const) ||
        is_power_of_2(-int_or_long_const))) return true;
   if (bc == Bytecodes::_land &&
-      (is_power_of_2(int_or_long_const+1) ||
+      (is_power_of_2((unsigned long)int_or_long_const+1) ||
        (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
        (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
 

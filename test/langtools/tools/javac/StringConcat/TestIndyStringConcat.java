@@ -24,13 +24,12 @@
 import jdk.test.lib.compiler.CompilerUtils;
 import toolbox.ToolBox;
 
-import java.lang.classfile.Attributes;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.nio.file.Path;
@@ -87,7 +86,7 @@ public class TestIndyStringConcat {
 
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString(methodName)) {
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeModel code = method.code().orElseThrow();
                 for (CodeElement i : code.elementList()) {
                     if (i instanceof InvokeDynamicInstruction indy) {
                         BootstrapMethodEntry bsmSpec = indy.invokedynamic().bootstrap();

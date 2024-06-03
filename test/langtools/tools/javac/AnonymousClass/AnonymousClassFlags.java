@@ -125,7 +125,7 @@ public class AnonymousClassFlags {
     }
 
     private static int lookupInnerFlags(ClassModel classFile, String innerName) {
-        InnerClassesAttribute inners = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute inners = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
         if (inners == null) {
             throw new AssertionError("InnerClasses attribute missing in class " + classFile.thisClass().asInternalName());
         }

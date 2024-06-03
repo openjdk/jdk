@@ -388,11 +388,19 @@ public abstract sealed class Reference<T>
     private native boolean refersTo0(Object o);
 
     /**
-     * Clears this reference object.  Invoking this method will not cause this
-     * object to be enqueued.
+     * Clears this reference object. Invoking this method does not enqueue this
+     * object, and the garbage collector will not clear or enqueue this object.
      *
-     * <p> This method is invoked only by Java code; when the garbage collector
-     * clears references it does so directly, without invoking this method.
+     * <p>When the garbage collector or the {@link #enqueue()} method clear
+     * references they do so directly, without invoking this method.
+     *
+     * @apiNote
+     * There is a potential race condition with the garbage collector. When this
+     * method is called, the garbage collector may already be in the process of
+     * (or already completed) clearing and/or enqueueing this reference.
+     * Avoid this race by ensuring the referent remains strongly reachable until
+     * after the call to clear(), using {@link #reachabilityFence(Object)} if
+     * necessary.
      */
     public void clear() {
         clear0();
@@ -470,11 +478,33 @@ public abstract sealed class Reference<T>
     }
 
     /**
-     * Clears this reference object and adds it to the queue with which
-     * it is registered, if any.
+     * Clears this reference object, then attempts to add it to the queue with
+     * which it is registered, if any.
      *
-     * <p> This method is invoked only by Java code; when the garbage collector
-     * enqueues references it does so directly, without invoking this method.
+     * <p>If this reference is registered with a queue but not yet enqueued,
+     * the reference is added to the queue; this method is
+     * <b><i>successful</i></b> and returns true.
+     * If this reference is not registered with a queue, or was already enqueued
+     * (by the garbage collector, or a previous call to {@code enqueue}), this
+     * method is <b><i>unsuccessful</i></b> and returns false.
+     *
+     * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
+     * Actions in a thread prior to a <b><i>successful</i></b> call to {@code enqueue}
+     * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+     * the reference is removed from the queue by {@link ReferenceQueue#poll}
+     * or {@link ReferenceQueue#remove}. <b><i>Unsuccessful</i></b> calls to
+     * {@code enqueue} have no specified memory consistency effects.
+     *
+     * <p> When this method clears references it does so directly, without
+     * invoking the {@link #clear()} method. When the garbage collector clears
+     * and enqueues references it does so directly, without invoking the
+     * {@link #clear()} method or this method.
+     *
+     * @apiNote
+     * Use of this method allows the registered queue's
+     * {@link ReferenceQueue#poll} and {@link ReferenceQueue#remove} methods
+     * to return this reference even though the referent may still be strongly
+     * reachable.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
@@ -511,60 +541,78 @@ public abstract sealed class Reference<T>
     }
 
     /**
-     * Ensures that the object referenced by the given reference remains
-     * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>,
-     * regardless of any prior actions of the program that might otherwise cause
-     * the object to become unreachable; thus, the referenced object is not
+     * Ensures that the given object remains
+     * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>.
+     * This reachability is assured regardless of any optimizing transformations
+     * the virtual machine may perform that might otherwise allow the object to
+     * become unreachable (see JLS {@jls 12.6.1}). Thus, the given object is not
      * reclaimable by garbage collection at least until after the invocation of
-     * this method.  Invocation of this method does not itself initiate garbage
-     * collection or finalization.
+     * this method. References to the given object will not be cleared (or
+     * enqueued, if applicable) by the garbage collector until after invocation
+     * of this method.
+     * Invocation of this method does not itself initiate reference processing,
+     * garbage collection, or finalization.
      *
      * <p> This method establishes an ordering for <em>strong reachability</em>
      * with respect to garbage collection.  It controls relations that are
      * otherwise only implicit in a program -- the reachability conditions
-     * triggering garbage collection.  This method is designed for use in
-     * uncommon situations of premature finalization where using
-     * {@code synchronized} blocks or methods, or using other synchronization
-     * facilities are not possible or do not provide the desired control.  This
-     * method is applicable only when reclamation may have visible effects,
-     * which is possible for objects with finalizers (See Section {@jls 12.6}
-     * of <cite>The Java Language Specification</cite>) that
-     * are implemented in ways that rely on ordering control for
-     * correctness.
+     * triggering garbage collection.  This method is applicable only
+     * when reclamation may have visible effects,
+     * such as for objects that use finalizers or {@link Cleaner}, or code that
+     * performs {@linkplain java.lang.ref reference processing}.
+     *
+     * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
+     * Actions in a thread prior to calling {@code reachabilityFence(x)}
+     * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+     * the garbage collector clears any reference to {@code x}.
      *
      * @apiNote
-     * Finalization may occur whenever the virtual machine detects that no
-     * reference to an object will ever be stored in the heap: The garbage
-     * collector may reclaim an object even if the fields of that object are
-     * still in use, so long as the object has otherwise become unreachable.
-     * This may have surprising and undesirable effects in cases such as the
-     * following example in which the bookkeeping associated with a class is
+     * Reference processing or finalization can occur after an object becomes
+     * unreachable. An object can become unreachable when the virtual machine
+     * detects that there is no further need for the object (other than for
+     * running a finalizer). In the course of optimization, the virtual machine
+     * can reorder operations of an object's methods such that the object
+     * becomes unneeded earlier than might naively be expected &mdash;
+     * including while a method of the object is still running. For instance,
+     * the VM can move the loading of <em>values</em> from the object's fields
+     * to occur earlier. The object itself is then no longer needed and becomes
+     * unreachable, and the method can continue running using the obtained values.
+     * This may have surprising and undesirable effects when using a Cleaner or
+     * finalizer for cleanup: there is a race between the
+     * program thread running the method, and the cleanup thread running the
+     * Cleaner or finalizer. The cleanup thread could free a
+     * resource, followed by the program thread (still running the method)
+     * attempting to access the now-already-freed resource.
+     * Use of {@code reachabilityFence} can prevent this race by ensuring that the
+     * object remains strongly reachable.
+     * <p>
+     * The following is an example in which the bookkeeping associated with a class is
      * managed through array indices.  Here, method {@code action} uses a
      * {@code reachabilityFence} to ensure that the {@code Resource} object is
      * not reclaimed before bookkeeping on an associated
-     * {@code ExternalResource} has been performed; in particular here, to
+     * {@code ExternalResource} has been performed; specifically, to
      * ensure that the array slot holding the {@code ExternalResource} is not
      * nulled out in method {@link Object#finalize}, which may otherwise run
      * concurrently.
      *
-     * <pre> {@code
+     * {@snippet :
      * class Resource {
      *   private static ExternalResource[] externalResourceArray = ...
      *
      *   int myIndex;
      *   Resource(...) {
-     *     myIndex = ...
+     *     this.myIndex = ...
      *     externalResourceArray[myIndex] = ...;
      *     ...
      *   }
      *   protected void finalize() {
-     *     externalResourceArray[myIndex] = null;
+     *     externalResourceArray[this.myIndex] = null;
      *     ...
      *   }
      *   public void action() {
      *     try {
      *       // ...
-     *       int i = myIndex;
+     *       int i = this.myIndex; // last use of 'this' Resource in action()
      *       Resource.update(externalResourceArray[i]);
      *     } finally {
      *       Reference.reachabilityFence(this);
@@ -573,36 +621,20 @@ public abstract sealed class Reference<T>
      *   private static void update(ExternalResource ext) {
      *     ext.status = ...;
      *   }
-     * }}</pre>
+     * }
+     * }
      *
-     * Here, the invocation of {@code reachabilityFence} is nonintuitively
+     * The invocation of {@code reachabilityFence} is
      * placed <em>after</em> the call to {@code update}, to ensure that the
      * array slot is not nulled out by {@link Object#finalize} before the
      * update, even if the call to {@code action} was the last use of this
-     * object.  This might be the case if, for example a usage in a user program
+     * object.  This might be the case if, for example, a usage in a user program
      * had the form {@code new Resource().action();} which retains no other
-     * reference to this {@code Resource}.  While probably overkill here,
-     * {@code reachabilityFence} is placed in a {@code finally} block to ensure
-     * that it is invoked across all paths in the method.  In a method with more
-     * complex control paths, you might need further precautions to ensure that
-     * {@code reachabilityFence} is encountered along all of them.
-     *
-     * <p> It is sometimes possible to better encapsulate use of
-     * {@code reachabilityFence}.  Continuing the above example, if it were
-     * acceptable for the call to method {@code update} to proceed even if the
-     * finalizer had already executed (nulling out slot), then you could
-     * localize use of {@code reachabilityFence}:
-     *
-     * <pre> {@code
-     * public void action2() {
-     *   // ...
-     *   Resource.update(getExternalResource());
-     * }
-     * private ExternalResource getExternalResource() {
-     *   ExternalResource ext = externalResourceArray[myIndex];
-     *   Reference.reachabilityFence(this);
-     *   return ext;
-     * }}</pre>
+     * reference to this {@code Resource}.
+     * The {@code reachabilityFence} call is placed in a {@code finally} block to
+     * ensure that it is invoked across all paths in the method. A more complex
+     * method might need further precautions to ensure that
+     * {@code reachabilityFence} is encountered along all code paths.
      *
      * <p> Method {@code reachabilityFence} is not required in constructions
      * that themselves ensure reachability.  For example, because objects that
@@ -612,10 +644,11 @@ public abstract sealed class Reference<T>
      * blocks.  (Further, such blocks must not include infinite loops, or
      * themselves be unreachable, which fall into the corner case exceptions to
      * the "in general" disclaimer.)  However, method {@code reachabilityFence}
-     * remains a better option in cases where this approach is not as efficient,
+     * remains a better option in cases where synchronization is not as efficient,
      * desirable, or possible; for example because it would encounter deadlock.
      *
-     * @param ref the reference. If {@code null}, this method has no effect.
+     * @param ref the reference to the object to keep strongly reachable. If
+     * {@code null}, this method has no effect.
      * @since 9
      */
     @ForceInline
