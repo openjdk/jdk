@@ -335,7 +335,7 @@ public class CopyOnWriteArrayList<E>
      * @return an array containing all the elements in this list
      */
     public Object[] toArray() {
-        return getArray().length == 0 ? getArray() : getArray().clone();
+        return getArray().clone();
     }
 
     /**
