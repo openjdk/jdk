@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.lang.reflect.Proxy;
+package org.openjdk.bench.java.lang.reflect;
 
 
 import org.openjdk.jmh.annotations.Benchmark;
