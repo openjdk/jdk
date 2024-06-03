@@ -56,7 +56,6 @@
 #include "nmt/memTracker.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
@@ -71,7 +70,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/vframe.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/lockStack.inline.hpp"
@@ -1335,22 +1333,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
             oop vt = p->vthread();
             assert(vt != nullptr, "");
             st->print_cr("   \tCarrying virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
-            // Very slightly modified copy of what GetStackTraceClosure does
-            const int max_depth = MaxJavaStackTraceDepth;
-            const bool skip_hidden = !ShowHiddenFrames;
-            int total_count = 0;
-            for (vframeStream vfst(p, false, false, false); // we don't process frames as we don't care about oops
-                !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
-                vfst.next()) {
-
-              if (skip_hidden && (vfst.method()->is_hidden() ||
-                                  vfst.method()->is_continuation_enter_intrinsic())) {
-                continue;
-              }
-              st->print("\t"); // Indent
-              java_lang_Throwable::print_stack_element(st, vfst.method(), vfst.bci());
-              total_count++;
-            }
+            p->print_vthread_stack_on(st);
           }
         }
         p->print_stack_on(st);
