@@ -271,7 +271,7 @@ final class WixSourceConverter {
                         }
                     }
 
-                    if (prefix != null) {
+                    if (prefix != null && !XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
                         final String uri = prefixToUri.get(prefix);
                         var prefixObj = uriToPrefix.get(uri);
                         if (prefixObj.written) {
@@ -316,7 +316,7 @@ final class WixSourceConverter {
 
         static class Prefix {
 
-            public Prefix(String name) {
+            Prefix(String name) {
                 this.name = name;
             }
 
