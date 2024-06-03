@@ -39,11 +39,9 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8320725
  * @library /test/lib /
- * @requires os.arch == "aarch64"
  * @summary Verify non-strictly ordered AddReductionVF/VD and MulReductionVF/VD
- * nodes are generated for float and double types in VectorAPI
+ *          nodes are generated in VectorAPI
  * @modules jdk.incubator.vector
- *
  * @run driver compiler.vectorapi.TestVectorAddMulReduction
  */
 
@@ -78,29 +76,41 @@ public class TestVectorAddMulReduction {
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=8"}, counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=8"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_64() {
         testFloatAddKernel(FloatVector.SPECIES_64, fa);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=16"}, counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_128() {
         testFloatAddKernel(FloatVector.SPECIES_128, fa);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=32"}, counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_256() {
         testFloatAddKernel(FloatVector.SPECIES_256, fa);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=64"}, counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=64"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_512() {
         testFloatAddKernel(FloatVector.SPECIES_512, fa);
     }
@@ -115,22 +125,31 @@ public class TestVectorAddMulReduction {
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=16"}, counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_128() {
         testDoubleAddKernel(DoubleVector.SPECIES_128, da);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=32"}, counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_256() {
         testDoubleAddKernel(DoubleVector.SPECIES_256, da);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=64"}, counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=64"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_512() {
         testDoubleAddKernel(DoubleVector.SPECIES_512, da);
     }
@@ -148,15 +167,21 @@ public class TestVectorAddMulReduction {
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=8"}, counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=8"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatMul_64() {
         testFloatMulKernel(FloatVector.SPECIES_64, fa);
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=16"}, counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatMul_128() {
         testFloatMulKernel(FloatVector.SPECIES_128, fa);
     }
@@ -171,14 +196,16 @@ public class TestVectorAddMulReduction {
     }
 
     @Test
-    @IR(applyIf = {"MaxVectorSize", ">=16"}, counts = {IRNode.MUL_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
-        failOn = {"requires_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = {IRNode.MUL_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleMul_128() {
         testDoubleMulKernel(DoubleVector.SPECIES_128, da);
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "--add-modules=jdk.incubator.vector");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 }

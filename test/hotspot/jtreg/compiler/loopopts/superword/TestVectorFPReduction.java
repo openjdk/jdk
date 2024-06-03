@@ -21,17 +21,17 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @bug 8320725
- * @summary Ensure strictly ordered AddReductionVF/VD nodes are generated on SVE machines
- * while being disabled on Neon
+ * @summary Ensure strictly ordered AddReductionVF/VD and MulReductionVF/VD nodes
+            are generated when these operations are auto-vectorized
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorFPReduction
+ * @run driver compiler.loopopts.superword.TestVectorFPReduction
  */
 
 public class TestVectorFPReduction {
@@ -50,9 +50,12 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.ADD_REDUCTION_VF})
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
-        failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = {IRNode.ADD_REDUCTION_VF},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVF() {
         float result = 1;
         for (int i = 0; i < SIZE; i++) {
@@ -62,9 +65,12 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.ADD_REDUCTION_VD})
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
-        failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = {IRNode.ADD_REDUCTION_VD},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVD() {
         double result = 1;
         for (int i = 0; i < SIZE; i++) {
@@ -74,9 +80,12 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.MUL_REDUCTION_VF})
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
-        failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = {IRNode.MUL_REDUCTION_VF},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVF() {
         float result = 1;
         for (int i = 0; i < SIZE; i++) {
@@ -86,9 +95,12 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"}, failOn = {IRNode.MUL_REDUCTION_VD})
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
-        failOn = {"no_strict_order"}, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = {IRNode.MUL_REDUCTION_VD},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVD() {
         double result = 1;
         for (int i = 0; i < SIZE; i++) {
