@@ -93,6 +93,9 @@ template <class RegImpl> class ReverseRegSetIterator;
 // A set of registers
 template <class RegImpl>
 class AbstractRegSet {
+#ifndef ARM
+  STATIC_ASSERT(RegImpl::number_of_registers <= 64);
+#endif
   uint64_t _bitset;
 
   constexpr AbstractRegSet(uint64_t bitset) : _bitset(bitset) { }
@@ -107,7 +110,6 @@ public:
 
   constexpr AbstractRegSet(RegImpl r1)
     : _bitset(r1->is_valid() ? size_t(1) << r1->encoding() : 0) {
-    assert(RegImpl::number_of_registers <= 64, "must be");
   }
 
   constexpr AbstractRegSet operator+(const AbstractRegSet aSet) const {
