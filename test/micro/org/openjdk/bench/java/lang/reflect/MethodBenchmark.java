@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmark measuring the speed of Method/Method.getExceptionTypes(), 
+ * Benchmark measuring the speed of Method/Method.getExceptionTypes(),
  * getParameterTypes() in cases where the result array is length zero,
  * and hashCode().
  */
