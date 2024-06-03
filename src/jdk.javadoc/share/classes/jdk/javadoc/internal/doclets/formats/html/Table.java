@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import javafx.scene.control.Tab;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
@@ -332,21 +333,11 @@ public class Table<T> extends Content {
             }
         }
         int colIndex = 0;
-        String regex = "<(?:a|area|button|input|object|select|textarea)\\b";
-        Pattern pattern = Pattern.compile(regex);
+        Pattern pattern = Pattern.compile("<a\\b");
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
-            /**
-             * The attribute tabindex="0" allows a non-form/link/object element to be placed
-             * in the default navigation order, making any element focusable and capable of triggering interaction.
-             *
-             * In this context, we add tab order only to plain text elements. This is done to
-             * avoid potential violations of the `widget_tabbable_single` rule, which states
-             * that a component with a "tablist" role should not have more than one tabbable element.
-             *
-             * For more information on the `widget_tabbable_single` rule, please refer to the following documentation:
-             * <a href="https://able.ibm.com/rules/archives/latest/doc/en-US/widget_tabbable_single.html#%7B%22message%22%3A%22Component%20with%20%5C%22tablist%5C%22%20role%20has%20more%20than%20one%20tabbable%20element%22%2C%22snippet%22%3A%22%3Cdiv%20tabindex%3D%5C%220%5C%22%20role%3D%5C%22tablist%5C%22%20class%3D%5C%22col-second%20odd-row-color%20method-summary-table%20method-summary-table-tab2%20method-summary-table-tab3%5C%22%3E%22%2C%22value%22%3A%5B%22VIOLATION%22%2C%22POTENTIAL%22%5D%2C%22reasonId%22%3A%22fail_multiple_tabbable%22%2C%22ruleId%22%3A%22widget_tabbable_single%22%7D">widget_tabbable_single</a>
-             */
+            // Only make element tabbable if it doesn't contain tabbable content to avoid widget_tabbable_single(Potential Violation)
+            // For more info refer : https://able.ibm.com/rules/archives/latest/doc/en-US/widget_tabbable_single.html
             boolean matchFound = pattern.matcher(c.toString()).find();
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
