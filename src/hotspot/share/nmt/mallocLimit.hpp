@@ -26,6 +26,7 @@
 #ifndef SHARE_SERVICES_MALLOCLIMIT_HPP
 #define SHARE_SERVICES_MALLOCLIMIT_HPP
 
+#include "memory/allStatic.hpp"
 #include "nmt/memflags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
