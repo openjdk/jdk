@@ -5204,7 +5204,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
     Register right_16_bits = c_rarg7;
     Register step = x28; // t3
 
-    VectorRegister vzero = v4; // group: v5, v6, v7
+    VectorRegister vzero = v31;
     VectorRegister vbytes[] = {
       v8, v9, v10, v11
     };
@@ -5233,17 +5233,14 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vmv_v_x(vtable_64, temp1);
     __ vsub_vv(vtable_64, vtable_64, vtemp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
-    __ vmv_v_i(vzero, 0);
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     if (MaxVectorSize > 16) {
       // Need to generate vtable_16 explicitly
-      __ mv(temp1, 16);
-      __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m1);
-
-      // Generating accumulation coefficients for further calculations
       __ vid_v(vtemp1);
-      __ vmv_v_x(vtable_16, temp1);
+      __ vmv_v_i(vtable_16, 16);
       __ vsub_vv(vtable_16, vtable_16, vtemp1);
     }
+    __ vmv_v_i(vzero, 0);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
