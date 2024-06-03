@@ -54,6 +54,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         try {
             Terminal terminal = TerminalBuilder.builder().encoding(charset)
                                                .exec(false)
+                                               .nativeSignals(false)
                                                .systemOutput(SystemOutput.SysOut)
                                                .build();
             return new JdkConsoleImpl(terminal);
