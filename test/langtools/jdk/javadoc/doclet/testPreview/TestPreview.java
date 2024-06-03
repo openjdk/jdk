@@ -105,8 +105,8 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color package package-tab1"><a href="java.base/preview/package-summary.html">preview</a><sup><a href="java.base/preview/package-summary.html#preview-preview">PREVIEW</a></sup></div>
-                    <div class="col-second even-row-color package package-tab1">Test Feature</div>
-                    <div class="col-last even-row-color package package-tab1">
+                    <div class="col-second even-row-color package package-tab1" role="tablist" tabindex="0">Test Feature</div>
+                    <div class="col-last even-row-color package package-tab1" role="tablist" tabindex="0>
                     <div class="block">Preview package.</div>
                     </div>
                     """,

@@ -239,10 +239,10 @@ public class TestUseOption extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>class&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
                     title="class in Unnamed Package">Two</a></code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     """,
                 """
@@ -255,9 +255,9 @@ public class TestUseOption extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Interface</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>interface&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Three.html" class="type-name-link" title="interface in Unnamed Package">Three</a></code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     """,
                 """
@@ -270,10 +270,10 @@ public class TestUseOption extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>class&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
-                    title="class in Unnamed Package">Two</a></code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    title="class in Unnamed Package" role="tablist" tabindex="0">Two</a></code></div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     """);
     }
