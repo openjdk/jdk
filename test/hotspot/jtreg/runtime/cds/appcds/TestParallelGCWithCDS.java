@@ -121,7 +121,7 @@ public class TestParallelGCWithCDS {
                         out.shouldMatch(pattern);
                     } catch (RuntimeException ex) {
                         // If the test is run with a very small heap, the above expected
-                        // output may not occurred as the JVM may fail in many locations
+                        // output may not occur as the JVM may fail in many locations
                         // with different messages. Just make sure the exit code is
                         // non-zero and the JVM has not crashed.
                         out.shouldNotHaveExitValue(0);
