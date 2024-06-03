@@ -26,7 +26,7 @@
  * @test
  * @bug 8333394
  * @summary Test bailout of range check policy with an If with a Phi as condition.
- * @run main/othervm -XX:CompileCommand=compileonly,*TestIfWithPhiInput*::* -Xcomp
+ * @run main/othervm -XX:CompileCommand=compileonly,*TestIfWithPhiInput*::* -Xcomp -XX:-TieredCompilation
  *                   compiler.predicates.assertion.TestIfWithPhiInput
  */
 
