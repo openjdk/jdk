@@ -161,7 +161,7 @@
  * public class SignedResultsControl implements Control {
  *     // User-friendly constructor
  *     public SignedResultsControl(boolean criticality) {
- * 	// assemble the components of the request control
+ *  // assemble the components of the request control
  *     };
  *
  *     // Methods used by service providers
@@ -201,8 +201,8 @@
  *     // Find the one we want
  *     for (int i = 0; i &lt; respCtls; i++) {
  *         if(respCtls[i] instanceof ChangeIDControl) {
- * 	    ChangeIDControl cctl = (ChangeIDControl)respCtls[i];
- * 	    System.out.println(cctl.getChangeID());
+ *      ChangeIDControl cctl = (ChangeIDControl)respCtls[i];
+ *      System.out.println(cctl.getChangeID());
  *         }
  *     }
  * }
@@ -241,11 +241,11 @@
  *
  *     public Control getControlInstance(Control orig) throws NamingException {
  *         if (isOneOfMyControls(orig.getID())) {
- * 	    ...
+ *      ...
  *
- * 	    // determine which of ours it is and call its constructor
- * 	    return (new ChangeIDControl(orig.getID(), orig.getEncodedValue()));
- * 	}
+ *      // determine which of ours it is and call its constructor
+ *      return (new ChangeIDControl(orig.getID(), orig.getEncodedValue()));
+ *  }
  *         return null;  // not one of ours
  *     }
  * }

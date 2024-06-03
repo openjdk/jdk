@@ -50,7 +50,7 @@
  * <em>directory object</em>, or <em>directory entry</em> as it is sometimes
  * called.
  * <p>
- * You use	<code>getAttributes()</code> to retrieve the attributes
+ * You use  <code>getAttributes()</code> to retrieve the attributes
  * associated with a directory object (for which you supply the name).
  * Attributes are modified using <code>modifyAttributes()</code>.
  * You can add, replace, or remove attributes and/or attribute values
