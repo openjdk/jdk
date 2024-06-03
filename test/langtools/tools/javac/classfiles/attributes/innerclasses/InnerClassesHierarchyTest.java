@@ -98,7 +98,7 @@ public class InnerClassesHierarchyTest extends TestResult {
                     continue;
                 }
                 ClassModel cf = readClassFile(currentClassName);
-                InnerClassesAttribute attr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                InnerClassesAttribute attr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
                 checkNotNull(attr, "Class should not contain "
                         + "inner classes attribute : " + currentClassName);
                 checkTrue(innerClasses.containsKey(currentClassName),

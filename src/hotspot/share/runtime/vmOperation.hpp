@@ -50,8 +50,8 @@
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
-  template(GenCollectFull)                        \
-  template(GenCollectForAllocation)               \
+  template(SerialCollectForAllocation)            \
+  template(SerialGCCollect)                       \
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCSystemGC)                    \
   template(G1CollectForAllocation)                \

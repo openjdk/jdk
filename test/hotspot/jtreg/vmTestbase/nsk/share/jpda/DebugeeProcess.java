@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import java.util.function.Consumer;
  * @see nsk.share.jdi.Debugee
  * @see nsk.share.jdwp.Debugee
  */
-abstract public class DebugeeProcess extends FinalizableObject {
+abstract public class DebugeeProcess {
 
     /** Default prefix for log messages. */
     public static final String LOG_PREFIX = "binder> ";
@@ -84,9 +84,6 @@ abstract public class DebugeeProcess extends FinalizableObject {
     protected DebugeeProcess (DebugeeBinder binder) {
         this.binder = binder;
         this.log = binder.getLog();
-
-        // Register the cleanup() method to be called when this instance becomes unreachable.
-        registerCleanup();
     }
 
     /**
@@ -430,7 +427,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
     /**
      * Kill the debugee VM if it is not terminated yet.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
+     * @throws Throwable if any throwable exception is thrown during shutdown
      */
     public void close() {
         if (checkTermination) {
@@ -458,12 +455,4 @@ abstract public class DebugeeProcess extends FinalizableObject {
         log.complain(prefix + message);
     }
 
-    /**
-     * Finalize debuggee VM wrapper by invoking <code>close()</code>.
-     *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     */
-    public void cleanup() {
-        close();
-    }
 }

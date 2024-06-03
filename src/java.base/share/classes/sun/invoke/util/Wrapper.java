@@ -128,7 +128,7 @@ public enum Wrapper {
         static int other(int slots)   { return slots << SLOT_SHIFT; }
     }
 
-    /// format queries:
+    //--- format queries:
 
     /** How many bits are in the wrapped value?  Returns 0 for OBJECT or VOID. */
     public int     bitWidth()      { return (format >> Format.SIZE_SHIFT) & Format.SIZE_MASK; }
