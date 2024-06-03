@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,28 @@
  * questions.
  */
 
-package jdk.internal.access;
+package jdk.internal.lang.stable;
 
-import jdk.internal.lang.StableValue;
+import jdk.internal.misc.Unsafe;
 
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.IntFunction;
+final class StableUtil {
 
-public interface JavaUtilCollectionAccess {
-    <E> List<E> listFromTrustedArray(Object[] array);
-    <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
-    <E> List<E> listFromStable(List<StableValue<E>> delegate, IntFunction<? extends E> mapper);
-    <K, V> Map<K, V> mapFromStable(Map<K, StableValue<V>> delegate, Function<? super K, ? extends V> mapper);
+    private StableUtil() {}
+
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    private static final Object NULL_SENTINEL = new Object();
+
+    @SuppressWarnings("unchecked")
+    static <T> T nullSentinel() {
+        return (T) NULL_SENTINEL;
+    }
+
+    static <T> String render(T t) {
+        if (t != null) {
+            return t == nullSentinel() ? "[null]" : "[" + t + "]";
+        }
+        return ".unset";
+    }
+
 }

@@ -4766,10 +4766,23 @@ public final class Class<T> implements java.io.Serializable,
             return null;
         }
         if (subClasses.length > 0) {
-            if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
-                subClasses = Arrays.stream(subClasses)
-                                   .filter(this::isDirectSubType)
-                                   .toArray(s -> new Class<?>[s]);
+            // Neither Streams nor lambdas are used here in order to allow
+            // this method to be invoked early in the boot sequence.
+            boolean anyIsNotDirectSubclass = false;
+            for (Class<?> c : subClasses) {
+                if (!isDirectSubType(c)) {
+                    anyIsNotDirectSubclass = true;
+                    break;
+                }
+            }
+            if (anyIsNotDirectSubclass) {
+                List<Class<?>> list = new ArrayList<>();
+                for (Class<?> subClass : subClasses) {
+                    if (isDirectSubType(subClass)) {
+                        list.add(subClass);
+                    }
+                }
+                subClasses = list.toArray(new Class<?>[0]);
             }
         }
         if (subClasses.length > 0) {

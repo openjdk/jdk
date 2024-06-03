@@ -192,4 +192,17 @@ public class HelloClasslist {
             throw t;
         }
     }
+
+    // Generate enhanced switch statements
+    // Todo: Enable when in a public API
+/*        MemoizedSupplier<Integer> memoizedSupplier =
+                StableValue.memoizedSupplier(new Supplier<Integer>() {
+                    @Override public Integer get() { return 42; }
+                });
+        memoizedSupplier.get();
+        MemoizedIntSupplier<Integer> intFunction =
+                StableArray.memoizedIntFunction(new IntFunction<>() {
+                    @Override public Object apply(int value) { return 42; }
+                });
+        intFunction.apply(0);*/
 }

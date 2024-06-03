@@ -648,13 +648,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        Class<?> declaringClass = f.getDeclaringClass();
-        if (declaringClass.isHidden()) {
-            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
-        }
-        if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
-        }
+        assertNotTrusted(f);
         return theInternalUnsafe.objectFieldOffset(f);
     }
 
@@ -687,13 +681,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        Class<?> declaringClass = f.getDeclaringClass();
-        if (declaringClass.isHidden()) {
-            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
-        }
-        if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
-        }
+        assertNotTrusted(f);
         return theInternalUnsafe.staticFieldOffset(f);
     }
 
@@ -718,13 +706,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        Class<?> declaringClass = f.getDeclaringClass();
-        if (declaringClass.isHidden()) {
-            throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
-        }
-        if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get base address on a record class: " + f);
-        }
+        assertNotTrusted(f);
         return theInternalUnsafe.staticFieldBase(f);
     }
 
@@ -741,6 +723,20 @@ public final class Unsafe {
     @ForceInline
     public int arrayBaseOffset(Class<?> arrayClass) {
         return theInternalUnsafe.arrayBaseOffset(arrayClass);
+    }
+
+    private static void assertNotTrusted(Field f) {
+        Class<?> declaringClass = f.getDeclaringClass();
+        if (declaringClass.isHidden()) {
+            throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
+        }
+        if (declaringClass.isRecord()) {
+            throw new UnsupportedOperationException("can't get base address on a record class: " + f);
+        }
+        Class<?> fieldType = f.getType();
+        if (fieldType.getName().equals("jdk.internal.lang.stable.StableValue")) {
+            throw new UnsupportedOperationException("can't get field offset for a field of type " + fieldType.getName() + ": " + f);
+        }
     }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
