@@ -37,18 +37,20 @@
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
+// - - NativePltCall
 // - - NativeCall
 // - - NativeMovConstReg
-// - - NativeMovConstRegPatching
 // - - NativeMovRegMem
-// - - NativeMovRegMemPatching
+// - - NativeLoadGot
 // - - NativeJump
-// - - NativeIllegalOpCode
-// - - NativeGeneralJump
-// - - NativeReturn
-// - - NativeReturnX (return with argument)
-// - - NativePushConst
-// - - NativeTstRegMem
+// - - - NativeGeneralJump
+// - - NativeGotJump
+// - - NativeIllegalInstruction
+// - - NativeCallTrampolineStub
+// - - NativeMembar
+// - - NativeLdSt
+// - - NativePostCallNop
+// - - NativeDeoptInstruction
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -326,15 +328,6 @@ inline NativeMovConstReg* nativeMovConstReg_before(address address) {
   return test;
 }
 
-class NativeMovConstRegPatching: public NativeMovConstReg {
-private:
-  friend NativeMovConstRegPatching* nativeMovConstRegPatching_at(address address) {
-    NativeMovConstRegPatching* test = (NativeMovConstRegPatching*)(address - instruction_offset);
-    DEBUG_ONLY(test->verify());
-    return test;
-  }
-};
-
 // An interface for accessing/manipulating native moves of the form:
 //      mov[b/w/l/q] [reg + offset], reg   (instruction_code_reg2mem)
 //      mov[b/w/l/q] reg, [reg+offset]     (instruction_code_mem2reg
@@ -386,29 +379,6 @@ inline NativeMovRegMem* nativeMovRegMem_at(address address) {
   DEBUG_ONLY(test->verify());
   return test;
 }
-
-class NativeMovRegMemPatching: public NativeMovRegMem {
-private:
-  friend NativeMovRegMemPatching* nativeMovRegMemPatching_at(address address) {
-    Unimplemented();
-    return 0;
-  }
-};
-
-// An interface for accessing/manipulating native leal instruction of form:
-//        leal reg, [reg + offset]
-
-class NativeLoadAddress: public NativeInstruction {
-  enum AArch64_specific_constants {
-    instruction_size            =    4,
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    4
-  };
-
-public:
-  void verify();
-};
 
 //   adrp    x16, #page
 //   add     x16, x16, #offset
@@ -522,32 +492,10 @@ inline NativeGotJump* nativeGotJump_at(address addr) {
   return jump;
 }
 
-class NativePopReg : public NativeInstruction {
-public:
-  // Insert a pop instruction
-  static void insert(address code_pos, Register reg);
-};
-
-
 class NativeIllegalInstruction: public NativeInstruction {
 public:
   // Insert illegal opcode as specific address
   static void insert(address code_pos);
-};
-
-// return instruction that does not pop values of the stack
-class NativeReturn: public NativeInstruction {
-public:
-};
-
-// return instruction that does pop values of the stack
-class NativeReturnX: public NativeInstruction {
-public:
-};
-
-// Simple test vs memory
-class NativeTstRegMem: public NativeInstruction {
-public:
 };
 
 inline bool NativeInstruction::is_nop() const{
