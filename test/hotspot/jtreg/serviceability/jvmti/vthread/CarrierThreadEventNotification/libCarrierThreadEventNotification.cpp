@@ -37,7 +37,7 @@ static jthread* carrier_threads = nullptr;
 static jint cthread_cnt = 0;
 
 static const char* CTHREAD_NAME_START = "ForkJoinPool";
-static const size_t CTHREAD_NAME_START_LEN = (int)strlen("ForkJoinPool");
+static const size_t CTHREAD_NAME_START_LEN = strlen("ForkJoinPool");
 
 static jint
 get_cthreads(JNIEnv* jni, jthread** cthreads_p) {
@@ -55,7 +55,7 @@ get_cthreads(JNIEnv* jni, jthread** cthreads_p) {
     if (strncmp(tname, CTHREAD_NAME_START, CTHREAD_NAME_START_LEN) == 0) {
       cthreads[ct_cnt++] = jni->NewGlobalRef(thread);
     }
-    deallocate(jvmti, jni, (void*)tname);
+    deallocate(jvmti, jni, tname);
   }
   *cthreads_p = cthreads;
   return ct_cnt;
@@ -92,8 +92,7 @@ Java_CarrierThreadEventNotification_setSingleSteppingMode(JNIEnv* jni, jclass kl
       check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_SINGLE_STEP");
       jni->DeleteGlobalRef(thread);
     }
-    jvmtiError err = jvmti->Deallocate((unsigned char*)carrier_threads);
-    check_jvmti_status(jni, err, "deallocate: error in JVMTI Deallocate call");
+    deallocate(jvmti, jni, carrier_threads);
     cthread_cnt = 0;
     carrier_threads = nullptr;
   }
