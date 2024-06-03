@@ -1421,14 +1421,6 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, 
   return JVMTI_ERROR_NONE;
 }
 
-jvmtiError
-JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                           JavaThread** jt_pp, oop* thread_oop_p) {
-  JavaThread* cur_thread = JavaThread::current();
-  jvmtiError err = get_threadOop_and_JavaThread(t_list, thread, cur_thread, jt_pp, thread_oop_p);
-  return err;
-}
-
 // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
 // Used in PopFrame and ForceEarlyReturn implementations.
 jvmtiError
@@ -1483,7 +1475,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
   if (owning_thread != nullptr) {
     oop thread_oop = get_vthread_or_thread_oop(owning_thread);
-    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+    bool is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
     if (is_virtual) {
       thread_oop = nullptr;
     }
@@ -1530,7 +1522,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
          waiter = mon->next_waiter(waiter)) {
       JavaThread *w = mon->thread_of_waiter(waiter);
       oop thread_oop = get_vthread_or_thread_oop(w);
-      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
         skipped++;
       }
       nWait++;
@@ -1557,8 +1549,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a heavyweight monitor
 
     // null out memory for robustness
-    memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
-    memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    if (ret.waiters != nullptr) {
+      memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
+    }
+    if (ret.notify_waiters != nullptr) {
+      memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    }
 
     if (ret.waiter_count > 0) { // we have contending threads waiting to enter/re-enter the monitor
       // identify threads waiting to enter and re-enter the monitor
@@ -1576,9 +1572,9 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       for (int i = 0; i < nWait; i++) {
         JavaThread *w = mon->thread_of_waiter(waiter);
         oop thread_oop = get_vthread_or_thread_oop(w);
-        bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+        bool is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
         assert(w != nullptr, "sanity check");
-        if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        if (is_virtual) {
           skipped++;
         } else {
           // If the thread was found on the ObjectWaiter list, then
@@ -1996,7 +1992,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
 
-  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, &java_thread, &thread_obj);
+  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, current, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
     hs_cl->set_result(err);
     return;
@@ -2194,7 +2190,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
