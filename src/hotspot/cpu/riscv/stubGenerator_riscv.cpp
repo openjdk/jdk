@@ -5072,7 +5072,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ addi(buff, buff, 64);
 
     // Reduction sum for s1_new
-    // 0xFF * 64 = 0xFF0, so:
+    // 0xFF * 64 = 0x3FC0, so:
     // 1. Need to do vector-widening reduction sum
     // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
     __ vwredsumu_vs(vs1acc[0], vbytes[0], vzero);
