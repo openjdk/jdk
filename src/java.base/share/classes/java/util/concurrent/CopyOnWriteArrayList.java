@@ -145,7 +145,7 @@ public class CopyOnWriteArrayList<E>
         Object[] es;
         if (c.getClass() == CopyOnWriteArrayList.class)
             es = ((CopyOnWriteArrayList<?>)c).getArray();
-        else if (c.isEmpty()) 
+        else if (c.isEmpty())
             es = EMPTY_ELEMENTDATA;
         else {
             es = c.toArray();
