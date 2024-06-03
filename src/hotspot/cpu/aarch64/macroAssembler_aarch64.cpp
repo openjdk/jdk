@@ -68,6 +68,8 @@
 
 #include <sys/types.h>
 
+static_assert(different_registers(zr, sp), "fucked");
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
