@@ -46,8 +46,6 @@ class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
-  static methodHandle resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS);
-
   // Shared stub locations
 
   static RuntimeStub*        _wrong_method_blob;

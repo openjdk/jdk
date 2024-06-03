@@ -2064,8 +2064,8 @@ bool FileMapInfo::can_use_heap_region() {
                 archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
-  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
-                MaxHeapSize/M, HeapRegion::GrainBytes);
+  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, G1HeapRegion::GrainBytes = " SIZE_FORMAT,
+                MaxHeapSize/M, G1HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
@@ -2130,7 +2130,7 @@ bool FileMapInfo::map_heap_region() {
 #ifdef ASSERT
     // The "old" regions must be parsable -- we cannot have any unused space
     // at the start of the lowest G1 region that contains archived objects.
-    assert(is_aligned(_mapped_heap_memregion.start(), HeapRegion::GrainBytes), "must be");
+    assert(is_aligned(_mapped_heap_memregion.start(), G1HeapRegion::GrainBytes), "must be");
 
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
@@ -2140,7 +2140,7 @@ bool FileMapInfo::map_heap_region() {
     address heap_end = (address)heap_range.end();
     address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
     assert(heap_end >= mapped_heap_region_end, "must be");
-    assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
+    assert(heap_end - mapped_heap_region_end < (intx)(G1HeapRegion::GrainBytes),
            "must be at the top of the heap to avoid fragmentation");
 #endif
 
