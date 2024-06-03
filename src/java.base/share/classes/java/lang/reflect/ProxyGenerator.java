@@ -61,6 +61,9 @@ import java.lang.constant.DynamicConstantDesc;
  */
 final class ProxyGenerator {
 
+    private static final ClassFile CF_CONTEXT =
+            ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
+
     private static final ClassDesc
             CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
             CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
@@ -118,10 +121,6 @@ final class ProxyGenerator {
         }
     }
 
-    /**
-     * Classfile context
-     */
-    private final ClassFile classfileContext;
     private final ConstantPoolBuilder cp;
     private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
     private final NameAndTypeEntry exInit;
@@ -163,10 +162,6 @@ final class ProxyGenerator {
      */
     private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
                            int accessFlags) {
-        this.classfileContext = ClassFile.of(
-                ClassFile.StackMapsOption.DROP_STACK_MAPS,
-                ClassFile.ClassHierarchyResolverOption.of(
-                        ClassHierarchyResolver.ofClassLoading(loader).cached()));
         this.cp = ConstantPoolBuilder.of();
         this.classEntry = cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(className));
         this.interfaces = interfaces;
@@ -469,7 +464,7 @@ final class ProxyGenerator {
             checkReturnTypes(sigmethods);
         }
 
-        return classfileContext.build(classEntry, cp, clb -> {
+        return CF_CONTEXT.build(classEntry, cp, clb -> {
             clb.withSuperclass(proxy);
             clb.withFlags(accessFlags);
             clb.withInterfaces(toClassEntries(cp, interfaces));
