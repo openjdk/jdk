@@ -1680,6 +1680,23 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
 
 void MacroAssembler::movptr1(Register Rd, uint64_t imm64, int32_t &offset) {
   // Load upper 31 bits
+  //
+  // In case of 11th bit of `lower` is 0, it's straightforward to understand.
+  // In case of 11th bit of `lower` is 1, it's a bit tricky, to help understand,
+  // imagine divide both `upper` and `lower` into 2 parts respectively, i.e.
+  // [upper_20, upper_12], [lower_20, lower_12], they are the same just before
+  // `lower = (lower << 52) >> 52;`.
+  // After `upper -= lower;`,
+  //    upper_20' = upper_20 - (-1) == upper_20 + 1
+  //    upper_12 = 0x000
+  // After `lui(Rd, upper);`, `Rd` = upper_20' << 12
+  // Also divide `Rd` into 2 parts [Rd_20, Rd_12],
+  //    Rd_20 == upper_20'
+  //    Rd_12 == 0x000
+  // After `addi(Rd, Rd, lower);`,
+  //    Rd_20 = upper_20' + (-1) == upper_20 + 1 - 1 = upper_20
+  //    Rd_12 = lower_12
+  // So, finally Rd == [upper_20, lower_12]
   int64_t imm = imm64 >> 17;
   int64_t upper = imm, lower = imm;
   lower = (lower << 52) >> 52;
@@ -1700,18 +1717,23 @@ void MacroAssembler::movptr1(Register Rd, uint64_t imm64, int32_t &offset) {
 void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
   assert_different_registers(Rd, tmp, noreg);
 
-  uint32_t upper18 = (addr >> 30ull);
-  int32_t  lower30 = (addr & 0x3fffffffu);
-  int32_t  low12   = (lower30 << 20) >> 20;
-  int32_t  mid18   = ((lower30 - low12) >> 12);
+  // addr: [upper18, lower30[mid18, lower12]]
 
-  lui(tmp, upper18 << 12);
-  lui(Rd, mid18 << 12);
+  int64_t upper18 = addr >> 18;
+  lui(tmp, upper18);
+
+  int64_t lower30 = addr & 0x3fffffff;
+  int64_t mid18 = lower30, lower12 = lower30;
+  lower12 = (lower12 << 52) >> 52;
+  // For this tricky part (`mid18 -= lower12;` + `offset = lower12;`),
+  // please refer to movptr1 above.
+  mid18 -= (int32_t)lower12;
+  lui(Rd, mid18);
 
   slli(tmp, tmp, 18);
   add(Rd, Rd, tmp);
 
-  offset = low12;
+  offset = lower12;
 }
 
 void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register temp) {
