@@ -89,14 +89,4 @@ public class CopyOnWriteArrayListBenchmark {
     public CopyOnWriteArrayList<?> createInstanceDefault() {
         return new CopyOnWriteArrayList<Object>();
     }
-
-    @Benchmark
-    public Object[] toArray() {
-        return oneItemInstance.toArray();
-    }
-
-    @Benchmark
-    public Object[] toArrayEmpty() {
-        return defaultInstance.toArray();
-    }
 }
