@@ -22,62 +22,37 @@
  */
 package org.openjdk.bench.java.lang.reflect.Proxy;
 
-import java.io.IOException;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.constant.ClassDesc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.SingleShotTime)
-@Fork(value = 1, jvmArgsAppend = {"--enable-preview"})
+@Fork(1)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 10, time = 2)
 @State(Scope.Benchmark)
 public class ProxyGenBench {
-    ClsLoader loader;
-    Map<String, Class<?>> clsMap;
 
-    @Setup(Level.Invocation)
-    public void setup() throws IOException {
-        ClassModel tempModel = ClassFile.of().parse(ProxyGenBench.class.getResourceAsStream("ProxyGenBench$Interfaze.class").readAllBytes());
-        ClassDesc tempDesc = ClassDesc.ofDescriptor(Interfaze.class.descriptorString());
-        loader = new ClsLoader();
-        clsMap = new HashMap<>(100);
-        for (int i = 0; i < 100; i++) {
-            String intfName = Interfaze.class.getName() + i;
-            loader.defClass(intfName, ClassRemapper.of(Map.of(tempDesc, ClassDesc.of(intfName))).remapClass(ClassFile.of(), tempModel));
-        }
-    }
+    static final Class<?>[] INTF = new Class<?>[]{Interfaze.class};
+    static final IHandler HANDLER = new IHandler();
 
     @Benchmark
-    public void generateProxies(Blackhole bh) {
-        for (Class<?> intf : clsMap.values()) {
-            bh.consume(Proxy.newProxyInstance(
-                    loader,
-                    new Class<?>[]{intf},
-                    new IHandler()
-            ));
+    public void generate100Proxies() {
+        for (int i = 0; i < 100; i++) {
+            Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER);
         }
     }
 
@@ -94,21 +69,14 @@ public class ProxyGenBench {
         }
     }
 
-    public class ClsLoader extends ClassLoader {
+    static class ClsLoader extends ClassLoader {
 
         public ClsLoader() {
-            super(ProxyGenBench.class.getClassLoader());
+            super(Interfaze.class.getClassLoader());
         }
+    }
 
-        Class<?> defClass(String className, byte[] classData) {
-            Class<?> cls = defineClass(className, classData, 0, classData.length);
-            clsMap.put(className, cls);
-            return cls;
-        }
-
-        @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException {
-            return clsMap.get(name);
-        }
+    public static void main(String[] args) {
+        new ProxyGenBench().generate100Proxies();
     }
 }
