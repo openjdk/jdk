@@ -268,6 +268,14 @@ class StubGenerator: public StubCodeGenerator {
                                address byte_copy_entry, address short_copy_entry,
                                address int_copy_entry, address long_copy_entry);
 
+  // Generate 'unsafe' set memory stub
+  // Though just as safe as the other stubs, it takes an unscaled
+  // size_t argument instead of an element count.
+  //
+  // Examines the alignment of the operands and dispatches
+  // to an int, short, or byte copy loop.
+  address generate_unsafe_setmemory(const char *name, address byte_copy_entry);
+
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.
   // Also, clean the sign bits of src_pos and dst_pos.
@@ -474,6 +482,9 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister P1L, const XMMRegister P1H,
                                const XMMRegister P2L, const XMMRegister P2H,
                                const XMMRegister YTMP1, const Register rscratch);
+
+  address generate_intpoly_montgomeryMult_P256();
+  address generate_intpoly_assign();
 
   // BASE64 stubs
 

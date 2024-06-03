@@ -46,13 +46,9 @@ class WorkerThreads;
 // Invariant: bottom() <= top() <= end()
 // top() and end() are exclusive.
 
-class MutableSpaceMangler;
-
 class MutableSpace: public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  // Helper for mangling unused space in debug builds
-  MutableSpaceMangler* _mangler;
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
   size_t _alignment;
@@ -60,15 +56,13 @@ class MutableSpace: public CHeapObj<mtGC> {
   HeapWord* volatile _top;
   HeapWord* _end;
 
-  MutableSpaceMangler* mangler() { return _mangler; }
-
   void numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space);
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
  public:
-  virtual ~MutableSpace();
+  virtual ~MutableSpace() = default;
   MutableSpace(size_t page_size);
 
   // Accessors
@@ -107,19 +101,10 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual void update() { }
   virtual void accumulate_statistics() { }
 
-  // Methods used in mangling.  See descriptions under SpaceMangler.
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
-  virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
-  virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
-  virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
-
-  // Used to save the space's current top for later use during mangling.
-  virtual void set_top_for_allocations() PRODUCT_RETURN;
+  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   virtual void ensure_parsability() { }
-
-  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   // Boolean queries.
   bool is_empty() const              { return used_in_words() == 0; }

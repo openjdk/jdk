@@ -293,6 +293,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
   st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
   st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
+  st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
+  st->print_cr("- _ro_ptrmap_start_pos:           " SIZE_FORMAT, _ro_ptrmap_start_pos);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
@@ -1580,7 +1582,7 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
 // lots of leading zeros.
 size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
   size_t old_zeros = map->find_first_set_bit(0);
-  size_t old_size = map->size_in_bytes();
+  size_t old_size = map->size();
 
   // Slice and resize bitmap
   map->truncate(old_zeros, map->size());
@@ -1589,13 +1591,16 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
     size_t new_zeros = map->find_first_set_bit(0);
     assert(new_zeros == 0, "Should have removed leading zeros");
   )
-
-  assert(map->size_in_bytes() < old_size, "Map size should have decreased");
+  assert(map->size() <= old_size, "sanity");
   return old_zeros;
 }
 
-char* FileMapInfo::write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
+char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
+  size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
+  size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
+  header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
+  header()->set_ro_ptrmap_start_pos(removed_ro_zeros);
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
@@ -1942,9 +1947,9 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     address valid_new_base = (address)header()->mapped_base_address();
     address valid_new_end  = (address)mapped_end();
 
-    SharedDataRelocator rw_patcher((address*)rw_patch_base, (address*)rw_patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator rw_patcher((address*)rw_patch_base + header()->rw_ptrmap_start_pos(), (address*)rw_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    SharedDataRelocator ro_patcher((address*)ro_patch_base, (address*)ro_patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
     rw_ptrmap.iterate(&rw_patcher);
     ro_ptrmap.iterate(&ro_patcher);
@@ -2059,8 +2064,8 @@ bool FileMapInfo::can_use_heap_region() {
                 archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
-  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
-                MaxHeapSize/M, HeapRegion::GrainBytes);
+  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, G1HeapRegion::GrainBytes = " SIZE_FORMAT,
+                MaxHeapSize/M, G1HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
@@ -2125,7 +2130,7 @@ bool FileMapInfo::map_heap_region() {
 #ifdef ASSERT
     // The "old" regions must be parsable -- we cannot have any unused space
     // at the start of the lowest G1 region that contains archived objects.
-    assert(is_aligned(_mapped_heap_memregion.start(), HeapRegion::GrainBytes), "must be");
+    assert(is_aligned(_mapped_heap_memregion.start(), G1HeapRegion::GrainBytes), "must be");
 
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
@@ -2135,7 +2140,7 @@ bool FileMapInfo::map_heap_region() {
     address heap_end = (address)heap_range.end();
     address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
     assert(heap_end >= mapped_heap_region_end, "must be");
-    assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
+    assert(heap_end - mapped_heap_region_end < (intx)(G1HeapRegion::GrainBytes),
            "must be at the top of the heap to avoid fragmentation");
 #endif
 

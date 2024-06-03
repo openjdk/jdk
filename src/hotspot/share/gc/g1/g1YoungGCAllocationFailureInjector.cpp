@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
-#include "gc/g1/g1_globals.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 #if ALLOCATION_FAILURE_INJECTOR
 
@@ -39,7 +39,7 @@ public:
     _allocation_failure_regions(allocation_failure_regions),
     _allocation_failure_regions_num(cset_length * G1GCAllocationFailureALotCSetPercent / 100) { }
 
-  bool do_heap_region(HeapRegion* r) override {
+  bool do_heap_region(G1HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
     if (_allocation_failure_regions_num > 0) {
       _allocation_failure_regions.set_bit(r->hrm_index());

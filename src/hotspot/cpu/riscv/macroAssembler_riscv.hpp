@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -146,7 +146,7 @@ class MacroAssembler: public Assembler {
   // last Java Frame (fills frame anchor)
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, address last_java_pc, Register tmp);
   void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Label &last_java_pc, Register tmp);
-  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc, Register tmp);
+  void set_last_Java_frame(Register last_java_sp, Register last_java_fp, Register last_java_pc);
 
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);
@@ -581,6 +581,9 @@ class MacroAssembler: public Assembler {
   void fsflagsi(Register Rd, unsigned imm);
   void fsflagsi(unsigned imm);
 
+  // Restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni(Register tmp);
+
   // Control transfer pseudo instructions
   void beqz(Register Rs, const address dest);
   void bnez(Register Rs, const address dest);
@@ -589,14 +592,40 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
-  void j(Label &l, Register temp = t0);
+ private:
+  void jump_link(const address dest, Register temp);
+  void jump_link(const Address &adr, Register temp);
+ public:
+  // We try to follow risc-v asm menomics.
+  // But as we don't layout a reachable GOT,
+  // we often need to resort to movptr, li <48imm>.
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+
+  // jump: jal x0, offset
+  // For long reach uses temp register for:
+  // la + jr
   void j(const address dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
-  void jal(Label &l, Register temp = t0);
-  void jal(const address dest, Register temp = t0);
-  void jal(const Address &adr, Register temp = t0);
-  void jal(Register Rd, Label &L, Register temp = t0);
-  void jal(Register Rd, const address dest, Register temp = t0);
+  void j(Label &l, Register temp = t0);
+
+  // jump register: jalr x0, offset(rs)
+  void jr(Register Rd, int32_t offset = 0);
+
+  // call: la + jalr x1
+  void call(const address dest, Register temp = t0);
+
+  // jalr: jalr x1, offset(rs)
+  void jalr(Register Rs, int32_t offset = 0);
+
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
+  // Uses call() for intra code cache, else movptr + jalr.
+  void rt_call(address dest, Register tmp = t0);
+
+  // ret: jalr x0, 0(x1)
+  inline void ret() {
+    Assembler::jalr(x0, x1, 0);
+  }
 
   //label
   void beqz(Register Rs, Label &l, bool is_far = false);
@@ -678,6 +707,22 @@ private:
   int pop_v(unsigned int bitset, Register stack);
 #endif // COMPILER2
 
+  // The signed 20-bit upper imm can materialize at most negative 0xF...F80000000, two G.
+  // The following signed 12-bit imm can at max subtract 0x800, two K, from that previously loaded two G.
+  bool is_valid_32bit_offset(int64_t x) {
+    constexpr int64_t twoG = (2 * G);
+    constexpr int64_t twoK = (2 * K);
+    return x < (twoG - twoK) && x >= (-twoG - twoK);
+  }
+
+  // Ensure that the auipc can reach the destination at x from anywhere within
+  // the code cache so that if it is relocated we know it will still reach.
+  bool is_32bit_offset_from_codecache(int64_t x) {
+    int64_t low  = (int64_t)CodeCache::low_bound();
+    int64_t high = (int64_t)CodeCache::high_bound();
+    return is_valid_32bit_offset(x - low) && is_valid_32bit_offset(x - high);
+  }
+
 public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
@@ -722,14 +767,13 @@ public:
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
   typedef void (MacroAssembler::* compare_and_branch_label_insn)(Register Rs1, Register Rs2, Label &L, bool is_far);
   typedef void (MacroAssembler::* jal_jalr_insn)(Register Rt, address dest);
-  typedef void (MacroAssembler::* load_insn_by_temp)(Register Rt, address dest, Register temp);
 
-  void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
   void wrap_label(Register r1, Register r2, Label &L,
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
+  // la will use movptr instead of GOT when not in reach for auipc.
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
   void la(Register Rd, const address addr, int32_t &offset);
@@ -752,13 +796,6 @@ public:
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
 
-  void mv(Register Rd, Address dest) {
-    assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-    relocate(dest.rspec(), [&] {
-      movptr(Rd, dest.target());
-    });
-  }
-
   void mv(Register Rd, RegisterOrConstant src) {
     if (src.is_register()) {
       mv(Rd, src.as_register());
@@ -767,17 +804,16 @@ public:
     }
   }
 
-  void movptr(Register Rd, address addr, int32_t &offset);
-
-  void movptr(Register Rd, address addr) {
-    int offset = 0;
-    movptr(Rd, addr, offset);
-    addi(Rd, Rd, offset);
-  }
-
-  inline void movptr(Register Rd, uintptr_t imm64) {
-    movptr(Rd, (address)imm64);
-  }
+  // Generates a load of a 48-bit constant which can be
+  // patched to any 48-bit constant, i.e. address.
+  // If common case supply additional temp register
+  // to shorten the instruction sequence.
+  void movptr(Register Rd, address addr, Register tmp = noreg);
+  void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+ private:
+  void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+ public:
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
@@ -833,7 +869,7 @@ public:
   void NAME(Register Rd, address dest) {                                                           \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (is_valid_32bit_offset(distance)) {                                                         \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
@@ -890,7 +926,7 @@ public:
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (is_valid_32bit_offset(distance)) {                                                         \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -951,7 +987,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (is_valid_32bit_offset(distance)) {                                                         \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -996,7 +1032,7 @@ public:
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (is_valid_32bit_offset(distance)) {                                                         \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1250,7 +1286,7 @@ public:
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp6, Register product_hi);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                       Register z, Register zlen,
+                       Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
 #endif
@@ -1465,21 +1501,6 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-  // Emit a runtime call. Only invalidates the tmp register which
-  // is used to keep the entry address for jalr/movptr.
-  void rt_call(address dest, Register tmp = t0);
-
-  void call(const address dest, Register temp = t0) {
-    assert_cond(dest != nullptr);
-    assert(temp != noreg, "expecting a register");
-    int32_t offset = 0;
-    mv(temp, dest, offset);
-    jalr(x1, temp, offset);
-  }
-
-  inline void ret() {
-    jalr(x0, x1, 0);
-  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline

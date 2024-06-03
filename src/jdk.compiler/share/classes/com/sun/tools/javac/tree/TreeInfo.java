@@ -182,6 +182,41 @@ public class TreeInfo {
         }
     }
 
+    /** Check if the given tree is an explicit reference to the 'this' instance of the
+     *  class currently being compiled. This is true if tree is:
+     *  - An unqualified 'this' identifier
+     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *    but also NOT an enclosing outer class of 'currentClass'.
+     */
+    public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isExplicitThisReference(types, currentClass, skipParens(tree));
+            case IDENT: {
+                JCIdent ident = (JCIdent)tree;
+                Names names = ident.name.table.names;
+                return ident.name == names._this || ident.name == names._super;
+            }
+            case SELECT: {
+                JCFieldAccess select = (JCFieldAccess)tree;
+                Type selectedType = types.erasure(select.selected.type);
+                if (!selectedType.hasTag(TypeTag.CLASS))
+                    return false;
+                Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
+                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Names names = select.name.table.names;
+                return currentClassSym.isSubClass(selectedClassSym, types) &&
+                        (select.name == names._super ||
+                        (select.name == names._this &&
+                            (currentClassSym == selectedClassSym ||
+                            !currentClassSym.isEnclosedBy(selectedClassSym))));
+            }
+            default:
+                return false;
+        }
+    }
+
     /** Is this a call to super?
      */
     public static boolean isSuperCall(JCTree tree) {
@@ -266,6 +301,16 @@ public class TreeInfo {
         public void visitLambda(JCLambda tree) {
             // don't descend any further
         }
+    }
+
+    /**
+     * Is the given method invocation an invocation of this(...) or super(...)?
+     */
+    public static boolean isConstructorCall(JCMethodInvocation invoke) {
+        Name name = TreeInfo.name(invoke.meth);
+        Names names = name.table.names;
+
+        return (name == names._this || name == names._super);
     }
 
     /** Finds super() invocations and translates them using the given mapping.
@@ -441,13 +486,6 @@ public class TreeInfo {
                 ? ((JCCompilationUnit) tree).docComments
                 : env.toplevel.docComments;
         return (docComments == null) ? null : docComments.getCommentText(tree);
-    }
-
-    public static DCTree.DCDocComment getCommentTree(Env<?> env, JCTree tree) {
-        DocCommentTable docComments = (tree.hasTag(JCTree.Tag.TOPLEVEL))
-                ? ((JCCompilationUnit) tree).docComments
-                : env.toplevel.docComments;
-        return (docComments == null) ? null : docComments.getCommentTree(tree);
     }
 
     /** The position of the first statement in a block, or the position of

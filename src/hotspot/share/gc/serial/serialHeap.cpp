@@ -30,7 +30,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
@@ -315,7 +314,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
   for (uint try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
 
     // First allocation attempt is lock-free.
-    Generation *young = _young_gen;
+    DefNewGeneration *young = _young_gen;
     if (young->should_allocate(size, is_tlab)) {
       result = young->par_allocate(size, is_tlab);
       if (result != nullptr) {
@@ -380,7 +379,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
       gc_count_before = total_collections();
     }
 
-    VM_GenCollectForAllocation op(size, is_tlab, gc_count_before);
+    VM_SerialCollectForAllocation op(size, is_tlab, gc_count_before);
     VMThread::execute(&op);
     if (op.prologue_succeeded()) {
       result = op.result();
@@ -433,200 +432,60 @@ bool SerialHeap::must_clear_all_soft_refs() {
          _gc_cause == GCCause::_wb_full_gc;
 }
 
-void SerialHeap::collect_generation(Generation* gen, bool full, size_t size,
-                                    bool is_tlab, bool run_verification, bool clear_soft_refs) {
-  FormatBuffer<> title("Collect gen: %s", gen->short_name());
-  GCTraceTime(Trace, gc, phases) t1(title);
-  TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause(), heap()->is_young_gen(gen) ? "end of minor GC" : "end of major GC");
+bool SerialHeap::is_young_gc_safe() const {
+  if (!_young_gen->to()->is_empty()) {
+    return false;
+  }
+  return _old_gen->promotion_attempt_is_safe(_young_gen->used());
+}
 
-  gen->stat_record()->invocations++;
-  gen->stat_record()->accumulated_time.start();
+bool SerialHeap::do_young_collection(bool clear_soft_refs) {
+  if (!is_young_gc_safe()) {
+    return false;
+  }
+  IsSTWGCActiveMark gc_active_mark;
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
+  GCIdMark gc_id_mark;
+  GCTraceCPUTime tcpu(_young_gen->gc_tracer());
+  GCTraceTime(Info, gc) t("Pause Young", nullptr, gc_cause(), true);
+  TraceCollectorStats tcs(_young_gen->counters());
+  TraceMemoryManagerStats tmms(_young_gen->gc_manager(), gc_cause(), "end of minor GC");
+  print_heap_before_gc();
+  const PreGenGCValues pre_gc_values = get_pre_gc_values();
 
-  // Must be done anew before each collection because
-  // a previous collection will do mangling and will
-  // change top of some spaces.
-  record_gen_tops_before_GC();
-
-  log_trace(gc)("%s invoke=%d size=" SIZE_FORMAT, heap()->is_young_gen(gen) ? "Young" : "Old", gen->stat_record()->invocations, size * HeapWordSize);
-
-  if (run_verification && VerifyBeforeGC) {
+  increment_total_collections(false);
+  const bool should_verify = total_collections() >= VerifyGCStartAt;
+  if (should_verify && VerifyBeforeGC) {
+    prepare_for_verify();
     Universe::verify("Before GC");
   }
+  gc_prologue(false);
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
-  // Do collection work
-  {
-    save_marks();   // save marks for all gens
+  save_marks();
 
-    gen->collect(full, clear_soft_refs, size, is_tlab);
-  }
+  bool result = _young_gen->collect(clear_soft_refs);
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
-  gen->stat_record()->accumulated_time.stop();
+  update_gc_stats(_young_gen, false);
 
-  update_gc_stats(gen, full);
-
-  if (run_verification && VerifyAfterGC) {
+  if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
   }
-}
 
-void SerialHeap::do_collection(bool full,
-                               bool clear_all_soft_refs,
-                               size_t size,
-                               bool is_tlab,
-                               GenerationType max_generation) {
-  ResourceMark rm;
-  DEBUG_ONLY(Thread* my_thread = Thread::current();)
+  _young_gen->compute_new_size();
 
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(my_thread->is_VM_thread(), "only VM thread");
-  assert(Heap_lock->is_locked(),
-         "the requesting thread should have the Heap_lock");
-  guarantee(!is_gc_active(), "collection is not reentrant");
+  print_heap_change(pre_gc_values);
 
-  if (GCLocker::check_active_before_gc()) {
-    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
-  }
+  // Track memory usage and detect low memory after GC finishes
+  MemoryService::track_memory_usage();
 
-  const bool do_clear_all_soft_refs = clear_all_soft_refs ||
-                          soft_ref_policy()->should_clear_all_soft_refs();
+  gc_epilogue(false);
 
-  ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
+  print_heap_after_gc();
 
-  IsGCActiveMark active_gc_mark;
-
-  bool complete = full && (max_generation == OldGen);
-  bool old_collects_young = complete && !ScavengeBeforeFullGC;
-  bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
-
-  const PreGenGCValues pre_gc_values = get_pre_gc_values();
-
-  bool run_verification = total_collections() >= VerifyGCStartAt;
-  bool prepared_for_verification = false;
-  bool do_full_collection = false;
-
-  if (do_young_collection) {
-    GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(((DefNewGeneration*)_young_gen)->gc_tracer());
-    GCTraceTime(Info, gc) t("Pause Young", nullptr, gc_cause(), true);
-
-    print_heap_before_gc();
-
-    if (run_verification && VerifyBeforeGC) {
-      prepare_for_verify();
-      prepared_for_verification = true;
-    }
-
-    gc_prologue(complete);
-    increment_total_collections(complete);
-
-    collect_generation(_young_gen,
-                       full,
-                       size,
-                       is_tlab,
-                       run_verification,
-                       do_clear_all_soft_refs);
-
-    if (size > 0 && (!is_tlab || _young_gen->supports_tlab_allocation()) &&
-        size * HeapWordSize <= _young_gen->unsafe_max_alloc_nogc()) {
-      // Allocation request was met by young GC.
-      size = 0;
-    }
-
-    // Ask if young collection is enough. If so, do the final steps for young collection,
-    // and fallthrough to the end.
-    do_full_collection = should_do_full_collection(size, full, is_tlab, max_generation);
-    if (!do_full_collection) {
-      // Adjust generation sizes.
-      _young_gen->compute_new_size();
-
-      print_heap_change(pre_gc_values);
-
-      // Track memory usage and detect low memory after GC finishes
-      MemoryService::track_memory_usage();
-
-      gc_epilogue(complete);
-    }
-
-    print_heap_after_gc();
-
-  } else {
-    // No young collection, ask if we need to perform Full collection.
-    do_full_collection = should_do_full_collection(size, full, is_tlab, max_generation);
-  }
-
-  if (do_full_collection) {
-    GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
-    GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
-
-    print_heap_before_gc();
-
-    if (!prepared_for_verification && run_verification && VerifyBeforeGC) {
-      prepare_for_verify();
-    }
-
-    if (!do_young_collection) {
-      gc_prologue(complete);
-      increment_total_collections(complete);
-    }
-
-    // Accounting quirk: total full collections would be incremented when "complete"
-    // is set, by calling increment_total_collections above. However, we also need to
-    // account Full collections that had "complete" unset.
-    if (!complete) {
-      increment_total_full_collections();
-    }
-
-    CodeCache::on_gc_marking_cycle_start();
-
-    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                              false /* unregister_nmethods_during_purge */,
-                              false /* lock_nmethod_free_separately */);
-
-    collect_generation(_old_gen,
-                       full,
-                       size,
-                       is_tlab,
-                       run_verification,
-                       do_clear_all_soft_refs);
-
-    CodeCache::on_gc_marking_cycle_finish();
-    CodeCache::arm_all_nmethods();
-
-    // Adjust generation sizes.
-    _old_gen->compute_new_size();
-    _young_gen->compute_new_size();
-
-    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-    ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-    DEBUG_ONLY(MetaspaceUtils::verify();)
-
-    // Need to clear claim bits for the next mark.
-    ClassLoaderDataGraph::clear_claimed_marks();
-
-    // Resize the metaspace capacity after full collections
-    MetaspaceGC::compute_new_size();
-
-    print_heap_change(pre_gc_values);
-
-    // Track memory usage and detect low memory after GC finishes
-    MemoryService::track_memory_usage();
-
-    // Need to tell the epilogue code we are done with Full GC, regardless what was
-    // the initial value for "complete" flag.
-    gc_epilogue(true);
-
-    print_heap_after_gc();
-  }
-}
-
-bool SerialHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
-                                           SerialHeap::GenerationType max_gen) const {
-  return max_gen == OldGen && _old_gen->should_collect(full, size, is_tlab);
+  return result;
 }
 
 void SerialHeap::register_nmethod(nmethod* nm) {
@@ -650,10 +509,11 @@ void SerialHeap::prune_unlinked_nmethods() {
 }
 
 HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
-  GCCauseSetter x(this, GCCause::_allocation_failure);
+  assert(size != 0, "precondition");
+
   HeapWord* result = nullptr;
 
-  assert(size != 0, "Precondition violated");
+  GCLocker::check_active_before_gc();
   if (GCLocker::is_active_and_needs_gc()) {
     // GC locker is active; instead of a collection we will attempt
     // to expand the heap, if there's room for expansion.
@@ -661,30 +521,14 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
       result = expand_heap_and_allocate(size, is_tlab);
     }
     return result;   // Could be null if we are out of space.
-  } else if (!incremental_collection_will_fail(false /* don't consult_young */)) {
-    // Do an incremental collection.
-    do_collection(false,                     // full
-                  false,                     // clear_all_soft_refs
-                  size,                      // size
-                  is_tlab,                   // is_tlab
-                  SerialHeap::OldGen); // max_generation
-  } else {
-    log_trace(gc)(" :: Trying full because partial may fail :: ");
-    // Try a full collection; see delta for bug id 6266275
-    // for the original code and why this has been simplified
-    // with from-space allocation criteria modified and
-    // such allocation moved out of the safepoint path.
-    do_collection(true,                      // full
-                  false,                     // clear_all_soft_refs
-                  size,                      // size
-                  is_tlab,                   // is_tlab
-                  SerialHeap::OldGen); // max_generation
   }
 
-  result = attempt_allocation(size, is_tlab, false /*first_only*/);
+  // If young-gen can handle this allocation, attempt young-gc firstly.
+  bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
+  collect_at_safepoint(!should_run_young_gc);
 
+  result = attempt_allocation(size, is_tlab, false /*first_only*/);
   if (result != nullptr) {
-    assert(is_in_reserved(result), "result not in heap");
     return result;
   }
 
@@ -701,22 +545,19 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   // attempt fails, an OOM exception will be thrown.
   {
     UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
-
-    do_collection(true,                      // full
-                  true,                      // clear_all_soft_refs
-                  size,                      // size
-                  is_tlab,                   // is_tlab
-                  SerialHeap::OldGen); // max_generation
+    const bool clear_all_soft_refs = true;
+    do_full_collection_no_gc_locker(clear_all_soft_refs);
   }
 
   result = attempt_allocation(size, is_tlab, false /* first_only */);
   if (result != nullptr) {
-    assert(is_in_reserved(result), "result not in heap");
     return result;
   }
-
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-    "Flag should have been handled and cleared prior to this point");
+  // The previous full-gc can shrink the heap, so re-expand it.
+  result = expand_heap_and_allocate(size, is_tlab);
+  if (result != nullptr) {
+    return result;
+  }
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
@@ -757,18 +598,56 @@ void SerialHeap::process_roots(ScanningOption so,
   }
 }
 
-bool SerialHeap::no_allocs_since_save_marks() {
-  return _young_gen->no_allocs_since_save_marks() &&
-         _old_gen->no_allocs_since_save_marks();
+template <typename OopClosureType>
+static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord** from) {
+  assert(*from != nullptr, "precondition");
+  HeapWord* t;
+  HeapWord* p = *from;
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = space->top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      p += cast_to_oop(p)->oop_iterate_size(blk);
+    }
+  } while (t < space->top());
+
+  *from = space->top();
 }
 
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
+  ContiguousSpace* to_space = young_gen()->to();
   do {
-    young_gen()->oop_since_save_marks_iterate(young_cl);
-    old_gen()->oop_since_save_marks_iterate(old_cl);
-  } while (!no_allocs_since_save_marks());
+    oop_iterate_from(young_cl, to_space, &_young_gen_saved_top);
+    oop_iterate_from(old_cl, old_gen()->space(), &_old_gen_saved_top);
+    // Recheck to-space only, because postcondition of oop_iterate_from is no
+    // unscanned objs
+  } while (_young_gen_saved_top != to_space->top());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+}
+
+void SerialHeap::try_collect_at_safepoint(bool full) {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  if (GCLocker::check_active_before_gc()) {
+    return;
+  }
+  collect_at_safepoint(full);
+}
+
+void SerialHeap::collect_at_safepoint(bool full) {
+  assert(!GCLocker::is_active(), "precondition");
+  bool clear_soft_refs = must_clear_all_soft_refs();
+
+  if (!full) {
+    bool success = do_young_collection(clear_soft_refs);
+    if (success) {
+      return;
+    }
+    // Upgrade to Full-GC if young-gc fails
+  }
+  do_full_collection_no_gc_locker(clear_soft_refs);
 }
 
 // public collection interfaces
@@ -794,13 +673,11 @@ void SerialHeap::collect(GCCause::Cause cause) {
                            || (cause == GCCause::_gc_locker)
                 DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
 
-  const GenerationType max_generation = should_run_young_gc
-                                      ? YoungGen
-                                      : OldGen;
-
   while (true) {
-    VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                         cause, max_generation);
+    VM_SerialGCCollect op(!should_run_young_gc,
+                          gc_count_before,
+                          full_gc_count_before,
+                          cause);
     VMThread::execute(&op);
 
     if (!GCCause::is_explicit_full_gc(cause)) {
@@ -823,27 +700,83 @@ void SerialHeap::collect(GCCause::Cause cause) {
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
-   do_full_collection(clear_all_soft_refs, OldGen);
+  if (GCLocker::check_active_before_gc()) {
+    return;
+  }
+  do_full_collection_no_gc_locker(clear_all_soft_refs);
 }
 
-void SerialHeap::do_full_collection(bool clear_all_soft_refs,
-                                    GenerationType last_generation) {
-  do_collection(true,                   // full
-                clear_all_soft_refs,    // clear_all_soft_refs
-                0,                      // size
-                false,                  // is_tlab
-                last_generation);       // last_generation
-  // Hack XXX FIX ME !!!
-  // A scavenge may not have been attempted, or may have
-  // been attempted and failed, because the old gen was too full
-  if (gc_cause() == GCCause::_gc_locker && incremental_collection_failed()) {
-    log_debug(gc, jni)("GC locker: Trying a full collection because scavenge failed");
-    // This time allow the old gen to be collected as well
-    do_collection(true,                // full
-                  clear_all_soft_refs, // clear_all_soft_refs
-                  0,                   // size
-                  false,               // is_tlab
-                  OldGen);             // last_generation
+void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
+  IsSTWGCActiveMark gc_active_mark;
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
+  GCIdMark gc_id_mark;
+  GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
+  GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
+  TraceCollectorStats tcs(_old_gen->counters());
+  TraceMemoryManagerStats tmms(_old_gen->gc_manager(), gc_cause(), "end of major GC");
+  const PreGenGCValues pre_gc_values = get_pre_gc_values();
+  print_heap_before_gc();
+
+  increment_total_collections(true);
+  const bool should_verify = total_collections() >= VerifyGCStartAt;
+  if (should_verify && VerifyBeforeGC) {
+    prepare_for_verify();
+    Universe::verify("Before GC");
+  }
+
+  gc_prologue(true);
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
+  CodeCache::on_gc_marking_cycle_start();
+  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                            false /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
+  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
+  gc_timer->register_gc_start();
+
+  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
+  gc_tracer->report_gc_start(gc_cause(), gc_timer->gc_start());
+
+  pre_full_gc_dump(gc_timer);
+
+  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
+
+  post_full_gc_dump(gc_timer);
+
+  gc_timer->register_gc_end();
+
+  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
+
+  // Adjust generation sizes.
+  _old_gen->compute_new_size();
+  _young_gen->compute_new_size();
+
+  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
+  DEBUG_ONLY(MetaspaceUtils::verify();)
+
+  // Need to clear claim bits for the next mark.
+  ClassLoaderDataGraph::clear_claimed_marks();
+
+  // Resize the metaspace capacity after full collections
+  MetaspaceGC::compute_new_size();
+
+  print_heap_change(pre_gc_values);
+
+  // Track memory usage and detect low memory after GC finishes
+  MemoryService::track_memory_usage();
+
+  // Need to tell the epilogue code we are done with Full GC, regardless what was
+  // the initial value for "complete" flag.
+  gc_epilogue(true);
+
+  print_heap_after_gc();
+
+  if (should_verify && VerifyAfterGC) {
+    Universe::verify("After GC");
   }
 }
 
@@ -934,8 +867,8 @@ bool SerialHeap::is_maximal_no_gc() const {
 }
 
 void SerialHeap::save_marks() {
-  _young_gen->save_marks();
-  _old_gen->save_marks();
+  _young_gen_saved_top = _young_gen->to()->top();
+  _old_gen_saved_top = _old_gen->space()->top();
 }
 
 void SerialHeap::verify(VerifyOption option /* ignored */) {
@@ -967,11 +900,7 @@ bool SerialHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void SerialHeap::print_tracing_info() const {
-  if (log_is_enabled(Debug, gc, heap, exit)) {
-    LogStreamHandle(Debug, gc, heap, exit) lsh;
-    _young_gen->print_summary_info_on(&lsh);
-    _old_gen->print_summary_info_on(&lsh);
-  }
+ // Does nothing
 }
 
 void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
@@ -1023,12 +952,3 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
-
-#ifndef PRODUCT
-void SerialHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    _young_gen->record_spaces_top();
-    _old_gen->record_spaces_top();
-  }
-}
-#endif  // not PRODUCT
