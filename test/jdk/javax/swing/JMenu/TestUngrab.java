@@ -57,6 +57,7 @@ public class TestUngrab {
     static volatile Dimension dim;
     static volatile int width;
     static volatile int height;
+    static volatile boolean popupVisible;
 
     private static void createAndShowGUI() {
         frame = new JFrame();
@@ -79,6 +80,7 @@ public class TestUngrab {
             SwingUtilities.invokeAndWait(() -> createAndShowGUI());
             robot.waitForIdle();
             robot.delay(1000);
+
             SwingUtilities.invokeAndWait(() -> {
                 point = menu.getLocationOnScreen();
                 dim = menu.getSize();
@@ -88,6 +90,7 @@ public class TestUngrab {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+
             SwingUtilities.invokeAndWait(() -> {
                 loc = frame.getLocationOnScreen();
                 width = frame.getWidth();
@@ -97,8 +100,12 @@ public class TestUngrab {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(1000);
-            System.out.println("isPopupMenuVisible " + menu.isPopupMenuVisible());
-            if (menu.isPopupMenuVisible()) {
+
+            SwingUtilities.invokeAndWait(() -> {
+                popupVisible = menu.isPopupMenuVisible();
+            });
+            System.out.println("isPopupMenuVisible " + popupVisible);
+            if (popupVisible) {
                 throw new RuntimeException("popup menu not closed on resize");
             }
         } finally {
