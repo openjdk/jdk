@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8332230
+ * @bug 8301580 8322159 8333107 8332230
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @enablePreview
@@ -149,6 +149,52 @@ public class AttrRecovery extends TestRunner {
 
         List<String> expected = List.of(
                 "C.java:7:17: compiler.err.not.stmt",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8333107
+    public void testNestedLambda() throws Exception {
+        String code = """
+                      public class Dummy {
+                          private void main() {
+                              Stream l = null;
+                              l.map(a -> {
+                                  l.map(b -> {
+                                      return null;
+                                  });
+                                  l.map(new FI() {
+                                      public String convert(String s) {
+                                          return null;
+                                      }
+                                  });
+                                  class Local {}
+                              });
+                          }
+                          public interface Stream {
+                              public void map(FI fi);
+                          }
+                          public interface FI {
+                              public String convert(String s);
+                          }
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev",
+                         "-XDshould-stop.at=FLOW")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Dummy.java:4:10: compiler.err.cant.apply.symbol: kindname.method, map, Dummy.FI, @15, kindname.interface, Dummy.Stream, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.missing.ret.val: java.lang.String)))",
                 "1 error"
         );
 
