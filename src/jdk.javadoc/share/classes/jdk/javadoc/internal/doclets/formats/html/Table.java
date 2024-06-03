@@ -321,7 +321,7 @@ public class Table<T> extends Content {
             }
         }
         int colIndex = 0;
-        Pattern pattern = Pattern.compile("<a\\b");
+        Pattern pattern = Pattern.compile("<(?:a)\\b");
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Only make element tabbable if it doesn't contain tabbable content to avoid widget_tabbable_single(Potential Violation)
