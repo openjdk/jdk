@@ -1200,9 +1200,11 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         iff->Opcode() == Op_RangeCheck) { // Test?
 
       // Comparing trip+off vs limit
-      Node *bol = iff->in(1);
-      if (bol->req() < 2) {
-        continue; // dead constant test
+      Node* bol = iff->in(1);
+      if (bol->req() != 2) {
+        // Could be a dead constant test or another dead variant (e.g. a Phi with 2 inputs created with split_thru_phi).
+        // Either way, skip this test.
+        continue;
       }
       if (!bol->is_Bool()) {
         assert(bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate(),
