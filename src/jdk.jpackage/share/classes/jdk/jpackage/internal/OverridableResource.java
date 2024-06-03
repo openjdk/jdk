@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
@@ -73,7 +75,7 @@ final class OverridableResource {
 
     OverridableResource(String defaultName) {
         this.defaultName = defaultName;
-        setSourceOrder(Source.values());
+        setSourceOrder(Source.values()).setLogger(Log::verbose);
     }
 
     Path getResourceDir() {
@@ -129,6 +131,11 @@ final class OverridableResource {
         sources = Stream.of(v)
                 .map(source -> Map.entry(source, getHandler(source)))
                 .toList();
+        return this;
+    }
+
+    OverridableResource setLogger(Consumer<String> v) {
+        logger = v;
         return this;
     }
 
@@ -222,6 +229,20 @@ final class OverridableResource {
                 RESOURCE_DIR.fetchFrom(params));
     }
 
+    final class NoLogging implements Closeable {
+        NoLogging() {
+            logger = OverridableResource.this.logger;
+            OverridableResource.this.setLogger(v -> {});
+        }
+
+        @Override
+        public void close() throws IOException {
+            OverridableResource.this.setLogger(logger);
+        }
+
+        private final Consumer<String> logger;
+    }
+
     private Source sendToConsumer(ResourceConsumer consumer) throws IOException {
         for (var source: sources) {
             if (source.getValue().apply(consumer)) {
@@ -241,7 +262,7 @@ final class OverridableResource {
     private boolean useExternal(ResourceConsumer dest) throws IOException {
         boolean used = externalPath != null && Files.exists(externalPath);
         if (used && dest != null) {
-            Log.verbose(MessageFormat.format(I18N.getString(
+            logger.accept(MessageFormat.format(I18N.getString(
                     "message.using-custom-resource-from-file"),
                     getPrintableCategory(),
                     externalPath.toAbsolutePath().normalize()));
@@ -270,9 +291,9 @@ final class OverridableResource {
                 final Path logResourceName = Optional.ofNullable(logPublicName).orElse(
                         resourceName).normalize();
 
-                Log.verbose(MessageFormat.format(I18N.getString(
+                logger.accept((MessageFormat.format(I18N.getString(
                         "message.using-custom-resource"), getPrintableCategory(),
-                        logResourceName));
+                        logResourceName)));
 
                 try (InputStream in = Files.newInputStream(customResource)) {
                     processResourceStream(in, dest);
@@ -291,9 +312,9 @@ final class OverridableResource {
                     .orElse(Optional
                             .ofNullable(publicName)
                             .orElseGet(() -> dest.publicName()));
-            Log.verbose(MessageFormat.format(
+            logger.accept((MessageFormat.format(
                     I18N.getString("message.using-default-resource"),
-                    defaultName, getPrintableCategory(), resourceName));
+                    defaultName, getPrintableCategory(), resourceName)));
 
             try (InputStream in = readDefault(defaultName)) {
                 processResourceStream(in, dest);
@@ -380,6 +401,7 @@ final class OverridableResource {
     }
 
     private Map<String, String> substitutionData;
+    private Consumer<String> logger;
     private String category;
     private Path resourceDir;
     private Path publicName;
