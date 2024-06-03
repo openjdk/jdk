@@ -798,8 +798,6 @@ public:
 
   static CollectorCounters* counters()    { return _counters; }
 
-  // Marking support
-  static inline bool mark_obj(oop obj);
   static inline bool is_marked(oop obj);
 
   template <class T> static inline void adjust_pointer(T* p);

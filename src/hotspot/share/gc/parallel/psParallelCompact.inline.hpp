@@ -77,15 +77,6 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 }
 #endif // ASSERT
 
-inline bool PSParallelCompact::mark_obj(oop obj) {
-  if (mark_bitmap()->mark_obj(obj)) {
-    ContinuationGCSupport::transform_stack_chunk(obj);
-    return true;
-  } else {
-    return false;
-  }
-}
-
 template <class T>
 inline void PSParallelCompact::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
