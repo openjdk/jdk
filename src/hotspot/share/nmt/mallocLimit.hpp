@@ -30,9 +30,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// forward declaration
-class outputStream;
-
 enum class MallocLimitMode {
   trigger_fatal = 0,
   trigger_oom   = 1
@@ -42,6 +39,9 @@ struct malloclimit {
   size_t sz;            // Limit size
   MallocLimitMode mode; // Behavior flags
 };
+
+// forward declaration
+class outputStream;
 
 class MallocLimitSet {
   malloclimit _glob;                    // global limit
