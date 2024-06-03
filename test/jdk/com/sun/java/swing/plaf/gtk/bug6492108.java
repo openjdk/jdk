@@ -68,7 +68,8 @@ public class bug6492108 extends SwingTestHelper {
 
     private static void addTextComps(Container parent,
                                      Class<? extends JTextComponent> type)
-                                     throws Throwable {
+            throws Throwable
+    {
         JTextComponent text = type.newInstance();
         addTextComp(parent, text);
 
@@ -132,8 +133,8 @@ public class bug6492108 extends SwingTestHelper {
                                   test.getWidth(), test.getHeight());
                 BufferedImage testimg = robot.createScreenCapture(testRect);
 
-                if (refimg.getWidth() != testimg.getWidth() ||
-                    refimg.getHeight() != testimg.getHeight())
+                if (refimg.getWidth() != testimg.getWidth()
+                   || refimg.getHeight() != testimg.getHeight())
                 {
                     fail("Test image size must match reference image size");
                 }
