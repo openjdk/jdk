@@ -208,6 +208,8 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Skips specified number of bytes of uncompressed data.
+     * This method may block until the specified number of bytes are read and
+     * skipped.
      *
      * @implNote
      * If {@code n} is greater than {@link Integer#MAX_VALUE} then this method
