@@ -215,19 +215,6 @@ public class DocFilesHandler {
         }
 
         @Override
-        protected Navigation getNavBar(PageMode pageMode, Element element) {
-            List<Content> subnavLinks = new ArrayList<>();
-            var pkg = dfElement.getPackageElement();
-            if (configuration.showModules) {
-                subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(element), pkg.isUnnamed()));
-            }
-            if (!pkg.isUnnamed()) {
-                subnavLinks.add(getBreadcrumbLink(pkg, true));
-            }
-            return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
-        }
-
-        @Override
         public void buildPage() throws DocFileIOException {
 
             List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));

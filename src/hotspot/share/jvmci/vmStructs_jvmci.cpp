@@ -361,6 +361,8 @@
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
   static_field(StubRoutines,                _chacha20Block,                                   address)                               \
   static_field(StubRoutines,                _poly1305_processBlocks,                          address)                               \
+  static_field(StubRoutines,                _intpoly_montgomeryMult_P256,                     address)                               \
+  static_field(StubRoutines,                _intpoly_assign,                                  address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
@@ -836,7 +838,7 @@
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, uint)
+  static_field(G1HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \

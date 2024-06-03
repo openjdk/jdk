@@ -955,7 +955,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     size_t original_count = shenandoah_policy()->full_gc_count();
     while (result == nullptr
         && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
-      control_thread()->handle_alloc_failure(req);
+      control_thread()->handle_alloc_failure(req, true);
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
