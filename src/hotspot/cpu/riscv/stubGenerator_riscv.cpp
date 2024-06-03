@@ -5080,9 +5080,8 @@ static const uint64_t right_16_bits = right_n_bits(16);
 
     // Summing up calculated results for s2_new
     __ vsetvli(temp0, count, Assembler::e16, Assembler::m4);
-    // 0xFF   * 0x10 = 0xFF0   max per single vector element,
-    // 0xFF0  * 0x10 = 0xFF00  max per vector,
-    // 0xFF00 * 0x4  = 0x3FC00 max for the whole group, so:
+    // Upper bound for reduction sum:
+    // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
     // 1. Need to do vector-widening reduction sum
     // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
     __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
