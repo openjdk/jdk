@@ -5230,15 +5230,13 @@ static const uint64_t right_16_bits = right_n_bits(16);
 
     // Generating accumulation coefficients for further calculations
     __ vid_v(vtemp1);
-    __ vmv_v_x(vtable_64, temp1);
-    __ vsub_vv(vtable_64, vtable_64, vtemp1);
+    __ vrsub_vx(vtable_64, vtemp1, temp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     if (MaxVectorSize > 16) {
       // Need to generate vtable_16 explicitly
       __ vid_v(vtemp1);
-      __ vmv_v_i(vtable_16, 16);
-      __ vsub_vv(vtable_16, vtable_16, vtemp1);
+      __ vrsub_vi(vtable_16, vtemp1, 16);
     }
     __ vmv_v_i(vzero, 0);
 
