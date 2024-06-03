@@ -51,7 +51,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
-import jdk.jpackage.internal.resources.ResourceLocator;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -66,8 +65,16 @@ final class WixSourceConverter {
         Transformed,
     }
 
-    WixSourceConverter() {
-        var xslt = new StreamSource(ResourceLocator.class.getResourceAsStream("wix3-to-wix4-conv.xsl"));
+    WixSourceConverter(Path resourceDir) throws IOException {
+        var buf = new ByteArrayOutputStream();
+
+        new OverridableResource("wix3-to-wix4-conv.xsl")
+                .setPublicName("wix-conv.xsl")
+                .setResourceDir(resourceDir)
+                .setCategory(I18N.getString("resource.wix-src-conv"))
+                .saveToStream(buf);
+
+        var xslt = new StreamSource(new ByteArrayInputStream(buf.toByteArray()));
 
         var tf = TransformerFactory.newInstance();
         try {
@@ -142,24 +149,16 @@ final class WixSourceConverter {
         return Status.Transformed;
     }
 
-    @SuppressWarnings("try")
     private static byte[] saveResourceInMemory(OverridableResource resource) throws IOException {
         var buf = new ByteArrayOutputStream();
-        try (var nolog = resource.new NoLogging()) {
-            resource.saveToStream(buf);
-        }
+        resource.saveToStream(buf);
         return buf.toByteArray();
     }
 
     final static class ResourceGroup {
 
         ResourceGroup(WixToolsetType wixToolsetType) {
-            switch (wixToolsetType) {
-                case Wix3 ->
-                    conv = null;
-                default ->
-                    conv = new WixSourceConverter();
-            }
+            this.wixToolsetType = wixToolsetType;
         }
 
         void addResource(OverridableResource resource, Path resourceSaveAsFile) {
@@ -167,19 +166,26 @@ final class WixSourceConverter {
         }
 
         void saveResources() throws IOException {
-            if (conv != null) {
-                for (var e : resources.entrySet()) {
-                    conv.appyTo(e.getValue(), e.getKey());
+            switch (wixToolsetType) {
+                case Wix3 -> {
+                    for (var e : resources.entrySet()) {
+                        e.getValue().saveToFile(e.getKey());
+                    }
                 }
-            } else {
-                for (var e : resources.entrySet()) {
-                    e.getValue().saveToFile(e.getKey());
+                default -> {
+                    var resourceDir = resources.values().stream().filter(res -> {
+                        return null != res.getResourceDir();
+                    }).findAny().map(OverridableResource::getResourceDir).orElse(null);
+                    var conv = new WixSourceConverter(resourceDir);
+                    for (var e : resources.entrySet()) {
+                        conv.appyTo(e.getValue(), e.getKey());
+                    }
                 }
             }
         }
 
         private final Map<Path, OverridableResource> resources = new HashMap<>();
-        private final WixSourceConverter conv;
+        private final WixToolsetType wixToolsetType;
     }
 
     //
