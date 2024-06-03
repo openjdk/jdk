@@ -152,15 +152,6 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
 
   VMError::record_coredump_status(buffer, success);
 }
-#ifdef _AIX
-static long calculate_number_of_pages_in_range(void* address, size_t len, size_t pagesize) {
-  uintptr_t address_unaligned = (uintptr_t) address;
-  uintptr_t address_aligned = address_unaligned & (~(pagesize - 1));
-  size_t len2 = len + (address_unaligned - address_aligned);
-  long numPages = (len2 + pagesize - 1) / pagesize;
-  return numPages;
-}
-#endif
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
   log_info(os)("test _____ %s", "in os_posix");
@@ -174,17 +165,10 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   // set a guard
   vec[stripe] = 'X';
-  size_t page_sz;
-  uintx pages;
-#ifdef _AIX
-  page_sz = sysconf(_SC_PAGESIZE);
-  pages = calculate_number_of_pages_in_range(start, size, page_sz);
-#else
-  page_sz = os::vm_page_size();
-  pages = size / page_sz;
-  assert(is_aligned(start, page_sz), "Start address must be page aligned");
-#endif
+  size_t page_sz = NOT_AIX(os::vm_page_size()) AIX_ONLY(sysconf(_SC_PAGESIZE));
+  uintx pages = size / page_sz;
 
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
   committed_start = nullptr;
