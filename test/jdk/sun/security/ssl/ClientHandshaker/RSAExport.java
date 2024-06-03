@@ -198,7 +198,7 @@ public class RSAExport {
 
         kpg.initialize(512);
         serverKeys = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.newEndEntity(
+        serverCertificate = CertificateBuilder.newServerCertificateBuilder(
             "C = US, ST = Some-State, O = Some Org, CN = SomeoneExport",
             serverKeys.getPublic(), caKeys.getPublic())
             .build(caCertificate, caKeys.getPrivate(), "SHA1withRSA");

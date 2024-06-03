@@ -243,13 +243,13 @@ public class BasicConstraints extends TMBase {
             .build(caSignerCertificate, caSignerKeyPair.getPrivate(), "SHA256withRSA");
 
         serverKeyPair = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.newEndEntity(
+        serverCertificate = CertificateBuilder.newServerCertificateBuilder(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = localhost",
             serverKeyPair.getPublic(), certIssuerKeyPair.getPublic())
             .build(certIssuerCertificate, certIssuerKeyPair.getPrivate(), "SHA256withRSA");
 
         clientKeyPair = kpg.generateKeyPair();
-        clientCertificate = CertificateBuilder.newEndEntity(
+        clientCertificate = CertificateBuilder.newClientCertificateBuilder(
             "C = US, O = Java, OU = SunJSSE Test Serivce, CN = InterOp Tester",
             clientKeyPair.getPublic(), certIssuerKeyPair.getPublic())
             .build(certIssuerCertificate, certIssuerKeyPair.getPrivate(),"SHA256withRSA");

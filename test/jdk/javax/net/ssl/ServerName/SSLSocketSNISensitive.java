@@ -89,19 +89,19 @@ public class SSLSocketSNISensitive {
                 .build(null, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysA = kpg.generateKeyPair();
-        X509Certificate trustedCertA = CertificateBuilder.newEndEntity(
+        X509Certificate trustedCertA = CertificateBuilder.newServerCertificateBuilder(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.example.com",
                 trustedKeysA.getPublic(), caKey.getPublic())
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysB = kpg.generateKeyPair();
-        X509Certificate trustedCertB = CertificateBuilder.newEndEntity(
+        X509Certificate trustedCertB = CertificateBuilder.newServerCertificateBuilder(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.example.net",
                 trustedKeysB.getPublic(), caKey.getPublic())
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
 
         KeyPair trustedKeysC = kpg.generateKeyPair();
-        X509Certificate trustedCertC = CertificateBuilder.newEndEntity(
+        X509Certificate trustedCertC = CertificateBuilder.newServerCertificateBuilder(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=www.invalid.com",
                 trustedKeysC.getPublic(), caKey.getPublic())
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");
@@ -110,7 +110,7 @@ public class SSLSocketSNISensitive {
         serverKeys = new KeyPair[]{trustedKeysA, trustedKeysB, trustedKeysC};
 
         KeyPair trustedKeysD = kpg.generateKeyPair();
-        X509Certificate trustedCertD = CertificateBuilder.newEndEntity(
+        X509Certificate trustedCertD = CertificateBuilder.newClientCertificateBuilder(
                 "C=US, O=Java, OU=SunJSSE Test Serivce, CN=InterOp Tester",
                 trustedKeysD.getPublic(), caKey.getPublic())
                 .build(caCertificate, caKey.getPrivate(), "MD5withRSA");

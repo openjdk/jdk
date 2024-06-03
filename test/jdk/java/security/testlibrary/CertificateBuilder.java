@@ -33,10 +33,7 @@ import java.security.*;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.ObjectIdentifier;
-import sun.security.util.SignatureUtil;
+import sun.security.util.*;
 import sun.security.x509.*;
 
 /**
@@ -400,13 +397,6 @@ public class CertificateBuilder {
     /**
      * Creates a CertificateBuilder with default values for creating end-entity
      * certificates. Certificates are valid for an hour and are given a random serial number.
-     * Default key usage specifies:
-     * <ul>
-     *     <li>Digital Signature</li>
-     *     <li>Non Repudiation</li>
-     *     <li>Key Encipherment</li>
-     *
-     * </ul>
      *
      * @param subjectName the subject name for the certificate
      * @param publicKey the public key to be associated with the certificate
@@ -424,9 +414,56 @@ public class CertificateBuilder {
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
                 .addSubjectKeyIdExt(publicKey)
-                .addKeyUsageExt(new boolean[]{true, true, true, false, false, false, false, false, false})
                 .addAuthorityKeyIdExt(caKey)
                 .addExtensions(Arrays.asList(extensions));
+    }
+
+    /**
+     * Creates a CertificateBuilder for TLS servers. Certificates are valid for
+     * one hour and are given a random serial number. The Extended Key Usage extension
+     * is set to serverAuth.
+     * Default key usage:
+     * <ul>
+     *     <li>Digital Signature</li>
+     *     <li>Non Repudiation</li>
+     *     <li>Key Encipherment</li>
+     *     <li>Key Agreement</li>
+     * </ul>
+     * @param subjectName the subject name for the certificate
+     * @param publicKey the public key to be associated with the certificate
+     * @param caKey CA key used to sign the certificate
+     * @param extensions Optional extensions to add to the certificate
+     * @throws Exception
+     */
+    public static CertificateBuilder newServerCertificateBuilder(String subjectName,
+                 PublicKey publicKey, PublicKey caKey, Extension... extensions) throws Exception {
+        return newEndEntity(subjectName, publicKey, caKey, extensions)
+                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
+                .addExtendedKeyUsageExt(List.of(KnownOIDs.serverAuth.value()));
+    }
+
+    /**
+     * Creates a CertificateBuilder for TLS clients. Certificates are valid for
+     * one hour and are given a random serial number. The Extended Key Usage extension
+     * is set to clientAuth.
+     * Default key usage:
+     * <ul>
+     *     <li>Digital Signature</li>
+     *     <li>Non Repudiation</li>
+     *     <li>Key Encipherment</li>
+     *     <li>Key Agreement</li>
+     * </ul>
+     * @param subjectName the subject name for the certificate
+     * @param publicKey the public key to be associated with the certificate
+     * @param caKey CA key used to sign the certificate
+     * @param extensions Optional extensions to add to the certificate
+     * @throws Exception
+     */
+    public static CertificateBuilder newClientCertificateBuilder(String subjectName,
+                 PublicKey publicKey, PublicKey caKey, Extension... extensions) throws Exception {
+        return newEndEntity(subjectName, publicKey, caKey, extensions)
+                .addKeyUsageExt(new boolean[]{true, true, true, false, true, false, false, false, false})
+                .addExtendedKeyUsageExt(List.of(KnownOIDs.clientAuth.value()));
     }
 
     /**

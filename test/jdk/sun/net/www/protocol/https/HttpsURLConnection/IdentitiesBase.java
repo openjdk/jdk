@@ -74,14 +74,14 @@ public abstract class IdentitiesBase {
 
 
         serverKeysRsa1024 = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.newEndEntity(
+        serverCertificate = CertificateBuilder.newServerCertificateBuilder(
             "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Server, CN = localhost",
             serverKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
             CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
             .build(caCertificate, caKeysRsa1024.getPrivate(), "MD5withRSA");
 
         clientKeysRsa1024 = kpg.generateKeyPair();
-        clientCertificate = CertificateBuilder.newEndEntity(
+        clientCertificate = CertificateBuilder.newClientCertificateBuilder(
             "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Client, CN = localhost",
             clientKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
             CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))

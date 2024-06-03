@@ -192,13 +192,13 @@ public class IPAddressDNSIdentities extends IdentitiesBase {
     IPAddressDNSIdentities() throws Exception {
         super();
 
-        serverCertificate = CertificateBuilder.newEndEntity(
+        serverCertificate = CertificateBuilder.newServerCertificateBuilder(
             "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Server, CN = localhost",
                 serverKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
                 CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))
                 .build(caCertificate, caKeysRsa1024.getPrivate(),"MD5withRSA");
 
-        clientCertificate = CertificateBuilder.newEndEntity(
+        clientCertificate = CertificateBuilder.newClientCertificateBuilder(
                 "C = US, ST = Some-State, L = Some-City, O = Some-Org, OU = SSL-Client, CN = localhost",
                 clientKeysRsa1024.getPublic(), caKeysRsa1024.getPublic(),
                 CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))

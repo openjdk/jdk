@@ -81,7 +81,7 @@ public class MD2InTrustAnchor {
             .build(null, caKey.getPrivate(), "MD2withRSA");
 
         targetKeys = kpg.generateKeyPair();
-        targetCert = CertificateBuilder.newEndEntity(
+        targetCert = CertificateBuilder.newServerCertificateBuilder(
             "C=US, O=Java, OU=SunJSSE Test Serivce, CN=localhost",
             targetKeys.getPublic(), caKey.getPublic())
             .addExtendedKeyUsageExt(

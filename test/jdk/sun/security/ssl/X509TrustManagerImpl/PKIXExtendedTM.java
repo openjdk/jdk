@@ -291,14 +291,14 @@ public class PKIXExtendedTM extends TMBase {
             .build(null, caKeys.getPrivate(), "MD5withRSA");
 
         serverKeyPair = kpg.generateKeyPair();
-        serverCertificate = CertificateBuilder.newEndEntity(
+        serverCertificate = CertificateBuilder.newServerCertificateBuilder(
             "C=US, ST=Some-State, L=Some-City, O=Some-Org, OU=SSL-Server, CN=localhost",
             serverKeyPair.getPublic(), caKeys.getPublic(),
             CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))
             .build(trustedCertificate, caKeys.getPrivate(), "MD5withRSA");
 
         clientKeyPair = kpg.generateKeyPair();
-        clientCertificate = CertificateBuilder.newEndEntity(
+        clientCertificate = CertificateBuilder.newClientCertificateBuilder(
             "C=US, ST=Some-State, L=Some-City, O=Some-Org, OU=SSL-Client, CN=localhost",
             clientKeyPair.getPublic(), caKeys.getPublic(),
             CertificateBuilder.createDNSSubjectAltNameExt(true, "localhost"))
