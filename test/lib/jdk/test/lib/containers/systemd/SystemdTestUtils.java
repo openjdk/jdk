@@ -49,16 +49,21 @@ public class SystemdTestUtils {
     /**
      * Run Java inside a systemd slice with specified parameters and options.
      *
-     * @param DockerRunOptions options for running docker
-     *
-     * @return output of the run command
+     * @param opts The systemd slice options when running java
+     * @return
      * @throws Exception
      */
     public static OutputAnalyzer systemdRunJava(SystemdRunOptions opts) throws Exception {
         return execute(buildJavaCommand(opts));
     }
 
-    // create commonly used options with class to be launched inside systemd slice
+    /**
+     * Create commonly used options with the class to be launched inside the
+     * systemd slice
+     *
+     * @param testClass The test class or {@code -version}
+     * @return The basic options.
+     */
     public static SystemdRunOptions newOpts(String testClass) {
         return new SystemdRunOptions(testClass,
                                      "-Xlog:os+container=trace",
@@ -71,13 +76,11 @@ public class SystemdTestUtils {
      *
      * The JDK will then run within that slice as provided by the SystemdRunOptions.
      *
-     * @param          name of the image to be created, including version tag
-     * @param dockerfileContent content of the Dockerfile; use null to generate default content
+     * @param runOpts The systemd slice options to use when running the test.
+     * @return The systemd slice files (for cleanup-purposes later).
      * @throws Exception
      */
     public static ResultFiles buildSystemdSlices(SystemdRunOptions runOpts) throws Exception {
-        // Slice name may include '-' which is a hierarchical slice indicator.
-        // Replace '-' with '_' to avoid side-effects.
         String sliceName = sliceName(runOpts);
         String sliceNameCpu = sliceNameCpu(runOpts);
 
@@ -102,6 +105,8 @@ public class SystemdTestUtils {
     }
 
     private static String sliceName(SystemdRunOptions runOpts) {
+        // Slice name may include '-' which is a hierarchical slice indicator.
+        // Replace '-' with '_' to avoid side-effects.
         return "jdk_internal_" + runOpts.sliceName.replace("-", "_");
     }
 
@@ -168,19 +173,18 @@ public class SystemdTestUtils {
     /**
      * Build the java command to run inside a systemd slice
      *
-     * @param SystemdRunOptions options for running docker
+     * @param SystemdRunOptions options for running the systemd slice test
      *
      * @return command
      * @throws Exception
      */
     private static List<String> buildJavaCommand(SystemdRunOptions opts) throws Exception {
         List<String> javaCmd = new ArrayList<>();
-        // systemd-run --slice slice-name.slice --scope <java>
+        // systemd-run --slice <slice-name>.slice --scope <java>
         javaCmd.add("systemd-run");
         javaCmd.add("--slice");
         javaCmd.add(sliceFileName(sliceNameCpu(opts)));
         javaCmd.add("--scope");
-        // sudo systemctl daemon-reload && sudo systemctl restart test-cpu-mem.slice && sudo systemd-run --slice test-cpu-mem.slice --scope
         javaCmd.add(Path.of(Utils.TEST_JDK, "bin", "java").toString());
         javaCmd.addAll(opts.javaOpts);
         javaCmd.add(opts.classToRun);
