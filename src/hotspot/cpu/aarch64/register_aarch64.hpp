@@ -389,14 +389,14 @@ typedef AbstractRegSet<PRegister> PRegSet;
 
 template <>
 inline Register AbstractRegSet<Register>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_Register(exact_log2(first)) : noreg;
+  uint32_t first = checked_cast<uint32_t>(_bitset & -_bitset);
+  return first != 0 ? as_Register(exact_log2(first)) : noreg;
 }
 
 template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
+  uint32_t first = checked_cast<uint32_t>(_bitset & -_bitset);
+  return first != 0 ? as_FloatRegister(exact_log2(first)) : fnoreg;
 }
 
 inline Register as_Register(FloatRegister reg) {
