@@ -31,13 +31,13 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
@@ -103,17 +103,17 @@ inline size_t G1CollectedHeap::clamp_plab_size(size_t value) const {
 // Inline functions for G1CollectedHeap
 
 // Return the region with the given index. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
+inline G1HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
 // Return the region with the given index, or null if unmapped. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
+inline G1HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
 template <typename Func>
-inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, const Func& f) {
+inline void G1CollectedHeap::humongous_obj_regions_iterate(G1HeapRegion* start, const Func& f) {
   assert(start->is_starts_humongous(), "must be");
 
   do {
-    HeapRegion* next = _hrm.next_region_in_humongous(start);
+    G1HeapRegion* next = _hrm.next_region_in_humongous(start);
     f(start);
     start = next;
   } while (start != nullptr);
@@ -123,29 +123,29 @@ inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
-  return (uint)(pointer_delta(addr, reserved().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
+  return (uint)(pointer_delta(addr, reserved().start(), sizeof(uint8_t)) >> G1HeapRegion::LogOfHRGrainBytes);
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
-  return _hrm.reserved().start() + index * HeapRegion::GrainWords;
+  return _hrm.reserved().start() + index * G1HeapRegion::GrainWords;
 }
 
 
-inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
+inline G1HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at(region_idx);
 }
 
-inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
+inline G1HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
 
-inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
+inline void G1CollectedHeap::old_set_add(G1HeapRegion* hr) {
   _old_set.add(hr);
 }
 
-inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
+inline void G1CollectedHeap::old_set_remove(G1HeapRegion* hr) {
   _old_set.remove(hr);
 }
 
@@ -160,7 +160,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   // Assign the containing region to containing_hr so that we don't
   // have to keep calling heap_region_containing() in the
   // asserts below.
-  DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing(start);)
+  DEBUG_ONLY(G1HeapRegion* containing_hr = heap_region_containing(start);)
   assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");
@@ -193,7 +193,7 @@ inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) const {
   return _region_attr.is_in_cset(addr);
 }
 
-bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) const {
+bool G1CollectedHeap::is_in_cset(const G1HeapRegion* hr) const {
   return _region_attr.is_in_cset(hr);
 }
 
@@ -215,23 +215,23 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
   _region_attr.set_humongous_candidate(index);
 }
 
-void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
   _region_attr.set_new_survivor_region(r->hrm_index());
 }
 
-void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
+void G1CollectedHeap::register_region_with_region_attr(G1HeapRegion* r) {
   _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
   _region_attr.set_is_pinned(r->hrm_index(), r->has_pinned_objects());
 }
 
-void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
+void G1CollectedHeap::register_old_region_with_region_attr(G1HeapRegion* r) {
   assert(!r->has_pinned_objects(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
   _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
   _rem_set->exclude_region_from_scan(r->hrm_index());
 }
 
-void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
+void G1CollectedHeap::register_optional_region_with_region_attr(G1HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
@@ -248,11 +248,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass_raw();
-  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
+  Klass* k = obj->klass_without_asserts();
+  return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
 }
 
-inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const G1HeapRegion* hr) const {
   if (hr->is_in_parsable_area(obj)) {
     // This object is in the parsable part of the heap, live unless scrubbed.
     return is_obj_filler(obj);
@@ -265,7 +265,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) co
 
 inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
-  assert(!is_gc_active(), "must not pin objects during a GC");
+  assert(!is_stw_gc_active(), "must not pin objects during a GC pause");
   assert(obj->is_typeArray(), "must be typeArray");
 
   uint obj_region_idx = heap_region_containing(obj)->hrm_index();
@@ -274,7 +274,7 @@ inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
 
 inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
-  assert(!is_gc_active(), "must not unpin objects during a GC");
+  assert(!is_stw_gc_active(), "must not unpin objects during a GC pause");
 
   uint obj_region_idx = heap_region_containing(obj)->hrm_index();
   G1ThreadLocalData::pin_count_cache(thread).dec_count(obj_region_idx);
@@ -286,7 +286,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   return is_obj_dead(obj, heap_region_containing(obj));
 }
 
-inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
+inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const G1HeapRegion* hr) const {
    return !is_marked(obj);
 }
 
@@ -311,7 +311,7 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   }
 }
 
-inline bool G1CollectedHeap::is_collection_set_candidate(const HeapRegion* r) const {
+inline bool G1CollectedHeap::is_collection_set_candidate(const G1HeapRegion* r) const {
   const G1CollectionSetCandidates* candidates = collection_set()->candidates();
   return candidates->contains(r);
 }

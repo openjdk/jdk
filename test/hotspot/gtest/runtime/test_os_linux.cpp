@@ -356,7 +356,7 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   const bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
   char* const heap = os::reserve_memory(size, false, mtInternal);
-  EXPECT_NE(heap, (char*)NULL);
+  EXPECT_NE(heap, nullptr);
   EXPECT_TRUE(os::commit_memory(heap, size, false));
 
   {

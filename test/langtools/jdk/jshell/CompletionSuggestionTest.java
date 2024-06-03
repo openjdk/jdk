@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662 8326333
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -86,9 +86,9 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("Object[].|", "class");
         assertCompletion("int[].|", "class");
         assertEval("Object[] ao = null;");
-        assertCompletion("int i = ao.|", "length");
+        assertCompletion("int i = ao.le|", "length");
         assertEval("int[] ai = null;");
-        assertCompletion("int i = ai.|", "length");
+        assertCompletion("int i = ai.le|", "length");
         assertCompletionIncludesExcludes("\"\".|",
                 new HashSet<>(Collections.emptyList()),
                 new HashSet<>(Arrays.asList("String(")));
@@ -809,5 +809,16 @@ public class CompletionSuggestionTest extends KullaTesting {
                                      ste(m1, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET),
                                      ste(m2, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET));
         assertSignature("test(|", "void test(String s)", "void test(Integer i)");
+    }
+
+    //JDK-8326333: verify completion returns sensible output for arrays:
+    public void testArray() {
+        assertEval("String[] strs = null;");
+        assertCompletion("strs.to|", "toString()");
+        assertCompletion("strs.le|", "length");
+        assertEval("int[] ints = null;");
+        assertCompletion("ints.no|", "notify()", "notifyAll()");
+        assertCompletion("ints.le|", "length");
+        assertCompletion("String[].|", "class");
     }
 }

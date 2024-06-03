@@ -26,22 +26,22 @@
 #define SHARE_GC_G1_VMSTRUCTS_G1_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \
                         volatile_nonstatic_field,                             \
                         static_field)                                         \
                                                                               \
-  static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
+  static_field(G1HeapRegion, GrainBytes,        size_t)                       \
+  static_field(G1HeapRegion, LogOfHRGrainBytes, uint)                         \
                                                                               \
-  nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
-  nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
-  nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
-  nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
-  volatile_nonstatic_field(HeapRegion, _pinned_object_count, size_t)          \
+  nonstatic_field(G1HeapRegion, _type,           HeapRegionType)              \
+  nonstatic_field(G1HeapRegion, _bottom,         HeapWord* const)             \
+  nonstatic_field(G1HeapRegion, _top,            HeapWord* volatile)          \
+  nonstatic_field(G1HeapRegion, _end,            HeapWord* const)             \
+  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, size_t)        \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \
@@ -93,7 +93,7 @@
                                                                               \
   declare_type(G1CollectedHeap, CollectedHeap)                                \
                                                                               \
-  declare_toplevel_type(HeapRegion)                                           \
+  declare_toplevel_type(G1HeapRegion)                                         \
   declare_toplevel_type(HeapRegionManager)                                    \
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(G1MonitoringSupport)                                  \
@@ -103,7 +103,7 @@
   declare_toplevel_type(G1DirtyCardQueue)                                     \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
-  declare_toplevel_type(HeapRegion*)                                          \
+  declare_toplevel_type(G1HeapRegion*)                                        \
   declare_toplevel_type(G1MonitoringSupport*)                                 \
                                                                               \
   declare_integer_type(HeapRegionType::Tag volatile)

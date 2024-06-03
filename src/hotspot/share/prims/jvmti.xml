@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1004,7 +1004,7 @@ jvmtiEnv *jvmti;
     In some cases, <jvmti/> functions allocate memory that your program must
     explicitly deallocate. This is indicated in the individual <jvmti/>
     function descriptions.  Empty lists, arrays, sequences, etc are
-    returned as <code>NULL</code>.
+    returned as <code>nullptr</code>.
     <p/>
     In the event that the <jvmti/> function encounters
     an error (any return value other than <code>JVMTI_ERROR_NONE</code>) the values
@@ -1098,7 +1098,7 @@ jvmtiEnv *jvmti;
           <allocbuf incount="size"><uchar/></allocbuf>
           <description>
             On return, a pointer to the beginning of the allocated memory.
-            If <code>size</code> is zero, <code>NULL</code> is returned.
+            If <code>size</code> is zero, <code>nullptr</code> is returned.
           </description>
         </param>
       </parameters>
@@ -1514,13 +1514,13 @@ jvmtiEnv *jvmti;
       <description>
         Get the current thread.
         The current thread is the Java programming language thread which has called the function.
-        The function may return <code>NULL</code> in the start phase if the
+        The function may return <code>nullptr</code> in the start phase if the
         <internallink id="jvmtiCapabilities.can_generate_early_vmstart">
         <code>can_generate_early_vmstart</code></internallink> capability is enabled
         and the <code>java.lang.Thread</code> class has not been initialized yet.
         <p/>
         Note that most <jvmti/> functions that take a thread
-        as an argument will accept <code>NULL</code> to mean
+        as an argument will accept <code>nullptr</code> to mean
         the current thread.
       </description>
       <origin>new</origin>
@@ -1530,7 +1530,7 @@ jvmtiEnv *jvmti;
         <param id="thread_ptr">
           <outptr><jthread/></outptr>
           <description>
-             On return, points to the current thread, or <code>NULL</code>.
+             On return, points to the current thread, or <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -1679,7 +1679,7 @@ jvmtiEnv *jvmti;
           A thread in <paramlink id="except_list"></paramlink> was invalid.
         </error>
         <error id="JVMTI_ERROR_NULL_POINTER">
-          Both <paramlink id="except_list"></paramlink> was <code>NULL</code>
+          Both <paramlink id="except_list"></paramlink> was <code>nullptr</code>
           and <paramlink id="except_count"></paramlink> was non-zero.
         </error>
       </errors>
@@ -1776,7 +1776,7 @@ jvmtiEnv *jvmti;
           A thread in <paramlink id="except_list"></paramlink> was invalid.
         </error>
         <error id="JVMTI_ERROR_NULL_POINTER">
-          Both <paramlink id="except_list"></paramlink> was <code>NULL</code>
+          Both <paramlink id="except_list"></paramlink> was <code>nullptr</code>
           and <paramlink id="except_count"></paramlink> was non-zero.
         </error>
       </errors>
@@ -1898,7 +1898,7 @@ jvmtiEnv *jvmti;
           A thread in <paramlink id="except_list"></paramlink> was invalid.
         </error>
         <error id="JVMTI_ERROR_NULL_POINTER">
-          Both <paramlink id="except_list"></paramlink> was <code>NULL</code>
+          Both <paramlink id="except_list"></paramlink> was <code>nullptr</code>
           and <paramlink id="except_count"></paramlink> was non-zero.
         </error>
       </errors>
@@ -1993,7 +1993,7 @@ jvmtiEnv *jvmti;
           <jthreadGroup/>
           <description>
             The thread group to which this thread belongs.
-            <code>NULL</code> if the thread has terminated.
+            <code>nullptr</code> if the thread has terminated.
           </description>
         </field>
         <field id="context_class_loader">
@@ -2139,7 +2139,7 @@ jvmtiEnv *jvmti;
           <outptr><jobject/></outptr>
             <description>
               On return, filled with the current contended monitor, or
-              NULL if there is none.
+              nullptr if there is none.
             </description>
         </param>
       </parameters>
@@ -2259,7 +2259,7 @@ jvmtiEnv *jvmti;
         <param id="arg">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed to the start function</nullok>
+            <nullok><code>nullptr</code> is passed to the start function</nullok>
           </inbuf>
           <description>
             The argument to the start function.
@@ -2292,7 +2292,7 @@ jvmtiEnv *jvmti;
       <description>
         The VM stores a pointer value associated with each environment-thread
         pair. This pointer value is called <i>thread-local storage</i>.
-        This value is <code>NULL</code> unless set with this function.
+        This value is <code>nullptr</code> unless set with this function.
         Agents can allocate memory in which they store thread specific
         information. By setting thread-local storage it can then be
         accessed with
@@ -2316,7 +2316,7 @@ jvmtiEnv *jvmti;
         <param id="data">
           <inbuf>
             <void/>
-            <nullok>value is set to <code>NULL</code></nullok>
+            <nullok>value is set to <code>nullptr</code></nullok>
           </inbuf>
           <description>
             The value to be entered into the thread-local storage.
@@ -2350,7 +2350,7 @@ jvmtiEnv *jvmti;
             storage is returned.
             If thread-local storage has not been set with
             <functionlink id="SetThreadLocalStorage"></functionlink> the returned
-            pointer is <code>NULL</code>.
+            pointer is <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -2589,7 +2589,7 @@ err = (*jvmti)-&gt;GetStackTrace(jvmti, aThread, 0, 5,
 if (err == JVMTI_ERROR_NONE &amp;&amp; count &gt;= 1) {
    char *methodName;
    err = (*jvmti)-&gt;GetMethodName(jvmti, frames[0].method,
-                       &amp;methodName, NULL, NULL);
+                       &amp;methodName, nullptr, nullptr);
    if (err == JVMTI_ERROR_NONE) {
       printf("Executing method: %s", methodName);
    }
@@ -3146,7 +3146,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           <jobject/>
           <description>
             The return value for the called frame.
-            An object or <code>NULL</code>.
+            An object or <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -4274,7 +4274,7 @@ class C2 extends C1 implements I2 {
             <datalink id="JVMTI_HEAP_REFERENCE_CONSTANT_POOL"/>,
             <datalink id="JVMTI_HEAP_REFERENCE_STACK_LOCAL"/>,
             or <datalink id="JVMTI_HEAP_REFERENCE_JNI_LOCAL"/>.
-            Otherwise <code>NULL</code>.
+            Otherwise <code>nullptr</code>.
           </description>
         </param>
         <param id="class_tag">
@@ -4319,7 +4319,7 @@ class C2 extends C1 implements I2 {
             Points to the tag of the referrer object, or
             points to the zero if the referrer
             object is not tagged.
-            <code>NULL</code> if the referrer in not an object (that is,
+            <code>nullptr</code> if the referrer in not an object (that is,
             this callback is reporting a heap root).
             To set the tag value to be associated with the referrer object
             the agent sets the <code>jlong</code> pointed to by the parameter.
@@ -4621,7 +4621,7 @@ class C2 extends C1 implements I2 {
         it is reported by invoking the agent supplied callback function
         <functionlink id="jvmtiPrimitiveFieldCallback"/>.
         <p/>
-        Whether a callback is provided or is <code>NULL</code> only determines
+        Whether a callback is provided or is <code>nullptr</code> only determines
         whether the callback will be invoked, it does not influence
         which objects are visited nor does it influence whether other callbacks
         will be invoked.
@@ -4766,7 +4766,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -4812,7 +4812,7 @@ class C2 extends C1 implements I2 {
         Unless the iteration is aborted by the
         <datalink id="jvmtiHeapVisitControl">Heap Visit Control Flags</datalink>
         returned by a callback, all objects in the heap are visited.
-        Whether a callback is provided or is <code>NULL</code> only determines
+        Whether a callback is provided or is <code>nullptr</code> only determines
         whether the callback will be invoked, it does not influence
         which objects are visited nor does it influence whether other callbacks
         will be invoked.
@@ -4942,7 +4942,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5590,7 +5590,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5634,7 +5634,7 @@ class C2 extends C1 implements I2 {
         are reported. In other words, the <paramlink id="object_ref_callback"></paramlink>
         callback will not be called until the appropriate callback has been called
         for all roots. If the <paramlink id="object_ref_callback"></paramlink> callback is
-        specified as <code>NULL</code> then this function returns after
+        specified as <code>nullptr</code> then this function returns after
         reporting the root objects to the profiler.
         <p/>
         During the execution of this function the state of the heap
@@ -5688,7 +5688,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5747,7 +5747,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5815,7 +5815,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok><code>NULL</code> is passed as the user supplied data</nullok>
+            <nullok><code>nullptr</code> is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -6767,7 +6767,7 @@ class C2 extends C1 implements I2 {
         <p/>
         If a named module is defined to the class loader and it
         contains the package then that named module is returned,
-        otherwise <code>NULL</code> is returned.
+        otherwise <code>nullptr</code> is returned.
         <p/>
       </description>
       <origin>new</origin>
@@ -6781,7 +6781,7 @@ class C2 extends C1 implements I2 {
           </ptrtype>
           <description>
             A class loader.
-            If the <code>class_loader</code> is not <code>NULL</code>
+            If the <code>class_loader</code> is not <code>nullptr</code>
             or a subclass of <code>java.lang.ClassLoader</code>
             this function returns
             <errorlink id="JVMTI_ERROR_ILLEGAL_ARGUMENT"></errorlink>.
@@ -6800,13 +6800,13 @@ class C2 extends C1 implements I2 {
           <outptr><jobject/></outptr>
           <description>
             On return, points to a <code>java.lang.Module</code> object
-            or points to <code>NULL</code>.
+            or points to <code>nullptr</code>.
           </description>
         </param>
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
-          If class loader is not <code>NULL</code> and is not a class loader object.
+          If class loader is not <code>nullptr</code> and is not a class loader object.
         </error>
       </errors>
     </function>
@@ -7261,7 +7261,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the class, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the class, then,
-            on return, points to <code>NULL</code>.
+            on return, points to <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -7791,7 +7791,7 @@ class C2 extends C1 implements I2 {
               this class.
               If the class was not created by a class loader
               or if the class loader is the bootstrap class loader,
-              points to <code>NULL</code>.
+              points to <code>nullptr</code>.
             </description>
         </param>
       </parameters>
@@ -8114,7 +8114,7 @@ class C2 extends C1 implements I2 {
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_NULL_POINTER">
-          One of <code>class_bytes</code> is <code>NULL</code>.
+          One of <code>class_bytes</code> is <code>nullptr</code>.
         </error>
         <error id="JVMTI_ERROR_UNMODIFIABLE_CLASS">
           An element of <code>class_definitions</code> cannot be modified.
@@ -8249,37 +8249,42 @@ class C2 extends C1 implements I2 {
         <field id="owner">
           <jthread/>
             <description>
-              The thread owning this monitor, or <code>NULL</code> if unused
+              The platform thread owning this monitor, or <code>nullptr</code> if owned
+              by a virtual thread or not owned
             </description>
         </field>
         <field id="entry_count">
           <jint/>
           <description>
-            The number of times the owning thread has entered the monitor
+            The number of times the platform thread owning this monitor has entered it, 
+            or <code>0</code> if owned by a virtual thread or not owned
           </description>
         </field>
         <field id="waiter_count">
           <jint/>
           <description>
-            The number of threads waiting to own this monitor
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting or no threads are waiting
           </description>
         </field>
         <field id="waiters">
           <allocfieldbuf><jthread/></allocfieldbuf>
             <description>
-              The <code>waiter_count</code> waiting threads
+              The <code>waiter_count</code> waiting platform threads
             </description>
         </field>
         <field id="notify_waiter_count">
           <jint/>
           <description>
-            The number of threads waiting to be notified by this monitor
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting to be notified or no threads are waiting
+            to be notified
           </description>
         </field>
         <field id="notify_waiters">
           <allocfieldbuf><jthread/></allocfieldbuf>
             <description>
-              The <code>notify_waiter_count</code> threads waiting to be notified
+              The <code>notify_waiter_count</code> platform threads waiting to be notified
             </description>
         </field>
       </typedef>
@@ -8287,6 +8292,12 @@ class C2 extends C1 implements I2 {
         Get information about the object's monitor.
         The fields of the <functionlink id="jvmtiMonitorUsage"></functionlink> structure
         are filled in with information about usage of the monitor.
+        <p/>
+        <b> This function does not support getting information about an object's monitor
+            when it is owned by a virtual thread. It also does not support returning a
+            reference to virtual threads that are waiting to own a monitor or waiting to
+            be notified.
+        </b>
           <todo>
             Decide and then clarify suspend requirements.
           </todo>
@@ -8411,7 +8422,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the field, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the field, then,
-            on return, points to <code>NULL</code>.
+            on return, points to <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -8604,7 +8615,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the method, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the method, then,
-            on return, points to <code>NULL</code>.
+            on return, points to <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -8902,7 +8913,7 @@ class C2 extends C1 implements I2 {
           <description>
             The local variable's generic signature, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
-            The value of this field will be <code>NULL</code> for any local
+            The value of this field will be <code>nullptr</code> for any local
             variable which does not have a generic type.
           </description>
         </field>
@@ -9240,7 +9251,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
          a prefix is the same as calling this function with
          <paramlink id="prefix_count"/> of <code>1</code>.
          Calling <code>SetNativeMethodPrefix</code> with
-         <code>NULL</code> is the same as calling this function with
+         <code>nullptr</code> is the same as calling this function with
          <paramlink id="prefix_count"/> of <code>0</code>.
       </description>
       <origin>new</origin>
@@ -9660,7 +9671,7 @@ myInit() {
         table have no effect.
         This is an atomic action, all callbacks are set at once.
         No events are sent before this function is called.
-        When an entry is <code>NULL</code> or when the event is beyond
+        When an entry is <code>nullptr</code> or when the event is beyond
         <paramlink id="size_of_callbacks"></paramlink> no event is sent.
         Details on events are
         described <internallink id="EventSection">later</internallink> in this document.
@@ -9708,7 +9719,7 @@ myInit() {
             the event <paramlink id="event_type"></paramlink> will be disabled
           </constant>
         </constants>
-        If <code>event_thread</code> is <code>NULL</code>,
+        If <code>event_thread</code> is <code>nullptr</code>,
         the event is enabled or disabled globally; otherwise, it is
         enabled or disabled for a particular thread.
         An event is generated for
@@ -9773,10 +9784,10 @@ myInit() {
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_INVALID_THREAD">
-          <paramlink id="event_thread"/> is non-<code>NULL</code> and is not a valid thread.
+          <paramlink id="event_thread"/> is non-<code>nullptr</code> and is not a valid thread.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_ALIVE">
-          <paramlink id="event_thread"/> is non-<code>NULL</code> and is not alive
+          <paramlink id="event_thread"/> is non-<code>nullptr</code> and is not alive
           (has not been started or has terminated).
         </error>
         <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
@@ -9997,7 +10008,7 @@ myInit() {
         <field id="null_ok">
           <jboolean/>
             <description>
-              Is a <code>NULL</code> argument permitted? Applies only to pointer and object types.
+              Is a <code>nullptr</code> argument permitted? Applies only to pointer and object types.
             </description>
         </field>
       </typedef>
@@ -10225,7 +10236,7 @@ myInit() {
 
         <description>
           Sets the callback function for an extension event and
-          enables the event. Or, if the callback is <code>NULL</code>, disables
+          enables the event. Or, if the callback is <code>nullptr</code>, disables
           the event.  Note that unlike standard events, setting
           the callback and enabling the event are a single operation.
         </description>
@@ -10249,7 +10260,7 @@ myInit() {
               <nullok>disable the event</nullok>
             </ptrtype>
             <description>
-              If <code>callback</code> is non-<code>NULL</code>,
+              If <code>callback</code> is non-<code>nullptr</code>,
               set <code>callback</code> to be the event callback function
               and enable the event.
             </description>
@@ -11043,7 +11054,7 @@ myInit() {
             <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
             On many platforms this call will be equivalent to:
 <example>
-  GetThreadCpuTime(env, NULL, nanos_ptr)
+  GetThreadCpuTime(env, nullptr, nanos_ptr)
 </example>
       </description>
       <origin>new</origin>
@@ -11636,7 +11647,7 @@ myInit() {
       <description>
         The VM stores a pointer value associated with each environment.
         This pointer value is called <i>environment-local storage</i>.
-        This value is <code>NULL</code> unless set with this function.
+        This value is <code>nullptr</code> unless set with this function.
         Agents can allocate memory in which they store environment specific
         information. By setting environment-local storage it can then be
         accessed with
@@ -11654,7 +11665,7 @@ myInit() {
         <param id="data">
           <inbuf>
             <void/>
-            <nullok>value is set to <code>NULL</code></nullok>
+            <nullok>value is set to <code>nullptr</code></nullok>
           </inbuf>
           <description>
             The value to be entered into the environment-local storage.
@@ -11682,7 +11693,7 @@ myInit() {
             storage is returned.
             If environment-local storage has not been set with
             <functionlink id="SetEnvironmentLocalStorage"></functionlink> returned
-            pointer is <code>NULL</code>.
+            pointer is <code>nullptr</code>.
           </description>
         </param>
       </parameters>
@@ -11948,7 +11959,7 @@ myInit() {
       on successful completion of the function.
     </errorid>
     <errorid id="JVMTI_ERROR_NULL_POINTER" num="100">
-      Pointer is unexpectedly <code>NULL</code>.
+      Pointer is unexpectedly <code>nullptr</code>.
     </errorid>
     <errorid id="JVMTI_ERROR_OUT_OF_MEMORY" num="110">
       The function attempted to allocate memory and no more memory was
@@ -12455,7 +12466,7 @@ myInit() {
         <jobject/>
           <description>
             Object with the field being accessed if the field is an
-            instance field; <code>NULL</code> otherwise
+            instance field; <code>nullptr</code> otherwise
           </description>
       </param>
       <param id="field">
@@ -12525,7 +12536,7 @@ myInit() {
         <jobject/>
           <description>
             Object with the field being modified if the field is an
-            instance field; <code>NULL</code> otherwise
+            instance field; <code>nullptr</code> otherwise
           </description>
       </param>
       <param id="field">
@@ -12759,7 +12770,7 @@ myInit() {
         </outptr>
           <description>
             The JNI environment of the event (current) thread
-            Will be <code>NULL</code> if sent during the primordial
+            Will be <code>nullptr</code> if sent during the primordial
             <functionlink id="GetPhase">phase</functionlink>.
           </description>
       </param>
@@ -12876,13 +12887,13 @@ myInit() {
       <param id="catch_klass">
         <jclass method="catch_method"/>
           <description>
-            Class that will catch the exception, or <code>NULL</code> if no known catch
+            Class that will catch the exception, or <code>nullptr</code> if no known catch
           </description>
       </param>
       <param id="catch_method">
         <jmethodID class="catch_klass"/>
           <description>
-            Method that will catch the exception, or <code>NULL</code> if no known catch
+            Method that will catch the exception, or <code>nullptr</code> if no known catch
           </description>
       </param>
       <param id="catch_location">
@@ -12914,7 +12925,7 @@ myInit() {
       <code>exception</code> object identifies the exception object. Exceptions
       caught in native methods are not necessarily available by the time the
       exception catch is reported, so the <code>exception</code> field is set
-      to <code>NULL</code>.
+      to <code>nullptr</code>.
     </description>
     <origin>jvmdi</origin>
     <capabilities>
@@ -13347,7 +13358,7 @@ myInit() {
     <functionlink id="GetNamedModule"></functionlink>
     function can be used to map class loader and a package name to a module.
     When a class is being redefined or retransformed then
-    <code>class_being_redefined</code> is non <code>NULL</code> and so
+    <code>class_being_redefined</code> is non <code>nullptr</code> and so
     the JNI <code>GetModule</code> function can also be used
     to obtain the Module.
     <p/>
@@ -13394,14 +13405,14 @@ myInit() {
           The class being
           <functionlink id="RedefineClasses">redefined</functionlink> or
           <functionlink id="RetransformClasses">retransformed</functionlink>.
-          <code>NULL</code> if sent by class load.
+          <code>nullptr</code> if sent by class load.
         </description>
       </param>
       <param id="loader">
         <jobject/>
           <description>
             The class loader loading the class.
-            <code>NULL</code> if the bootstrap class loader.
+            <code>nullptr</code> if the bootstrap class loader.
           </description>
       </param>
       <param id="name">
@@ -13410,8 +13421,8 @@ myInit() {
             Name of class being loaded as a VM internal qualified name
             (for example, "java/util/List"), encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
-            Note: if the class is defined with a <code>NULL</code> name or
-            without a name specified, <code>name</code> will be <code>NULL</code>.
+            Note: if the class is defined with a <code>nullptr</code> name or
+            without a name specified, <code>name</code> will be <code>nullptr</code>.
         </description>
       </param>
       <param id="protection_domain">
@@ -13629,7 +13640,7 @@ myInit() {
           The native address range of each entry is from
           <fieldlink id="start_address" struct="jvmtiAddrLocationMap"></fieldlink>
           to <code>start_address-1</code> of the next entry.
-          <code>NULL</code> if mapping information cannot be supplied.
+          <code>nullptr</code> if mapping information cannot be supplied.
         </description>
       </param>
       <param id="compile_info">
@@ -14692,7 +14703,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
     Finish fixing spec to reflect that alloc sizes are jlong.
   </change>
   <change date="22 Jan 2003">
-    Allow NULL as RunAgentThread arg.
+    Allow nullptr as RunAgentThread arg.
   </change>
   <change date="22 Jan 2003">
     Fixed names to standardized naming convention
@@ -14702,7 +14713,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
     Since we are using jthread, removed GetThread.
   </change>
   <change date="31 Jan 2003">
-    Change GetFieldName to allow NULLs like GetMethodName.
+    Change GetFieldName to allow nullptr like GetMethodName.
   </change>
   <change date="29 Feb 2003" version="v40">
       Rewrite the introductory text, adding sections on
@@ -14811,7 +14822,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="13 May 2003" version="v62">
       Clarify semantics of raw monitors.
       Change flags on <code>GetThreadStatus</code>.
-      <code>GetClassLoader</code> return NULL for the bootstrap class loader.
+      <code>GetClassLoader</code> return nullptr for the bootstrap class loader.
       Add <code>GetClassName</code> issue.
       Define local variable signature.
       Disallow zero in annotations array of <code>GetObjectsWithAnnotations</code>.
@@ -14821,7 +14832,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="14 May 2003" version="v63">
       Define the data type <code>jvmtiEventCallbacks</code>.
-      Zero length allocations return NULL.
+      Zero length allocations return nullptr.
       Keep SetAllocationHooks in JVMDI, but remove from <jvmti/>.
       Add JVMTI_THREAD_STATUS_FLAG_INTERRUPTED.
   </change>
@@ -14843,7 +14854,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Overhaul Heap functionality: single callback,
       remove GetHeapRoots, add reachable iterators,
       and rename "annotation" to "tag".
-      NULL thread parameter on most functions is current
+      nullptr thread parameter on most functions is current
       thread.
       Add timers.
       Remove ForceExit.
@@ -14880,7 +14891,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="26 June 2003" version="v72">
       SetThreadLocalStorage and SetEnvironmentLocalStorage should allow value
-      to be set to NULL.
+      to be set to nullptr.
       NotifyFramePop, GetFrameLocationm and all the local variable operations
       needed to have their wording about frames fixed.
       Grammar and clarity need to be fixed throughout.
@@ -14920,7 +14931,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="14 July 2003" version="v74">
       Technical Publications Department corrections.
-      Allow thread and environment local storage to be set to NULL.
+      Allow thread and environment local storage to be set to nullptr.
   </change>
   <change date="23 July 2003" version="v75">
       Use new Agent_OnLoad rather than overloaded JVM_OnLoad.
@@ -14952,7 +14963,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Move stack frame description into Stack Frame category.
   </change>
   <change date="26 July 2003" version="v80">
-      Allow NULL (means bootstrap loader) for GetClassloaderClasses.
+      Allow nullptr (means bootstrap loader) for GetClassloaderClasses.
       Add new heap reference kinds for references from classes.
       Add timer information struct and query functions.
       Add AvailableProcessors.
@@ -15051,7 +15062,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Clarifications and typos.
   </change>
   <change date="3 December 2003" version="0.2.95">
-      Allow NULL user_data in heap iterators.
+      Allow nullptr user_data in heap iterators.
   </change>
   <change date="28 January 2004" version="0.2.97">
       Add GetThreadState, deprecate GetThreadStatus.
@@ -15199,7 +15210,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="5 November 2004" version="1.0.38">
       Add missing function table layout.
       Add missing description of C++ member function format of functions.
-      Clarify that name in CFLH can be NULL.
+      Clarify that name in CFLH can be nullptr.
       Released as part of <tm>J2SE</tm> 5.0.
   </change>
   <change date="24 April 2005" version="1.1.47">
@@ -15212,7 +15223,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Allow AddToBootstrapClassLoaderSearch be used in live phase.
       Fix historic rubbish in the descriptions of the heap_object_callback
       parameter of IterateOverHeap and IterateOverInstancesOfClass functions;
-      disallow NULL for this parameter.
+      disallow nullptr for this parameter.
       Clarify, correct and make consistent: wording about current thread,
       opaque frames and insufficient number of frames in PopFrame.
       Consistently use "current frame" rather than "topmost".
@@ -15407,7 +15418,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="12 February 2017" version="9.0.0">
       Minor update for GetCurrentThread function:
-      The function may return NULL in the start phase if the
+      The function may return nullptr in the start phase if the
       can_generate_early_vmstart capability is enabled.
   </change>
   <change date="7 February 2018" version="11.0.0">

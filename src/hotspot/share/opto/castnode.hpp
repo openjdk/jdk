@@ -180,6 +180,7 @@ class CastPPNode: public ConstraintCastNode {
   public:
   CastPPNode (Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    init_class_id(Class_CastPP);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }

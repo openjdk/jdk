@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 4052967 4073209 4073215 4084933 4096952 4109314 4126678 4151406 4151429
  * 4154525 4154537 4154542 4154650 4159922 4162593 4173604 4176686 4184229 4208960
- * 4966229 6433179 6851214 8007520 8008577
+ * 4966229 6433179 6851214 8007520 8008577 8174269
  * @library /java/text/testlib
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneRegression
+ * @run junit TimeZoneRegression
  */
 
 import java.util.*;

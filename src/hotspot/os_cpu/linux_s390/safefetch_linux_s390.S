@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,18 @@
  *
  */
 
-    .globl SafeFetchN_impl
-    .globl _SafeFetchN_fault
-    .globl _SafeFetchN_continuation
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
+#include "defs.S.inc"
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
     #  r2 : address
     #  r3 : defaultval
     #  r2 : retval
-SafeFetch32_impl:
-_SafeFetch32_fault:
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     lgf      %r2, 0(%r2)
     br       %r14
-_SafeFetch32_continuation:
+DECLARE_FUNC(_SafeFetch32_continuation):
     lgr      %r2, %r3
     br       %r14
 
@@ -48,10 +43,10 @@ _SafeFetch32_continuation:
     #  r2 : address
     #  r3 : defaultval
     #  r2 : retval
-SafeFetchN_impl:
-_SafeFetchN_fault:
+DECLARE_FUNC(SafeFetchN_impl):
+DECLARE_FUNC(_SafeFetchN_fault):
     lg       %r2, 0(%r2)
     br       %r14
-_SafeFetchN_continuation:
+DECLARE_FUNC(_SafeFetchN_continuation):
     lgr      %r2, %r3
     br       %r14

@@ -27,7 +27,6 @@
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -1281,7 +1280,15 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
+  ::SetLastError(0); // Clear old pending errors
+  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  if (ret == nullptr) {
+    char buf[512];
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
+  }
+  return ret;
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -1730,17 +1737,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   // chop off newline character
   char* nl = strchr(buf, '\n');
   if (nl != nullptr) *nl = '\0';
-}
-
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
 }
 
 static inline time_t get_mtime(const char* filename) {
@@ -2782,18 +2778,18 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
-      CompiledMethod* nm = nullptr;
+      nmethod* nm = nullptr;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
       }
 
-      bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
-      if (((in_vm || in_native || is_unsafe_arraycopy) && thread->doing_unsafe_access()) ||
+      bool is_unsafe_memory_access = (in_native || in_java) && UnsafeMemoryAccess::contains_pc(pc);
+      if (((in_vm || in_native || is_unsafe_memory_access) && thread->doing_unsafe_access()) ||
           (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
-        if (is_unsafe_arraycopy) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (is_unsafe_memory_access) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
@@ -2834,14 +2830,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        if (cb != nullptr && cb->is_compiled()) {
-          CompiledMethod* cm = cb->as_compiled_method();
+        if (cb != nullptr && cb->is_nmethod()) {
+          nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = cm->is_method_handle_return(pc) ?
-            cm->deopt_mh_handler_begin() :
-            cm->deopt_handler_begin();
-          assert(cm->insts_contains_inclusive(pc), "");
-          cm->set_original_pc(&fr, pc);
+          address deopt = nm->is_method_handle_return(pc) ?
+            nm->deopt_mh_handler_begin() :
+            nm->deopt_handler_begin();
+          assert(nm->insts_contains_inclusive(pc), "");
+          nm->set_original_pc(&fr, pc);
           // Set pc to handler
           exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
           return EXCEPTION_CONTINUE_EXECUTION;
@@ -4258,7 +4254,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  os::infinite_sleep();
+  ::abort();
 }
 
 #undef EXIT_TIMEOUT
@@ -4882,13 +4878,6 @@ bool os::dir_is_empty(const char* path) {
   return is_empty;
 }
 
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
-  return ::open(path, oflags, _S_IREAD | _S_IWRITE);
-}
-
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
   return (jlong)::_lseeki64(fd, (__int64)0L, SEEK_CUR);
@@ -5167,22 +5156,6 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
   return base;
 }
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // This OS does not allow existing memory maps to be remapped so we
-  // would have to unmap the memory before we remap it.
-
-  // Because there is a small window between unmapping memory and mapping
-  // it in again with different protections, CDS archives are mapped RW
-  // on windows, so this function isn't called.
-  ShouldNotReachHere();
-  return nullptr;
-}
-
 
 // Unmap a block of memory.
 // Returns true=success, otherwise false.

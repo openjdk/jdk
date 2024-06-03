@@ -268,6 +268,14 @@ class StubGenerator: public StubCodeGenerator {
                                address byte_copy_entry, address short_copy_entry,
                                address int_copy_entry, address long_copy_entry);
 
+  // Generate 'unsafe' set memory stub
+  // Though just as safe as the other stubs, it takes an unscaled
+  // size_t argument instead of an element count.
+  //
+  // Examines the alignment of the operands and dispatches
+  // to an int, short, or byte copy loop.
+  address generate_unsafe_setmemory(const char *name, address byte_copy_entry);
+
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.
   // Also, clean the sign bits of src_pos and dst_pos.
@@ -453,6 +461,30 @@ class StubGenerator: public StubCodeGenerator {
   void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
                              const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
                              const XMMRegister TMP, const Register rscratch);
+  //Poly305 AVX2 implementation
+  void poly1305_process_blocks_avx2(const Register input, const Register length,
+    const Register a0, const Register a1, const Register a2,
+    const Register r0, const Register r1, const Register c1);
+  void poly1305_msg_mul_reduce_vec4_avx2(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                                   const Address R0, const Address R1, const Address R2,
+                                   const Address R1P, const Address R2P,
+                                   const XMMRegister P0L, const XMMRegister P0H,
+                                   const XMMRegister P1L, const XMMRegister P1H,
+                                   const XMMRegister P2L, const XMMRegister P2H,
+                                   const XMMRegister YTMP1, const XMMRegister YTMP2,
+                                   const XMMRegister YTMP3, const XMMRegister YTMP4,
+                                   const XMMRegister YTMP5, const XMMRegister YTMP6,
+                                   const Register input, const Register length, const Register rscratch);
+  void poly1305_mul_reduce_vec4_avx2(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                               const XMMRegister R0, const XMMRegister R1, const XMMRegister R2,
+                               const XMMRegister R1P, const XMMRegister R2P,
+                               const XMMRegister P0L, const XMMRegister P0H,
+                               const XMMRegister P1L, const XMMRegister P1H,
+                               const XMMRegister P2L, const XMMRegister P2H,
+                               const XMMRegister YTMP1, const Register rscratch);
+
+  address generate_intpoly_montgomeryMult_P256();
+  address generate_intpoly_assign();
 
   // BASE64 stubs
 
@@ -583,6 +615,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // shared exception handler for FFM upcall stubs
   address generate_upcall_stub_exception_handler();
+
+  // Specialized stub implementations for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub();
 
   void create_control_words();
 

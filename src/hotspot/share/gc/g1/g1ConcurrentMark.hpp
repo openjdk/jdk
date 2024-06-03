@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -41,11 +41,11 @@
 #include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
-class G1ConcurrentMarkThread;
 class G1CollectedHeap;
+class G1ConcurrentMark;
+class G1ConcurrentMarkThread;
 class G1CMOopClosure;
 class G1CMTask;
-class G1ConcurrentMark;
 class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
@@ -96,9 +96,13 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // are alive. An instance is also embedded into the
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
-  G1CollectedHeap* _g1h;
+  G1ConcurrentMark* _cm;
+
 public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  G1CMIsAliveClosure();
+  G1CMIsAliveClosure(G1ConcurrentMark* cm);
+  void initialize(G1ConcurrentMark* cm);
+
   bool do_object_b(oop obj);
 };
 
@@ -145,7 +149,7 @@ private:
     // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
-    // Illustration of the Growable Array data structure.
+    // Illustration of the growable array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
@@ -174,7 +178,7 @@ private:
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket -1));
+              _min_capacity * ( 1ULL << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -225,7 +229,9 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    bool expand();
+    // Expand the mark stack doubling its size.
+    bool try_expand();
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
@@ -435,12 +441,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1OldTracer*            _gc_tracer_cm;
 
   // Timing statistics. All of them are in ms
-  NumberSeq _init_times;
   NumberSeq _remark_times;
   NumberSeq _remark_mark_times;
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
-  double    _total_cleanup_time;
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
@@ -462,8 +466,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void finalize_marking();
 
   void weak_refs_work();
-
-  void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
   void compute_new_sizes();
@@ -505,7 +507,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // method. So, this way, each task will spend very little time in
   // claim_region() and is allowed to call the regular clock method
   // frequently.
-  HeapRegion* claim_region(uint worker_id);
+  G1HeapRegion* claim_region(uint worker_id);
 
   // Determines whether we've run out of regions to scan. Note that
   // the finger can point past the heap end in case the heap was expanded
@@ -539,6 +541,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
+  // Top pointer for each region at the start of marking. Must be valid for all committed
+  // regions.
+  HeapWord* volatile* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
@@ -558,16 +563,26 @@ public:
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
+  // Update the TAMS for the given region to the current top.
+  inline void update_top_at_mark_start(G1HeapRegion* r);
+  // Reset the TAMS for the given region to bottom of that region.
+  inline void reset_top_at_mark_start(G1HeapRegion* r);
+
+  inline HeapWord* top_at_mark_start(const G1HeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(uint region) const;
+  // Returns whether the given object been allocated since marking start (i.e. >= TAMS in that region).
+  inline bool obj_allocated_since_mark_start(oop obj) const;
+
   // Sets the internal top_at_region_start for the given region to current top of the region.
-  inline void update_top_at_rebuild_start(HeapRegion* r);
+  inline void update_top_at_rebuild_start(G1HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(uint region) const;
+  inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics(HeapRegion* r);
+  void clear_statistics(G1HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
-  void humongous_object_eagerly_reclaimed(HeapRegion* r);
+  void humongous_object_eagerly_reclaimed(G1HeapRegion* r);
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
@@ -644,8 +659,8 @@ public:
   // them.
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
-  void add_root_region(HeapRegion* r);
-  bool is_root_region(HeapRegion* r);
+  void add_root_region(G1HeapRegion* r);
+  bool is_root_region(G1HeapRegion* r);
   void root_region_scan_abort_and_wait();
 
 private:
@@ -673,7 +688,7 @@ public:
   // Clears marks for all objects in the given region in the marking
   // bitmap. This should only be used to clean the bitmap during a
   // safepoint.
-  void clear_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(G1HeapRegion* hr);
 
   // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).
@@ -743,7 +758,7 @@ private:
   G1CMOopClosure*             _cm_oop_closure;
 
   // Region this task is scanning, null if we're not scanning any
-  HeapRegion*                 _curr_region;
+  G1HeapRegion*               _curr_region;
   // Local finger of this task, null if we're not scanning a region
   HeapWord*                   _finger;
   // Limit of the region this task is scanning, null if we're not scanning one
@@ -791,7 +806,7 @@ private:
 
   // Updates the local fields after this task has claimed
   // a new region to scan
-  void setup_for_region(HeapRegion* hr);
+  void setup_for_region(G1HeapRegion* hr);
   // Makes the limit of the region up-to-date
   void update_region_limit();
 
@@ -954,7 +969,7 @@ public:
   // The header and footer are printed in the constructor and
   // destructor respectively.
   G1PrintRegionLivenessInfoClosure(const char* phase_name);
-  virtual bool do_heap_region(HeapRegion* r);
+  virtual bool do_heap_region(G1HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
 #endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

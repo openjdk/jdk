@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ReferenceType.allLineLocations_ss.allLineLocations_ss004.allLineLocations_ss004
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ReferenceType.allLineLocations_ss.allLineLocations_ss004.allLineLocations_ss004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -80,7 +80,10 @@ import nsk.share.jdi.sde.*;
 
 public class allLineLocations_ss004 extends SDEDebugger {
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

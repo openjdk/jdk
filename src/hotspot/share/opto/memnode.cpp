@@ -227,7 +227,7 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
         t->is_oopptr()->cast_to_exactness(true)
         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id());
-      if (t_oop->is_aryptr()) {
+      if (t_oop->isa_aryptr()) {
         mem_t = mem_t->is_aryptr()
                      ->cast_to_stable(t_oop->is_aryptr()->is_stable())
                      ->cast_to_size(t_oop->is_aryptr()->size())
@@ -856,7 +856,7 @@ bool LoadNode::can_remove_control() const {
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
-  return !Type::cmp(_type, load._type) &&
+  return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
          _mo == load._mo;
 }
@@ -944,6 +944,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
   case T_OBJECT:
+  case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
@@ -1548,14 +1549,19 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 // Phi *base*. This method is essentially a copy of the validations performed
 // by 'split_through_phi'. The first use of this method was in EA code as part
 // of simplification of allocation merges.
+// Some differences from original method (split_through_phi):
+//  - If base->is_CastPP(): base = base->in(1)
 bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-  bool base_is_phi = (base != nullptr) && base->is_Phi();
 
-  if (req() > 3 || !base_is_phi) {
+  if (base->is_CastPP()) {
+    base = base->in(1);
+  }
+
+  if (req() > 3 || base == nullptr || !base->is_Phi()) {
     return false;
   }
 
@@ -2448,6 +2454,12 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
     }
   }
 
+  if (tkls != nullptr && !UseSecondarySupersCache
+      && tkls->offset() == in_bytes(Klass::secondary_super_cache_offset()))  {
+    // Treat Klass::_secondary_super_cache as a constant when the cache is disabled.
+    return TypePtr::NULL_PTR;
+  }
+
   // Bailout case
   return LoadNode::Value(phase);
 }
@@ -2685,6 +2697,697 @@ uint StoreNode::hash() const {
   return NO_HASH;
 }
 
+// Class to parse array pointers, and determine if they are adjacent. We parse the form:
+//
+//   pointer =   base
+//             + constant_offset
+//             + LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+//             + sum(other_offsets)
+//
+//
+// Note: we accumulate all constant offsets into constant_offset, even the int constant behind
+//       the "LShiftL(ConvI2L(...))" pattern. We convert "ConvI2L(int_offset + int_con)" to
+//       "ConvI2L(int_offset) + int_con", which is only safe if we can assume that either all
+//       compared addresses have an overflow for "int_offset + int_con" or none.
+//       For loads and stores on arrays, we know that if one overflows and the other not, then
+//       the two addresses lay almost max_int indices apart, but the maximal array size is
+//       only about half of that. Therefore, the RangeCheck on at least one of them must have
+//       failed.
+//
+//   constant_offset += LShiftL( ConvI2L(int_con), int_offset_shift)
+//
+//   pointer =   base
+//             + constant_offset
+//             + LShiftL( ConvI2L(int_offset), int_offset_shift)
+//             + sum(other_offsets)
+//
+class ArrayPointer {
+private:
+  const bool _is_valid;          // The parsing succeeded
+  const Node* _pointer;          // The final pointer to the position in the array
+  const Node* _base;             // Base address of the array
+  const jlong _constant_offset;  // Sum of collected constant offsets
+  const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
+  const jint  _int_offset_shift; // (optional) Shift value for int_offset
+  const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
+
+  ArrayPointer(const bool is_valid,
+               const Node* pointer,
+               const Node* base,
+               const jlong constant_offset,
+               const Node* int_offset,
+               const jint int_offset_shift,
+               const GrowableArray<Node*>* other_offsets) :
+      _is_valid(is_valid),
+      _pointer(pointer),
+      _base(base),
+      _constant_offset(constant_offset),
+      _int_offset(int_offset),
+      _int_offset_shift(int_offset_shift),
+      _other_offsets(other_offsets)
+  {
+    assert(_pointer != nullptr, "must always have pointer");
+    assert(is_valid == (_base != nullptr), "have base exactly if valid");
+    assert(is_valid == (_other_offsets != nullptr), "have other_offsets exactly if valid");
+  }
+
+  static ArrayPointer make_invalid(const Node* pointer) {
+    return ArrayPointer(false, pointer, nullptr, 0, nullptr, 0, nullptr);
+  }
+
+  static bool parse_int_offset(Node* offset, Node*& int_offset, jint& int_offset_shift) {
+    // offset = LShiftL( ConvI2L(int_offset), int_offset_shift)
+    if (offset->Opcode() == Op_LShiftL &&
+        offset->in(1)->Opcode() == Op_ConvI2L &&
+        offset->in(2)->Opcode() == Op_ConI) {
+      int_offset = offset->in(1)->in(1); // LShiftL -> ConvI2L -> int_offset
+      int_offset_shift = offset->in(2)->get_int(); // LShiftL -> int_offset_shift
+      return true;
+    }
+
+    // offset = ConvI2L(int_offset) = LShiftL( ConvI2L(int_offset), 0)
+    if (offset->Opcode() == Op_ConvI2L) {
+      int_offset = offset->in(1);
+      int_offset_shift = 0;
+      return true;
+    }
+
+    // parse failed
+    return false;
+  }
+
+public:
+  // Parse the structure above the pointer
+  static ArrayPointer make(PhaseGVN* phase, const Node* pointer) {
+    assert(phase->type(pointer)->isa_aryptr() != nullptr, "must be array pointer");
+    if (!pointer->is_AddP()) { return ArrayPointer::make_invalid(pointer); }
+
+    const Node* base = pointer->in(AddPNode::Base);
+    if (base == nullptr) { return ArrayPointer::make_invalid(pointer); }
+
+    const int search_depth = 5;
+    Node* offsets[search_depth];
+    int count = pointer->as_AddP()->unpack_offsets(offsets, search_depth);
+
+    // We expect at least a constant each
+    if (count <= 0) { return ArrayPointer::make_invalid(pointer); }
+
+    // We extract the form:
+    //
+    //   pointer =   base
+    //             + constant_offset
+    //             + LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+    //             + sum(other_offsets)
+    //
+    jlong constant_offset = 0;
+    Node* int_offset = nullptr;
+    jint int_offset_shift = 0;
+    GrowableArray<Node*>* other_offsets = new GrowableArray<Node*>(count);
+
+    for (int i = 0; i < count; i++) {
+      Node* offset = offsets[i];
+      if (offset->Opcode() == Op_ConI) {
+        // Constant int offset
+        constant_offset += offset->get_int();
+      } else if (offset->Opcode() == Op_ConL) {
+        // Constant long offset
+        constant_offset += offset->get_long();
+      } else if(int_offset == nullptr && parse_int_offset(offset, int_offset, int_offset_shift)) {
+        // LShiftL( ConvI2L(int_offset), int_offset_shift)
+        int_offset = int_offset->uncast();
+        if (int_offset->Opcode() == Op_AddI && int_offset->in(2)->Opcode() == Op_ConI) {
+          // LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+          constant_offset += ((jlong)int_offset->in(2)->get_int()) << int_offset_shift;
+          int_offset = int_offset->in(1);
+        }
+      } else {
+        // All others
+        other_offsets->append(offset);
+      }
+    }
+
+    return ArrayPointer(true, pointer, base, constant_offset, int_offset, int_offset_shift, other_offsets);
+  }
+
+  bool is_adjacent_to_and_before(const ArrayPointer& other, const jlong data_size) const {
+    if (!_is_valid || !other._is_valid) { return false; }
+
+    // Offset adjacent?
+    if (this->_constant_offset + data_size != other._constant_offset) { return false; }
+
+    // All other components identical?
+    if (this->_base != other._base ||
+        this->_int_offset != other._int_offset ||
+        this->_int_offset_shift != other._int_offset_shift ||
+        this->_other_offsets->length() != other._other_offsets->length()) {
+      return false;
+    }
+
+    for (int i = 0; i < this->_other_offsets->length(); i++) {
+      Node* o1 = this->_other_offsets->at(i);
+      Node* o2 = other._other_offsets->at(i);
+      if (o1 != o2) { return false; }
+    }
+
+    return true;
+  }
+
+#ifndef PRODUCT
+  void dump() {
+    if (!_is_valid) {
+      tty->print("ArrayPointer[%d %s, invalid]", _pointer->_idx, _pointer->Name());
+      return;
+    }
+    tty->print("ArrayPointer[%d %s, base[%d %s] + %lld",
+               _pointer->_idx, _pointer->Name(),
+               _base->_idx, _base->Name(),
+               (long long)_constant_offset);
+    if (_int_offset != 0) {
+      tty->print(" + I2L[%d %s] << %d",
+                 _int_offset->_idx, _int_offset->Name(), _int_offset_shift);
+    }
+    for (int i = 0; i < _other_offsets->length(); i++) {
+      Node* n = _other_offsets->at(i);
+      tty->print(" + [%d %s]", n->_idx, n->Name());
+    }
+    tty->print_cr("]");
+  }
+#endif
+};
+
+// Link together multiple stores (B/S/C/I) into a longer one.
+//
+// Example: _store = StoreB[i+3]
+//
+//   RangeCheck[i+0]           RangeCheck[i+0]
+//   StoreB[i+0]
+//   RangeCheck[i+1]           RangeCheck[i+1]
+//   StoreB[i+1]         -->   pass:             fail:
+//   StoreB[i+2]               StoreI[i+0]       StoreB[i+0]
+//   StoreB[i+3]
+//
+// The 4 StoreB are merged into a single StoreI node. We have to be careful with RangeCheck[i+1]: before
+// the optimization, if this RangeCheck[i+1] fails, then we execute only StoreB[i+0], and then trap. After
+// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+1], and StoreB[i+0] on the
+// failing path.
+//
+// Note: For normal array stores, every store at first has a RangeCheck. But they can be removed with:
+//       - RCE (RangeCheck Elimination): the RangeChecks in the loop are hoisted out and before the loop,
+//                                       and possibly no RangeChecks remain between the stores.
+//       - RangeCheck smearing: the earlier RangeChecks are adjusted such that they cover later RangeChecks,
+//                              and those later RangeChecks can be removed. Example:
+//
+//                              RangeCheck[i+0]                         RangeCheck[i+0] <- before first store
+//                              StoreB[i+0]                             StoreB[i+0]     <- first store
+//                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3] <- only RC between first and last store
+//                              StoreB[i+0]                             StoreB[i+1]     <- second store
+//                              RangeCheck[i+2]     --> removed
+//                              StoreB[i+0]                             StoreB[i+2]
+//                              RangeCheck[i+3]     --> removed
+//                              StoreB[i+0]                             StoreB[i+3]     <- last store
+//
+//                              Thus, it is a common pattern that between the first and last store in a chain
+//                              of adjacent stores there remains exactly one RangeCheck, located between the
+//                              first and the second store (e.g. RangeCheck[i+3]).
+//
+class MergePrimitiveArrayStores : public StackObj {
+private:
+  PhaseGVN* _phase;
+  StoreNode* _store;
+
+public:
+  MergePrimitiveArrayStores(PhaseGVN* phase, StoreNode* store) : _phase(phase), _store(store) {}
+
+  StoreNode* run();
+
+private:
+  bool is_compatible_store(const StoreNode* other_store) const;
+  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
+  bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
+  static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out);
+  enum CFGStatus { SuccessNoRangeCheck, SuccessWithRangeCheck, Failure };
+  static CFGStatus cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store);
+
+  class Status {
+  private:
+    StoreNode* _found_store;
+    bool       _found_range_check;
+
+    Status(StoreNode* found_store, bool found_range_check)
+      : _found_store(found_store), _found_range_check(found_range_check) {}
+
+  public:
+    StoreNode* found_store() const { return _found_store; }
+    bool found_range_check() const { return _found_range_check; }
+    static Status make_failure() { return Status(nullptr, false); }
+
+    static Status make(StoreNode* found_store, const CFGStatus cfg_status) {
+      if (cfg_status == CFGStatus::Failure) {
+        return Status::make_failure();
+      }
+      return Status(found_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+    }
+  };
+
+  Status find_adjacent_use_store(const StoreNode* def_store) const;
+  Status find_adjacent_def_store(const StoreNode* use_store) const;
+  Status find_use_store(const StoreNode* def_store) const;
+  Status find_def_store(const StoreNode* use_store) const;
+  Status find_use_store_unidirectional(const StoreNode* def_store) const;
+  Status find_def_store_unidirectional(const StoreNode* use_store) const;
+
+  void collect_merge_list(Node_List& merge_list) const;
+  Node* make_merged_input_value(const Node_List& merge_list);
+  StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
+
+  DEBUG_ONLY( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+};
+
+StoreNode* MergePrimitiveArrayStores::run() {
+  // Check for B/S/C/I
+  int opc = _store->Opcode();
+  if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
+    return nullptr;
+  }
+
+  // Only merge stores on arrays, and the stores must have the same size as the elements.
+  const TypePtr* ptr_t = _store->adr_type();
+  if (ptr_t == nullptr) {
+    return nullptr;
+  }
+  const TypeAryPtr* aryptr_t = ptr_t->isa_aryptr();
+  if (aryptr_t == nullptr) {
+    return nullptr;
+  }
+  BasicType bt = aryptr_t->elem()->array_element_basic_type();
+  if (!is_java_primitive(bt) ||
+      type2aelembytes(bt) != _store->memory_size()) {
+    return nullptr;
+  }
+
+  // The _store must be the "last" store in a chain. If we find a use we could merge with
+  // then that use or a store further down is the "last" store.
+  Status status_use = find_adjacent_use_store(_store);
+  if (status_use.found_store() != nullptr) {
+    return nullptr;
+  }
+
+  // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
+  Status status_def = find_adjacent_def_store(_store);
+  if (status_def.found_store() == nullptr) {
+    return nullptr;
+  }
+
+  ResourceMark rm;
+  Node_List merge_list;
+  collect_merge_list(merge_list);
+
+  Node* merged_input_value = make_merged_input_value(merge_list);
+  if (merged_input_value == nullptr) { return nullptr; }
+
+  StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
+
+  DEBUG_ONLY( if(TraceMergeStores) { trace(merge_list, merged_input_value, merged_store); } )
+
+  return merged_store;
+}
+
+// Check compatibility between _store and other_store.
+bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store) const {
+  int opc = _store->Opcode();
+  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
+  assert(_store->adr_type()->isa_aryptr() != nullptr, "must be array store");
+
+  if (other_store == nullptr ||
+      _store->Opcode() != other_store->Opcode() ||
+      other_store->adr_type() == nullptr ||
+      other_store->adr_type()->isa_aryptr() == nullptr) {
+    return false;
+  }
+
+  // Check that the size of the stores, and the array elements are all the same.
+  const TypeAryPtr* aryptr_t1 = _store->adr_type()->is_aryptr();
+  const TypeAryPtr* aryptr_t2 = other_store->adr_type()->is_aryptr();
+  BasicType aryptr_bt1 = aryptr_t1->elem()->array_element_basic_type();
+  BasicType aryptr_bt2 = aryptr_t2->elem()->array_element_basic_type();
+  if (!is_java_primitive(aryptr_bt1) || !is_java_primitive(aryptr_bt2)) {
+    return false;
+  }
+  int size1 = type2aelembytes(aryptr_bt1);
+  int size2 = type2aelembytes(aryptr_bt2);
+  if (size1 != size2 ||
+      size1 != _store->memory_size() ||
+      _store->memory_size() != other_store->memory_size()) {
+    return false;
+  }
+  return true;
+}
+
+bool MergePrimitiveArrayStores::is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const {
+  if (!is_adjacent_input_pair(def_store->in(MemNode::ValueIn),
+                              use_store->in(MemNode::ValueIn),
+                              def_store->memory_size())) {
+    return false;
+  }
+
+  ResourceMark rm;
+  ArrayPointer array_pointer_use = ArrayPointer::make(_phase, use_store->in(MemNode::Address));
+  ArrayPointer array_pointer_def = ArrayPointer::make(_phase, def_store->in(MemNode::Address));
+  if (!array_pointer_def.is_adjacent_to_and_before(array_pointer_use, use_store->memory_size())) {
+    return false;
+  }
+
+  return true;
+}
+
+bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
+  // Pattern: [n1 = ConI, n2 = ConI]
+  if (n1->Opcode() == Op_ConI) {
+    return n2->Opcode() == Op_ConI;
+  }
+
+  // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+  Node const* base_n2;
+  jint shift_n2;
+  if (!is_con_RShift(n2, base_n2, shift_n2)) {
+    return false;
+  }
+  if (n1->Opcode() == Op_ConvL2I) {
+    // look through
+    n1 = n1->in(1);
+  }
+  Node const* base_n1;
+  jint shift_n1;
+  if (n1 == base_n2) {
+    // n1 = base = base >> 0
+    base_n1 = n1;
+    shift_n1 = 0;
+  } else if (!is_con_RShift(n1, base_n1, shift_n1)) {
+    return false;
+  }
+  int bits_per_store = memory_size * 8;
+  if (base_n1 != base_n2 ||
+      shift_n1 + bits_per_store != shift_n2 ||
+      shift_n1 % bits_per_store != 0) {
+    return false;
+  }
+
+  // both load from same value with correct shift
+  return true;
+}
+
+// Detect pattern: n = base_out >> shift_out
+bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out) {
+  assert(n != nullptr, "precondition");
+
+  int opc = n->Opcode();
+  if (opc == Op_ConvL2I) {
+    n = n->in(1);
+    opc = n->Opcode();
+  }
+
+  if ((opc == Op_RShiftI ||
+       opc == Op_RShiftL ||
+       opc == Op_URShiftI ||
+       opc == Op_URShiftL) &&
+      n->in(2)->is_ConI()) {
+    base_out = n->in(1);
+    shift_out = n->in(2)->get_int();
+    // The shift must be positive:
+    return shift_out >= 0;
+  }
+  return false;
+}
+
+// Check if there is nothing between the two stores, except optionally a RangeCheck leading to an uncommon trap.
+MergePrimitiveArrayStores::CFGStatus MergePrimitiveArrayStores::cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store) {
+  assert(use_store->in(MemNode::Memory) == def_store, "use-def relationship");
+
+  Node* ctrl_use = use_store->in(MemNode::Control);
+  Node* ctrl_def = def_store->in(MemNode::Control);
+  if (ctrl_use == nullptr || ctrl_def == nullptr) {
+    return CFGStatus::Failure;
+  }
+
+  if (ctrl_use == ctrl_def) {
+    // Same ctrl -> no RangeCheck in between.
+    // Check: use_store must be the only use of def_store.
+    if (def_store->outcnt() > 1) {
+      return CFGStatus::Failure;
+    }
+    return CFGStatus::SuccessNoRangeCheck;
+  }
+
+  // Different ctrl -> could have RangeCheck in between.
+  // Check: 1. def_store only has these uses: use_store and MergeMem for uncommon trap, and
+  //        2. ctrl separated by RangeCheck.
+  if (def_store->outcnt() != 2) {
+    return CFGStatus::Failure; // Cannot have exactly these uses: use_store and MergeMem for uncommon trap.
+  }
+  int use_store_out_idx = def_store->raw_out(0) == use_store ? 0 : 1;
+  Node* merge_mem = def_store->raw_out(1 - use_store_out_idx)->isa_MergeMem();
+  if (merge_mem == nullptr ||
+      merge_mem->outcnt() != 1) {
+    return CFGStatus::Failure; // Does not have MergeMem for uncommon trap.
+  }
+  if (!ctrl_use->is_IfProj() ||
+      !ctrl_use->in(0)->is_RangeCheck() ||
+      ctrl_use->in(0)->outcnt() != 2) {
+    return CFGStatus::Failure; // Not RangeCheck.
+  }
+  ProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
+  Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
+  if (trap != merge_mem->unique_out() ||
+      ctrl_use->in(0)->in(0) != ctrl_def) {
+    return CFGStatus::Failure; // Not RangeCheck with merge_mem leading to uncommon trap.
+  }
+
+  return CFGStatus::SuccessWithRangeCheck;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_use_store(const StoreNode* def_store) const {
+  Status status_use = find_use_store(def_store);
+  StoreNode* use_store = status_use.found_store();
+  if (use_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
+    return Status::make_failure();
+  }
+  return status_use;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_def_store(const StoreNode* use_store) const {
+  Status status_def = find_def_store(use_store);
+  StoreNode* def_store = status_def.found_store();
+  if (def_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
+    return Status::make_failure();
+  }
+  return status_def;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store(const StoreNode* def_store) const {
+  Status status_use = find_use_store_unidirectional(def_store);
+
+#ifdef ASSERT
+  StoreNode* use_store = status_use.found_store();
+  if (use_store != nullptr) {
+    Status status_def = find_def_store_unidirectional(use_store);
+    assert(status_def.found_store() == def_store &&
+           status_def.found_range_check() == status_use.found_range_check(),
+           "find_use_store and find_def_store must be symmetric");
+  }
+#endif
+
+  return status_use;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store(const StoreNode* use_store) const {
+  Status status_def = find_def_store_unidirectional(use_store);
+
+#ifdef ASSERT
+  StoreNode* def_store = status_def.found_store();
+  if (def_store != nullptr) {
+    Status status_use = find_use_store_unidirectional(def_store);
+    assert(status_use.found_store() == use_store &&
+           status_use.found_range_check() == status_def.found_range_check(),
+           "find_use_store and find_def_store must be symmetric");
+  }
+#endif
+
+  return status_def;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store_unidirectional(const StoreNode* def_store) const {
+  assert(is_compatible_store(def_store), "precondition: must be compatible with _store");
+
+  for (DUIterator_Fast imax, i = def_store->fast_outs(imax); i < imax; i++) {
+    StoreNode* use_store = def_store->fast_out(i)->isa_Store();
+    if (is_compatible_store(use_store)) {
+      return Status::make(use_store, cfg_status_for_pair(use_store, def_store));
+    }
+  }
+
+  return Status::make_failure();
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unidirectional(const StoreNode* use_store) const {
+  assert(is_compatible_store(use_store), "precondition: must be compatible with _store");
+
+  StoreNode* def_store = use_store->in(MemNode::Memory)->isa_Store();
+  if (!is_compatible_store(def_store)) {
+    return Status::make_failure();
+  }
+
+  return Status::make(def_store, cfg_status_for_pair(use_store, def_store));
+}
+
+void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const {
+  // The merged store can be at most 8 bytes.
+  const uint merge_list_max_size = 8 / _store->memory_size();
+  assert(merge_list_max_size >= 2 &&
+         merge_list_max_size <= 8 &&
+         is_power_of_2(merge_list_max_size),
+         "must be 2, 4 or 8");
+
+  // Traverse up the chain of adjacent def stores.
+  StoreNode* current = _store;
+  merge_list.push(current);
+  while (current != nullptr && merge_list.size() < merge_list_max_size) {
+    Status status = find_adjacent_def_store(current);
+    current = status.found_store();
+    if (current != nullptr) {
+      merge_list.push(current);
+
+      // We can have at most one RangeCheck.
+      if (status.found_range_check()) {
+        break;
+      }
+    }
+  }
+
+  // Truncate the merge_list to a power of 2.
+  const uint pow2size = round_down_power_of_2(merge_list.size());
+  assert(pow2size >= 2, "must be merging at least 2 stores");
+  while (merge_list.size() > pow2size) { merge_list.pop(); }
+}
+
+// Merge the input values of the smaller stores to a single larger input value.
+Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_list) {
+  int new_memory_size = _store->memory_size() * merge_list.size();
+  Node* first = merge_list.at(merge_list.size()-1);
+  Node* merged_input_value = nullptr;
+  if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    // Pattern: [ConI, ConI, ...] -> new constant
+    jlong con = 0;
+    jlong bits_per_store = _store->memory_size() * 8;
+    jlong mask = (((jlong)1) << bits_per_store) - 1;
+    for (uint i = 0; i < merge_list.size(); i++) {
+      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+      con = con << bits_per_store;
+      con = con | (mask & con_i);
+    }
+    merged_input_value = _phase->longcon(con);
+  } else {
+    // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
+    //             |                                  |
+    //           _store                             first
+    //
+    merged_input_value = first->in(MemNode::ValueIn);
+    Node const* base_last;
+    jint shift_last;
+    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    assert(is_true, "must detect con RShift");
+    if (merged_input_value != base_last && merged_input_value->Opcode() == Op_ConvL2I) {
+      // look through
+      merged_input_value = merged_input_value->in(1);
+    }
+    if (merged_input_value != base_last) {
+      // merged_input_value is not the base
+      return nullptr;
+    }
+  }
+
+  if (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size <= 4) {
+    // Example:
+    //
+    //   long base = ...;
+    //   a[0] = (byte)(base >> 0);
+    //   a[1] = (byte)(base >> 8);
+    //
+    merged_input_value = _phase->transform(new ConvL2INode(merged_input_value));
+  }
+
+  assert((_phase->type(merged_input_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size == 8),
+         "merged_input_value is either int or long, and new_memory_size is small enough");
+
+  return merged_input_value;
+}
+
+//                                                                                                          //
+// first_ctrl    first_mem   first_adr                first_ctrl    first_mem         first_adr             //
+//  |                |           |                     |                |                 |                 //
+//  |                |           |                     |                +---------------+ |                 //
+//  |                |           |                     |                |               | |                 //
+//  |                | +---------+                     |                | +---------------+                 //
+//  |                | |                               |                | |             | |                 //
+//  +--------------+ | |  v1                           +------------------------------+ | |  v1             //
+//  |              | | |  |                            |                | |           | | |  |              //
+// RangeCheck     first_store                         RangeCheck        | |          first_store            //
+//  |                |  |                              |                | |                |                //
+// last_ctrl         |  +----> unc_trap               last_ctrl         | |                +----> unc_trap  //
+//  |                |                       ===>      |                | |                                 //
+//  +--------------+ | a2 v2                           |                | |                                 //
+//  |              | | |  |                            |                | |                                 //
+//  |             second_store                         |                | |                                 //
+//  |                |                                 |                | | [v1 v2   ...   vn]              //
+// ...              ...                                |                | |         |                       //
+//  |                |                                 |                | |         v                       //
+//  +--------------+ | an vn                           +--------------+ | | merged_input_value              //
+//                 | | |  |                                           | | |  |                              //
+//                last_store (= _store)                              merged_store                           //
+//                                                                                                          //
+StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_list, Node* merged_input_value) {
+  Node* first_store = merge_list.at(merge_list.size()-1);
+  Node* last_ctrl   = _store->in(MemNode::Control); // after (optional) RangeCheck
+  Node* first_mem   = first_store->in(MemNode::Memory);
+  Node* first_adr   = first_store->in(MemNode::Address);
+
+  const TypePtr* new_adr_type = _store->adr_type();
+
+  int new_memory_size = _store->memory_size() * merge_list.size();
+  BasicType bt = T_ILLEGAL;
+  switch (new_memory_size) {
+    case 2: bt = T_SHORT; break;
+    case 4: bt = T_INT;   break;
+    case 8: bt = T_LONG;  break;
+  }
+
+  StoreNode* merged_store = StoreNode::make(*_phase, last_ctrl, first_mem, first_adr,
+                                            new_adr_type, merged_input_value, bt, MemNode::unordered);
+
+  // Marking the store mismatched is sufficient to prevent reordering, since array stores
+  // are all on the same slice. Hence, we need no barriers.
+  merged_store->set_mismatched_access();
+
+  // Constants above may now also be be packed -> put candidate on worklist
+  _phase->is_IterGVN()->_worklist.push(first_mem);
+
+  return merged_store;
+}
+
+#ifdef ASSERT
+void MergePrimitiveArrayStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+  stringStream ss;
+  ss.print_cr("[TraceMergeStores]: Replace");
+  for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
+    merge_list.at(i)->dump("\n", false, &ss);
+  }
+  ss.print_cr("[TraceMergeStores]: with");
+  merged_input_value->dump("\n", false, &ss);
+  merged_store->dump("\n", false, &ss);
+  tty->print("%s", ss.as_string());
+}
+#endif
+
 //------------------------------Ideal------------------------------------------
 // Change back-to-back Store(, p, x) -> Store(m, p, y) to Store(m, p, x).
 // When a store immediately follows a relevant allocation/initialization,
@@ -2770,6 +3473,18 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+#ifdef VM_LITTLE_ENDIAN
+  if (MergeStores && UseUnalignedAccesses) {
+    if (phase->C->post_loop_opts_phase()) {
+      MergePrimitiveArrayStores merge(phase, this);
+      Node* progress = merge.run();
+      if (progress != nullptr) { return progress; }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
+  }
+#endif
+
   return nullptr;                  // No further progress
 }
 
@@ -2801,7 +3516,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    result = mem;
+    // Ensure vector type is the same
+    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
+      result = mem;
+    }
   }
 
   // Two stores in a row of the same value?
@@ -2810,7 +3528,24 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
-    result = mem;
+    if (!is_StoreVector()) {
+      result = mem;
+    } else {
+      const StoreVectorNode* store_vector = as_StoreVector();
+      const StoreVectorNode* mem_vector = mem->as_StoreVector();
+      const Node* store_indices = store_vector->indices();
+      const Node* mem_indices = mem_vector->indices();
+      const Node* store_mask = store_vector->mask();
+      const Node* mem_mask = mem_vector->mask();
+      // Ensure types, indices, and masks match
+      if (store_vector->vect_type() == mem_vector->vect_type() &&
+          ((store_indices == nullptr) == (mem_indices == nullptr) &&
+           (store_indices == nullptr || store_indices->eqv_uncast(mem_indices))) &&
+          ((store_mask == nullptr) == (mem_mask == nullptr) &&
+           (store_mask == nullptr || store_mask->eqv_uncast(mem_mask)))) {
+        result = mem;
+      }
+    }
   }
 
   // Store of zero anywhere into a freshly-allocated object?
@@ -3408,6 +4143,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           my_mem = load_node;
         } else {
           assert(my_mem->unique_out() == this, "sanity");
+          assert(!trailing_load_store(), "load store node can't be eliminated");
           del_req(Precedent);
           phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
           my_mem = nullptr;
@@ -3423,7 +4159,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           eliminate = true;
         }
       }
-    } else if (opc == Op_MemBarRelease) {
+    } else if (opc == Op_MemBarRelease || (UseStoreStoreForCtor && opc == Op_MemBarStoreStore)) {
       // Final field stores.
       Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent));
       if ((alloc != nullptr) && alloc->is_Allocate() &&

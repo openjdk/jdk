@@ -22,9 +22,15 @@
  */
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -36,13 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.commons.ModuleTargetAttribute;
 import jdk.test.lib.util.ModuleInfoWriter;
 
 import org.testng.annotations.Test;
@@ -51,9 +50,7 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @enablePreview
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.commons
- *          java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng AnnotationsTest
@@ -149,23 +146,39 @@ public class AnnotationsTest {
      * Adds the Deprecated annotation to the given module-info class file.
      */
     static byte[] addDeprecated(byte[] bytes, boolean forRemoval, String since) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
+        var cf = ClassFile.of();
+        var oldModel = cf.parse(bytes);
+        return cf.transform(oldModel, new ClassTransform() {
+            boolean rvaaFound = false;
 
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) { };
+            @Override
+            public void accept(ClassBuilder builder, ClassElement element) {
+                if (!rvaaFound && element instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
+                    rvaaFound = true;
+                    var res = new ArrayList<java.lang.classfile.Annotation>(rvaa.annotations().size() + 1);
+                    res.addAll(rvaa.annotations());
+                    res.add(createDeprecated());
+                    builder.accept(RuntimeVisibleAnnotationsAttribute.of(res));
+                    return;
+                }
+                builder.accept(element);
+            }
 
-        ClassReader cr = new ClassReader(bytes);
-        List<Attribute> attrs = new ArrayList<>();
-        attrs.add(new ModuleTargetAttribute());
-        cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
+            @Override
+            public void atEnd(ClassBuilder builder) {
+                if (!rvaaFound) {
+                    builder.accept(RuntimeVisibleAnnotationsAttribute.of(List.of(createDeprecated())));
+                }
+            }
 
-        AnnotationVisitor annotationVisitor
-            = cv.visitAnnotation("Ljava/lang/Deprecated;", true);
-        annotationVisitor.visit("forRemoval", forRemoval);
-        annotationVisitor.visit("since", since);
-        annotationVisitor.visitEnd();
-
-        return cw.toByteArray();
+            private java.lang.classfile.Annotation createDeprecated() {
+                return java.lang.classfile.Annotation.of(
+                        Deprecated.class.describeConstable().orElseThrow(),
+                        AnnotationElement.of("forRemoval", AnnotationValue.ofBoolean(forRemoval)),
+                        AnnotationElement.of("since", AnnotationValue.ofString(since))
+                );
+            }
+        });
     }
 
     /**

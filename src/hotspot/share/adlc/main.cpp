@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,9 @@ int main(int argc, char *argv[])
   // Verify that the results of the parse are consistent
   AD.verify();
 
+  // Check defined operands are used
+  AD.check_usage();
+
   // Prepare to generate the result files:
   AD.generateMatchLists();
   AD.identify_unique_operands();
@@ -216,7 +219,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "code/nativeInst.hpp");
   AD.addInclude(AD._CPP_file, "code/vmreg.inline.hpp");
   AD.addInclude(AD._CPP_file, "gc/shared/collectedHeap.inline.hpp");
-  AD.addInclude(AD._CPP_file, "oops/compiledICHolder.hpp");
   AD.addInclude(AD._CPP_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._CPP_file, "oops/markWord.hpp");
   AD.addInclude(AD._CPP_file, "oops/method.hpp");

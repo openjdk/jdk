@@ -37,7 +37,6 @@
                  develop_pd,                                                \
                  product,                                                   \
                  product_pd,                                                \
-                 notproduct,                                                \
                  range,                                                     \
                  constraint)                                                \
                                                                             \
@@ -104,7 +103,7 @@
           "Number of first instructions in a loop to align")                \
           range(0, max_jint)                                                \
                                                                             \
-  notproduct(intx, IndexSetWatch, 0,                                        \
+  develop(intx, IndexSetWatch, 0,                                           \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
           range(-1, max_intx)                                               \
                                                                             \
@@ -119,19 +118,19 @@
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \
                                                                             \
-  notproduct(bool, PrintIdeal, false,                                       \
+  develop(bool, PrintIdeal, false,                                          \
           "Print ideal graph before code generation")                       \
                                                                             \
-  notproduct(bool, PrintOpto, false,                                        \
+  develop(bool, PrintOpto, false,                                           \
           "Print compiler2 attempts")                                       \
                                                                             \
-  notproduct(bool, PrintOptoInlining, false,                                \
+  develop(bool, PrintOptoInlining, false,                                   \
           "Print compiler2 inlining decisions")                             \
                                                                             \
-  notproduct(bool, VerifyIdealNodeCount, false,                             \
+  develop(bool, VerifyIdealNodeCount, false,                                \
           "Verify that tracked dead ideal node count is accurate")          \
                                                                             \
-  notproduct(bool, PrintIdealNodeCount, false,                              \
+  develop(bool, PrintIdealNodeCount, false,                                 \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
   product_pd(bool, IdealizeClearArrayNode, DIAGNOSTIC,                      \
@@ -140,19 +139,19 @@
   develop(bool, OptoBreakpoint, false,                                      \
           "insert breakpoint at method entry")                              \
                                                                             \
-  notproduct(bool, OptoBreakpointOSR, false,                                \
+  develop(bool, OptoBreakpointOSR, false,                                   \
           "insert breakpoint at osr method entry")                          \
                                                                             \
-  notproduct(uint64_t, BreakAtNode, 0,                                      \
+  develop(uint64_t, BreakAtNode, 0,                                         \
           "Break at construction of this Node (either _idx or _debug_idx)") \
                                                                             \
-  notproduct(bool, OptoBreakpointC2R, false,                                \
+  develop(bool, OptoBreakpointC2R, false,                                   \
           "insert breakpoint at runtime stub entry")                        \
                                                                             \
-  notproduct(bool, OptoNoExecute, false,                                    \
+  develop(bool, OptoNoExecute, false,                                       \
           "Attempt to parse and compile but do not execute generated code") \
                                                                             \
-  notproduct(bool, PrintOptoStatistics, false,                              \
+  develop(bool, PrintOptoStatistics, false,                                 \
           "Print New compiler statistics")                                  \
                                                                             \
   product(bool, PrintOptoAssembly, false, DIAGNOSTIC,                       \
@@ -161,13 +160,13 @@
   develop_pd(bool, OptoPeephole,                                            \
           "Apply peephole optimizations after register allocation")         \
                                                                             \
-  notproduct(bool, PrintFrameConverterAssembly, false,                      \
+  develop(bool, PrintFrameConverterAssembly, false,                         \
           "Print New compiler assembly output for frame converters")        \
                                                                             \
-  notproduct(bool, PrintParseStatistics, false,                             \
+  develop(bool, PrintParseStatistics, false,                                \
           "Print nodes, transforms and new values made per bytecode parsed")\
                                                                             \
-  notproduct(bool, PrintOptoPeephole, false,                                \
+  develop(bool, PrintOptoPeephole, false,                                   \
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
@@ -192,7 +191,7 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
+  develop(bool, TraceSuperWordLoopUnrollAnalysis, false,                    \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \
   product(bool, UseVectorMacroLogic, true, DIAGNOSTIC,                      \
@@ -221,7 +220,7 @@
           "multianewarray instruction")                                     \
           range(0, max_jint)                                                \
                                                                             \
-  notproduct(bool, TraceProfileTripCount, false,                            \
+  develop(bool, TraceProfileTripCount, false,                               \
           "Trace profile loop trip count information")                      \
                                                                             \
   product(bool, UseCountedLoopSafepoints, false,                            \
@@ -278,16 +277,16 @@
   develop_pd(bool, UseCISCSpill,                                            \
           "Use ADLC supplied cisc instructions during allocation")          \
                                                                             \
-  notproduct(bool, VerifyGraphEdges , false,                                \
+  develop(bool, VerifyGraphEdges , false,                                   \
           "Verify Bi-directional Edges")                                    \
                                                                             \
-  notproduct(bool, VerifyDUIterators, true,                                 \
+  develop(bool, VerifyDUIterators, true,                                    \
           "Verify the safety of all iterations of Bi-directional Edges")    \
                                                                             \
-  notproduct(bool, VerifyHashTableKeys, true,                               \
+  develop(bool, VerifyHashTableKeys, true,                                  \
           "Verify the immutability of keys in the VN hash tables")          \
                                                                             \
-  notproduct(bool, VerifyRegisterAllocator , false,                         \
+  develop(bool, VerifyRegisterAllocator , false,                            \
           "Verify Register Allocator")                                      \
                                                                             \
   develop(intx, FLOATPRESSURE, -1,                                          \
@@ -302,10 +301,10 @@
           "integer register for allocation")                                \
           range(-1, max_jint)                                               \
                                                                             \
-  notproduct(bool, TraceOptoPipelining, false,                              \
+  develop(bool, TraceOptoPipelining, false,                                 \
           "Trace pipelining information")                                   \
                                                                             \
-  notproduct(bool, TraceOptoOutput, false,                                  \
+  develop(bool, TraceOptoOutput, false,                                     \
           "Trace pipelining information")                                   \
                                                                             \
   product_pd(bool, OptoScheduling,                                          \
@@ -321,7 +320,7 @@
           "Additional phis that can be created by partial peeling")         \
           range(0, max_jint)                                                \
                                                                             \
-  notproduct(bool, TracePartialPeeling, false,                              \
+  develop(bool, TracePartialPeeling, false,                                 \
           "Trace partial peeling (loop rotation) information")              \
                                                                             \
   product(bool, PartialPeelAtUnsignedTests, true,                           \
@@ -333,7 +332,7 @@
   product(bool, LoopUnswitching, true,                                      \
           "Enable loop unswitching (a form of invariant test hoisting)")    \
                                                                             \
-  notproduct(bool, TraceLoopUnswitching, false,                             \
+  develop(bool, TraceLoopUnswitching, false,                                \
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
@@ -348,11 +347,17 @@
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
-  notproduct(bool, TraceSuperWord, false,                                   \
+  develop(bool, TraceSuperWord, false,                                      \
           "Trace superword transforms")                                     \
                                                                             \
-  notproduct(bool, TraceNewVectors, false,                                  \
+  develop(bool, TraceNewVectors, false,                                     \
           "Trace creation of Vector nodes")                                 \
+                                                                            \
+  product(bool, MergeStores, true, DIAGNOSTIC,                              \
+          "Optimize stores by combining values into larger store")          \
+                                                                            \
+  develop(bool, TraceMergeStores, false,                                    \
+          "Trace creation of merged stores")                                \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
@@ -361,11 +366,11 @@
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
                                                                             \
-  notproduct(bool, PrintIdealGraph, false,                                  \
+  develop(bool, PrintIdealGraph, false,                                     \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \
                                                                             \
-  notproduct(intx, PrintIdealGraphLevel, 0,                                 \
+  develop(intx, PrintIdealGraphLevel, 0,                                    \
           "Level of detail of the ideal graph printout. "                   \
           "System-wide value, -1=printing is disabled, "                    \
           "0=print nothing except IGVPrintLevel directives, "               \
@@ -374,14 +379,14 @@
           "as well by using CompileCommand=option.")                        \
           range(-1, 6)                                                      \
                                                                             \
-  notproduct(intx, PrintIdealGraphPort, 4444,                               \
+  develop(intx, PrintIdealGraphPort, 4444,                                  \
           "Ideal graph printer to network port")                            \
           range(0, SHRT_MAX)                                                \
                                                                             \
-  notproduct(ccstr, PrintIdealGraphAddress, "127.0.0.1",                    \
+  develop(ccstr, PrintIdealGraphAddress, "127.0.0.1",                       \
           "IP address to connect to visualizer")                            \
                                                                             \
-  notproduct(ccstr, PrintIdealGraphFile, nullptr,                           \
+  develop(ccstr, PrintIdealGraphFile, nullptr,                              \
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
                                                                             \
@@ -449,13 +454,13 @@
   product(bool, EliminateNestedLocks, true,                                 \
           "Eliminate nested locks of the same object when possible")        \
                                                                             \
-  notproduct(bool, PrintLockStatistics, false,                              \
+  develop(bool, PrintLockStatistics, false,                                 \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
   product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
                                                                             \
-  notproduct(bool, PrintEliminateLocks, false,                              \
+  develop(bool, PrintEliminateLocks, false,                                 \
           "Print out when locks are eliminated")                            \
                                                                             \
   product(bool, EliminateAutoBox, true,                                     \
@@ -474,7 +479,7 @@
   product(bool, ReduceAllocationMerges, true, DIAGNOSTIC,                   \
           "Try to simplify allocation merges before Scalar Replacement")    \
                                                                             \
-  notproduct(bool, TraceReduceAllocationMerges, false,                      \
+  develop(bool, TraceReduceAllocationMerges, false,                         \
              "Trace decision for simplifying allocation merges.")           \
                                                                             \
   develop(bool, VerifyReduceAllocationMerges, true,                         \
@@ -490,13 +495,13 @@
   develop(bool, ExitEscapeAnalysisOnTimeout, true,                          \
           "Exit or throw assert in EA when it reaches time limit")          \
                                                                             \
-  notproduct(bool, PrintEscapeAnalysis, false,                              \
+  develop(bool, PrintEscapeAnalysis, false,                                 \
           "Print the results of escape analysis")                           \
                                                                             \
   product(bool, EliminateAllocations, true,                                 \
           "Use escape analysis to eliminate allocations")                   \
                                                                             \
-  notproduct(bool, PrintEliminateAllocations, false,                        \
+  develop(bool, PrintEliminateAllocations, false,                           \
           "Print out when allocations are eliminated")                      \
                                                                             \
   product(intx, EliminateAllocationArraySizeLimit, 64,                      \
@@ -510,16 +515,16 @@
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \
-  notproduct(bool, PrintOptimizePtrCompare, false,                          \
+  develop(bool, PrintOptimizePtrCompare, false,                             \
           "Print information about optimized pointers compare")             \
                                                                             \
-  notproduct(bool, VerifyConnectionGraph , true,                            \
+  develop(bool, VerifyConnectionGraph , true,                               \
           "Verify Connection Graph construction in Escape Analysis")        \
                                                                             \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
-  notproduct(bool, PrintOptimizeStringConcat, false,                        \
+  develop(bool, PrintOptimizeStringConcat, false,                           \
           "Print information about transformations performed on Strings")   \
                                                                             \
   product(intx, ValueSearchLimit, 1000,                                     \
@@ -580,7 +585,7 @@
   develop(bool, MonomorphicArrayCheck, true,                                \
           "Uncommon-trap array store checks that require full type check")  \
                                                                             \
-  notproduct(bool, TracePhaseCCP, false,                                    \
+  develop(bool, TracePhaseCCP, false,                                       \
           "Print progress during Conditional Constant Propagation")         \
                                                                             \
   develop(bool, PrintDominators, false,                                     \
@@ -614,7 +619,7 @@
   product(bool, DebugInlinedCalls, true, DIAGNOSTIC,                        \
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
-  notproduct(bool, VerifyLoopOptimizations, false,                          \
+  develop(bool, VerifyLoopOptimizations, false,                             \
           "verify major loop optimizations")                                \
                                                                             \
   product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
@@ -630,7 +635,7 @@
           "X and Y in 0=off; 1=on")                                         \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
-  notproduct(bool, TraceCISCSpill, false,                                   \
+  develop(bool, TraceCISCSpill, false,                                      \
           "Trace allocators use of cisc spillable instructions")            \
                                                                             \
   product(bool, SplitIfBlocks, true,                                        \
@@ -762,9 +767,6 @@
   product(bool, UseProfiledLoopPredicate, true,                             \
           "Move predicates out of loops based on profiling data")           \
                                                                             \
-  product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")                            \
-                                                                            \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
           "to stress handling of long counted loops: run inner loop"        \
@@ -789,6 +791,13 @@
                                                                             \
   develop(bool, StressPrunedExceptionHandlers, false,                       \
           "Always prune exception handlers")                                \
+                                                                            \
+  product(bool, InlineSecondarySupersTest, true, DIAGNOSTIC,                \
+          "Inline the secondary supers hash lookup.")                       \
+                                                                            \
+  product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
+          "Use StoreStore barrier instead of Release barrier at the end "   \
+          "of constructors")                                                \
 
 // end of C2_FLAGS
 

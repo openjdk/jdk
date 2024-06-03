@@ -296,6 +296,9 @@ reg_class long_rcx_reg(RCX, RCX_H);
 // Singleton class for RDX long register
 reg_class long_rdx_reg(RDX, RDX_H);
 
+// Singleton class for R11 long register
+reg_class long_r11_reg(R11, R11_H);
+
 // Singleton class for RAX int register
 reg_class int_rax_reg(RAX);
 
@@ -358,7 +361,7 @@ source %{
 #define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
-#define __ _masm.
+#define __ masm->
 
 RegMask _ANY_REG_mask;
 RegMask _PTR_REG_mask;
@@ -519,7 +522,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-void emit_cmpfp_fixup(MacroAssembler& _masm) {
+static void emit_cmpfp_fixup(MacroAssembler* masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -539,7 +542,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -558,10 +561,10 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
-                     XMMRegister a, XMMRegister b,
-                     XMMRegister xmmt, Register rt,
-                     bool min, bool single) {
+static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
+                            XMMRegister a, XMMRegister b,
+                            XMMRegister xmmt, Register rt,
+                            bool min, bool single) {
 
   Label nan, zero, below, above, done;
 
@@ -643,7 +646,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -719,9 +722,8 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -743,7 +745,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != nullptr);
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(__ offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -795,10 +797,9 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   if (generate_vzeroupper(C)) {
     // Clear upper bits of YMM registers when current compiled code uses
@@ -825,7 +826,6 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    MacroAssembler _masm(&cbuf);
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
@@ -881,16 +881,15 @@ static enum RC rc_class(OptoReg::Name reg)
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st);
 
-static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
+static void vec_stack_to_stack_helper(C2_MacroAssembler *masm, int src_offset,
                                       int dst_offset, uint ireg, outputStream* st) {
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS:
       __ movq(Address(rsp, -8), rax);
@@ -966,11 +965,11 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
   }
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
+uint MachSpillCopyNode::implementation(C2_MacroAssembler* masm,
                                        PhaseRegAlloc* ra_,
                                        bool do_size,
                                        outputStream* st) const {
-  assert(cbuf != nullptr || st  != nullptr, "sanity");
+  assert(masm != nullptr || st  != nullptr, "sanity");
   // Get registers to move
   OptoReg::Name src_second = ra_->get_reg_second(in(1));
   OptoReg::Name src_first = ra_->get_reg_first(in(1));
@@ -997,15 +996,15 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
       int dst_offset = ra_->reg2offset(dst_first);
-      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
+      vec_stack_to_stack_helper(masm, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_float ) {
-      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(masm, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(masm, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_float ) {
       int stack_offset = ra_->reg2offset(src_first);
-      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(masm, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
@@ -1021,8 +1020,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ pushq(Address(rsp, src_offset));
           __ popq (Address(rsp, dst_offset));
 #ifndef PRODUCT
@@ -1039,8 +1037,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // No pushl/popl, so:
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(Address(rsp, -8), rax);
           __ movl(rax, Address(rsp, src_offset));
           __ movl(Address(rsp, dst_offset), rax);
@@ -1062,8 +1059,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1077,8 +1073,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1095,8 +1090,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1111,8 +1105,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1129,8 +1122,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1150,8 +1142,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1165,8 +1156,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1182,8 +1172,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
@@ -1198,8 +1187,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
@@ -1216,8 +1204,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1230,8 +1217,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1246,8 +1232,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
   #ifndef PRODUCT
         } else {
@@ -1268,8 +1253,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1283,8 +1267,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1300,8 +1283,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1314,8 +1296,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1331,8 +1312,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1346,8 +1326,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1370,8 +1349,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1386,8 +1364,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_Register(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1403,8 +1380,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1432,8 +1408,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, nullptr);
+void MachSpillCopyNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  implementation(masm, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1451,13 +1427,12 @@ void BoxLockNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void BoxLockNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
 
-  MacroAssembler masm(&cbuf);
-  masm.lea(as_Register(reg), Address(rsp, offset));
+  __ lea(as_Register(reg), Address(rsp, offset));
 }
 
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
@@ -1472,40 +1447,18 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
+    st->print_cr("\tcmpl    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   } else {
-    st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
-                 "# Inline cache check");
+    st->print_cr("movq    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tcmpq    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   }
   st->print_cr("\tjne     SharedRuntime::_ic_miss_stub");
-  st->print_cr("\tnop\t# nops to align entry point");
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
-  MacroAssembler masm(&cbuf);
-  uint insts_size = cbuf.insts_size();
-  if (UseCompressedClassPointers) {
-    masm.load_klass(rscratch1, j_rarg0, rscratch2);
-    masm.cmpptr(rax, rscratch1);
-  } else {
-    masm.cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
-  }
-
-  masm.jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
-  if (OptoBreakpoint) {
-    // Leave space for int3
-    nops_cnt -= 1;
-  }
-  nops_cnt &= 0x3; // Do not add nops if code is aligned.
-  if (nops_cnt > 0)
-    masm.nop(nops_cnt);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -1684,7 +1637,6 @@ encode %{
     //  [REX_B]
     //    f:   f7 f9                   idiv   $div
     // 0000000000000011 <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -1740,7 +1692,6 @@ encode %{
     //   17:   48 99                   cqto
     //   19:   48 f7 f9                idiv   $div
     // 000000000000001c <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -1782,7 +1733,6 @@ encode %{
     Label miss;
     const bool set_cond_codes = true;
 
-    MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
                                      nullptr, &miss,
                                      /*set_cond_codes:*/ true);
@@ -1793,21 +1743,19 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = cbuf.insts_size());
+    debug_only(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
       __ vzeroupper();
     }
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = __ offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 
   enc_class Java_To_Runtime(method meth) %{
     // No relocation needed
-    MacroAssembler _masm(&cbuf);
     __ mov64(r10, (int64_t) $meth$$method);
     __ call(r10);
     __ post_call_nop();
@@ -1818,8 +1766,6 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    MacroAssembler _masm(&cbuf);
-
     if (!_method) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, $meth$$method)));
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
@@ -1828,7 +1774,7 @@ encode %{
       __ addr_nop_5();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       address mark = __ pc();
@@ -1837,10 +1783,11 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, call_offset);
+        __ code()->shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(masm, mark);
+        __ clear_inst_mark();
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -1851,8 +1798,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
-    MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
     __ post_call_nop();
   %}
 
@@ -2147,28 +2093,6 @@ operand immU31()
   interface(CONST_INTER);
 %}
 
-// Constant for long shifts
-operand immI_32()
-%{
-  predicate( n->get_int() == 32 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Constant for long shifts
-operand immI_64()
-%{
-  predicate( n->get_int() == 64 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immP()
 %{
@@ -2323,28 +2247,6 @@ operand immL_M1()
   interface(CONST_INTER);
 %}
 
-// Long Immediate: the value 10
-operand immL10()
-%{
-  predicate(n->get_long() == 10);
-  match(ConL);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long immediate from 0 to 127.
-// Used for a shorter form of long mul by 10.
-operand immL_127()
-%{
-  predicate(0 <= n->get_long() && n->get_long() < 0x80);
-  match(ConL);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
@@ -2474,64 +2376,6 @@ operand immL_65535()
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(vectmask_reg));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K1()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K1));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K2()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K2));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K3()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K3));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K4()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K4));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K5()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K5));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K6()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K6));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K7()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K7));
   match(RegVectMask);
   format %{%}
   interface(REG_INTER);
@@ -2684,18 +2528,6 @@ operand rRegN() %{
 // the RBP is used as a proper frame pointer and is not included in ptr_reg. As a
 // result, RBP is not included in the output of the instruction either.
 
-operand no_rax_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
-  match(RegP);
-  match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // This operand is not allowed to use RBP even if
 // RBP is not used to hold the frame pointer.
 operand no_rbp_RegP()
@@ -2703,17 +2535,6 @@ operand no_rbp_RegP()
   constraint(ALLOC_IN_RC(ptr_reg_no_rbp));
   match(RegP);
   match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand no_rax_rbx_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_rbx_reg));
-  match(RegP);
   match(rsi_RegP);
   match(rdi_RegP);
 
@@ -2842,6 +2663,16 @@ operand rcx_RegL()
 operand rdx_RegL()
 %{
   constraint(ALLOC_IN_RC(long_rdx_reg));
+  match(RegL);
+  match(rRegL);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand r11_RegL()
+%{
+  constraint(ALLOC_IN_RC(long_r11_reg));
   match(RegL);
   match(rRegL);
 
@@ -4480,7 +4311,7 @@ instruct loadD(regD dst, memory mem)
 
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "maxF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4491,13 +4322,13 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
   format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4505,7 +4336,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{ "maxD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4516,13 +4347,13 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
   format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4530,7 +4361,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "minF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4541,13 +4372,13 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
   format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4555,7 +4386,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
     format %{ "minD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4566,13 +4397,13 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
   format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -5808,7 +5639,7 @@ instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, regF xtmp1, regF xtmp2, rRegL rtmp, rFlagsReg cr) %{
+instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, vlRegF xtmp1, vlRegF xtmp2, rRegL rtmp, rFlagsReg cr) %{
   predicate(VM_Version::supports_gfni());
   match(Set dst (ReverseI src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
@@ -5830,7 +5661,7 @@ instruct bytes_reversebit_long(rRegL dst, rRegL src, rRegL rtmp1, rRegL rtmp2, r
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, regD xtmp1, regD xtmp2, rRegL rtmp, rFlagsReg cr) %{
+instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, vlRegD xtmp1, vlRegD xtmp2, rRegL rtmp, rFlagsReg cr) %{
   predicate(VM_Version::supports_gfni());
   match(Set dst (ReverseL src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
@@ -9878,7 +9709,7 @@ instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9929,7 +9760,7 @@ instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9982,7 +9813,7 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10003,7 +9834,7 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10023,7 +9854,7 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10044,7 +9875,7 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10065,7 +9896,7 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10085,7 +9916,7 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10105,6 +9936,7 @@ instruct convF2D_reg_reg(regD dst, regF src)
 
 instruct convF2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvF2D (LoadF src)));
 
   format %{ "cvtss2sd $dst, $src" %}
@@ -10127,6 +9959,7 @@ instruct convD2F_reg_reg(regF dst, regD src)
 
 instruct convD2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvD2F (LoadD src)));
 
   format %{ "cvtsd2ss $dst, $src" %}
@@ -10203,13 +10036,16 @@ instruct round_float_reg(rRegI dst, regF src, rRegL rtmp, rcx_RegL rcx, rFlagsRe
   ins_pipe(pipe_slow);
 %}
 
-instruct convI2F_reg_reg(regF dst, rRegI src)
+instruct convI2F_reg_reg(vlRegF dst, rRegI src)
 %{
   predicate(!UseXmmI2F);
   match(Set dst (ConvI2F src));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10217,6 +10053,7 @@ instruct convI2F_reg_reg(regF dst, rRegI src)
 
 instruct convI2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2F (LoadI src)));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
@@ -10226,13 +10063,16 @@ instruct convI2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convI2D_reg_reg(regD dst, rRegI src)
+instruct convI2D_reg_reg(vlRegD dst, rRegI src)
 %{
   predicate(!UseXmmI2D);
   match(Set dst (ConvI2D src));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10240,6 +10080,7 @@ instruct convI2D_reg_reg(regD dst, rRegI src)
 
 instruct convI2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2D (LoadI src)));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
@@ -10277,12 +10118,15 @@ instruct convXI2D_reg(regD dst, rRegI src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2F_reg_reg(regF dst, rRegL src)
+instruct convL2F_reg_reg(vlRegF dst, rRegL src)
 %{
   match(Set dst (ConvL2F src));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10290,6 +10134,7 @@ instruct convL2F_reg_reg(regF dst, rRegL src)
 
 instruct convL2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2F (LoadL src)));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
@@ -10299,12 +10144,15 @@ instruct convL2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2D_reg_reg(regD dst, rRegL src)
+instruct convL2D_reg_reg(vlRegD dst, rRegL src)
 %{
   match(Set dst (ConvL2D src));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10312,6 +10160,7 @@ instruct convL2D_reg_reg(regD dst, rRegL src)
 
 instruct convL2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2D (LoadL src)));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
@@ -10538,7 +10387,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 // Fast clearing of an array
-// Small ClearArray non-AVX512.
+// Small non-constant lenght ClearArray for non-AVX512 targets.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
@@ -10598,7 +10447,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 non-constant length.
+// Small non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
@@ -10659,7 +10508,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray non-AVX512.
+// Large non-constant length ClearArray for non-AVX512 targets.
 instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
@@ -10710,7 +10559,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray AVX512.
+// Large non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
@@ -10761,11 +10610,10 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 constant length.
+// Small constant length ClearArray for AVX512 targets.
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (MaxVectorSize >= 32) && VM_Version::supports_avx512vl());
   match(Set dummy (ClearArray cnt base));
   ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
@@ -12237,6 +12085,31 @@ instruct partialSubtypeCheck(rdi_RegP result,
   ins_pipe(pipe_slow);
 %}
 
+instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP super_con, rdi_RegP result,
+                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
+                                       rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+
+  ins_cost(700);  // smaller than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+
+  ins_encode %{
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
+                                       $temp3$$Register, $temp4$$Register, $result$$Register,
+                                       super_klass_slot);
+    } else {
+      __ call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
                                      rsi_RegP sub, rax_RegP super, rcx_RegI rcx,
                                      immP0 zero,
@@ -12404,7 +12277,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
 %}
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
@@ -12417,12 +12290,37 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object rax_reg));
+  effect(TEMP tmp, USE_KILL rax_reg);
+  ins_cost(300);
+  format %{ "fastunlock $object,$rax_reg\t! kills $rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -12571,6 +12469,8 @@ instruct Ret()
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
+// Don't use rbp for 'jump_target' because a MachEpilogNode has already been
+// emitted just above the TailCall which has reset rbp to the caller state.
 instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);

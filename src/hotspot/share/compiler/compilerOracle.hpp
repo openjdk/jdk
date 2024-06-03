@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/istream.hpp"
 
 class methodHandle;
 
@@ -101,7 +102,7 @@ NOT_PRODUCT(option(TestOptionDouble, "TestOptionDouble", Double)) \
   option(Option, "option", Unknown) \
   option(Unknown, "unknown", Unknown)
 
-enum class CompileCommand {
+enum class CompileCommandEnum : int {
   #define enum_of_options(option, name, ctype) option,
     COMPILECOMMAND_OPTIONS(enum_of_options)
   #undef enum_of_options
@@ -120,10 +121,17 @@ enum class MemStatAction {
 };
 
 class CompilerOracle : AllStatic {
+ public:
+  typedef bool parse_from_line_fn_t(char*);
+
  private:
   static bool _quiet;
   static void print_parse_error(char* error_msg, char* original_line);
-  static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
+  static void print_command(CompileCommandEnum option, const char* name, enum OptionType type);
+
+  // The core parser.
+  static bool parse_from_input(inputStream::Input* input,
+                               parse_from_line_fn_t* parse_from_line);
 
  public:
   // True if the command file has been specified or is implicit
@@ -165,32 +173,34 @@ class CompilerOracle : AllStatic {
   static void tag_blackhole_if_possible(const methodHandle& method);
 
   // A wrapper for checking bool options
-  static bool has_option(const methodHandle& method, enum CompileCommand option);
+  static bool has_option(const methodHandle& method, CompileCommandEnum option);
 
   // Check if method has option and value set. If yes, overwrite value and return true,
   // otherwise leave value unchanged and return false.
   template<typename T>
-  static bool has_option_value(const methodHandle& method, enum CompileCommand option, T& value);
+  static bool has_option_value(const methodHandle& method, CompileCommandEnum option, T& value);
 
   // This check is currently only needed by whitebox API
   template<typename T>
-  static bool option_matches_type(enum CompileCommand option, T& value);
+  static bool option_matches_type(CompileCommandEnum option, T& value);
 
   // Reads from string instead of file
-  static bool parse_from_string(const char* option_string, bool (*parser)(char*));
+  static bool parse_from_string(const char* option_string,
+                                parse_from_line_fn_t* parser);
   static bool parse_from_line(char* line);
+  static bool parse_from_line_quietly(char* line);
   static bool parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();
 
   // convert a string to a proper compilecommand option - used from whitebox.
-  // returns CompileCommand::Unknown on names not matching an option.
-  static enum CompileCommand string_to_option(const char* name);
+  // returns CompileCommandEnum::Unknown on names not matching an option.
+  static CompileCommandEnum string_to_option(const char* name);
 
   // convert a string to a proper compilecommand option
-  // returns CompileCommand::Unknown if name is not an option.
-  static enum CompileCommand parse_option_name(const char* name);
+  // returns CompileCommandEnum::Unknown if name is not an option.
+  static CompileCommandEnum parse_option_name(const char* name);
 
   // convert a string to a proper option type
   // returns OptionType::Unknown on strings not matching an option type.

@@ -28,9 +28,9 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -262,7 +262,7 @@ public:
   explicit RemSetSamplingClosure(G1CollectionSet* cset) :
     _cset(cset), _sampled_card_rs_length(0), _sampled_code_root_rs_length(0) {}
 
-  bool do_heap_region(HeapRegion* r) override {
+  bool do_heap_region(G1HeapRegion* r) override {
     HeapRegionRemSet* rem_set = r->rem_set();
     _sampled_card_rs_length += rem_set->occupied();
     _sampled_code_root_rs_length += rem_set->code_roots_list_length();
@@ -317,7 +317,7 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
       size_t used_bytes = _policy->estimate_used_young_bytes_locked();
       Heap_lock->unlock();
       adjust_young_list_target_length();
-      size_t young_bytes = _policy->young_list_target_length() * HeapRegion::GrainBytes;
+      size_t young_bytes = _policy->young_list_target_length() * G1HeapRegion::GrainBytes;
       size_t available_bytes = young_bytes - MIN2(young_bytes, used_bytes);
       adjust_threads_wanted(available_bytes);
       _needs_adjust = false;

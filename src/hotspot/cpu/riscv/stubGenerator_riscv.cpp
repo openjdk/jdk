@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -127,8 +124,9 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -34 [ argument word 1      ]
-  // -33 [ saved f27            ] <--- sp_after_call
+  // -35 [ argument word 1      ]
+  // -34 [ saved FRM in Floating-point Control and Status Register ] <--- sp_after_call
+  // -33 [ saved f27            ]
   // -32 [ saved f26            ]
   // -31 [ saved f25            ]
   // -30 [ saved f24            ]
@@ -165,8 +163,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -33,
+    sp_after_call_off  = -34,
 
+    frm_off            = sp_after_call_off,
     f27_off            = -33,
     f26_off            = -32,
     f25_off            = -31,
@@ -214,6 +213,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Address sp_after_call (fp, sp_after_call_off  * wordSize);
 
+    const Address frm_save      (fp, frm_off           * wordSize);
     const Address call_wrapper  (fp, call_wrapper_off   * wordSize);
     const Address result        (fp, result_off         * wordSize);
     const Address result_type   (fp, result_type_off    * wordSize);
@@ -295,6 +295,16 @@ class StubGenerator: public StubCodeGenerator {
     __ fsd(f25, f25_save);
     __ fsd(f26, f26_save);
     __ fsd(f27, f27_save);
+
+    __ frrm(t0);
+    __ sd(t0, frm_save);
+    // Set frm to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes.
+    Label skip_fsrmi;
+    guarantee(__ RoundingMode::rne == 0, "must be");
+    __ beqz(t0, skip_fsrmi);
+    __ fsrmi(__ RoundingMode::rne);
+    __ bind(skip_fsrmi);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -414,6 +424,14 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(x18, x18_save);
 
     __ ld(x9, x9_save);
+
+    // restore frm
+    Label skip_fsrm;
+    __ ld(t0, frm_save);
+    __ frrm(t1);
+    __ beq(t0, t1, skip_fsrm);
+    __ fsrm(t0);
+    __ bind(skip_fsrm);
 
     __ ld(c_rarg0, call_wrapper);
     __ ld(c_rarg1, result);
@@ -634,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ rt_call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -1115,9 +1133,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1191,9 +1209,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -2413,7 +2431,7 @@ class StubGenerator: public StubCodeGenerator {
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
@@ -2822,7 +2840,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen()
   {
@@ -2835,8 +2852,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = x12;
     const Register ylen  = x13;
     const Register z     = x14;
-    const Register zlen  = x15;
 
+    const Register tmp0  = x15;
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2847,7 +2864,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
@@ -2863,10 +2880,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = x10;
     const Register xlen  = x11;
     const Register z     = x12;
-    const Register zlen  = x13;
     const Register y     = x14; // == x
     const Register ylen  = x15; // == xlen
 
+    const Register tmp0  = x13; // zlen, unused
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2879,7 +2896,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ mv(y, x);
     __ mv(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave();
     __ ret();
 
@@ -3662,8 +3679,153 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // COMPILER2
 
+  address generate_cont_thaw(Continuation::thaw_kind kind) {
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    address start = __ pc();
+
+    if (return_barrier) {
+      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    if (return_barrier) {
+      // preserve possible return value from a method returning to the return barrier
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    __ mv(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    Label thaw_success;
+    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
+    __ bnez(t1, thaw_success);
+    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ jr(t0);
+    __ bind(thaw_success);
+
+    // make room for the thawed frames
+    __ sub(t0, sp, t1);
+    __ andi(sp, t0, -16); // align
+
+    if (return_barrier) {
+      // save original return value -- again
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries
+    __ mv(c_rarg1, kind);
+
+    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 is the sp of the yielding frame
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    } else {
+      __ mv(x10, zr); // return 0 (success) from doYield
+    }
+
+    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
+    __ mv(fp, t1);
+    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
+
+    if (return_barrier_exception) {
+      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
+      __ verify_oop(x10);
+      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
+
+      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
+
+      __ mv(x11, x10); // the exception handler
+      __ mv(x10, x9); // restore return value contaning the exception oop
+      __ verify_oop(x10);
+
+      __ leave();
+      __ mv(x13, ra);
+      __ jr(x11); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret();
+    }
+
+    return start;
+  }
+
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
+    address start = __ pc();
+    generate_cont_thaw(Continuation::thaw_top);
+    return start;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+
+    // TODO: will probably need multiple return barriers depending on return type
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    return start;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+#if COMPILER2_OR_JVMCI
+
 #undef __
 #define __ this->
+
   class Sha2Generator : public MacroAssembler {
     StubCodeGenerator* _cgen;
    public:
@@ -4044,261 +4206,9 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
   };
-#undef __
-#define __ masm->
-
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Since we need to preserve callee-saved values (currently
-  // only for C2, but done for C1 as well) we need a callee-saved oop
-  // map and therefore have to make these stubs into RuntimeStubs
-  // rather than BufferBlobs.  If the compiler needs all registers to
-  // be preserved between the fault point and the exception handler
-  // then it must assume responsibility for that in
-  // AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
-
-#undef __
-#define __ masm->
-
-  address generate_throw_exception(const char* name,
-                                   address runtime_entry,
-                                   Register arg1 = noreg,
-                                   Register arg2 = noreg) {
-    // Information about frame layout at time of blocking runtime call.
-    // Note that we only have to preserve callee-saved registers since
-    // the compilers are responsible for supplying a continuation point
-    // if they expect all registers to be preserved.
-    // n.b. riscv asserts that frame::arg_reg_save_area_bytes == 0
-    assert_cond(runtime_entry != nullptr);
-    enum layout {
-      fp_off = 0,
-      fp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    const int insts_size = 1024;
-    const int locs_size  = 64;
-
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    assert_cond(oop_maps != nullptr && masm != nullptr);
-
-    address start = __ pc();
-
-    // This is an inlined and slightly modified version of call_VM
-    // which has the ability to fetch the return PC out of
-    // thread-local storage and also sets up last_Java_sp slightly
-    // differently than the real call_VM
-
-    __ enter(); // Save FP and RA before call
-
-    assert(is_even(framesize / 2), "sp not 16-byte aligned");
-
-    // ra and fp are already in place
-    __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
-
-    int frame_complete = __ pc() - start;
-
-    // Set up last_Java_sp and last_Java_fp
-    address the_pc = __ pc();
-    __ set_last_Java_frame(sp, fp, the_pc, t0);
-
-    // Call runtime
-    if (arg1 != noreg) {
-      assert(arg2 != c_rarg1, "clobbered");
-      __ mv(c_rarg1, arg1);
-    }
-    if (arg2 != noreg) {
-      __ mv(c_rarg2, arg2);
-    }
-    __ mv(c_rarg0, xthread);
-    BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry);
-
-    // Generate oop map
-    OopMap* map = new OopMap(framesize, 0);
-    assert_cond(map != nullptr);
-
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    __ reset_last_Java_frame(true);
-
-    __ leave();
-
-    // check for pending exceptions
-#ifdef ASSERT
-    Label L;
-    __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
-    __ bnez(t0, L);
-    __ should_not_reach_here();
-    __ bind(L);
-#endif // ASSERT
-    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-    // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name,
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    assert(stub != nullptr, "create runtime stub fail!");
-    return stub->entry_point();
-  }
 
 #undef __
 #define __ _masm->
-
-  address generate_cont_thaw(Continuation::thaw_kind kind) {
-    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
-    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
-
-    address start = __ pc();
-
-    if (return_barrier) {
-      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
-    }
-
-#ifndef PRODUCT
-    {
-      Label OK;
-      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
-      __ beq(sp, t0, OK);
-      __ stop("incorrect sp");
-      __ bind(OK);
-    }
-#endif
-
-    if (return_barrier) {
-      // preserve possible return value from a method returning to the return barrier
-      __ sub(sp, sp, 2 * wordSize);
-      __ fsd(f10, Address(sp, 0 * wordSize));
-      __ sd(x10, Address(sp, 1 * wordSize));
-    }
-
-    __ mv(c_rarg1, (return_barrier ? 1 : 0));
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
-    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
-
-    if (return_barrier) {
-      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ld(x10, Address(sp, 1 * wordSize));
-      __ fld(f10, Address(sp, 0 * wordSize));
-      __ add(sp, sp, 2 * wordSize);
-    }
-
-#ifndef PRODUCT
-    {
-      Label OK;
-      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
-      __ beq(sp, t0, OK);
-      __ stop("incorrect sp");
-      __ bind(OK);
-    }
-#endif
-
-    Label thaw_success;
-    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
-    __ bnez(t1, thaw_success);
-    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
-    __ jr(t0);
-    __ bind(thaw_success);
-
-    // make room for the thawed frames
-    __ sub(t0, sp, t1);
-    __ andi(sp, t0, -16); // align
-
-    if (return_barrier) {
-      // save original return value -- again
-      __ sub(sp, sp, 2 * wordSize);
-      __ fsd(f10, Address(sp, 0 * wordSize));
-      __ sd(x10, Address(sp, 1 * wordSize));
-    }
-
-    // If we want, we can templatize thaw by kind, and have three different entries
-    __ mv(c_rarg1, kind);
-
-    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
-    __ mv(t1, x10); // x10 is the sp of the yielding frame
-
-    if (return_barrier) {
-      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ld(x10, Address(sp, 1 * wordSize));
-      __ fld(f10, Address(sp, 0 * wordSize));
-      __ add(sp, sp, 2 * wordSize);
-    } else {
-      __ mv(x10, zr); // return 0 (success) from doYield
-    }
-
-    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
-    __ mv(fp, t1);
-    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
-
-    if (return_barrier_exception) {
-      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
-      __ verify_oop(x10);
-      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
-
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
-
-      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
-
-      __ mv(x11, x10); // the exception handler
-      __ mv(x10, x9); // restore return value contaning the exception oop
-      __ verify_oop(x10);
-
-      __ leave();
-      __ mv(x13, ra);
-      __ jr(x11); // the exception handler
-    } else {
-      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-      __ leave();
-      __ ret();
-    }
-
-    return start;
-  }
-
-  address generate_cont_thaw() {
-    if (!Continuations::enabled()) return nullptr;
-
-    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
-    address start = __ pc();
-    generate_cont_thaw(Continuation::thaw_top);
-    return start;
-  }
-
-  address generate_cont_returnBarrier() {
-    if (!Continuations::enabled()) return nullptr;
-
-    // TODO: will probably need multiple return barriers depending on return type
-    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
-    address start = __ pc();
-
-    generate_cont_thaw(Continuation::thaw_return_barrier);
-
-    return start;
-  }
-
-  address generate_cont_returnBarrier_exception() {
-    if (!Continuations::enabled()) return nullptr;
-
-    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
-    address start = __ pc();
-
-    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
-
-    return start;
-  }
 
   // Set of L registers that correspond to a contiguous memory area.
   // Each 64-bit register typically corresponds to 2 32-bit integers.
@@ -4809,6 +4719,348 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+
+  // ------------------------ SHA-1 intrinsic ------------------------
+
+  // K't =
+  //    5a827999, 0  <= t <= 19
+  //    6ed9eba1, 20 <= t <= 39
+  //    8f1bbcdc, 40 <= t <= 59
+  //    ca62c1d6, 60 <= t <= 79
+  void sha1_prepare_k(Register cur_k, int round) {
+    assert(round >= 0 && round < 80, "must be");
+
+    static const int64_t ks[] = {0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6};
+    if ((round % 20) == 0) {
+      __ mv(cur_k, ks[round/20]);
+    }
+  }
+
+  // W't =
+  //    M't,                                      0 <=  t <= 15
+  //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+  void sha1_prepare_w(Register cur_w, Register ws[], Register buf, int round) {
+    assert(round >= 0 && round < 80, "must be");
+
+    if (round < 16) {
+      // in the first 16 rounds, in ws[], every register contains 2 W't, e.g.
+      //   in ws[0], high part contains W't-0, low part contains W't-1,
+      //   in ws[1], high part contains W't-2, low part contains W't-3,
+      //   ...
+      //   in ws[7], high part contains W't-14, low part contains W't-15.
+
+      if ((round % 2) == 0) {
+        __ ld(ws[round/2], Address(buf, (round/2) * 8));
+        // reverse bytes, as SHA-1 is defined in big-endian.
+        __ revb(ws[round/2], ws[round/2]);
+        __ srli(cur_w, ws[round/2], 32);
+      } else {
+        __ mv(cur_w, ws[round/2]);
+      }
+
+      return;
+    }
+
+    if ((round % 2) == 0) {
+      int idx = 16;
+      // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+      __ srli(t1, ws[(idx-8)/2], 32);
+      __ xorr(t0, ws[(idx-3)/2], t1);
+
+      __ srli(t1, ws[(idx-14)/2], 32);
+      __ srli(cur_w, ws[(idx-16)/2], 32);
+      __ xorr(cur_w, cur_w, t1);
+
+      __ xorr(cur_w, cur_w, t0);
+      __ rolw_imm(cur_w, cur_w, 1, t0);
+
+      // copy the cur_w value to ws[8].
+      // now, valid w't values are at:
+      //  w0:       ws[0]'s lower 32 bits
+      //  w1 ~ w14: ws[1] ~ ws[7]
+      //  w15:      ws[8]'s higher 32 bits
+      __ slli(ws[idx/2], cur_w, 32);
+
+      return;
+    }
+
+    int idx = 17;
+    // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+    __ srli(t1, ws[(idx-3)/2], 32);
+    __ xorr(t0, t1, ws[(idx-8)/2]);
+
+    __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
+
+    __ xorr(cur_w, cur_w, t0);
+    __ rolw_imm(cur_w, cur_w, 1, t0);
+
+    // copy the cur_w value to ws[8]
+    __ zero_extend(cur_w, cur_w, 32);
+    __ orr(ws[idx/2], ws[idx/2], cur_w);
+
+    // shift the w't registers, so they start from ws[0] again.
+    // now, valid w't values are at:
+    //  w0 ~ w15: ws[0] ~ ws[7]
+    Register ws_0 = ws[0];
+    for (int i = 0; i < 16/2; i++) {
+      ws[i] = ws[i+1];
+    }
+    ws[8] = ws_0;
+  }
+
+  // f't(x, y, z) =
+  //    Ch(x, y, z)     = (x & y) ^ (~x & z)            , 0  <= t <= 19
+  //    Parity(x, y, z) = x ^ y ^ z                     , 20 <= t <= 39
+  //    Maj(x, y, z)    = (x & y) ^ (x & z) ^ (y & z)   , 40 <= t <= 59
+  //    Parity(x, y, z) = x ^ y ^ z                     , 60 <= t <= 79
+  void sha1_f(Register dst, Register x, Register y, Register z, int round) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(dst, x, y, z, t0, t1);
+
+    if (round < 20) {
+      // (x & y) ^ (~x & z)
+      __ andr(t0, x, y);
+      __ andn(dst, z, x);
+      __ xorr(dst, dst, t0);
+    } else if (round >= 40 && round < 60) {
+      // (x & y) ^ (x & z) ^ (y & z)
+      __ andr(t0, x, y);
+      __ andr(t1, x, z);
+      __ andr(dst, y, z);
+      __ xorr(dst, dst, t0);
+      __ xorr(dst, dst, t1);
+    } else {
+      // x ^ y ^ z
+      __ xorr(dst, x, y);
+      __ xorr(dst, dst, z);
+    }
+  }
+
+  // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+  // e = d
+  // d = c
+  // c = ROTL'30(b)
+  // b = a
+  // a = T
+  void sha1_process_round(Register a, Register b, Register c, Register d, Register e,
+                          Register cur_k, Register cur_w, Register tmp, int round) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp, t0);
+
+    // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+
+    // cur_w will be recalculated at the beginning of each round,
+    // so, we can reuse it as a temp register here.
+    Register tmp2 = cur_w;
+
+    // reuse e as a temporary register, as we will mv new value into it later
+    Register tmp3 = e;
+    __ add(tmp2, cur_k, tmp2);
+    __ add(tmp3, tmp3, tmp2);
+    __ rolw_imm(tmp2, a, 5, t0);
+
+    sha1_f(tmp, b, c, d, round);
+
+    __ add(tmp2, tmp2, tmp);
+    __ add(tmp2, tmp2, tmp3);
+
+    // e = d
+    // d = c
+    // c = ROTL'30(b)
+    // b = a
+    // a = T
+    __ mv(e, d);
+    __ mv(d, c);
+
+    __ rolw_imm(c, b, 30);
+    __ mv(b, a);
+    __ mv(a, tmp2);
+  }
+
+  // H(i)0 = a + H(i-1)0
+  // H(i)1 = b + H(i-1)1
+  // H(i)2 = c + H(i-1)2
+  // H(i)3 = d + H(i-1)3
+  // H(i)4 = e + H(i-1)4
+  void sha1_calculate_im_hash(Register a, Register b, Register c, Register d, Register e,
+                              Register prev_ab, Register prev_cd, Register prev_e) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    __ add(a, a, prev_ab);
+    __ srli(prev_ab, prev_ab, 32);
+    __ add(b, b, prev_ab);
+
+    __ add(c, c, prev_cd);
+    __ srli(prev_cd, prev_cd, 32);
+    __ add(d, d, prev_cd);
+
+    __ add(e, e, prev_e);
+  }
+
+  void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
+                                Register prev_ab, Register prev_cd, Register prev_e) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0);
+
+    __ slli(t0, b, 32);
+    __ zero_extend(prev_ab, a, 32);
+    __ orr(prev_ab, prev_ab, t0);
+
+    __ slli(t0, d, 32);
+    __ zero_extend(prev_cd, c, 32);
+    __ orr(prev_cd, prev_cd, t0);
+
+    __ mv(prev_e, e);
+  }
+
+  // Intrinsic for:
+  //   void sun.security.provider.SHA.implCompress0(byte[] buf, int ofs)
+  //   void sun.security.provider.DigestBase.implCompressMultiBlock0(byte[] b, int ofs, int limit)
+  //
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0: byte[]  src array + offset
+  //   c_rarg1: int[]   SHA.state
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
+  //   c_rarg2: int     offset
+  //   c_rarg3: int     limit
+  //
+  // Outputs:
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
+  //   c_rarg0: int offset, when (multi_block == true)
+  //
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    address start = __ pc();
+    __ enter();
+
+    RegSet saved_regs = RegSet::range(x18, x27);
+    if (multi_block) {
+      // use x9 as src below.
+      saved_regs += RegSet::of(x9);
+    }
+    __ push_reg(saved_regs, sp);
+
+    // c_rarg0 - c_rarg3: x10 - x13
+    Register buf    = c_rarg0;
+    Register state  = c_rarg1;
+    Register offset = c_rarg2;
+    Register limit  = c_rarg3;
+    // use src to contain the original start point of the array.
+    Register src    = x9;
+
+    if (multi_block) {
+      __ sub(limit, limit, offset);
+      __ add(limit, limit, buf);
+      __ sub(src, buf, offset);
+    }
+
+    // [args-reg]:  x14 - x17
+    // [temp-reg]:  x28 - x31
+    // [saved-reg]: x18 - x27
+
+    // h0/1/2/3/4
+    const Register a = x14, b = x15, c = x16, d = x17, e = x28;
+    // w0, w1, ... w15
+    // put two adjecent w's in one register:
+    //    one at high word part, another at low word part
+    // at different round (even or odd), w't value reside in different items in ws[].
+    // w0 ~ w15, either reside in
+    //    ws[0] ~ ws[7], where
+    //      w0 at higher 32 bits of ws[0],
+    //      w1 at lower 32 bits of ws[0],
+    //      ...
+    //      w14 at higher 32 bits of ws[7],
+    //      w15 at lower 32 bits of ws[7].
+    // or, reside in
+    //    w0:       ws[0]'s lower 32 bits
+    //    w1 ~ w14: ws[1] ~ ws[7]
+    //    w15:      ws[8]'s higher 32 bits
+    Register ws[9] = {x29, x30, x31, x18,
+                      x19, x20, x21, x22,
+                      x23}; // auxiliary register for calculating w's value
+    // current k't's value
+    const Register cur_k = x24;
+    // current w't's value
+    const Register cur_w = x25;
+    // values of a, b, c, d, e in the previous round
+    const Register prev_ab = x26, prev_cd = x27;
+    const Register prev_e = offset; // reuse offset/c_rarg2
+
+    // load 5 words state into a, b, c, d, e.
+    //
+    // To minimize the number of memory operations, we apply following
+    // optimization: read the states (a/b/c/d) of 4-byte values in pairs,
+    // with a single ld, and split them into 2 registers.
+    //
+    // And, as the core algorithm of SHA-1 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in a/b/c/d/e. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in a/c/e, rather than set the higher
+    // 32-bits of a/c/e to zero explicitly with extra instructions.
+    __ ld(a, Address(state, 0));
+    __ srli(b, a, 32);
+    __ ld(c, Address(state, 8));
+    __ srli(d, c, 32);
+    __ lw(e, Address(state, 16));
+
+    Label L_sha1_loop;
+    if (multi_block) {
+      __ BIND(L_sha1_loop);
+    }
+
+    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    for (int round = 0; round < 80; round++) {
+      // prepare K't value
+      sha1_prepare_k(cur_k, round);
+
+      // prepare W't value
+      sha1_prepare_w(cur_w, ws, buf, round);
+
+      // one round process
+      sha1_process_round(a, b, c, d, e, cur_k, cur_w, t2, round);
+    }
+
+    // compute the intermediate hash value
+    sha1_calculate_im_hash(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    if (multi_block) {
+      int64_t block_bytes = 16 * 4;
+      __ addi(buf, buf, block_bytes);
+
+      __ bge(limit, buf, L_sha1_loop, true);
+    }
+
+    // store back the state.
+    __ zero_extend(a, a, 32);
+    __ slli(b, b, 32);
+    __ orr(a, a, b);
+    __ sd(a, Address(state, 0));
+    __ zero_extend(c, c, 32);
+    __ slli(d, d, 32);
+    __ orr(c, c, d);
+    __ sd(c, Address(state, 8));
+    __ sw(e, Address(state, 16));
+
+    // return offset
+    if (multi_block) {
+      __ sub(c_rarg0, buf, src);
+    }
+
+    __ pop_reg(saved_regs, sp);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+#endif // COMPILER2_OR_JVMCI
+
 #ifdef COMPILER2
 
 static const int64_t right_2_bits = right_n_bits(2);
@@ -5122,6 +5374,114 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // Continuation point for throwing of implicit exceptions that are
+  // not handled in the current activation. Fabricates an exception
+  // oop and initiates normal exception dispatching in this
+  // frame. Since we need to preserve callee-saved values (currently
+  // only for C2, but done for C1 as well) we need a callee-saved oop
+  // map and therefore have to make these stubs into RuntimeStubs
+  // rather than BufferBlobs.  If the compiler needs all registers to
+  // be preserved between the fault point and the exception handler
+  // then it must assume responsibility for that in
+  // AbstractCompiler::continuation_for_implicit_null_exception or
+  // continuation_for_implicit_division_by_zero_exception. All other
+  // implicit exceptions (e.g., NullPointerException or
+  // AbstractMethodError on entry) are either at call sites or
+  // otherwise assume that stack unwinding will be initiated, so
+  // caller saved registers were assumed volatile in the compiler.
+
+#undef __
+#define __ masm->
+
+  address generate_throw_exception(const char* name,
+                                   address runtime_entry,
+                                   Register arg1 = noreg,
+                                   Register arg2 = noreg) {
+    // Information about frame layout at time of blocking runtime call.
+    // Note that we only have to preserve callee-saved registers since
+    // the compilers are responsible for supplying a continuation point
+    // if they expect all registers to be preserved.
+    // n.b. riscv asserts that frame::arg_reg_save_area_bytes == 0
+    assert_cond(runtime_entry != nullptr);
+    enum layout {
+      fp_off = 0,
+      fp_off2,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    const int insts_size = 1024;
+    const int locs_size  = 64;
+
+    CodeBuffer code(name, insts_size, locs_size);
+    OopMapSet* oop_maps  = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    assert_cond(oop_maps != nullptr && masm != nullptr);
+
+    address start = __ pc();
+
+    // This is an inlined and slightly modified version of call_VM
+    // which has the ability to fetch the return PC out of
+    // thread-local storage and also sets up last_Java_sp slightly
+    // differently than the real call_VM
+
+    __ enter(); // Save FP and RA before call
+
+    assert(is_even(framesize / 2), "sp not 16-byte aligned");
+
+    // ra and fp are already in place
+    __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
+
+    int frame_complete = __ pc() - start;
+
+    // Set up last_Java_sp and last_Java_fp
+    address the_pc = __ pc();
+    __ set_last_Java_frame(sp, fp, the_pc, t0);
+
+    // Call runtime
+    if (arg1 != noreg) {
+      assert(arg2 != c_rarg1, "clobbered");
+      __ mv(c_rarg1, arg1);
+    }
+    if (arg2 != noreg) {
+      __ mv(c_rarg2, arg2);
+    }
+    __ mv(c_rarg0, xthread);
+    BLOCK_COMMENT("call runtime_entry");
+    __ rt_call(runtime_entry);
+
+    // Generate oop map
+    OopMap* map = new OopMap(framesize, 0);
+    assert_cond(map != nullptr);
+
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    __ reset_last_Java_frame(true);
+
+    __ leave();
+
+    // check for pending exceptions
+#ifdef ASSERT
+    Label L;
+    __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
+    __ bnez(t0, L);
+    __ should_not_reach_here();
+    __ bind(L);
+#endif // ASSERT
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+    // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(name,
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    assert(stub != nullptr, "create runtime stub fail!");
+    return stub->entry_point();
+  }
+
 #undef __
 
   // Initialization
@@ -5136,8 +5496,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =
@@ -5271,6 +5631,11 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block();
+    }
+
+    if (UseSHA1Intrinsics) {
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
     }
 
 #endif // COMPILER2_OR_JVMCI

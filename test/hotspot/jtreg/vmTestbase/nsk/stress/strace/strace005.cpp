@@ -22,8 +22,8 @@
  */
 
 #include <stdio.h>
-#include "nsk_strace.h"
-#include "nsk_tools.h"
+#include "nsk_strace.hpp"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

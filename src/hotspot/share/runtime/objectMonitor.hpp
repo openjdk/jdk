@@ -175,7 +175,6 @@ private:
   JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
   JavaThread* volatile _Responsible;
 
-  volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
   int _contentions;                 // Number of active contentions in enter(). It is used by is_busy()
@@ -295,6 +294,7 @@ private:
   int       contentions() const;
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
+  void      set_recursions(size_t recursions);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
@@ -353,8 +353,14 @@ private:
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  int       TryLock(JavaThread* current);
-  int       TrySpin(JavaThread* current);
+
+
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  TryLockResult  TryLock(JavaThread* current);
+
+  bool      TrySpin(JavaThread* current);
+  bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support

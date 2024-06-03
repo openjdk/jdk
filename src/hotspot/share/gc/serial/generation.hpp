@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -41,7 +43,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (mark-compact)
 //
 // The system configuration currently allowed is:
 //
@@ -51,9 +53,7 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-
 class OopClosure;
-class GCStats;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -72,9 +72,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
-
-  // Statistics for garbage collection
-  GCStats* _gc_stats;
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
@@ -102,34 +99,12 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
-  // The largest number of contiguous free bytes in this or any higher generation.
-  virtual size_t max_contiguous_available() const;
-
-  // Returns true if this generation cannot be expanded further
-  // without a GC. Override as appropriate.
-  virtual bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
 
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
-  }
-
-  // Returns "true" iff this generation should be used to allocate an
-  // object of the given size.  Young generations might
-  // wish to exclude very large objects, for example, since, if allocated
-  // often, they would greatly increase the frequency of young-gen
-  // collection.
-  virtual bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab || supports_tlab_allocation()) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
   }
 
   // Allocate and returns a block of the requested size, or returns "null".
@@ -142,58 +117,12 @@ class Generation: public CHeapObj<mtGC> {
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
 
-  // "obj" is the address of an object in a younger generation.  Allocate space
-  // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or null if
-  // the allocation failed).
-  //
-  // The "obj_size" argument is just obj->size(), passed along so the caller can
-  // avoid repeating the virtual call to retrieve it.
-  virtual oop promote(oop obj, size_t obj_size);
-
-  // Returns "true" iff collect() should subsequently be called on this
-  // this generation. See comment below.
-  // This is a generic implementation which can be overridden.
-  //
-  // Note: in the current (1.4) implementation, when serialHeap's
-  // incremental_collection_will_fail flag is set, all allocations are
-  // slow path (the only fast-path place to allocate is DefNew, which
-  // will be full if the flag is set).
-  // Thus, older generations which collect younger generations should
-  // test this flag and collect if it is set.
-  virtual bool should_collect(bool   full,
-                              size_t word_size,
-                              bool   is_tlab) {
-    return (full || should_allocate(word_size, is_tlab));
-  }
-
-  // Perform a garbage collection.
-  // If full is true attempt a full garbage collection of this generation.
-  // Otherwise, attempting to (at least) free enough space to support an
-  // allocation of the given "word_size".
-  virtual void collect(bool   full,
-                       bool   clear_all_soft_refs,
-                       size_t word_size,
-                       bool   is_tlab) = 0;
-
   // Perform a heap collection, attempting to create (at least) enough
   // space to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the resulting
   // "oop" (initializing the allocated block). If the allocation is
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {}
-
-  // Generations may keep statistics about collection. This method
-  // updates those statistics. current_generation is the generation
-  // that was most recently collected. This allows the generation to
-  // decide what statistics are valid to collect. For example, the
-  // generation can decide to gather the amount of promoted data if
-  // the collection of the young generation has completed.
-  GCStats* gc_stats() const { return _gc_stats; }
-  virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
   // Printing
   virtual const char* name() const = 0;
@@ -204,20 +133,7 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual void verify() = 0;
 
-  struct StatRecord {
-    int invocations;
-    elapsedTimer accumulated_time;
-    StatRecord() :
-      invocations(0),
-      accumulated_time(elapsedTimer()) {}
-  };
-private:
-  StatRecord _stat_record;
 public:
-  StatRecord* stat_record() { return &_stat_record; }
-
-  virtual void print_summary_info_on(outputStream* st);
-
   // Performance Counter support
   virtual void update_counters() = 0;
   virtual CollectorCounters* counters() { return _gc_counters; }
@@ -230,7 +146,6 @@ public:
   void set_gc_manager(GCMemoryManager* gc_manager) {
     _gc_manager = gc_manager;
   }
-
 };
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

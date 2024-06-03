@@ -52,6 +52,7 @@ class OSContainer: AllStatic {
 
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
+  static jlong memory_and_swap_usage_in_bytes();
   static jlong memory_soft_limit_in_bytes();
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();

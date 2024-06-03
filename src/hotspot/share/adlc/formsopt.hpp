@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------RegDef-----------------------------------------
@@ -199,6 +200,7 @@ public:
 
   void dump();                  // Debug printer
   void output(FILE *fp);        // Write info to output files
+  virtual void forms_do(FormClosure* f);
 
   virtual bool has_stack_version() {
     return _stack_or_reg;
@@ -305,6 +307,11 @@ public:
   char* condition_code() {
     return _condition_code;
   }
+
+  virtual void forms_do(FormClosure* f) {
+    if (_rclasses[0]) f->do_form(_rclasses[0]);
+    if (_rclasses[1]) f->do_form(_rclasses[1]);
+  }
 };
 
 //------------------------------AllocClass-------------------------------------
@@ -325,6 +332,7 @@ public:
 
   void dump();                  // Debug printer
   void output(FILE *fp);        // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 
@@ -568,6 +576,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 class PeepPredicate : public Form {

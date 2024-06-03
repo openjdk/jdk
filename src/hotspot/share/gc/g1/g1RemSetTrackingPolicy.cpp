@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
+bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(G1HeapRegion* r) const {
   // All non-free and non-young regions need to be scanned for references;
   // At every gc we gather references to other regions in young.
   // Free regions trivially do not need scanning because they do not contain live
@@ -37,7 +38,7 @@ bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
   return !(r->is_young() || r->is_free());
 }
 
-void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),
         "Region %u with unexpected heap region type %s", r->hrm_index(), r->get_type_str());
   if (r->is_old()) {
@@ -50,80 +51,49 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
   r->rem_set()->set_state_complete();
 }
 
-void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_at_free(G1HeapRegion* r) {
   /* nothing to do */
 }
 
-static void print_before_rebuild(HeapRegion* r, bool selected_for_rebuild, size_t total_live_bytes, size_t live_bytes) {
-  log_trace(gc, remset, tracking)("Before rebuild region %u "
-                                  "(tams: " PTR_FORMAT ") "
-                                  "total_live_bytes %zu "
-                                  "selected %s "
-                                  "(live_bytes %zu "
-                                  "type %s)",
-                                  r->hrm_index(),
-                                  p2i(r->top_at_mark_start()),
-                                  total_live_bytes,
-                                  BOOL_TO_STR(selected_for_rebuild),
-                                  live_bytes,
-                                  r->get_type_str());
-}
-
-bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r, bool is_live) {
+bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(r->is_humongous(), "Region %u should be humongous", r->hrm_index());
+  assert(r->is_starts_humongous(), "Region %u should be Humongous", r->hrm_index());
 
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
   bool selected_for_rebuild = false;
-  // For humongous regions, to be of interest for rebuilding the remembered set the following must apply:
-  // - We always try to update the remembered sets of humongous regions containing
-  // type arrays as they might have been reset after full gc.
-  if (is_live && cast_to_oop(r->humongous_start_region()->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
-    r->rem_set()->set_state_updating();
+  // Humongous regions containing type-array objs are remset-tracked to
+  // support eager-reclaim. However, their remset state can be reset after
+  // Full-GC. Try to re-enable remset-tracking for them if possible.
+  if (cast_to_oop(r->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
+    auto on_humongous_region = [] (G1HeapRegion* r) {
+      r->rem_set()->set_state_updating();
+    };
+    G1CollectedHeap::heap()->humongous_obj_regions_iterate(r, on_humongous_region);
     selected_for_rebuild = true;
   }
-
-  size_t const live_bytes = is_live ? HeapRegion::GrainBytes : 0;
-  print_before_rebuild(r, selected_for_rebuild, live_bytes, live_bytes);
 
   return selected_for_rebuild;
 }
 
-bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_bytes_below_tams) {
+bool G1RemSetTrackingPolicy::update_old_before_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(!r->is_humongous(), "Region %u is humongous", r->hrm_index());
-
-  // Only consider updating the remembered set for old gen regions.
-  if (!r->is_old()) {
-    return false;
-  }
+  assert(r->is_old(), "Region %u should be Old", r->hrm_index());
 
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
-  size_t live_bytes_above_tams = pointer_delta(r->top(), r->top_at_mark_start()) * HeapWordSize;
-  size_t total_live_bytes = live_bytes_below_tams + live_bytes_above_tams;
-
   bool selected_for_rebuild = false;
-  // For old regions, to be of interest for rebuilding the remembered set the following must apply:
-  // - They must contain some live data in them.
-  // - Only need to rebuild non-complete remembered sets.
-  // - Otherwise only add those old gen regions which occupancy is low enough that there
-  // is a chance that we will ever evacuate them in the mixed gcs.
-  if ((total_live_bytes > 0) &&
-      G1CollectionSetChooser::region_occupancy_low_enough_for_evac(total_live_bytes) &&
+
+  if (G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
       !r->rem_set()->is_tracked()) {
-
     r->rem_set()->set_state_updating();
     selected_for_rebuild = true;
   }
 
-  print_before_rebuild(r, selected_for_rebuild, total_live_bytes, live_bytes_below_tams);
-
   return selected_for_rebuild;
 }
 
-void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
 
   if (r->is_old_or_humongous()) {
@@ -137,7 +107,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
       g1h->humongous_obj_regions_iterate(r,
-                                         [&] (HeapRegion* r) {
+                                         [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
                                            r->rem_set()->clear(true /* only_cardset */);
@@ -150,7 +120,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     "remset occ %zu "
                                     "size %zu)",
                                     r->hrm_index(),
-                                    p2i(r->top_at_mark_start()),
+                                    p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());

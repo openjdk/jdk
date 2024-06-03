@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,13 @@ hotspot_runtime = \
 hotspot_runtime_no_cds = \
   runtime \
   -runtime/cds
+
+hotspot_runtime_non_cds_mode = \
+  runtime \
+  -runtime/cds/CheckSharingWithDefaultArchive.java \
+  -runtime/cds/appcds/dynamicArchive/DynamicSharedSymbols.java \
+  -runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchive.java \
+  -runtime/cds/appcds/jcmd
 
 hotspot_handshake = \
   runtime/handshake
@@ -142,6 +149,7 @@ serviceability_ttf_virtual = \
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
+  gtest/LockStackGtests.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
@@ -414,7 +422,8 @@ tier1_runtime = \
  -runtime/Unsafe/RangeCheck.java \
   sanity/ \
  -:tier1_runtime_appcds_exclude \
- -runtime/signal
+ -runtime/signal \
+ -runtime/stack
 
 hotspot_cds = \
   runtime/cds/ \
