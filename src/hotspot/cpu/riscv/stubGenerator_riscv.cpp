@@ -5065,10 +5065,11 @@ static const uint64_t right_16_bits = right_n_bits(16);
     //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
     //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
 
+    __ mv(count, 64);
     // Load data
     __ vsetvli(temp0, count, Assembler::e8, Assembler::m4);
     __ vle8_v(vbytes[0], buff);
-    __ add(buff, buff, temp0);
+    __ addi(buff, buff, 64);
 
     // Reduction sum for s1_new
     // 0xFF * 64 = 0xFF0, so:
@@ -5283,7 +5284,6 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
-    __ mv(step, 64);
 
   // Align L_nmax loop by 64
   __ bind(L_nmax_loop_entry);
