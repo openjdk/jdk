@@ -271,8 +271,8 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
        (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
 
-      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib, $BINUTILS_INSTALL_DIR/lib32 or $BINUTILS_INSTALL_DIR/lib64
-      # depending on system setup
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib, $BINUTILS_INSTALL_DIR/lib32
+      # or $BINUTILS_INSTALL_DIR/lib64, depending on system setup
       LIBIBERTY_LIB=""
       if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
         LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
