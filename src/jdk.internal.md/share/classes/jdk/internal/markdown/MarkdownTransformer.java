@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTreeVisitor;
-import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
@@ -61,8 +60,6 @@ import jdk.internal.org.commonmark.parser.Parser;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
 
 import static com.sun.tools.javac.util.Position.NOPOS;
-import java.util.regex.Matcher;
-import jdk.internal.org.commonmark.internal.util.Escaping;
 
 /**
  * A class to transform a {@code DocTree} node into a similar one with

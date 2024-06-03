@@ -296,128 +296,147 @@ public class JavadocHelperTest {
     }
 
     public void testMarkdown() throws Exception {
-        doTestJavadoc("/// Prefix {@inheritDoc} suffix.\n" +
-                      "///\n" +
-                      "/// *Another* __paragraph__.\n" +
-                      "///\n" +
-                      "/// Paragraph \uFFFC with \uFFFC replacement \uFFFC character.\n" +
-                      "///\n" +
-                      "/// @param p1 prefix {@inheritDoc} suffix\n" +
-                      "/// @param p2 prefix {@inheritDoc} suffix\n" +
-                      "/// @param p3 prefix {@inheritDoc} suffix\n" +
-                      "/// @throws IllegalStateException prefix {@inheritDoc} suffix\n" +
-                      "/// @throws IllegalArgumentException prefix {@inheritDoc} suffix\n" +
-                      "/// @throws IllegalAccessException prefix {@inheritDoc} suffix\n" +
-                      "/// @return prefix {@inheritDoc} suffix\n",
+        doTestJavadoc("""
+                      /// Prefix {@inheritDoc} suffix.
+                      ///
+                      /// *Another* __paragraph__.
+                      ///
+                      /// Paragraph \ufffc with \ufffc replacement \ufffc character.
+                      ///
+                      /// @param p1 prefix {@inheritDoc} suffix
+                      /// @param p2 prefix {@inheritDoc} suffix
+                      /// @param p3 prefix {@inheritDoc} suffix
+                      /// @throws IllegalStateException prefix {@inheritDoc} suffix
+                      /// @throws IllegalArgumentException prefix {@inheritDoc} suffix
+                      /// @throws IllegalAccessException prefix {@inheritDoc} suffix
+                      /// @return prefix {@inheritDoc} suffix
+                      """,
                       getSubTest,
-                      "Prefix javadoc1 suffix.\n" +
-                      "\n" +
-                      "<p><em>Another</em> <strong>paragraph</strong>.\n" +
-                      "\n" +
-                      "<p>Paragraph \ufffc with \ufffc replacement \ufffc character.\n" +
-                      "\n" +
-                      "@param p1 prefix param1 suffix\n" +
-                      "@param p2 prefix param2 suffix\n" +
-                      "@param p3 prefix param3 suffix\n" +
-                      "@throws IllegalStateException prefix exc1 suffix\n" +
-                      "@throws IllegalArgumentException prefix exc2 suffix\n" +
-                      "@throws IllegalAccessException prefix exc3 suffix\n" +
-                      "@return prefix value suffix");
+                      """
+                      Prefix javadoc1 suffix.
+
+                      <p><em>Another</em> <strong>paragraph</strong>.
+
+                      <p>Paragraph \ufffc with \ufffc replacement \ufffc character.
+
+                      @param p1 prefix param1 suffix
+                      @param p2 prefix param2 suffix
+                      @param p3 prefix param3 suffix
+                      @throws IllegalStateException prefix exc1 suffix
+                      @throws IllegalArgumentException prefix exc2 suffix
+                      @throws IllegalAccessException prefix exc3 suffix
+                      @return prefix value suffix""");
     }
 
     public void testMarkdown2() throws Exception {
-        doTestJavadoc("/// {@inheritDoc}\n" +
-                      "///\n" +
-                      "/// *Another* __paragraph__. [java.lang.Object]\n" +
-                      "///\n" +
-                      "/// @since snc\n",
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
                       getSubTest,
-                      "javadoc1\n" +
-                      "\n" +
-                      "<p><em>Another</em> <strong>paragraph</strong>. {@link java.lang.Object}\n" +
-                      "\n" +
-                      "@param p1 param1\n" +
-                      "@param p2 param2\n" +
-                      "@param p3 param3\n" +
-                      "@throws java.lang.IllegalStateException exc1\n" +
-                      "@throws java.lang.IllegalArgumentException exc2\n" +
-                      "@throws java.lang.IllegalAccessException exc3\n" +
-                      "@return value\n" +
-                      "@since snc");
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@link java.lang.Object}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
     }
 
     public void testMarkdown3() throws Exception {
-        doTestJavadoc("/// {@inheritDoc}\n" +
-                      "///\n" +
-                      "/// *Another* __paragraph__.\n",
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__.
+                      """,
                       getSubTest,
-                      "javadoc1\n" +
-                      "\n" +
-                      "<p><em>Another</em> <strong>paragraph</strong>." + //the formatting could be improved
-                      "@param p1 param1\n" +
-                      "@param p2 param2\n" +
-                      "@param p3 param3\n" +
-                      "@throws java.lang.IllegalStateException exc1\n" +
-                      "@throws java.lang.IllegalArgumentException exc2\n" +
-                      "@throws java.lang.IllegalAccessException exc3\n" +
-                      "@return value\n");
+                      //the formatting could be improved:
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>.@param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      """);
     }
 
     public void testMarkdown4() throws Exception {
-        doTestJavadoc("/// {@inheritDoc}\n" +
-                      "///\n" +
-                      "/// *Another* __paragraph__. [test][java.lang.Object]\n" +
-                      "///\n" +
-                      "/// @since snc\n",
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [test][java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
                       getSubTest,
-                      "javadoc1\n" +
-                      "\n" +
-                      "<p><em>Another</em> <strong>paragraph</strong>. {@linkplain java.lang.Object test}\n" +
-                      "\n" +
-                      "@param p1 param1\n" +
-                      "@param p2 param2\n" +
-                      "@param p3 param3\n" +
-                      "@throws java.lang.IllegalStateException exc1\n" +
-                      "@throws java.lang.IllegalArgumentException exc2\n" +
-                      "@throws java.lang.IllegalAccessException exc3\n" +
-                      "@return value\n" +
-                      "@since snc");
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@linkplain java.lang.Object test}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
     }
 
     public void testMarkdown5() throws Exception {
-        doTestJavadoc("///[define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]\n" +
-                      "///\n" +
-                      "/// @since snc\n",
+        doTestJavadoc("""
+                      ///[define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///
+                      /// @since snc
+                      """,
                       getSubTest,
-                      "{@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}\n" +
-                      "\n" +
-                      "@param p1 param1\n" +
-                      "@param p2 param2\n" +
-                      "@param p3 param3\n" +
-                      "@throws java.lang.IllegalStateException exc1\n" +
-                      "@throws java.lang.IllegalArgumentException exc2\n" +
-                      "@throws java.lang.IllegalAccessException exc3\n" +
-                      "@return value\n" +
-                      " @since snc");
+                      """
+                      {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
     }
 
     public void testMarkdown6() throws Exception {
-        doTestJavadoc("///Text1 [define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]\n" +
-                      "///text2\n" +
-                      "///\n" +
-                      "/// @since snc\n",
+        doTestJavadoc("""
+                      ///Text1 [define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///text2
+                      ///
+                      /// @since snc
+                      """,
                       getSubTest,
-                      "Text1 {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}\n" +
-                      "text2\n" +
-                      "\n" +
-                      "@param p1 param1\n" +
-                      "@param p2 param2\n" +
-                      "@param p3 param3\n" +
-                      "@throws java.lang.IllegalStateException exc1\n" +
-                      "@throws java.lang.IllegalArgumentException exc2\n" +
-                      "@throws java.lang.IllegalAccessException exc3\n" +
-                      "@return value\n" +
-                      " @since snc");
+                      """
+                      Text1 {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+                      text2
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
     }
 
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {

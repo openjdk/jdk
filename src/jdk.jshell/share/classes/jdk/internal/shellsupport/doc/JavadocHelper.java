@@ -43,8 +43,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -94,8 +96,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
-import java.util.regex.Pattern;
-import java.util.stream.StreamSupport;
+
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
 import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.parser.IncludeSourceSpans;
@@ -515,7 +516,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 @Override
                 public Void visitLink(LinkTree node, Void p) {
                     if (sp.isRewrittenTree(null, dcTree, node)) {
-                        //this links is a synthetic rewritten link, replace
+                        //this link is a synthetic rewritten link, replace
                         //the original span with the new link:
                         int start = (int) sp.getStartPosition(null, dcTree, node);
                         int end   = (int) sp.getEndPosition(null, dcTree, node);
