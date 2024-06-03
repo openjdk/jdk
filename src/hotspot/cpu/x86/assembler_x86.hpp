@@ -1019,6 +1019,15 @@ private:
 
   void pusha_uncached();
   void popa_uncached();
+
+  // APX ISA extensions for register save/restore optimizations.
+  void push2(Register src1, Register src2, bool with_ppx = false);
+  void pop2(Register src1, Register src2, bool with_ppx = false);
+  void push2p(Register src1, Register src2);
+  void pop2p(Register src1, Register src2);
+  void pushp(Register src);
+  void popp(Register src);
+
 #endif
   void vzeroupper_uncached();
   void decq(Register dst);
@@ -3072,7 +3081,6 @@ public:
   }
 
   void set_extended_context(void) { _is_extended_context = true; }
-
 };
 
 #endif // CPU_X86_ASSEMBLER_X86_HPP

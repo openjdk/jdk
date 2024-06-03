@@ -5894,6 +5894,58 @@ void Assembler::evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, 
   emit_int16(0x6D, (0xC0 | encode));
 }
 
+void Assembler::push2(Register src1, Register src2, bool with_ppx) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  /* EVEX.BASE */
+  int src_enc = src1->encoding();
+  /* EVEX.VVVV */
+  int nds_enc = src2->encoding();
+
+  bool vex_b = (src_enc & 8) == 8;
+  bool evex_v = (nds_enc >= 16);
+  bool evex_b = (src_enc >= 16);
+
+  // EVEX.ND = 1;
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  set_attributes(&attributes);
+
+  evex_prefix(0, vex_b, 0, 0, evex_b, evex_v, false /*eevex_x*/, nds_enc, VEX_SIMD_NONE, /* map4 */ VEX_OPCODE_0F_3C);
+  emit_int16(0xFF, (0xC0 | (0x6 << 3) | (src_enc & 7)));
+}
+
+void Assembler::pop2(Register src1, Register src2, bool with_ppx) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  /* EVEX.BASE */
+  int src_enc = src1->encoding();
+  /* EVEX.VVVV */
+  int nds_enc = src2->encoding();
+
+  bool vex_b = (src_enc & 8) == 8;
+  bool evex_v = (nds_enc >= 16);
+  bool evex_b = (src_enc >= 16);
+
+  // EVEX.ND = 1;
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  set_attributes(&attributes);
+
+  evex_prefix(0, vex_b, 0, 0, evex_b, evex_v, false /*eevex_x*/, nds_enc, VEX_SIMD_NONE, /* map4 */ VEX_OPCODE_0F_3C);
+  emit_int16(0x8F, (0xC0 | (src_enc & 7)));
+}
+
+void Assembler::push2p(Register src1, Register src2) {
+  push2(src1, src2, true);
+}
+
+void Assembler::pop2p(Register src1, Register src2) {
+  pop2(src1, src2, true);
+}
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -5903,6 +5955,13 @@ void Assembler::push(int32_t imm32) {
 
 void Assembler::push(Register src) {
   int encode = prefix_and_encode(src->encoding());
+  emit_int8(0x50 | encode);
+}
+
+void Assembler::pushp(Register src) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(src->encoding());
   emit_int8(0x50 | encode);
 }
 
@@ -11809,7 +11868,6 @@ void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, boo
       _attributes->get_embedded_opmask_register_specifier() != 0) {
     byte4 |= (_attributes->is_clear_context() ? EVEX_Z : 0);
   }
-
   emit_int32(EVEX_4bytes, byte2, byte3, byte4);
 }
 
@@ -14141,6 +14199,13 @@ void Assembler::popq(Address dst) {
   emit_operand(rax, dst, 0);
 }
 
+void Assembler::popp(Register dst) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(dst->encoding());
+  emit_int8((unsigned char)0x58 | encode);
+}
+
 void Assembler::popq(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
   emit_int8((unsigned char)0x58 | encode);
@@ -14219,41 +14284,25 @@ void Assembler::popa() { // 64bit
 
 void Assembler::popa_uncached() { // 64bit
   if (UseAPX) {
-    movq(r31, Address(rsp, 0));
-    movq(r30, Address(rsp, wordSize));
-    movq(r29, Address(rsp, 2 * wordSize));
-    movq(r28, Address(rsp, 3 * wordSize));
-    movq(r27, Address(rsp, 4 * wordSize));
-    movq(r26, Address(rsp, 5 * wordSize));
-    movq(r25, Address(rsp, 6 * wordSize));
-    movq(r24, Address(rsp, 7 * wordSize));
-    movq(r23, Address(rsp, 8 * wordSize));
-    movq(r22, Address(rsp, 9 * wordSize));
-    movq(r21, Address(rsp, 10 * wordSize));
-    movq(r20, Address(rsp, 11 * wordSize));
-    movq(r19, Address(rsp, 12 * wordSize));
-    movq(r18, Address(rsp, 13 * wordSize));
-    movq(r17, Address(rsp, 14 * wordSize));
-    movq(r16, Address(rsp, 15 * wordSize));
-    movq(r15, Address(rsp, 16 * wordSize));
-    movq(r14, Address(rsp, 17 * wordSize));
-    movq(r13, Address(rsp, 18 * wordSize));
-    movq(r12, Address(rsp, 19 * wordSize));
-    movq(r11, Address(rsp, 20 * wordSize));
-    movq(r10, Address(rsp, 21 * wordSize));
-    movq(r9,  Address(rsp, 22 * wordSize));
-    movq(r8,  Address(rsp, 23 * wordSize));
-    movq(rdi, Address(rsp, 24 * wordSize));
-    movq(rsi, Address(rsp, 25 * wordSize));
-    movq(rbp, Address(rsp, 26 * wordSize));
-    // Skip rsp as it is restored automatically to the value
-    // before the corresponding pusha when popa is done.
-    movq(rbx, Address(rsp, 28 * wordSize));
-    movq(rdx, Address(rsp, 29 * wordSize));
-    movq(rcx, Address(rsp, 30 * wordSize));
-    movq(rax, Address(rsp, 31 * wordSize));
-
-    addq(rsp, 32 * wordSize);
+    popp(rax);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
+    pop2p(rcx,rdx);
+    pop2p(rbx,rbp);
+    pop2p(rsi,rdi);
+    pop2p(r8, r9);
+    pop2p(r10,r11);
+    pop2p(r12,r13);
+    pop2p(r14,r15);
+    pop2p(r16,r17);
+    pop2p(r18,r19);
+    pop2p(r20,r21);
+    pop2p(r22,r23);
+    pop2p(r24,r25);
+    pop2p(r26,r27);
+    pop2p(r28,r29);
+    pop2p(r30,r31);
   } else {
     movq(r15, Address(rsp, 0));
     movq(r14, Address(rsp, wordSize));
@@ -14287,41 +14336,25 @@ void Assembler::pusha() { // 64bit
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
   if (UseAPX) {
-    subq(rsp, 32 * wordSize);
-    movq(Address(rsp, 31 * wordSize), rax);
-    movq(Address(rsp, 30 * wordSize), rcx);
-    movq(Address(rsp, 29 * wordSize), rdx);
-    movq(Address(rsp, 28 * wordSize), rbx);
+    push2p(r31, r30);
+    push2p(r29, r28);
+    push2p(r27, r26);
+    push2p(r25, r24);
+    push2p(r23, r22);
+    push2p(r21, r20);
+    push2p(r19, r18);
+    push2p(r17, r16);
+    push2p(r15, r14);
+    push2p(r13, r12);
+    push2p(r11, r10);
+    push2p(r9, r8);
+    push2p(rdi, rsi);
+    push2p(rbp, rbx);
     // Skip rsp as the value is normally not used. There are a few places where
     // the original value of rsp needs to be known but that can be computed
     // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-    movq(Address(rsp, 26 * wordSize), rbp);
-    movq(Address(rsp, 25 * wordSize), rsi);
-    movq(Address(rsp, 24 * wordSize), rdi);
-    movq(Address(rsp, 23 * wordSize), r8);
-    movq(Address(rsp, 22 * wordSize), r9);
-    movq(Address(rsp, 21 * wordSize), r10);
-    movq(Address(rsp, 20 * wordSize), r11);
-    movq(Address(rsp, 19 * wordSize), r12);
-    movq(Address(rsp, 18 * wordSize), r13);
-    movq(Address(rsp, 17 * wordSize), r14);
-    movq(Address(rsp, 16 * wordSize), r15);
-    movq(Address(rsp, 15 * wordSize), r16);
-    movq(Address(rsp, 14 * wordSize), r17);
-    movq(Address(rsp, 13 * wordSize), r18);
-    movq(Address(rsp, 12 * wordSize), r19);
-    movq(Address(rsp, 11 * wordSize), r20);
-    movq(Address(rsp, 10 * wordSize), r21);
-    movq(Address(rsp, 9 * wordSize), r22);
-    movq(Address(rsp, 8 * wordSize), r23);
-    movq(Address(rsp, 7 * wordSize), r24);
-    movq(Address(rsp, 6 * wordSize), r25);
-    movq(Address(rsp, 5 * wordSize), r26);
-    movq(Address(rsp, 4 * wordSize), r27);
-    movq(Address(rsp, 3 * wordSize), r28);
-    movq(Address(rsp, 2 * wordSize), r29);
-    movq(Address(rsp, wordSize), r30);
-    movq(Address(rsp, 0), r31);
+    push2p(rdx, rcx);
+    pushp(rax);
   } else {
     subq(rsp, 16 * wordSize);
     movq(Address(rsp, 15 * wordSize), rax);
