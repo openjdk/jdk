@@ -1327,18 +1327,18 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       if (internal_format) {
         p->trace_stack();
       } else {
+        p->print_stack_on(st);
         oop thread_oop = p->threadObj();
         if (thread_oop != nullptr) {
           if (p->is_vthread_mounted()) {
             oop vt = p->vthread();
             assert(vt != nullptr, "");
-            st->print_cr("   \tCarrying virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+            st->print_cr("   \tMounted virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
             st->inc();
             p->print_vthread_stack_on(st);
             st->dec();
           }
         }
-        p->print_stack_on(st);
       }
     }
     st->cr();
