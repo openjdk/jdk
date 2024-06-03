@@ -205,7 +205,7 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout);
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,

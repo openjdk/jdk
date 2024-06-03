@@ -520,7 +520,7 @@ inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
-  // would mistakenly return 0 for _region_end
+  // This method would mistakenly return 0 for _heap_end; hence exclusive.
   assert(addr < _heap_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
@@ -528,8 +528,8 @@ ParallelCompactData::region_offset(const HeapWord* addr) const
 inline size_t
 ParallelCompactData::addr_to_region_idx(const HeapWord* addr) const
 {
-  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
-  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
+  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _heap_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
+  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _heap_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
   return pointer_delta(addr, _heap_start) >> Log2RegionSize;
 }
 
