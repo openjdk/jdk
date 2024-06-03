@@ -177,7 +177,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     __ relocate(target.rspec(), [&] {
       int32_t offset;
       __ la(t0, target.target(), offset);
-      __ jalr(x1, t0, offset);
+      __ jalr(t0, offset);
     });
     __ leave();
     __ ret();

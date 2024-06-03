@@ -66,6 +66,7 @@ bool XNMethodDataOops::has_non_immediates() const {
 
 XNMethodData::XNMethodData() :
     _lock(),
+    _ic_lock(),
     _oops(nullptr) {}
 
 XNMethodData::~XNMethodData() {
@@ -74,6 +75,10 @@ XNMethodData::~XNMethodData() {
 
 XReentrantLock* XNMethodData::lock() {
   return &_lock;
+}
+
+XReentrantLock* XNMethodData::ic_lock() {
+  return &_ic_lock;
 }
 
 XNMethodDataOops* XNMethodData::oops() const {
