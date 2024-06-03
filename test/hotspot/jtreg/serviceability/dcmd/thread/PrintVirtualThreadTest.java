@@ -81,7 +81,7 @@ public class PrintVirtualThreadTest {
 
         void compute() {
             started.countDown();
-            while(true) {
+            while (true) {
                 if (shouldStop.get()) {
                     break;
                 }
