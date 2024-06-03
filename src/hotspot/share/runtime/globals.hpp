@@ -1399,7 +1399,7 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
-          range(1*M, 3*G)                                                   \
+          range(1*M, LP64_ONLY(4*G) NOT_LP64(max_uintx))                    \
                                                                             \
   develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
           "Force the class space to be allocated at this address or "       \
