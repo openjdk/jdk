@@ -76,17 +76,17 @@ final class ProxyGenerator {
             CD_UndeclaredThrowableException = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 
     private static final MethodTypeDesc
-            MTD_boolean = MethodTypeDescImpl.ofValidated(CD_boolean, ConstantUtils.EMPTY_CLASSDESC),
-            MTD_void_InvocationHandler = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_InvocationHandler}),
-            MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_String}),
-            MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, new ClassDesc[]{CD_Throwable}),
-            MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class, ConstantUtils.EMPTY_CLASSDESC),
-            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array, ConstantUtils.EMPTY_CLASSDESC),
-            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, new ClassDesc[]{ConstantDescs.CD_String, CD_Class_array}),
-            MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, ConstantUtils.EMPTY_CLASSDESC),
-            MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, new ClassDesc[]{CD_MethodHandles_Lookup}),
-            MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, new ClassDesc[]{CD_Object, CD_Method, CD_Object_array}),
-            MTD_String = MethodTypeDescImpl.ofValidated(CD_String, ConstantUtils.EMPTY_CLASSDESC);
+            MTD_boolean = MethodTypeDescImpl.ofValidated(CD_boolean),
+            MTD_void_InvocationHandler = MethodTypeDescImpl.ofValidated(CD_void, CD_InvocationHandler),
+            MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String),
+            MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable),
+            MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
+            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array),
+            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, ConstantDescs.CD_String, CD_Class_array),
+            MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
+            MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
+            MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
+            MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
 
     private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
 
@@ -785,9 +785,9 @@ final class ProxyGenerator {
         PrimitiveTypeInfo(Class<?> primitiveClass, ClassDesc baseType, ClassDesc wrapperClass) {
             assert baseType.isPrimitive();
             this.wrapperClass = wrapperClass;
-            this.wrapperMethodType = MethodTypeDescImpl.ofValidated(wrapperClass, new ClassDesc[]{baseType});
+            this.wrapperMethodType = MethodTypeDescImpl.ofValidated(wrapperClass, baseType);
             this.unwrapMethodName = primitiveClass.getName() + "Value";
-            this.unwrapMethodType = MethodTypeDescImpl.ofValidated(baseType, ConstantUtils.EMPTY_CLASSDESC);
+            this.unwrapMethodType = MethodTypeDescImpl.ofValidated(baseType);
         }
 
         public static PrimitiveTypeInfo get(Class<?> cl) {
