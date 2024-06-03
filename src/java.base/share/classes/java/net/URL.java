@@ -381,6 +381,7 @@ public final class URL implements java.io.Serializable {
      * <li>{@code https}</li>
      * <li>{@code file}</li>
      * <li>{@code jar}</li>
+     * <li>{@code nested}</li>
      * </ul>
      * Protocol handlers for additional protocols may also be  available.
      * Some protocol handlers, for example those used for loading platform
