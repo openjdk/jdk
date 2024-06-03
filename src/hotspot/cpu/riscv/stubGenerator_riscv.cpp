@@ -5070,8 +5070,12 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vle8_v(vbytes[0], buff);
     __ add(buff, buff, temp0);
 
-    // Reduction sum for s1_new, multiplication for s2_new
+    // Reduction sum for s1_new
+    // 0xFF * 64 = 0xFF0, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
     __ vwredsumu_vs(vs1acc[0], vbytes[0], vzero);
+    // Multiplication for s2_new
     __ vwmulu_vv(vs2acc[0], vtable, vbytes[0]);
 
     // s2 = s2 + s1 * 64
