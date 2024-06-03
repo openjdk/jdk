@@ -93,7 +93,7 @@ public class MethodHandles {
 
     // See IMPL_LOOKUP below.
 
-    //// Method handle creation from ordinary methods.
+    //--- Method handle creation from ordinary methods.
 
     /**
      * Returns a {@link Lookup lookup object} with
@@ -3745,7 +3745,7 @@ return mh1;
             return new InfoFromMemberName(this, member, refKind);
         }
 
-        /// Helper methods, all package-private.
+        //--- Helper methods, all package-private.
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
@@ -4639,7 +4639,7 @@ return mh1;
     }
 
 
-    /// method handle invocation (reflective style)
+    //--- method handle invocation (reflective style)
 
     /**
      * Produces a method handle which will invoke any method handle of the
@@ -4822,7 +4822,7 @@ return invoker;
         return type.invokers().basicInvoker();
     }
 
-     /// method handle modification (creation from other method handles)
+     //--- method handle modification (creation from other method handles)
 
     /**
      * Produces a method handle which adapts the type of the

@@ -5631,7 +5631,6 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(dst, rtmp2);
 }
 
-#ifdef _LP64
 void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src,
                                                     XMMRegister mask, Register rtmp, Register rscratch,
                                                     XMMRegister permv, XMMRegister xtmp, BasicType bt,
@@ -5665,7 +5664,6 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // compressing/expanding the source vector lanes.
   vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
 }
-#endif
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
                                                bool merge, BasicType bt, int vec_enc) {

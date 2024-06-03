@@ -8249,37 +8249,42 @@ class C2 extends C1 implements I2 {
         <field id="owner">
           <jthread/>
             <description>
-              The thread owning this monitor, or <code>nullptr</code> if unused
+              The platform thread owning this monitor, or <code>nullptr</code> if owned
+              by a virtual thread or not owned
             </description>
         </field>
         <field id="entry_count">
           <jint/>
           <description>
-            The number of times the owning thread has entered the monitor
+            The number of times the platform thread owning this monitor has entered it, 
+            or <code>0</code> if owned by a virtual thread or not owned
           </description>
         </field>
         <field id="waiter_count">
           <jint/>
           <description>
-            The number of threads waiting to own this monitor
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting or no threads are waiting
           </description>
         </field>
         <field id="waiters">
           <allocfieldbuf><jthread/></allocfieldbuf>
             <description>
-              The <code>waiter_count</code> waiting threads
+              The <code>waiter_count</code> waiting platform threads
             </description>
         </field>
         <field id="notify_waiter_count">
           <jint/>
           <description>
-            The number of threads waiting to be notified by this monitor
+            The number of platform threads waiting to own this monitor, or <code>0</code>
+            if only virtual threads are waiting to be notified or no threads are waiting
+            to be notified
           </description>
         </field>
         <field id="notify_waiters">
           <allocfieldbuf><jthread/></allocfieldbuf>
             <description>
-              The <code>notify_waiter_count</code> threads waiting to be notified
+              The <code>notify_waiter_count</code> platform threads waiting to be notified
             </description>
         </field>
       </typedef>
@@ -8287,6 +8292,12 @@ class C2 extends C1 implements I2 {
         Get information about the object's monitor.
         The fields of the <functionlink id="jvmtiMonitorUsage"></functionlink> structure
         are filled in with information about usage of the monitor.
+        <p/>
+        <b> This function does not support getting information about an object's monitor
+            when it is owned by a virtual thread. It also does not support returning a
+            reference to virtual threads that are waiting to own a monitor or waiting to
+            be notified.
+        </b>
           <todo>
             Decide and then clarify suspend requirements.
           </todo>

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
-import sun.jvm.hotspot.gc.g1.HeapRegion;
+import sun.jvm.hotspot.gc.g1.G1HeapRegion;
 import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.runtime.VM;
 
@@ -59,11 +59,11 @@ public class TestG1HeapRegion {
         try {
             agent.attach(Integer.parseInt(pid));
             G1CollectedHeap heap = (G1CollectedHeap)VM.getVM().getUniverse().heap();
-            HeapRegion hr = heap.hrm().heapRegionIterator().next();
-            HeapRegion hrTop = heap.hrm().getByAddress(hr.top());
+            G1HeapRegion hr = heap.hrm().heapRegionIterator().next();
+            G1HeapRegion hrTop = heap.hrm().getByAddress(hr.top());
 
             Asserts.assertEquals(hr.top(), hrTop.top(),
-                                 "Address of HeapRegion does not match.");
+                                 "Address of G1HeapRegion does not match.");
         } finally {
             agent.detach();
         }

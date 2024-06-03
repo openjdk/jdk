@@ -53,8 +53,8 @@ class HeapRegionSetChecker : public CHeapObj<mtGC> {
 public:
   // Verify MT safety for this HeapRegionSet.
   virtual void check_mt_safety() = 0;
-  // Returns true if the given HeapRegion is of the correct type for this HeapRegionSet.
-  virtual bool is_correct_type(HeapRegion* hr) = 0;
+  // Returns true if the given G1HeapRegion is of the correct type for this HeapRegionSet.
+  virtual bool is_correct_type(G1HeapRegion* hr) = 0;
   // Return a description of the type of regions this HeapRegionSet contains.
   virtual const char* get_description() = 0;
 };
@@ -79,7 +79,7 @@ protected:
 
   // verify_region() is used to ensure that the contents of a region
   // added to / removed from a set are consistent.
-  void verify_region(HeapRegion* hr) PRODUCT_RETURN;
+  void verify_region(G1HeapRegion* hr) PRODUCT_RETURN;
 
   void check_mt_safety() {
     if (_checker != nullptr) {
@@ -98,15 +98,15 @@ public:
 
   // It updates the fields of the set to reflect hr being added to
   // the set and tags the region appropriately.
-  inline void add(HeapRegion* hr);
+  inline void add(G1HeapRegion* hr);
 
   // It updates the fields of the set to reflect hr being removed
   // from the set and tags the region appropriately.
-  inline void remove(HeapRegion* hr);
+  inline void remove(G1HeapRegion* hr);
 
   virtual void verify();
   void verify_start();
-  void verify_next_region(HeapRegion* hr);
+  void verify_next_region(G1HeapRegion* hr);
   void verify_end();
 
   void verify_optional() { DEBUG_ONLY(verify();) }
@@ -163,19 +163,19 @@ private:
     void add(NodeInfo* info);
   };
 
-  HeapRegion* _head;
-  HeapRegion* _tail;
+  G1HeapRegion* _head;
+  G1HeapRegion* _tail;
 
   // _last is used to keep track of where we added an element the last
   // time. It helps to improve performance when adding several ordered items in a row.
-  HeapRegion* _last;
+  G1HeapRegion* _last;
 
   NodeInfo*   _node_info;
 
   static uint _unrealistically_long_length;
 
-  inline HeapRegion* remove_from_head_impl();
-  inline HeapRegion* remove_from_tail_impl();
+  inline G1HeapRegion* remove_from_head_impl();
+  inline G1HeapRegion* remove_from_tail_impl();
 
   inline void increase_length(uint node_index);
   inline void decrease_length(uint node_index);
@@ -184,7 +184,7 @@ private:
   void add_list_common_start(FreeRegionList* from_list);
   void add_list_common_end(FreeRegionList* from_list);
 
-  void verify_region_to_remove(HeapRegion* curr, HeapRegion* next) NOT_DEBUG_RETURN;
+  void verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) NOT_DEBUG_RETURN;
 protected:
   // See the comment for HeapRegionSetBase::clear()
   virtual void clear();
@@ -196,7 +196,7 @@ public:
   void verify_list();
 
 #ifdef ASSERT
-  bool contains(HeapRegion* hr) const {
+  bool contains(G1HeapRegion* hr) const {
     return hr->containing_set() == this;
   }
 #endif
@@ -206,14 +206,14 @@ public:
   // Add hr to the list. The region should not be a member of another set.
   // Assumes that the list is ordered and will preserve that order. The order
   // is determined by hrm_index.
-  inline void add_ordered(HeapRegion* hr);
+  inline void add_ordered(G1HeapRegion* hr);
   // Same restrictions as above, but adds the region last in the list.
-  inline void add_to_tail(HeapRegion* region_to_add);
+  inline void add_to_tail(G1HeapRegion* region_to_add);
 
   // Removes from head or tail based on the given argument.
-  HeapRegion* remove_region(bool from_head);
+  G1HeapRegion* remove_region(bool from_head);
 
-  HeapRegion* remove_region_with_node_index(bool from_head,
+  G1HeapRegion* remove_region_with_node_index(bool from_head,
                                             uint requested_node_index);
 
   // Merge two ordered lists. The result is also ordered. The order is
@@ -231,7 +231,7 @@ public:
   // Remove all (contiguous) regions from first to first + num_regions -1 from
   // this list.
   // Num_regions must be >= 1.
-  void remove_starting_at(HeapRegion* first, uint num_regions);
+  void remove_starting_at(G1HeapRegion* first, uint num_regions);
 
   virtual void verify();
 
@@ -245,21 +245,21 @@ public:
 class FreeRegionListIterator : public StackObj {
 private:
   FreeRegionList* _list;
-  HeapRegion*     _curr;
+  G1HeapRegion*   _curr;
 
 public:
   bool more_available() {
     return _curr != nullptr;
   }
 
-  HeapRegion* get_next() {
+  G1HeapRegion* get_next() {
     assert(more_available(),
            "get_next() should be called when more regions are available");
 
     // If we are going to introduce a count in the iterator we should
     // do the "cycle" check.
 
-    HeapRegion* hr = _curr;
+    G1HeapRegion* hr = _curr;
     _list->verify_region(hr);
     _curr = hr->next();
     return hr;
