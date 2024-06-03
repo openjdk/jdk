@@ -5109,6 +5109,60 @@ static const uint64_t right_16_bits = right_n_bits(16);
     }
   }
 
+  void adler32_process_bytes_by32(Register buff, Register s1, Register s2, Register count,
+    VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
+    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2) {
+
+    // Same algorithm as for 64 bytes, but shrinked to 32 bytes step:
+    //   s1_new = s1 + b1 + b2 + ... + b32
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b32)
+    //          = s2 + s1 * 32 + (b1 * 32 + b2 * 31 + ... + b32 * 1)
+    //          = s2 + s1 * 32 + (b1, b2, ... b16) dot (32, 31, ... 1)
+
+    __ mv(count, 32);
+    // Load data
+    __ vsetvli(temp0, count, Assembler::e8, Assembler::m2);
+    __ vle8_v(vbytes[0], buff);
+    __ addi(buff, buff, 32);
+
+    // Reduction sum for s1_new
+    // 0xFF * 32 = 0x1FE0, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
+    __ vwredsumu_vs(vs1acc[0], vbytes[0], vzero);
+    // Multiplication for s2_new
+    __ vwmulu_vv(vs2acc[0], vtable, vbytes[0]);
+
+    // s2 = s2 + s1 * 32
+    __ slli(temp1, s1, 5);
+    __ add(s2, s2, temp1);
+
+    // Summing up calculated results for s2_new
+    __ vsetvli(temp0, count, Assembler::e16, Assembler::m2);
+    // Upper bound for reduction sum:
+    // 0xFF * (32 + 31 + ... + 2 + 1) = 0x20DF0 max for whole register group, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
+    __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
+    if (MaxVectorSize == 16)
+      // For small vector length, the rest of multiplied data
+      // is in successor of vs2acc[i], so summing it up, too
+      __ vwredsumu_vs(vtemp2, vs2acc[1], vzero);
+
+    // Extracting results for:
+    // s1_new
+    __ vmv_x_s(temp0, vs1acc[0]);
+    __ add(s1, s1, temp0);
+    // s2_new
+    __ vsetvli(temp0, count, Assembler::e32, Assembler::m1);
+    __ vmv_x_s(temp1, vtemp1);
+    __ add(s2, s2, temp1);
+    if (MaxVectorSize == 16) {
+      __ vmv_x_s(temp2, vtemp2);
+      __ add(s2, s2, temp2);
+    }
+  }
+
   void adler32_process_bytes_by16(Register buff, Register s1, Register s2, Register right_16_bits,
     VectorRegister vtable, VectorRegister vzero, VectorRegister *vbytes, VectorRegister *vs1acc, VectorRegister *vs2acc, 
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2, int LMUL) {
@@ -5219,6 +5273,7 @@ static const uint64_t right_16_bits = right_n_bits(16);
       v16, v18, v20, v22
     };
     VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
+    VectorRegister vtable_32 = (MaxVectorSize == 16) ? v26 : v4;
     VectorRegister vtable_16 = (MaxVectorSize == 16) ? v27 : v30;
     VectorRegister vtemp1 = v28;
     VectorRegister vtemp2 = v29;
@@ -5236,11 +5291,20 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ vid_v(vtemp1);
     __ vrsub_vx(vtable_64, vtemp1, temp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
+    if (MaxVectorSize > 16) {
+      // Need to generate vtable_32 explicitly
+      __ mv(temp1, 32);
+      __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
+      __ vid_v(vtemp1);
+      __ vrsub_vx(vtable_32, vtemp1, temp1);
+      // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
+    }
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     if (MaxVectorSize > 16) {
       // Need to generate vtable_16 explicitly
       __ vid_v(vtemp1);
       __ vrsub_vi(vtable_16, vtemp1, 16);
+      // vtable_32 group now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
     }
     __ vmv_v_i(vzero, 0);
 
@@ -5296,7 +5360,9 @@ static const uint64_t right_16_bits = right_n_bits(16);
     __ bgtz(count, L_nmax_loop);
 
     // There are three iterations left to do
-    const int remainder = 3;
+    adler32_process_bytes_by32(buff, s1, s2, step, vtable_32, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2);
+    const int remainder = 1;
     adler32_process_bytes_by16(buff, s1, s2, right_16_bits, vtable_16, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2, remainder);
 
