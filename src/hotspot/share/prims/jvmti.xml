@@ -1098,7 +1098,7 @@ jvmtiEnv *jvmti;
           <allocbuf incount="size"><uchar/></allocbuf>
           <description>
             On return, a pointer to the beginning of the allocated memory.
-            If <code>size</code> is zero, null pointer is returned.
+            If <code>size</code> is zero, a null pointer is returned.
           </description>
         </param>
       </parameters>
@@ -1530,7 +1530,7 @@ jvmtiEnv *jvmti;
         <param id="thread_ptr">
           <outptr><jthread/></outptr>
           <description>
-             On return, points to the current thread, or <code>null</code>.
+             On return, points to the current thread, or null.
           </description>
         </param>
       </parameters>
@@ -1993,7 +1993,7 @@ jvmtiEnv *jvmti;
           <jthreadGroup/>
           <description>
             The thread group to which this thread belongs.
-            null pointer if the thread has terminated.
+            Null if the thread has terminated.
           </description>
         </field>
         <field id="context_class_loader">
@@ -2139,7 +2139,7 @@ jvmtiEnv *jvmti;
           <outptr><jobject/></outptr>
             <description>
               On return, filled with the current contended monitor, or
-              null pointer if there is none.
+              null if there is none.
             </description>
         </param>
       </parameters>
@@ -2259,7 +2259,7 @@ jvmtiEnv *jvmti;
         <param id="arg">
           <inbuf>
             <void/>
-            <nullok>null pointer is passed to the start function</nullok>
+            <nullok>A null pointer is passed to the start function</nullok>
           </inbuf>
           <description>
             The argument to the start function.
@@ -2350,7 +2350,7 @@ jvmtiEnv *jvmti;
             storage is returned.
             If thread-local storage has not been set with
             <functionlink id="SetThreadLocalStorage"></functionlink> the returned
-            pointer is <code>null</code>.
+            pointer is null.
           </description>
         </param>
       </parameters>
@@ -4274,7 +4274,7 @@ class C2 extends C1 implements I2 {
             <datalink id="JVMTI_HEAP_REFERENCE_CONSTANT_POOL"/>,
             <datalink id="JVMTI_HEAP_REFERENCE_STACK_LOCAL"/>,
             or <datalink id="JVMTI_HEAP_REFERENCE_JNI_LOCAL"/>.
-            Otherwise null pointer.
+            Otherwise a null pointer.
           </description>
         </param>
         <param id="class_tag">
@@ -4319,7 +4319,7 @@ class C2 extends C1 implements I2 {
             Points to the tag of the referrer object, or
             points to the zero if the referrer
             object is not tagged.
-            null pointer if the referrer in not an object (that is,
+            Null if the referrer in not an object (that is,
             this callback is reporting a heap root).
             To set the tag value to be associated with the referrer object
             the agent sets the <code>jlong</code> pointed to by the parameter.
@@ -4766,7 +4766,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok>null pointer is passed as the user supplied data</nullok>
+            <nullok>a null pointer is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -4942,7 +4942,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok>null pointer is passed as the user supplied data</nullok>
+            <nullok>a null pointer is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5590,7 +5590,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok>null pointer is passed as the user supplied data</nullok>
+            <nullok>a null pointer is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5634,7 +5634,7 @@ class C2 extends C1 implements I2 {
         are reported. In other words, the <paramlink id="object_ref_callback"></paramlink>
         callback will not be called until the appropriate callback has been called
         for all roots. If the <paramlink id="object_ref_callback"></paramlink> callback is
-        specified as null pointer then this function returns after
+        specified as null then this function returns after
         reporting the root objects to the profiler.
         <p/>
         During the execution of this function the state of the heap
@@ -5688,7 +5688,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok>>null pointer is passed as the user supplied data</nullok>
+            <nullok>a null pointer is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -5747,7 +5747,7 @@ class C2 extends C1 implements I2 {
         <param id="user_data">
           <inbuf>
             <void/>
-            <nullok>null pointer is passed as the user supplied data</nullok>
+            <nullok>a null pointer is passed as the user supplied data</nullok>
           </inbuf>
           <description>
             User supplied data to be passed to the callback.
@@ -6767,7 +6767,7 @@ class C2 extends C1 implements I2 {
         <p/>
         If a named module is defined to the class loader and it
         contains the package then that named module is returned,
-        otherwise null pointer is returned.
+        otherwise null is returned.
         <p/>
       </description>
       <origin>new</origin>
@@ -6800,7 +6800,7 @@ class C2 extends C1 implements I2 {
           <outptr><jobject/></outptr>
           <description>
             On return, points to a <code>java.lang.Module</code> object
-            or points to <code>null</code>.
+            or points to null.
           </description>
         </param>
       </parameters>
@@ -7261,7 +7261,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the class, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the class, then,
-            on return, points to <code>null</code>.
+            on return, points to null.
           </description>
         </param>
       </parameters>
@@ -7791,7 +7791,7 @@ class C2 extends C1 implements I2 {
               this class.
               If the class was not created by a class loader
               or if the class loader is the bootstrap class loader,
-              points to <code>null</code>.
+              points to null.
             </description>
         </param>
       </parameters>
@@ -8411,7 +8411,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the field, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the field, then,
-            on return, points to <code>null</code>.
+            on return, points to null.
           </description>
         </param>
       </parameters>
@@ -8604,7 +8604,7 @@ class C2 extends C1 implements I2 {
             On return, points to the generic signature of the method, encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
             If there is no generic signature attribute for the method, then,
-            on return, points to <code>null</code>.
+            on return, points to null.
           </description>
         </param>
       </parameters>
@@ -9240,7 +9240,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
          a prefix is the same as calling this function with
          <paramlink id="prefix_count"/> of <code>1</code>.
          Calling <code>SetNativeMethodPrefix</code> with
-         null pointer is the same as calling this function with
+         a null pointer is the same as calling this function with
          <paramlink id="prefix_count"/> of <code>0</code>.
       </description>
       <origin>new</origin>
@@ -11654,7 +11654,7 @@ myInit() {
         <param id="data">
           <inbuf>
             <void/>
-            <nullok>value is set to <code>null</code></nullok>
+            <nullok>value is set to null</nullok>
           </inbuf>
           <description>
             The value to be entered into the environment-local storage.
@@ -11682,7 +11682,7 @@ myInit() {
             storage is returned.
             If environment-local storage has not been set with
             <functionlink id="SetEnvironmentLocalStorage"></functionlink> returned
-            pointer is <code>null</code>.
+            pointer is null.
           </description>
         </param>
       </parameters>
@@ -11948,7 +11948,7 @@ myInit() {
       on successful completion of the function.
     </errorid>
     <errorid id="JVMTI_ERROR_NULL_POINTER" num="100">
-      Pointer is unexpectedly <code>null</code>.
+      Pointer is unexpectedly null.
     </errorid>
     <errorid id="JVMTI_ERROR_OUT_OF_MEMORY" num="110">
       The function attempted to allocate memory and no more memory was
@@ -12455,7 +12455,7 @@ myInit() {
         <jobject/>
           <description>
             Object with the field being accessed if the field is an
-            instance field; null pointer otherwise
+            instance field; a null pointer otherwise
           </description>
       </param>
       <param id="field">
@@ -12525,7 +12525,7 @@ myInit() {
         <jobject/>
           <description>
             Object with the field being modified if the field is an
-            instance field; null pointer otherwise
+            instance field; a null pointer otherwise
           </description>
       </param>
       <param id="field">
@@ -12876,13 +12876,13 @@ myInit() {
       <param id="catch_klass">
         <jclass method="catch_method"/>
           <description>
-            Class that will catch the exception, or null pointer if no known catch
+            Class that will catch the exception, or null if no known catch
           </description>
       </param>
       <param id="catch_method">
         <jmethodID class="catch_klass"/>
           <description>
-            Method that will catch the exception, or null pointer if no known catch
+            Method that will catch the exception, or null if no known catch
           </description>
       </param>
       <param id="catch_location">
@@ -13394,14 +13394,14 @@ myInit() {
           The class being
           <functionlink id="RedefineClasses">redefined</functionlink> or
           <functionlink id="RetransformClasses">retransformed</functionlink>.
-          null pointer if sent by class load.
+          A null pointer if sent by class load.
         </description>
       </param>
       <param id="loader">
         <jobject/>
           <description>
             The class loader loading the class.
-            null pointer if the bootstrap class loader.
+            A null pointer if the bootstrap class loader.
           </description>
       </param>
       <param id="name">
@@ -13410,8 +13410,8 @@ myInit() {
             Name of class being loaded as a VM internal qualified name
             (for example, "java/util/List"), encoded as a
             <internallink id="mUTF">modified UTF-8</internallink> string.
-            Note: if the class is defined with a null pointer name or
-            without a name specified, <code>name</code> will be null.
+            Note: if the class is defined with a null pointer name,
+            <code>name</code> will be null.
         </description>
       </param>
       <param id="protection_domain">
@@ -13629,7 +13629,7 @@ myInit() {
           The native address range of each entry is from
           <fieldlink id="start_address" struct="jvmtiAddrLocationMap"></fieldlink>
           to <code>start_address-1</code> of the next entry.
-          null pointer if mapping information cannot be supplied.
+          A null pointer if mapping information cannot be supplied.
         </description>
       </param>
       <param id="compile_info">
@@ -14692,7 +14692,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
     Finish fixing spec to reflect that alloc sizes are jlong.
   </change>
   <change date="22 Jan 2003">
-    Allow null pointer as RunAgentThread arg.
+    Allow null as RunAgentThread arg.
   </change>
   <change date="22 Jan 2003">
     Fixed names to standardized naming convention
@@ -14702,7 +14702,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
     Since we are using jthread, removed GetThread.
   </change>
   <change date="31 Jan 2003">
-    Change GetFieldName to allow null pointer like GetMethodName.
+    Change GetFieldName to allow null like GetMethodName.
   </change>
   <change date="29 Feb 2003" version="v40">
       Rewrite the introductory text, adding sections on
@@ -14811,7 +14811,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="13 May 2003" version="v62">
       Clarify semantics of raw monitors.
       Change flags on <code>GetThreadStatus</code>.
-      <code>GetClassLoader</code> return null pointer for the bootstrap class loader.
+      <code>GetClassLoader</code> return a null pointer for the bootstrap class loader.
       Add <code>GetClassName</code> issue.
       Define local variable signature.
       Disallow zero in annotations array of <code>GetObjectsWithAnnotations</code>.
@@ -14821,7 +14821,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="14 May 2003" version="v63">
       Define the data type <code>jvmtiEventCallbacks</code>.
-      Zero length allocations return null pointer.
+      Zero length allocations return a null pointer.
       Keep SetAllocationHooks in JVMDI, but remove from <jvmti/>.
       Add JVMTI_THREAD_STATUS_FLAG_INTERRUPTED.
   </change>
@@ -14843,7 +14843,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Overhaul Heap functionality: single callback,
       remove GetHeapRoots, add reachable iterators,
       and rename "annotation" to "tag".
-      null pointer thread parameter on most functions is current
+      A null pointer thread parameter on most functions is current
       thread.
       Add timers.
       Remove ForceExit.

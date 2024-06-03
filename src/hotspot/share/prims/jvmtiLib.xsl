@@ -378,7 +378,7 @@
       <xsl:value-of select="../@id"/>
     </code>
     is
-    <code>null</code> pointer, the current thread is used.
+    null, the current thread is used.
   </xsl:if>
 </xsl:template>
 

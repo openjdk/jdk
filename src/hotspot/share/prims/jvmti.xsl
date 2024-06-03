@@ -1586,7 +1586,7 @@ typedef struct {
   </xsl:if>
   <xsl:apply-templates select="." mode="paramlink"/>
   <xsl:text> is </xsl:text>
-  <code>null</code> pointer
+  a null pointer
   <xsl:text>.</xsl:text>
 </xsl:template>
 
