@@ -268,7 +268,7 @@ public class VerifyAccess {
      * @param type the supposed type of a member or symbolic reference of refc
      * @param refc the class attempting to make the reference
      */
-    public static boolean isTypeVisible(Class<?> type, Class<?> refc) {
+    public static boolean ensureTypeVisible(Class<?> type, Class<?> refc) {
         if (type == refc) {
             return true;  // easy check
         }
@@ -340,12 +340,12 @@ public class VerifyAccess {
      * @param type the supposed type of a member or symbolic reference of refc
      * @param refc the class attempting to make the reference
      */
-    public static boolean isTypeVisible(java.lang.invoke.MethodType type, Class<?> refc) {
-        if (!isTypeVisible(type.returnType(), refc)) {
+    public static boolean ensureTypeVisible(java.lang.invoke.MethodType type, Class<?> refc) {
+        if (!ensureTypeVisible(type.returnType(), refc)) {
             return false;
         }
         for (int n = 0, max = type.parameterCount(); n < max; n++) {
-            if (!isTypeVisible(type.parameterType(n), refc)) {
+            if (!ensureTypeVisible(type.parameterType(n), refc)) {
                 return false;
             }
         }
