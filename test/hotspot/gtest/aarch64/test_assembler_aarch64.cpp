@@ -83,6 +83,11 @@ TEST_VM(AssemblerAArch64, validate) {
   BufferBlob::free(b);
 }
 
+constexpr uint32_t test_encode_dmb_ld = 0xd50339bf;
+constexpr uint32_t test_encode_dmb_st = 0xd5033abf;
+constexpr uint32_t test_encode_dmb    = 0xd5033bbf;
+constexpr uint32_t test_encode_nop    = 0xd503201f;
+
 static void asm_dump(address start, address end) {
   ResourceMark rm;
   stringStream ss;
@@ -123,24 +128,24 @@ void test_merge_dmb() {
   asm_dump(code.insts()->start(), code.insts()->end());
   // AlwaysMergeDMB
   static const unsigned int insns1[] = {
-    0xd5033abf, // dmb.ishst
-    0xd503201f, // nop
-    0xd50339bf, // dmb.ishld
-    0xd503201f, // nop
-    0xd5033bbf, // dmb.ish
-    0xd503201f, // nop
-    0xd5033bbf, // dmb.ish
+    test_encode_dmb_st,
+    test_encode_nop,
+    test_encode_dmb_ld,
+    test_encode_nop,
+    test_encode_dmb,
+    test_encode_nop,
+    test_encode_dmb,
   };
   // !AlwaysMergeDMB
   static const unsigned int insns2[] = {
-    0xd5033abf, // dmb.ishst
-    0xd503201f, // nop
-    0xd50339bf, // dmb.ishld
-    0xd503201f, // nop
-    0xd5033bbf, // dmb.ish
-    0xd503201f, // nop
-    0xd50339bf, // dmb.ishld
-    0xd5033abf, // dmb.ishst
+    test_encode_dmb_st,
+    test_encode_nop,
+    test_encode_dmb_ld,
+    test_encode_nop,
+    test_encode_dmb,
+    test_encode_nop,
+    test_encode_dmb_ld,
+    test_encode_dmb_st,
   };
   if (AlwaysMergeDMB) {
     EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns1));
@@ -205,10 +210,6 @@ TEST_VM(AssemblerAArch64, merge_dmb_after_expand) {
   EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
   asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
 }
-
-constexpr uint32_t test_encode_dmb_ld = 0xd50339bf;
-constexpr uint32_t test_encode_dmb_st = 0xd5033abf;
-constexpr uint32_t test_encode_dmb    = 0xd5033bbf;
 
 void expect_dmbld(void* addr) {
   if (*((uint32_t *) addr) != test_encode_dmb_ld) {
@@ -291,7 +292,7 @@ void test_merge_dmb_all_kinds() {
     for (int b2 = 0; b2 < count; b2++) {
       for (int b3 = 0; b3 < count; b3++) {
         for (int b4 = 0; b4 < count; b4++) {
-          tty->print_cr("%s + %s + %s + %s", kind[b1].label, kind[b2].label, kind[b3].label, kind[b4].label);
+          // tty->print_cr("%s + %s + %s + %s", kind[b1].label, kind[b2].label, kind[b3].label, kind[b4].label);
 
           address start = __ pc();
           __ membar(kind[b1].flavor);
