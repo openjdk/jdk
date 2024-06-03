@@ -135,7 +135,7 @@ static jlong as_long(LIR_Opr data) {
 Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
   if (addr->base()->is_illegal()) {
     assert(addr->index()->is_illegal(), "must be illegal too");
-    __ movptr(tmp, addr->disp());
+    __ movptr(tmp, (address)addr->disp());
     return Address(tmp, 0);
   }
 

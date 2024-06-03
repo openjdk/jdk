@@ -804,17 +804,16 @@ public:
     }
   }
 
-  void movptr(Register Rd, address addr, int32_t &offset);
-
-  void movptr(Register Rd, address addr) {
-    int offset = 0;
-    movptr(Rd, addr, offset);
-    addi(Rd, Rd, offset);
-  }
-
-  inline void movptr(Register Rd, uintptr_t imm64) {
-    movptr(Rd, (address)imm64);
-  }
+  // Generates a load of a 48-bit constant which can be
+  // patched to any 48-bit constant, i.e. address.
+  // If common case supply additional temp register
+  // to shorten the instruction sequence.
+  void movptr(Register Rd, address addr, Register tmp = noreg);
+  void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+ private:
+  void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+ public:
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
