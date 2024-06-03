@@ -327,8 +327,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
             if (currentEntry instanceof QueueCacheEntry<K,V> qe) {
                 qe.clear();
-                //Queue<CacheEntry<K,V>> queue = qe.getQueue();
-                //queue.forEach(queue::remove);
             }
         }
 
@@ -393,11 +391,24 @@ class MemoryCache<K,V> extends Cache<K,V> {
         cacheMap.clear();
     }
 
-    public synchronized void put(K key, V value) {
+    public void put(K key, V value) {
         put(key, value, false);
     }
 
-    public synchronized void put(K key, V value, boolean queueable) {
+    /**
+     * This puts an entry into the cacheMap.
+     *
+     * If useQueue is true, V will be added using a QueueCacheEntry which
+     * is added to cacheMap.  If false, V is added to the cacheMap directly.
+     *
+     * This method is synchronized to avoid multiple QueueCacheEntry
+     * overwriting the same key.
+     *
+     * @param key key to the cacheMap
+     * @param value value to be stored
+     * @param canQueue can the value be put into a QueueCacheEntry
+     */
+    public synchronized void put(K key, V value, boolean canQueue) {
         emptyQueue();
         long expirationTime =
             (lifetime == 0) ? 0 : System.currentTimeMillis() + lifetime;
@@ -414,7 +425,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
                 case QueueCacheEntry<K, V> qe -> qe.putValue(newEntry);
                 case null,
                     default -> {
-                    if (queueable) {
+                    if (canQueue) {
                         var q = new QueueCacheEntry<>(key, value,
                             expirationTime, queue);
                         q.putValue(newEntry);
@@ -447,7 +458,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
-    public synchronized V get(Object key) {
+    public V get(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.get(key);
         if (entry == null) {
@@ -465,11 +476,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         if (entry instanceof QueueCacheEntry<K,V> qe) {
             V result = qe.getValue(lifetime);
             if (qe.isEmpty()) {
-                try {
-                    cacheMap.remove(key);
-                } catch (NullPointerException e) {
-                    // Something else took and evaluated the entry
-                }
+                cacheMap.remove(key);
             }
             return result;
         }
@@ -477,7 +484,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         return entry.getValue();
     }
 
-    public synchronized void remove(Object key) {
+    public void remove(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry != null) {
@@ -485,7 +492,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
-    public synchronized V pull(Object key) {
+    public V pull(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry == null) {
@@ -711,13 +718,12 @@ class MemoryCache<K,V> extends Cache<K,V> {
                 System.out.println("Added to queue (size=" + queue.size() +
                     "): " + entry.getKey().toString() + ",  " + entry);
             }
-            // Update the cache entry's expiration time to the latest entry.  One
-            // should expect a ticket's expiration lifetime to be consistent across
-            // all tickets.
+            // Update the cache entry's expiration time to the latest entry.
+            // the get() will remove expired tickets
             expirationTime = entry.getExpirationTime();
-            // Limit the number of queue entries, removing the oldest.  As this is
-            // a one for one entry swap, locking isn't necessary and plus or minus
-            // a few entries is not critical.
+            // Limit the number of queue entries, removing the oldest.  As this
+            // is a one for one entry swap, locking isn't necessary and plus or
+            // minus a few entries is not critical.
             if (queue.size() > MAXQUEUESIZE) {
                 queue.remove();
             }
