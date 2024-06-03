@@ -93,7 +93,8 @@ template <class RegImpl> class ReverseRegSetIterator;
 // A set of registers
 template <class RegImpl>
 class AbstractRegSet {
-  size_t _bitset;
+  STATIC_ASSERT(RegImpl::number_of_registers <= 64);
+  uint64_t _bitset;
 
   constexpr AbstractRegSet(size_t bitset) : _bitset(bitset) { }
 
