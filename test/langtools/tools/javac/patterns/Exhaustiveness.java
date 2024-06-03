@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2104,6 +2104,39 @@ public class Exhaustiveness extends TestRunner {
                   }
               }""");
    }
+
+    @Test //JDK-8327368
+    public void testExpandForTypeVariables(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   interface Parent { int a();}
+
+                   static class Child implements Parent {
+                       public int a() {
+                           return 1;
+                       }
+                   }
+
+                   record Rec<T, U>(T a, U b) {}
+
+                   private static <T extends Parent, U extends Parent> boolean test(Rec<T, U> p) {
+                       boolean res;
+                       switch (p) {
+                           case Rec(Child a, var b) -> res = a.a() + b.a() == 2; //line A
+                       }
+                       return res;
+                   }
+
+                   public static void main(String argv[]) {
+                       System.out.println(test(new Rec<>(new Child(), new Child())));
+                   }
+               }
+               """,
+               "Test.java:14:9: compiler.err.not.exhaustive.statement",
+               "1 error");
+    }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);

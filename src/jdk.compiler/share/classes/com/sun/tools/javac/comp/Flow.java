@@ -1174,8 +1174,8 @@ public class Flow {
                                 }
                             }
                         }
-                    } else if (pd instanceof BindingPattern bp) {
-                        Set<Symbol> permittedSymbols = allPermittedSubTypes((ClassSymbol) bp.type.tsym, cs -> true);
+                    } else if (pd instanceof BindingPattern bp && bp.type.tsym instanceof ClassSymbol clazz) {
+                        Set<Symbol> permittedSymbols = allPermittedSubTypes(clazz, cs -> true);
 
                         if (!permittedSymbols.isEmpty()) {
                             for (Symbol permitted : permittedSymbols) {
