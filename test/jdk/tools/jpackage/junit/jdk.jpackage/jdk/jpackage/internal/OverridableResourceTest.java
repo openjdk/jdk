@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 package jdk.jpackage.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,8 +35,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.OverridableResource.NoLogging;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -189,6 +194,38 @@ public class OverridableResourceTest {
         new OverridableResource(null).saveToFile(dstFile);
 
         assertFalse(dstFile.toFile().exists());
+    }
+
+    @Test
+    public void testNoLogging() throws IOException {
+        var log = new StringWriter();
+        Log.setPrintWriter(new PrintWriter(log), new PrintWriter(log));
+        Log.setVerbose();
+
+        OverridableResource resource = new OverridableResource(DEFAULT_NAME).setPublicName("foo");
+        Log.flush();
+        assertTrue(log.getBuffer().toString().isEmpty());
+
+        Consumer<Boolean> runTest = expectLogMessageAppended -> {
+            var buf = log.getBuffer();
+            buf.delete(0, buf.length());
+            try {
+                resource.saveToStream(new ByteArrayOutputStream());
+                Log.flush();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            var logMsg = buf.toString();
+            assertEquals(expectLogMessageAppended, !logMsg.isEmpty());
+        };
+
+        runTest.accept(true);
+
+        try (var suppressLogging = resource.new NoLogging()) {
+            runTest.accept(false);
+        }
+
+        runTest.accept(true);
     }
 
     private final static String DEFAULT_NAME;
