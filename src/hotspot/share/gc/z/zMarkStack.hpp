@@ -52,7 +52,7 @@ public:
 };
 
 template <typename T>
-class ZStackList {
+class ZCACHE_ALIGNED ZStackList {
 private:
   uintptr_t   _base;
   T* volatile _head;
@@ -91,7 +91,6 @@ public:
 
   void publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish);
   ZMarkStack* steal_stack();
-  ZMarkStripe &operator=(const ZMarkStripe &other);
 };
 
 class ZMarkStripeSet {
