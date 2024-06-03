@@ -106,7 +106,7 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
       required_len = result_len + 1;
       result_len = buflen - 1;
     }
-  } else if (format[0] == '%' && format[1] == 's' && format[2] == '\0') {
+  } else if (strncmp(format, "%s", 3) == 0) { //(format[0] == '%' && format[1] == 's' && format[2] == '\0') {
     // trivial copy-through format string
     result = va_arg(ap, const char*);
     result_len = strlen(result);
