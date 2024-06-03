@@ -1333,7 +1333,9 @@ void Threads::print_on(outputStream* st, bool print_stacks,
             oop vt = p->vthread();
             assert(vt != nullptr, "");
             st->print_cr("   \tCarrying virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+            st->inc();
             p->print_vthread_stack_on(st);
+            st->dec();
           }
         }
         p->print_stack_on(st);

@@ -1819,6 +1819,11 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
     }
     if (f->is_java_frame()) {
       javaVFrame* jvf = javaVFrame::cast(f);
+      int indentation = st->indentation();
+      while(indentation > 0) {
+        st->print("\t");
+        indentation--;
+      }
       java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
 
       // Print out lock information
