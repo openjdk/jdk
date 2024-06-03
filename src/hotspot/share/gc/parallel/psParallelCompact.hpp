@@ -520,7 +520,7 @@ inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
-  // would mistakenly return 0 for _heap_end
+  // This method would mistakenly return 0 for _heap_end; hence exclusive.
   assert(addr < _heap_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
