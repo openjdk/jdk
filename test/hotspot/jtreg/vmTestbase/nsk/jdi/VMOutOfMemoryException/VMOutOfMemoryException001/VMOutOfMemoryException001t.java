@@ -33,7 +33,7 @@ import nsk.share.jdi.AbstractJDIDebuggee;
  */
 public class VMOutOfMemoryException001t extends AbstractJDIDebuggee {
 
-    public static int[] buf = new int[1024 * 1024];
+    public static int[] reserverdMemory = new int[1024 * 1024];
     public static void main(String args[]) {
         new VMOutOfMemoryException001t().doTest(args);
     }
@@ -47,7 +47,8 @@ public class VMOutOfMemoryException001t extends AbstractJDIDebuggee {
             super.doTest();
         } catch (OutOfMemoryError e) {
             isOutOfMemory = true;
-            buf = null;
+            reserverdMemory = null;
+            log.display("Got expected OOME.");
         }
         // Normally the super class handles the return value.
         // If we got here after an OutOfMemoryError, we consider the test passed.
