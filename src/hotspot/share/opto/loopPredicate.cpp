@@ -1370,8 +1370,9 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
     }
     // Avoid RCE if Counted loop's test is '!='.
     BoolTest::mask bt = cl->loopexit()->test_trip();
-    if (bt != BoolTest::lt && bt != BoolTest::gt)
+    if (bt != BoolTest::lt && bt != BoolTest::gt) {
       cl = nullptr;
+    }
   }
 
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
