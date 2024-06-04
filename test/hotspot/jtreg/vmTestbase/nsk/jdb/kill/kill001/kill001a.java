@@ -167,7 +167,7 @@ class MyThread extends Thread {
             synchronized (kill001a.lock) { }
             // We need some code that does an invoke here to make sure the async exception
             // gets thrown before we leave the try block.
-            // The methodForException should work until exception is thrown
+            // The methodForException should work until exception is thrown.
             methodForException();
         } catch (Throwable t) {
             if (t == expectedException) {
