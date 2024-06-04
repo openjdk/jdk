@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 
-// for basename, needed for Alpine
+// for basename
 #include <libgen.h>
 
 typedef struct {
