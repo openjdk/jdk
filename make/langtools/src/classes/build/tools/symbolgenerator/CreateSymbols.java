@@ -338,6 +338,8 @@ public class CreateSymbols {
             "Ljdk/internal/PreviewFeature;";
     private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
             "Ljdk/internal/javac/PreviewFeature;";
+    private static final String RESTRICTED_ANNOTATION =
+            "Ljdk/internal/javac/Restricted;";
     private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
             "Ljdk/internal/PreviewFeature+Annotation;";
     private static final String VALUE_BASED_ANNOTATION =
@@ -349,7 +351,8 @@ public class CreateSymbols {
                     "Lsun/Proprietary+Annotation;",
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
-                    VALUE_BASED_ANNOTATION));
+                    VALUE_BASED_ANNOTATION,
+                    RESTRICTED_ANNOTATION));
 
     private void stripNonExistentAnnotations(LoadDescriptions data) {
         Set<String> allClasses = data.classes.name2Class.keySet();
