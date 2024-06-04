@@ -115,11 +115,11 @@ public class TestParallelGCWithCDS {
                     out.shouldContain(HELLO);
                 } else {
                     String pattern = "((Too small maximum heap)" +
-                                       "|(GC triggered before VM initialization completed)" +
-                                       "|(java.lang.OutOfMemoryError: Java heap space)" +
-                                       "|(Initial heap size set to a larger value than the maximum heap size))";
-                        out.shouldMatch(pattern);
-                        out.shouldNotHaveFatalError();
+                                     "|(GC triggered before VM initialization completed)" +
+                                     "|(java.lang.OutOfMemoryError: Java heap space)" +
+                                     "|(Initial heap size set to a larger value than the maximum heap size))";
+                    out.shouldMatch(pattern);
+                    out.shouldNotHaveFatalError();
                 }
                 n++;
             }
