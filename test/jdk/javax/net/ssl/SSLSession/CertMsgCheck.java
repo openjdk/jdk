@@ -31,7 +31,6 @@
  *
  */
 
-import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,9 +46,6 @@ public class CertMsgCheck {
         client1 = new TLSBase.Client(true, false);
         server.getSession(client1).getSessionContext();
         server.done();
-        //while (!server.getSignal()) {
-//            Thread.sleep(100);
-//        }
 
         eList.addAll(server.getExceptionList());
         System.out.println("Exception list size is " + eList.size());
