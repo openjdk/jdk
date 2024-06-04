@@ -88,7 +88,8 @@ requires.properties= \
     vm.flagless \
     docker.support \
     jdk.containerized \
-    jlink.runtime.linkable
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
 requiredVersion=7.3.1+1

@@ -40,7 +40,7 @@ import tests.JImageHelper;
  * @test
  * @summary Compare packaged-modules jlink with a run-time image based jlink to
  *          produce the same result
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.packagedModules & jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile

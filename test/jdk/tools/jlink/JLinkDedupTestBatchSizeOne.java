@@ -43,6 +43,7 @@ import java.nio.file.Paths;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
+ * @requires jlink.packagedModules
  * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne
  */

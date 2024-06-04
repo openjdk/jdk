@@ -27,6 +27,7 @@
  * @summary  jlink should use the version from java.base.jmod to find modules
  * @bug 8185130
  * @summary jlink should throw error if target image and current JDK versions don't match
+ * @requires jlink.packagedModules
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.process.* CheckRuntimeVersion

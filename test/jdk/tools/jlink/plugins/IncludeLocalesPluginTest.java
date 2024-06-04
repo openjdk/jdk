@@ -43,7 +43,7 @@ import tests.Result;
  *      8296248 8306116 8174269
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage

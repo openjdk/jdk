@@ -21,6 +21,9 @@
  * questions.
  */
 
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+
 import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.MethodTypeDesc;
@@ -32,16 +35,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
-
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
 
 /*
  * @test
@@ -54,6 +54,7 @@ import static java.lang.constant.ConstantDescs.CD_int;
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
+ * @requires jlink.packagedModules
  * @build tests.*
  * @run testng/othervm GenerateJLIClassesPluginTest
  */
