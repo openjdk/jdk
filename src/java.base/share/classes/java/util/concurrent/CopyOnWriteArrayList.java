@@ -1034,7 +1034,7 @@ public class CopyOnWriteArrayList<E>
         // Read in array length and allocate array
         int len = s.readInt();
         SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, len);
-        Object[] es = new Object[len];
+        Object[] es = (len == 0 ? EMPTY_ELEMENTDATA : new Object[len]);
 
         // Read in all elements in the proper order.
         for (int i = 0; i < len; i++)
