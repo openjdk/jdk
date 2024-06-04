@@ -5804,8 +5804,35 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp
   z_cr(tmp, tmp); // set CC to EQ
 }
 
-void MacroAssembler::population_count(Register r_dst, Register r_src, Register r_tmp, bool is_long) {
-  BLOCK_COMMENT("population_count {");
+void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_int {");
+
+  if (VM_Version::has_MiscInstrExt3()) {
+    z_llgfr(r_src, r_src);
+    z_popcnt(r_dst, r_src, 8);
+  } else {
+
+    z_illtrap(48); // fixme: remove
+#ifdef ASSERT
+    assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
+    assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+#endif
+
+    z_popcnt(r_dst, r_src);
+    z_srlg(r_tmp, r_dst, 16);
+    z_alr(r_dst, r_tmp);
+    z_srlg(r_tmp, r_dst, 8);
+    z_alr(r_dst, r_tmp);
+    // TODO: use risbgn instruction instead of srl below
+    z_llgcr(r_dst, r_dst);
+
+  }
+
+  BLOCK_COMMENT("} pop_count_int");
+}
+
+void MacroAssembler::pop_count_long(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_long {");
 
   if (VM_Version::has_MiscInstrExt3()) {
     z_popcnt(r_dst, r_src, 8);
@@ -5817,24 +5844,14 @@ void MacroAssembler::population_count(Register r_dst, Register r_src, Register r
     assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
 #endif
 
-    if (is_long) {
-      z_popcnt(r_dst, r_src);
-      z_ahhlr(r_dst, r_dst, r_dst);
-      z_sllg(r_tmp, r_dst, 16);
-      z_algr(r_dst, r_tmp);
-      z_sllg(r_tmp, r_dst, 8);
-      z_algr(r_dst, r_tmp);
-      z_srlg(r_dst, r_dst, 56);
-    } else {
-      z_popcnt(r_dst, r_src);
-      z_srlg(r_tmp, r_dst, 16);
-      z_alr(r_dst, r_tmp);
-      z_srlg(r_tmp, r_dst, 8);
-      z_alr(r_dst, r_tmp);
-      // TODO: use risbgn instruction instead of srl below
-      z_llgcr(r_dst, r_dst);
-    }
+    z_popcnt(r_dst, r_src);
+    z_ahhlr(r_dst, r_dst, r_dst);
+    z_sllg(r_tmp, r_dst, 16);
+    z_algr(r_dst, r_tmp);
+    z_sllg(r_tmp, r_dst, 8);
+    z_algr(r_dst, r_tmp);
+    z_srlg(r_dst, r_dst, 56);
   }
 
-  BLOCK_COMMENT("} population_count");
+  BLOCK_COMMENT("} pop_count_long");
 }

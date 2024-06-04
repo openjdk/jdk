@@ -1022,15 +1022,8 @@ class MacroAssembler: public Assembler {
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
 
-  /*
-   * When the miscellaneous-instruction-extensions facility 3 is not installed or bit 0 of the M3 field is zero,
-   * a count of the number of "one" bits in each of the eight bytes of general register src is placed into the
-   * corresponding byte of general register dst. Each byte of general register dst is an 8-bit binary integer
-   * in the range of 0-8.
-   *
-   * For more information refer PofZ
-   */
-  void population_count(Register dst, Register src, Register tmp = noreg, bool is_long = false);
+  void pop_count_int(Register dst, Register src, Register tmp = noreg);
+  void pop_count_long(Register dst, Register src, Register tmp = noreg);
 
 };
 
