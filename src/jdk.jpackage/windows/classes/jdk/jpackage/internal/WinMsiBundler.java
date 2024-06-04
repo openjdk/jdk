@@ -591,7 +591,7 @@ public class WinMsiBundler  extends AbstractBundler {
             var name = path.getFileName().toString();
             wixResources.addResource(createResource(name, params).setPublicName(name).
                     setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
-                    getString("resource.wxl-file")), path);
+                    getString("resource.wxl-file")), configDir.resolve(name));
         }
 
         // Save all WiX resources into config dir.
@@ -606,6 +606,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
+            wxl = configDir.resolve(wxl.getFileName());
             wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }

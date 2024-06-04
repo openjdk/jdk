@@ -206,10 +206,12 @@ public class WinL10nTest {
             }
 
             if (wxlFileInitializers != null) {
+                var wixSrcDir = Path.of(cmd.getArgumentValue("--temp")).resolve("config");
+
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
                         if (!v.name.startsWith("MsiInstallerStrings_")) {
-                            v.createCmdOutputVerifier(resourceDir).apply(getBuildCommandLine(result));
+                            v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
                         }
                     }
                     Path tempDir = getTempDirectory(cmd, tempRoot).toAbsolutePath();
@@ -220,7 +222,7 @@ public class WinL10nTest {
                     Stream.of(wxlFileInitializers)
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
-                                    resourceDir).apply(result.getOutput().stream()));
+                                    wixSrcDir).apply(result.getOutput().stream()));
                     TKit.assertFalse(getBuildCommandLine(result).findAny().isPresent(),
                             "Check light.exe was not invoked");
                 }
