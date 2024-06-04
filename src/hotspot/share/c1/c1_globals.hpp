@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,48 +35,47 @@
                  develop_pd,                                                \
                  product,                                                   \
                  product_pd,                                                \
-                 notproduct,                                                \
                  range,                                                     \
                  constraint)                                                \
                                                                             \
   /* Printing */                                                            \
-  notproduct(bool, PrintC1Statistics, false,                                \
+  develop(bool, PrintC1Statistics, false,                                   \
           "Print Compiler1 statistics" )                                    \
                                                                             \
-  notproduct(bool, PrintInitialBlockList, false,                            \
+  develop(bool, PrintInitialBlockList, false,                               \
           "Print block list of BlockListBuilder")                           \
                                                                             \
-  notproduct(bool, PrintCFG, false,                                         \
+  develop(bool, PrintCFG, false,                                            \
           "Print control flow graph after each change")                     \
                                                                             \
-  notproduct(bool, PrintCFG0, false,                                        \
+  develop(bool, PrintCFG0, false,                                           \
           "Print control flow graph after construction")                    \
                                                                             \
-  notproduct(bool, PrintCFG1, false,                                        \
+  develop(bool, PrintCFG1, false,                                           \
           "Print control flow graph after optimizations")                   \
                                                                             \
-  notproduct(bool, PrintCFG2, false,                                        \
+  develop(bool, PrintCFG2, false,                                           \
           "Print control flow graph before code generation")                \
                                                                             \
-  notproduct(bool, PrintIRDuringConstruction, false,                        \
+  develop(bool, PrintIRDuringConstruction, false,                           \
           "Print IR as it's being constructed (helpful for debugging frontend)")\
                                                                             \
-  notproduct(bool, PrintPhiFunctions, false,                                \
+  develop(bool, PrintPhiFunctions, false,                                   \
           "Print phi functions when they are created and simplified")       \
                                                                             \
-  notproduct(bool, PrintIR, false,                                          \
+  develop(bool, PrintIR, false,                                             \
           "Print full intermediate representation after each change")       \
                                                                             \
-  notproduct(bool, PrintIR0, false,                                         \
+  develop(bool, PrintIR0, false,                                            \
           "Print full intermediate representation after construction")      \
                                                                             \
-  notproduct(bool, PrintIR1, false,                                         \
+  develop(bool, PrintIR1, false,                                            \
           "Print full intermediate representation after optimizations")     \
                                                                             \
-  notproduct(bool, PrintIR2, false,                                         \
+  develop(bool, PrintIR2, false,                                            \
           "Print full intermediate representation before code generation")  \
                                                                             \
-  notproduct(bool, PrintSimpleStubs, false,                                 \
+  develop(bool, PrintSimpleStubs, false,                                    \
           "Print SimpleStubs")                                              \
                                                                             \
   /* C1 optimizations */                                                    \
@@ -188,10 +187,10 @@
           "Percentage of prev. allowed inline size in recursive inlining")  \
           range(0, 100)                                                     \
                                                                             \
-  notproduct(bool, PrintIRWithLIR, false,                                   \
+  develop(bool, PrintIRWithLIR, false,                                      \
           "Print IR instructions with generated LIR")                       \
                                                                             \
-  notproduct(bool, PrintLIRWithAssembly, false,                             \
+  develop(bool, PrintLIRWithAssembly, false,                                \
           "Show LIR instruction with generated assembly")                   \
                                                                             \
   develop(bool, CommentedAssembly, trueInDebug,                             \
@@ -210,7 +209,7 @@
   develop(bool, StressLinearScan, false,                                    \
           "scramble block order used by LinearScan (stress test)")          \
                                                                             \
-  product(bool, TimeLinearScan, false,                                      \
+  develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
   develop(bool, TimeEachLinearScan, false,                                  \

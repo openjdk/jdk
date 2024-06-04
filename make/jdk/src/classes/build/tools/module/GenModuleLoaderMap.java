@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class GenModuleLoaderMap {
         // default set of boot modules and ext modules
         Stream<String> bootModules = Stream.empty();
         Stream<String> platformModules = Stream.empty();
+        Stream<String> nativeAccessModules = Stream.empty();
         Path outfile = null;
         Path source = null;
         for (int i=0; i < args.length; i++) {
@@ -60,6 +61,9 @@ public class GenModuleLoaderMap {
                 } else if (option.equals("-platform")) {
                     String[] mns = arg.split(",");
                     platformModules = Stream.concat(platformModules, Arrays.stream(mns));
+                } else if (option.equals("-native-access")) {
+                    String[] mns = arg.split(",");
+                    nativeAccessModules = Stream.concat(nativeAccessModules, Arrays.stream(mns));
                 } else if (option.equals("-o")) {
                     outfile = Paths.get(arg);
                 } else {
@@ -84,6 +88,8 @@ public class GenModuleLoaderMap {
                     line = patch(line, "@@BOOT_MODULE_NAMES@@", bootModules);
                 } else if (line.contains("@@PLATFORM_MODULE_NAMES@@")) {
                     line = patch(line, "@@PLATFORM_MODULE_NAMES@@", platformModules);
+                } else if (line.contains("@@NATIVE_ACCESS_MODULE_NAMES@@")) {
+                    line = patch(line, "@@NATIVE_ACCESS_MODULE_NAMES@@", nativeAccessModules);
                 }
                 writer.println(line);
             }

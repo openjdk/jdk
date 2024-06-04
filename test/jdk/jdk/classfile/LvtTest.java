@@ -122,9 +122,9 @@ class LvtTest {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
@@ -146,27 +146,27 @@ class LvtTest {
                                   c0.localVariable(1, i1n, intSig, i1, preEnd) // LV Entries can be added before the labels
                                     .localVariable(2, i2, intSig, loopTop, preEnd)
                                     .labelBinding(start)
-                                    .constantInstruction(ICONST_1, 1)         // 0
-                                    .storeInstruction(TypeKind.IntType, 1)          // 1
+                                    .iconst_1()         // 0
+                                    .istore(1)          // 1
                                     .labelBinding(i1)
-                                    .constantInstruction(ICONST_1, 1)         // 2
-                                    .storeInstruction(TypeKind.IntType, 2)          // 3
+                                    .iconst_1()         // 2
+                                    .istore(2)          // 3
                                     .labelBinding(loopTop)
-                                    .loadInstruction(TypeKind.IntType, 2)           // 4
-                                    .constantInstruction(BIPUSH, 10)         // 5
-                                    .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                    .loadInstruction(TypeKind.IntType, 1)           // 7
-                                    .loadInstruction(TypeKind.IntType, 2)           // 8
-                                    .operatorInstruction(IMUL)             // 9
-                                    .storeInstruction(TypeKind.IntType, 1)          // 10
-                                    .incrementInstruction(2, 1)    // 11
-                                    .branchInstruction(GOTO, loopTop)     // 12
+                                    .iload(2)           // 4
+                                    .bipush(10)         // 5
+                                    .if_icmpge(loopEnd) // 6
+                                    .iload(1)           // 7
+                                    .iload(2)           // 8
+                                    .imul()             // 9
+                                    .istore(1)          // 10
+                                    .iinc(2, 1)    // 11
+                                    .goto_(loopTop)     // 12
                                     .labelBinding(loopEnd)
-                                    .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                    .loadInstruction(TypeKind.IntType, 1)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_INT_VOID, false)  // 15
+                                    .getstatic(CD_System, "out", CD_PrintStream)   // 13
+                                    .iload(1)
+                                    .invokevirtual(CD_PrintStream, "println", MTD_INT_VOID)  // 15
                                     .labelBinding(preEnd)
-                                    .returnInstruction(VoidType)
+                                    .return_()
                                     .labelBinding(end)
                                     .localVariable(0, slotName, desc, start, end); // and lv entries can be added after the labels
                               }));
@@ -174,7 +174,7 @@ class LvtTest {
 
         var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
+        var lvt = main.code().get().findAttribute(Attributes.localVariableTable()).get();
         var lvs = lvt.localVariables();
 
         assertEquals(lvs.size(), 3);
@@ -236,9 +236,9 @@ class LvtTest {
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
 
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
 
@@ -263,14 +263,14 @@ class LvtTest {
                                       c0.localVariable(2, l, juList, beforeRet, end)
                                         .localVariableType(1, u, TU, start, end)
                                         .labelBinding(start)
-                                        .newObjectInstruction(ClassDesc.of("java.util.ArrayList"))
-                                        .stackInstruction(DUP)
-                                        .invokeInstruction(INVOKESPECIAL, CD_ArrayList, "<init>", MTD_VOID, false)
-                                        .storeInstruction(TypeKind.ReferenceType, 2)
+                                        .new_(ClassDesc.of("java.util.ArrayList"))
+                                        .dup()
+                                        .invokespecial(CD_ArrayList, "<init>", MTD_VOID, false)
+                                        .astore(2)
                                         .labelBinding(beforeRet)
                                         .localVariableType(2, l, sig, beforeRet, end)
-                                        .loadInstruction(TypeKind.ReferenceType, 1)
-                                        .returnInstruction(TypeKind.ReferenceType)
+                                        .aload(1)
+                                        .areturn()
                                         .labelBinding(end)
                                         .localVariable(0, slotName, desc, start, end)
                                         .localVariable(1, u, jlObject, start, end);
@@ -278,7 +278,7 @@ class LvtTest {
         });
         var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
+        var lvtt = main.code().get().findAttribute(Attributes.localVariableTypeTable()).get();
         var lvts = lvtt.localVariableTypes();
 
         /* From javap:

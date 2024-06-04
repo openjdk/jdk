@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
+StringEventLog* Events::_memprotect_messages = nullptr;
+StringEventLog* Events::_nmethod_flush_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
 StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
@@ -97,6 +99,8 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _nmethod_flush_messages = new StringEventLog("Nmethod flushes", "nmethodflushes");
+    _memprotect_messages = new StringEventLog("Memory protections", "memprotects");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
     if (UseZGC) {
       _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");

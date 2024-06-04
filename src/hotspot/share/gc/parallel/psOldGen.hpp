@@ -149,7 +149,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   virtual void print_on(outputStream* st) const;
 
   void verify();
-  void verify_object_start_array();
 
   // Performance Counter support
   void update_counters();
@@ -157,9 +156,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Printing support
   const char* name() const { return "ParOldGen"; }
 
-  // Debugging support
-  // Save the tops of all spaces for later use during mangling.
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSOLDGEN_HPP

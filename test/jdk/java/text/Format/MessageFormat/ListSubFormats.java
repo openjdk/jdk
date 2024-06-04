@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8318761
+ * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce the
  *          appropriate FormatType and FormatStyle for ListFormat. ListFormat's
  *          STANDARD, OR, and UNIT types are supported as built-in patterns for
@@ -33,19 +33,22 @@
 
 import java.text.ListFormat;
 import java.text.MessageFormat;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+// This test expects an US locale, as this locale provides distinct instances
+// for different styles.
 public class ListSubFormats {
 
     // Recognize the 'list' FormatType as well as '', 'or', and
     // 'unit' associated FormatStyles
     @Test
     public void applyPatternTest() {
-        var mFmt = new MessageFormat("{0,list}{1,list,or}{2,list,unit}");
+        var mFmt = new MessageFormat("{0,list}{1,list,or}{2,list,unit}", Locale.US);
         var listStandard = ListFormat.getInstance(mFmt.getLocale(),
                 ListFormat.Type.STANDARD, ListFormat.Style.FULL);
         var listOr = ListFormat.getInstance(mFmt.getLocale(),
@@ -63,12 +66,12 @@ public class ListSubFormats {
     public void badApplyPatternTest() {
         // Wrong FormatStyle
         IllegalArgumentException exc = assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,list,standard}"));
+                new MessageFormat("{0,list,standard}", Locale.US));
         assertEquals("Unexpected modifier for List: standard", exc.getMessage());
 
         // Wrong FormatType
         exc = assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,listt,or}"));
+                new MessageFormat("{0,listt,or}", Locale.US));
         assertEquals("unknown format type: listt", exc.getMessage());
 
     }
@@ -77,7 +80,7 @@ public class ListSubFormats {
     // produce correct patterns.
     @Test
     public void toPatternTest() {
-        var mFmt = new MessageFormat("{0}{1}{2}");
+        var mFmt = new MessageFormat("{0}{1}{2}", Locale.US);
         mFmt.setFormatByArgumentIndex(0,
                 ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
         mFmt.setFormatByArgumentIndex(1,
@@ -90,9 +93,10 @@ public class ListSubFormats {
     // A custom ListFormat cannot be recognized, thus does not produce any built-in pattern
     @Test
     public void badToPatternTest() {
-        var mFmt = new MessageFormat("{0}");
+        var mFmt = new MessageFormat("{0}", Locale.US);
         mFmt.setFormatByArgumentIndex(0,
-                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.UNIT, ListFormat.Style.NARROW));
+                ListFormat.getInstance(mFmt.getLocale(),
+                        ListFormat.Type.UNIT, ListFormat.Style.NARROW));
         assertEquals("{0}", mFmt.toPattern());
     }
 }

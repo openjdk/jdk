@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@
 
 int ContinuationEntry::_return_pc_offset = 0;
 address ContinuationEntry::_return_pc = nullptr;
-CompiledMethod* ContinuationEntry::_enter_special = nullptr;
+nmethod* ContinuationEntry::_enter_special = nullptr;
 int ContinuationEntry::_interpreted_entry_offset = 0;
 
-void ContinuationEntry::set_enter_code(CompiledMethod* cm, int interpreted_entry_offset) {
+void ContinuationEntry::set_enter_code(nmethod* nm, int interpreted_entry_offset) {
   assert(_return_pc_offset != 0, "");
-  _return_pc = cm->code_begin() + _return_pc_offset;
+  _return_pc = nm->code_begin() + _return_pc_offset;
 
-  _enter_special = cm;
+  _enter_special = nm;
   _interpreted_entry_offset = interpreted_entry_offset;
   assert(_enter_special->code_contains(compiled_entry()),    "entry not in enterSpecial");
   assert(_enter_special->code_contains(interpreted_entry()), "entry not in enterSpecial");
@@ -141,7 +141,7 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
   if (pc != StubRoutines::cont_returnBarrier()) {
     CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;
     assert(cb != nullptr, "sp: " INTPTR_FORMAT " pc: " INTPTR_FORMAT, p2i(sp), p2i(pc));
-    assert(cb->as_compiled_method()->method()->is_continuation_enter_intrinsic(), "");
+    assert(cb->as_nmethod()->method()->is_continuation_enter_intrinsic(), "");
   }
 
   return true;

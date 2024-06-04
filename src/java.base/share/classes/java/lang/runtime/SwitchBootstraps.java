@@ -26,6 +26,7 @@
 package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
+import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -48,6 +49,8 @@ import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
+
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
@@ -74,32 +77,39 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
-    private static final MethodHandle NULL_CHECK;
-    private static final MethodHandle IS_ZERO;
-    private static final MethodHandle CHECK_INDEX;
-    private static final MethodHandle MAPPED_ENUM_LOOKUP;
+
+    private static final MethodType TYPES_SWITCH_TYPE = MethodType.methodType(int.class,
+            Object.class,
+            int.class,
+            BiPredicate.class,
+            List.class);
 
     private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
             MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
+    private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
+            MethodTypeDesc.ofDescriptor("(II)I");
 
-    private static final Map<TypePairs, String> typePairToName;
+    private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
-    static {
-        try {
-            NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
-                                           MethodType.methodType(boolean.class, Object.class));
-            IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
-                                           MethodType.methodType(boolean.class, int.class));
-            CHECK_INDEX = LOOKUP.findStatic(Objects.class, "checkIndex",
-                                           MethodType.methodType(int.class, int.class, int.class));
-            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
-                                                   MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
-                                                                         Class.class, EnumDesc[].class, EnumMap.class));
+    private static class StaticHolders {
+        private static final MethodHandle NULL_CHECK;
+        private static final MethodHandle IS_ZERO;
+        private static final MethodHandle MAPPED_ENUM_LOOKUP;
+
+        static {
+            try {
+                NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
+                                               MethodType.methodType(boolean.class, Object.class));
+                IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
+                                               MethodType.methodType(boolean.class, int.class));
+                MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
+                                                       MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
+                                                                             Class.class, EnumDesc[].class, EnumMap.class));
+            }
+            catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
         }
-        catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        typePairToName = TypePairs.initialize();
     }
 
     /**
@@ -166,13 +176,12 @@ public class SwitchBootstraps {
             || (!invocationType.returnType().equals(int.class))
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
-        requireNonNull(labels);
 
-        Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
+        for (Object l : labels) { // implicit null-check
+            verifyLabel(l, selectorType);
+        }
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
-
-        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
@@ -285,18 +294,17 @@ public class SwitchBootstraps {
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
             //else return "typeSwitch(labels)"
             MethodHandle body =
-                    MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
+                    MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.NULL_CHECK, 0, int.class),
                                                 MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
-                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
+                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.IS_ZERO, 1, Object.class),
                                                                             generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
-                                                                            MethodHandles.insertArguments(MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
+                                                                            MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
             target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
         } else {
             target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
 
         target = target.asType(invocationType);
-        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
@@ -340,12 +348,6 @@ public class SwitchBootstraps {
             }
         }
         return enumMap.map[value.ordinal()];
-    }
-
-    private static MethodHandle withIndexCheck(MethodHandle target, int labelsCount) {
-        MethodHandle checkIndex = MethodHandles.insertArguments(CHECK_INDEX, 1, labelsCount + 1);
-
-        return MethodHandles.filterArguments(target, 1, checkIndex);
     }
 
     private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
@@ -410,6 +412,11 @@ public class SwitchBootstraps {
         int EXTRA_CLASS_LABELS  = 3;
 
         return cb -> {
+            // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
+            cb.iload(RESTART_IDX);
+            cb.loadConstant(labelConstants.length + 1);
+            cb.invokestatic(CD_Objects, "checkIndex", CHECK_INDEX_DESCRIPTOR);
+            cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
             cb.if_nonnull(nonNullLabel);
@@ -417,7 +424,7 @@ public class SwitchBootstraps {
             cb.ireturn();
             cb.labelBinding(nonNullLabel);
             if (labelConstants.length == 0) {
-                cb.constantInstruction(0)
+                cb.loadConstant(0)
                         .ireturn();
                 return;
             }
@@ -457,7 +464,7 @@ public class SwitchBootstraps {
                             // Object o = ...
                             // o instanceof Wrapped(float)
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(Wrapper.forBasicType(classLabel)
+                            cb.instanceOf(Wrapper.forBasicType(classLabel)
                                     .wrapperType()
                                     .describeConstable()
                                     .orElseThrow());
@@ -467,23 +474,24 @@ public class SwitchBootstraps {
                             // o instanceof float
                             Label notNumber = cb.newLabel();
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(ConstantDescs.CD_Number);
-                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class) {
+                            cb.instanceOf(ConstantDescs.CD_Number);
+                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
+                                selectorType == Long.class || selectorType == Float.class || selectorType == Double.class) {
                                 cb.ifeq(next);
                             } else {
                                 cb.ifeq(notNumber);
                             }
                             cb.aload(SELECTOR_OBJ);
                             cb.checkcast(ConstantDescs.CD_Number);
-                            if (selectorType == long.class) {
+                            if (selectorType == long.class || selectorType == Long.class) {
                                 cb.invokevirtual(ConstantDescs.CD_Number,
                                         "longValue",
                                         MethodTypeDesc.of(ConstantDescs.CD_long));
-                            } else if (selectorType == float.class) {
+                            } else if (selectorType == float.class || selectorType == Float.class) {
                                 cb.invokevirtual(ConstantDescs.CD_Number,
                                         "floatValue",
                                         MethodTypeDesc.of(ConstantDescs.CD_float));
-                            } else if (selectorType == double.class) {
+                            } else if (selectorType == double.class || selectorType == Double.class) {
                                 cb.invokevirtual(ConstantDescs.CD_Number,
                                         "doubleValue",
                                         MethodTypeDesc.of(ConstantDescs.CD_double));
@@ -495,7 +503,7 @@ public class SwitchBootstraps {
                                 cb.goto_(compare);
                                 cb.labelBinding(notNumber);
                                 cb.aload(SELECTOR_OBJ);
-                                cb.instanceof_(ConstantDescs.CD_Character);
+                                cb.instanceOf(ConstantDescs.CD_Character);
                                 cb.ifeq(next);
                                 cb.aload(SELECTOR_OBJ);
                                 cb.checkcast(ConstantDescs.CD_Character);
@@ -506,7 +514,7 @@ public class SwitchBootstraps {
                             }
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
-                            String methodName = typePairToName.get(typePair);
+                            String methodName = TypePairs.typePairToName.get(typePair);
                             cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
                                     methodName,
                                     MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
@@ -516,11 +524,11 @@ public class SwitchBootstraps {
                         Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
                         if (classLabelConstableOpt.isPresent()) {
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                            cb.instanceOf(classLabelConstableOpt.orElseThrow());
                             cb.ifeq(next);
                         } else {
                             cb.aload(EXTRA_CLASS_LABELS);
-                            cb.constantInstruction(extraClassLabels.size());
+                            cb.loadConstant(extraClassLabels.size());
                             cb.invokeinterface(ConstantDescs.CD_List,
                                     "get",
                                     MethodTypeDesc.of(ConstantDescs.CD_Object,
@@ -539,7 +547,7 @@ public class SwitchBootstraps {
                     int enumIdx = enumDescs.size();
                     enumDescs.add(enumLabel);
                     cb.aload(ENUM_CACHE);
-                    cb.constantInstruction(enumIdx);
+                    cb.loadConstant(enumIdx);
                     cb.invokestatic(ConstantDescs.CD_Integer,
                             "valueOf",
                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
@@ -563,7 +571,7 @@ public class SwitchBootstraps {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
                     cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Number);
+                    cb.instanceOf(ConstantDescs.CD_Number);
                     cb.ifeq(notNumber);
                     cb.aload(SELECTOR_OBJ);
                     cb.checkcast(ConstantDescs.CD_Number);
@@ -573,7 +581,7 @@ public class SwitchBootstraps {
                     cb.goto_(compare);
                     cb.labelBinding(notNumber);
                     cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Character);
+                    cb.instanceOf(ConstantDescs.CD_Character);
                     cb.ifeq(next);
                     cb.aload(SELECTOR_OBJ);
                     cb.checkcast(ConstantDescs.CD_Character);
@@ -589,9 +597,9 @@ public class SwitchBootstraps {
                         element.caseLabel() instanceof Double ||
                         element.caseLabel() instanceof Boolean)) {
                     if (element.caseLabel() instanceof Boolean c) {
-                        cb.constantInstruction(c ? 1 : 0);
+                        cb.loadConstant(c ? 1 : 0);
                     } else {
-                        cb.constantInstruction((ConstantDesc) element.caseLabel());
+                        cb.loadConstant((ConstantDesc) element.caseLabel());
                     }
                     cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
                             "valueOf",
@@ -607,11 +615,11 @@ public class SwitchBootstraps {
                     throw new InternalError("Unsupported label type: " +
                             element.caseLabel().getClass());
                 }
-                cb.constantInstruction(idx);
+                cb.loadConstant(idx);
                 cb.ireturn();
             }
             cb.labelBinding(dflt);
-            cb.constantInstruction(cases.size());
+            cb.loadConstant(cases.size());
             cb.ireturn();
         };
     }
@@ -623,7 +631,7 @@ public class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = new ArrayList<>();
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
-        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of().build(ReferenceClassDescImpl.ofValidatedBinaryName(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
@@ -638,12 +646,8 @@ public class SwitchBootstraps {
             lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
-                                                        MethodType.methodType(int.class,
-                                                                              Object.class,
-                                                                              int.class,
-                                                                              BiPredicate.class,
-                                                                              List.class));
-            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(EnumDesc[]::new)),
+                                                        TYPES_SWITCH_TYPE);
+            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
                                                        List.copyOf(extraClassLabels));
             typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
                                                              MethodType.methodType(int.class,
@@ -683,11 +687,25 @@ public class SwitchBootstraps {
 
     // TypePairs should be in sync with the corresponding record in Lower
     record TypePairs(Class<?> from, Class<?> to) {
+
+        private static final Map<TypePairs, String> typePairToName = initialize();
+
         public static TypePairs of(Class<?> from,  Class<?> to) {
             if (from == byte.class || from == short.class || from == char.class) {
                 from = int.class;
             }
             return new TypePairs(from, to);
+        }
+
+        public int hashCode() {
+            return 31 * from.hashCode() + to.hashCode();
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof TypePairs otherPair) {
+                return otherPair.from == from && otherPair.to == to;
+            }
+            return false;
         }
 
         public static Map<TypePairs, String> initialize() {

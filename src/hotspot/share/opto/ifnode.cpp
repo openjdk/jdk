@@ -1051,6 +1051,10 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   }
   hook->destruct(igvn);
 
+  if (adjusted_val->is_top() || adjusted_lim->is_top()) {
+    return false;
+  }
+
   if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
       !igvn->C->post_loop_opts_phase()) {
     // If range check elimination applies to this comparison, it includes code to protect from overflows that may

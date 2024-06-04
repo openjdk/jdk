@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 7058207 8000986 8062588 8210406
+ * @bug 7058207 8000986 8062588 8210406 8174269
  * @summary CalendarDataProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
  * @build com.foobar.Utils
  *        com.bar.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI CalendarDataProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI CalendarDataProviderTest
  */
 
 import java.util.Calendar;

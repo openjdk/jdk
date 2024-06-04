@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ _JAVA_COMPILATION_GMK := 1
 ifeq (,$(_MAKEBASE_GMK))
   $(error You must include MakeBase.gmk prior to including JavaCompilation.gmk)
 endif
+
+include MakeIO.gmk
 
 # Java compilation needs SetupJarArchive and/or SetupZipArchive, if we're
 # generating a jar file or a source zip.
@@ -195,7 +197,7 @@ define SetupJavaCompilationBody
 
   ifeq ($$($1_COMPILER), bootjdk)
     # Javac server is not available when using the bootjdk compiler.
-    $1_JAVAC_CMD := $$(JAVAC)
+    $1_JAVAC_CMD := $$(JAVAC) -J$$(JAVA_FLAGS_TMPDIR)
 
     ifeq ($$($1_SMALL_JAVA), true)
       $1_FLAGS += $$(addprefix -J, $$(JAVA_FLAGS_SMALL))
@@ -209,7 +211,7 @@ define SetupJavaCompilationBody
       $1_TARGET_RELEASE := $$(TARGET_RELEASE_BOOTJDK)
     endif
   else ifeq ($$($1_COMPILER), buildjdk)
-    $1_JAVAC_CMD := $$(BUILD_JAVAC)
+    $1_JAVAC_CMD := $$(BUILD_JAVAC) -J$$(JAVA_FLAGS_TMPDIR)
 
     ifeq ($$($1_TARGET_RELEASE), )
       # If unspecified, default to the new jdk we're building

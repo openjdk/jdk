@@ -35,6 +35,7 @@ import jdk.vm.ci.code.test.riscv64.RISCV64TestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -95,7 +96,7 @@ public class CodeInstallationTest {
         }
     }
 
-    protected void test(TestCompiler compiler, Method method, Object... args) {
+    protected HotSpotNmethod test(TestCompiler compiler, Method method, Object... args) {
         try {
             HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
             TestAssembler asm = createAssembler();
@@ -115,9 +116,9 @@ public class CodeInstallationTest {
             Object expected = method.invoke(null, args);
             Object actual = installed.executeVarargs(args);
             Assert.assertEquals(expected, actual);
+            return (HotSpotNmethod) installed;
         } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.toString());
+            throw new AssertionError(e);
         }
     }
 }

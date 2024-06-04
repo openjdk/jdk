@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,6 @@ include NativeCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, common/JdkNativeCompilation.gmk))
-
-FindSrcDirsForLib += \
-  $(call uniq, $(wildcard \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/lib$(strip $2) \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/lib$(strip $2) \
-      $(TOPDIR)/src/$(strip $1)/share/native/lib$(strip $2)))
 
 FindSrcDirsForComponent += \
   $(call uniq, $(wildcard \
@@ -82,17 +76,159 @@ endif
 GetJavaHeaderDir = \
   $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
 
-# Process a dir description such as "java.base:headers" into a set of proper absolute paths.
-ProcessDir = \
+HOTSPOT_INCLUDE_DIR := $(TOPDIR)/src/hotspot/share/include \
+    $(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include
+
+# Preprocess a source dir destination. Pass on absolute paths unchanged. Expand
+# description such as "java.base:headers" into a set of proper absolute paths,
+# by looking in $MODULE/[shared|$OS|$OSTYPE]/native.
+# Treat *:libjvm as a special case, and replace it with the proper hotspot
+# include directories.
+ProcessSrcDir = \
   $(if $(findstring :, $1), \
-    $(call FindSrcDirsForComponent, $(firstword $(subst :, , $1)), $(lastword $(subst :, , $1))) \
+    $(if $(filter %:libjvm, $1), \
+      $(HOTSPOT_INCLUDE_DIR) \
+    , \
+      $(call FindSrcDirsForComponent, $(firstword $(subst :, , $1)), \
+          $(lastword $(subst :, , $1))) \
+    ) \
   , \
     $(if $(filter /%, $1), \
       $1 \
     , \
-      $(call FindSrcDirsForComponent, $(MODULE), $1) \
+      $(if $(filter libjvm, $1), \
+        $(HOTSPOT_INCLUDE_DIR) \
+      , \
+        $(call FindSrcDirsForComponent, $(MODULE), $1) \
+      ) \
     ) \
   )
+
+# Create a proper LIBPATH for the given library. Sets result in $1_$2_LIBPATH.
+# $1: The name of the rule (namespace)
+# $2: The safe namespace of the library
+define ResolveLibPath
+  # Determine proper LIBPATH. This is quite messy due to historical reasons,
+  # and because we need to have special treatment for "gtest:" and ":jvm".
+  ifneq ($$($1_$2_MODULE), gtest)
+    ifneq ($$($1_$2_NAME), jvm)
+      # This is the common case
+      ifeq ($$(call isTargetOs, windows), true)
+        $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)/lib$$($1_$2_NAME)
+      else
+        ifeq ($(STATIC_LIBS), true)
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)/lib$$($1_$2_NAME)/static
+        else ifeq ($$($1_$2_STATIC_LIBRARY), true)
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/native/$$($1_$2_MODULE)
+        else
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/modules_libs/$$($1_$2_MODULE)
+        endif
+      endif
+    else
+      # Special treatment for hotspot
+      ifeq ($(CREATING_BUILDJDK), true)
+        # When building a buildjdk, it's always only the server variant
+        $1_$2_JVM_VARIANT_PATH := server
+      else
+        $1_$2_JVM_VARIANT_PATH := $(JVM_VARIANT_MAIN)
+      endif
+      ifeq ($$(call isTargetOs, windows), true)
+        ifeq ($(STATIC_LIBS), true)
+          $1_$2_LIBPATH := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_$2_JVM_VARIANT_PATH)/libjvm/objs/static
+        else
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/modules_libs/$$($1_$2_MODULE)
+        endif
+      else
+        ifeq ($(STATIC_LIBS), true)
+          $1_$2_LIBPATH := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_$2_JVM_VARIANT_PATH)/libjvm/objs/static
+        else
+          $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/modules_libs/$$($1_$2_MODULE)/$$($1_$2_JVM_VARIANT_PATH)
+        endif
+      endif
+    endif
+  else
+    # Special treatment for virtual module "gtest"
+    ifeq ($$($1_$2_NAME), jvm)
+      ifeq ($$(call isTargetOs, windows), true)
+        ifeq ($(STATIC_LIBS), true)
+          $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/gtest/objs/static
+        else
+          $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/gtest/objs
+        endif
+      else
+        ifeq ($(STATIC_LIBS), true)
+          $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/gtest/objs/static
+        else
+          $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/gtest
+        endif
+      endif
+    else ifeq ($$($1_$2_NAME), gtest)
+      $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/libgtest
+      ifeq ($(STATIC_LIBS), true)
+        $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/libgtest/objs/static
+      else
+        $1_$2_LIBPATH := $$(JVM_OUTPUTDIR)/libgtest
+      endif
+    endif
+  endif
+endef
+
+# Process a JDK library designation such as "java.desktop:jawt" into the needed
+# additions to EXTRA_LINK_DEPS, LDFLAGS, LIBS and EXTRA_HEADER_DIRS.
+# $1: The name of the rule (namespace)
+# $2: The safe namespace of the library
+# $3: The actual string given to represent the library
+define AddJdkLibrary
+  $1_$2_NAME := $$(strip $$(lastword $$(subst :, , $3)))
+  $1_$2_MODULE := $$(strip $$(patsubst %$$($1_$2_NAME), %, $3))
+
+  ifeq ($$(filter lib%, $$($1_$2_NAME)),)
+    $$(error Library name $$($1_$2_NAME) missing lib prefix in $1)
+  endif
+  $1_$2_NAME := $$(strip $$(patsubst lib%, %, $$($1_$2_NAME)))
+
+  ifeq ($$($1_$2_MODULE),)
+    $1_$2_MODULE := $$(MODULE)
+  else
+    $1_$2_MODULE := $$(strip $$(patsubst %:, %, $$($1_$2_MODULE)))
+  endif
+
+  # Determine if the library in question is static.
+  # Ideally, we should not hardcode these
+  ifeq ($(call isTargetOs, aix)+$$($1_$2_MODULE):$$($1_$2_NAME), true+java.base:jli)
+     $1_$2_STATIC_LIBRARY := true
+  endif
+  ifeq ($$($1_$2_MODULE):$$($1_$2_NAME), gtest:gtest)
+     $1_$2_STATIC_LIBRARY := true
+  endif
+
+  # Setup $1_$2_LIBPATH.
+  $$(eval $$(call ResolveLibPath,$1,$2))
+
+  $1_EXTRA_HEADER_DIRS += $$($1_$2_MODULE):lib$$($1_$2_NAME)
+
+  ifneq ($(STATIC_LIBS), true)
+    ifeq ($$(call isTargetOs, windows), true)
+      ifeq ($$(filter -libpath:$$($1_$2_LIBPATH), $$($1_LDFLAGS)), )
+        $1_LDFLAGS += -libpath:$$($1_$2_LIBPATH)
+      endif
+      $1_LIBS += $$($1_$2_NAME)$(STATIC_LIBRARY_SUFFIX)
+      $1_$2_LIBFILE := $(LIBRARY_PREFIX)$$($1_$2_NAME)$(STATIC_LIBRARY_SUFFIX)
+    else
+      ifeq ($$(filter -L$$($1_$2_LIBPATH), $$($1_LDFLAGS)), )
+        $1_LDFLAGS += -L$$($1_$2_LIBPATH)
+      endif
+      $1_LIBS += -l$$($1_$2_NAME)
+      ifeq ($$($1_$2_STATIC_LIBRARY), true)
+        $1_$2_LIBFILE := $(LIBRARY_PREFIX)$$($1_$2_NAME)$(STATIC_LIBRARY_SUFFIX)
+      else
+        $1_$2_LIBFILE := $(LIBRARY_PREFIX)$$($1_$2_NAME)$(SHARED_LIBRARY_SUFFIX)
+      endif
+    endif
+
+    $1_EXTRA_LINK_DEPS += $$($1_$2_LIBPATH)/$$($1_$2_LIBFILE)
+  endif
+endef
 
 GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 
@@ -104,29 +240,76 @@ JDK_RCFLAGS=$(RCFLAGS) \
     -D"JDK_NAME=$(JDK_RC_NAME) $(VERSION_SHORT)" \
     -D"JDK_FVER=$(subst .,$(COMMA),$(VERSION_NUMBER_FOUR_POSITIONS))"
 
-# Setup make rules for creating a native shared library with suitable defaults
-# for the OpenJDK project.
+# Setup make rules for creating a native binary with suitable defaults
+# for the OpenJDK project. This macro is mostly considered to be an internal
+# support version. Please use SetupJdkLibrary or SetupJdkExecutable instead.
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
 #
 # Remaining parameters are named arguments. These are all passed on to
-# SetupNativeCompilation, except for
-#   EXTRA_RCFLAGS -- additional RCFLAGS to append.
-#   EXTRA_HEADER_DIRS -- additional directories to look for headers in
-#   EXTRA_SRC -- additional directories to look for source in
+# SetupNativeCompilation. This macro also adds the following additional
+# arguments:
+#
+#   SRC -- this is passed on after preprocessing. The preprocessing will pass on
+#     absolute paths unchanged, but relative paths will be expanded to include
+#     all directories with this name in $MODULE/[shared|$OS|$OSTYPE]/native.
+#   EXTRA_SRC -- additional directories to look for source in. This is processed
+#     like SRC.
 #   EXCLUDE_SRC_PATTERNS -- exclude source dirs matching these patterns from
 #     appearing in SRC.
+#   EXTRA_HEADER_DIRS -- additional directories to look for headers in. This can
+#     be specified either as an absolute path, or relative directory names which
+#     are preprocessed like SRC, or in the format <module>:<directory>, which
+#     will be processed like SRC but for the given module. The names
+#     "java.base:libjvm" and "gtest:libjvm" symbolise virtual libraries that
+#     will be replaced with proper values for hotspot.
 #   HEADERS_FROM_SRC -- if false, does not add source dirs automatically as
 #     header include dirs. (Defaults to true.)
-#   SRC -- this is passed on, but preprocessed to accept source dir designations
+#   JDK_LIBS -- libraries generated by the JDK build system to link against.
+#     These take the form <module>:<basename>. For the current module, the
+#     module name and colon can be omitted. The basename should be specified
+#     as the source directory, e.g. "libjava". The gtest module is a virtual
+#     module that will be replaced with correct values for gtest. When
+#     specifying JDK_LIBS, suitable values for EXTRA_LINK_DEPS, LDFLAGS, LIBS
+#     and EXTRA_HEADER_DIRS will be added.
+#   JDK_LIBS_<os> or JDK_LIBS_<osType> -- additional JDK_LIBS for the given OS
+#     or OS type only
+#   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
-#     such as "java.base:headers".
-SetupJdkLibrary = $(NamedParamsMacroTemplate)
-define SetupJdkLibraryBody
+#   DEFAULT_LIBCXX -- if false, do not add LIBCXX to LIBS for C++ compilations
+#   DEFAULT_CFLAGS -- if false, do not add default CFLAGS and CXXFLAGS
+#   DEFAULT_LDFLAGS -- if false, do not add default LDFLAGS
+#   CFLAGS_FILTER_OUT -- flags to filter out from default CFLAGS
+#   CXXFLAGS_FILTER_OUT -- flags to filter out from default CXXFLAGS
+#   LDFLAGS_FILTER_OUT -- flags to filter out from default LDFLAGS
+#   LD_SET_ORIGIN -- if false, do not add SET_*_ORIGIN flags to LDFLAGS
+#   APPEND_LDFLAGS -- a quirk to have additional LDFLAGS that will be set after
+#     the origin flags
+#   DEFAULT_VERSIONINFO_RESOURCE -- if false, do not set the default
+#     VERSIONINFO_RESOURCE
+#
+SetupJdkNativeCompilation = $(NamedParamsMacroTemplate)
+define SetupJdkNativeCompilationBody
+  ifeq ($$($1_TYPE), EXECUTABLE)
+    $1_NATIVE_DIR_PREFIX :=
+    $1_MODULES_PATH := modules_cmds
+    $1_RC_EXT := exe
+    $1_RC_FTYPE := 0x1L
+  else
+    $1_NATIVE_DIR_PREFIX := lib
+    $1_MODULES_PATH := modules_libs
+    $1_RC_EXT := dll
+    $1_RC_FTYPE := 0x2L
+  endif
+
   ifeq ($$($1_OUTPUT_DIR), )
     ifneq ($$(MODULE), )
-      $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+      ifeq ($$($1_TYPE), STATIC_LIBRARY)
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)
+      else
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/$$($1_MODULES_PATH)/$$(strip $$(MODULE))
+      endif
     else
       $$(error Must specify OUTPUT_DIR in a MODULE free context)
     endif
@@ -134,23 +317,31 @@ define SetupJdkLibraryBody
 
   ifeq ($$($1_OBJECT_DIR), )
     ifneq ($$(MODULE), )
-      $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/lib$$($1_NAME)
+      $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NATIVE_DIR_PREFIX)$$($1_NAME)
     else
       $$(error Must specify OBJECT_DIR in a MODULE free context)
     endif
   endif
 
+  ifneq ($$($1_DEFAULT_LIBCXX), false)
+    ifeq ($$($1_LINK_TYPE), C++)
+      $1_LIBS += $(LIBCXX)
+    endif
+  endif
+
   ifeq ($$($1_SRC), )
     ifneq ($$(MODULE), )
-      $1_SRC := $$(call FindSrcDirsForLib, $$(MODULE), $$($1_NAME))
+      $1_SRC := $$(call FindSrcDirsForComponent, $$(MODULE), $$($1_NATIVE_DIR_PREFIX)$$($1_NAME))
     else
-      $$(error Must specify SRC in a MODULE free context)
+      ifeq ($$($1_EXTRA_FILES), )
+        $$(error Must specify SRC or EXTRA_FILES in a MODULE free context)
+      endif
     endif
   else
-    $1_SRC := $$(foreach dir, $$($1_SRC), $$(call ProcessDir, $$(dir)))
+    $1_SRC := $$(foreach dir, $$($1_SRC), $$(call ProcessSrcDir, $$(dir)))
   endif
   ifneq ($$($1_EXTRA_SRC), )
-    $1_SRC += $$(foreach dir, $$($1_EXTRA_SRC), $$(call ProcessDir, $$(dir)))
+    $1_SRC += $$(foreach dir, $$($1_EXTRA_SRC), $$(call ProcessSrcDir, $$(dir)))
   endif
 
   ifneq ($$($1_EXCLUDE_SRC_PATTERNS), )
@@ -160,19 +351,20 @@ define SetupJdkLibraryBody
     $1_SRC := $$(filter-out $$($1_EXCLUDE_SRC), $$($1_SRC))
   endif
 
-  ifeq ($$($1_VERSIONINFO_RESOURCE), )
-    $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
+  ifneq ($$($1_DEFAULT_VERSIONINFO_RESOURCE), false)
+    ifeq ($$($1_VERSIONINFO_RESOURCE), )
+      $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
+    endif
   endif
 
   ifeq ($$($1_RC_FILEDESC), )
     $1_RC_FILEDESC := $(JDK_RC_NAME) binary
   endif
-
   $1_RCFLAGS := $(JDK_RCFLAGS) \
-      -D"JDK_FILEDESC=$$(strip $$($1_RC_FILEDESC))" \
-      -D"JDK_FNAME=$$($1_NAME).dll" \
+      -D"JDK_FILEDESC=$$($1_RC_FILEDESC)" \
+      -D"JDK_FNAME=$$($1_NAME).$$($1_RC_EXT)" \
       -D"JDK_INTERNAL_NAME=$$($1_NAME)" \
-      -D"JDK_FTYPE=0x2L" \
+      -D"JDK_FTYPE=$$($1_RC_FTYPE)" \
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
 
@@ -181,12 +373,40 @@ define SetupJdkLibraryBody
   endif
 
   # Add the module specific java header dir
-  $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
+  ifneq ($$(MODULE), )
+    $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
+  endif
 
-  ifneq ($$($1_EXTRA_HEADER_DIRS), )
-    $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
-        $$(call ProcessDir, $$(dir)))
-    $1_EXTRA_HEADER_FLAGS := $$(addprefix -I, $$($1_PROCESSED_EXTRA_HEADER_DIRS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
+  $$(foreach lib, $$($1_JDK_LIBS), \
+    $$(eval $$(call AddJdkLibrary,$1,$$(subst :,_,$$(lib)),$$(lib))) \
+  )
+
+  # Add the include path for jni.h to all native compilations
+  $1_EXTRA_HEADER_DIRS += \
+      $(SUPPORT_OUTPUTDIR)/modules_include/java.base \
+      java.base:include \
+      #
+
+  $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
+      $$(call ProcessSrcDir, $$(dir)))
+  $1_EXTRA_HEADER_FLAGS := $$(addprefix -I, $$($1_PROCESSED_EXTRA_HEADER_DIRS))
+
+  ifneq ($$($1_DEFAULT_CFLAGS), false)
+    ifeq ($$($1_TYPE), EXECUTABLE)
+      # Set the default flags first to be able to override
+      $1_CFLAGS := $$(filter-out $$($1_CFLAGS_FILTER_OUT), $$(CFLAGS_JDKEXE)) $$($1_CFLAGS)
+
+      # Set the default flags first to be able to override
+      $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKEXE)) $$($1_CXXFLAGS)
+    else
+      # Set the default flags first to be able to override
+      $1_CFLAGS := $$(filter-out $$($1_CFLAGS_FILTER_OUT), $$(CFLAGS_JDKLIB)) $$($1_CFLAGS)
+
+      # Set the default flags first to be able to override
+      $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKLIB)) $$($1_CXXFLAGS)
+    endif
   endif
 
   ifneq ($$($1_CFLAGS), )
@@ -199,55 +419,68 @@ define SetupJdkLibraryBody
     $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
 
+  ifneq ($$($1_DEFAULT_LDFLAGS), false)
+    ifeq ($$($1_TYPE), EXECUTABLE)
+      # Set the default flags first to be able to override
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE)) $$($1_LDFLAGS)
+    else
+      # Set the default flags first to be able to override
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB)) $$($1_LDFLAGS)
+    endif
+  endif
+
+  ifneq ($$($1_LD_SET_ORIGIN), false)
+    ifeq ($$($1_TYPE), EXECUTABLE)
+      $1_LDFLAGS += $$(call SET_EXECUTABLE_ORIGIN)
+    else
+      $1_LDFLAGS += $$(call SET_SHARED_LIBRARY_ORIGIN)
+    endif
+  endif
+  # APPEND_LDFLAGS, if it exists, must be set after the origin flags
+  # This is a workaround to keep existing behavior
+  $1_LDFLAGS += $$($1_APPEND_LDFLAGS)
+
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...
-  $$(eval $$(call SetupNativeCompilation, $1, ))
+  $$(eval $$(call SetupNativeCompilation, $1))
 endef
 
-# Setup make rules for creating a native executable with suitable defaults for
-# the OpenJDK project.
+# Setup make rules for creating a native library with suitable defaults
+# for the OpenJDK project. The default is to create a shared library,
+# but by passing TYPE := STATIC_LIBARY, a static library can be created.
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
 #
 # Remaining parameters are named arguments. These are all passed on to
-# SetupNativeCompilation, except for
-#   EXTRA_RCFLAGS -- additional RCFLAGS to append.
+# SetupJdkNativeCompilation. Please see that macro for details.
+SetupJdkLibrary = $(NamedParamsMacroTemplate)
+define SetupJdkLibraryBody
+  # If type is unspecified, default to LIBRARY
+  ifeq ($$($1_TYPE), )
+    $1_TYPE := LIBRARY
+  endif
+
+  # Since we reuse the rule name ($1), all our arguments will pass through.
+  # We lose in transparency, but gain in brevity in this call...
+  $$(eval $$(call SetupJdkNativeCompilation, $1))
+endef
+
+# Setup make rules for creating a native executable with suitable defaults
+# for the OpenJDK project.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These are all passed on to
+# SetupJdkNativeCompilation. Please see that macro for details.
 SetupJdkExecutable = $(NamedParamsMacroTemplate)
 define SetupJdkExecutableBody
   $1_TYPE := EXECUTABLE
 
-  ifeq ($$($1_OUTPUT_DIR), )
-    ifneq ($$(MODULE), )
-      $1_OUTPUT_DIR := $$(call FindExecutableDirForModule, $$(MODULE))
-    else
-      $$(error Must specify OUTPUT_DIR in a MODULE free context)
-    endif
-  endif
-
-  ifeq ($$($1_OBJECT_DIR), )
-    ifneq ($$(MODULE), )
-      $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NAME)
-    else
-      $$(error Must specify OBJECT_DIR in a MODULE free context)
-    endif
-  endif
-
-  ifeq ($$($1_VERSIONINFO_RESOURCE), )
-    $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
-  endif
-
-  $1_RCFLAGS := $(JDK_RCFLAGS) \
-      -D"JDK_FILEDESC=$(JDK_RC_NAME) binary" \
-      -D"JDK_FNAME=$$($1_NAME).exe" \
-      -D"JDK_INTERNAL_NAME=$$($1_NAME)" \
-      -D"JDK_FTYPE=0x1L" \
-      -I$(TOPDIR)/src/java.base/windows/native/common \
-      $$($1_EXTRA_RCFLAGS)
-
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...
-  $$(eval $$(call SetupNativeCompilation, $1))
+  $$(eval $$(call SetupJdkNativeCompilation, $1))
 endef
 
 endif # _JDK_NATIVE_COMPILATION_GMK

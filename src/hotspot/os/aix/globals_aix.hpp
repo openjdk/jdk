@@ -34,7 +34,6 @@
                          develop_pd,                                                \
                          product,                                                   \
                          product_pd,                                                \
-                         notproduct,                                                \
                          range,                                                     \
                          constraint)                                                \
                                                                                     \
@@ -45,7 +44,7 @@
   /* via shmctl). */                                                                \
   /* Per default we quit with an error if that variable is found; for certain */    \
   /* customer scenarios, we may want to be able to run despite that variable. */    \
-  product(bool, AllowExtshm, false,                                                 \
+  product(bool, AllowExtshm, false, DIAGNOSTIC,                                     \
           "Allow VM to run with EXTSHM=ON.")                                        \
                                                                                     \
   /*  Maximum expected size of the data segment. That correlates with the      */   \
@@ -59,23 +58,17 @@
           "Maximum expected Data Segment Size.")                                    \
                                                                                     \
   /* Use optimized addresses for the polling page.                             */   \
-  product(bool, OptimizePollingPageLocation, true,                                  \
+  product(bool, OptimizePollingPageLocation, true, DIAGNOSTIC,                      \
              "Optimize the location of the polling page used for Safepoints")       \
                                                                                     \
   /* Use 64K pages for virtual memory (shmat). */                                   \
-  product(bool, Use64KPages, true,                                                  \
+  product(bool, Use64KPages, true, DIAGNOSTIC,                                      \
           "Use 64K pages if available.")                                            \
-                                                                                    \
-  /*  If VM uses 64K paged memory (shmat) for virtual memory: threshold below  */   \
-  /*  which virtual memory allocations are done with 4K memory (mmap). This is */   \
-  /*  mainly for test purposes.                                                */   \
-  develop(uintx, Use64KPagesThreshold, 0,                                           \
-          "4K/64K page allocation threshold.")                                      \
                                                                                     \
   /* Normally AIX commits memory on touch, but sometimes it is helpful to have */   \
   /* explicit commit behaviour. This flag, if true, causes the VM to touch     */   \
   /* memory on os::commit_memory() (which normally is a noop).                 */   \
-  product(bool, UseExplicitCommit, false,                                           \
+  product(bool, UseExplicitCommit, false, DIAGNOSTIC,                               \
           "Explicit commit for virtual memory.")
 
 // end of RUNTIME_OS_FLAGS

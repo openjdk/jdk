@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
@@ -55,7 +56,6 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
@@ -981,29 +981,36 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
+
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return LOCALE_CACHE.computeIfAbsent(baseloc, Locale::createLocale);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LOCALE_CACHE.computeIfAbsent(key, Locale::createLocale);
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
-    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
-    private static Locale createLocale(Object key) {
-        return switch (key) {
-            case BaseLocale base -> new Locale(base, null);
-            case LocaleKey lk -> new Locale(lk.base, lk.exts);
-            default -> throw new InternalError("should not happen");
-        };
-    }
+    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
+            = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
+        @Override
+        public Locale apply(Object key) {
+            if (key instanceof BaseLocale base) {
+                return new Locale(base, null);
+            }
+            LocaleKey lk = (LocaleKey)key;
+            return new Locale(lk.base, lk.exts);
+        }
+    };
 
     private static final class LocaleKey {
+
         private final BaseLocale base;
         private final LocaleExtensions exts;
         private final int hash;
