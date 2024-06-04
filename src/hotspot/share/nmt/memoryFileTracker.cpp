@@ -123,11 +123,6 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
   return _files;
 }
 
-const VirtualMemorySnapshot& MemoryFileTracker::summary_for(const MemoryFile* file) {
-  return file->_summary;
-}
-
-
 bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
   _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
@@ -181,7 +176,7 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     for (int i = 0; i < mt_number_of_types; i++) {
       VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
       const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
-      snap->reserve_memory(current->reserved());
+      // Only account the committed memory.
       snap->commit_memory(current->committed());
     }
   }

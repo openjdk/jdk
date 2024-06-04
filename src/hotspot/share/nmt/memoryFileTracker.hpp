@@ -72,8 +72,6 @@ public:
   MemoryFile* make_file(const char* descriptive_name);
   void free_file(MemoryFile* file);
 
-  const VirtualMemorySnapshot& summary_for(const MemoryFile* file);
-
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
   // Print detailed report of file
@@ -100,8 +98,6 @@ public:
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
                                 const NativeCallStack& stack, MEMFLAGS flag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
-
-    static const VirtualMemorySnapshot& summary_for(const MemoryFile* device);
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 
