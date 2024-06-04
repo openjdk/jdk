@@ -208,6 +208,7 @@ class Copy : AllStatic {
 
   // Copy word-aligned words from lower to higher addresses, not atomic on each word
   inline static void conjoint_words_to_higher(const HeapWord* from, HeapWord* to, size_t byte_count) {
+    if (byte_count == 0) return;
     // byte_count is in bytes to check its alignment
     assert_params_ok(from, to, HeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
