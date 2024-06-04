@@ -190,9 +190,7 @@ class SpaceInfo
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
   void set_start_array(ObjectStartArray* s) { _start_array = s; }
 
-  void publish_new_top() const              { _space->set_top(_new_top); }
-
- private:
+private:
   MutableSpace*     _space;
   HeapWord*         _new_top;
   HeapWord*         _dense_prefix;
