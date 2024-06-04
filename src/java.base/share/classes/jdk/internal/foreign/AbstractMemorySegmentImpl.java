@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,10 +357,15 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public void checkAccess(long offset, long length, boolean readOnly) {
+    public void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
+    }
+
+    @ForceInline
+    public void checkAccess(long offset, long length, boolean readOnly) {
+        checkReadOnly(readOnly);
         checkBounds(offset, length);
     }
 
@@ -681,10 +686,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         long dstBytes = dstToOffset - dstFromOffset;
         srcImpl.checkAccess(srcFromOffset, srcBytes, true);
         dstImpl.checkAccess(dstFromOffset, dstBytes, true);
-        if (dstImpl == srcImpl) {
-            srcImpl.checkValidState();
-            return -1;
-        }
 
         long bytes = Math.min(srcBytes, dstBytes);
         long i = 0;
@@ -827,6 +828,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void set(AddressLayout layout, long offset, MemorySegment value) {
+        Objects.requireNonNull(value);
         layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
@@ -952,6 +954,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
+        Objects.requireNonNull(value);
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }

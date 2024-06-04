@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -495,5 +496,12 @@ public class VM {
      */
     public static List<BufferPool> getBufferPools() {
         return BufferPoolsHolder.BUFFER_POOLS;
+    }
+
+    /**
+     * Return the initial value of System.err that was set during VM initialization.
+     */
+    public static PrintStream initialErr() {
+        return SharedSecrets.getJavaLangAccess().initialSystemErr();
     }
 }

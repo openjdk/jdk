@@ -688,12 +688,9 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesRemoveDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
+class CompilerDirectivesRemoveDCmd : public DCmd {
 public:
-  static int num_arguments() { return 1; }
-  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap);
+  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "Compiler.directives_remove";
   }
@@ -714,9 +711,8 @@ public:
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 1; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_add";
@@ -735,36 +731,9 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesReplaceDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
+class CompilerDirectivesClearDCmd : public DCmd {
 public:
-  static int num_arguments() { return 2; }
-  CompilerDirectivesReplaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "Compiler.directives_replace";
-  }
-  static const char* description() {
-    return "Clear directives stack, and load new compiler directives from file.";
-  }
-  static const char* impact() {
-    return "Low";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class CompilerDirectivesClearDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
-public:
-  static int num_arguments() { return 1; }
-  CompilerDirectivesClearDCmd(outputStream* output, bool heap);
+  CompilerDirectivesClearDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "Compiler.directives_clear";
   }

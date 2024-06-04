@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal;
 import java.lang.reflect.Modifier;
 
 import jdk.jfr.internal.event.EventConfiguration;
-import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.util.Bytecode;
 /**
  * All upcalls from the JVM should go through this class.
@@ -78,7 +77,7 @@ final class JVMUpcalls {
                 Bytecode.log(clazz.getName(), bytes);
                 return bytes;
             }
-            return JDKEvents.retransformCallback(clazz, oldBytes);
+            return oldBytes;
         } catch (Throwable t) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation to event class " + clazz.getName());
         }
@@ -110,9 +109,6 @@ final class JVMUpcalls {
             eventName = ei.getEventName();
             if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
-                return oldBytes;
-            }
-            if (ei.isMirrorEvent()) {
                 return oldBytes;
             }
 

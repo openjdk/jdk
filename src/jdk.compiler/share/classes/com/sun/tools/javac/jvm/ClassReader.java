@@ -308,7 +308,7 @@ public class ClassReader {
             c.members_field.enter(sym);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Error Diagnoses
  ***********************************************************************/
 
@@ -338,7 +338,7 @@ public class ClassReader {
             dcfh);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Buffer Access
  ***********************************************************************/
 
@@ -378,7 +378,7 @@ public class ClassReader {
         return res;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Constant Pool Access
  ***********************************************************************/
 
@@ -437,7 +437,7 @@ public class ClassReader {
         return set;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Types
  ***********************************************************************/
 
@@ -590,8 +590,21 @@ public class ClassReader {
                 ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                List<Type> actuals = sigToTypes('>');
+                List<Type> formals = ((ClassType)t.type.tsym.type).typarams_field;
+                if (formals != null) {
+                    if (actuals.isEmpty())
+                        actuals = formals;
+                }
+                /* actualsCp is final as it will be captured by the inner class below. We could avoid defining
+                 * this additional local variable and depend on field ClassType::typarams_field which `actuals` is
+                 * assigned to but then we would have a dependendy on the internal representation of ClassType which
+                 * could change in the future
+                 */
+                final List<Type> actualsCp = actuals;
+                outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
+                        boolean typeArgsSet = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
                             if (!completed) {
@@ -621,7 +634,27 @@ public class ClassReader {
                         public void setEnclosingType(Type outer) {
                             throw new UnsupportedOperationException();
                         }
-                    };
+
+                        @Override
+                        public List<Type> getTypeArguments() {
+                            if (!typeArgsSet) {
+                                typeArgsSet = true;
+                                List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                                if (formalsCp != null && !formalsCp.isEmpty()) {
+                                    if (actualsCp.length() == formalsCp.length()) {
+                                        List<Type> a = actualsCp;
+                                        List<Type> f = formalsCp;
+                                        while (a.nonEmpty()) {
+                                            a.head = a.head.withTypeVar(f.head);
+                                            a = a.tail;
+                                            f = f.tail;
+                                        }
+                                    }
+                                }
+                            }
+                            return super.getTypeArguments();
+                        }
+                };
                 switch (signature[sigp++]) {
                 case ';':
                     if (sigp < siglimit && signature[sigp] == '.') {
@@ -791,7 +824,7 @@ public class ClassReader {
         }
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Attributes
  ***********************************************************************/
 
@@ -1462,7 +1495,7 @@ public class ClassReader {
         return null;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Java-language annotations
  ***********************************************************************/
 
@@ -2579,7 +2612,7 @@ public class ClassReader {
         }
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Symbols
  ***********************************************************************/
 
@@ -3122,7 +3155,7 @@ public class ClassReader {
      */
     public boolean filling = false;
 
-/************************************************************************
+/* **********************************************************************
  * Adjusting flags
  ***********************************************************************/
 

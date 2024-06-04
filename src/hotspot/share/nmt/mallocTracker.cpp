@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -38,8 +39,8 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -226,6 +227,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
+#if !INCLUDE_ASAN
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
@@ -303,5 +306,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

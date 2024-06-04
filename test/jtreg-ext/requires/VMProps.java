@@ -67,6 +67,9 @@ public class VMProps implements Callable<Map<String, String>> {
     // value known to jtreg as an indicator of error state
     private static final String ERROR_STATE = "__ERROR__";
 
+    private static final String GC_PREFIX = "-XX:+Use";
+    private static final String GC_SUFFIX = "GC";
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static class SafeMap {
@@ -348,8 +351,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
 
-        String GC_PREFIX  = "-XX:+Use";
-        String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
         if (jtropts != null) {
             for (String opt : jtropts.split(",")) {
@@ -419,13 +420,15 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if compiler in use supports RTM and false otherwise.
+     * @return "true" if compiler in use supports RTM and "false" otherwise.
+     * Note: Lightweight locking does not support RTM (for now).
      */
     protected String vmRTMCompiler() {
         boolean isRTMCompiler = false;
 
         if (Compiler.isC2Enabled() &&
-            (Platform.isX86() || Platform.isX64() || Platform.isPPC())) {
+            (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
+            is_LM_LIGHTWEIGHT().equals("false")) {
             isRTMCompiler = true;
         }
         return "" + isRTMCompiler;
@@ -460,7 +463,31 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if this VM can write Java heap objects into the CDS archive
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if the VM options specified via the "test.cds.runtime.options"
+     * property is compatible with writing Java heap objects into the CDS archive
+     */
+    protected boolean isCDSRuntimeOptionsCompatible() {
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts == null) {
+            return true;
+        }
+        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        String G1GC_ENABLED = "-XX:+UseG1GC";
+        for (String opt : jtropts.split(",")) {
+            if (opt.equals(CCP_DISABLED)) {
+                return false;
+            }
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
+                !opt.equals(G1GC_ENABLED)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -479,6 +506,34 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
+    }
+
+    /**
+     * @return LockingMode.
+     */
+    protected String vmLockingMode() {
+        return "" + WB.getIntVMFlag("LockingMode");
+    }
+
+    /**
+     * @return "true" if LockingMode == 0 (LM_MONITOR)
+     */
+    protected String is_LM_MONITOR() {
+        return "" + vmLockingMode().equals("0");
+    }
+
+    /**
+     * @return "true" if LockingMode == 1 (LM_LEGACY)
+     */
+    protected String is_LM_LEGACY() {
+        return "" + vmLockingMode().equals("1");
+    }
+
+    /**
+     * @return "true" if LockingMode == 2 (LM_LIGHTWEIGHT)
+     */
+    protected String is_LM_LIGHTWEIGHT() {
+        return "" + vmLockingMode().equals("2");
     }
 
     /**

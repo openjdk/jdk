@@ -148,18 +148,21 @@ public:
       return;
     }
 
-    ShenandoahReentrantLocker locker(nm_data->lock());
+    {
+      ShenandoahReentrantLocker locker(nm_data->lock());
 
-    // Heal oops and disarm
-    if (_bs->is_armed(nm)) {
-      ShenandoahEvacOOMScope oom_evac_scope;
-      ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
-      // mark_as_maybe_on_stack() callbacks when they are used again.
-      _bs->set_guard_value(nm, 0);
+      // Heal oops and disarm
+      if (_bs->is_armed(nm)) {
+        ShenandoahEvacOOMScope oom_evac_scope;
+        ShenandoahNMethod::heal_nmethod_metadata(nm_data);
+        // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_stack() callbacks when they are used again.
+        _bs->set_guard_value(nm, 0);
+      }
     }
 
     // Clear compiled ICs and exception caches
+    ShenandoahReentrantLocker locker(nm_data->ic_lock());
     nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
@@ -215,8 +218,8 @@ ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
   locker.notify_all();
 }
 
-void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
+void ShenandoahCodeRootsIterator::possibly_parallel_nmethods_do(NMethodClosure *f) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   assert(_table_snapshot != nullptr, "Sanity");
-  _table_snapshot->parallel_blobs_do(f);
+  _table_snapshot->parallel_nmethods_do(f);
 }

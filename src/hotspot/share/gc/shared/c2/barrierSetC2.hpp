@@ -205,6 +205,63 @@ public:
   virtual bool is_opt_access() const { return true; }
 };
 
+class BarrierSetC2State : public ArenaObj {
+protected:
+  Node_Array                      _live;
+
+public:
+  BarrierSetC2State(Arena* arena) : _live(arena) {}
+
+  RegMask* live(const Node* node) {
+    if (!node->is_Mach() || !needs_liveness_data(node->as_Mach())) {
+      // Don't need liveness for non-MachNodes or if the GC doesn't request it
+      return nullptr;
+    }
+    RegMask* live = (RegMask*)_live[node->_idx];
+    if (live == nullptr) {
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
+      _live.map(node->_idx, (Node*)live);
+    }
+
+    return live;
+  }
+
+  virtual bool needs_liveness_data(const MachNode* mach) const = 0;
+  virtual bool needs_livein_data() const = 0;
+};
+
+// This class represents the slow path in a C2 barrier. It is defined by a
+// memory access, an entry point, and a continuation point (typically the end of
+// the barrier). It provides a set of registers whose value is live across the
+// barrier, and hence must be preserved across runtime calls from the stub.
+class BarrierStubC2 : public ArenaObj {
+protected:
+  const MachNode* _node;
+  Label           _entry;
+  Label           _continuation;
+  RegMask         _preserve;
+
+  // Registers that are live-in/live-out of the entire memory access
+  // implementation (possibly including multiple barriers). Whether live-in or
+  // live-out registers are returned depends on
+  // BarrierSetC2State::needs_livein_data().
+  RegMask& live() const;
+
+public:
+  BarrierStubC2(const MachNode* node);
+
+  // Entry point to the stub.
+  Label* entry();
+  // Return point from the stub (typically end of barrier).
+  Label* continuation();
+
+  // Preserve the value in reg across runtime calls in this barrier.
+  void preserve(Register reg);
+  // Do not preserve the value in reg across runtime calls in this barrier.
+  void dont_preserve(Register reg);
+  // Set of registers whose value needs to be preserved across runtime calls in this barrier.
+  const RegMask& preserve_set() const;
+};
 
 // This is the top-level class for the backend of the Access API in C2.
 // The top-level class is responsible for performing raw accesses. The
@@ -223,6 +280,8 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   void pin_atomic_op(C2AtomicParseAccess& access) const;
+  void clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                        address call_addr, const char* call_name) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.
@@ -302,6 +361,7 @@ public:
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
   virtual void late_barrier_analysis() const { }
+  virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }
   virtual void emit_stubs(CodeBuffer& cb) const { }
 

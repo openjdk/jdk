@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.util.Locale;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
@@ -38,6 +39,7 @@ import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
+import jdk.internal.org.jline.terminal.TerminalBuilder.SystemOutput;
 
 /**
  * JdkConsole/Provider implementations for jline
@@ -51,7 +53,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
     public JdkConsole console(boolean isTTY, Charset charset) {
         try {
             Terminal terminal = TerminalBuilder.builder().encoding(charset)
-                                               .exec(false).build();
+                                               .exec(false)
+                                               .systemOutput(SystemOutput.SysOut)
+                                               .build();
             return new JdkConsoleImpl(terminal);
         } catch (IllegalStateException ise) {
             //cannot create a non-dumb, non-exec terminal,
@@ -81,21 +85,40 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public JdkConsole format(String fmt, Object ... args) {
-            writer().format(fmt, args).flush();
+        public JdkConsole println(Object obj) {
+            writer().println(obj);
+            writer().flush();
             return this;
         }
 
         @Override
-        public JdkConsole printf(String format, Object ... args) {
-            return format(format, args);
+        public JdkConsole print(Object obj) {
+            writer().print(obj);
+            writer().flush();
+            return this;
         }
 
         @Override
-        public String readLine(String fmt, Object ... args) {
+        public String readln(String prompt) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args));
+                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
+        }
+
+        @Override
+        public JdkConsole format(Locale locale, String format, Object ... args) {
+            writer().format(locale, format, args).flush();
+            return this;
+        }
+
+        @Override
+        public String readLine(Locale locale, String format, Object ... args) {
+            try {
+                initJLineIfNeeded();
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -103,14 +126,15 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readLine() {
-            return readLine("");
+            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         @Override
-        public char[] readPassword(String fmt, Object ... args) {
+        public char[] readPassword(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args), '\0').toCharArray();
+                return jline.readLine(String.format(locale, format, args).replace("%", "%%"), '\0')
+                            .toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
             } finally {
@@ -120,7 +144,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public char[] readPassword() {
-            return readPassword("");
+            return readPassword(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         @Override
