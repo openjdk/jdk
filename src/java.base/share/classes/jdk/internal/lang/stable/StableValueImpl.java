@@ -32,6 +32,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -56,8 +57,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean trySet(T value) {
         synchronized (mutex) {
-            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET,
-                    null, (value == null) ? nullSentinel() : value);
+            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
         }
     }
 
@@ -66,7 +66,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElseThrow() {
         final T t = value;
         if (t != null) {
-            return t == nullSentinel() ? null : t;
+            return unwrap(t);
         }
         throw new NoSuchElementException("No value set");
     }
@@ -76,7 +76,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElse(T other) {
         final T t = value;
         if (t != null) {
-            return t == nullSentinel() ? null : t;
+            return unwrap(t);
         }
         return other;
     }
@@ -86,12 +86,20 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value != null;
     }
 
+    @Override
+    public void ifSet(Consumer<? super T> action) {
+        T t = value;
+        if (t != null) {
+            action.accept(unwrap(t));
+        }
+    }
+
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
         final T t = value;
         if (t != null) {
-            return t == nullSentinel() ? null : t;
+            return unwrap(t);
         }
         return compute(supplier);
     }
@@ -101,7 +109,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         synchronized (mutex) {
             T t = value;
             if (t != null) {
-                return t == nullSentinel() ? null : t;
+                return unwrap(t);
             }
             t = supplier.get();
             trySet(t);
@@ -114,7 +122,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public <I> T computeIfUnset(I input, Function<? super I, ? extends T> mapper) {
         final T t = value;
         if (t != null) {
-            return t == nullSentinel() ? null : t;
+            return unwrap(t);
         }
         return compute(input, mapper);
     }
@@ -124,14 +132,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
         synchronized (mutex) {
             T t = value;
             if (t != null) {
-                return t == nullSentinel() ? null : t;
+                return unwrap(t);
             }
             t = mapper.apply(input);
             trySet(t);
             return orElseThrow();
         }
     }
-
 
     @Override
     public int hashCode() {
@@ -147,6 +154,16 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public String toString() {
         return "StableValue" + render(value);
+    }
+
+    // Wraps null values into a sentinel value
+    private static <T> T wrap(T t) {
+        return (t == null) ? nullSentinel() : t;
+    }
+
+    // Unwraps null sentinel values into null
+    private static <T> T unwrap(T t) {
+        return t == nullSentinel() ? null : t;
     }
 
     // Factory

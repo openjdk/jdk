@@ -26,6 +26,7 @@
 package jdk.internal.lang;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -92,6 +94,14 @@ public sealed interface StableValue<T>
      * {@return {@code true} if a value is set, {@code false} otherwise}
      */
     boolean isSet();
+
+    /**
+     * If a value is set, performs the given action with the set value,
+     * otherwise does nothing.
+     *
+     * @param action the action to be performed, if a value is set
+     */
+    void ifSet(Consumer<? super T> action);
 
     /**
      * If the stable value is unset, attempts to compute its value using the given
@@ -177,6 +187,8 @@ public sealed interface StableValue<T>
                     " because a value is alredy set: " + this);
         }
     }
+
+
 
     // Factories
 
