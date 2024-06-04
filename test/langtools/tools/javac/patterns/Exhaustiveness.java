@@ -2105,37 +2105,81 @@ public class Exhaustiveness extends TestRunner {
               }""");
    }
 
+    @Test
+    public void testNestedIntersectionType(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+
+                   static abstract class Abs {}
+
+                   sealed interface B permits V {}
+
+                   static final class V extends Abs implements B {}
+
+                   final static record R<T extends B>(T b) {}
+
+                   static <T extends Abs & B> int r(R<T> r) {
+                       return switch (r) {
+                           case R(B b) -> 3;
+                       };
+                   }
+               }
+               """);
+    }
     @Test //JDK-8327368
     public void testExpandForTypeVariables(Path base) throws Exception {
         doTest(base,
                new String[0],
                """
                public class Test {
-                   interface Parent { int a();}
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
 
-                   static class Child implements Parent {
-                       public int a() {
-                           return 1;
-                       }
-                   }
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
 
-                   record Rec<T, U>(T a, U b) {}
+                   static final class V implements B { public V() {} }
+                   static final class W implements B { public W() {} }
 
-                   private static <T extends Parent, U extends Parent> boolean test(Rec<T, U> p) {
-                       boolean res;
-                       switch (p) {
-                           case Rec(Child a, var b) -> res = a.a() + b.a() == 2; //line A
-                       }
-                       return res;
-                   }
+                   final static record R<T1 extends A, T2 extends B>(T1 a, T2 b) { }
 
-                   public static void main(String argv[]) {
-                       System.out.println(test(new Rec<>(new Child(), new Child())));
+                   static <T1 extends A, T2 extends B> int r(R<T1, T2> r) {
+                       return switch (r) {
+                           case R(A a, V b) -> 1; // Any A with specific B
+                           case R(T a, var b) -> 2; // Specific A with any B
+                           case R(U a, W b) -> 3; // Specific A with specific B
+                       };
                    }
                }
-               """,
-               "Test.java:14:9: compiler.err.not.exhaustive.statement",
-               "1 error");
+               """);
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
+
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
+
+                   static final class V extends Abs implements B { public V() {} }
+                   static final class W extends Abs implements B { public W() {} }
+
+                   static abstract class Abs {}
+
+                   final static record R<T1 extends A, T2 extends B>(T1 a, T2 b) { }
+
+                   static <T1 extends A, T2 extends Abs & B> int r(R<T1, T2> r) {
+                       return switch (r) {
+                           case R(A a, V b) -> 1; // Any A with specific B
+                           case R(T a, var b) -> 2; // Specific A with any B
+                           case R(U a, W b) -> 3; // Specific A with specific B
+                       };
+                   }
+               }
+               """);
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
