@@ -42,7 +42,6 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 // Note: throughout this code we will use the term "VMA" for OS system level memory mapping
@@ -198,7 +197,16 @@ struct GCThreadClosure : public ThreadClosure {
 };
 
 static void print_thread_details(uintx thread_id, const char* name, outputStream* st) {
-  st->print("(" UINTX_FORMAT " \"%s\")", (uintx)thread_id, name);
+  // avoid commas and spaces in output to ease post-processing via awk
+  char tmp[64];
+  stringStream ss(tmp, sizeof(tmp));
+  ss.print(":" UINTX_FORMAT "-%s", (uintx)thread_id, name);
+  for (int i = 0; tmp[i] != '\0'; i++) {
+    if (!isalnum(tmp[i])) {
+      tmp[i] = '-';
+    }
+  }
+  st->print_raw(tmp);
 }
 
 // Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
@@ -228,18 +236,18 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
 ///////////////
 
-MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, MappingPrintOptions options) :
-    _out(st), _options(options), _nmt_info(nmt_info)
+MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info) :
+    _out(st), _nmt_info(nmt_info)
 {}
 
-void MappingPrintSession::print_nmt_flag_legend(int indent) const {
-#define DO(flag, shortname, text) _out->fill_to(indent); _out->print_cr("%10s: %s", shortname, text);
+void MappingPrintSession::print_nmt_flag_legend() const {
+#define DO(flag, shortname, text) _out->indent(); _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }
 
-void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const void* vma_to) const {
-
+bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const void* vma_to) const {
+  int num_printed = 0;
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
@@ -248,33 +256,33 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
       for (int i = 0; i < mt_number_of_types; i++) {
         const MEMFLAGS flag = (MEMFLAGS)i;
         if (flags.has_flag(flag)) {
-          if (i > 0) {
-            _out->put(' ');
+          if (num_printed > 0) {
+            _out->put(',');
           }
           _out->print("%s", get_shortname_for_nmt_flag(flag));
           if (flag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
           }
+          num_printed ++;
         }
       }
     }
   }
+  return num_printed > 0;
 }
 
-void MemMapPrinter::print_all_mappings(outputStream* st, MappingPrintOptions options) {
+void MemMapPrinter::print_all_mappings(outputStream* st) {
   CachedNMTInformation nmt_info;
   st->print_cr("Memory mappings:");
-  if (!options.only_summary) {
-    // Prepare NMT info cache. But only do so if we print individual mappings,
-    // otherwise, we won't need it and can save that work.
-    if (MemTracker::enabled()) {
-      nmt_info.fill_from_nmt();
-      DEBUG_ONLY(nmt_info.print_on(st);)
-    } else {
-      st->print_cr("NMT is disabled. VM info not available.");
-    }
+  // Prepare NMT info cache. But only do so if we print individual mappings,
+  // otherwise, we won't need it and can save that work.
+  if (MemTracker::enabled()) {
+    nmt_info.fill_from_nmt();
+    DEBUG_ONLY(nmt_info.print_on(st);)
+  } else {
+    st->print_cr("NMT is disabled. VM info not available.");
   }
-  MappingPrintSession session(st, nmt_info, options);
+  MappingPrintSession session(st, nmt_info);
   pd_print_all_mappings(session);
 }
 

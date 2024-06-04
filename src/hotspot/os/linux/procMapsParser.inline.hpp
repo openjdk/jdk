@@ -29,17 +29,13 @@
 #include "utilities/globalDefinitions.hpp"
 #include "procMapsParser.hpp"
 
-void ProcMapsInfo::reset() {
-  from = to = nullptr;
-  prot[0] = filename[0] = '\0';
-}
-
-size_t ProcMapsInfo::vsize() const {
+size_t ProcSmapsInfo::vsize() const {
   return from < to ? pointer_delta(to, from, 1) : 0;
 }
 
 void ProcSmapsInfo::reset() {
-  ProcMapsInfo::reset();
+  from = to = nullptr;
+  prot[0] = filename[0] = '\0';
   kernelpagesize = rss = private_hugetlb = anonhugepages = swap = 0;
 }
 

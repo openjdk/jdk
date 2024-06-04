@@ -166,9 +166,10 @@ void outputStream::vprint_cr(const char* format, va_list argptr) {
   do_vsnprintf_and_write(format, argptr, true);
 }
 
-void outputStream::fill_to(int col) {
-  int need_fill = col - position();
+int outputStream::fill_to(int col) {
+  int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
+  return need_fill;
 }
 
 void outputStream::move_to(int col, int slop, int min_space) {

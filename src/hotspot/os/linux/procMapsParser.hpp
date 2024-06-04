@@ -34,20 +34,15 @@
 // Usage:
 //
 // FILE* f = fopen(...)
-// ProcMapsParser parser(f);
-// ProcMapsInfo info;
+// ProcSMapsParser parser(f);
+// ProcSMapsInfo info;
 // while (parser.parse_next(info)) { ... }
 
-struct ProcMapsInfo {
+struct ProcSmapsInfo {
   void* from;
   void* to;
   char prot[20 + 1];
   char filename[1024 + 1];
-  inline virtual void reset();
-  inline size_t vsize() const;
-};
-
-struct ProcSmapsInfo : public ProcMapsInfo {
   size_t kernelpagesize;
   size_t rss;
   size_t private_hugetlb;
@@ -60,37 +55,25 @@ struct ProcSmapsInfo : public ProcMapsInfo {
   bool hg; // thp-advised
   bool ht; // uses hugetlb pages
   bool nh; // thp forbidden
-  bool thp_eligible;
-  inline void reset() override;
+  inline size_t vsize() const;
+  inline void reset();
 };
 
-class ProcMapsParserBase {
+class ProcSmapsParser {
   FILE* _f;
-  bool _had_error;
-protected:
   const size_t _linelen;
   char* _line;
+
   bool read_line(); // sets had_error in case of error
-public:
-  ProcMapsParserBase(FILE* f);
-  ~ProcMapsParserBase();
-  bool had_error() const { return _had_error; }
-};
-
-class ProcMapsParser : public ProcMapsParserBase {
-public:
-  ProcMapsParser(FILE* f) : ProcMapsParserBase(f) {}
-  // Starts or continues parsing. Returns true on success,
-  // false on EOF or on error.
-  bool parse_next(ProcMapsInfo& out);
-};
-
-class ProcSmapsParser : public ProcMapsParserBase {
   bool is_header_line();
   void scan_header_line(ProcSmapsInfo& out);
   void scan_additional_line(ProcSmapsInfo& out);
+
 public:
-  ProcSmapsParser(FILE* f) : ProcMapsParserBase(f) {}
+
+  ProcSmapsParser(FILE* f);
+  ~ProcSmapsParser();
+
   // Starts or continues parsing. Returns true on success,
   // false on EOF or on error.
   bool parse_next(ProcSmapsInfo& out);

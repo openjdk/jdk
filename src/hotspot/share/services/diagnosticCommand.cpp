@@ -1186,9 +1186,7 @@ SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MappingPrintOptions options;
-  options.only_summary = _only_summary.value();
-  MemMapPrinter::print_all_mappings(output(), options);
+  MemMapPrinter::print_all_mappings(output());
 }
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
@@ -1208,9 +1206,7 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MappingPrintOptions options;
-    options.only_summary = _only_summary.value();
-    MemMapPrinter::print_all_mappings(&fs, options);
+    MemMapPrinter::print_all_mappings(&fs);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));

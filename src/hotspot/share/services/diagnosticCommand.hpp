@@ -992,7 +992,7 @@ public:
   static const char* description() {
     return "Prints an annotated process memory map of the VM process (linux only).";
   }
-  static const char* impact() { return "Medium; higher for large and very fragmented address space (e.g. when using ZGC)."; }
+  static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};
@@ -1011,7 +1011,7 @@ public:
   static const char* description() {
     return "Dumps an annotated process memory map to an output file (linux only).";
   }
-  static const char* impact() { return "Medium; higher for large and very fragmented address space (e.g. when using ZGC)."; }
+  static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};

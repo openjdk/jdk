@@ -35,28 +35,20 @@
 class outputStream;
 class CachedNMTInformation;
 
-struct MappingPrintOptions {
-  // Don't print individual mappings. Only
-  // print accumulated summary.
-  bool only_summary;
-};
-
 class MappingPrintSession {
   outputStream* const _out;
-  const MappingPrintOptions _options;
   const CachedNMTInformation& _nmt_info;
 public:
-  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, MappingPrintOptions options);
-  void print_nmt_info_for_region(const void* from, const void* to) const;
-  void print_nmt_flag_legend(int indent) const;
-  const MappingPrintOptions& options() const { return _options; }
+  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info);
+  bool print_nmt_info_for_region(const void* from, const void* to) const;
+  void print_nmt_flag_legend() const;
   outputStream* out() const { return _out; }
 };
 
 class MemMapPrinter : public AllStatic {
   static void pd_print_all_mappings(const MappingPrintSession& session);
 public:
-  static void print_all_mappings(outputStream* st, MappingPrintOptions options);
+  static void print_all_mappings(outputStream* st);
 };
 
 #endif // LINUX
