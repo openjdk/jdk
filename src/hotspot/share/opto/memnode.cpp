@@ -3517,7 +3517,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
     // Ensure vector type is the same
-    if (!is_StoreVector() || as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type()) {
+    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
       result = mem;
     }
   }

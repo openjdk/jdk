@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -785,7 +785,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xml.writeStartElement("RegistryKey");
         xml.writeAttribute("Root", regRoot);
         xml.writeAttribute("Key", registryKeyPath);
-        if (getWixVersion().compareTo("3.6") < 0) {
+        if (DottedVersion.compareComponents(getWixVersion(), DottedVersion.lazy("3.6")) < 0) {
             xml.writeAttribute("Action", "createAndRemoveOnUninstall");
         }
         xml.writeStartElement("RegistryValue");
@@ -799,7 +799,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String addDirectoryCleaner(XMLStreamWriter xml, Path path) throws
             XMLStreamException, IOException {
-        if (getWixVersion().compareTo("3.6") < 0) {
+        if (DottedVersion.compareComponents(getWixVersion(), DottedVersion.lazy("3.6")) < 0) {
             return null;
         }
 

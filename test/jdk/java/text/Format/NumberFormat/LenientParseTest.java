@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640
+ * @bug 8327640 8331485
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -34,6 +34,7 @@
  * @run junit/othervm -Duser.language=ar -Duser.country=AR LenientParseTest
  */
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -125,6 +126,18 @@ public class LenientParseTest {
         dFmt.setParseIntegerOnly(true);
         assertEquals(expectedValue, successParse(dFmt, toParse, expectedIndex));
         dFmt.setParseIntegerOnly(false);
+    }
+
+    @Test // Non-localized, only run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void badExponentParseNumberFormatTest() {
+        // Some fmt, with an "E" exponent string
+        DecimalFormat fmt = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
+        // Upon non-numeric in exponent, parse will still successfully complete
+        // but index should end on the last valid char in exponent
+        assertEquals(1.23E45, successParse(fmt, "1.23E45.123", 7));
+        assertEquals(1.23E45, successParse(fmt, "1.23E45.", 7));
+        assertEquals(1.23E45, successParse(fmt, "1.23E45FOO3222", 7));
     }
 
     // ---- CurrencyFormat tests ----
