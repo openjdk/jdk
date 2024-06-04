@@ -570,31 +570,42 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
 ################################################################################
 #
 # jlink options.
-# We always keep packaged modules in JDK image.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 [
-  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: true,
-      RESULT: JLINK_KEEP_PACKAGED_MODULES,
-      DESC: [enable keeping of packaged modules in jdk image],
-      CHECKING_MSG: [if packaged modules are kept])
-  AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
-])
 
-################################################################################
-#
-# Configure option for runtime image based linkable jimage.
-#
-# Determines whether or not a run-time linkable JDK image is being
-# produced from the product image.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_RUN_TIME_LINK_IMAGE],
-[
+  ################################################################################
+  #
+  # Configure option for runtime image based linkable jimage.
+  #
+  # Determines whether or not a run-time linkable JDK image is being
+  # produced from the product image. If set to 'true, changes the *default*
+  # of packaged modules to 'false'.
+  #
   UTIL_ARG_ENABLE(NAME: runtime-link-image, DEFAULT: false,
       RESULT: JLINK_PRODUCE_RUNTIME_LINK_JDK,
       DESC: [enable producing an image suitable for runtime linking],
       CHECKING_MSG: [whether or not an image suitable for runtime linking should be produced])
   AC_SUBST(JLINK_PRODUCE_RUNTIME_LINK_JDK)
+
+  if test "x$JLINK_PRODUCE_RUNTIME_LINK_JDK" = xtrue; then
+    DEFAULT_PACKAGED_MODULES=false
+  else
+    DEFAULT_PACKAGED_MODULES=true
+  fi
+
+  ################################################################################
+  #
+  # Configure option for packaged modules
+  #
+  # We keep packaged modules in JDK image unless a runtime linkable image
+  # is requested.
+  #
+  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: $DEFAULT_PACKAGED_MODULES,
+      RESULT: JLINK_KEEP_PACKAGED_MODULES,
+      DESC: [enable keeping of packaged modules in jdk image],
+      CHECKING_MSG: [if packaged modules are kept])
+  AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
 ])
 
 ################################################################################
