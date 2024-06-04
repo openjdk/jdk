@@ -271,17 +271,17 @@ public class SinceChecker {
                     "fixes are needed for this Module");
         }
         String moduleVersion = getModuleVersionFromFile(moduleDirectory);
-        checkModuleOrPackage(moduleVersion, moduleElement, ct, "Module: ");
+        checkModuleOrPackage(javadocHelper,moduleVersion, moduleElement, ct, "Module: ");
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             if (ed.getTargetModules() == null) {
                 String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
-                checkModuleOrPackage(packageVersion, ed.getPackage(), ct, "Package: ");
+                checkModuleOrPackage(javadocHelper,packageVersion, ed.getPackage(), ct, "Package: ");
                 analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
             }
         }
     }
 
-    private void checkModuleOrPackage(String moduleVersion, Element moduleElement, JavacTask ct, String elementCategory) {
+    private void checkModuleOrPackage(EffectiveSourceSinceHelper javadocHelper, String moduleVersion, Element moduleElement, JavacTask ct, String elementCategory) {
         String id = getElementName(moduleElement, moduleElement, ct.getTypes());
         var elementInfo = classDictionary.get(id);
         if (elementInfo == null) {
@@ -292,7 +292,8 @@ public class SinceChecker {
         if (moduleVersion == null) {
             error("Unable to retrieve `@since` for " + elementCategory + id);
         } else {
-            checkEquals(moduleVersion, version, id);
+            String position = javadocHelper.getElementPosition(id);
+            checkEquals(position,moduleVersion, version, id);
         }
     }
 
@@ -412,7 +413,8 @@ public class SinceChecker {
         } catch (Exception e) {
             error("For element " + element + "mappedVersion" + mappedVersion + " is null " + e);
         }
-        checkEquals(sinceVersion, realMappedVersion, uniqueId);
+        String position = javadocHelper.getElementPosition(uniqueId);
+        checkEquals(position, sinceVersion, realMappedVersion, uniqueId);
     }
 
     private Version extractSinceVersionFromText(String documentation) {
@@ -436,7 +438,7 @@ public class SinceChecker {
         }
     }
 
-    private void checkEquals(String sinceVersion, String mappedVersion, String name) {
+    private void checkEquals(String prefix, String sinceVersion, String mappedVersion, String name) {
         if (sinceVersion == null || mappedVersion == null) {
             error(name + ": NULL value for either real or effective `@since` . real/mapped version is="
                     + mappedVersion + " while the `@since` in the source code is= " + sinceVersion);
@@ -446,19 +448,18 @@ public class SinceChecker {
             sinceVersion = "9";
         }
         if (!sinceVersion.equals(mappedVersion)) {
-            String message = getWrongSinceMessage(sinceVersion, mappedVersion, name);
+            String message = getWrongSinceMessage(prefix, sinceVersion, mappedVersion, name);
             error(message);
         }
     }
-
-    private static String getWrongSinceMessage(String sinceVersion, String mappedVersion, String elementSimpleName) {
+    private static String getWrongSinceMessage(String prefix, String sinceVersion, String mappedVersion, String elementSimpleName) {
         String message;
         if (mappedVersion.equals("9")) {
             message = elementSimpleName + ": `@since` version is " + sinceVersion + " but the element exists before JDK 10";
         } else {
-            message = elementSimpleName + ": `@since` version is " + sinceVersion + " instead of " + mappedVersion;
+            message = elementSimpleName + ": `@since` version: " + sinceVersion + "; found: " + mappedVersion;
         }
-        return message;
+        return prefix + message;
     }
 
     private static String getElementName(Element owner, Element element, Types types) {
@@ -668,6 +669,7 @@ public class SinceChecker {
         private final StandardJavaFileManager fm;
         private final Set<String> seenLookupElements = new HashSet<>();
         private final Map<String, Version> signature2Source = new HashMap<>();
+        private final Map<String, String> signature2Location = new HashMap<>();
 
         /**
          * Create the helper.
@@ -737,32 +739,37 @@ public class SinceChecker {
             return since;
         }
 
+        private String getElementPosition(String signature) {
+           return signature2Location.getOrDefault(signature, "");
+        }
+
         //where:
         private void fillElementCache(JavacTask task, CompilationUnitTree cut, Types typeUtils, Elements elementUtils) {
             Trees trees = Trees.instance(task);
+            String fileName = cut.getSourceFile().getName();
 
             new TreePathScanner<Void, Void>() {
                 @Override
                 public Void visitMethod(MethodTree node, Void p) {
-                    handleDeclaration();
+                    handleDeclaration(node,fileName);
                     return null;
                 }
 
                 @Override
                 public Void visitClass(ClassTree node, Void p) {
-                    handleDeclaration();
+                    handleDeclaration(node,fileName);
                     return super.visitClass(node, p);
                 }
 
                 @Override
                 public Void visitVariable(VariableTree node, Void p) {
-                    handleDeclaration();
+                    handleDeclaration(node,fileName);
                     return null;
                 }
 
                 @Override
                 public Void visitModule(ModuleTree node, Void p) {
-                    handleDeclaration();
+                    handleDeclaration(node,fileName);
                     return null;
                 }
 
@@ -774,16 +781,21 @@ public class SinceChecker {
                 @Override
                 public Void visitPackage(PackageTree node, Void p) {
                     if (cut.getSourceFile().isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-                        handleDeclaration();
+                        handleDeclaration(node,fileName);
                     }
                     return super.visitPackage(node, p);
                 }
 
-                private void handleDeclaration() {
+                private void handleDeclaration(Tree node, String fileName) {
                     Element currentElement = trees.getElement(getCurrentPath());
 
                     if (currentElement != null) {
+                        long startPosition = trees.getSourcePositions().getStartPosition(cut, node);
+                        long lineNumber = cut.getLineMap().getLineNumber(startPosition);
+                        String filePathWithLineNumber = String.format("src%s:%s ",fileName,lineNumber);
+
                         signature2Source.put(getElementName(currentElement.getEnclosingElement(), currentElement, typeUtils), computeSinceVersion(currentElement, typeUtils, elementUtils));
+                        signature2Location.put(getElementName(currentElement.getEnclosingElement(), currentElement, typeUtils), filePathWithLineNumber);
                     }
                 }
             }.scan(cut, null);
