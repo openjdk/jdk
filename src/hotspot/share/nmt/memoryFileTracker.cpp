@@ -99,7 +99,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {
-    tty->print_cr("Broken tree found with first occurrence at nodes %lu, %lu",
+    tty->print_cr("Broken tree found with first occurrence at nodes %zu, %zu",
                   broken_start->key(), broken_end->key());
     tty->print_cr("Expected start out to have same type as end in, but was: %s, %s",
                   VMATree::statetype_to_string(broken_start->val().out.type()),
