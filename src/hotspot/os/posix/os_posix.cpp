@@ -425,17 +425,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   return aligned_base;
 }
 
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // All supported POSIX platforms provide C99 semantics.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
-}
-
 int os::get_fileno(FILE* fp) {
   return NOT_AIX(::)fileno(fp);
 }
@@ -508,7 +497,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 #if defined(AIX)
   st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
+  st->print("%ld", sysconf(_SC_CHILD_MAX));
 
   print_rlimit(st, ", THREADS", RLIMIT_THREADS);
 #else
@@ -621,9 +610,14 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
-  uname(&name);
-  jio_snprintf(buf, buflen, "%s", name.nodename);
-  return true;
+  int retcode = uname(&name);
+  if (retcode != -1) {
+    jio_snprintf(buf, buflen, "%s", name.nodename);
+    return true;
+  }
+  const char* errmsg = os::strerror(errno);
+  log_warning(os)("Failed to get host name, error message: %s", errmsg);
+  return false;
 }
 
 #ifndef _LP64
@@ -722,7 +716,16 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
+  ::dlerror(); // Clear any previous error
+  void* ret = ::dlsym(handle, name);
+  if (ret == nullptr) {
+    const char* tmp = ::dlerror();
+    // It is possible that we found a NULL symbol, hence no error.
+    if (tmp != nullptr) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    }
+  }
+  return ret;
 }
 
 void os::dll_unload(void *lib) {
@@ -838,6 +841,14 @@ void os::exit(int num) {
 
 void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
+}
+
+bool os::dont_yield() {
+  return DontYieldALot;
+}
+
+void os::naked_yield() {
+  sched_yield();
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

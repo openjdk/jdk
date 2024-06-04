@@ -1433,7 +1433,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   int num_entries = 0;
   for (int i = 0; i < nFlags; i++) {
     JVMFlag* flag = &JVMFlag::flags[i];
-    // Exclude notproduct and develop flags in product builds.
+    // Exclude develop flags in product builds.
     if (flag->is_constant_in_binary()) {
       continue;
     }
@@ -1590,7 +1590,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     int num_entries = 0;
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       JVMFlag* flag = &JVMFlag::flags[i];
-      // Exclude notproduct and develop flags in product builds.
+      // Exclude develop flags in product builds.
       if (flag->is_constant_in_binary()) {
         continue;
       }

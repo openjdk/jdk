@@ -59,6 +59,8 @@ public sealed interface TypeCheckInstruction extends Instruction
      * @param op the opcode for the specific type of type check instruction,
      *           which must be of kind {@link Opcode.Kind#TYPE_CHECK}
      * @param type the type against which to check or cast
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#TYPE_CHECK}.
      */
     static TypeCheckInstruction of(Opcode op, ClassEntry type) {
         Util.checkKind(op, Opcode.Kind.TYPE_CHECK);

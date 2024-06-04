@@ -56,6 +56,8 @@ public sealed interface BranchInstruction extends Instruction
      * @param op the opcode for the specific type of branch instruction,
      *           which must be of kind {@link Opcode.Kind#BRANCH}
      * @param target the target of the branch
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#BRANCH}.
      */
     static BranchInstruction of(Opcode op, Label target) {
         Util.checkKind(op, Opcode.Kind.BRANCH);

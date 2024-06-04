@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,8 @@ private:
   static const TypeFunc* generic_arraycopy_Type();
   static const TypeFunc* slow_arraycopy_Type();   // the full routine
 
+  static const TypeFunc* make_setmemory_Type();
+
   static const TypeFunc* array_fill_Type();
 
   static const TypeFunc* array_sort_Type();
@@ -296,6 +298,8 @@ private:
   static const TypeFunc* base64_encodeBlock_Type();
   static const TypeFunc* base64_decodeBlock_Type();
   static const TypeFunc* poly1305_processBlocks_Type();
+  static const TypeFunc* intpoly_montgomeryMult_P256_Type();
+  static const TypeFunc* intpoly_assign_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();

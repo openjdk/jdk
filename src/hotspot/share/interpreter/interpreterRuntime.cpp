@@ -223,20 +223,6 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   // Make sure klass is initialized
   klass->initialize(CHECK);
 
-  // At this point the class may not be fully initialized
-  // because of recursive initialization. If it is fully
-  // initialized & has_finalized is not set, we rewrite
-  // it into its fast version (Note: no locking is needed
-  // here since this is an atomic byte write and can be
-  // done more than once).
-  //
-  // Note: In case of classes with has_finalized we don't
-  //       rewrite since that saves us an extra check in
-  //       the fast version which then would call the
-  //       slow version anyway (and do a call back into
-  //       Java).
-  //       If we have a breakpoint, then we don't rewrite
-  //       because the _breakpoint bytecode would be lost.
   oop obj = klass->allocate_instance(CHECK);
   current->set_vm_result(obj);
 JRT_END
@@ -864,12 +850,11 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
       return;
     }
 
-    if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
-      resolved_method = methodHandle(current, info.resolved_method()->get_new_method());
-    } else {
-      resolved_method = methodHandle(current, info.resolved_method());
-    }
+    resolved_method = methodHandle(current, info.resolved_method());
   } // end JvmtiHideSingleStepping
+
+  // Don't allow safepoints until the method is cached.
+  NoSafepointVerifier nsv;
 
   // check if link resolution caused cpCache to be updated
   if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
@@ -960,7 +945,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
+  pool->cache()->set_dynamic_call(info, index);
 }
 
 // This function is the interface to the assembly code. It returns the resolved

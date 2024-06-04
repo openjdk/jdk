@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2827,11 +2827,6 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       _has_finalizer = true;
     }
   }
-  if (name == vmSymbols::object_initializer_name() &&
-      signature == vmSymbols::void_method_signature() &&
-      m->is_vanilla_constructor()) {
-    _has_vanilla_constructor = true;
-  }
 
   NOT_PRODUCT(m->verify());
   return m;
@@ -3408,8 +3403,7 @@ u4 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* cons
                                                              CHECK_0);
 
     RecordComponent* record_component =
-      RecordComponent::allocate(_loader_data, name_index, descriptor_index,
-                                attributes_count, generic_sig_index,
+      RecordComponent::allocate(_loader_data, name_index, descriptor_index, generic_sig_index,
                                 annotations, type_annotations, CHECK_0);
     record_components->at_put(x, record_component);
   }  // End of component processing loop
@@ -4163,34 +4157,10 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     }
   }
 
-  // Check if this klass has a vanilla default constructor
-  if (super == nullptr) {
-    // java.lang.Object has empty default constructor
-    ik->set_has_vanilla_constructor();
-  } else {
-    if (super->has_vanilla_constructor() &&
-        _has_vanilla_constructor) {
-      ik->set_has_vanilla_constructor();
-    }
-#ifdef ASSERT
-    bool v = false;
-    if (super->has_vanilla_constructor()) {
-      const Method* const constructor =
-        ik->find_method(vmSymbols::object_initializer_name(),
-                       vmSymbols::void_method_signature());
-      if (constructor != nullptr && constructor->is_vanilla_constructor()) {
-        v = true;
-      }
-    }
-    assert(v == ik->has_vanilla_constructor(), "inconsistent has_vanilla_constructor");
-#endif
-  }
-
   // If it cannot be fast-path allocated, set a bit in the layout helper.
   // See documentation of InstanceKlass::can_be_fastpath_allocated().
   assert(ik->size_helper() > 0, "layout_helper is initialized");
-  if ((!RegisterFinalizersAtInit && ik->has_finalizer())
-      || ik->is_abstract() || ik->is_interface()
+  if (ik->is_abstract() || ik->is_interface()
       || (ik->name() == vmSymbols::java_lang_Class() && ik->class_loader() == nullptr)
       || ik->size_helper() >= FastAllocateSizeLimit) {
     // Forbid fast-path allocation.
@@ -5373,7 +5343,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     ik->set_has_contended_annotations(true);
   }
 
-  // Fill in has_finalizer, has_vanilla_constructor, and layout_helper
+  // Fill in has_finalizer and layout_helper
   set_precomputed_flags(ik);
 
   // check if this class can access its super class
@@ -5559,7 +5529,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_contended_fields(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
-  _has_vanilla_constructor(false),
   _max_bootstrap_specifier_index(-1) {
 
   _class_name = name != nullptr ? name : vmSymbols::unknown_class_name();

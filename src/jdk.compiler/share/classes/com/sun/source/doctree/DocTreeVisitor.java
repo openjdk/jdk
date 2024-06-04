@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,6 +244,22 @@ public interface DocTreeVisitor<R,P> {
      * @since 9
      */
     default R visitProvides(ProvidesTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
+     * Visits a {@code RawTextTree} node.
+     *
+     * @implSpec Visits the provided {@code RawTextTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @since 23
+     */
+    default R visitRawText(RawTextTree node, P p) {
         return visitOther(node, p);
     }
 
