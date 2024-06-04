@@ -862,10 +862,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Obtains non-format single character from String
      */
     private char findNonFormatChar(String src, char defChar) {
-        return (char)src.chars()
-            .filter(c -> Character.getType(c) != Character.FORMAT)
-            .findFirst()
-            .orElse(defChar);
+        for (int i = 0; i < src.length(); i++) {
+            if (Character.getType(src.charAt(i)) != Character.FORMAT) {
+                return src.charAt(i);
+            }
+        }
+        return defChar;
     }
 
     /**
