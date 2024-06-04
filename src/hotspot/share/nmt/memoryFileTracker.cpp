@@ -115,6 +115,7 @@ MemoryFileTracker::MemoryFile* MemoryFileTracker::make_file(const char* descript
 }
 
 void MemoryFileTracker::free_file(MemoryFile* file) {
+  if (file == nullptr) return;
   _files.remove(file);
   delete file;
 }
@@ -145,6 +146,10 @@ void MemoryFileTracker::Instance::free_memory(MemoryFile* file, size_t offset, s
 MemoryFileTracker::MemoryFile*
 MemoryFileTracker::Instance::make_file(const char* descriptive_name) {
   return _tracker->make_file(descriptive_name);
+}
+
+void MemoryFileTracker::Instance::free_file(MemoryFileTracker::MemoryFile* file) {
+  return _tracker->free_file(file);
 }
 
 void MemoryFileTracker::Instance::print_report_on(const MemoryFile* file,
