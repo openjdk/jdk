@@ -21,40 +21,38 @@
 # questions.
 #
 
-set initialEcho [lrange $argv 0 0]
+set initialEcho [lindex $argv 0]
 set java [lrange $argv 1 end]
-set prompt "prompt: "
-set pwprompt "password prompt: "
-set input "InPuT"
-set password "PaSsWoRd"
-set expected "input is $input"
-set pwexpected "password is $password"
+set rlprompt "prompt: "
+set rpprompt "password prompt: "
+set rlinput "InPuT"
+set rpinput "PaSsWoRd"
+set rlexpected "input is $rlinput"
+set rpexpected "password is $rpinput"
+set stty_init $initialEcho
 set timeout 2
 
-eval spawn $java
+proc test {prompt input echoStat expected} {
+    expect "$prompt"
+    send -- "$input\n"
+    if {$echoStat == "echo"} {
+        expect "$input"
+    }
+    expect "$expected"
+
+    if {$expect_out(0,string) != $expected} {
+        send_error "Expected: $expected\n"
+        send_error "Received: $expect_out(0,string)"
+        exit 1
+    }
+}
+
+spawn sh -c "[list {*}$java] && stty -a"
 
 # readLine() - input is displayed depending on initialEcho value
-expect "$prompt"
-send -- "$input\n"
-if {$initialEcho == "true"} {
-    expect "$input"
-}
-expect "$expected"
-
-if {$expect_out(0,string) != $expected} {
-    send_error "Expected: $expected\n"
-    send_error "Received: $expect_out(0,string)"
-    exit 1
-}
-
-# readPassword() - password is not displayed regardless of initialEcho value
-expect "$pwprompt"
-send -- "$password\n"
-expect "$pwexpected"
-
-if {$expect_out(0,string) != $pwexpected} {
-    send_error "Expected: $pwexpected\n"
-    send_error "Received: $expect_out(0,string)"
-    exit 1
-}
+test "$rlprompt" "$rlinput" "$initialEcho" "$rlexpected"
+# readPassword() - input is not displayed
+test "$rpprompt" "$rpinput" "-echo" "$rpexpected"
+# See if the initialEcho is restored with `stty -a`
+expect " $initialEcho "
 expect eof

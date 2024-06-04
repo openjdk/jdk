@@ -22,9 +22,6 @@
  */
 
 import java.io.Console;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -60,8 +57,8 @@ public class RestoreEchoTest {
             Assumptions.abort("'" + expect + "' not found");
         }
 
-        expectRunner("false");
-        expectRunner("true");
+        expectRunner("-echo");
+        expectRunner("echo");
     }
 
     private static void expectRunner(String initialEcho) throws Throwable {
@@ -78,8 +75,7 @@ public class RestoreEchoTest {
                 "--add-opens=java.base/jdk.internal.io=ALL-UNNAMED",
                 "-Djdk.console=java.base",
                 "-classpath", testClasses,
-                "RestoreEchoTest",
-                initialEcho);
+                "RestoreEchoTest");
         output.reportDiagnosticSummary();
         var eval = output.getExitValue();
         if (eval != 0) {
@@ -91,12 +87,6 @@ public class RestoreEchoTest {
         if (!"java.base".equals(System.getProperty("jdk.console"))) {
             throw new RuntimeException("Test failed. jdk.console is not java.base");
         }
-
-        MethodHandle MH_echo = MethodHandles.privateLookupIn(JdkConsoleImpl.class, MethodHandles.lookup())
-                .findStatic(JdkConsoleImpl.class, "echo", MethodType.methodType(boolean.class, boolean.class));
-
-        var initialEcho = Boolean.parseBoolean(args[0]);
-        var originalEcho = (boolean)MH_echo.invokeExact(initialEcho);
 
         Console con = System.console();
         if (con == null) {
@@ -110,23 +100,5 @@ public class RestoreEchoTest {
         // testing readPassword()
         input = String.valueOf(con.readPassword("password prompt: "));
         con.printf("password is %s\n", input);
-
-        var echoAfter = (boolean)MH_echo.invokeExact(originalEcho);
-
-        var echoStates =
-                """
-                    Platform's original echo state: %s
-                    Echo state before readPassword(): %s
-                    Echo state after readPassword(): %s
-                """.formatted(originalEcho, initialEcho, echoAfter);
-        if (initialEcho != echoAfter) {
-            throw new RuntimeException(
-                """
-                Initial echo state was not correctly restored.
-                %s
-                """.formatted(echoStates));
-        } else {
-            System.out.println(echoStates);
-        }
     }
 }
