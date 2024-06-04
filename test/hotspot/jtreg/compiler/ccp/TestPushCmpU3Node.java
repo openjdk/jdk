@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,30 @@
  * questions.
  */
 
-package jdk.jfr.internal.instrument;
+/*
+ * @test
+ * @bug 8333366
+ * @summary Test that CmpU3Nodes are pushed back to the CCP worklist such that the type can be re-evaluated.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestPushCmpU3Node::test
+ *                   compiler.ccp.TestPushCmpU3Node
+ */
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package compiler.ccp;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@interface JIInstrumentationMethod {
+import static java.lang.Integer.*;
+
+public class TestPushCmpU3Node {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; ++i) {
+            test();
+        }
+    }
+
+    public static void test() {
+        for (int i = MAX_VALUE - 50_000; compareUnsigned(i, -1) < 0; ++i) {
+            if (compareUnsigned(MIN_VALUE, i) < 0) {
+                return;
+            }
+        }
+    }
 }

@@ -1303,7 +1303,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
            "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
            p2i(base_address), base_address_alignment);
 
-  const size_t class_space_size = CompressedClassSpaceSize;
+  size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
          "CompressedClassSpaceSize malformed: "
@@ -1311,6 +1311,16 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
+
+  // Reduce class space size if it would not fit into the Klass encoding range
+  constexpr size_t max_encoding_range_size = 4 * G;
+  guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
+  if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
+    class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
+    log_info(metaspace)("CDS initialization: reducing class space size from " SIZE_FORMAT " to " SIZE_FORMAT,
+        CompressedClassSpaceSize, class_space_size);
+    FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
+  }
 
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;

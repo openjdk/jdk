@@ -30,7 +30,6 @@
 #include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -42,6 +41,7 @@
 class MacroAssembler: public Assembler {
 
  public:
+
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
@@ -49,7 +49,7 @@ class MacroAssembler: public Assembler {
   // Alignment
   int align(int modulus, int extra_offset = 0);
 
-  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+  static inline void assert_alignment(address pc, int alignment = MacroAssembler::instruction_size) {
     assert(is_aligned(pc, alignment), "bad alignment");
   }
 
@@ -1232,7 +1232,7 @@ public:
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
-  int ic_check(int end_alignment = NativeInstruction::instruction_size);
+  int ic_check(int end_alignment = MacroAssembler::instruction_size);
 
   // Support for memory inc/dec
   // n.b. increment/decrement calls with an Address destination will
@@ -1542,6 +1542,226 @@ private:
 public:
   void lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
   void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+
+public:
+  enum {
+    // Refer to function emit_trampoline_stub.
+    trampoline_stub_instruction_size = 3 * instruction_size + wordSize, // auipc + ld + jr + target address
+    trampoline_stub_data_offset      = 3 * instruction_size,            // auipc + ld + jr
+
+    // movptr
+    movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
+  };
+
+  static bool is_load_pc_relative_at(address branch);
+  static bool is_li16u_at(address instr);
+
+  static bool is_trampoline_stub_at(address addr) {
+    // Ensure that the stub is exactly
+    //      ld   t0, L--->auipc + ld
+    //      jr   t0
+    // L:
+
+    // judge inst + register + imm
+    // 1). check the instructions: auipc + ld + jalr
+    // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
+    // 3). check if the offset in ld[31:20] equals the data_offset
+    assert_cond(addr != nullptr);
+    const int instr_size = instruction_size;
+    if (is_auipc_at(addr) &&
+        is_ld_at(addr + instr_size) &&
+        is_jalr_at(addr + 2 * instr_size) &&
+        (extract_rd(addr)                    == x5) &&
+        (extract_rd(addr + instr_size)       == x5) &&
+        (extract_rs1(addr + instr_size)      == x5) &&
+        (extract_rs1(addr + 2 * instr_size)  == x5) &&
+        (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_stub_data_offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool is_call_at(address instr) {
+    if (is_jal_at(instr) || is_jalr_at(instr)) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
+  static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
+  static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
+  static bool is_ld_at(address instr)         { assert_cond(instr != nullptr); return is_load_at(instr) && extract_funct3(instr) == 0b011; }
+  static bool is_load_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000011; }
+  static bool is_float_load_at(address instr) { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000111; }
+  static bool is_auipc_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010111; }
+  static bool is_jump_at(address instr)       { assert_cond(instr != nullptr); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
+  static bool is_add_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110011 && extract_funct3(instr) == 0b000; }
+  static bool is_addi_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_to_zr_at(address instr){ assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
+  static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
+  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
+
+  static bool is_srli_at(address instr) {
+    assert_cond(instr != nullptr);
+    return extract_opcode(instr) == 0b0010011 &&
+           extract_funct3(instr) == 0b101 &&
+           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+  }
+
+  static bool is_slli_shift_at(address instr, uint32_t shift) {
+    assert_cond(instr != nullptr);
+    return (extract_opcode(instr) == 0b0010011 && // opcode field
+            extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
+            Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
+  }
+
+  static bool is_movptr1_at(address instr);
+  static bool is_movptr2_at(address instr);
+
+  static bool is_lwu_to_zr(address instr);
+
+private:
+  static Register extract_rs1(address instr);
+  static Register extract_rs2(address instr);
+  static Register extract_rd(address instr);
+  static uint32_t extract_opcode(address instr);
+  static uint32_t extract_funct3(address instr);
+
+  // the instruction sequence of movptr is as below:
+  //     lui
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi/jalr/load
+  static bool check_movptr1_data_dependency(address instr) {
+    address lui = instr;
+    address addi1 = lui + instruction_size;
+    address slli1 = addi1 + instruction_size;
+    address addi2 = slli1 + instruction_size;
+    address slli2 = addi2 + instruction_size;
+    address last_instr = slli2 + instruction_size;
+    return extract_rs1(addi1) == extract_rd(lui) &&
+           extract_rs1(addi1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(slli2) &&
+           extract_rs1(last_instr) == extract_rd(slli2);
+  }
+
+  // the instruction sequence of movptr2 is as below:
+  //     lui
+  //     lui
+  //     slli
+  //     add
+  //     addi/jalr/load
+  static bool check_movptr2_data_dependency(address instr) {
+    address lui1 = instr;
+    address lui2 = lui1 + instruction_size;
+    address slli = lui2 + instruction_size;
+    address add  = slli + instruction_size;
+    address last_instr = add + instruction_size;
+    return extract_rd(add) == extract_rd(lui2) &&
+           extract_rs1(add) == extract_rd(lui2) &&
+           extract_rs2(add) == extract_rd(slli) &&
+           extract_rs1(slli) == extract_rd(lui1) &&
+           extract_rd(slli) == extract_rd(lui1) &&
+           extract_rs1(last_instr) == extract_rd(add);
+  }
+
+  // the instruction sequence of li64 is as below:
+  //     lui
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi
+  static bool check_li64_data_dependency(address instr) {
+    address lui = instr;
+    address addi1 = lui + instruction_size;
+    address slli1 = addi1 + instruction_size;
+    address addi2 = slli1 + instruction_size;
+    address slli2 = addi2 + instruction_size;
+    address addi3 = slli2 + instruction_size;
+    address slli3 = addi3 + instruction_size;
+    address addi4 = slli3 + instruction_size;
+    return extract_rs1(addi1) == extract_rd(lui) &&
+           extract_rs1(addi1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(slli2) &&
+           extract_rs1(addi3) == extract_rd(slli2) &&
+           extract_rs1(addi3) == extract_rd(addi3) &&
+           extract_rs1(slli3) == extract_rd(addi3) &&
+           extract_rs1(slli3) == extract_rd(slli3) &&
+           extract_rs1(addi4) == extract_rd(slli3) &&
+           extract_rs1(addi4) == extract_rd(addi4);
+  }
+
+  // the instruction sequence of li16u is as below:
+  //     lui
+  //     srli
+  static bool check_li16u_data_dependency(address instr) {
+    address lui = instr;
+    address srli = lui + instruction_size;
+
+    return extract_rs1(srli) == extract_rd(lui) &&
+           extract_rs1(srli) == extract_rd(srli);
+  }
+
+  // the instruction sequence of li32 is as below:
+  //     lui
+  //     addiw
+  static bool check_li32_data_dependency(address instr) {
+    address lui = instr;
+    address addiw = lui + instruction_size;
+
+    return extract_rs1(addiw) == extract_rd(lui) &&
+           extract_rs1(addiw) == extract_rd(addiw);
+  }
+
+  // the instruction sequence of pc-relative is as below:
+  //     auipc
+  //     jalr/addi/load/float_load
+  static bool check_pc_relative_data_dependency(address instr) {
+    address auipc = instr;
+    address last_instr = auipc + instruction_size;
+
+    return extract_rs1(last_instr) == extract_rd(auipc);
+  }
+
+  // the instruction sequence of load_label is as below:
+  //     auipc
+  //     load
+  static bool check_load_pc_relative_data_dependency(address instr) {
+    address auipc = instr;
+    address load = auipc + instruction_size;
+
+    return extract_rd(load) == extract_rd(auipc) &&
+           extract_rs1(load) == extract_rd(load);
+  }
+
+  static bool is_li32_at(address instr);
+  static bool is_li64_at(address instr);
+  static bool is_pc_relative_at(address branch);
+
+  static bool is_membar(address addr) {
+    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+  }
+  static uint32_t get_membar_kind(address addr);
+  static void set_membar_kind(address addr, uint32_t order_kind);
 };
 
 #ifdef ASSERT
