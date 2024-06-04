@@ -1701,6 +1701,9 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   return true;
 }
 
+void poo () {
+}
+
 // Return true: we succeeded in generating this code
 bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
@@ -1724,8 +1727,11 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
+  lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &poo)));
+  blr(rscratch1);
+
   const Register slot = rscratch1;
-  ldrb(slot, Address(r_sub_klass, Klass::hash_slot_offset()));
+  ldrb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
 
   // Make sure that result is nonzero if the test below misses.
   mov(result, 1);
