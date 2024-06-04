@@ -78,7 +78,6 @@ public class RetransformApp {
     private static void launchApp(final Path agentJar) throws Exception {
         final OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:-CheckIntrinsics",
                 "-javaagent:" + agentJar.toString(),
                 RetransformApp.class.getName());
         oa.shouldHaveExitValue(0);
