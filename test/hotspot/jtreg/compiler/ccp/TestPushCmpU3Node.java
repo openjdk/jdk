@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,30 @@
  * questions.
  */
 
-
 /*
  * @test
- * @modules java.base/jdk.internal.misc:+open
- *
- * @summary converted from VM Testbase metaspace/gc/watermark_0_1.
- * VM Testbase keywords: [nonconcurrent, no_cds]
- *
- * @comment Don't run test in configurations where we can't reliably count number of metaspace triggered GCs
- * @requires vm.gc != null | !vm.opt.final.ClassUnloadingWithConcurrentMark
- * @requires vm.gc != "G1" | !vm.opt.final.ClassUnloadingWithConcurrentMark
- * @requires vm.gc != "Z"
- * @requires vm.compMode != "Xcomp"
- * @library /vmTestbase /test/lib
- * @run main/othervm
- *      -Xmx1g
- *      -Xms150m
- *      -Xlog:gc:gc.log
- *      -XX:MetaspaceSize=5m
- *      -XX:MaxMetaspaceSize=25m
- *      -XX:MinMetaspaceFreeRatio=0
- *      -XX:MaxMetaspaceFreeRatio=1
- *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:-UseCompressedOops
- *      metaspace.gc.HighWaterMarkTest
+ * @bug 8333366
+ * @summary Test that CmpU3Nodes are pushed back to the CCP worklist such that the type can be re-evaluated.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestPushCmpU3Node::test
+ *                   compiler.ccp.TestPushCmpU3Node
  */
 
+package compiler.ccp;
+
+import static java.lang.Integer.*;
+
+public class TestPushCmpU3Node {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; ++i) {
+            test();
+        }
+    }
+
+    public static void test() {
+        for (int i = MAX_VALUE - 50_000; compareUnsigned(i, -1) < 0; ++i) {
+            if (compareUnsigned(MIN_VALUE, i) < 0) {
+                return;
+            }
+        }
+    }
+}
