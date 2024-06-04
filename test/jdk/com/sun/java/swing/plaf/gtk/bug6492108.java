@@ -29,6 +29,10 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -47,7 +51,7 @@ import jtreg.SkippedException;
  * @summary Verifies that the background is painted the same for
  *          JTextArea, JTextPane, and JEditorPane.
  * @library /javax/swing/regtesthelpers /test/lib
- * @build SwingTestHelper
+ * @build SwingTestHelper Util
  * @run main/othervm bug6492108
  */
 
@@ -60,8 +64,7 @@ public class bug6492108 extends SwingTestHelper {
             UIManager.setLookAndFeel(
                 "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         } catch (Exception e) {
-            throw new SkippedException("GTK LAF is not supported on this system;" +
-                    " test passes");
+            throw new SkippedException("GTK LAF is not supported on this system");
         }
         new bug6492108().run(args);
     }
@@ -113,41 +116,28 @@ public class bug6492108 extends SwingTestHelper {
         requestAndWaitForFocus(panel);
     }
 
-    private void onBackgroundThread20() {
+    private void onEDT20() {
         // For each component on the top row, compare against the two
         // components below in the same column.  All three components in
         // that column should be the same pixel-for-pixel.
         for (int count = 0; count < 4; count++) {
             Component ref = panel.getComponent(count);
-            Point loc = ref.getLocationOnScreen();
-            Rectangle refRect =
-                new Rectangle(loc.x, loc.y, ref.getWidth(), ref.getHeight());
-            BufferedImage refimg = robot.createScreenCapture(refRect);
+            Rectangle refRect = new Rectangle(ref.getLocationOnScreen(), ref.getSize());
+            BufferedImage refImg = robot.createScreenCapture(refRect);
 
             for (int k = 1; k < 3; k++) {
                 int index = count + (k*4);
                 Component test = panel.getComponent(index);
-                loc = test.getLocationOnScreen();
-                Rectangle testRect =
-                    new Rectangle(loc.x, loc.y,
-                                  test.getWidth(), test.getHeight());
-                BufferedImage testimg = robot.createScreenCapture(testRect);
+                Rectangle testRect = new Rectangle(test.getLocationOnScreen(), test.getSize());
+                BufferedImage testImg = robot.createScreenCapture(testRect);
 
-                if (refimg.getWidth() != testimg.getWidth()
-                   || refimg.getHeight() != testimg.getHeight())
-                {
-                    fail("Test image size must match reference image size");
-                }
+                if (!Util.compareBufferedImages(refImg, testImg)) {
+                    try {
+                        ImageIO.write(refImg, "png", new File("refImg.png"));
+                        ImageIO.write(testImg, "png", new File("testImg.png"));
+                    } catch (IOException ignored) {}
 
-                for (int y = 0; y < refimg.getHeight(); y++) {
-                    for (int x = 0; x < refimg.getWidth(); x++) {
-                        int refPixel  = refimg.getRGB(x, y);
-                        int testPixel = testimg.getRGB(x, y);
-                        if (refPixel != testPixel) {
-                            fail("Image comparison failed at (" +
-                                 x + "," + y + ") for image " + index);
-                        }
-                    }
+                    fail("Image comparison failed for images at index " + count + " and " + index);
                 }
             }
         }
