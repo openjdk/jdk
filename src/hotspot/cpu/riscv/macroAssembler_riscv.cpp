@@ -3481,16 +3481,19 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+// Both inline code and stub use specific registers and may jump from inline code/stub to stub,
 // Ensure that the inline code and the stub are using the same registers.
-#define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                     \
-do {                                                                \
-  assert(r_super_klass  == x10                                   && \
-         r_array_base   == x11                                   && \
-         r_array_length == x12                                   && \
-         (r_array_index == x13        || r_array_index == noreg) && \
-         (r_sub_klass   == x14        || r_sub_klass   == noreg) && \
-         (result        == x15        || result        == noreg) && \
-         (r_bitmap      == x16        || r_bitmap      == noreg), "registers must match riscv.ad"); \
+// And which need to be declared registers in the C2-related instruct first.
+#define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS(r_super_klass, r_array_base, r_array_length,  \
+                                                r_array_index, r_sub_klass, result, r_bitmap) \
+do {                                                                                          \
+  assert(r_super_klass  == x10                             &&                                 \
+         r_array_base   == x11                             &&                                 \
+         r_array_length == x12                             &&                                 \
+         (r_array_index == x13  || r_array_index == noreg) &&                                 \
+         (r_sub_klass   == x14  || r_sub_klass   == noreg) &&                                 \
+         (result        == x15  || result        == noreg) &&                                 \
+         (r_bitmap      == x16  || r_bitmap      == noreg), "registers must match riscv.ad"); \
 } while(0)
 
 // Return true: we succeeded in generating this code
@@ -3515,11 +3518,12 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
     r_array_index  = tmp3, // x13
     r_bitmap       = tmp4; // x16
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS(r_super_klass, r_array_base, r_array_length,
+                                          r_array_index, r_sub_klass, result, r_bitmap);
 
   u1 bit = super_klass_slot;
 
-  // Make sure that result is nonzero if the test_bit blow misses.
+  // Initialize result value to 1 which means mismatch.
   mv(result, 1);
 
   ld(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
@@ -3600,11 +3604,12 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     r_array_length = tmp1,
     r_sub_klass    = noreg; // unused
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS(r_super_klass, r_array_base, r_array_length,
+                                          r_array_index, r_sub_klass, result, r_bitmap);
 
-  Label L_matched, L_fallthrough, L_huge;
+  Label L_matched, L_fallthrough, L_bitmap_full;
 
-  // Make sure that result is nonzero
+  // Initialize result value to 1 which means mismatch.
   mv(result, 1);
 
   // Load the array length.
@@ -3614,11 +3619,10 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "");
   addi(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
-  // The bitmap is full to bursting.
-  // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
+  // Check if bitmap is SECONDARY_SUPERS_BITMAP_FULL 
+  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "Adjust this code");
   addi(t0, r_bitmap, (u1)1);
-  beqz(t0, L_huge);
+  beqz(t0, L_bitmap_full);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -3655,7 +3659,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     // FIXME: We could do something smarter here, maybe a vectorized
     // comparison or a binary search, but is that worth any added
     // complexity?
-    bind(L_huge);
+    bind(L_bitmap_full);
     repne_scan(r_array_base, r_super_klass, r_array_length, t0);
     bne(r_super_klass, t0, L_fallthrough);
   }
@@ -3676,12 +3680,13 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   assert_different_registers(r_sub_klass, r_super_klass, tmp1, tmp2, tmp3, result, t0);
 
   const Register
-    r_array_base   = tmp1,
-    r_array_length = tmp2,
+    r_array_base   = tmp1,  // X11
+    r_array_length = tmp2,  // X12
     r_array_index  = noreg, // unused
     r_bitmap       = noreg; // unused
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS(r_super_klass, r_array_base, r_array_length,
+                                          r_array_index, r_sub_klass, result, r_bitmap);
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 

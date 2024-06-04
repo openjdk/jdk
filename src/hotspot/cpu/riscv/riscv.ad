@@ -10123,8 +10123,8 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
 instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
                                        iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
 %{
-  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
   predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
   effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
 
   ins_cost(700);  // smaller than the next version
