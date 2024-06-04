@@ -125,7 +125,7 @@ TEST_VM(ostream, bufferedStream_dynamic_large) {
 */
 
 // Test helper for do_vsnprintf
-class defaultStream::TestSupport : AllStatic {
+class outputStream::TestSupport : AllStatic {
 
   // Shared constants and variables for all subtests.
   static const size_t buflen = 11;
@@ -144,7 +144,7 @@ class defaultStream::TestSupport : AllStatic {
                           size_t& rlen, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
-    const char* res = tty->do_vsnprintf(buf, len, format, ap, add_cr, rlen);
+    const char* res = do_vsnprintf(buf, len, format, ap, add_cr, rlen);
     va_end(ap);
     return res;
   }
@@ -158,7 +158,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "012345678";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, str);
+      result = test(&buffer[0], buflen, false, result_len, str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -168,7 +168,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "0123456789";
       size_t initial_len = strlen(str);
       ASSERT_EQ(initial_len, max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, str);
+      result = test(&buffer[0], buflen, false, result_len, str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -178,7 +178,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "0123456789A";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len > max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, str);
+      result = test(&buffer[0], buflen, false, result_len, str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len);
@@ -189,7 +189,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "01234567";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, str);
+      result = test(&buffer[0], buflen, true, result_len, str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -201,7 +201,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "012345678";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, str);
+      result = test(&buffer[0], buflen, true, result_len, str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -214,7 +214,7 @@ class defaultStream::TestSupport : AllStatic {
       size_t initial_len = strlen(str);
       ASSERT_EQ(initial_len, max_len);
       ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, str);
+      result = test(&buffer[0], buflen, true, result_len, str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len);
@@ -230,7 +230,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "012345678";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, "%s", str);
+      result = test(&buffer[0], buflen, false, result_len, "%s", str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -240,7 +240,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "0123456789";
       size_t initial_len = strlen(str);
       ASSERT_EQ(initial_len, max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, "%s", str);
+      result = test(&buffer[0], buflen, false, result_len, "%s", str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -250,7 +250,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "0123456789A";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len > max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, "%s", str);
+      result = test(&buffer[0], buflen, false, result_len, "%s", str);
       ASSERT_EQ(result, str);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len);
@@ -261,7 +261,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "01234567";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, "%s", str);
+      result = test(&buffer[0], buflen, true, result_len, "%s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -273,7 +273,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "012345678";
       size_t initial_len = strlen(str);
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, "%s", str);
+      result = test(&buffer[0], buflen, true, result_len, "%s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -286,7 +286,7 @@ class defaultStream::TestSupport : AllStatic {
       size_t initial_len = strlen(str);
       ASSERT_EQ(initial_len, max_len);
       ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, "%s", str);
+      result = test(&buffer[0], buflen, true, result_len, "%s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len);
@@ -302,7 +302,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "01234567";
       size_t initial_len = strlen(str) + 1;
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, " %s", str);
+      result = test(&buffer[0], buflen, false, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -312,7 +312,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "012345678";
       size_t initial_len = strlen(str) + 1;
       ASSERT_EQ(initial_len, max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, " %s", str);
+      result = test(&buffer[0], buflen, false, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -323,7 +323,7 @@ class defaultStream::TestSupport : AllStatic {
       size_t initial_len = strlen(str) + 1;
       ASSERT_TRUE(initial_len > max_len);
       ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1));
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, false, result_len, " %s", str);
+      result = test(&buffer[0], buflen, false, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
     }
@@ -333,7 +333,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "0123456";
       size_t initial_len = strlen(str) + 1;
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, " %s", str);
+      result = test(&buffer[0], buflen, true, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -345,7 +345,7 @@ class defaultStream::TestSupport : AllStatic {
       const char* str = "01234567";
       size_t initial_len = strlen(str) + 1;
       ASSERT_TRUE(initial_len < max_len);
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, " %s", str);
+      result = test(&buffer[0], buflen, true, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len + 1);
@@ -358,7 +358,7 @@ class defaultStream::TestSupport : AllStatic {
       size_t initial_len = strlen(str) + 1;
       ASSERT_EQ(initial_len, max_len);
       ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
-      result = defaultStream::TestSupport::test(&buffer[0], buflen, true, result_len, " %s", str);
+      result = test(&buffer[0], buflen, true, result_len, " %s", str);
       ASSERT_EQ(result, buffer);
       ASSERT_EQ(strlen(result), result_len);
       ASSERT_EQ(result_len, initial_len);
@@ -368,13 +368,13 @@ class defaultStream::TestSupport : AllStatic {
 
 };
 
-const size_t defaultStream::TestSupport::max_len;
-char defaultStream::TestSupport::buffer[defaultStream::TestSupport::buflen];
-size_t defaultStream::TestSupport::result_len = 0;
-const char* defaultStream::TestSupport::result = nullptr;
+const size_t outputStream::TestSupport::max_len;
+char outputStream::TestSupport::buffer[outputStream::TestSupport::buflen];
+size_t outputStream::TestSupport::result_len = 0;
+const char* outputStream::TestSupport::result = nullptr;
 
 TEST_VM(ostream, do_vsnprintf_buffering) {
-  defaultStream::TestSupport::test_constant_string();
-  defaultStream::TestSupport::test_percent_s_string();
-  defaultStream::TestSupport::test_general_string();
+  outputStream::TestSupport::test_constant_string();
+  outputStream::TestSupport::test_percent_s_string();
+  outputStream::TestSupport::test_general_string();
 }

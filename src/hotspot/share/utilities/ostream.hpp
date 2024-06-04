@@ -59,17 +59,20 @@ class outputStream : public CHeapObjBase {
   // Returns whether a newline was seen or not
    bool update_position(const char* s, size_t len);
 
-  // Nominally processes the given format string and the supplied arguments
-  // to produce a formatted string using the supplied buffer. The formatted
-  // string (in the buffer) is returned, and the outgoing `result_len` set
-  // to the size of the returned string.
+  // Processes the given format string and the supplied arguments
+  // to produce a formatted string in the supplied buffer. Returns
+  // the formatted string (in the buffer). If the formatted string
+  // would be longer than the buffer, it is truncated.
   //
   // If the format string is a plain string (no format specifiers)
-  // or idiomatically it is "%s" to print a supplied argument string, then
-  // the buffer is ignored, we return the string directly and set `result_len` to its
-  // length. However, if `add_cr` is true then we have to copy the string
-  // into the buffer and we risk truncation. The `result_len` is always set to the length
-  // of the returned string.
+  // or is exactly "%s" to print a supplied argument string, then
+  // the buffer is ignored, and we return the string directly.
+  // However, if `add_cr` is true then we have to copy the string
+  // into the buffer, which risks truncation if the string is too long.
+  //
+  // The `result_len` reference is always set to the length of the returned string.
+  //
+  // If add_cr is true then the cr will always be placed in the buffer (buffer minimum size is 2).
   //
   // In a debug build, if truncation occurs a VM warning is issued.
    static const char* do_vsnprintf(char* buffer, size_t buflen,
@@ -85,6 +88,8 @@ class outputStream : public CHeapObjBase {
    void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) ATTRIBUTE_PRINTF(2, 0);
 
  public:
+   class TestSupport;  // Unit test support
+
    // creation
    outputStream();
    outputStream(bool has_time_stamps);
