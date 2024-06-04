@@ -36,7 +36,7 @@ G1RegionsOnNodes::~G1RegionsOnNodes() {
   FREE_C_HEAP_ARRAY(uint, _count_per_node);
 }
 
-uint G1RegionsOnNodes::add(HeapRegion* hr) {
+uint G1RegionsOnNodes::add(G1HeapRegion* hr) {
   uint node_index = hr->node_index();
 
   // Update only if the node index is valid.

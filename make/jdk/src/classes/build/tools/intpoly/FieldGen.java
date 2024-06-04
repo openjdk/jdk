@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,7 +778,7 @@ public class FieldGen {
         result.appendLine("}");
 
         result.appendLine("@Override");
-        result.appendLine("protected void mult(long[] a, long[] b, long[] r) {");
+        result.appendLine("protected int mult(long[] a, long[] b, long[] r) {");
         result.incrIndent();
         for (int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
             result.appendIndent();
@@ -804,6 +804,9 @@ public class FieldGen {
             }
         }
         result.append(");\n");
+        result.appendIndent();
+        result.append("return 0;");
+        result.appendLine();
         result.decrIndent();
         result.appendLine("}");
 
@@ -833,7 +836,7 @@ public class FieldGen {
         //      }
         //  }
         result.appendLine("@Override");
-        result.appendLine("protected void square(long[] a, long[] r) {");
+        result.appendLine("protected int square(long[] a, long[] r) {");
         result.incrIndent();
         for (int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
             result.appendIndent();
@@ -874,6 +877,9 @@ public class FieldGen {
             }
         }
         result.append(");\n");
+        result.appendIndent();
+        result.append("return 0;");
+        result.appendLine();
         result.decrIndent();
         result.appendLine("}");
 

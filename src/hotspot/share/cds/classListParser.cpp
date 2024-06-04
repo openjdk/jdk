@@ -59,7 +59,8 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     _classlist_file(file),
     _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
     _file_input(do_open(file), /* need_close=*/true),
-    _input_stream(&_file_input) {
+    _input_stream(&_file_input),
+    _parse_mode(parse_mode) {
   log_info(cds)("Parsing %s%s", file,
                 parse_lambda_forms_invokers_only() ? " (lambda form invokers only)" : "");
   if (!_file_input.is_open()) {
@@ -70,7 +71,6 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
   _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
-  _parse_mode = parse_mode;
 
   // _instance should only be accessed by the thread that created _instance.
   assert(_instance == nullptr, "must be singleton");

@@ -134,7 +134,7 @@ public class TestBCI {
             this.name = m.methodName().stringValue();
             this.desc = m.methodTypeSymbol();
             m.code().orElseThrow(() -> new IllegalArgumentException("Missing Code in " + m))
-                    .findAttribute(Attributes.LINE_NUMBER_TABLE)
+                    .findAttribute(Attributes.lineNumberTable())
                     .orElseThrow(() -> new IllegalArgumentException("Missing LineNumberTable in " + m))
                     .lineNumbers().forEach(entry ->
                             bciToLineNumbers.computeIfAbsent(entry.startPc(), _ -> new TreeSet<>())
