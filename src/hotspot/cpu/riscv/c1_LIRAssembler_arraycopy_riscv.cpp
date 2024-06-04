@@ -341,7 +341,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ call_VM_leaf(entry, args_num);
   }
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 

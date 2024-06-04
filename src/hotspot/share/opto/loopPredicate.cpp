@@ -348,10 +348,13 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
     if (uncommon_proj->unique_ctrl_out() != rgn) {
       break;
     }
-    if (iff->in(1)->Opcode() == Op_Opaque4 && assertion_predicate_has_loop_opaque_node(iff)) {
+    Node* bol = iff->in(1);
+    assert(!bol->is_OpaqueInitializedAssertionPredicate(), "should not find an Initialized Assertion Predicate");
+    if (bol->is_Opaque4()) {
+      assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
       if (get_opaque) {
         // Collect the predicate Opaque4 node.
-        list.push(iff->in(1));
+        list.push(bol);
       } else {
         // Collect the predicate projection.
         list.push(predicate);
