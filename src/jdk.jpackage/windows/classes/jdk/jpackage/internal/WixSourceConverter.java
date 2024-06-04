@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -136,11 +137,14 @@ final class WixSourceConverter {
             throw new RuntimeException(ex);
         }
 
-        try (var outXml = Files.newOutputStream(resourceSaveAsFile)) {
+        try (var outXml = new ByteArrayOutputStream()) {
             transformer.transform(inputXml.get(), new StAXResult((XMLStreamWriter) Proxy.
                     newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
+            Files.createDirectories(IOUtils.getParent(resourceSaveAsFile));
+            Files.copy(new ByteArrayInputStream(outXml.toByteArray()), resourceSaveAsFile,
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (TransformerException | XMLStreamException ex) {
             // Should never happen
             throw new RuntimeException(ex);
