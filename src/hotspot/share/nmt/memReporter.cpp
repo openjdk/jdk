@@ -272,6 +272,13 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 }
 
 void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
+
+  // NMT reports may be triggered (as part of error handling) very early. Make sure
+  // Metaspace is already initialized.
+  if (!Metaspace::initialized()) {
+    return;
+  }
+
   assert(type == Metaspace::NonClassType || type == Metaspace::ClassType,
     "Invalid metadata type");
   const char* name = (type == Metaspace::NonClassType) ?
