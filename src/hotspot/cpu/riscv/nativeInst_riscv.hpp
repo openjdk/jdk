@@ -53,7 +53,6 @@ class NativeCall;
 
 class NativeInstruction {
   friend class Relocation;
-  friend bool is_NativeCallTrampolineStub_at(address);
  public:
   enum {
     instruction_size = MacroAssembler::instruction_size,

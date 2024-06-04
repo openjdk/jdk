@@ -501,7 +501,6 @@ bool NativeCall::reloc_set_destination(address dest) {
   }
 }
 
-
 bool NativeCall::is_call_before(address return_address) {
   if (!UseTrampolines) {
     return NativeFarCall::is_call_before(return_address) ||
