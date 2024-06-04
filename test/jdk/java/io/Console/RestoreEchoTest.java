@@ -25,8 +25,6 @@ import java.io.Console;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import jdk.internal.io.JdkConsoleImpl;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -40,8 +38,6 @@ import org.junit.jupiter.api.condition.OS;
  * @test
  * @bug 8332161
  * @summary Tests JdkConsoleImpl restores the echo state after readPassword() call
- *     This test relies on the static JdkConsoleImpl.echo() method, which
- *     queries/sets the platform's echo state.
  * @library /test/lib
  * @modules java.base/jdk.internal.io:+open
  * @run junit RestoreEchoTest
