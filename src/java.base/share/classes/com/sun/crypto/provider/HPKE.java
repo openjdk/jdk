@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.AsymmetricKey;
 import java.security.InvalidAlgorithmParameterException;
@@ -52,14 +53,18 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PrivilegedAction;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.XECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class HPKE extends CipherSpi {
@@ -461,6 +466,7 @@ public class HPKE extends CipherSpi {
             } else {
                 params = p;
             }
+            checkDisabledAlgorithms(params);
             suite_id = concat(
                     "HPKE".getBytes(StandardCharsets.UTF_8),
                     DHKEM.I2OSP(params.kem_id(), 2),
@@ -484,6 +490,84 @@ public class HPKE extends CipherSpi {
                 throw new InvalidAlgorithmParameterException("Cannot find HKDF for " + kdfAlg, e);
             }
             aead = new AEAD(params.aead_id());
+        }
+
+        private static int[][][] disabledIdentifiers;
+        static {
+            disabledIdentifiers = new int[3][][];
+            List<int[]> disabledKEMs = new ArrayList<>();
+            List<int[]> disabledKDFs = new ArrayList<>();
+            List<int[]> disabledAEADs = new ArrayList<>();
+            @SuppressWarnings("removal")
+            String property = AccessController.doPrivileged(
+                    new PrivilegedAction<String>() {
+                        @Override
+                        public String run() {
+                            return Security.getProperty("jdk.hpke.disabledAlgorithms");
+                        }
+                    });
+            if (property != null) {
+                for (String rule : property.split(",")) {
+                    if (rule == null) {
+                        continue;
+                    }
+                    rule = rule.trim();
+                    if (rule.isEmpty()) {
+                        continue;
+                    }
+                    int pos1 = rule.indexOf("=");
+                    int pos2 = rule.indexOf("-", pos1);
+                    if (pos1 == -1) {
+                        throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                    }
+                    int[] range = new int[2];
+                    try {
+                        if (pos2 == -1) {
+                            range[0] = range[1] = Integer.parseInt(rule.substring(pos1 + 1).trim());
+                        } else {
+                            range[0] = Integer.parseInt(rule.substring(pos1 + 1, pos2).trim());
+                            range[1] = Integer.parseInt(rule.substring(pos2 + 1).trim());
+                            if (range[0] > range[1]) {
+                                throw new IllegalArgumentException(
+                                        "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property, e);
+                    }
+                    switch (rule.substring(0, pos1).trim()) {
+                        case "kem_id" -> disabledKEMs.add(range);
+                        case "kdf_id" -> disabledKDFs.add(range);
+                        case "aead_id" -> disabledAEADs.add(range);
+                        default -> throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                    }
+                }
+            }
+            disabledIdentifiers[0] = disabledKEMs.toArray(new int[0][]);
+            disabledIdentifiers[1] = disabledKDFs.toArray(new int[0][]);
+            disabledIdentifiers[2] = disabledAEADs.toArray(new int[0][]);
+            System.out.print("\u001b[1;37;41m" + Arrays.deepToString(disabledIdentifiers));
+            System.out.println("\u001b[m");
+        }
+
+        private static void checkDisabledAlgorithms(HPKEParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            checkDisabled("kem_id", disabledIdentifiers[0], params.kem_id());
+            checkDisabled("kdf_id", disabledIdentifiers[1], params.kdf_id());
+            checkDisabled("aead_id", disabledIdentifiers[2], params.aead_id());
+        }
+
+        private static void checkDisabled(String label, int[][] ranges, int id)
+                throws InvalidAlgorithmParameterException {
+            for (int[] range : ranges) {
+                if (id >= range[0] && id <= range[1]) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Disabled " + label + ": " + id);
+                }
+            }
         }
 
         private Context KeySchedule(int mode,
