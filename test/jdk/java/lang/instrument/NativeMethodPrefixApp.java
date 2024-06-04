@@ -73,9 +73,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
     }
 
     private static Path createAgentJar() throws Exception {
-        // first setup a directory containing (only) the classes needed in boot classpath
-        // of the application jar to be launched
-        final Path bootClassesDir = createBootClassesDir();
+        final String testClassesDir = System.getProperty("test.classes");
         final Path agentJar = Path.of("NativeMethodPrefixAgent.jar");
         final String manifest = """
                 Manifest-Version: 1.0
@@ -83,7 +81,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
                 Can-Retransform-Classes: true
                 Can-Set-Native-Method-Prefix: true
                 """
-                + "Boot-Class-Path: " + bootClassesDir.toString().replace(File.separatorChar, '/') + "/"
+                + "Boot-Class-Path: " + testClassesDir.replace(File.separatorChar, '/') + "/"
                 + "\n";
         System.out.println("Manifest is:\n" + manifest);
         // create the agent jar
@@ -92,23 +90,6 @@ public class NativeMethodPrefixApp implements StringIdCallback {
                 "NativeMethodPrefixAgent",
                 "asmlib.Instrumentor");
         return agentJar;
-    }
-
-    private static Path createBootClassesDir() throws Exception {
-        final Path bootreporterClassesDir = Path.of(System.getProperty("test.classes"))
-                .resolve("bootreporter");
-        if (!Files.isDirectory(bootreporterClassesDir)) {
-            throw new Exception(bootreporterClassesDir + " is missing or not a directory");
-        }
-        // copy over the bootreporter.StringIdCallback and bootreporter.StringIdCallbackReporter
-        // into the boot classpath directory
-        final Path bootClassesDir = Path.of("bootclasses");
-        Files.createDirectories(bootClassesDir.resolve("bootreporter"));
-        Files.copy(bootreporterClassesDir.resolve("StringIdCallback.class"),
-                bootClassesDir.resolve("bootreporter", "StringIdCallback.class"));
-        Files.copy(bootreporterClassesDir.resolve("StringIdCallbackReporter.class"),
-                bootClassesDir.resolve("bootreporter", "StringIdCallbackReporter.class"));
-        return bootClassesDir;
     }
 
     private static void launchApp(final Path agentJar) throws Exception {
