@@ -34,9 +34,8 @@
 
 #include <stdio.h>
 
-#ifdef MUSL_LIBC
-#include <libgen.h> // for basename
-#endif
+// for basename, needed for Alpine
+#include <libgen.h>
 
 typedef struct {
   const char* mount_path;
@@ -51,6 +50,7 @@ static bool file_exists(const char* filename) {
   return os::stat(filename, &st) == 0;
 }
 
+// we rely on temp_file returning modifiable memory in resource area.
 static char* temp_file(const char* prefix) {
   const testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
   stringStream path;
