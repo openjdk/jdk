@@ -442,5 +442,5 @@ public final class Utils {
         // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
-	}
+    }
 }
