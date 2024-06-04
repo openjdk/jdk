@@ -166,7 +166,7 @@ inline bool SplitInfo::is_split(size_t region_idx) const
 
 class SpaceInfo
 {
- public:
+public:
   MutableSpace* space() const { return _space; }
 
   // Where the free space will start after the collection.  Valid only after the
@@ -190,9 +190,7 @@ class SpaceInfo
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
   void set_start_array(ObjectStartArray* s) { _start_array = s; }
 
-  void publish_new_top() const              { _space->set_top(_new_top); }
-
- private:
+private:
   MutableSpace*     _space;
   HeapWord*         _new_top;
   HeapWord*         _dense_prefix;
@@ -681,7 +679,7 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 // https://doi.org/10.1145/3313808.3313820
 
 class PSParallelCompact : AllStatic {
- public:
+public:
   // Convenient access to type names.
   typedef ParMarkBitMap::idx_t idx_t;
   typedef ParallelCompactData::RegionData RegionData;
@@ -701,7 +699,7 @@ public:
 
   friend class PSParallelCompactTest;
 
- private:
+private:
   static STWGCTimer           _gc_timer;
   static ParallelOldTracer    _gc_tracer;
   static elapsedTimer         _accumulated_time;
@@ -716,10 +714,10 @@ public:
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
- public:
+public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
- private:
+private:
 
   static void initialize_space_info();
 
@@ -768,7 +766,7 @@ public:
 
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
- public:
+public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
   static bool invoke(bool maximum_heap_compaction);
@@ -885,12 +883,12 @@ public:
 };
 
 class MoveAndUpdateClosure: public StackObj {
- private:
+private:
   ParMarkBitMap* const        _bitmap;
   size_t                      _words_remaining; // Words left to copy.
   static inline size_t calculate_words_remaining(size_t region);
 
- protected:
+protected:
   HeapWord*               _source;          // Next addr that would be read.
   HeapWord*               _destination;     // Next addr to be written.
   ObjectStartArray* const _start_array;
@@ -900,7 +898,7 @@ class MoveAndUpdateClosure: public StackObj {
   // Update variables to indicate that word_count words were processed.
   inline void update_state(size_t words);
 
- public:
+public:
   typedef ParMarkBitMap::idx_t idx_t;
 
   ParMarkBitMap*        bitmap() const { return _bitmap; }
