@@ -404,7 +404,8 @@ const ciTypeFlow::StateVector* ciTypeFlow::get_start_state() {
     state->push_translate(str.type());
   }
   // Set the rest of the locals to bottom.
-  while (state->stack_size() != 0) {
+  assert(state->stack_size() <= 0, "stack size should not be strictly positive");
+  while (state->stack_size() < 0) {
     state->push(state->bottom_type());
   }
   // Lock an object, if necessary.
