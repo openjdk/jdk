@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.event;
 
-package jdk.jfr.internal.instrument;
+import sun.nio.ch.FileChannelImpl;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
+import java.lang.Throwable;
+import java.lang.reflect.Field;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+/**
+ * Helper class to enable JFR tracing.
+ */
+public final class JFRTracing {
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@interface JIInstrumentationMethod {
+  public static void enable() throws NoSuchFieldException, IllegalAccessException {
+      enable(Throwable.class);
+      enable(FileInputStream.class);
+      enable(FileOutputStream.class);
+      enable(FileChannelImpl.class);
+      enable(RandomAccessFile.class);
+  }
+
+  private static void enable(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {
+      Field field = clazz.getDeclaredField("jfrTracing");
+      field.setAccessible(true);
+      field.setBoolean(null, true);
+  }
 }
