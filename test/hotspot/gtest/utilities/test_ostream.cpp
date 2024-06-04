@@ -128,9 +128,9 @@ TEST_VM(ostream, bufferedStream_dynamic_large) {
 class defaultStream::TestSupport : AllStatic {
 
   // Shared constants and variables for all subtests.
-  static constexpr size_t buflen = 11;
+  static const size_t buflen = 11;
   static char buffer[buflen];
-  static constexpr size_t max_len = buflen - 1;
+  static const size_t max_len = buflen - 1;
   static size_t result_len;
   static const char* result;
 
@@ -368,7 +368,7 @@ class defaultStream::TestSupport : AllStatic {
 
 };
 
-constexpr size_t defaultStream::TestSupport::max_len;
+const size_t defaultStream::TestSupport::max_len;
 char defaultStream::TestSupport::buffer[defaultStream::TestSupport::buflen];
 size_t defaultStream::TestSupport::result_len = 0;
 const char* defaultStream::TestSupport::result = nullptr;
