@@ -79,16 +79,15 @@
                                  int needle_con_cnt, Register result, int ae);
 
   void arrays_equals(Register r1, Register r2,
-                     Register tmp3, Register tmp4,
-                     Register tmp5, Register tmp6,
-                     Register result, Register cnt1,
-                     int elem_size);
+                     Register tmp1, Register tmp2, Register tmp3,
+                     Register result, int elem_size);
 
   void arrays_hashcode(Register ary, Register cnt, Register result,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6,
                        BasicType eltype);
+
   // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
@@ -252,20 +251,9 @@
   void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
                     BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
 
-  // In Matcher::scalable_predicate_reg_slots,
-  // we assume each predicate register is one-eighth of the size of
-  // scalable vector register, one mask bit per vector byte.
-  void spill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vse8_v(v, t0);
-  }
+  void spill_vmask(VectorRegister v, int offset);
 
-  void unspill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vle8_v(v, t0);
-  }
+  void unspill_vmask(VectorRegister v, int offset);
 
   void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
@@ -276,7 +264,7 @@
   }
 
   void integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
-                        VectorRegister src, BasicType src_bt);
+                        VectorRegister src, BasicType src_bt, bool is_signed);
 
   void integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                         VectorRegister src, BasicType src_bt);

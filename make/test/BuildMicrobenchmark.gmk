@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
 include TestFilesCompilation.gmk
 
@@ -92,8 +94,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(JMH_COMPILE_JARS), \
-    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast \
-        serial preview, \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
+        serial preview dangling-doc-comments, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := \
@@ -101,11 +103,14 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
         --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
         --enable-preview \
         -XDsuppressNotes \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor, \

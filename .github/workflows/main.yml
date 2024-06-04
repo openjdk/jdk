@@ -133,8 +133,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-    # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
-    if: needs.select.outputs.linux-x64 == 'true' || needs.select.outputs.linux-cross-compile == 'true'
+    if: needs.select.outputs.linux-x64 == 'true'
 
   build-linux-x86:
     name: linux-x86
@@ -214,7 +213,6 @@ jobs:
     name: linux-cross-compile
     needs:
       - select
-      - build-linux-x64
     uses: ./.github/workflows/build-cross-compile.yml
     with:
       gcc-major-version: '10'

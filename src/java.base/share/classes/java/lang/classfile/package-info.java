@@ -174,20 +174,26 @@
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
- * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
+ * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
+ * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
+ * -- specify a custom class hierarchy resolver used by stack map generation</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
+ * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadCodeOption}}
+ * -- patch out unreachable code (default is {@code PATCH_DEAD_CODE})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadLabelsOption}}
+ * -- filter unresolved labels (default is {@code FAIL_ON_DEAD_LABELS})</li>
  *   <li>{@link java.lang.classfile.ClassFile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
  *   <li>{@link java.lang.classfile.ClassFile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
- * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
- * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
- * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
- * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ShortJumpsOption}
+ * -- automatically rewrite short jumps to long when necessary (default is {@code FIX_SHORT_JUMPS})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
+ * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
  * </ul>
  * <p>
  * Most options allow you to request that certain parts of the classfile be
@@ -222,7 +228,7 @@
  * instruction invoking {@code println} could have been generated with {@link
  * java.lang.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
- * java.lang.classfile.CodeBuilder#invokeInstruction(java.lang.classfile.Opcode,
+ * java.lang.classfile.CodeBuilder#invoke(java.lang.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or {@link
  * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassFileElement)
@@ -232,6 +238,12 @@
  * the convenience method {@code CodeBuilder.invokeInstruction}, which in turn behaves
  * as if it calls method {@code CodeBuilder.with}. This composing of method calls on the
  * builder enables the composing of transforms (as described later).
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method of any Class-File API class or interface will cause a {@link
+ * java.lang.NullPointerException NullPointerException} to be thrown. Additionally,
+ * invoking a method with an array or collection containing a {@code null} element
+ * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the

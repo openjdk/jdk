@@ -41,7 +41,7 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
 class HeapRegionRemSet;
-class HeapRegion;
+class G1HeapRegion;
 class HeapRegionSetBase;
 class nmethod;
 
@@ -54,7 +54,7 @@ class nmethod;
 // sentinel value for hrm_index
 #define G1_NO_HRM_INDEX ((uint) -1)
 
-// A HeapRegion is the smallest piece of a G1CollectedHeap that
+// A G1HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.
 
 // Each heap region is self contained. top() and end() can never
@@ -66,7 +66,7 @@ class nmethod;
 // the last will point to their own end. The last ContinuesHumongous
 // region may have top() equal the end of object if there isn't
 // room for filler objects to pad out to the end of the region.
-class HeapRegion : public CHeapObj<mtGC> {
+class G1HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
 
   HeapWord* const _bottom;
@@ -74,7 +74,7 @@ class HeapRegion : public CHeapObj<mtGC> {
 
   HeapWord* volatile _top;
 
-  G1BlockOffsetTablePart _bot_part;
+  G1BlockOffsetTable* _bot;
 
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
@@ -130,10 +130,10 @@ private:
   // Try to allocate at least min_word_size and up to desired_size from this region.
   // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
-  // This version assumes that all allocation requests to this HeapRegion are properly
+  // This version assumes that all allocation requests to this G1HeapRegion are properly
   // synchronized.
   inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
+  // Try to allocate at least min_word_size and up to desired_size from this G1HeapRegion.
   // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version synchronizes with other calls to par_allocate_impl().
@@ -167,12 +167,9 @@ public:
   inline HeapWord* allocate(size_t word_size);
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
-  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
-
   // Full GC support methods.
 
-  void update_bot_for_block(HeapWord* start, HeapWord* end);
+  inline void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.
@@ -180,12 +177,12 @@ public:
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
-  // All allocated blocks are occupied by objects in a HeapRegion.
+  // All allocated blocks are occupied by objects in a G1HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
-  // current value of this HeapRegion.
+  // current value of this G1HeapRegion.
   size_t block_size(const HeapWord* p) const;
   size_t block_size(const HeapWord* p, HeapWord* pb) const;
 
@@ -208,7 +205,7 @@ private:
   HeapRegionType _type;
 
   // For a humongous region, region in which it starts.
-  HeapRegion* _humongous_start_region;
+  G1HeapRegion* _humongous_start_region;
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
@@ -217,17 +214,11 @@ private:
   uint _index_in_opt_cset;
 
   // Fields used by the HeapRegionSetBase class and subclasses.
-  HeapRegion* _next;
-  HeapRegion* _prev;
+  G1HeapRegion* _next;
+  G1HeapRegion* _prev;
 #ifdef ASSERT
   HeapRegionSetBase* _containing_set;
 #endif // ASSERT
-
-  // The start of the unmarked area. The unmarked area extends from this
-  // word until the top and/or end of the region, and is the part
-  // of the region for which no marking was done, i.e. objects may
-  // have been allocated in this part since the last mark phase.
-  HeapWord* volatile _top_at_mark_start;
 
   // The area above this limit is fully parsable. This limit
   // is equal to bottom except
@@ -245,8 +236,6 @@ private:
 
   // Amount of dead data in the region.
   size_t _garbage_bytes;
-
-  inline void init_top_at_mark_start();
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -284,7 +273,7 @@ private:
   inline HeapWord* next_live_in_unparsable(const HeapWord* p, HeapWord* limit) const;
 
 public:
-  HeapRegion(uint hrm_index,
+  G1HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
              MemRegion mr,
              G1CardSetConfiguration* config);
@@ -293,7 +282,7 @@ public:
   // sequence, otherwise -1.
   uint hrm_index() const { return _hrm_index; }
 
-  // Initializing the HeapRegion not only resets the data structure, but also
+  // Initializing the G1HeapRegion not only resets the data structure, but also
   // resets the BOT for that heap region.
   // The default values for clear_space means that we will do the clearing if
   // there's clearing to be done ourselves. We also always mangle the space.
@@ -352,10 +341,6 @@ public:
 
   inline bool is_collection_set_candidate() const;
 
-  // Get the start of the unmarked area in this region.
-  HeapWord* top_at_mark_start() const;
-  void set_top_at_mark_start(HeapWord* value);
-
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
   // safepoint the _acquire method must be used.
   HeapWord* parsable_bottom() const;
@@ -366,19 +351,12 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking is starting. Initialize
-  // all fields related to the next marking info.
-  inline void note_start_of_marking();
-
-  // Notify the region that concurrent marking has finished. Passes the number of
-  // bytes between bottom and TAMS.
-  inline void note_end_of_marking(size_t marked_bytes);
+  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
+  // bytes marked between bottom and TAMS.
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();
-
-  // Notify the region that the (corresponding) bitmap has been cleared.
-  inline void reset_top_at_mark_start();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
@@ -422,7 +400,7 @@ public:
   void set_old();
 
   // For a humongous region, region in which it starts.
-  HeapRegion* humongous_start_region() const {
+  G1HeapRegion* humongous_start_region() const {
     return _humongous_start_region;
   }
 
@@ -437,7 +415,7 @@ public:
   // Makes the current region be a "continues humongous'
   // region. first_hr is the "start humongous" region of the series
   // which this region will be part of.
-  void set_continues_humongous(HeapRegion* first_hr);
+  void set_continues_humongous(G1HeapRegion* first_hr);
 
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
@@ -450,19 +428,17 @@ public:
 
   inline bool in_collection_set() const;
 
-  inline const char* collection_set_candidate_short_type_str() const;
-
   void prepare_remset_for_scan();
 
   // Methods used by the HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into
   // linked lists.
-  void set_next(HeapRegion* next) { _next = next; }
-  HeapRegion* next()              { return _next; }
+  void set_next(G1HeapRegion* next) { _next = next; }
+  G1HeapRegion* next()              { return _next; }
 
-  void set_prev(HeapRegion* prev) { _prev = prev; }
-  HeapRegion* prev()              { return _prev; }
+  void set_prev(G1HeapRegion* prev) { _prev = prev; }
+  G1HeapRegion* prev()              { return _prev; }
 
   void unlink_from_list();
 
@@ -490,8 +466,8 @@ public:
 #endif // ASSERT
 
 
-  // Reset the HeapRegion to default values and clear its remembered set.
-  // If clear_space is true, clear the HeapRegion's memory.
+  // Reset the G1HeapRegion to default values and clear its remembered set.
+  // If clear_space is true, clear the G1HeapRegion's memory.
   // Callers must ensure this is not called by multiple threads at the same time.
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
@@ -540,10 +516,6 @@ public:
   inline        bool is_in_parsable_area(const void* const addr) const;
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
-  bool obj_allocated_since_marking_start(oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
-  }
-
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure(bool retain);
 
@@ -563,9 +535,9 @@ public:
   void add_code_root(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
-  // Applies blk->do_code_blob() to each of the entries in
+  // Applies blk->do_nmethod() to each of the entries in
   // the code roots list for this region
-  void code_roots_do(CodeBlobClosure* blk) const;
+  void code_roots_do(NMethodClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
@@ -596,7 +568,7 @@ public:
   HeapRegionClosure(): _is_complete(true) {}
 
   // Typically called on each region until it returns true.
-  virtual bool do_heap_region(HeapRegion* r) = 0;
+  virtual bool do_heap_region(G1HeapRegion* r) = 0;
 
   // True after iteration if the closure was applied to all heap regions
   // and returned "false" in all cases.

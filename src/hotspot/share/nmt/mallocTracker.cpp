@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -38,10 +39,11 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
@@ -101,14 +103,20 @@ void MallocMemorySummary::initialize() {
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -122,14 +130,20 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
 
 bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -213,6 +227,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
+#if !INCLUDE_ASAN
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
@@ -290,5 +306,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

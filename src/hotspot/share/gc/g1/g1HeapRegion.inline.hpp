@@ -42,7 +42,7 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
+inline HeapWord* G1HeapRegion::allocate_impl(size_t min_word_size,
                                            size_t desired_word_size,
                                            size_t* actual_size) {
   HeapWord* obj = top();
@@ -59,7 +59,7 @@ inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
   }
 }
 
-inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
+inline HeapWord* G1HeapRegion::par_allocate_impl(size_t min_word_size,
                                                size_t desired_word_size,
                                                size_t* actual_size) {
   do {
@@ -83,11 +83,11 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::block_start(const void* addr) const {
+inline HeapWord* G1HeapRegion::block_start(const void* addr) const {
   return block_start(addr, parsable_bottom_acquire());
 }
 
-inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
+inline HeapWord* G1HeapRegion::advance_to_block_containing_addr(const void* addr,
                                                               HeapWord* const pb,
                                                               HeapWord* first_block) const {
   HeapWord* cur_block = first_block;
@@ -100,28 +100,29 @@ inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
     cur_block = next_block;
     // Because the BOT is precise, we should never step into the next card
     // (i.e. crossing the card boundary).
-    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+    assert(!G1BlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
   }
 }
 
-inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
+inline HeapWord* G1HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
+  assert(addr >= bottom() && addr < top(), "invalid address");
+  HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
-inline bool HeapRegion::is_in_parsable_area(const void* const addr) const {
+inline bool G1HeapRegion::is_in_parsable_area(const void* const addr) const {
   return is_in_parsable_area(addr, parsable_bottom());
 }
 
-inline bool HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
+inline bool G1HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
   return addr >= pb;
 }
 
-inline bool HeapRegion::is_marked_in_bitmap(oop obj) const {
+inline bool G1HeapRegion::is_marked_in_bitmap(oop obj) const {
   return G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap()->is_marked(obj);
 }
 
-inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb) const {
+inline bool G1HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb) const {
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
 
@@ -140,24 +141,24 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
+inline HeapWord* G1HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
   return bitmap->get_next_marked_addr(p, limit);
 }
 
-inline HeapWord* HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord* const limit) const {
+inline HeapWord* G1HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord* const limit) const {
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   return next_live_in_unparsable(bitmap, p, limit);
 }
 
-inline bool HeapRegion::is_collection_set_candidate() const {
+inline bool G1HeapRegion::is_collection_set_candidate() const {
  return G1CollectedHeap::heap()->is_collection_set_candidate(this);
 }
 
-inline size_t HeapRegion::block_size(const HeapWord* p) const {
+inline size_t G1HeapRegion::block_size(const HeapWord* p) const {
   return block_size(p, parsable_bottom());
 }
 
-inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) const {
+inline size_t G1HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) const {
   assert(p < top(), "precondition");
 
   if (!block_is_obj(p, pb)) {
@@ -167,35 +168,34 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
   return cast_to_oop(p)->size();
 }
 
-inline void HeapRegion::prepare_for_full_gc() {
+inline void G1HeapRegion::prepare_for_full_gc() {
   // After marking and class unloading the heap temporarily contains dead objects
   // with unloaded klasses. Moving parsable_bottom makes some (debug) code correctly
   // skip dead objects.
   _parsable_bottom = top();
 }
 
-inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
+inline void G1HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a movable region is invalid.
-  // But all objects are live, we get this by setting TAMS to bottom.
-  init_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_skip_compacting_after_full_gc() {
+inline void G1HeapRegion::reset_skip_compacting_after_full_gc() {
   assert(!is_free(), "must be");
 
-  _garbage_bytes = 0;
-
-  reset_top_at_mark_start();
-
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_after_full_gc_common() {
+inline void G1HeapRegion::reset_after_full_gc_common() {
+  // After a full gc the mark information in a movable region is invalid. Reset marking
+  // information.
+  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
+
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();
+
+  _garbage_bytes = 0;
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -204,7 +204,7 @@ inline void HeapRegion::reset_after_full_gc_common() {
 }
 
 template<typename ApplyToMarkedClosure>
-inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure) {
+inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure) {
   HeapWord* limit = top();
   HeapWord* next_addr = bottom();
 
@@ -224,24 +224,24 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
-inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
+inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
                                           size_t desired_word_size,
                                           size_t* actual_word_size) {
   return par_allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::allocate(size_t word_size) {
+inline HeapWord* G1HeapRegion::allocate(size_t word_size) {
   size_t temp;
   return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* HeapRegion::allocate(size_t min_word_size,
+inline HeapWord* G1HeapRegion::allocate(size_t min_word_size,
                                       size_t desired_word_size,
                                       size_t* actual_word_size) {
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline void HeapRegion::update_bot() {
+inline void G1HeapRegion::update_bot() {
   HeapWord* next_addr = bottom();
 
   HeapWord* prev_addr;
@@ -253,93 +253,57 @@ inline void HeapRegion::update_bot() {
   assert(next_addr == top(), "Should stop the scan at the limit.");
 }
 
-inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
-  assert(is_old(), "should only do BOT updates for old regions");
-
-  HeapWord* obj_end = obj_start + obj_size;
-
-  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+inline void G1HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  assert(is_in(start), "The start address must be in this region: " HR_FORMAT
+         " start " PTR_FORMAT " end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end));
+         p2i(start), p2i(end));
 
-  _bot_part.update_for_block(obj_start, obj_end);
+  _bot->update_for_block(start, end);
 }
 
-inline HeapWord* HeapRegion::top_at_mark_start() const {
-  return Atomic::load(&_top_at_mark_start);
-}
-
-inline void HeapRegion::set_top_at_mark_start(HeapWord* value) {
-  Atomic::store(&_top_at_mark_start, value);
-}
-
-inline HeapWord* HeapRegion::parsable_bottom() const {
+inline HeapWord* G1HeapRegion::parsable_bottom() const {
   assert(!is_init_completed() || SafepointSynchronize::is_at_safepoint(), "only during initialization or safepoint");
   return _parsable_bottom;
 }
 
-inline HeapWord* HeapRegion::parsable_bottom_acquire() const {
+inline HeapWord* G1HeapRegion::parsable_bottom_acquire() const {
   return Atomic::load_acquire(&_parsable_bottom);
 }
 
-inline void HeapRegion::reset_parsable_bottom() {
+inline void G1HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
-  if (is_old_or_humongous() && !is_collection_set_candidate()) {
-    set_top_at_mark_start(top());
-  }
-}
-
-inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
+inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes) {
   assert_at_safepoint();
 
-  if (top_at_mark_start() != bottom()) {
-    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
   }
 
   if (needs_scrubbing()) {
-    _parsable_bottom = top_at_mark_start();
+    _parsable_bottom = top_at_mark_start;
   }
 }
 
-inline void HeapRegion::note_end_of_scrubbing() {
+inline void G1HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
 }
 
-inline void HeapRegion::init_top_at_mark_start() {
-  reset_top_at_mark_start();
-  _parsable_bottom = bottom();
-  _garbage_bytes = 0;
-}
-
-inline void HeapRegion::reset_top_at_mark_start() {
-  // We do not need a release store here because
-  //
-  // - if this method is called during concurrent bitmap clearing, we do not read
-  // the bitmap any more for live/dead information (we do not read the bitmap at
-  // all at that point).
-  // - otherwise we reclaim regions only during GC and we do not read tams and the
-  // bitmap concurrently.
-  set_top_at_mark_start(bottom());
-}
-
-inline bool HeapRegion::needs_scrubbing() const {
+inline bool G1HeapRegion::needs_scrubbing() const {
   return is_old();
 }
 
-inline bool HeapRegion::in_collection_set() const {
+inline bool G1HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
 
 template <class Closure, bool in_gc_pause>
-HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
+HeapWord* G1HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         Closure* cl) {
   assert(is_humongous(), "precondition");
-  HeapRegion* sr = humongous_start_region();
+  G1HeapRegion* sr = humongous_start_region();
   oop obj = cast_to_oop(sr->bottom());
 
   // If concurrent and klass_or_null is null, then space has been
@@ -378,7 +342,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 }
 
 template <class Closure>
-inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl) {
+inline HeapWord* G1HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl) {
   HeapWord* const start = mr.start();
   HeapWord* const end = mr.end();
 
@@ -423,7 +387,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
 // we expect that the amount of GCs executed during scrubbing is very low so such
 // tests would be unnecessary almost all the time.
 template <class Closure, bool in_gc_pause>
-inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl) {
+inline HeapWord* G1HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl) {
   // Cache the boundaries of the memory region in some const locals
   HeapWord* const start = mr.start();
   HeapWord* const end = mr.end();
@@ -487,7 +451,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
 }
 
 template <bool in_gc_pause, class Closure>
-HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
+HeapWord* G1HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
                                                             Closure* cl) {
   assert(MemRegion(bottom(), top()).contains(mr), "Card region not in heap region");
 
@@ -508,26 +472,26 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   return oops_on_memregion_iterate<Closure, in_gc_pause>(mr, cl);
 }
 
-inline uint HeapRegion::age_in_surv_rate_group() const {
+inline uint G1HeapRegion::age_in_surv_rate_group() const {
   assert(has_surv_rate_group(), "pre-condition");
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   return _surv_rate_group->age_in_group(_age_index);
 }
 
-inline bool HeapRegion::has_valid_age_in_surv_rate() const {
+inline bool G1HeapRegion::has_valid_age_in_surv_rate() const {
   return _surv_rate_group->is_valid_age_index(_age_index);
 }
 
-inline bool HeapRegion::has_surv_rate_group() const {
+inline bool G1HeapRegion::has_surv_rate_group() const {
   return _surv_rate_group != nullptr;
 }
 
-inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
+inline double G1HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
   assert(has_surv_rate_group(), "pre-condition");
   return _surv_rate_group->surv_rate_pred(predictor, age_in_surv_rate_group());
 }
 
-inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
+inline void G1HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
   assert(surv_rate_group != nullptr, "pre-condition");
   assert(!has_surv_rate_group(), "pre-condition");
   assert(is_young(), "pre-condition");
@@ -536,7 +500,7 @@ inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group
   _age_index = surv_rate_group->next_age_index();
 }
 
-inline void HeapRegion::uninstall_surv_rate_group() {
+inline void G1HeapRegion::uninstall_surv_rate_group() {
   if (has_surv_rate_group()) {
     assert(has_valid_age_in_surv_rate(), "pre-condition");
     assert(is_young(), "pre-condition");
@@ -548,12 +512,12 @@ inline void HeapRegion::uninstall_surv_rate_group() {
   }
 }
 
-inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
+inline void G1HeapRegion::record_surv_words_in_group(size_t words_survived) {
   uint age = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age, words_survived);
 }
 
-inline void HeapRegion::add_pinned_object_count(size_t value) {
+inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   assert(value != 0, "wasted effort");
   assert(!is_free(), "trying to pin free region %u, adding %zu", hrm_index(), value);
   Atomic::add(&_pinned_object_count, value, memory_order_relaxed);

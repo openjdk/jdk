@@ -92,8 +92,8 @@ public final class Unsafe {
         return theUnsafe;
     }
 
-    /// peek and poke operations
-    /// (compilers should optimize these to memory ops)
+    //--- peek and poke operations
+    // (compilers should optimize these to memory ops)
 
     // These work on object fields in the Java heap.
     // They will not work on elements of packed arrays.
@@ -420,7 +420,7 @@ public final class Unsafe {
 
 
 
-    /// helper methods for validating various types of objects/values
+    //--- helper methods for validating various types of objects/values
 
     /**
      * Create an exception reflecting that some of the input was invalid
@@ -581,7 +581,7 @@ public final class Unsafe {
     }
 
 
-    /// wrappers for malloc, realloc, free:
+    //--- wrappers for malloc, realloc, free:
 
     /**
      * Round up allocation size to a multiple of HeapWordSize.
@@ -1032,7 +1032,7 @@ public final class Unsafe {
     @IntrinsicCandidate
     private native void writebackPostSync0();
 
-    /// random queries
+    //--- random queries
 
     /**
      * This constant differs from all results that will ever be returned from
@@ -1312,7 +1312,7 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
-    /// random trusted operations from JNI:
+    //--- random trusted operations from JNI:
 
     /**
      * Tells the VM to define a class, without security checks.  By default, the
@@ -3824,6 +3824,7 @@ public final class Unsafe {
     private native long allocateMemory0(long bytes);
     private native long reallocateMemory0(long address, long bytes);
     private native void freeMemory0(long address);
+    @IntrinsicCandidate
     private native void setMemory0(Object o, long offset, long bytes, byte value);
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);

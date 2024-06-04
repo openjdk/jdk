@@ -28,18 +28,18 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.hpp"
+#include "opto/optoreg.hpp"
+
+class Node;
+#endif // COMPILER2
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
-private:
-  void incr_allocated_bytes(MacroAssembler* masm,
-    RegisterOrConstant size_in_bytes,
-    Register           tmp
-);
-
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register addr, Register count, int callee_saved_regs) {}
@@ -62,6 +62,11 @@ public:
   virtual void barrier_stubs_init() {}
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
 
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP

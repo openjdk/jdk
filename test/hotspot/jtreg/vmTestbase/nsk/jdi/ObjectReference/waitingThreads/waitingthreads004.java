@@ -62,7 +62,10 @@ public class waitingthreads004 {
     //------------------------------------------------------- immutable common methods
 
     public static void main(String argv[]) {
-        System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     private static void display(String msg) {
