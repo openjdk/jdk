@@ -3619,7 +3619,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "");
   addi(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
-  // Check if bitmap is SECONDARY_SUPERS_BITMAP_FULL 
+  // Check if bitmap is SECONDARY_SUPERS_BITMAP_FULL
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "Adjust this code");
   addi(t0, r_bitmap, (u1)1);
   beqz(t0, L_bitmap_full);
