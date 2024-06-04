@@ -51,8 +51,8 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="ElementKindVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see ElementKindVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see ElementKindVisitor6
  * @see ElementKindVisitor8
  * @see ElementKindVisitor9
