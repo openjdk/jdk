@@ -3227,7 +3227,8 @@ void SuperWordVTransformBuilder::set_req_all_for_scalar(VTransformNode* vtn, Vec
 void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
-  for (uint j = 0; j < vtn->req(); j++) {
+  // Vectors have no ctrl, so ignore it.
+  for (uint j = 1; j < vtn->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
     set_req_for_vector(vtn, vtn_dependencies, j, pack);
