@@ -21,43 +21,35 @@
  * questions.
  */
 
-import com.beust.ah.A;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import org.testng.Assert;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /*
  * @test
  * @summary Test of diagnostic command Thread.print with virtual threads
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules java.base
  * @run testng PrintVirtualThreadTest
  */
 public class PrintVirtualThreadTest {
 
     public void run(CommandExecutor executor) throws InterruptedException {
-        var shouldStop = new AtomicBoolean();
+        var shouldFinish = new AtomicBoolean(false);
         var started = new CountDownLatch(1);
-        final Runnable runnable = new DummyRunnable(shouldStop, started);
+        final Runnable runnable = new DummyRunnable(shouldFinish, started);
         Thread.startVirtualThread(runnable);
         started.await();
         /* Execute */
         OutputAnalyzer output = executor.execute("Thread.print");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
+        shouldFinish.compareAndSet(false, true);
     }
 
     @Test
@@ -67,11 +59,11 @@ public class PrintVirtualThreadTest {
 
     static class DummyRunnable implements Runnable {
 
-        private final AtomicBoolean shouldStop;
+        private final AtomicBoolean shouldFinish;
         private final CountDownLatch started;
 
-        public DummyRunnable(AtomicBoolean shouldStop, CountDownLatch started) {
-           this.shouldStop = shouldStop;
+        public DummyRunnable(AtomicBoolean shouldFinish, CountDownLatch started) {
+           this.shouldFinish = shouldFinish;
            this.started = started;
         }
 
@@ -82,7 +74,7 @@ public class PrintVirtualThreadTest {
         void compute() {
             started.countDown();
             while (true) {
-                if (shouldStop.get()) {
+                if (shouldFinish.get()) {
                     break;
                 }
             }
