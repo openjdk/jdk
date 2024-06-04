@@ -1976,7 +1976,9 @@ class StubGenerator: public StubCodeGenerator {
     __ cbz(copied_oop, L_store_element);
 
     __ load_klass(r19_klass, copied_oop);// query the object klass
-    generate_type_check(r19_klass, ckoff, ckval, L_store_element);
+    generate_type_check(/*sub_klass*/r19_klass,
+                        /*super_check_offset*/ckoff,
+                        /*super_klass*/ckval, L_store_element);
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.

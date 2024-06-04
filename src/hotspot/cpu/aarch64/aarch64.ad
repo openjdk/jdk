@@ -3604,8 +3604,8 @@ encode %{
 
      Label miss;
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     nullptr, &miss,
-                                     /*set_cond_codes:*/ true);
+                                      nullptr, &miss,
+                                      /*set_cond_codes:*/ true);
      if ($primary) {
        __ mov(result_reg, zr);
      }
@@ -16221,53 +16221,81 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
   ins_pipe(pipe_class_memory);
 %}
 
-instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP super_con, vRegD_V0 vtemp, iRegP_R5 result,
-                                       iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
-                                       rFlagsReg cr)
+instruct partialSubtypeCheckFast(iRegP_R4 sub, iRegP_R0 super_reg, vRegD_V0 vtemp, iRegP_R5 result,
+                                 iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
+                                 rFlagsReg cr)
 %{
-  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
-  predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub super_reg));
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
-  ins_cost(700);  // smaller than the next version
-  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+  ins_cost(500);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg" %}
 
   ins_encode %{
     bool success = false;
-    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
-    if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                                 $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                                 $vtemp$$FloatRegister,
-                                                 $result$$Register,
-                                                 super_klass_slot);
-    } else {
-      address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
-      success = (call != nullptr);
-    }
+    success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+                                               $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                               $vtemp$$FloatRegister,
+                                               $result$$Register);
+    __ cmp($result$$Register, (u1)0);
     if (!success) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
   %}
 
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, immP0 zero, rFlagsReg cr)
-%{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL temp, KILL result);
-
-  ins_cost(1100);  // slightly larger than the next version
-  format %{ "partialSubtypeCheck $result, $sub, $super == 0" %}
-
-  ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
-
-  opcode(0x0); // Don't zero result reg on hit
+  opcode(0x1); // Force zero of result reg on hit
 
   ins_pipe(pipe_class_memory);
 %}
+
+// instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP super_con, vRegD_V0 vtemp, iRegP_R5 result,
+//                                        iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
+//                                        rFlagsReg cr)
+// %{
+//   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+//   predicate(UseSecondarySupersTable);
+//   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
+
+//   ins_cost(700);  // smaller than the next version
+//   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+
+//   ins_encode %{
+//     bool success = false;
+//     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+//     if (InlineSecondarySupersTest) {
+//       success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+//                                                  $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+//                                                  $vtemp$$FloatRegister,
+//                                                  $result$$Register,
+//                                                  super_klass_slot);
+//     } else {
+//       address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+//       success = (call != nullptr);
+//     }
+//     if (!success) {
+//       ciEnv::current()->record_failure("CodeCache is full");
+//       return;
+//     }
+//   %}
+
+//   ins_pipe(pipe_class_memory);
+// %}
+
+// instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, immP0 zero, rFlagsReg cr)
+// %{
+//   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
+//   effect(KILL temp, KILL result);
+
+//   ins_cost(1100);  // slightly larger than the next version
+//   format %{ "partialSubtypeCheck $result, $sub, $super == 0" %}
+
+//   ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
+
+//   opcode(0x0); // Don't zero result reg on hit
+
+//   ins_pipe(pipe_class_memory);
+// %}
 
 // Intrisics for String.compareTo()
 

@@ -1021,6 +1021,15 @@ public:
                                      u1 super_klass_slot,
                                      bool stub_is_near = false);
 
+  bool lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     FloatRegister vtemp,
+                                     Register result,
+                                     bool stub_is_near = false);
+
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
                                      Register temp1,

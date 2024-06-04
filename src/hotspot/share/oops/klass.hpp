@@ -428,6 +428,7 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
