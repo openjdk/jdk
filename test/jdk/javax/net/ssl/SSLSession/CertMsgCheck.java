@@ -31,29 +31,41 @@
  *
  */
 
+import javax.net.ssl.SSLHandshakeException;
+import java.util.ArrayList;
+import java.util.List;
+
 public class CertMsgCheck {
 
     public static void main(String[] args) throws Exception {
+        List<Exception> eList = new ArrayList<>();
         // Start server
         TLSBase.Server server = new TLSBase.ServerBuilder().setClientAuth(true).
             build();
-
+        TLSBase.Client client1;
         // Initial client session
-        TLSBase.Client client1 = new TLSBase.Client(true, false);
-        if (server.getSession(client1).getSessionContext() == null) {
-            for (Exception e : server.getExceptionList()) {
-                System.out.println("Looking at " + e.getClass() + " " +
-                    e.getMessage());
-                if (e.getMessage().contains(args[0])) {
-                    System.out.println("Found correct exception: " + args[0] +
-                    " in " + e.getMessage());
-                    return;
-                } else {
-                    System.out.println("No \"" + args[0] + "\" found.");
-                }
-            }
+        client1 = new TLSBase.Client(true, false);
+        server.getSession(client1).getSessionContext();
+        server.done();
+        //while (!server.getSignal()) {
+//            Thread.sleep(100);
+//        }
 
-            throw new Exception("Failed to find expected alert: " + args[0]);
+        eList.addAll(server.getExceptionList());
+        System.out.println("Exception list size is " + eList.size());
+
+        for (Exception e : eList) {
+            System.out.println("Looking at " + e.getClass() + " " +
+                e.getMessage());
+            if (e.getMessage().contains(args[0])) {
+                System.out.println("Found correct exception: " + args[0] +
+                    " in " + e.getMessage());
+                return;
+            } else {
+                System.out.println("No \"" + args[0] + "\" found.");
+            }
         }
+
+        throw new Exception("Failed to find expected alert: " + args[0]);
     }
 }

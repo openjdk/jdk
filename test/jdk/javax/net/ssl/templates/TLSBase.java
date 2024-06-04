@@ -62,6 +62,7 @@ abstract public class TLSBase {
     static int serverPort;
     // Name shown during read and write ops
     String name;
+    boolean connectionDone = false;
 
     TLSBase() {
         String keyFilename =
@@ -97,8 +98,8 @@ abstract public class TLSBase {
     private static KeyManager[] getKeyManager(boolean empty) throws Exception {
         FileInputStream fis = null;
         if (!empty) {
-            fis = new FileInputStream(System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile);
+            fis = new FileInputStream(System.getProperty("test.src", "./") +
+                "/" + pathToStores + "/" + keyStoreFile);
         }
         // Load the keystore
         char[] pwd = passwd.toCharArray();
@@ -113,8 +114,8 @@ abstract public class TLSBase {
     private static TrustManager[] getTrustManager(boolean empty) throws Exception {
         FileInputStream fis = null;
         if (!empty) {
-            fis = new FileInputStream(System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile);
+            fis = new FileInputStream(System.getProperty("test.src", "./") +
+                "/" + pathToStores + "/" + trustStoreFile);
         }
         // Load the keystore
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -138,6 +139,10 @@ abstract public class TLSBase {
         return tmf.getTrustManagers();
     }
 
+    public boolean isDone() {
+        return connectionDone;
+    }
+
     /**
      * Server constructor must be called before any client operation so the
      * tls server is ready.  There should be no timing problems as the
@@ -148,7 +153,6 @@ abstract public class TLSBase {
         // Clients sockets are kept in a hash table with the port as the key.
         ConcurrentHashMap<Integer, SSLSocket> clientMap =
                 new ConcurrentHashMap<>();
-        boolean exit = false;
         Thread t;
         List<Exception> exceptionList = new ArrayList<>();
 
@@ -157,7 +161,8 @@ abstract public class TLSBase {
             name = "server";
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(builder.km), TLSBase.getTrustManager(builder.tm), null);
+                sslContext.init(TLSBase.getKeyManager(builder.km)
+                    , TLSBase.getTrustManager(builder.tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(builder.clientauth);
@@ -165,6 +170,7 @@ abstract public class TLSBase {
             } catch (Exception e) {
                 System.err.println(e.getMessage());
                 e.printStackTrace();
+                connectionDone = true;
             }
 
             // Thread to allow multiple clients to connect
@@ -178,13 +184,16 @@ abstract public class TLSBase {
                         try {
                             write(c, read(c));
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            System.out.println("Caught " + e.getMessage() +
+                                " put in list");
                             exceptionList.add(e);
                         }
                     }
                 } catch (Exception ex) {
                     System.err.println("Server Down");
                     ex.printStackTrace();
+                } finally {
+                    connectionDone = true;
                 }
             });
             t.start();
@@ -203,7 +212,8 @@ abstract public class TLSBase {
             name = "server";
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
+                sslContext.init(TLSBase.getKeyManager(km),
+                    TLSBase.getTrustManager(tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(true);
@@ -211,6 +221,7 @@ abstract public class TLSBase {
             } catch (Exception e) {
                 System.err.println(e.getMessage());
                 e.printStackTrace();
+                connectionDone = true;
             }
 
                 // Thread to allow multiple clients to connect
@@ -224,12 +235,16 @@ abstract public class TLSBase {
                             try {
                                 write(c, read(c));
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                System.out.println("Caught " + e.getMessage() +
+                                    " put in list");
+                                exceptionList.add(e);
                             }
                         }
                     } catch (Exception ex) {
                         System.err.println("Server Down");
                         ex.printStackTrace();
+                    } finally {
+                        connectionDone = true;
                     }
                 });
                 t.start();
@@ -239,7 +254,7 @@ abstract public class TLSBase {
         // test or the test will never end.
         void done() {
             try {
-                t.interrupt();
+                t.join(5000);
                 ssock.close();
             } catch (Exception e) {
                 System.err.println(e.getMessage());
