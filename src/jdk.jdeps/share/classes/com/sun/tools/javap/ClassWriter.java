@@ -42,6 +42,7 @@ import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassSignature;
 import java.lang.classfile.ClassFile;
 import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -248,9 +249,29 @@ public class ClassWriter extends BasicWriter {
         if (options.verbose) {
             attrWriter.write(classModel.attributes());
         }
+
+        if (options.verify) {
+            var vErrors = VERIFIER.verify(classModel);
+            if (!vErrors.isEmpty()) {
+                println();
+                for (var ve : vErrors) {
+                    println(ve.getMessage());
+                }
+                errorReported = true;
+            }
+        }
         return !errorReported;
     }
     // where
+
+    private static final ClassFile VERIFIER = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+            ClassHierarchyResolver.defaultResolver().orElse(new ClassHierarchyResolver() {
+                @Override
+                public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+                    // mark all unresolved classes as interfaces to exclude them from assignability verification
+                    return ClassHierarchyInfo.ofInterface();
+                }
+            })));
 
     final SignaturePrinter sigPrinter;
 

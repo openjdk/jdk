@@ -135,7 +135,7 @@ static jlong as_long(LIR_Opr data) {
 Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
   if (addr->base()->is_illegal()) {
     assert(addr->index()->is_illegal(), "must be illegal too");
-    __ movptr(tmp, addr->disp());
+    __ movptr(tmp, (address)addr->disp());
     return Address(tmp, 0);
   }
 
@@ -1023,7 +1023,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
