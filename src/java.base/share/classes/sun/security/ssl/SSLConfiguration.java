@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,8 @@ final class SSLConfiguration implements Cloneable {
 
     // Number of NewSessionTickets (NST) that will be sent by the server.
     static final int serverNewSessionTicketCount;
+    // Default for NST
+    static final int SERVER_NST_DEFAULT = 3;
 
     // Is the extended_master_secret extension supported?
     static {
@@ -199,9 +201,20 @@ final class SSLConfiguration implements Cloneable {
             "jdk.tls.server.newSessionTicketCount");
         if (nstServerCount == null || nstServerCount < 1 ||
             nstServerCount > 10) {
-            serverNewSessionTicketCount = 3;
+            serverNewSessionTicketCount = SERVER_NST_DEFAULT;
+            if (nstServerCount != null && SSLLogger.isOn &&
+                SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount defaults to 3 as " +
+                        "the property was not between 1 and 10");
+            }
         } else {
             serverNewSessionTicketCount = nstServerCount;
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount set to " +
+                        serverNewSessionTicketCount);
+            }
         }
     }
 
