@@ -3300,14 +3300,12 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     //             |                                  |
     //           _store                             first
     //
-#ifdef VM_LITTLE_ENDIAN
     Node* hi = _store->in(MemNode::ValueIn);
     Node* lo = first->in(MemNode::ValueIn);
-#else // VM_LITTLE_ENDIAN
+#ifndef VM_LITTLE_ENDIAN
     // `_store` and `first` are swapped in the diagram above
-    Node* hi = first->in(MemNode::ValueIn);
-    Node* lo = _store->in(MemNode::ValueIn);
-#endif // VM_LITTLE_ENDIAN
+    swap(hi, lo);
+#endif // !VM_LITTLE_ENDIAN
     Node const* hi_base;
     jint hi_shift;
     merged_input_value = lo;
