@@ -549,8 +549,6 @@ public class HPKE extends CipherSpi {
             disabledIdentifiers[0] = disabledKEMs.toArray(new int[0][]);
             disabledIdentifiers[1] = disabledKDFs.toArray(new int[0][]);
             disabledIdentifiers[2] = disabledAEADs.toArray(new int[0][]);
-            System.out.print("\u001b[1;37;41m" + Arrays.deepToString(disabledIdentifiers));
-            System.out.println("\u001b[m");
         }
 
         private static void checkDisabledAlgorithms(HPKEParameterSpec params)
