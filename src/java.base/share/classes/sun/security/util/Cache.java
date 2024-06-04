@@ -93,7 +93,12 @@ public abstract class Cache<K,V> {
      */
     public abstract void put(K key, V value);
 
-    public void put(K key, V value, boolean flag) {
+    /**
+     * Add V to the cache with the option to use a QueueCacheEntry if the
+     * cache is configured for it.  If the cache is not configured for a queue,
+     * V will silently add the entry directly.
+     */
+    public void put(K key, V value, boolean canQueue) {
         put(key, value);
     }
 
@@ -132,7 +137,7 @@ public abstract class Cache<K,V> {
      * lifetime for entries, with the values held by SoftReferences.
      */
     public static <K,V> Cache<K,V> newSoftMemoryCache(int size) {
-        return new MemoryCache<K,V>(CacheType.SOFT, size);
+        return new MemoryCache<>(CacheType.SOFT, size);
     }
 
     /**
@@ -141,11 +146,11 @@ public abstract class Cache<K,V> {
      * by SoftReferences.
      */
     public static <K,V> Cache<K,V> newSoftMemoryCache(int size, int timeout) {
-        return new MemoryCache<K,V>(CacheType.SOFT, size, timeout);
+        return new MemoryCache<>(CacheType.SOFT, size, timeout);
     }
 
     public static <K,V> Cache<K,V> newSoftMemoryQueue(int size, int timeout) {
-        return new MemoryCache<K,V>(CacheType.CACHE, size, timeout);
+        return new MemoryCache<>(CacheType.CACHE, size, timeout);
     }
 
     /**
@@ -153,7 +158,7 @@ public abstract class Cache<K,V> {
      * lifetime for entries, with the values held by standard references.
      */
     public static <K,V> Cache<K,V> newHardMemoryCache(int size) {
-        return new MemoryCache<K,V>(CacheType.HARD, size);
+        return new MemoryCache<>(CacheType.HARD, size);
     }
 
     /**
@@ -170,7 +175,7 @@ public abstract class Cache<K,V> {
      * by standard references.
      */
     public static <K,V> Cache<K,V> newHardMemoryCache(int size, int timeout) {
-        return new MemoryCache<K,V>(CacheType.HARD, size, timeout);
+        return new MemoryCache<>(CacheType.HARD, size, timeout);
     }
 
     /**
@@ -210,9 +215,6 @@ public abstract class Cache<K,V> {
     }
 
 }
-
-enum CacheType { SOFT, HARD, CACHE }
-
 
 class NullCache<K,V> extends Cache<K,V> {
 
@@ -259,6 +261,12 @@ class NullCache<K,V> extends Cache<K,V> {
     }
 
 }
+
+/**
+ * There are three types of cache.  SoftCacheEntry, HardCacheEntry, and
+ * QueueCacheEntry.  This enum is used to identify the cache's configuration.
+ */
+enum CacheType { SOFT, HARD, CACHE }
 
 class MemoryCache<K,V> extends Cache<K,V> {
 
@@ -384,9 +392,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             for (CacheEntry<K,V> entry : cacheMap.values()) {
                 entry.invalidate();
             }
-            while (queue.poll() != null) {
-                // empty
-            }
+            while (queue.poll() != null);
         }
         cacheMap.clear();
     }
@@ -418,6 +424,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
         if (cacheType != CacheType.CACHE) {
+            // No matter canQueue's value, enter the value directly
             cacheMap.put(key, newEntry);
         } else {
             CacheEntry<K, V> entry = cacheMap.get(key);
@@ -465,10 +472,10 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return null;
         }
         if (lifetime > 0 && !entry.isValid(System.currentTimeMillis())) {
+            cacheMap.remove(key);
             if (DEBUG) {
                 System.out.println("Ignoring expired entry");
             }
-            cacheMap.remove(key);
             return null;
         }
 
@@ -662,6 +669,13 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
+    /**
+     * This CacheEntry<K,V> type allows multiple V entries to be stored in
+     * one key in the cacheMap.
+     *
+     * This implementation is need for TLS clients that receive multiple
+     * PSKs or NewSessionTickets for server resumption.
+     */
     private static class QueueCacheEntry<K,V> extends SoftReference<V>
         implements CacheEntry<K,V> {
 
@@ -713,7 +727,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             expirationTime = time;
         }
 
-        public boolean putValue(CacheEntry<K,V> entry) {
+        public void putValue(CacheEntry<K,V> entry) {
             if (DEBUG) {
                 System.out.println("Added to queue (size=" + queue.size() +
                     "): " + entry.getKey().toString() + ",  " + entry);
@@ -727,7 +741,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             if (queue.size() > MAXQUEUESIZE) {
                 queue.remove();
             }
-            return queue.add(entry);
+            queue.add(entry);
         }
 
         public boolean isValid(long currentTime) {
@@ -760,6 +774,5 @@ class MemoryCache<K,V> extends Cache<K,V> {
         public Queue<CacheEntry<K,V>> getQueue() {
             return queue;
         }
-
     }
 }
