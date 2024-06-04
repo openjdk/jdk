@@ -211,7 +211,7 @@ public class HandlersOnComplexResetUpdate {
 
         ReferenceQueue<Logger> queue = new ReferenceQueue();
         WeakReference<Logger> fooRef = new WeakReference<>(Logger.getLogger("com.foo"), queue);
-        if (fooRef.get() != fooChild.getParent()) {
+        if (!fooRef.refersTo(fooChild.getParent())) {
             throw new RuntimeException("Unexpected parent logger: "
                     + fooChild.getParent() +"\n\texpected: " + fooRef.get());
         }
@@ -346,7 +346,7 @@ public class HandlersOnComplexResetUpdate {
                     throw new RuntimeException("Unexpected reference: "
                             + ref2 +"\n\texpected: " + fooRef);
                 }
-                if (ref2.get() != null) {
+                if (!ref2.refersTo(null)) {
                     throw new RuntimeException("Referent not cleared: " + ref2.get());
                 }
                 System.out.println("Got fooRef after reset(), fooChild is " + fooChild);
