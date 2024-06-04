@@ -26,10 +26,16 @@
 
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
+#include "nmt/memflags.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+
+// The malloc header, as well as the coming VMATree implementation, rely on MEMFLAGS
+// fitting into eight bits.
+STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
   assert(bad_address >= (address)this, "sanity");

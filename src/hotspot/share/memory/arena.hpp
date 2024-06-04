@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@ public:
     tiny_size  =  256  - slack, // Size of first chunk (tiny)
     init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
     medium_size= 10*K  - slack, // Size of medium-sized chunk
-    size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
-    non_pool_size = init_size + 32 // An initial size which is not one of above
+    size       = 32*K  - slack  // Default size of an Arena chunk (following the first)
   };
 
   static void chop(Chunk* chunk);                  // Chop this chunk

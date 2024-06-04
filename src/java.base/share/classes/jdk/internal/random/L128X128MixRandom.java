@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A "splittable" pseudorandom number generator (PRNG) whose period
@@ -75,12 +74,6 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * @since   17
  *
  */
-@RandomGeneratorProperties(
-        name = "L128X128MixRandom",
-        group = "LXM",
-        i = 128, j = 1, k = 128,
-        equidistribution = 1
-)
 public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerator {
 
     /*

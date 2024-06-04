@@ -218,7 +218,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
@@ -243,7 +243,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
                 return;
             }
 
-            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");

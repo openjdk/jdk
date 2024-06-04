@@ -841,24 +841,6 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
   _old_gen->complete_loaded_archive_space(archive_space);
 }
 
-#ifndef PRODUCT
-void ParallelScavengeHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->record_spaces_top();
-    old_gen()->record_spaces_top();
-  }
-}
-
-void ParallelScavengeHeap::gen_mangle_unused_area() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->eden_space()->mangle_unused_area();
-    young_gen()->to_space()->mangle_unused_area();
-    young_gen()->from_space()->mangle_unused_area();
-    old_gen()->object_space()->mangle_unused_area();
-  }
-}
-#endif
-
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
 }
