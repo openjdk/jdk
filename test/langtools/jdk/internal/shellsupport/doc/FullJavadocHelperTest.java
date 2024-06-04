@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/jdk.internal.shellsupport.doc
+ *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run testng/timeout=900/othervm -Xmx1024m FullJavadocHelperTest
  */
