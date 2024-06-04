@@ -51,8 +51,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 final class ConstructKeys {
 
-    private static PublicKey constructPublicKey(byte[] encodedKey,
-                                                int ofs, int len, String encodedKeyAlgorithm)
+    private static final PublicKey constructPublicKey(byte[] encodedKey,
+            int ofs, int len, String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         PublicKey key;
         byte[] keyBytes = (ofs == 0 && encodedKey.length == len)
@@ -85,8 +85,8 @@ final class ConstructKeys {
         return key;
     }
 
-    private static PrivateKey constructPrivateKey(byte[] encodedKey,
-                                                  int ofs, int len, String encodedKeyAlgorithm)
+    private static final PrivateKey constructPrivateKey(byte[] encodedKey,
+            int ofs, int len, String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         PrivateKey key;
         byte[] keyBytes = (ofs == 0 && encodedKey.length == len)
@@ -124,8 +124,8 @@ final class ConstructKeys {
         return key;
     }
 
-    private static SecretKey constructSecretKey(byte[] encodedKey,
-                                                int ofs, int len, String encodedKeyAlgorithm) {
+    private static final SecretKey constructSecretKey(byte[] encodedKey,
+            int ofs, int len, String encodedKeyAlgorithm) {
         return (new SecretKeySpec(encodedKey, ofs, len, encodedKeyAlgorithm));
     }
 

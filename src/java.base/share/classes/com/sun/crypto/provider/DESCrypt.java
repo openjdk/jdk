@@ -602,7 +602,7 @@ class DESCrypt extends SymmetricCipher implements DESConstants {
             j = 128 - DES_BLOCK_SIZE;
 
         } else {
-            offset = -DES_BLOCK_SIZE;
+            offset = 0 - DES_BLOCK_SIZE;
             j = 0;
         }
 

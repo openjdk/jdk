@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                                + LINE_SEP + "g:" + LINE_SEP
                                + Debug.toHexString(this.g));
         if (this.l != 0)
-            sb.append(LINE_SEP).append("l:").append(LINE_SEP).append("    ").append(this.l);
+            sb.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
         return sb.toString();
     }
 

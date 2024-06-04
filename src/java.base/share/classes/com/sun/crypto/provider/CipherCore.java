@@ -966,7 +966,7 @@ final class CipherCore {
 
     private int finalNoPadding(byte[] in, int inOfs, byte[] out, int outOfs,
                                int len)
-        throws IllegalBlockSizeException, ShortBufferException {
+        throws IllegalBlockSizeException {
 
         if (in == null || len == 0) {
             return 0;

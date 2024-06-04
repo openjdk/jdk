@@ -583,10 +583,10 @@ public final class DESedeWrapCipher extends CipherSpi {
         }
     }
 
-    private static byte[] getChecksum(byte[] in) {
+    private static final byte[] getChecksum(byte[] in) {
         return getChecksum(in, 0, in.length);
     }
-    private static byte[] getChecksum(byte[] in, int offset, int len) {
+    private static final byte[] getChecksum(byte[] in, int offset, int len) {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
