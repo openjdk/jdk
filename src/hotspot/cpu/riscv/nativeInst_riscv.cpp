@@ -39,102 +39,8 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-//-----------------------------------------------------------------------------
-// NativeInstruction
-Register NativeInstruction::extract_rs1(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 19, 15));
-}
-
-Register NativeInstruction::extract_rs2(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 24, 20));
-}
-
-Register NativeInstruction::extract_rd(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 11, 7));
-}
-
-uint32_t NativeInstruction::extract_opcode(address instr) {
-  assert_cond(instr != nullptr);
-  return Assembler::extract(Assembler::ld_instr(instr), 6, 0);
-}
-
-uint32_t NativeInstruction::extract_funct3(address instr) {
-  assert_cond(instr != nullptr);
-  return Assembler::extract(Assembler::ld_instr(instr), 14, 12);
-}
-
-bool NativeInstruction::is_pc_relative_at(address instr) {
-  // auipc + jalr
-  // auipc + addi
-  // auipc + load
-  // auipc + fload_load
-  return (is_auipc_at(instr)) &&
-         (is_addi_at(instr + instruction_size) ||
-          is_jalr_at(instr + instruction_size) ||
-          is_load_at(instr + instruction_size) ||
-          is_float_load_at(instr + instruction_size)) &&
-         check_pc_relative_data_dependency(instr);
-}
-
-// ie:ld(Rd, Label)
-bool NativeInstruction::is_load_pc_relative_at(address instr) {
-  return is_auipc_at(instr) && // auipc
-         is_ld_at(instr + instruction_size) && // ld
-         check_load_pc_relative_data_dependency(instr);
-}
-
 bool NativeInstruction::is_call_at(address addr) {
   return NativeCall::is_at(addr);
-}
-
-bool NativeInstruction::is_movptr1_at(address instr) {
-  return is_lui_at(instr) && // Lui
-         is_addi_at(instr + instruction_size) && // Addi
-         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
-         is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
-         (is_addi_at(instr + instruction_size * 5) ||
-          is_jalr_at(instr + instruction_size * 5) ||
-          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
-         check_movptr1_data_dependency(instr);
-}
-
-bool NativeInstruction::is_movptr2_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_lui_at(instr + instruction_size) && // lui
-         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
-         is_add_at(instr + instruction_size * 3) &&
-         (is_addi_at(instr + instruction_size * 4) ||
-          is_jalr_at(instr + instruction_size * 4) ||
-          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
-         check_movptr2_data_dependency(instr);
-}
-
-bool NativeInstruction::is_li16u_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_srli_at(instr + instruction_size) && // srli
-         check_li16u_data_dependency(instr);
-}
-
-bool NativeInstruction::is_li32_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addiw_at(instr + instruction_size) && // addiw
-         check_li32_data_dependency(instr);
-}
-
-bool NativeInstruction::is_li64_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addi_at(instr + instruction_size) && // addi
-         is_slli_shift_at(instr + instruction_size * 2, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 3) && // addi
-         is_slli_shift_at(instr + instruction_size * 4, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 5) && // addi
-         is_slli_shift_at(instr + instruction_size * 6, 8) &&   // Slli Rd, Rs, 8
-         is_addi_at(instr + instruction_size * 7) && // addi
-         check_li64_data_dependency(instr);
 }
 
 //-----------------------------------------------------------------------------
@@ -142,7 +48,7 @@ bool NativeInstruction::is_li64_at(address instr) {
 
 address NativeShortCall::destination() const {
   address addr = addr_at(0);
-  assert(NativeInstruction::is_jal_at(instruction_address()), "inst must be jal.");
+  assert(MacroAssembler::is_jal_at(instruction_address()), "inst must be jal.");
 
   address destination = MacroAssembler::target_addr_for_insn(instruction_address());
 
@@ -298,8 +204,8 @@ NativeShortCall* NativeShortCall::at(address addr) {
 }
 
 bool NativeShortCall::is_at(address addr) {
-  if (is_jal_at(addr)) {
-    if (NativeInstruction::extract_rd(addr)  == x1) {
+  if (MacroAssembler::is_jal_at(addr)) {
+    if (MacroAssembler::extract_rd(addr)  == x1) {
       return true;
     }
   }
@@ -342,13 +248,13 @@ bool NativeShortCallTrampolineStub::is_at(address addr) {
   // 3). check if the offset in ld[31:20] equals the data_offset
   assert_cond(addr != nullptr);
   const int instr_size = NativeInstruction::instruction_size;
-  if (NativeInstruction::is_auipc_at(addr) &&
-      NativeInstruction::is_ld_at(addr + instr_size) &&
-      NativeInstruction::is_jalr_at(addr + 2 * instr_size) &&
-      (NativeInstruction::extract_rd(addr)                    == x5) &&
-      (NativeInstruction::extract_rd(addr + instr_size)       == x5) &&
-      (NativeInstruction::extract_rs1(addr + instr_size)      == x5) &&
-      (NativeInstruction::extract_rs1(addr + 2 * instr_size)  == x5) &&
+  if (MacroAssembler::is_auipc_at(addr) &&
+      MacroAssembler::is_ld_at(addr + instr_size) &&
+      MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
+      (MacroAssembler::extract_rd(addr)                    == x5) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
       (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == NativeShortCall::trampoline_data_offset)) {
     return true;
   }
@@ -486,14 +392,14 @@ NativeFarCall* NativeFarCall::at(address addr) {
 bool NativeFarCall::is_at(address addr) {
   assert_cond(addr != nullptr);
   const int instr_size = NativeInstruction::instruction_size;
-  if (NativeInstruction::is_auipc_at(addr) &&
-      NativeInstruction::is_ld_at(addr + instr_size) &&
-      NativeInstruction::is_jalr_at(addr + 2 * instr_size) &&
-      (NativeInstruction::extract_rd(addr)                    == x5) &&
-      (NativeInstruction::extract_rd(addr + instr_size)       == x5) &&
-      (NativeInstruction::extract_rs1(addr + instr_size)      == x5) &&
-      (NativeInstruction::extract_rs1(addr + 2 * instr_size)  == x5) &&
-      (NativeInstruction::extract_rd(addr + 2 * instr_size)  == x1)) {
+  if (MacroAssembler::is_auipc_at(addr) &&
+      MacroAssembler::is_ld_at(addr + instr_size) &&
+      MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
+      (MacroAssembler::extract_rd(addr)                    == x5) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
+      (MacroAssembler::extract_rd(addr + 2 * instr_size)  == x1)) {
     return true;
   }
   return false;
@@ -753,14 +659,7 @@ address NativeGeneralJump::jump_destination() const {
 //-------------------------------------------------------------------
 
 bool NativeInstruction::is_safepoint_poll() {
-  return is_lwu_to_zr(addr_at(0));
-}
-
-bool NativeInstruction::is_lwu_to_zr(address instr) {
-  assert_cond(instr != nullptr);
-  return (extract_opcode(instr) == 0b0000011 &&
-          extract_funct3(instr) == 0b110 &&
-          extract_rd(instr) == zr);         // zr
+  return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
 // A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
@@ -836,29 +735,7 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   ShouldNotCallThis();
 }
 
-uint32_t NativeMembar::get_kind() {
-  uint32_t insn = uint_at(0);
-
-  uint32_t predecessor = Assembler::extract(insn, 27, 24);
-  uint32_t successor = Assembler::extract(insn, 23, 20);
-
-  return MacroAssembler::pred_succ_to_membar_mask(predecessor, successor);
-}
-
-void NativeMembar::set_kind(uint32_t order_kind) {
-  uint32_t predecessor = 0;
-  uint32_t successor = 0;
-
-  MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
-
-  uint32_t insn = uint_at(0);
-  address pInsn = (address) &insn;
-  Assembler::patch(pInsn, 27, 24, predecessor);
-  Assembler::patch(pInsn, 23, 20, successor);
-
-  address membar = addr_at(0);
-  Assembler::sd_instr(membar, insn);
-}
+//-------------------------------------------------------------------
 
 void NativePostCallNop::make_deopt() {
   MacroAssembler::assert_alignment(addr_at(0));
@@ -882,7 +759,7 @@ bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   }
   int32_t data = (oopmap_slot << 24) | cb_offset;
   assert(data != 0, "must be");
-  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+  assert(MacroAssembler::is_lui_to_zr_at(addr_at(4)) && MacroAssembler::is_addiw_to_zr_at(addr_at(8)), "must be");
 
   MacroAssembler::patch_imm_in_li32(addr_at(4), data);
   return true; // successfully encoded
