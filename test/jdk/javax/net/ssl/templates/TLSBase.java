@@ -62,7 +62,6 @@ abstract public class TLSBase {
     static int serverPort;
     // Name shown during read and write ops
     String name;
-    boolean connectionDone = false;
 
     TLSBase() {
         String keyFilename =
@@ -139,9 +138,6 @@ abstract public class TLSBase {
         return tmf.getTrustManagers();
     }
 
-    public boolean isDone() {
-        return connectionDone;
-    }
 
     /**
      * Server constructor must be called before any client operation so the
@@ -161,16 +157,15 @@ abstract public class TLSBase {
             name = "server";
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(builder.km)
-                    , TLSBase.getTrustManager(builder.tm), null);
+                sslContext.init(TLSBase.getKeyManager(builder.km),
+                    TLSBase.getTrustManager(builder.tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(builder.clientauth);
                 serverPort = ssock.getLocalPort();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                System.err.println("Failure during server initialization");
                 e.printStackTrace();
-                connectionDone = true;
             }
 
             // Thread to allow multiple clients to connect
@@ -192,8 +187,6 @@ abstract public class TLSBase {
                 } catch (Exception ex) {
                     System.err.println("Server Down");
                     ex.printStackTrace();
-                } finally {
-                    connectionDone = true;
                 }
             });
             t.start();
@@ -219,9 +212,8 @@ abstract public class TLSBase {
                 ssock.setNeedClientAuth(true);
                 serverPort = ssock.getLocalPort();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                System.err.println("Failure during server initialization");
                 e.printStackTrace();
-                connectionDone = true;
             }
 
                 // Thread to allow multiple clients to connect
@@ -243,8 +235,6 @@ abstract public class TLSBase {
                     } catch (Exception ex) {
                         System.err.println("Server Down");
                         ex.printStackTrace();
-                    } finally {
-                        connectionDone = true;
                     }
                 });
                 t.start();

@@ -31,23 +31,20 @@
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CertMsgCheck {
 
     public static void main(String[] args) throws Exception {
-        List<Exception> eList = new ArrayList<>();
         // Start server
         TLSBase.Server server = new TLSBase.ServerBuilder().setClientAuth(true).
             build();
-        TLSBase.Client client1;
+
         // Initial client session
-        client1 = new TLSBase.Client(true, false);
+        TLSBase.Client client1 = new TLSBase.Client(true, false);
+
         server.getSession(client1).getSessionContext();
         server.done();
 
-        eList.addAll(server.getExceptionList());
+        var eList = server.getExceptionList();
         System.out.println("Exception list size is " + eList.size());
 
         for (Exception e : eList) {
