@@ -5812,11 +5812,10 @@ void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tm
     z_popcnt(r_dst, r_src, 8);
   } else {
 
-    z_illtrap(48); // fixme: remove
 #ifdef ASSERT
     assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
     assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
-#endif
+#endif // ASSERT
 
     z_popcnt(r_dst, r_src);
     z_srlg(r_tmp, r_dst, 16);
@@ -5825,7 +5824,6 @@ void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tm
     z_alr(r_dst, r_tmp);
     // TODO: use risbgn instruction instead of srl below
     z_llgcr(r_dst, r_dst);
-
   }
 
   BLOCK_COMMENT("} pop_count_int");
@@ -5838,11 +5836,10 @@ void MacroAssembler::pop_count_long(Register r_dst, Register r_src, Register r_t
     z_popcnt(r_dst, r_src, 8);
   } else {
 
-    z_illtrap(48); // fixme: remove
 #ifdef ASSERT
     assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
     assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
-#endif
+#endif // ASSERT
 
     z_popcnt(r_dst, r_src);
     z_ahhlr(r_dst, r_dst, r_dst);
