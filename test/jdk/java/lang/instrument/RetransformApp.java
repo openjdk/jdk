@@ -39,7 +39,8 @@ import jdk.test.lib.helpers.ClassFileInstaller;
  * @build RetransformAgent asmlib.Instrumentor
  * @enablePreview
  * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
- * @run driver RetransformApp roleDriver
+ * @run driver/timeout=240 RetransformApp roleDriver
+ * @comment The test uses a higher timeout to prevent test timeouts noted in JDK-6528548
  */
 public class RetransformApp {
 
