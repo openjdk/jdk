@@ -26,9 +26,7 @@
  * @summary Attempt to provoke error 316 on OS X in NativeSignal.signal()
  */
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -42,21 +40,38 @@ public class StressNativeSignal {
     private ServerSocketThread serverSocketThread;
 
     StressNativeSignal() {
-        try {
-            serverSocketThread = new ServerSocketThread();
+        serverSocketThread = initServerSocketThread();
+        if (serverSocketThread != null) {
             serverSocketThread.start();
-        } catch (Exception z) {
-            System.err.println("failed to create and start a ServerSocketThread");
-            z.printStackTrace();
         }
 
-        try {
-            udpThread = new UDPThread();
+        udpThread = initUDPThread();
+        if (udpThread != null) {
             udpThread.start();
+        }
+    }
+
+    private UDPThread initUDPThread() {
+        UDPThread aUDPThread = null;
+        try {
+            aUDPThread = new UDPThread();
         } catch (Exception z) {
             System.err.println("failed to create and start a UDPThread");
             z.printStackTrace();
         }
+        return aUDPThread;
+    }
+
+    private ServerSocketThread initServerSocketThread() {
+        ServerSocketThread aServerSocketThread = null;
+        try {
+            aServerSocketThread = new ServerSocketThread();
+ 
+        } catch (Exception z) {
+            System.err.println("failed to create and start a ServerSocketThread");
+            z.printStackTrace();
+        }
+        return aServerSocketThread;
     }
 
     public static void main(String[] args) throws Throwable {
@@ -73,7 +88,10 @@ public class StressNativeSignal {
             } catch (Exception z) {
                 z.printStackTrace(System.err);
             }
+        } else {
+            System.out.println("UDPThread test scenario was not run");
         }
+
         if ((serverSocketThread != null) && (serverSocketThread.isAlive())) {
             serverSocketThread.terminate();
             try {
@@ -81,6 +99,8 @@ public class StressNativeSignal {
             } catch (Exception z) {
                 z.printStackTrace(System.err);
             }
+        } else {
+            System.out.println("ServerSocketThread test scenario was not run");
         }
     }
 
@@ -108,15 +128,10 @@ public class StressNativeSignal {
             try {
                 threadStarted.countDown();
                 Socket client = socket.accept();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                // the test never reaches here as the close will affect the blocking accept call
-                // and there are no clients to connect to this serversocket
-                while (!shouldTerminate) {
-                    String msg = reader.readLine();
-                }
+                client.close();
+                throw new RuntimeException("Unexpected return from accept call");
             } catch (Exception z) {
                 System.err.println("ServerSocketThread: caught exception " + z.getClass().getName());
-                z.printStackTrace();
                 if (!shouldTerminate) {
                     z.printStackTrace(System.err);
                 }
