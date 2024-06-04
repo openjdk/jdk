@@ -61,7 +61,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
     address stub = __ emit_trampoline_stub(offset, dest);
     assert(stub, "pre-allocated trampolines");
 
-    address reloc_pc = cb->stubs()->end() - NativeShortCall::trampoline_size;
+    address reloc_pc = cb->stubs()->end() - MacroAssembler::NativeShortCall::trampoline_size;
     while (!it.is_empty()) {
       offset = *it.next();
       address caller_pc = cb->insts()->start() + offset;

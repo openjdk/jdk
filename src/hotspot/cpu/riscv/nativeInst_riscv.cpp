@@ -39,12 +39,106 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+//-----------------------------------------------------------------------------
+// NativeInstruction
+
 bool NativeInstruction::is_call_at(address addr) {
   return NativeCall::is_at(addr);
 }
 
 //-----------------------------------------------------------------------------
+// NativeShortCallTrampoline
+class NativeShortCall;
+
+class NativeShortCallTrampolineStub : public NativeInstruction {
+ private:
+  friend NativeShortCall;
+  enum RISCV_specific_constants {
+    trampoline_data_offset = 3 * NativeInstruction::instruction_size // auipc + ld + jr
+  };
+
+  address destination(nmethod *nm = nullptr) const;
+  void set_destination(address new_destination);
+  ptrdiff_t destination_offset() const;
+
+  static bool is_at(address addr);
+  static NativeShortCallTrampolineStub* at(address addr);
+};
+
+address NativeShortCallTrampolineStub::destination(nmethod *nm) const {
+  return ptr_at(trampoline_data_offset);
+}
+
+void NativeShortCallTrampolineStub::set_destination(address new_destination) {
+  set_ptr_at(trampoline_data_offset, new_destination);
+  OrderAccess::release();
+}
+
+bool NativeShortCallTrampolineStub::is_at(address addr) {
+  // Ensure that the stub is exactly
+  //      ld   t0, L--->auipc + ld
+  //      jr   t0
+  // L:
+
+  // judge inst + register + imm
+  // 1). check the instructions: auipc + ld + jalr
+  // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
+  // 3). check if the offset in ld[31:20] equals the data_offset
+  assert_cond(addr != nullptr);
+  const int instr_size = NativeInstruction::instruction_size;
+  if (MacroAssembler::is_auipc_at(addr) &&
+      MacroAssembler::is_ld_at(addr + instr_size) &&
+      MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
+      (MacroAssembler::extract_rd(addr)                    == x5) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
+      (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_data_offset)) {
+    return true;
+  }
+  return false;
+}
+
+NativeShortCallTrampolineStub* NativeShortCallTrampolineStub::at(address addr) {
+  assert_cond(addr != nullptr);
+  assert(NativeShortCallTrampolineStub::is_at(addr), "no call trampoline found");
+  return (NativeShortCallTrampolineStub*)addr;
+}
+
+//-----------------------------------------------------------------------------
 // NativeShortCall
+class NativeShortCall: private NativeInstruction {
+ public:
+  // Creation
+  friend NativeCall* nativeCall_at(address addr);
+  friend NativeCall* nativeCall_before(address return_address);
+
+  address instruction_address() const       { return addr_at(0); }
+  address next_instruction_address() const  { return addr_at(NativeInstruction::instruction_size); }
+  address return_address() const            { return addr_at(NativeInstruction::instruction_size); }
+  address destination() const;
+  address reloc_destination(address orig_address);
+
+  void set_destination(address dest);
+  void verify_alignment() {} // do nothing on riscv
+  void verify();
+  void print();
+
+  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool reloc_set_destination(address dest);
+
+ private:
+  address get_trampoline();
+  bool has_trampoline();
+  address trampoline_destination();
+ public:
+
+  static NativeShortCall* at(address addr);
+  static bool is_at(address addr);
+  static bool is_call_before(address return_address);
+  static void insert(address code_pos, address entry);
+  static void replace_mt_safe(address instr_addr, address code_buffer);
+};
 
 address NativeShortCall::destination() const {
   address addr = addr_at(0);
@@ -213,7 +307,7 @@ bool NativeShortCall::is_at(address addr) {
 }
 
 bool NativeShortCall::is_call_before(address return_address) {
-  return NativeShortCall::is_at(return_address - Assembler::instruction_size);
+  return NativeShortCall::is_at(return_address - instruction_size);
 }
 
 void NativeShortCall::insert(address code_pos, address entry) {
@@ -225,50 +319,46 @@ void NativeShortCall::replace_mt_safe(address instr_addr, address code_buffer) {
 }
 
 //-----------------------------------------------------------------------------
-// NativeShortCallTrampoline
-
-address NativeShortCallTrampolineStub::destination(nmethod *nm) const {
-  return ptr_at(NativeShortCall::trampoline_data_offset);
-}
-
-void NativeShortCallTrampolineStub::set_destination(address new_destination) {
-  set_ptr_at(NativeShortCall::trampoline_data_offset, new_destination);
-  OrderAccess::release();
-}
-
-bool NativeShortCallTrampolineStub::is_at(address addr) {
-  // Ensure that the stub is exactly
-  //      ld   t0, L--->auipc + ld
-  //      jr   t0
-  // L:
-
-  // judge inst + register + imm
-  // 1). check the instructions: auipc + ld + jalr
-  // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
-  // 3). check if the offset in ld[31:20] equals the data_offset
-  assert_cond(addr != nullptr);
-  const int instr_size = NativeInstruction::instruction_size;
-  if (MacroAssembler::is_auipc_at(addr) &&
-      MacroAssembler::is_ld_at(addr + instr_size) &&
-      MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
-      (MacroAssembler::extract_rd(addr)                    == x5) &&
-      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
-      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
-      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
-      (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == NativeShortCall::trampoline_data_offset)) {
-    return true;
-  }
-  return false;
-}
-
-NativeShortCallTrampolineStub* NativeShortCallTrampolineStub::at(address addr) {
-  assert_cond(addr != nullptr);
-  assert(NativeShortCallTrampolineStub::is_at(addr), "no call trampoline found");
-  return (NativeShortCallTrampolineStub*)addr;
-}
-
-//-----------------------------------------------------------------------------
 // NativeFarCall
+class NativeFarCall: public NativeInstruction {
+ public:
+  // Creation
+  friend NativeCall* nativeCall_at(address addr);
+  friend NativeCall* nativeCall_before(address return_address);
+
+  enum RISCV_specific_constants {
+    return_address_offset       =    3 * NativeInstruction::instruction_size, // ld auipc jalr
+  };
+
+  address instruction_address() const       { return addr_at(0); }
+  address next_instruction_address() const  { return addr_at(return_address_offset); }
+  address return_address() const            { return addr_at(return_address_offset); }
+  address destination() const;
+  address reloc_destination(address orig_address);
+
+  void set_destination(address dest);
+  void verify_alignment() {} // do nothing on riscv
+  void verify();
+  void print();
+
+  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool reloc_set_destination(address dest);
+
+ private:
+  address stub_address();
+  address stub_address_destination();
+  bool has_address_stub();
+
+  static void set_stub_address_destination_at(address dest, address value);
+  static address stub_address_destination_at(address src);
+ public:
+
+  static NativeFarCall* at(address addr);
+  static bool is_at(address addr);
+  static bool is_call_before(address return_address);
+  static void insert(address code_pos, address entry);
+  static void replace_mt_safe(address instr_addr, address code_buffer);
+};
 
 address NativeFarCall::destination() const {
   address addr = addr_at(0);
@@ -501,6 +591,10 @@ bool NativeCall::reloc_set_destination(address dest) {
   }
 }
 
+bool NativeCall::is_at(address addr) {
+  return NativeShortCall::is_at(addr) || NativeFarCall::is_at(addr);
+}
+
 bool NativeCall::is_call_before(address return_address) {
   if (!UseTrampolines) {
     return NativeFarCall::is_call_before(return_address) ||
@@ -524,6 +618,25 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   } else {
     NativeShortCall::replace_mt_safe(instr_addr, code_buffer);
   }
+}
+
+NativeCall* nativeCall_at(address addr) {
+  assert_cond(addr != nullptr);
+  NativeCall* call = (NativeCall*)(addr);
+  DEBUG_ONLY(call->verify());
+  return call;
+}
+
+NativeCall* nativeCall_before(address return_address) {
+  assert_cond(return_address != nullptr);
+  NativeCall* call = nullptr;
+  if (NativeFarCall::is_call_before(return_address)) {
+    call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
+  } else {
+    call = (NativeCall*)(return_address - NativeShortCall::instruction_size);
+  }
+  DEBUG_ONLY(call->verify());
+  return call;
 }
 
 //-------------------------------------------------------------------

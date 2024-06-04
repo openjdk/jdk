@@ -41,8 +41,6 @@
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
-// - - NativeCallTrampolineStub
-// - - NativeMembar
 // - - NativePostCallNop
 // - - NativeDeoptInstruction
 
@@ -73,8 +71,8 @@ class NativeInstruction {
   bool is_call()                            const { return is_call_at(addr_at(0));                        }
   static bool is_call_at(address addr);
 
-  inline bool is_nop() const;
-  inline bool is_jump_or_nop();
+  bool is_nop() const;
+  bool is_jump_or_nop();
   bool is_safepoint_poll();
   bool is_sigill_not_entrant();
   bool is_stop();
@@ -111,97 +109,6 @@ NativeInstruction* nativeInstruction_at(address addr) {
 NativeCall* nativeCall_at(address addr);
 NativeCall* nativeCall_before(address return_address);
 
-class NativeShortCall: private NativeInstruction {
- public:
-  enum RISCV_specific_constants {
-    trampoline_size        = 3 * NativeInstruction::instruction_size + wordSize, // auipc + ld + jr + target address
-    trampoline_data_offset = 3 * NativeInstruction::instruction_size             // auipc + ld + jr
-  };
-
-  // Creation
-  inline friend NativeCall* nativeCall_at(address addr);
-  inline friend NativeCall* nativeCall_before(address return_address);
-
-  address instruction_address() const       { return addr_at(0); }
-  address next_instruction_address() const  { return addr_at(NativeInstruction::instruction_size); }
-  address return_address() const            { return addr_at(NativeInstruction::instruction_size); }
-  address destination() const;
-  address reloc_destination(address orig_address);
-
-  void set_destination(address dest);
-  void verify_alignment() {} // do nothing on riscv
-  void verify();
-  void print();
-
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
-  bool reloc_set_destination(address dest);
-
- private:
-  address get_trampoline();
-  bool has_trampoline();
-  address trampoline_destination();
- public:
-
-  static NativeShortCall* at(address addr);
-  static bool is_at(address addr);
-  static bool is_call_before(address return_address);
-  static void insert(address code_pos, address entry);
-  static void replace_mt_safe(address instr_addr, address code_buffer);
-};
-
-class NativeShortCallTrampolineStub : public NativeInstruction {
- private:
-  friend NativeShortCall;
-
-  address destination(nmethod *nm = nullptr) const;
-  void set_destination(address new_destination);
-  ptrdiff_t destination_offset() const;
-
-  static bool is_at(address addr);
-  static NativeShortCallTrampolineStub* at(address addr);
-};
-
-class NativeFarCall: public NativeInstruction {
- public:
-  // Creation
-  inline friend NativeCall* nativeCall_at(address addr);
-  inline friend NativeCall* nativeCall_before(address return_address);
-
-  enum RISCV_specific_constants {
-    instruction_size            =    3 * NativeInstruction::instruction_size, // ld auipc jalr
-    return_address_offset       =    3 * NativeInstruction::instruction_size, // ld auipc jalr
-  };
-
-  address instruction_address() const       { return addr_at(0); }
-  address next_instruction_address() const  { return addr_at(return_address_offset); }
-  address return_address() const            { return addr_at(return_address_offset); }
-  address destination() const;
-  address reloc_destination(address orig_address);
-
-  void set_destination(address dest);
-  void verify_alignment() {} // do nothing on riscv
-  void verify();
-  void print();
-
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
-  bool reloc_set_destination(address dest);
-
- private:
-  address stub_address();
-  address stub_address_destination();
-  bool has_address_stub();
-
-  static void set_stub_address_destination_at(address dest, address value);
-  static address stub_address_destination_at(address src);
- public:
-
-  static NativeFarCall* at(address addr);
-  static bool is_at(address addr);
-  static bool is_call_before(address return_address);
-  static void insert(address code_pos, address entry);
-  static void replace_mt_safe(address instr_addr, address code_buffer);
-};
-
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
@@ -212,8 +119,8 @@ class NativeCall: private NativeInstruction {
   };
 
   // Creation
-  inline friend NativeCall* nativeCall_at(address addr);
-  inline friend NativeCall* nativeCall_before(address return_address);
+  friend NativeCall* nativeCall_at(address addr);
+  friend NativeCall* nativeCall_before(address return_address);
 
   address instruction_address() const;
   address next_instruction_address() const;
@@ -229,31 +136,11 @@ class NativeCall: private NativeInstruction {
   bool set_destination_mt_safe(address dest, bool assert_lock = true);
   bool reloc_set_destination(address dest);
 
-  static bool is_at(address addr) { return NativeShortCall::is_at(addr) ||
-                                           NativeFarCall::is_at(addr); }
+  static bool is_at(address addr);
   static bool is_call_before(address return_address);
   static void insert(address code_pos, address entry);
   static void replace_mt_safe(address instr_addr, address code_buffer);
 };
-
-inline NativeCall* nativeCall_at(address addr) {
-  assert_cond(addr != nullptr);
-  NativeCall* call = (NativeCall*)(addr);
-  DEBUG_ONLY(call->verify());
-  return call;
-}
-
-inline NativeCall* nativeCall_before(address return_address) {
-  assert_cond(return_address != nullptr);
-  NativeCall* call = nullptr;
-  if (NativeFarCall::is_call_before(return_address)) {
-    call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
-  } else {
-    call = (NativeCall*)(return_address - NativeInstruction::instruction_size);
-  }
-  DEBUG_ONLY(call->verify());
-  return call;
-}
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
 // (used to manipulate inlined 64-bit data calls, etc.)
