@@ -918,8 +918,7 @@ final class P11Cipher extends CipherSpi {
                     k = token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, padBufferLen,
                             0, out, outOfs, outLen);
-                }
-                if (paddingObj != null) {
+                } else if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
                         // call C_EncryptUpdate first if the padBuffer is full
@@ -1032,8 +1031,7 @@ final class P11Cipher extends CipherSpi {
                         k = token.p11.C_EncryptUpdate(session.id(),
                                 0, padBuffer, 0, padBufferLen,
                                 outAddr, outArray, outOfs, outLen);
-                    }
-                    if (paddingObj != null) {
+                    } else if (paddingObj != null) {
                         int startOff = 0;
                         if (reqBlockUpdates) {
                             // call C_EncryptUpdate first if the padBuffer is full
