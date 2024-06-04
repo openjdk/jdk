@@ -87,7 +87,7 @@ public class HeapSummary extends Tool {
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
       if (heap instanceof G1CollectedHeap) {
-        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+        printValMB("G1HeapRegionSize       = ", G1HeapRegion.grainBytes());
       }
 
       System.out.println();
