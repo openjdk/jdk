@@ -267,11 +267,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
         fi
       ],
       [
-        if test "x$STATIC_BUILD" = xtrue; then
-          with_native_debug_symbols="none"
-        else
-          with_native_debug_symbols="external"
-        fi
+        with_native_debug_symbols="external"
       ])
   AC_MSG_RESULT([$with_native_debug_symbols])
 
@@ -543,24 +539,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 [
-  UTIL_ARG_ENABLE(NAME: static-build, DEFAULT: false, RESULT: STATIC_BUILD,
-      DESC: [enable static library build],
-      CHECKING_MSG: [if static build is enabled],
-      CHECK_AVAILABLE: [
-        AC_MSG_CHECKING([if static build is available])
-        if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-          AC_MSG_RESULT([yes])
-        else
-          AC_MSG_RESULT([no])
-          AVAILABLE=false
-        fi
-      ],
-      IF_ENABLED: [
-        STATIC_BUILD_CFLAGS="-DSTATIC_BUILD=1"
-        CFLAGS_JDKLIB_EXTRA="$CFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
-        CXXFLAGS_JDKLIB_EXTRA="$CXXFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
-      ])
-  AC_SUBST(STATIC_BUILD)
+  UTIL_DEPRECATED_ARG_ENABLE(static-build)
 ])
 
 ################################################################################

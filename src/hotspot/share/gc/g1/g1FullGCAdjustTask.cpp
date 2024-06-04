@@ -61,7 +61,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     _bitmap(collector->mark_bitmap()),
     _worker_id(worker_id) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     G1AdjustClosure cl(_collector);
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
