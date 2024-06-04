@@ -5894,6 +5894,7 @@ void Assembler::evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, 
   emit_int16(0x6D, (0xC0 | encode));
 }
 
+#ifdef _LP64
 void Assembler::push2(Register src1, Register src2, bool with_ppx) {
   //FIXME: Uncomment assertion after JDK-8329031
   //assert(VM_Version::supports_apx_f(), "requires APX");
@@ -5946,6 +5947,22 @@ void Assembler::pop2p(Register src1, Register src2) {
   pop2(src1, src2, true);
 }
 
+void Assembler::pushp(Register src) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(src->encoding());
+  emit_int8(0x50 | encode);
+}
+
+void Assembler::popp(Register dst) {
+  //FIXME: Uncomment assertion after JDK-8329031
+  //assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(dst->encoding());
+  emit_int8((unsigned char)0x58 | encode);
+}
+#endif //_LP64
+
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -5955,13 +5972,6 @@ void Assembler::push(int32_t imm32) {
 
 void Assembler::push(Register src) {
   int encode = prefix_and_encode(src->encoding());
-  emit_int8(0x50 | encode);
-}
-
-void Assembler::pushp(Register src) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
-  int encode = prefixq_and_encode_rex2(src->encoding());
   emit_int8(0x50 | encode);
 }
 
@@ -14199,13 +14209,6 @@ void Assembler::popq(Address dst) {
   emit_operand(rax, dst, 0);
 }
 
-void Assembler::popp(Register dst) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
-  int encode = prefixq_and_encode_rex2(dst->encoding());
-  emit_int8((unsigned char)0x58 | encode);
-}
-
 void Assembler::popq(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
   emit_int8((unsigned char)0x58 | encode);
@@ -14336,6 +14339,8 @@ void Assembler::pusha() { // 64bit
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
   if (UseAPX) {
+    // Data being pushed/popped by PUSH2/POP2 must be 16B-aligned on the stack.
+    andq(rsp, -(StackAlignmentInBytes));
     push2p(r31, r30);
     push2p(r29, r28);
     push2p(r27, r26);
