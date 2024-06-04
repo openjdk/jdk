@@ -49,7 +49,7 @@ public class PrintVirtualThreadTest {
         OutputAnalyzer output = executor.execute("Thread.print");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
-        shouldFinish.compareAndSet(false, true);
+        shouldFinish.set(true);
     }
 
     @Test
