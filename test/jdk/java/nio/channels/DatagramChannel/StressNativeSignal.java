@@ -66,7 +66,7 @@ public class StressNativeSignal {
         ServerSocketThread aServerSocketThread = null;
         try {
             aServerSocketThread = new ServerSocketThread();
- 
+
         } catch (Exception z) {
             System.err.println("failed to create and start a ServerSocketThread");
             z.printStackTrace();
@@ -119,7 +119,6 @@ public class StressNativeSignal {
         private final CountDownLatch threadStarted = new CountDownLatch(1);
 
         public ServerSocketThread () throws Exception {
-
             socket = new ServerSocket(1122);
         }
 
@@ -162,7 +161,6 @@ public class StressNativeSignal {
         private DatagramChannel channel;
         private volatile boolean shouldTerminate;
         private final CountDownLatch threadStarted = new CountDownLatch(1);
-
 
         public UDPThread () throws Exception {
 
