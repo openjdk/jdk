@@ -995,6 +995,11 @@ jvmtiEnv *jvmti;
     across threads and are created dynamically.
   </intro>
 
+  <intro id="nullPointers" label="Null Pointers">
+    Parts of this specification refer to a "null pointer" as a possible function parameter
+    or return value. A "null pointer" is C <code>NULL</code> or C++ <code>nullptr</code>.
+  </intro>
+
   <intro id="functionReturn" label="Function Return Values">
     <jvmti/> functions always return an
     <internallink id="ErrorSection">error code</internallink> via the
@@ -1004,7 +1009,7 @@ jvmtiEnv *jvmti;
     In some cases, <jvmti/> functions allocate memory that your program must
     explicitly deallocate. This is indicated in the individual <jvmti/>
     function descriptions.  Empty lists, arrays, sequences, etc are
-    returned as a null pointer (C <code>NULL</code> or C++ <code>nullptr</code>).
+    returned as a null pointer.
     <p/>
     In the event that the <jvmti/> function encounters
     an error (any return value other than <code>JVMTI_ERROR_NONE</code>) the values
