@@ -4795,16 +4795,6 @@ jint os::init_2(void) {
     }
   }
 
-if (UseNewCode) {
-  for (size_t i = 0; i < M; i++) {
-    const size_t ps = os::vm_page_size();
-    char* p = os::reserve_memory(ps * 3);
-    if (p != nullptr) {
-      os::release_memory(p + ps, ps);
-    }
-  }
-}
-
   return JNI_OK;
 }
 

@@ -34,8 +34,6 @@
 
 #include <limits.h>
 
-// short names for vma properties we display
-
 class ProcSmapsSummary {
   unsigned _num_mappings;
   size_t _vsize;        // combined virtual size

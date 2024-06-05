@@ -51,12 +51,8 @@ ProcSmapsParser::~ProcSmapsParser() {
 }
 
 bool ProcSmapsParser::read_line() {
-  char* rc = ::fgets(_line, _linelen, _f);
-  if (rc == nullptr) {
-    _line[0] = '\0';
-    return false;
-  }
-  return true;
+  _line[0] = '\0';
+  return ::fgets(_line, _linelen, _f) != nullptr;
 }
 
 bool ProcSmapsParser::is_header_line() {
@@ -117,13 +113,14 @@ bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
   scan_header_line(out);
 
   // Now read until we encounter the next header line or EOF or an error.
-  bool stop = false;
+  bool ok = false, stop = false;
   do {
-    stop = !read_line() || is_header_line();
+    ok = read_line();
+    stop = !ok || is_header_line();
     if (!stop) {
       scan_additional_line(out);
     }
   } while (!stop);
 
-  return ::feof(_f) == 0 && ::ferror(_f) == 0;
+  return ok;
 }

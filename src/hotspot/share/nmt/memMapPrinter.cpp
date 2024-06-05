@@ -159,13 +159,6 @@ public:
   bool fill_from_nmt() {
     return VirtualMemoryTracker::walk_virtual_memory(this);
   }
-
-  void print_on(outputStream* st) const {
-    for (size_t i = 0; i < _count; i ++) {
-      st->print_cr(PTR_FORMAT "-" PTR_FORMAT " %s", p2i(_ranges[i].from), p2i(_ranges[i].to),
-          NMTUtil::flag_to_enum_name(_flags[i]));
-    }
-  }
 };
 
 /////// Thread information //////////////////////////
@@ -278,7 +271,6 @@ void MemMapPrinter::print_all_mappings(outputStream* st) {
   // otherwise, we won't need it and can save that work.
   if (MemTracker::enabled()) {
     nmt_info.fill_from_nmt();
-    DEBUG_ONLY(nmt_info.print_on(st);)
   } else {
     st->print_cr("NMT is disabled. VM info not available.");
   }
