@@ -26,8 +26,8 @@
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/arena.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/indexedFreeListAllocator.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.
@@ -68,36 +68,41 @@ public:
   };
 
 private:
-  struct Link : public ArenaObj {
-    Link* next;
-    StackIndex stack;
-    Link(Link* next, StackIndex v)
+  struct Link;
+  using Allocator = IndexedFreeListAllocator<Link, mtNMT>;
+  using LinkPtr = typename Allocator::I;
+  Allocator::I null() { return Allocator::nil; }
+  Allocator _allocator;
+  struct Link {
+    LinkPtr next;
+    const StackIndex stack;
+    Link(LinkPtr next, StackIndex v)
       : next(next),
         stack(v) {
     }
   };
   StackIndex put(const NativeCallStack& value) {
     int bucket = value.calculate_hash() % _table_size;
-    Link* link = _table[bucket];
-    while (link != nullptr) {
-      if (value.equals(get(link->stack))) {
-        return link->stack;
+    LinkPtr link = _table[bucket];
+    while (link != null()) {
+      Link& l = _allocator.translate(link);
+      if (value.equals(get(l.stack))) {
+        return l.stack;
       }
-      link = link->next;
+      link = l.next;
     }
     int idx = _stacks.append(value);
-    Link* new_link = new (&_arena) Link(_table[bucket], StackIndex(idx));
+    StackIndex si(idx);
+    LinkPtr new_link = _allocator.allocate(_table[bucket], si);
     _table[bucket] = new_link;
-    return new_link->stack;
+    return si;
   }
 
-  // For storage of the Links
-  Arena _arena;
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int default_table_size = 4099;
   int _table_size;
-  Link** _table;
+  LinkPtr* _table;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   const bool _is_detailed_mode;
 
@@ -120,14 +125,18 @@ public:
   }
 
   NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
-  : _arena(mtNMT), _table_size(table_size), _table(nullptr), _stacks(),
+  : _table_size(table_size), _table(nullptr), _stacks(),
     _is_detailed_mode(is_detailed_mode), _fake_stack() {
     if (_is_detailed_mode) {
-      _table = NEW_ARENA_ARRAY(&_arena, Link*, _table_size);
+      _table = NEW_C_HEAP_ARRAY(LinkPtr, _table_size, mtNMT);
       for (int i = 0; i < _table_size; i++) {
-        _table[i] = nullptr;
+        _table[i] = null();
       }
     }
+  }
+
+  ~NativeCallStackStorage() {
+    FREE_C_HEAP_ARRAY(LinkPtr, _table);
   }
 };
 
