@@ -44,7 +44,6 @@ class PSOldGen;
 class ParCompactionManager;
 class PSParallelCompact;
 class MoveAndUpdateClosure;
-class RefProcTaskExecutor;
 class ParallelOldTracer;
 class STWGCTimer;
 
@@ -681,7 +680,6 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 class PSParallelCompact : AllStatic {
 public:
   // Convenient access to type names.
-  typedef ParMarkBitMap::idx_t idx_t;
   typedef ParallelCompactData::RegionData RegionData;
 
   typedef enum {
@@ -800,11 +798,6 @@ public:
 
   template <class T> static inline void adjust_pointer(T* p);
 
-  // Compaction support.
-  // Return true if p is in the range [beg_addr, end_addr).
-  static inline bool is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr);
-  static inline bool is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr);
-
   // Convenience wrappers for per-space data kept in _space_info.
   static inline MutableSpace*     space(SpaceId space_id);
   static inline HeapWord*         new_top(SpaceId space_id);
@@ -899,8 +892,6 @@ protected:
   inline void update_state(size_t words);
 
 public:
-  typedef ParMarkBitMap::idx_t idx_t;
-
   ParMarkBitMap*        bitmap() const { return _bitmap; }
 
   size_t    words_remaining()    const { return _words_remaining; }
