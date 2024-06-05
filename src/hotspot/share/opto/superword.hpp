@@ -694,10 +694,6 @@ private:
   void build_edges_for_scalar_vtnodes(VectorSet& dependency_set);
 
   // VLoop accessors.
-  CountedLoopNode* cl()     const { return _vloop.cl(); }
-  bool in_bb(const Node* n) const { return _vloop.in_bb(n); }
-  PhiNode* iv()             const { return _vloop.iv(); }
-
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }

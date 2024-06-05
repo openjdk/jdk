@@ -3057,7 +3057,7 @@ void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_d
       continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
       // CountedLoop Phi's: ignore backedge (and entry value).
-      assert(n->in(0) == cl(), "only Phi's from the CountedLoop allowed");
+      assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
       set_req_for_scalar(vtn, vtn_dependencies, 0, n);
       continue;
     } else {
@@ -3144,9 +3144,9 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   Node* unique = _packset.isa_unique_input_or_null(pack, j);
-  if (unique == nullptr && p0->in(j) == iv()) {
+  if (unique == nullptr && p0->in(j) == _vloop.iv()) {
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
-    VTransformNode* iv_vtn = find_scalar(iv());
+    VTransformNode* iv_vtn = find_scalar(_vloop.iv());
     BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
     // If we have subword type, take that type directly. If p0 is some ConvI2L/F/D,
     // then the p0_bt can also be L/F/D but we need to produce ints for the input of
@@ -3203,7 +3203,7 @@ VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
   VTransformNode* vtn = get_vtnode_or_null(n);
   if (vtn != nullptr) { return vtn; }
 
-  assert(!in_bb(n), "only nodes outside the loop can be input nodes to the loop");
+  assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
   vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
   set_vtnode(n, vtn);
   return vtn;
@@ -3238,7 +3238,7 @@ void SuperWordVTransformBuilder::set_req_all_for_vector(VTransformNode* vtn, Vec
 void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
-    if (!in_bb(pred)) { continue; }
+    if (!_vloop.in_bb(pred)) { continue; }
 
     // Only add memory dependencies to memory nodes. All others are taken care of with the req.
     if (n->is_Mem() && !pred->is_Mem()) { continue; }
