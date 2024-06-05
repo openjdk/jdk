@@ -2015,36 +2015,6 @@ VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
-#ifdef ASSERT
-  // Mark Load/Store Vector for alignment verification
-  if (VerifyAlignVector) {
-    if (vn->Opcode() == Op_LoadVector) {
-      vn->as_LoadVector()->set_must_verify_alignment();
-    } else if (vn->Opcode() == Op_StoreVector) {
-      vn->as_StoreVector()->set_must_verify_alignment();
-    }
-  }
-#endif
-
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  Node* first = nodes().at(0);
-
-  register_new_node_from_vectorization(vloop_analyzer, vn, first);
-
-  for (int i = 0; i < _nodes.length(); i++) {
-    Node* n = _nodes.at(i);
-    phase->igvn().replace_node(n, vn);
-  }
-}
-
-void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  phase->register_new_node_with_ctrl_of(vn, old_node);
-  phase->igvn()._worklist.push(vn);
-  VectorNode::trace_new_vector(vn, "AutoVectorization");
-}
-
 bool VTransformElementWiseVectorNode::is_unary_element_wise_opcode(int opc) {
   switch (opc) {
   case Op_SqrtF:
@@ -2189,6 +2159,7 @@ VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
 
+  DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyStatus::make_vector(vn, vlen, vn->memory_size());
 }
@@ -2206,8 +2177,28 @@ VTransformApplyStatus VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
 
   StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
 
+  DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyStatus::make_vector(vn, vlen, vn->memory_size());
+}
+
+void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  Node* first = nodes().at(0);
+
+  register_new_node_from_vectorization(vloop_analyzer, vn, first);
+
+  for (int i = 0; i < _nodes.length(); i++) {
+    Node* n = _nodes.at(i);
+    phase->igvn().replace_node(n, vn);
+  }
+}
+
+void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  phase->register_new_node_with_ctrl_of(vn, old_node);
+  phase->igvn()._worklist.push(vn);
+  VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
 
 #ifndef PRODUCT

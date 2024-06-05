@@ -1959,6 +1959,7 @@ void PackSet::verify() const {
     }
   }
 }
+#endif
 
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
 // We reorder all slices in parallel, ensuring that the memops inside each slice are
@@ -2051,6 +2052,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
   }
 }
 
+#ifdef ASSERT
 // We check that every packset (name it p_def) only has vector uses (p_use),
 // which are proper vector uses of def.
 void SuperWord::verify_no_extract() {
