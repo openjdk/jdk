@@ -1170,26 +1170,25 @@ final class P11Cipher extends CipherSpi {
         }
         if (ciphertextBuf != null) {
             pad = pad == 0 ? blockSize : pad;
-            byte[] tmp = new byte[blockSize];
-            int start = end - blockSize - pad;
             if (encrypt) {
                 // .... pp[pp] ffff -> .... ffff pp[pp]
-                // Ultimate ffff block to the temporary buffer
-                ciphertextBuf.get(end - blockSize, tmp);
-                // Penultimate pp[pp] block to the end of ciphertext
-                ciphertextBuf.put(end - pad, ciphertextBuf, start, pad);
-                // Temporary buffer to the penultimate block
-                ciphertextBuf.put(start, tmp);
+                swapLastTwoBlocks(ciphertextBuf, end, pad, blockSize);
             } else {
                 // .... ffff pp[pp] -> .... pp[pp] ffff
-                // Penultimate ffff block to the temporary buffer
-                ciphertextBuf.get(start, tmp);
-                // Ending pp[pp] to the penultimate block
-                ciphertextBuf.put(start, ciphertextBuf, end - pad, pad);
-                // Temporary buffer to the end of ciphertext
-                ciphertextBuf.put(end - blockSize, tmp);
+                swapLastTwoBlocks(ciphertextBuf, end, blockSize, pad);
             }
         }
+    }
+
+    private static void swapLastTwoBlocks(ByteBuffer ciphertextBuf,
+            int ciphertextEnd, int prevBlockLen, int lastBlockLen) {
+        // .... prevBlock lastBlock -> .... lastBlock prevBlock
+        int prevBlockStart = ciphertextEnd - prevBlockLen - lastBlockLen;
+        byte[] prevBlockBackup = new byte[prevBlockLen];
+        ciphertextBuf.get(prevBlockStart, prevBlockBackup);
+        ciphertextBuf.put(prevBlockStart, ciphertextBuf,
+                ciphertextEnd - lastBlockLen, lastBlockLen);
+        ciphertextBuf.put(ciphertextEnd - prevBlockLen, prevBlockBackup);
     }
 
     private void handleException(PKCS11Exception e)
