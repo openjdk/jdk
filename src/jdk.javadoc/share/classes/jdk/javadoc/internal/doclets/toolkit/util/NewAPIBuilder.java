@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SinceTree;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 import javax.lang.model.element.Element;
@@ -54,11 +55,13 @@ public class NewAPIBuilder extends SummaryAPIListBuilder {
         if (!utils.hasDocCommentTree(e)) {
             return false;
         }
-        List<? extends DocTree> since = utils.getBlockTags(e, SINCE);
-        if (since.isEmpty()) {
+        var sinceTrees = utils.getBlockTags(e, SINCE, SinceTree.class);
+        if (sinceTrees.isEmpty()) {
             return false;
         }
-        CommentHelper ch = utils.getCommentHelper(e);
-        return since.stream().anyMatch(tree -> releases.contains(ch.getBody(tree).toString()));
+
+        // assumes a simple string value with no formatting
+        return sinceTrees.stream()
+                .anyMatch(tree -> releases.contains(tree.getBody().getFirst().toString()));
     }
 }
