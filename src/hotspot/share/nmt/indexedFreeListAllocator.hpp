@@ -3,10 +3,11 @@
 #include "utilities/growableArray.hpp"
 #include "runtime/os.hpp"
 
-// A free list allocator for a specific type E.
+// A free list, growth only, allocator for a specific type E.
 // The allocator returns 'pointers' of 4-bytes in size, allowing for
 // memory savings if a pointer-heavy self-referential structure is used.
 // It is "indexed" as a reference is base + index * sizeof(E).
+// It never returns any memory to the system.
 template<typename E, MEMFLAGS flag>
 class IndexedFreeListAllocator {
 public:
@@ -74,7 +75,7 @@ public:
   }
 };
 
-// A CHeap allocator with the same interface
+// A CHeap allocator
 template<typename E, MEMFLAGS flag>
 class CHeapAllocator {
 public:
