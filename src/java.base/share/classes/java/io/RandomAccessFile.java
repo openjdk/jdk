@@ -31,6 +31,8 @@ import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
 import jdk.internal.util.ByteArray;
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.event.FileWriteEvent;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -67,6 +69,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_SYNC =   4;
     private static final int O_DSYNC =  8;
     private static final int O_TEMPORARY =  16;
+
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file reads and writes should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     private final FileDescriptor fd;
 
@@ -376,10 +384,35 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceRead0();
+        }
         return read0();
     }
 
     private native int read0() throws IOException;
+
+    private int traceRead0() throws IOException {
+        int result = 0;
+        long bytesRead = 0;
+        boolean endOfFile = false;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            result = read0();
+            if (result < 0) {
+                endOfFile = true;
+            } else {
+                bytesRead = 1;
+            }
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
+            }
+        }
+        return result;
+    }
 
     /**
      * Reads a sub array as a sequence of bytes.
@@ -389,10 +422,32 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes0(b, off, len);
+        }
         return readBytes0(b, off, len);
     }
 
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
+
+    private int traceReadBytes0(byte b[], int off, int len) throws IOException {
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = readBytes0(b, off, len);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -537,11 +592,34 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceImplWrite(b);
+            return;
+        }
+        implWrite(b);
+    }
+
+    private void implWrite(int b) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             write0(b);
         } finally {
             Blocker.end(attempted);
+        }
+    }
+
+    private void traceImplWrite(int b) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            implWrite(b);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
         }
     }
 
@@ -556,11 +634,34 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceImplWriteBytes(b, off, len);
+            return;
+        }
+        implWriteBytes(b, off, len);
+    }
+
+    private void implWriteBytes(byte[] b, int off, int len) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             writeBytes0(b, off, len);
         } finally {
             Blocker.end(attempted);
+        }
+    }
+
+    private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            implWriteBytes(b, off, len);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
         }
     }
 

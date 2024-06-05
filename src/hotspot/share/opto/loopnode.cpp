@@ -1781,7 +1781,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
-  C->print_method(PHASE_BEFORE_CLOOPS, 3);
+  C->print_method(PHASE_BEFORE_CLOOPS, 3, x);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2289,7 +2289,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 #endif
 
-  C->print_method(PHASE_AFTER_CLOOPS, 3);
+  C->print_method(PHASE_AFTER_CLOOPS, 3, l);
 
   // Capture bounds of the loop in the induction variable Phi before
   // subsequent transformation (iteration splitting) obscures the
@@ -4380,10 +4380,9 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
-    assert(opaque4->Opcode() == Op_Opaque4, "must be");
-    if (!useful_predicates.member(opaque4)) { // not in the useful list
-      _igvn.replace_node(opaque4, opaque4->in(2));
+    Opaque4Node* opaque4_node = C->template_assertion_predicate_opaq_node(i - 1)->as_Opaque4();
+    if (!useful_predicates.member(opaque4_node)) { // not in the useful list
+      _igvn.replace_node(opaque4_node, opaque4_node->in(2));
     }
   }
 }

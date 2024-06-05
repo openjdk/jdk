@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
  */
 #include "precompiled.hpp"
 #include "cds/filemap.hpp"
-#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memflags.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -165,9 +166,11 @@ void MemSummaryReporter::report() {
   out->print("Total: ");
   print_total(total_reserved_amount, total_committed_amount);
   out->cr();
-  out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT,
+  out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT ", peak=" SIZE_FORMAT "%s #" SIZE_FORMAT,
                 amount_in_current_scale(total_malloced_bytes), current_scale(),
-                _malloc_snapshot->total_count());
+                _malloc_snapshot->total_count(),
+                amount_in_current_scale(_malloc_snapshot->total_peak()),
+                current_scale(), _malloc_snapshot->total_peak_count());
   out->print("       mmap:   ");
   print_total(total_mmap_reserved_bytes, total_mmap_committed_bytes);
   out->cr();
@@ -193,17 +196,10 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
-    if (ThreadStackTracker::track_as_vm()) {
-      const VirtualMemory* thread_stack_usage =
-        (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
-      reserved_amount  += thread_stack_usage->reserved();
-      committed_amount += thread_stack_usage->committed();
-    } else {
-      const MallocMemory* thread_stack_usage =
-        (const MallocMemory*)_malloc_snapshot->by_type(mtThreadStack);
-      reserved_amount += thread_stack_usage->malloc_size();
-      committed_amount += thread_stack_usage->malloc_size();
-    }
+    const VirtualMemory* thread_stack_usage =
+      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+    reserved_amount  += thread_stack_usage->reserved();
+    committed_amount += thread_stack_usage->committed();
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
     reserved_amount  += _malloc_snapshot->malloc_overhead();
@@ -240,21 +236,12 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
       " ", _instance_class_count, _array_class_count);
   } else if (flag == mtThread) {
-    if (ThreadStackTracker::track_as_vm()) {
-      const VirtualMemory* thread_stack_usage =
-       _vm_snapshot->by_type(mtThreadStack);
-      // report thread count
-      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
-      out->print("%27s (stack: ", " ");
-      print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
-    } else {
-      MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
-      const char* scale = current_scale();
-      // report thread count
-      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
-      out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
-        amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
-    }
+    const VirtualMemory* thread_stack_usage =
+     _vm_snapshot->by_type(mtThreadStack);
+    // report thread count
+    out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+    out->print("%27s (stack: ", " ");
+    print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
     out->print_cr(")");
   }
 
@@ -286,6 +273,13 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 }
 
 void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
+
+  // NMT reports may be triggered (as part of error handling) very early. Make sure
+  // Metaspace is already initialized.
+  if (!Metaspace::initialized()) {
+    return;
+  }
+
   assert(type == Metaspace::NonClassType || type == Metaspace::ClassType,
     "Invalid metadata type");
   const char* name = (type == Metaspace::NonClassType) ?
@@ -627,24 +621,15 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       out->print_cr(")");
 
       out->print("%27s (stack: ", " ");
-      if (ThreadStackTracker::track_as_vm()) {
-        // report thread stack
-        const VirtualMemory* current_thread_stack =
-          _current_baseline.virtual_memory(mtThreadStack);
-        const VirtualMemory* early_thread_stack =
-          _early_baseline.virtual_memory(mtThreadStack);
+      // report thread stack
+      const VirtualMemory* current_thread_stack =
+        _current_baseline.virtual_memory(mtThreadStack);
+      const VirtualMemory* early_thread_stack =
+        _early_baseline.virtual_memory(mtThreadStack);
 
-        print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
-          early_thread_stack->reserved(), early_thread_stack->committed());
-      } else {
-        const MallocMemory* current_thread_stack =
-          _current_baseline.malloc_memory(mtThreadStack);
-        const MallocMemory* early_thread_stack =
-          _early_baseline.malloc_memory(mtThreadStack);
+      print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
+        early_thread_stack->reserved(), early_thread_stack->committed());
 
-        print_malloc_diff(current_thread_stack->malloc_size(), current_thread_stack->malloc_count(),
-          early_thread_stack->malloc_size(), early_thread_stack->malloc_count(), flag);
-      }
       out->print_cr(")");
     }
 
@@ -898,4 +883,13 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   }
 
   out->print_cr(")\n");
- }
+}
+
+void MemDetailReporter::report_memory_file_allocations() {
+  stringStream st;
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
+  }
+  output()->print_raw(st.freeze());
+}
