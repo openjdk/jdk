@@ -1149,8 +1149,8 @@ final class P11Cipher extends CipherSpi {
      * 2040, section 8).
      */
     private void convertCTSVariant(ByteBuffer ciphertextBuf,
-            byte[] ciphertextArr, int end) {
-        if (end == blockSize) {
+            byte[] ciphertextArr, int ciphertextEnd) {
+        if (padBufferLen == blockSize) {
             // No reordering needed for a single block
             return;
         }
@@ -1160,7 +1160,7 @@ final class P11Cipher extends CipherSpi {
             // Already CS3
             return;
         }
-        int pad = end % blockSize;
+        int pad = padBufferLen % blockSize;
         if (token.ctsVariant == Token.CTSVariant.CS2 && pad != 0) {
             // CS2 and 'p' is a partial block, equal to CS3
             return;
@@ -1172,10 +1172,10 @@ final class P11Cipher extends CipherSpi {
             pad = pad == 0 ? blockSize : pad;
             if (encrypt) {
                 // .... pp[pp] ffff -> .... ffff pp[pp]
-                swapLastTwoBlocks(ciphertextBuf, end, pad, blockSize);
+                swapLastTwoBlocks(ciphertextBuf, ciphertextEnd, pad, blockSize);
             } else {
                 // .... ffff pp[pp] -> .... pp[pp] ffff
-                swapLastTwoBlocks(ciphertextBuf, end, blockSize, pad);
+                swapLastTwoBlocks(ciphertextBuf, ciphertextEnd, blockSize, pad);
             }
         }
     }
