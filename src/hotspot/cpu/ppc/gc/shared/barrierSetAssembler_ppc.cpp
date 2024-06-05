@@ -288,7 +288,7 @@ SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
   _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
                 + frame::native_abi_reg_args_size;
 
-  __ save_LR(R0);
+  __ save_LR_CR(R0);
   __ push_frame(_frame_size, R0);
 
   iterate_over_register_mask(ACTION_SAVE, _frame_size);
@@ -298,7 +298,7 @@ SaveLiveRegisters::~SaveLiveRegisters() {
   iterate_over_register_mask(ACTION_RESTORE, _frame_size);
 
   __ addi(R1_SP, R1_SP, _frame_size);
-  __ restore_LR(R0);
+  __ restore_LR_CR(R0);
 }
 
 int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int offset) {
