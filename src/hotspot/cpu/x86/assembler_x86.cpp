@@ -3918,7 +3918,7 @@ void Assembler::negl(Address dst) {
   emit_operand(as_Register(3), dst, 0);
 }
 
-void Assembler::nop(int i) {
+void Assembler::nop(uint i) {
 #ifdef ASSERT
   assert(i > 0, " ");
   // The fancy nops aren't currently recognized by debuggers making it a

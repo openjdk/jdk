@@ -157,6 +157,9 @@ public final class ConstantUtils {
             throw new IllegalArgumentException("zero-length member name");
         for (int i = 0; i < len; i++) {
             char ch = name.charAt(i);
+            // common case fast-path
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
+                continue;
             if (ch == '.' || ch == ';' || ch == '[' || ch == '/')
                 throw new IllegalArgumentException("Invalid member name: " + name);
             if (method && (ch == '<' || ch == '>')) {

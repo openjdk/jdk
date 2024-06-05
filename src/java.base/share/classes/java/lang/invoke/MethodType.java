@@ -1133,7 +1133,7 @@ class MethodType
         }
     }
 
-    /// Queries which have to do with the bytecode architecture
+    //--- Queries which have to do with the bytecode architecture
 
     /** Reports the number of JVM stack slots required to invoke a method
      * of this type.  Note that (for historical reasons) the JVM requires
@@ -1308,7 +1308,7 @@ class MethodType
         return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
     }
 
-    /// Serialization.
+    //--- Serialization.
 
     /**
      * There are no serializable fields for {@code MethodType}.

@@ -1831,6 +1831,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static int[] multiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         multiplyToLenCheck(x, xlen);
         multiplyToLenCheck(y, ylen);
+
+        if (z == null || z.length < (xlen + ylen))
+            z = new int[xlen + ylen];
+
         return implMultiplyToLen(x, xlen, y, ylen, z);
     }
 
@@ -1838,9 +1842,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static int[] implMultiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         int xstart = xlen - 1;
         int ystart = ylen - 1;
-
-        if (z == null || z.length < (xlen+ ylen))
-             z = new int[xlen+ylen];
 
         long carry = 0;
         for (int j=ystart, k=ystart+1+xstart; j >= 0; j--, k--) {
@@ -4097,8 +4098,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(mag, 0, mag.length, 0,
-                ArraysSupport.T_INT) * signum;
+        return ArraysSupport.hashCode(mag, 0, mag.length, 0) * signum;
     }
 
     /**
