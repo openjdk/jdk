@@ -35,7 +35,7 @@
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
  * @run main/othervm -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::run*
+ *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::run*,*TestPartialPeel*::test*
  *                   -XX:CompileCommand=inline,*TestPartialPeelAtUnsignedTestsNegativeLimit::test*
  *                   -XX:CompileCommand=dontinline,*TestPartialPeelAtUnsignedTestsNegativeLimit::check
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit

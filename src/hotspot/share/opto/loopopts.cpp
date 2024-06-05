@@ -3054,7 +3054,7 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
 //        |         |
 //    dummy-if      |
 //     /  |         |
-// other  |         |
+// dead   |         |
 //        v         v
 //   exit-proj   stay-in-loop-proj
 //
