@@ -728,7 +728,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
-      _heap->clear_cards_for(r);
+      _heap->old_generation()->clear_cards_for(r);
       _heap->old_generation()->increment_affiliated_region_count();
     } else {
       _heap->young_generation()->increment_affiliated_region_count();

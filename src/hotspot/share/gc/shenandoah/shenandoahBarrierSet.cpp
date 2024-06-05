@@ -173,6 +173,6 @@ void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // If compressed oops were not being used, these should already be aligned
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");
-  _heap->card_scan()->mark_range_as_dirty(aligned_start, (aligned_end - aligned_start));
+  _heap->old_generation()->card_scan()->mark_range_as_dirty(aligned_start, (aligned_end - aligned_start));
 }
 

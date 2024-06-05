@@ -136,9 +136,12 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region " SIZE_FORMAT " has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
     assert(region->is_regular(), "Use different service to promote humongous regions");
-    assert(region->age() >= _heap->age_census()->tenuring_threshold(), "Only promote regions that are sufficiently aged");
+    assert(region->age() >= _tenuring_threshold, "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region " SIZE_FORMAT " has been used for allocations before promotion", region->index());
   }
+
+  ShenandoahOldGeneration* const old_gen = _heap->old_generation();
+  ShenandoahYoungGeneration* const young_gen = _heap->young_generation();
 
   // Rebuild the remembered set information and mark the entire range as DIRTY.  We do NOT scan the content of this
   // range to determine which cards need to be DIRTY.  That would force us to scan the region twice, once now, and
@@ -147,8 +150,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   //
   // Rebuilding the remembered set consists of clearing all object registrations (reset_object_range()) here,
   // then registering every live object and every coalesced range of free objects in the loop that follows.
-  _heap->card_scan()->reset_object_range(region->bottom(), region->end());
-  _heap->card_scan()->mark_range_as_dirty(region->bottom(), region->get_top_before_promote() - region->bottom());
+  RememberedScanner* const scanner = old_gen->card_scan();
+  scanner->reset_object_range(region->bottom(), region->end());
+  scanner->mark_range_as_dirty(region->bottom(), region->get_top_before_promote() - region->bottom());
 
   // TODO: use an existing coalesce-and-fill function rather than replicating the code here.
   HeapWord* obj_addr = region->bottom();
@@ -157,7 +161,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     if (marking_context->is_marked(obj)) {
       assert(obj->klass() != nullptr, "klass should not be NULL");
       // This thread is responsible for registering all objects in this region.  No need for lock.
-      _heap->card_scan()->register_object_without_lock(obj_addr);
+      scanner->register_object_without_lock(obj_addr);
       obj_addr += obj->size();
     } else {
       HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, tams);
@@ -165,15 +169,13 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
       size_t fill_size = next_marked_obj - obj_addr;
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated objects known to be larger than min_size");
       ShenandoahHeap::fill_with_object(obj_addr, fill_size);
-      _heap->card_scan()->register_object_without_lock(obj_addr);
+      scanner->register_object_without_lock(obj_addr);
       obj_addr = next_marked_obj;
     }
   }
   // We do not need to scan above TAMS because restored top equals tams
   assert(obj_addr == tams, "Expect loop to terminate when obj_addr equals tams");
 
-  ShenandoahOldGeneration* const old_gen = _heap->old_generation();
-  ShenandoahYoungGeneration* const young_gen = _heap->young_generation();
 
   {
     ShenandoahHeapLocker locker(_heap->lock());
@@ -217,7 +219,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
   assert(_heap->active_generation()->is_mark_complete(), "sanity");
   assert(region->is_young(), "Only young regions can be promoted");
   assert(region->is_humongous_start(), "Should not promote humongous continuation in isolation");
-  assert(region->age() >= _heap->age_census()->tenuring_threshold(), "Only promote regions that are sufficiently aged");
+  assert(region->age() >= _tenuring_threshold, "Only promote regions that are sufficiently aged");
   assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
 
   // TODO: Consider not promoting humongous objects that represent primitive arrays.  Leaving a primitive array
@@ -231,8 +233,8 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
   const size_t humongous_waste = spanned_regions * ShenandoahHeapRegion::region_size_bytes() - obj->size() * HeapWordSize;
   const size_t index_limit = region->index() + spanned_regions;
 
-  ShenandoahGeneration* const old_generation = _heap->old_generation();
-  ShenandoahGeneration* const young_generation = _heap->young_generation();
+  ShenandoahOldGeneration* const old_gen = _heap->old_generation();
+  ShenandoahGeneration* const young_gen = _heap->young_generation();
   {
     // We need to grab the heap lock in order to avoid a race when changing the affiliations of spanned_regions from
     // young to old.
@@ -242,9 +244,9 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     // usage totals, including humongous waste, after evacuation is done.
     log_debug(gc)("promoting humongous region " SIZE_FORMAT ", spanning " SIZE_FORMAT, region->index(), spanned_regions);
 
-    young_generation->decrease_used(used_bytes);
-    young_generation->decrease_humongous_waste(humongous_waste);
-    young_generation->decrease_affiliated_region_count(spanned_regions);
+    young_gen->decrease_used(used_bytes);
+    young_gen->decrease_humongous_waste(humongous_waste);
+    young_gen->decrease_affiliated_region_count(spanned_regions);
 
     // transfer_to_old() increases capacity of old and decreases capacity of young
     _heap->generation_sizer()->force_transfer_to_old(spanned_regions);
@@ -260,25 +262,26 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
       r->set_affiliation(OLD_GENERATION);
     }
 
-    old_generation->increase_affiliated_region_count(spanned_regions);
-    old_generation->increase_used(used_bytes);
-    old_generation->increase_humongous_waste(humongous_waste);
+    old_gen->increase_affiliated_region_count(spanned_regions);
+    old_gen->increase_used(used_bytes);
+    old_gen->increase_humongous_waste(humongous_waste);
   }
 
   // Since this region may have served previously as OLD, it may hold obsolete object range info.
   HeapWord* const humongous_bottom = region->bottom();
-  _heap->card_scan()->reset_object_range(humongous_bottom, humongous_bottom + spanned_regions * ShenandoahHeapRegion::region_size_words());
+  RememberedScanner* const scanner = old_gen->card_scan();
+  scanner->reset_object_range(humongous_bottom, humongous_bottom + spanned_regions * ShenandoahHeapRegion::region_size_words());
   // Since the humongous region holds only one object, no lock is necessary for this register_object() invocation.
-  _heap->card_scan()->register_object_without_lock(humongous_bottom);
+  scanner->register_object_without_lock(humongous_bottom);
 
   if (obj->is_typeArray()) {
     // Primitive arrays don't need to be scanned.
     log_debug(gc)("Clean cards for promoted humongous object (Region " SIZE_FORMAT ") from " PTR_FORMAT " to " PTR_FORMAT,
             region->index(), p2i(humongous_bottom), p2i(humongous_bottom + obj->size()));
-    _heap->card_scan()->mark_range_as_clean(humongous_bottom, obj->size());
+    scanner->mark_range_as_clean(humongous_bottom, obj->size());
   } else {
     log_debug(gc)("Dirty cards for promoted humongous object (Region " SIZE_FORMAT ") from " PTR_FORMAT " to " PTR_FORMAT,
             region->index(), p2i(humongous_bottom), p2i(humongous_bottom + obj->size()));
-    _heap->card_scan()->mark_range_as_dirty(humongous_bottom, obj->size());
+    scanner->mark_range_as_dirty(humongous_bottom, obj->size());
   }
 }

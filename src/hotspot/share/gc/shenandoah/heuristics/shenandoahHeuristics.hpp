@@ -27,10 +27,10 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/numberSeq.hpp"
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \

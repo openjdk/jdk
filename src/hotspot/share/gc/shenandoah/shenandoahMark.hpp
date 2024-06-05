@@ -98,6 +98,9 @@ private:
   template <ShenandoahGenerationType GENERATION>
   static bool in_generation(ShenandoahHeap* const heap, oop obj);
 
+  template <class T>
+  static void mark_non_generational_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+
   static void mark_ref(ShenandoahObjToScanQueue* q,
                        ShenandoahMarkingContext* const mark_context,
                        bool weak, oop obj);

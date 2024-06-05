@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
@@ -101,6 +102,7 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
 
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
+  _age_census(nullptr),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
@@ -108,6 +110,11 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _old_gen_memory_pool(nullptr) {
   assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
   assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
+}
+
+void ShenandoahGenerationalHeap::post_initialize() {
+  ShenandoahHeap::post_initialize();
+  _age_census = new ShenandoahAgeCensus();
 }
 
 void ShenandoahGenerationalHeap::print_init_logger() const {
@@ -526,7 +533,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
     // safely walk the region backing the plab.
     log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
                   plab->waste() - original_waste, p2i(top));
-    card_scan()->register_object_without_lock(top);
+    old_generation()->card_scan()->register_object_without_lock(top);
   }
 }
 
@@ -718,7 +725,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
-  ShenandoahHeap* _heap;
+  ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
 
@@ -726,7 +733,7 @@ public:
   explicit ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahRegionIterator* regions,
                                                     ShenandoahRegionChunkIterator* work_chunks) :
           WorkerTask("Shenandoah Update References"),
-          _heap(ShenandoahHeap::heap()),
+          _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
           _work_chunks(work_chunks)
   {
@@ -820,7 +827,7 @@ private:
       // The remembered set workload is better balanced between threads, so threads that are "behind" can catch up with other
       // threads during this phase, allowing all threads to work more effectively in parallel.
       struct ShenandoahRegionChunk assignment;
-      RememberedScanner* scanner = _heap->card_scan();
+      RememberedScanner* scanner = _heap->old_generation()->card_scan();
 
       while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
         // Keep grabbing next work chunk to process until finished, or asked to yield
@@ -942,8 +949,9 @@ void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
-    assert(card_scan() != nullptr, "Card table must exist when card stats are enabled");
-    card_scan()->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
+    RememberedScanner* card_scan = old_generation()->card_scan();
+    assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
+    card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
   }
 }
 

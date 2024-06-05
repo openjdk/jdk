@@ -26,8 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -64,7 +66,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
     if (pad_words > 0) {
       assert(pad_words >= ShenandoahHeap::min_fill_size(), "pad_words expanded above to meet size constraint");
       ShenandoahHeap::fill_with_object(orig_top, pad_words);
-      ShenandoahHeap::heap()->card_scan()->register_object(orig_top);
+      ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->register_object(orig_top);
     }
 
     make_regular_allocation(req.affiliation());

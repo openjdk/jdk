@@ -29,10 +29,12 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
+class ShenandoahOldHeuristics;
 
 class ShenandoahOldGeneration : public ShenandoahGeneration {
 private:
@@ -174,6 +176,18 @@ public:
   // inclusion in a mixed evacuation are pinned. This should be rare.
   void abandon_mixed_evacuations();
 
+private:
+  RememberedScanner* _card_scan;
+
+public:
+  RememberedScanner* card_scan() { return _card_scan; }
+
+  // Clear cards for given region
+  void clear_cards_for(ShenandoahHeapRegion* region);
+
+  // Mark card for this location as dirty
+  void mark_card_as_dirty(void* location);
+
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   void parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
@@ -299,6 +313,7 @@ public:
   }
 
   static const char* state_name(State state);
+
 };
 
 

@@ -180,6 +180,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parseable(true),
+    _card_scan(nullptr),
     _state(WAITING_FOR_BOOTSTRAP),
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
@@ -187,6 +188,14 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
   _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
+
+  if (ShenandoahCardBarrier) {
+    // TODO: Old and young generations should only be instantiated for generational mode
+    ShenandoahCardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
+    size_t card_count = card_table->cards_required(ShenandoahHeap::heap()->reserved_region().word_size());
+    auto rs = new ShenandoahDirectCardMarkRememberedSet(card_table, card_count);
+    _card_scan = new ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet>(rs);
+  }
 }
 
 void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
@@ -387,7 +396,7 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   // This code will see the same set of regions to fill on each resumption as it did
   // on the initial run. That's okay because each region keeps track of its own coalesce
   // and fill state. Regions that were filled on a prior attempt will not try to fill again.
-  uint coalesce_and_fill_regions_count = heuristics()->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
+  uint coalesce_and_fill_regions_count = _old_heuristics->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
   assert(coalesce_and_fill_regions_count <= ShenandoahHeap::heap()->num_regions(), "Sanity");
   if (coalesce_and_fill_regions_count == 0) {
     // No regions need to be filled.
@@ -595,8 +604,8 @@ bool ShenandoahOldGeneration::validate_waiting_for_bootstrap() {
   assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become ready for bootstrap when still setup for bootstrapping.");
   assert(!is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
   assert(!heap->young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
-  assert(!heuristics()->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
-  assert(heuristics()->unprocessed_old_collection_candidates() == 0, "Cannot have mixed collection candidates in IDLE");
+  assert(!_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
+  assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot have mixed collection candidates in IDLE");
   return true;
 }
 #endif
@@ -659,17 +668,14 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
 }
 
 void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, bool promotion) {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  auto card_scan = heap->card_scan();
-
   // Only register the copy of the object that won the evacuation race.
-  card_scan->register_object_without_lock(obj);
+  _card_scan->register_object_without_lock(obj);
 
   // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
   // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
   // do this in batch, in a background GC thread than to try to carefully dirty only cards
   // that hold interesting pointers right now.
-  card_scan->mark_range_as_dirty(obj, words);
+  _card_scan->mark_range_as_dirty(obj, words);
 
   if (promotion) {
     // This evacuation was a promotion, track this as allocation against old gen
@@ -771,4 +777,12 @@ void ShenandoahOldGeneration::abandon_mixed_evacuations() {
       ShouldNotReachHere();
       break;
   }
+}
+
+void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
+  _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
+}
+
+void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
+  _card_scan->mark_card_as_dirty((HeapWord*)location);
 }

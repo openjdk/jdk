@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
@@ -110,5 +111,5 @@ void ShenandoahYoungGeneration::prepare_gc() {
   assert(type() == YOUNG, "Error?");
   // Clear any stale/partial local census data before the start of a
   // new marking cycle
-  ShenandoahHeap::heap()->age_census()->reset_local();
+  ShenandoahGenerationalHeap::heap()->age_census()->reset_local();
 }

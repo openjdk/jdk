@@ -37,12 +37,10 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
 
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -191,9 +189,6 @@ jint ShenandoahHeap::initialize() {
 
   _committed = _initial_size;
 
-  // Now we know the number of regions and heap sizes, initialize the heuristics.
-  initialize_heuristics_generations();
-
   size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
   size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   size_t region_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
@@ -234,20 +229,14 @@ jint ShenandoahHeap::initialize() {
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this, _heap_region));
 
-  //
-  // After reserving the Java heap, create the card table, barriers, and workers, in dependency order
-  //
-  if (mode()->is_generational()) {
-    ShenandoahDirectCardMarkRememberedSet *rs;
-    ShenandoahCardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
-    size_t card_count = card_table->cards_required(heap_rs.size() / HeapWordSize);
-    rs = new ShenandoahDirectCardMarkRememberedSet(ShenandoahBarrierSet::barrier_set()->card_table(), card_count);
-    _card_scan = new ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet>(rs);
+  // Now we know the number of regions and heap sizes, initialize the heuristics.
+  initialize_heuristics();
 
-    // Age census structure
-    _age_census = new ShenandoahAgeCensus();
-  }
+  assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
+  //
+  // Worker threads must be initialized after the barrier is configured
+  //
   _workers = new ShenandoahWorkerThreads("Shenandoah GC Threads", _max_workers);
   if (_workers == nullptr) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -501,7 +490,7 @@ void ShenandoahHeap::print_init_logger() const {
   ShenandoahInitLogger::print();
 }
 
-void ShenandoahHeap::initialize_heuristics_generations() {
+void ShenandoahHeap::initialize_mode() {
   if (ShenandoahGCMode != nullptr) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {
       _gc_mode = new ShenandoahSATBMode();
@@ -528,7 +517,9 @@ void ShenandoahHeap::initialize_heuristics_generations() {
             err_msg("GC mode \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
                     _gc_mode->name()));
   }
+}
 
+void ShenandoahHeap::initialize_heuristics() {
   // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
   // for old would be total heap - minimum capacity of young. This means the sum of the maximum
   // allowed for old and young could exceed the total heap size. It remains the case that the
@@ -569,7 +560,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _affiliations(nullptr),
   _gc_state_changed(false),
   _gc_no_progress_count(0),
-  _age_census(nullptr),
   _cancel_requested_time(0),
   _update_refs_iterator(this),
   _young_generation(nullptr),
@@ -577,6 +567,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _old_generation(nullptr),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
+  _gc_mode(nullptr),
   _free_set(nullptr),
   _pacer(nullptr),
   _verifier(nullptr),
@@ -597,9 +588,10 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
-  _collection_set(nullptr),
-  _card_scan(nullptr)
+  _collection_set(nullptr)
 {
+  // Initialize GC mode early, many subsequent initialization procedures depend on it
+  initialize_mode();
 }
 
 #ifdef _MSC_VER
@@ -1121,7 +1113,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
       // last-start representing object b while first-start represents object c.  This is why we need to require all
       // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-      card_scan()->register_object(result);
+      old_generation()->card_scan()->register_object(result);
     }
   }
 
@@ -2502,8 +2494,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
-    ShenandoahOldHeuristics* old_heuristics = old_gen->heuristics();
-    old_heuristics->trigger_maybe(first_old_region, last_old_region, old_region_count, num_regions());
+    old_gen->heuristics()->trigger_maybe(first_old_region, last_old_region, old_region_count, num_regions());
   }
 }
 
@@ -2711,17 +2702,5 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
     old_generation()->log_status(msg);
   } else {
     global_generation()->log_status(msg);
-  }
-}
-
-void ShenandoahHeap::clear_cards_for(ShenandoahHeapRegion* region) {
-  if (mode()->is_generational()) {
-    _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
-  }
-}
-
-void ShenandoahHeap::mark_card_as_dirty(void* location) {
-  if (mode()->is_generational()) {
-    _card_scan->mark_card_as_dirty((HeapWord*)location);
   }
 }

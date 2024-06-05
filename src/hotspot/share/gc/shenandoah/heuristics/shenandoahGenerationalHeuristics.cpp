@@ -225,7 +225,7 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
                                                                                    const RegionData* data,
                                                                                    size_t size) const {
 #ifdef ASSERT
-  const uint tenuring_threshold = ShenandoahHeap::heap()->age_census()->tenuring_threshold();
+  const uint tenuring_threshold = ShenandoahGenerationalHeap::heap()->age_census()->tenuring_threshold();
 #endif
 
   // cur_young_garbage represents the amount of memory to be reclaimed from young-gen.  In the case that live objects

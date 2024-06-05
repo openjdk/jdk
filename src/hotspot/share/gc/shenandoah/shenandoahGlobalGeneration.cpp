@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
@@ -130,7 +131,7 @@ void ShenandoahGlobalGeneration::prepare_gc() {
     assert(type() == GLOBAL, "Unexpected generation type");
     // Clear any stale/partial local census data before the start of a
     // new marking cycle
-    ShenandoahHeap::heap()->age_census()->reset_local();
+    ShenandoahGenerationalHeap::heap()->age_census()->reset_local();
   } else {
     assert(type() == NON_GEN, "Unexpected generation type");
   }

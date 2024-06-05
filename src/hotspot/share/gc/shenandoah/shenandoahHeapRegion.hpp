@@ -29,6 +29,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
