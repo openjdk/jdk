@@ -1889,9 +1889,6 @@ static void hemi_split(T* arr, unsigned num) {
 
 // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
 // If randomize is true, the location will be randomized.
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
 char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
 
   // Please keep the following constants in sync with the companion gtests:
@@ -1938,6 +1935,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     return nullptr; // overflow
   }
 
+  char* const hi_end = MIN2(max, absolute_max);
+  if ((uintptr_t)hi_end < bytes) {
+    return nullptr; // no need to go on
+  }
   char* const hi_att = align_down(MIN2(max, absolute_max) - bytes, alignment_adjusted);
   if (hi_att > max) {
     return nullptr; // overflow
