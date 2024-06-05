@@ -290,9 +290,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ std(R30, frame_size_in_bytes - 2*reg_size - vsregstosave_num * vs_reg_size, R1_SP);
 
   // save the flags
-  // Do the save_LR_CR by hand and adjust the return pc if requested.
-  __ mfcr(R30);
-  __ std(R30, frame_size_in_bytes + _abi0(cr), R1_SP);
+  // Do the save_LR by hand and adjust the return pc if requested.
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
     case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
@@ -435,9 +433,6 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   // restore link and the flags
   __ ld(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   __ mtlr(R31);
-
-  __ ld(R31, frame_size_in_bytes + _abi0(cr), R1_SP);
-  __ mtcr(R31);
 
   // restore scratch register's value
   __ ld(R31, frame_size_in_bytes - reg_size - vsregstosave_num * vs_reg_size, R1_SP);
