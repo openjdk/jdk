@@ -522,12 +522,12 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 // Note: Unsigned greater than comparison treat both <0 and >VEC_LENGTH indices as out-of-bound
 // indexes.
 Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
-  assert(elem_bt == T_BYTE, "");
+  assert(elem_bt == T_BYTE, "Shuffles use byte array based backing storage.");
   const TypeVect* vt  = TypeVect::make(elem_bt, num_elem);
   const Type* type_bt = Type::get_const_basic_type(elem_bt);
 
-  Node* mod_val = gvn().makecon(TypeInt::make(num_elem-1));
-  Node* bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
+  Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
+  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, type_bt));
 
   BoolTest::mask pred = BoolTest::ugt;
   ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(pred));
@@ -537,7 +537,7 @@ Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, Basi
   Node*  mask = gvn().transform(new VectorMaskCmpNode(pred, bcast_lane_cnt, index_vec, pred_node, vmask_type));
 
   // Make the indices greater than lane count as -ve values to match the java side implementation.
-  index_vec = gvn().transform(VectorNode::make(Op_AndV, index_vec, bcast_mod, vt));
+  index_vec = gvn().transform(VectorNode::make(Op_AndV, index_vec, bcast_mod_mask, vt));
   Node* biased_val = gvn().transform(VectorNode::make(Op_SubVB, index_vec, bcast_lane_cnt, vt));
   return gvn().transform(new VectorBlendNode(biased_val, index_vec, mask));
 }

@@ -26,10 +26,10 @@
 * @bug 8332119
 * @summary Incorrect IllegalArgumentException for C2 compiled permute kernel
 * @modules jdk.incubator.vector
-* @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation -XX:CompileOnly=TestTwoVectorPermute::micro compiler.vectorapi.TestTwoVectorPermute
 * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation compiler.vectorapi.TestTwoVectorPermute
+* @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:TieredStopAtLevel=3 compiler.vectorapi.TestTwoVectorPermute
 */
 package compiler.vectorapi;
 
@@ -41,7 +41,7 @@ import java.util.Random;
 public class TestTwoVectorPermute {
    public static final VectorSpecies<Float> FSP = FloatVector.SPECIES_256;
 
-   public static void validate(float [] res, float [] shuf, float [] src1, float [] src2) {
+   public static void validate(float[] res, float[] shuf, float[] src1, float[] src2) {
        for (int i = 0; i < res.length; i++) {
            float expected = Float.NaN;
            int shuf_index = (int)shuf[i];
@@ -62,7 +62,7 @@ public class TestTwoVectorPermute {
        }
    }
 
-   public static void micro(float [] res, float [] shuf, float [] src1, float [] src2) {
+   public static void micro(float[] res, float[] shuf, float[] src1, float[] src2) {
        VectorShuffle<Float> vshuf = FloatVector.fromArray(FSP, shuf, 0).toShuffle();
        VectorShuffle<Float> vshuf_wrapped = vshuf.wrapIndexes();
        FloatVector.fromArray(FSP, src1, 0)
