@@ -109,3 +109,41 @@ public:
     return *i.e;
   };
 };
+
+// An Arena allocator
+template<typename E, MEMFLAGS flag>
+class ArenaAllocator {
+  Arena _arena;
+public:
+  ArenaAllocator() : _arena(flag) {}
+
+  struct I {
+    E* e;
+    bool operator !=(I other) {
+      return e != other.e;
+    }
+    bool operator==(I other) {
+      return e == other.e;
+    }
+  };
+  static constexpr const I nil = {nullptr};
+
+  template<typename... Args>
+  I allocate(Args... args) {
+    void* place = _arena.Amalloc(sizeof(E));
+    ::new (place) E(args...);
+    return I{static_cast<E*>(place)};
+  }
+
+  void free(I i) {
+    _arena.Afree(i.e, sizeof(E));
+  }
+
+  E& operator[](I i) {
+    return *i.e;
+  }
+
+  E& translate(I i) {
+    return *i.e;
+  };
+};

@@ -75,6 +75,7 @@ TEST_VM_F(NativeCallStackStorageTest, PerfTest) {
 
   NativeCallStackStorage ncss(true);
   NativeCallStackStorageWithAllocator<CHeapAllocator> ncss_cheap(true);
+  NativeCallStackStorageWithAllocator<ArenaAllocator> ncss_arena(true);
 
   auto make_stack = []() -> NativeCallStack {
     size_t a = os::random();
@@ -113,4 +114,27 @@ TEST_VM_F(NativeCallStackStorageTest, PerfTest) {
   ms_int = duration_cast<milliseconds>(t2 - t1);
   ms_double = t2 - t1;
   tty->print_cr("Time taken with CHeap: %f", ms_double.count());
+
+  t1 = high_resolution_clock::now();
+  for (int i = 0; i < size; i++) {
+    ncss_arena.push(all[i]);
+  }
+  t2 = high_resolution_clock::now();
+
+  ms_int = duration_cast<milliseconds>(t2 - t1);
+  ms_double = t2 - t1;
+  tty->print_cr("Time taken with Arena: %f", ms_double.count());
+
+  {
+    NativeCallStackStorage ncss(true);
+    auto t1 = high_resolution_clock::now();
+    for (int i = 0; i < size; i++) {
+      ncss.push(all[i]);
+    }
+    auto t2 = high_resolution_clock::now();
+
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+    duration<double, std::milli> ms_double = t2 - t1;
+    tty->print_cr("Time taken with GrowableArray again: %f", ms_double.count());
+  }
 }
