@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -863,8 +863,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     private char findNonFormatChar(String src, char defChar) {
         for (int i = 0; i < src.length(); i++) {
-            if (Character.getType(src.charAt(i)) != Character.FORMAT) {
-                return src.charAt(i);
+            char c = src.charAt(i);
+            if (Character.getType(c) != Character.FORMAT) {
+                return c;
             }
         }
         return defChar;
