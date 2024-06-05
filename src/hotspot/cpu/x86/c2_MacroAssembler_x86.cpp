@@ -1116,26 +1116,11 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
-
-#ifndef _LP64
-    // Check if recursive.
-    xorptr(reg_rax, reg_rax);
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    jcc(Assembler::notZero, check_successor);
-
-    // Check if the entry lists are empty.
-    movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    jcc(Assembler::notZero, check_successor);
-
-    // Release lock.
-    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-#else // _LP64
     Label recursive;
 
     // Check if recursive.
     cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
-    jccb(Assembler::notEqual, recursive);
+    jccb(Assembler::notZero, recursive);
 
     // Release lock.
     movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
@@ -1151,7 +1136,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
     jccb(Assembler::zero, unlocked);
 
-    // Check if there is a successor, and of there is we are done.
+    // Check if there is a successor, and if there is we are done.
     cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
     jccb(Assembler::notZero, unlocked);
 
@@ -1161,7 +1146,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // Recursive unlock.
     bind(recursive);
     decrement(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-#endif
   }
 
   bind(unlocked);
