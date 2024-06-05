@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ abstract class WixFragmentBuilder {
     }
 
     void logWixFeatures() {
-        if (wixVersion.compareTo("3.6") >= 0) {
+        if (DottedVersion.compareComponents(wixVersion, DottedVersion.lazy("3.6")) >= 0) {
             Log.verbose(MessageFormat.format(I18N.getString(
                     "message.use-wix36-features"), wixVersion));
         }

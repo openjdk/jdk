@@ -63,6 +63,7 @@ public:
   static void nmethods_do(bool secondary, NMethodClosure* cl);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
+  static ZReentrantLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge();
