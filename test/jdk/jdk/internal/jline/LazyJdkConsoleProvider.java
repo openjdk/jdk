@@ -29,7 +29,7 @@
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.internal.le/jdk.internal.org.jline.terminal
  * @library /test/lib
- * @run main/othervm -Djdk.console=jdk.internal.le LazyJdkConsoleProvider
+ * @run main LazyJdkConsoleProvider
  */
 
 import java.io.IO;
@@ -72,6 +72,7 @@ public class LazyJdkConsoleProvider {
             ProcessBuilder builder =
                     ProcessTools.createTestJavaProcessBuilder("--enable-preview",
                                                               "-verbose:class",
+                                                              "-Djdk.console=jdk.internal.le",
                                                               LazyJdkConsoleProvider.class.getName(),
                                                               tc.testKey());
             OutputAnalyzer output = ProcessTools.executeProcess(builder, "");
