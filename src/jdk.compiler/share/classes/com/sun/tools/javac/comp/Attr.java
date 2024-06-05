@@ -3726,7 +3726,7 @@ public class Attr extends JCTree.Visitor {
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
                 Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
+                if (enclosingType != null && enclosingType.hasTag(CLASS) && exprType.tsym.hasOuterInstance()) {
                     // Check for the existence of an appropriate outer instance
                     rs.resolveImplicitThis(that.pos(), env, exprType);
                 }
