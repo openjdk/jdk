@@ -516,7 +516,7 @@ void NativeFarCall::replace_mt_safe(address instr_addr, address code_buffer) {
 // NativeCall
 
 address NativeCall::instruction_address() const {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->instruction_address();
   } else {
     return NativeShortCall::at(addr_at(0))->instruction_address();
@@ -524,7 +524,7 @@ address NativeCall::instruction_address() const {
 }
 
 address NativeCall::next_instruction_address() const {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->next_instruction_address();
   } else {
     return NativeShortCall::at(addr_at(0))->next_instruction_address();
@@ -532,7 +532,7 @@ address NativeCall::next_instruction_address() const {
 }
 
 address NativeCall::return_address() const {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->return_address();
   } else {
     return NativeShortCall::at(addr_at(0))->return_address();
@@ -540,7 +540,7 @@ address NativeCall::return_address() const {
 }
 
 address NativeCall::destination() const {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->destination();
   } else {
     return NativeShortCall::at(addr_at(0))->destination();
@@ -548,7 +548,7 @@ address NativeCall::destination() const {
 }
 
 address NativeCall::reloc_destination(address orig_address) {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->reloc_destination(orig_address);
   } else {
     return NativeShortCall::at(addr_at(0))->reloc_destination(orig_address);
@@ -556,7 +556,7 @@ address NativeCall::reloc_destination(address orig_address) {
 }
 
 void NativeCall::set_destination(address dest) {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     NativeFarCall::at(addr_at(0))->set_destination(dest);
   } else {
     NativeShortCall::at(addr_at(0))->set_destination(dest);
@@ -564,7 +564,7 @@ void NativeCall::set_destination(address dest) {
 }
 
 void NativeCall::verify() {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     NativeFarCall::at(addr_at(0))->verify();;
   } else {
     NativeShortCall::at(addr_at(0))->verify();
@@ -572,7 +572,7 @@ void NativeCall::verify() {
 }
 
 void NativeCall::print() {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     NativeFarCall::at(addr_at(0))->print();;
   } else {
     NativeShortCall::at(addr_at(0))->print();
@@ -580,7 +580,7 @@ void NativeCall::print() {
 }
 
 bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
   } else {
     return NativeShortCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
@@ -588,7 +588,7 @@ bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
 }
 
 bool NativeCall::reloc_set_destination(address dest) {
-  if (!UseTrampolines && NativeFarCall::is_at(addr_at(0))) {
+  if (!UseTrampolines) {
     return NativeFarCall::at(addr_at(0))->reloc_set_destination(dest);
   } else {
     return NativeShortCall::at(addr_at(0))->reloc_set_destination(dest);
@@ -596,20 +596,23 @@ bool NativeCall::reloc_set_destination(address dest) {
 }
 
 bool NativeCall::is_at(address addr) {
-  return NativeShortCall::is_at(addr) || NativeFarCall::is_at(addr);
+  if (!UseTrampolines) {
+    return NativeFarCall::is_at(addr);
+  } else {
+    return NativeShortCall::is_at(addr);
+  }
 }
 
 bool NativeCall::is_call_before(address return_address) {
   if (!UseTrampolines) {
-    return NativeFarCall::is_call_before(return_address) ||
-           NativeShortCall::is_call_before(return_address);
+    return NativeFarCall::is_call_before(return_address);
   } else {
     return NativeShortCall::is_call_before(return_address);
   }
 }
 
 void NativeCall::insert(address code_pos, address entry) {
-  if (!UseTrampolines && NativeFarCall::is_at(code_pos)) {
+  if (!UseTrampolines) {
     NativeFarCall::insert(code_pos, entry);
   } else {
     NativeShortCall::insert(code_pos, entry);
@@ -617,7 +620,7 @@ void NativeCall::insert(address code_pos, address entry) {
 }
 
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
-  if (!UseTrampolines && NativeFarCall::is_at(instr_addr)) {
+  if (!UseTrampolines) {
     NativeFarCall::replace_mt_safe(instr_addr, code_buffer);
   } else {
     NativeShortCall::replace_mt_safe(instr_addr, code_buffer);
@@ -634,7 +637,7 @@ NativeCall* nativeCall_at(address addr) {
 NativeCall* nativeCall_before(address return_address) {
   assert_cond(return_address != nullptr);
   NativeCall* call = nullptr;
-  if (NativeFarCall::is_call_before(return_address)) {
+  if (!UseTrampolines) {
     call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
   } else {
     call = (NativeCall*)(return_address - NativeShortCall::return_address_offset);

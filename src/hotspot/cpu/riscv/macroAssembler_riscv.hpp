@@ -597,7 +597,6 @@ class MacroAssembler: public Assembler {
  private:
   void load_link(const address source, Register temp);
   void jump_link(const address dest, Register temp);
-  void jump_link(const Address &adr, Register temp);
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,

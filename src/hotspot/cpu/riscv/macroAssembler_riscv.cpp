@@ -990,6 +990,7 @@ void MacroAssembler::load_link(const address source, Register temp) {
 }
 
 void MacroAssembler::jump_link(const address dest, Register temp) {
+  assert(UseTrampolines, "Must be");
   assert_cond(dest != nullptr);
   int64_t distance = dest - pc();
   if (is_simm21(distance) && ((distance % 2) == 0)) {
@@ -999,25 +1000,6 @@ void MacroAssembler::jump_link(const address dest, Register temp) {
     int32_t offset = 0;
     la(temp, dest, offset);
     jalr(temp, offset);
-  }
-}
-
-void MacroAssembler::jump_link(const Address &adr, Register temp) {
-  switch (adr.getMode()) {
-    case Address::literal: {
-      relocate(adr.rspec(), [&] {
-        jump_link(adr.target(), temp);
-      });
-      break;
-    }
-    case Address::base_plus_offset: {
-      int32_t offset = ((int32_t)adr.offset() << 20) >> 20;
-      la(temp, Address(adr.base(), adr.offset() - offset));
-      jalr(temp, offset);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
   }
 }
 
@@ -4657,7 +4639,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
         return nullptr;
       }
     } else {
-      jump_link(zero_blocks, t0);
+      rt_call(zero_blocks.target(), t0);
     }
   }
   bind(around);
