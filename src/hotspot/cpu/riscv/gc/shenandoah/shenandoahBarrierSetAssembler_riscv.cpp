@@ -112,18 +112,14 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   assert_different_registers(obj, pre_val, tmp1, tmp2);
   assert(pre_val != noreg && tmp1 != noreg && tmp2 != noreg, "expecting a register");
 
-  Address in_progress(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()));
   Address index(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwu(tmp1, in_progress);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbu(tmp1, in_progress);
-  }
-  __ beqz(tmp1, done);
+  Address gc_state(xthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ lbu(t1, gc_state);
+  __ test_bit(t1, t1, ShenandoahHeap::MARKING_BITPOS);
+  __ beqz(t1, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {

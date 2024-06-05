@@ -81,6 +81,8 @@ compiler/startup/StartupOutput.java 8326615 generic-x64
 
 compiler/rangechecks/TestArrayAccessAboveRCAfterRCCastIIEliminated.java 8332369 generic-all
 
+compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
+
 #############################################################################
 
 # :hotspot_gc
