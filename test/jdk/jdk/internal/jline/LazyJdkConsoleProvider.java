@@ -29,7 +29,7 @@
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.internal.le/jdk.internal.org.jline.terminal
  * @library /test/lib
- * @run main LazyJdkConsoleProvider
+ * @run main/othervm -Djdk.console=jdk.internal.le LazyJdkConsoleProvider
  */
 
 import java.io.IO;
