@@ -36,7 +36,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
@@ -1361,7 +1360,6 @@ class ImmutableCollections {
             return new CollSer(CollSer.IMM_MAP, array);
         }
     }
-
 }
 
 // ---------- Serialization Proxy ----------

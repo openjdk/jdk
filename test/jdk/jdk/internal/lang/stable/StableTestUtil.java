@@ -22,11 +22,11 @@
  */
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 final class StableTestUtil {
+
+    private StableTestUtil() {}
 
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>
@@ -42,37 +42,6 @@ final class StableTestUtil {
             return delegate.get();
         }
 
-    }
-
-    public static final class CountingIntFunction<T>
-            extends AbstractCounting<IntFunction<T>>
-            implements IntFunction<T> {
-
-        public CountingIntFunction(IntFunction<T> delegate) {
-            super(delegate);
-        }
-
-        @Override
-        public T apply(int value) {
-            incrementCounter();
-            return delegate.apply(value);
-        }
-
-    }
-
-    public static final class CountingFunction<T, R>
-            extends AbstractCounting<Function<T, R>>
-            implements Function<T, R> {
-
-        public CountingFunction(Function<T, R> delegate) {
-            super(delegate);
-        }
-
-        @Override
-        public R apply(T t) {
-            incrementCounter();
-            return delegate.apply(t);
-        }
     }
 
     abstract static class AbstractCounting<D> {

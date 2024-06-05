@@ -4768,8 +4768,8 @@ public final class Class<T> implements java.io.Serializable,
         if (subClasses.length > 0) {
             if (Arrays.stream(subClasses).anyMatch(c -> !isDirectSubType(c))) {
                 subClasses = Arrays.stream(subClasses)
-                        .filter(this::isDirectSubType)
-                        .toArray(s -> new Class<?>[s]);
+                                   .filter(this::isDirectSubType)
+                                   .toArray(s -> new Class<?>[s]);
             }
         }
         if (subClasses.length > 0) {

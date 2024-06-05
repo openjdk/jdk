@@ -83,8 +83,14 @@ final class StableValueTest {
     @Test
     void computeIfUnset() {
         StableValue<Integer> stable = StableValue.newInstance();
-        assertEquals(42, stable.computeIfUnset(() -> 42));
-        assertEquals(42, stable.computeIfUnset(() -> 13));
+        StableTestUtil.CountingSupplier<Integer> cntSupplier = new StableTestUtil.CountingSupplier<>(() -> 42);
+        StableTestUtil.CountingSupplier<Integer> cntSupplier2 = new StableTestUtil.CountingSupplier<>(() -> 13);
+        assertEquals(42, stable.computeIfUnset(cntSupplier));
+        assertEquals(1, cntSupplier.cnt());
+        assertEquals(42, stable.computeIfUnset(cntSupplier));
+        assertEquals(1, cntSupplier.cnt());
+        assertEquals(42, stable.computeIfUnset(cntSupplier2));
+        assertEquals(0, cntSupplier2.cnt());
         assertEquals("StableValue[42]", stable.toString());
         assertEquals(42, stable.orElse(null));
         assertFalse(stable.trySet(null));
