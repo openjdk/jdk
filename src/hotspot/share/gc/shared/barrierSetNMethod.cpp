@@ -100,6 +100,12 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   };
 
+  if (!is_armed(nm)) {
+    // Some other thread got here first and healed the oops
+    // and disarmed the nmethod. No need to continue.
+    return true;
+  }
+
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
   // Also, with concurrent GC, it is possible that frames in continuation stack
@@ -172,6 +178,9 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   nmethod* nm = cb->as_nmethod();
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
+  // Check for disarmed method here to avoid going into DeoptimizeNMethodBarriersALot code
+  // too often. nmethod_entry_barrier checks for disarmed status itself,
+  // but we have no visibility into whether the barrier acted or not.
   if (!bs_nm->is_armed(nm)) {
     return 0;
   }
