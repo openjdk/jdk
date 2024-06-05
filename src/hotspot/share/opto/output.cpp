@@ -1321,7 +1321,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   int code_req  = _buf_sizes._code;
   int const_req = _buf_sizes._const;
 
-  int pad_req   = NativeCall::instruction_size;
+  int pad_req   = NativeCall::byte_size();
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
