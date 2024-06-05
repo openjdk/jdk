@@ -127,13 +127,9 @@ public class JRTArchive implements Archive {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof JRTArchive) {
-            JRTArchive other = (JRTArchive)obj;
-            return Objects.equals(module, other.module) &&
-                   Objects.equals(path, other.path);
-        }
-
-        return false;
+        return (obj instanceof JRTArchive other &&
+                   Objects.equals(module, other.module) &&
+                   Objects.equals(path, other.path));
     }
 
     private void collectFiles() throws IOException {
