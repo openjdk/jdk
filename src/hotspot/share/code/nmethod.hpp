@@ -218,7 +218,7 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
-  int _inline_insts_size;
+  int _skipped_instructions_size;
 
   int _stub_offset;
 
@@ -590,7 +590,7 @@ public:
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
 
-  int inline_insts_size() const { return _inline_insts_size; }
+  int skipped_instructions_size () const { return _skipped_instructions_size; }
   int total_size() const;
 
   // Containment

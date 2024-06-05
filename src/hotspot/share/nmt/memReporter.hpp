@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "oops/instanceKlass.hpp"
 
 /*
  * Base class that provides helpers
@@ -165,6 +164,7 @@ class MemDetailReporter : public MemSummaryReporter {
   virtual void report() {
     MemSummaryReporter::report();
     report_virtual_memory_map();
+    report_memory_file_allocations();
     report_detail();
   }
 
@@ -173,6 +173,8 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_detail();
   // Report virtual memory map
   void report_virtual_memory_map();
+  // Report all physical devices
+  void report_memory_file_allocations();
   // Report malloc allocation sites; returns number of omitted sites
   int report_malloc_sites();
   // Report virtual memory reservation sites; returns number of omitted sites
