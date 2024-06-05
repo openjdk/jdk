@@ -1760,4 +1760,29 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+// Invoke callback on all memops, in the order of the schedule.
+template<typename Callback>
+void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
+  assert(_schedule.length() == _vtnodes.length(), "schedule was computed");
+
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+
+    // We can ignore input nodes, they are outside the loop.
+    if (vtn->isa_InputScalar() != nullptr) { continue; }
+
+    VTransformScalarNode* scalar = vtn->isa_Scalar();
+    if (scalar != nullptr && scalar->node()->is_Mem()) {
+      callback(scalar->node()->as_Mem());
+    }
+
+    VTransformVectorNode* vector = vtn->isa_Vector();
+    if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
+      for (int j = 0; j < vector->nodes().length(); j++) {
+        callback(vector->nodes().at(j)->as_Mem());
+      }
+    }
+  }
+}
+
 #endif // SHARE_OPTO_VECTORIZATION_HPP
