@@ -3125,11 +3125,11 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
     return nullptr;
   }
 
-  // From (SLE-full), we can extract a single signed loop exit condition depending on the stride:
+  // We prove below that we can extract a single signed loop exit condition from (SLE-full), depending on the stride:
   //   stride < 0:
-  //     i < 0        (SLE-negative)
+  //     i < 0        (SLE = SLE-negative)
   //   stride > 0:
-  //     i >= limit   (SLE-positive)
+  //     i >= limit   (SLE = SLE-positive)
   // such that we have the following graph before Partial Peeling with stride > 0 (similar for stride < 0):
   //
   // Loop:
@@ -3147,12 +3147,12 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   //   (SLE) IMPLIES (ULE)
   // This indeed holds when (COND) is given:
   // - stride > 0:
-  //       i >=  limit             // (SLE-positive)
+  //       i >=  limit             // (SLE = SLE-positive)
   //       i >=  limit >= 0        // (COND)
   //       i >=u limit >= 0        // (LEMMA)
   //     which is the unsigned loop exit condition (ULE).
   // - stride < 0:
-  //       i        <  0           // (SLE-negative)
+  //       i        <  0           // (SLE = SLE-negative)
   //       (uint) i >u MAX_INT     // (NEG) all negative values are greater than MAX_INT when converted to unsigned
   //       MAX_INT >= limit >= 0   // (COND)
   //       MAX_INT >=u limit >= 0  // (LEMMA)
@@ -3163,12 +3163,12 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   //
   // After Partial Peeling, we have the following structure for stride > 0 (similar for stride < 0):
   //   <cloned peeled section>
-  //   i >= limit (SLE)
+  //   i >= limit (SLE-positive)
   //   Loop:
   //     i >=u limit (ULE)
   //     <rest of unpeeled section>
   //     <peeled section>
-  //     i >= limit (SLE)
+  //     i >= limit (SLE-positive)
   //     goto Loop
   Node* rhs_cmpi;
   if (stride > 0) {

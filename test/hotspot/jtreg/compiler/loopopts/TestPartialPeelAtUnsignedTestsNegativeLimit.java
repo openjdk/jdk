@@ -142,7 +142,7 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
         while (true) {
             // <Peeled Section>
 
-            // Found as loop head in ciTypeFlow, but both path inside loop -> head not cloned.
+            // Found as loop head in ciTypeFlow, but both paths inside loop -> head not cloned.
             // As a result, this head has the safepoint as backedge instead of the loop exit test
             // and we cannot create a counted loop (yet). We first need to partial peel.
             if (flag) {
