@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/indexedFreeListAllocator.hpp"
+#include "nmt/indexedFreeListAllocator.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.

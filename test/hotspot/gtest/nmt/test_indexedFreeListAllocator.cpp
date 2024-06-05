@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "unittest.hpp"
-#include "utilities/indexedFreeListAllocator.hpp"
+#include "nmt/indexedFreeListAllocator.hpp"
 
 class TIFLA {
 public:
