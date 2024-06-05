@@ -50,6 +50,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     private static final int SIZE = 543;
     private static       int size = 543;
+    private static       int zero = 0;
 
     private int[] ints;
     private long[] longs;
@@ -119,6 +120,36 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
         }
         return res;
     }
+
+    @Test
+    // Tests that we add a ConvI2L for size, when converting it to long for
+    // the rotateRight rotation input.
+    // However, it currently only seems to vectorize in OSR, so we cannot add IR rules.
+    public long[] longExplicitRotateWithPopulateIndex() {
+        long[] res = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Long.rotateRight(i, /* some rotation value*/ size);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"avx512f", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
+    // The unknown init/limit values make sure that the rotation does fold badly
+    // like in longExplicitRotateWithPopulateIndex.
+    public long[] longExplicitRotateWithPopulateIndex2() {
+        long[] res = new long[SIZE];
+        for (int i = zero; i < size; i++) {
+            res[i] = Long.rotateRight(i, /* some rotation value*/ size);
+        }
+        return res;
+    }
+
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
