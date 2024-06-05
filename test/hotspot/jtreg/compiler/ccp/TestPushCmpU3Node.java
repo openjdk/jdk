@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,30 @@
  * questions.
  */
 
-package nsk.share;
-
-
-/**
- * This class is a simple example of finalizable object, that
- * implements interface <code>Finalizable</code>.
- *
- * @see Finalizable
- * @see Finalizer
+/*
+ * @test
+ * @bug 8333366
+ * @summary Test that CmpU3Nodes are pushed back to the CCP worklist such that the type can be re-evaluated.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestPushCmpU3Node::test
+ *                   compiler.ccp.TestPushCmpU3Node
  */
-public class FinalizableObject implements Finalizable {
-    /**
-     * Subclasses should override this method to provide the specific
-     * cleanup actions that they need.
-     */
-    public void cleanup() {}
+
+package compiler.ccp;
+
+import static java.lang.Integer.*;
+
+public class TestPushCmpU3Node {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; ++i) {
+            test();
+        }
+    }
+
+    public static void test() {
+        for (int i = MAX_VALUE - 50_000; compareUnsigned(i, -1) < 0; ++i) {
+            if (compareUnsigned(MIN_VALUE, i) < 0) {
+                return;
+            }
+        }
+    }
 }

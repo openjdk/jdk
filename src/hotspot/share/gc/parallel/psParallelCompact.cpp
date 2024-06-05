@@ -280,21 +280,6 @@ PSParallelCompact::print_generic_summary_data(ParallelCompactData& summary_data,
   ::print_generic_summary_data(summary_data,beg_addr, end_addr);
 }
 
-void
-print_generic_summary_data(ParallelCompactData& summary_data,
-                           SpaceInfo* space_info)
-{
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
-    return;
-  }
-
-  for (unsigned int id = 0; id < PSParallelCompact::last_space_id; ++id) {
-    const MutableSpace* space = space_info[id].space();
-    print_generic_summary_data(summary_data, space->bottom(),
-                               MAX2(space->top(), space_info[id].new_top()));
-  }
-}
-
 static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            const MutableSpace* space) {

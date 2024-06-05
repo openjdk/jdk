@@ -336,6 +336,8 @@ public class Deflater {
      * @param dictionary the dictionary data bytes
      * @see Inflater#inflate
      * @see Inflater#getAdler()
+     *
+     * @since 11
      */
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
