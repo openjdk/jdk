@@ -342,7 +342,7 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
         }
       }
     } else if (vm_reg->is_ConditionRegister()) {
-      ShouldNotReachHere(); // live condition registers are unexpected at this point
+      // NOP. Conditions registers are covered by save_LR_CR
     } else if (vm_reg->is_VectorSRegister()) {
       assert(SuperwordUseVSX, "or should not reach here");
       VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
