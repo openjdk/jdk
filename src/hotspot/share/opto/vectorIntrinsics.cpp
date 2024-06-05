@@ -511,10 +511,20 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   return true;
 }
 
+// Following routine generates IR corresponding to AbstractShuffle::partiallyWrapIndex method,
+// which partially wraps index by modulo VEC_LENGTH and generates a negative index value if original
+// index is out of valid index range [0, VEC_LENGTH)
+//
+//   wrapped_index = (VEC_LENGTH - 1) & index
+//   if (index u> VEC_LENGTH) {
+//     wrapped_index -= VEC_LENGTH;
+//
+// Note: Unsigned greater than comparison treat both <0 and >VEC_LENGTH indices as out-of-bound
+// indexes.
 Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
   assert(elem_bt == T_BYTE, "");
-  const TypeVect * vt  = TypeVect::make(elem_bt, num_elem);
-  const Type * type_bt = Type::get_const_basic_type(elem_bt);
+  const TypeVect* vt  = TypeVect::make(elem_bt, num_elem);
+  const Type* type_bt = Type::get_const_basic_type(elem_bt);
 
   Node* mod_val = gvn().makecon(TypeInt::make(num_elem-1));
   Node* bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
@@ -617,9 +627,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
 
   if (do_wrap)  {
     // Wrap the indices greater than lane count.
-     res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
+    res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
   } else {
-     res = partially_wrap_indexes(res, num_elem, elem_bt);
+    res = partially_wrap_indexes(res, num_elem, elem_bt);
   }
 
   ciKlass* sbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2305,6 +2315,8 @@ bool LibraryCallKit::inline_vector_convert() {
        !arch_supports_vector(Op_VectorMaskCmp, num_elem_to, elem_bt_to, VecMaskNotUsed)   ||
        !arch_supports_vector(Op_AndV, num_elem_to, elem_bt_to, VecMaskNotUsed)            ||
        !arch_supports_vector(Op_Replicate, num_elem_to, elem_bt_to, VecMaskNotUsed))) {
+    log_if_needed("  ** not supported: arity=1 op=shuffle_index_wrap vlen2=%d etype2=%s",
+                    num_elem_to, type2name(elem_bt_to));
     return false;
   }
 
