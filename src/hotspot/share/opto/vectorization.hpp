@@ -1378,6 +1378,7 @@ public:
   Node* node() const { return _node; }
   uint vector_length() const { return _vector_length; }
   uint vector_width() const { return _vector_width; }
+  NOT_PRODUCT( void trace(VTransformNode* vtn) const; )
 };
 
 class VTransformGraph : public StackObj {

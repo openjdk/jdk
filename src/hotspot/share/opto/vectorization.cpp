@@ -1864,19 +1864,28 @@ void VTransformGraph::apply() {
 #endif
 
   assert(cl()->is_main_loop(), "auto vectorization only for main loops");
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl());
 
   apply_memops_reordering_with_schedule();
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl());
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
-
   apply_vectorization();
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl());
 }
+
+#ifndef PRODUCT
+void VTransformApplyStatus::trace(VTransformNode* vtn) const {
+  tty->print("  apply: ");
+  vtn->print();
+  tty->print("    ->   ");
+  if (_node == nullptr) {
+    tty->print_cr("nullptr");
+  } else {
+    _node->dump();
+  }
+}
+#endif
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes
 // with vector nodes.
@@ -1888,10 +1897,10 @@ void VTransformGraph::apply_vectorization() const {
 #endif
 
   ResourceMark rm;
-  int length = _vtnodes.length();
   // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
   // Since "apply" is called on defs before uses, this allows us to find the
   // generated def (input) nodes when we are generating the use nodes in "apply".
+  int length = _vtnodes.length();
   GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
 
   uint max_vector_length = 0; // number of elements
@@ -1901,25 +1910,11 @@ void VTransformGraph::apply_vectorization() const {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyStatus status = vtn->apply(_vloop_analyzer,
                                               vnode_idx_to_transformed_node);
-    Node* n            = status.node();
-    uint vector_length = status.vector_length();
-    uint vector_width  = status.vector_width();
-#ifndef PRODUCT
-    if (_is_trace_verbose) {
-      tty->print("  apply: ");
-      vtn->print();
-      tty->print("    ->   ");
-      if (n == nullptr) {
-        tty->print_cr("nullptr");
-      } else {
-        n->dump();
-      }
-    }
-#endif
+    NOT_PRODUCT( if (_is_trace_verbose) { status.trace(vtn); } )
 
-    vnode_idx_to_transformed_node.at_put(vtn->_idx, n);
-    max_vector_length = MAX2(max_vector_length, vector_length);
-    max_vector_width  = MAX2(max_vector_width,  vector_width);
+    vnode_idx_to_transformed_node.at_put(vtn->_idx, status.node());
+    max_vector_length = MAX2(max_vector_length, status.vector_length());
+    max_vector_width  = MAX2(max_vector_width,  status.vector_width());
   }
 
   assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
