@@ -122,6 +122,6 @@ public class UnmodifiableHeaders extends Headers {
 
     @Override
     public String toString() {
-        return this.headers.toString();
+        return headers.toString();
     }
 }
