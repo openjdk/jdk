@@ -124,6 +124,9 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = nullptr;
 
+// True if -Xlog:perf+class+link was specified
+bool Arguments::_perf_class_link = false;
+
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
@@ -3764,14 +3767,12 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  if (log_is_enabled(Info, init)) {
-    FLAG_SET_ERGO_IF_DEFAULT(ProfileClassLinkage, true);
-  }
-
-  if (ProfileClassLinkage && !UsePerfData) {
-    if (!FLAG_IS_DEFAULT(ProfileClassLinkage)) {
-       warning("Disabling ProfileClassLinkage since UsePerfData is turned off.");
-       FLAG_SET_DEFAULT(ProfileClassLinkage, false);
+  if (log_is_enabled(Info, perf, class, link)) {
+    if (!UsePerfData) {
+      warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+    } else {
+      _perf_class_link = true;
     }
   }
 

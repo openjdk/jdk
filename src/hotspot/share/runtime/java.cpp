@@ -158,11 +158,9 @@ static void print_method_profiling_data() {
 }
 
 void log_vm_stats(outputStream *st) {
-  LogStreamHandle(Info, init) log;
+  LogStreamHandle(Info, perf, class, link) log;
   if (log.is_enabled()) {
-    if (ProfileClassLinkage) {
-      ClassLoader::print_counters(st);
-    }
+    ClassLoader::print_counters(st);
   }
 }
 

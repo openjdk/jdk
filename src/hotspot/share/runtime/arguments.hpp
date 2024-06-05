@@ -252,6 +252,9 @@ class Arguments : AllStatic {
   // preview features
   static bool _enable_preview;
 
+  // true if -Xlog:perf+class+link is specified, default to false
+  static bool _perf_class_link;
+
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
   static bool _UseOnStackReplacement;
@@ -484,6 +487,8 @@ class Arguments : AllStatic {
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_boot_class_path() { return _boot_class_path->value(); }
   static bool has_jimage() { return _has_jimage; }
+
+  static bool perf_class_link() { return _perf_class_link; }
 
   static char* get_java_home()    { return _java_home->value(); }
   static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
