@@ -48,14 +48,14 @@ public class TemplateGenerator {
             "-XX:-TieredCompilation",
             "-XX:-CreateCoredumpOnCrash"
     };
-    private Method testMethod;
+    private static Method testMethod;
     static final int TIMEOUT = 60;
     static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
     static final int TESTS_PER_TASK = 10;
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 2;
     static final Random RAND = new Random();
 
-    public void main() throws NoSuchMethodException {
+    public static void main(String[] args) throws NoSuchMethodException {
         testMethod = TemplateGenerator.class.getMethod("genNewTest", BigInteger.class, int.class, int.class, int.class, String.class);
 
         ThreadPoolExecutor threadPool = initializeThreadPool();
@@ -77,7 +77,7 @@ public class TemplateGenerator {
         return threadPool;
     }
 
-    public List<Object[]> generateParameterValues() {
+    public static List<Object[]> generateParameterValues() {
         Integer[] integerValues = {
                 -2, -1, 0, 1, 2,
                 Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
@@ -149,7 +149,7 @@ public class TemplateGenerator {
         return numCases;
     }
 
-    private void submitTestTasks(List<Object[]> values, ThreadPoolExecutor threadPool) {
+    private static void submitTestTasks(List<Object[]> values, ThreadPoolExecutor threadPool) {
         BigInteger num = BigInteger.ZERO;
         BigInteger numCases = computeTotalTestCases(values);
         while (num.compareTo(numCases) < 0) {
@@ -188,7 +188,7 @@ public class TemplateGenerator {
         return res;
     }
 
-    public void doWork(ArrayList<Object[]> testCases) {
+    public static void doWork(ArrayList<Object[]> testCases) {
         try {
             CodeSegments segments = prepareCodeSegments(testCases);
             String javaCode = assembleJavaCode(segments);
@@ -200,7 +200,7 @@ public class TemplateGenerator {
         }
     }
 
-    private CodeSegments prepareCodeSegments(ArrayList<Object[]> testCases) {
+    private static CodeSegments prepareCodeSegments(ArrayList<Object[]> testCases) {
         String statics = "";
         StringBuilder calls = new StringBuilder();
         StringBuilder methods = new StringBuilder();

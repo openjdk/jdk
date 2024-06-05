@@ -20,3 +20,5 @@ NashornProfile.txt
 /.settings/
 /compile_commands.json
 /.cache
+/test/hotspot/jtreg/compiler/lib/test_generator/out
+test/hotspot/jtreg/compiler/lib/test_generator/test_generator.iml
