@@ -40,14 +40,6 @@ inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
 }
 
-inline bool PSParallelCompact::is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return p >= beg_addr && p < end_addr;
-}
-
-inline bool PSParallelCompact::is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return is_in((HeapWord*)p, beg_addr, end_addr);
-}
-
 inline MutableSpace* PSParallelCompact::space(SpaceId id) {
   assert(id < last_space_id, "id out of range");
   return _space_info[id].space();
