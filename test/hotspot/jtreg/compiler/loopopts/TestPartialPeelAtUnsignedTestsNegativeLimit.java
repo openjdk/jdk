@@ -52,11 +52,15 @@
 /*
  * @test id=vanilla
  * @bug 8332920
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ *          Only run this test with C2 since it is time-consuming and only tests a C2 issue.
  * @run main compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
 package compiler.loopopts;
+
+import java.util.Random;
 
 import static java.lang.Integer.*;
 
@@ -65,6 +69,7 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
     static int iterations = 0;
     static int iFld2;
     static boolean flag;
+    final static Random RANDOM = new Random();
 
     public static void main(String[] args) {
         compareUnsigned(3, 3); // Load Integer class for -Xcomp
@@ -210,6 +215,9 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
         check(MIN_VALUE); // MAX_VALUE + 1 iterations
         testWhileLTIncr(-1, 1);
         check(0);
+        testWhileLTIncr(0, 0);
+        check(0);
+        checkIncrWithRandom(0, 0); // Sanity check this method.
         flag = !flag; // Change profiling
         testWhileLTIncr(MAX_VALUE - 2000, MAX_VALUE);
         check(2000);
@@ -234,6 +242,12 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
         check(2001);
         testWhileLTIncr(MAX_VALUE - 2000, MIN_VALUE + 2000);
         check(4001);
+
+        // Random values
+        int init = RANDOM.nextInt(0, MAX_VALUE);
+        int limit = RANDOM.nextInt(MIN_VALUE, 0);
+        testWhileLTIncr(init, limit);
+        checkIncrWithRandom(init, limit);
     }
 
     public static void runWhileLTDecr() {
@@ -242,6 +256,9 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
         check(2);
         testWhileLTDecr(-1, 1);
         check(0);
+        testWhileLTDecr(0, 0);
+        check(0);
+        checkDecrWithRandom(0, 0); // Sanity check this method.
         flag = !flag;
         testWhileLTDecr(MAX_VALUE, MIN_VALUE);
         check(MIN_VALUE); // MAX_VALUE + 1 iterations
@@ -268,11 +285,42 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
         check(MIN_VALUE + 2001); // MAX_VALUE + 2002 iterations
         testWhileLTDecr(MIN_VALUE + 2000, MIN_VALUE + 2001);
         check(MIN_VALUE + 2001); // MAX_VALUE + 2002 iterations
+
+        // Random values
+        int r1 = RANDOM.nextInt(MIN_VALUE, 0);
+        int r2 = RANDOM.nextInt(MIN_VALUE, 0);
+        int init = Math.min(r1, r2);
+        int limit = Math.max(r1, r2);
+        testWhileLTDecr(init, limit);
+        checkDecrWithRandom(init, limit);
     }
 
     static void check(int expectedIterations) {
         if (expectedIterations != iterations) {
             throw new RuntimeException("Expected " + expectedIterations + " iterations but only got " + iterations);
+        }
+        iterations = 0; // Reset
+    }
+
+    static void checkIncrWithRandom(long init, long limit) {
+        long expectedIterations = ((long)(MAX_VALUE) - init) + (limit - (long)MIN_VALUE) + 1;
+        if ((int)expectedIterations != iterations) {
+            String error = "Expected %d iterations but only got %d, init: %d, limit: %d"
+                            .formatted(expectedIterations, iterations, init, limit);
+            throw new RuntimeException(error);
+        }
+        iterations = 0; // Reset
+    }
+
+    static void checkDecrWithRandom(long init, long limit) {
+        long expectedIterations = init + MIN_VALUE + MAX_VALUE + 2;
+        if (init == limit) {
+            expectedIterations = 0;
+        }
+        if ((int)expectedIterations != iterations) {
+            String error = "Expected %d iterations but only got %d, init: %d, limit: %d"
+                    .formatted(expectedIterations, iterations, init, limit);
+            throw new RuntimeException(error);
         }
         iterations = 0; // Reset
     }
