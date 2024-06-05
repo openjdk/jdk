@@ -81,7 +81,7 @@ public:
     outputStream* st = _session.out();
 #define INDENT_BY(n)          \
   if (st->fill_to(n) == 0) {  \
-	  st->print(" ");           \
+    st->print(" ");           \
   }
     st->print(PTR_FORMAT "-" PTR_FORMAT, p2i(info.from), p2i(info.to));
     INDENT_BY(38);
