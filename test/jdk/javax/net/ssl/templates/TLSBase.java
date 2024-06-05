@@ -138,7 +138,6 @@ abstract public class TLSBase {
         return tmf.getTrustManagers();
     }
 
-
     /**
      * Server constructor must be called before any client operation so the
      * tls server is ready.  There should be no timing problems as the
