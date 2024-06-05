@@ -26,9 +26,10 @@
  * @bug 8331736
  * @summary Check that C2 does not exceed max live node limit when splitting unique types of large allocation merge.
  * @library /test/lib /
- * @requires vm.debug & vm.flagless & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
+ * @requires vm.debug & vm.compiler2.enabled
  * @compile -XDstringConcat=inline TestScalarReplacementMaxLiveNodes.java
- * @run main/othervm -Xbatch -server -XX:-OptimizeStringConcat -XX:-TieredCompilation
+ * @run main/othervm compiler.c2.TestScalarReplacementMaxLiveNodes
+ * @run main/othervm -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+ReduceAllocationMerges
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestScalarReplacementMaxLiveNodes::test
  *                   -XX:CompileCommand=compileonly,*TestScalarReplacementMaxLiveNodes*::*test*
