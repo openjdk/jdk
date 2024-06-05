@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -147,6 +148,69 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  The reader associated with this console
      */
     public Reader reader() {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream, terminates the line using {@link System#lineSeparator()}
+     * and then flushes the console.
+     *
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream and then flushes the console.
+     *
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console print(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a prompt as if by calling {@code print}, then reads a single line
+     * of text from this console.
+     *
+     * @param  prompt
+     *         A prompt string, may be {@code null}.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln(String prompt) {
         throw newUnsupportedOperationException();
     }
 
@@ -572,7 +636,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         CHARSET = cs;
 
-        cons = instantiateConsole(istty);
+        cons = instantiateConsole();
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
@@ -583,7 +647,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     @SuppressWarnings("removal")
-    private static Console instantiateConsole(boolean istty) {
+    private static Console instantiateConsole() {
         Console c;
 
         try {
@@ -591,24 +655,29 @@ public sealed class Console implements Flushable permits ProxyingConsole {
              * The JdkConsole provider used for Console instantiation can be specified
              * with the system property "jdk.console", whose value designates the module
              * name of the implementation, and which defaults to the value of
-             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If no
-             * providers are available, or instantiation failed, java.base built-in
+             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If multiple
+             * provider implementations exist in that module, the first one found is used.
+             * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            PrivilegedAction<Console> pa = () -> {
-                var consModName = System.getProperty("jdk.console",
-                        JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
-                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                        .map(jcp -> jcp.console(istty, CHARSET))
-                        .filter(Objects::nonNull)
-                        .findAny()
-                        .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(null);
-            };
-            c = AccessController.doPrivileged(pa);
-        } catch (ServiceConfigurationError ignore) {
+            c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
+                public Console run() {
+                    var consModName = System.getProperty("jdk.console",
+                            JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+
+                    for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                        if (consModName.equals(jcp.getClass().getModule().getName())) {
+                            var jc = jcp.console(istty, CHARSET);
+                            if (jc != null) {
+                                return new ProxyingConsole(jc);
+                            }
+                            break;
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (ServiceConfigurationError _) {
             c = null;
         }
 

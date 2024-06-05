@@ -1739,17 +1739,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   if (nl != nullptr) *nl = '\0';
 }
 
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
-}
-
 static inline time_t get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);

@@ -28,6 +28,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memflags.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -272,6 +273,13 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 }
 
 void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
+
+  // NMT reports may be triggered (as part of error handling) very early. Make sure
+  // Metaspace is already initialized.
+  if (!Metaspace::initialized()) {
+    return;
+  }
+
   assert(type == Metaspace::NonClassType || type == Metaspace::ClassType,
     "Invalid metadata type");
   const char* name = (type == Metaspace::NonClassType) ?
@@ -875,4 +883,13 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   }
 
   out->print_cr(")\n");
- }
+}
+
+void MemDetailReporter::report_memory_file_allocations() {
+  stringStream st;
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
+  }
+  output()->print_raw(st.freeze());
+}
