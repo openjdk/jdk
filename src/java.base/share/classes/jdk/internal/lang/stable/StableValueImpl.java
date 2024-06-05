@@ -26,19 +26,20 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static jdk.internal.lang.stable.StableUtil.*;
-
 public final class StableValueImpl<T> implements StableValue<T> {
+
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    private static final Object NULL_SENTINEL = new Object();
 
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
@@ -86,14 +87,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value != null;
     }
 
-    @Override
-    public void ifSet(Consumer<? super T> action) {
-        T t = value;
-        if (t != null) {
-            action.accept(unwrap(t));
-        }
-    }
-
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
@@ -112,29 +105,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
                 return unwrap(t);
             }
             t = supplier.get();
-            trySet(t);
-            return orElseThrow();
-        }
-    }
-
-    @ForceInline
-    @Override
-    public <I> T computeIfUnset(I input, Function<? super I, ? extends T> mapper) {
-        final T t = value;
-        if (t != null) {
-            return unwrap(t);
-        }
-        return compute(input, mapper);
-    }
-
-    @DontInline
-    private <I> T compute(I input, Function<? super I, ? extends T> mapper) {
-        synchronized (mutex) {
-            T t = value;
-            if (t != null) {
-                return unwrap(t);
-            }
-            t = mapper.apply(input);
             trySet(t);
             return orElseThrow();
         }
@@ -166,8 +136,21 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return t == nullSentinel() ? null : t;
     }
 
+    @SuppressWarnings("unchecked")
+    static <T> T nullSentinel() {
+        return (T) NULL_SENTINEL;
+    }
+
+    static <T> String render(T t) {
+        if (t != null) {
+            return t == nullSentinel() ? "[null]" : "[" + t + "]";
+        }
+        return ".unset";
+    }
+
+
     // Factory
-    public static <T> StableValueImpl<T> of() {
+    public static <T> StableValueImpl<T> newInstance() {
         return new StableValueImpl<>();
     }
 

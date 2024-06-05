@@ -25,21 +25,10 @@
 
 package jdk.internal.lang;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 
-import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A thin, atomic, thread-safe, set-at-most-once, stable value holder eligible for
@@ -49,8 +38,66 @@ import java.util.stream.Stream;
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
  <p>
- * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#of()}
+ * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
+ * <p>
+ * A List of stable values with a given {@code size} can be created the following way:
+ * {@snippet lang = java :
+ *     List<StableValue<E>> list = Stream.generate(StableValue::<E>newInstance)
+ *             .limit(size)
+ *             .toList();
+ * }
+ * The list can be used to model stable arrays of one dimensions. If two or more
+ * dimensional arrays are to be modeled, List of List of ... of StableValue can be used.
+ * <p>
+ * A Map of stable values with a given set of {@code keys} can be created like this:
+ * {@snippet lang = java :
+ *     Map<K, StableValue<V>> map = keys.stream()
+ *                 .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+ * }
+ * A memoized Supplier, where the given {@code original} supplier is guaranteed to be
+ * successfully invoked at most once even in a multi-threaded environment, can be
+ * created like this:
+ * {@snippet lang = java :
+ *     static <T> Supplier<T> memoizedSupplier(Supplier<T> original) {
+ *         Objects.requireNonNull(original);
+ *         final StableValue<T> stable = StableValue.newInstance();
+ *         return () -> stable.computeIfUnset(original);
+ *     }
+ * }
+ * A memoized IntFunction, for the allowed given {@code size} values and where the
+ * given {@code original} IntFunction is guaranteed to be successfully invoked at most
+ * once per inout index even in a multi-threaded environment, can be created like this:
+ * {@snippet lang = java :
+ *     static <R> IntFunction<R> memoizedIntFunction(int size,
+ *                                                   IntFunction<? extends R> original) {
+ *         List<StableValue<R>> backing = Stream.generate(StableValue::<R>newInstance)
+ *                 .limit(size)
+ *                 .toList();
+ *         return i -> backing.get(i)
+ *                       .computeIfUnset(() -> original.apply(i));
+ *     }
+ * }
+ * A memoized Function, for the allowed given {@code input} values and where the
+ * given {@code original} function is guaranteed to be successfully invoked at most
+ * once per input value even in a multi-threaded environment, can be created like this:
+ * {@snippet lang = java :
+ *     static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
+ *                                                   Function<? super T, ? extends R> original) {
+ *         Map<T, StableValue<R>> backing = inputs.stream()
+ *                 .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+ *         return t -> {
+ *             if (!backing.containsKey(t)) {
+ *                 throw new IllegalArgumentException("Input not allowed: "+t);
+ *             }
+ *             return backing.get(t)
+ *                         .computeIfUnset(() -> original.apply(t));
+ *         };
+ *     }
+ * }
+ * <p>
+ * The constructs above are eligible for similar JVM optimizations as the StableValue
+ * itself.
  * <p>
  * All methods that can set the stable value's value are guarded such that competing
  * set operations (by other threads) will block if another set operation is
@@ -61,7 +108,7 @@ import java.util.stream.Stream;
  *
  * @param <T> type of the wrapped value
  *
- * @since 23
+ * @since 24
  */
 public sealed interface StableValue<T>
         permits StableValueImpl {
@@ -96,14 +143,6 @@ public sealed interface StableValue<T>
     boolean isSet();
 
     /**
-     * If a value is set, performs the given action with the set value,
-     * otherwise does nothing.
-     *
-     * @param action the action to be performed, if a value is set
-     */
-    void ifSet(Consumer<? super T> action);
-
-    /**
      * If the stable value is unset, attempts to compute its value using the given
      * supplier function and enters it into this stable value.
      *
@@ -135,43 +174,6 @@ public sealed interface StableValue<T>
      */
     T computeIfUnset(Supplier<? extends T> supplier);
 
-    /**
-     * If the stable value is unset, attempts to compute its value using the given
-     * {@code input} parameter and the provided {@code mapper} function and enters
-     * it into this stable value.
-     *
-     * <p>If the mapper function itself throws an (unchecked) exception, the exception
-     * is rethrown, and no value is set. The most common usage is to construct a new
-     * object serving as an initial value or memoized result in a {@code mop}, as in:
-     *
-     * <pre> {@code
-     * Map<K, StableValue<T>> map = ...
-     * K key = ...
-     * T t = map.get(key).computeIfUnset(key, k -> new T(k));
-     * }</pre>
-     *
-     * @implSpec
-     * The default implementation is equivalent to the following steps for this
-     * {@code stable} value:
-     *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.getOrThrow();
-     * }
-     * T newValue = mapper.apply(input);
-     * stable.trySet(newValue);
-     * return newValue;
-     * }</pre>
-     * Except, the method is atomic and thread-safe.
-     *
-\    * @param input to be used with the provided {@code mapper}
-     * @param mapper the mapping function to compute a value from the {@code input}
-     * @return the current (existing or computed) value associated with
-     *         the stable value
-     */
-    <I> T computeIfUnset(I input, Function<? super I, ? extends T> mapper);
-
-
     // Convenience methods
 
     /**
@@ -189,121 +191,15 @@ public sealed interface StableValue<T>
     }
 
 
-
-    // Factories
+    // Factory
 
     /**
-     * {@return a fresh stable value with an unset ({@code null}) value}
+     * {@return a fresh stable value with an unset value}
      *
      * @param <T> the value type to set
      */
-    static <T> StableValue<T> of() {
-        return StableValueImpl.of();
+    static <T> StableValue<T> newInstance() {
+        return StableValueImpl.newInstance();
     }
-
-    /**
-     * {@return a lazily computed, atomic, thread-safe, set-at-most-once-per-index,
-     * List of stable elements eligible for certain JVM optimizations}
-     *
-     * @param size   the size of the returned list
-     * @param mapper to invoke when an element is to be computed
-     * @param <E> the {@code List}'s element type
-     */
-    static <E> List<E> ofList(int size,
-                              IntFunction<? extends E> mapper) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        if (size == 0) {
-            return List.of();
-        }
-        Objects.requireNonNull(mapper);
-        List<StableValue<E>> backing = Stream.generate(StableValue::<E>of)
-                .limit(size)
-                .toList();
-
-        return SharedSecrets.getJavaUtilCollectionAccess()
-                .listFromStable(backing, mapper);
-    };
-
-    /**
-     * {@return a lazily computed, atomic, thread-safe, set-at-most-once-per-key,
-     * Map of stable elements eligible for certain JVM optimizations}
-     * @param keys   the keys in the {@code Map}
-     * @param mapper to invoke when a value is to be computed
-     * @param <K> the {@code Map}'s key type
-     * @param <V> the {@code Map}'s value type
-     */
-    static <K, V> Map<K, V> ofMap(Set<K> keys,
-                                  Function<? super K, ? extends V> mapper) {
-        Objects.requireNonNull(keys);
-        Objects.requireNonNull(mapper);
-        Map<K, StableValue<V>> backing = keys.stream()
-                .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
-        return SharedSecrets.getJavaUtilCollectionAccess()
-                .mapFromStable(backing, mapper);
-    }
-
-    /**
-     * {@return a new thread-safe, stable, lazily computed {@linkplain Supplier supplier}
-     * that records the value of the provided {@code original} supplier upon being first
-     * accessed via {@linkplain Supplier#get()}}
-     * <p>
-     * The provided {@code original} supplier is guaranteed to be successfully invoked
-     * at most once even in a multi-threaded environment. Competing threads invoking the
-     * {@linkplain Supplier#get()} method when a value is already under computation
-     * will block until a value is computed or an exception is thrown by the
-     * computing thread.
-     * <p>
-     * If the {@code original} Supplier invokes the returned Supplier recursively,
-     * a StackOverflowError will be thrown when the returned
-     * Supplier's {@linkplain Function#apply(Object)}} method is invoked.
-     * <p>
-     * If the provided {@code original} supplier throws an exception, it is relayed
-     * to the initial caller. Subsequent read operations will incur a new invocation
-     * of the provided {@code original}.
-     *
-     * @param original supplier
-     * @param <T> the type of results supplied by the returned supplier
-     */
-    static <T> Supplier<T> memoizedSupplier(Supplier<T> original) {
-        Objects.requireNonNull(original);
-        final StableValue<T> stable = StableValue.of();
-        return () -> stable.computeIfUnset(original);
-    }
-
-    /**
-     * {@return a memoized IntFunction backed by a {@linkplain #ofList(int, IntFunction)
-     * stable list} where the provided {@code original} will be invoked at most once per
-     * index}
-     * @param size     the allowed input values, [0, size)
-     * @param original to invoke when an element is to be computed
-     * @param <R>      the type of the result of the function
-     */
-    static <R> IntFunction<R> memoizedIntFunction(int size,
-                                                  IntFunction<? extends R> original) {
-        return ofList(size, original)::get;
-    }
-
-    /**
-     * {@return a memoized Function backed by a {@linkplain #ofMap(Set, Function)
-     * stable map} where the provided {@code original} will be invoked at most once per
-     * index}
-     * @param inputs   the allowed input values
-     * @param original to invoke when an element is to be computed
-     * @param <T> the type of the input to the function
-     * @param <R> the type of the result of the function
-     */
-    static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
-                                                  Function<? super T, ? extends R> original) {
-        final Map<T, R> backing = ofMap(inputs, original);
-        return t -> {
-            if (!backing.containsKey(t)) {
-                throw new IllegalArgumentException("Input not allowed: "+t);
-            }
-            return backing.get(t);
-        };
-    }
-
 
 }

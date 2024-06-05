@@ -45,10 +45,10 @@ final class TrustedFieldTypeTest {
     @Test
     void reflection() throws NoSuchFieldException {
         final class Holder {
-            private final StableValue<Integer> value = StableValue.of();
+            private final StableValue<Integer> value = StableValue.newInstance();
         }
         final class HolderNonFinal {
-            private StableValue<Integer> value = StableValue.of();
+            private StableValue<Integer> value = StableValue.newInstance();
         }
 
         Field valueField = Holder.class.getDeclaredField("value");
@@ -66,7 +66,7 @@ final class TrustedFieldTypeTest {
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
 
         final class Holder {
-            private final StableValue<Integer> value = StableValue.of();
+            private final StableValue<Integer> value = StableValue.newInstance();
         }
 
         Field valueField = Holder.class.getDeclaredField("value");
@@ -80,7 +80,7 @@ final class TrustedFieldTypeTest {
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-        StableValue<Integer> originalValue = StableValue.of();
+        StableValue<Integer> originalValue = StableValue.newInstance();
 
         final class Holder {
             private final StableValue<Integer> value = originalValue;
@@ -90,11 +90,11 @@ final class TrustedFieldTypeTest {
         Holder holder = new Holder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.set(holder, StableValue.of())
+                valueVarHandle.set(holder, StableValue.newInstance())
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.compareAndSet(holder, originalValue, StableValue.of())
+                valueVarHandle.compareAndSet(holder, originalValue, StableValue.newInstance())
         );
 
     }

@@ -25,16 +25,9 @@
 
 package jdk.internal.access;
 
-import jdk.internal.lang.StableValue;
-
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 
 public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
-    <E> List<E> listFromStable(List<StableValue<E>> delegate, IntFunction<? extends E> mapper);
-    <K, V> Map<K, V> mapFromStable(Map<K, StableValue<V>> delegate, Function<? super K, ? extends V> mapper);
 }

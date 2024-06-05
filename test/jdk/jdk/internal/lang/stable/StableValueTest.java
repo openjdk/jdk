@@ -39,9 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +48,7 @@ final class StableValueTest {
 
     @Test
     void unset() {
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         assertNull(stable.orElse(null));
         assertThrows(NoSuchElementException.class, stable::orElseThrow);
         assertEquals("StableValue.unset", stable.toString());
@@ -62,7 +60,7 @@ final class StableValueTest {
 
     @Test
     void setNull() {
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         assertTrue(stable.trySet(null));
         assertEquals("StableValue[null]", stable.toString());
         assertNull(stable.orElse(13));
@@ -72,7 +70,7 @@ final class StableValueTest {
 
     @Test
     void setNonNull() {
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         assertTrue(stable.trySet(42));
         assertEquals("StableValue[42]", stable.toString());
         assertEquals(42, stable.orElse(null));
@@ -84,7 +82,7 @@ final class StableValueTest {
 
     @Test
     void computeIfUnset() {
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         assertEquals(42, stable.computeIfUnset(() -> 42));
         assertEquals(42, stable.computeIfUnset(() -> 13));
         assertEquals("StableValue[42]", stable.toString());
@@ -96,7 +94,7 @@ final class StableValueTest {
 
     @Test
     void computeIfUnsetException() {
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         Supplier<Integer> supplier = () -> {
             throw new UnsupportedOperationException("aaa");
         };
@@ -112,8 +110,8 @@ final class StableValueTest {
 
     @Test
     void testHashCode() {
-        StableValue<Integer> s0 = StableValue.of();
-        StableValue<Integer> s1 = StableValue.of();
+        StableValue<Integer> s0 = StableValue.newInstance();
+        StableValue<Integer> s1 = StableValue.newInstance();
         assertEquals(s0.hashCode(), s1.hashCode());
         s0.setOrThrow(42);
         s1.setOrThrow(42);
@@ -122,13 +120,13 @@ final class StableValueTest {
 
     @Test
     void testEquals() {
-        StableValue<Integer> s0 = StableValue.of();
-        StableValue<Integer> s1 = StableValue.of();
+        StableValue<Integer> s0 = StableValue.newInstance();
+        StableValue<Integer> s1 = StableValue.newInstance();
         assertEquals(s0, s1);
         s0.setOrThrow(42);
         s1.setOrThrow(42);
         assertEquals(s0, s1);
-        StableValue<Integer> other = StableValue.of();
+        StableValue<Integer> other = StableValue.newInstance();
         other.setOrThrow(13);
         assertNotEquals(s0, other);
         assertNotEquals(s0, "a");
@@ -176,7 +174,7 @@ final class StableValueTest {
     void race(BiPredicate<StableValue<Integer>, Integer> winnerPredicate) {
         int noThreads = 10;
         CountDownLatch starter = new CountDownLatch(1);
-        StableValue<Integer> stable = StableValue.of();
+        StableValue<Integer> stable = StableValue.newInstance();
         BitSet winner = new BitSet(noThreads);
         List<Thread> threads = IntStream.range(0, noThreads).mapToObj(i -> new Thread(() -> {
                     try {

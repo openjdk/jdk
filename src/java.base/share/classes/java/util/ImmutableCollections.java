@@ -34,14 +34,11 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import jdk.internal.ValueBased;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.StableValue;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
@@ -129,14 +126,6 @@ class ImmutableCollections {
                 }
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
-                }
-                public <E> List<E> listFromStable(List<StableValue<E>> delegate,
-                                                  IntFunction<? extends E> mapper) {
-                    return new StableList<>(delegate, mapper);
-                }
-                public <K, V> Map<K, V> mapFromStable(Map<K, StableValue<V>> delegate,
-                                                      Function<? super K, ? extends V> mapper) {
-                    return new StableMap<>(delegate, mapper);
                 }
             });
         }
@@ -1371,150 +1360,6 @@ class ImmutableCollections {
             }
             return new CollSer(CollSer.IMM_MAP, array);
         }
-    }
-
-    @ValueBased
-    static final class StableList<E> extends AbstractImmutableList<E> {
-
-        private final List<StableValue<E>> delegate;
-        private final IntFunction<? extends E> mapper;
-
-        public StableList(List<StableValue<E>> delegate,
-                          IntFunction<? extends E> mapper) {
-            this.delegate = delegate;
-            this.mapper = mapper;
-        }
-
-        @Override
-        public int size() {
-            return delegate.size();
-        }
-
-        @Override
-        public E get(int index) {
-            return delegate.get(index)
-                    .computeIfUnset(index, mapper::apply);
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            for (int i = 0; i < size(); i++) {
-                if (get(i).equals(o)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            for (int i = size() - 1; i >= 0; i--) {
-                if (get(i).equals(o)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-    }
-
-    static final class StableMap<K, V> extends AbstractImmutableMap<K, V> {
-
-        @Stable
-        private final Map<K, StableValue<V>> delegate;
-        @Stable
-        private final Function<? super K, ? extends V> mapper;
-
-        public StableMap(Map<K, StableValue<V>> delegate,
-                         Function<? super K, ? extends V> mapper) {
-            this.delegate = delegate;
-            this.mapper = mapper;
-        }
-
-        @Override
-        public boolean containsKey(Object o) {
-            Objects.requireNonNull(o);
-            return delegate.containsKey(o);
-        }
-
-        @Override
-        public boolean containsValue(Object o) {
-            return delegate.entrySet().stream()
-                    .anyMatch(e -> value(e).equals(o));
-        }
-
-        @Override
-        public int hashCode() {
-            return delegate.entrySet().stream()
-                    .reduce(0,
-                            (h, e) -> h + (e.getKey().hashCode()) ^ ((value(e)).hashCode()),
-                            (a, b) -> a);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public V get(Object o) {
-            StableValue<V> stable = delegate.get(o);
-            return stable == null
-                    ? null
-                    : stable.computeIfUnset((K)o, mapper);
-        }
-
-        @Override
-        public int size() {
-            return delegate.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return delegate.isEmpty();
-        }
-
-        final class StableMapIterator implements Iterator<Map.Entry<K,V>> {
-
-            @Stable
-            private final Iterator<Map.Entry<K, StableValue<V>>> delegateIterator;
-
-            StableMapIterator() {
-                delegateIterator = StableMap.this.delegate.entrySet().iterator();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return delegateIterator.hasNext();
-            }
-
-            @Override
-            public Map.Entry<K,V> next() {
-                Map.Entry<K, StableValue<V>> dNext = delegateIterator.next();
-                return new KeyValueHolder<>(dNext.getKey(), value(dNext));
-            }
-        }
-
-        @Override
-        public Set<Map.Entry<K,V>> entrySet() {
-            return new AbstractImmutableSet<>() {
-                @Override
-                public int size() {
-                    return StableMap.this.size();
-                }
-
-                @Override
-                public Iterator<Map.Entry<K,V>> iterator() {
-                    return new StableMap<K, V>.StableMapIterator();
-                }
-
-                @Override
-                public int hashCode() {
-                    return StableMap.this.hashCode();
-                }
-            };
-        }
-
-        // Unwraps a value
-        private V value(Entry<K, StableValue<V>> e) {
-            return e.getValue().computeIfUnset(e.getKey(), mapper);
-        }
-
     }
 
 }
