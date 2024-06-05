@@ -1777,13 +1777,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-  for (int i = 0; i < _vtnodes.length(); i++) {
-    VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dep()) {
-      stack.push(vtn);
-    }
-  }
+  schedule_collect_nodes_without_req_or_dep(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -1808,22 +1802,7 @@ bool VTransformGraph::schedule() {
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
           // circle.
-#ifndef PRODUCT
-          if (_is_trace_verbose) {
-            auto trace_circle_nodes = [&] (VTransformNode* n) {
-              bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
-              tty->print("  %s ", on_path ? "P" : "_");
-              n->print();
-            };
-            tty->print_cr("VTransformGraph::schedule found a cycle on path (P), vectorization attempt fails.");
-            tty->print_cr(" VTransformNodes on the stack:");
-            for (int j = 0; j < stack.length(); j++) {
-              trace_circle_nodes(stack.at(j));
-            }
-            tty->print_cr(" VTransformNode where the circle was detected:");
-            trace_circle_nodes(use);
-          }
-#endif
+          NOT_PRODUCT(if (_is_trace_rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
         stack.push(use);
@@ -1850,6 +1829,30 @@ bool VTransformGraph::schedule() {
   assert(rpo_idx == -1, "used up all rpo_idx, rpo_idx=%d", rpo_idx);
   return true;
 }
+
+// Push all "root" nodes, i.e. those that have no inputs (req or dependency):
+void VTransformGraph::schedule_collect_nodes_without_req_or_dep(GrowableArray<VTransformNode*>& stack) const {
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    if (!vtn->has_req_or_dep()) {
+      stack.push(vtn);
+    }
+  }
+}
+
+#ifndef PRODUCT
+void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
+                                           const VectorSet& pre_visited,
+                                           const VectorSet& post_visited) const {
+  tty->print_cr("\nVTransformGraph::schedule found a cycle on path (P), vectorization attempt fails.");
+  for (int j = 0; j < stack.length(); j++) {
+    VTransformNode* n = stack.at(j);
+    bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
+    tty->print("  %s ", on_path ? "P" : "_");
+    n->print();
+  }
+}
+#endif
 
 // Invoke callback on all memops, in the order of the schedule.
 template<typename Callback>

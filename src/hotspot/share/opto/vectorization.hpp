@@ -1461,6 +1461,8 @@ private:
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
+  void schedule_collect_nodes_without_req_or_dep(GrowableArray<VTransformNode*>& stack) const;
+
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
@@ -1476,6 +1478,9 @@ private:
   void print_vtnodes() const;
   void print_schedule() const;
   void print_memops_schedule() const;
+  void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
+                            const VectorSet& pre_visited,
+                            const VectorSet& post_visited) const;
 #endif
 };
 
