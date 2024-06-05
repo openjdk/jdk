@@ -113,11 +113,23 @@ NativeCall* nativeCall_before(address return_address);
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
 class NativeCall: private NativeInstruction {
+ // private: when common code is using byte_size()
  public:
   enum {
-    instruction_size = 3 * Assembler::instruction_size,
+    // Use byte_size() as it can be changed in runtime
+    // Since instruction_size exists on NativeInstruction we need
+    // to overload and hide it.
+    instruction_size = 3 * Assembler::instruction_size // auipc + ld + jalr
   };
+ public:
 
+  static int byte_size() {
+    if (!UseTrampolines) {
+      return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
+    } else {
+      return NativeInstruction::instruction_size; // jal
+    }
+  }
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);
