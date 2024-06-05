@@ -216,13 +216,13 @@ public class DeflaterInputStream extends FilterInputStream {
      * skipped.
      *
      * @implNote
-     * If {@code n} is greater than {@link Integer#MAX_VALUE} then this method
-     * will only skip at most {@code Integer.MAX_VALUE} bytes.
+     * This method skips at most {@code Integer.MAX_VALUE} bytes.
      *
-     * @param n number of bytes to be skipped
-     * @return the actual number of bytes skipped
+     * @param n number of bytes to be skipped. If {@code n} is zero then no bytes are skipped.
+     * @return the actual number of bytes skipped, which might be zero
      * @throws IOException if an I/O error occurs or if this stream is
-     * already closed
+     *                     already closed
+     * @throws IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {
         if (n < 0) {

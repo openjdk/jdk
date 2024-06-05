@@ -212,12 +212,12 @@ public class InflaterInputStream extends FilterInputStream {
      * skipped.
      *
      * @implNote
-     * If {@code n} is greater than {@link Integer#MAX_VALUE} then this method
-     * will only skip at most {@code Integer.MAX_VALUE} bytes.
+     * This method skips at most {@code Integer.MAX_VALUE} bytes.
      *
-     * @param n the number of bytes to skip
-     * @return the actual number of bytes skipped.
-     * @throws    IOException if an I/O error has occurred
+     * @param n the number of bytes to skip. If {@code n} is zero then no bytes are skipped.
+     * @return the actual number of bytes skipped, which might be zero
+     * @throws IOException if an I/O error occurs or if this stream is
+     *                     already closed
      * @throws    IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {
