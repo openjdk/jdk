@@ -228,7 +228,7 @@
  * instruction invoking {@code println} could have been generated with {@link
  * java.lang.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
- * java.lang.classfile.CodeBuilder#invokeInstruction(java.lang.classfile.Opcode,
+ * java.lang.classfile.CodeBuilder#invoke(java.lang.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or {@link
  * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassFileElement)

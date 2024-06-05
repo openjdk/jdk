@@ -51,8 +51,8 @@ public class T6716452 {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.CODE, CodeAttribute.class);
-        test(mm, Attributes.EXCEPTIONS, ExceptionsAttribute.class);
+        test(mm, Attributes.code(), CodeAttribute.class);
+        test(mm, Attributes.exceptions(), ExceptionsAttribute.class);
     }
 
     // test the result of MethodModel.findAttribute, MethodModel.attributes().indexOf() according to expectations

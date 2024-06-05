@@ -218,6 +218,8 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
+  int _skipped_instructions_size;
+
   int _stub_offset;
 
   // Offsets for different stubs section parts
@@ -232,7 +234,6 @@ class nmethod : public CodeBlob {
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
-  uint16_t _skipped_instructions_size;
 
   // Offsets in mutable data section
   // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,10 @@ public class JShellTool implements MessageHandler {
             return selectOptions(e -> e.getKey().showOption);
         }
 
+        boolean hasOption(OptionKind kind) {
+            return optMap.containsKey(kind);
+        }
+
         void addAll(OptionKind kind, Collection<String> vals) {
             optMap.computeIfAbsent(kind, k -> new ArrayList<>())
                     .addAll(vals);
@@ -470,7 +474,7 @@ public class JShellTool implements MessageHandler {
                     .map(mp -> mp.contains("=") ? mp : mp + "=ALL-UNNAMED")
                     .toList()
             );
-            if (options.has(argEnablePreview)) {
+            if (previewEnabled(options)) {
                 opts.addAll(OptionKind.ENABLE_PREVIEW, List.of(
                         OptionKind.ENABLE_PREVIEW.optionFlag));
                 opts.addAll(OptionKind.SOURCE_RELEASE, List.of(
@@ -488,6 +492,10 @@ public class JShellTool implements MessageHandler {
             } else {
                 return opts;
             }
+        }
+
+        boolean previewEnabled(OptionSet options) {
+            return options.has(argEnablePreview);
         }
 
         void addOptions(OptionKind kind, Collection<String> vals) {
@@ -627,7 +635,8 @@ public class JShellTool implements MessageHandler {
                 initialStartup = Startup.noStartup();
             } else {
                 String packedStartup = prefs.get(STARTUP_KEY);
-                initialStartup = Startup.unpack(packedStartup, new InitMessageHandler());
+                boolean preview = previewEnabled(options);
+                initialStartup = Startup.unpack(packedStartup, preview, new InitMessageHandler());
             }
             if (options.has(argExecution)) {
                 executionControlSpec = options.valueOf(argExecution);
@@ -2285,7 +2294,8 @@ public class JShellTool implements MessageHandler {
                 return false;
             }
         } else if (defaultOption) {
-            startup = Startup.defaultStartup(this);
+            boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
+            startup = Startup.defaultStartup(preview, this);
         } else if (noneOption) {
             startup = Startup.noStartup();
         }
@@ -2302,7 +2312,8 @@ public class JShellTool implements MessageHandler {
         StringBuilder sb = new StringBuilder();
         String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
-            Startup retainedStart = Startup.unpack(retained, this);
+            boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
+            Startup retainedStart = Startup.unpack(retained, preview, this);
             boolean currentDifferent = !startup.equals(retainedStart);
             sb.append(retainedStart.show(true));
             if (currentDifferent) {
