@@ -36,12 +36,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Class representing a difference between a jimage resource. For all intents
+ * Class representing a difference of a jimage resource. For all intents
  * and purposes this represents a difference between a resource in an optimized
  * jimage (e.g. images/jdk/lib/modules) and the underlying basic resources from
- * which the optimized image got derived from. The differences are being used
- * in JRTArchive so as to back-track from an optimized jimage to the original
- * (i.e. it restores original resources using the diff).
+ * which the optimized image got derived from (e.g. packaged modules). The
+ * differences are being used in JRTArchive so as to back-track from an optimized
+ * jimage to the original (i.e. it restores original resources using the diff).
  */
 public class ResourceDiff implements Comparable<ResourceDiff> {
 

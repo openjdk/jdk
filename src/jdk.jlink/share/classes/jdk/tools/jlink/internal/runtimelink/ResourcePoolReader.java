@@ -25,7 +25,6 @@ package jdk.tools.jlink.internal.runtimelink;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -46,7 +45,7 @@ public class ResourcePoolReader implements ImageResource {
 
     @Override
     public List<String> getEntries() {
-        return pool.entries().map(a -> a.path()).collect(Collectors.toList());
+        return pool.entries().map(a -> a.path()).toList();
     }
 
     @Override
