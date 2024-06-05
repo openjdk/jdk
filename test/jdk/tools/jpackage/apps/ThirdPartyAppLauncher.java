@@ -30,38 +30,40 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 public class ThirdPartyAppLauncher {
-	private static final Logger logger = Logger.getLogger(ThirdPartyAppLauncher.class.getName());
-	private static final String FS = File.separator;
-	private static final Path CWD = Paths.get(".");
-	private static final String processIdFilePath = CWD + FS + "process.tmp";
+    private static final Logger logger = Logger
+	    .getLogger(ThirdPartyAppLauncher.class.getName());
+    private static final String FS = File.separator;
+    private static final Path CWD = Paths.get(".");
+    private static final String processIdFilePath = CWD + FS + "process.tmp";
 
-	public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
 
-		ProcessBuilder processBuilder = new ProcessBuilder("regedit");
-		Process process = processBuilder.start();
-		logger.info("RegEdit id=" + process.pid());
+	ProcessBuilder processBuilder = new ProcessBuilder("regedit");
+	Process process = processBuilder.start();
+	logger.info("RegEdit id=" + process.pid());
 
-		File file = new File(processIdFilePath);
-		BufferedWriter writer = null;
-		try {
-			if (file.createNewFile()) {
-				logger.info(file.getAbsolutePath().toString());
-				writer = new BufferedWriter(new FileWriter(file));
-				writer.write("" + process.pid());
-				writer.close();
-				logger.info("Successfully written processid to file " + processIdFilePath);
-			}
-		} catch (IOException e) {
-			throw new IOException(e);
-		} finally {
-			try {
-				if (writer != null) {
-					writer.close();
-				}
-			} catch (IOException ex) {
-				throw new IOException(ex);
-			}
+	File file = new File(processIdFilePath);
+	BufferedWriter writer = null;
+	try {
+	    if (file.createNewFile()) {
+		logger.info(file.getAbsolutePath().toString());
+		writer = new BufferedWriter(new FileWriter(file));
+		writer.write("" + process.pid());
+		writer.close();
+		logger.info("Successfully written processid to file "
+			+ processIdFilePath);
+	    }
+	} catch (IOException e) {
+	    throw new IOException(e);
+	} finally {
+	    try {
+		if (writer != null) {
+		    writer.close();
 		}
-		System.exit(0);
+	    } catch (IOException ex) {
+		throw new IOException(ex);
+	    }
 	}
+	System.exit(0);
+    }
 }
