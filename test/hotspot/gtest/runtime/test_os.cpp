@@ -39,6 +39,8 @@
 #include "os_windows.hpp"
 #endif
 
+# include <stdio.h>
+
 using testing::HasSubstr;
 
 static size_t small_page_size() {
@@ -976,3 +978,12 @@ TEST_VM(os, vm_min_address) {
 #endif
 }
 
+TEST(os, is_space) {
+  ASSERT_EQ(os::is_space(1024), 0);
+  ASSERT_EQ(os::is_space(256), 0);
+  ASSERT_EQ(os::is_space(-1024), 0);
+  ASSERT_EQ(os::is_space(-42), 0);
+  ASSERT_EQ(os::is_space(EOF), 0);
+  ASSERT_EQ(os::is_space('a'), 0);
+  ASSERT_NE(os::is_space(' '), 0);
+}
