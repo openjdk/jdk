@@ -71,16 +71,18 @@ private:
   struct Link;
   using Allocator = IndexedFreeListAllocator<Link, mtNMT>;
   using LinkPtr = typename Allocator::I;
-  Allocator::I null() { return Allocator::nil; }
+  static Allocator::I null() { return Allocator::nil; }
   Allocator _allocator;
 
   struct Link {
     LinkPtr next;
-    const StackIndex stack;
+    StackIndex stack;
     Link(LinkPtr next, StackIndex v)
       : next(next),
         stack(v) {
     }
+    Link()
+    : next(null()), stack() {}
   };
 
   StackIndex put(const NativeCallStack& value) {
