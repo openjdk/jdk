@@ -78,10 +78,6 @@ ifeq ($(call check-jvm-feature, dtrace), true)
   JVM_CFLAGS_FEATURES += -DDTRACE_ENABLED
 endif
 
-ifeq ($(call check-jvm-feature, static-build), true)
-  JVM_CFLAGS_FEATURES += -DSTATIC_BUILD=1
-endif
-
 ifneq ($(call check-jvm-feature, jvmti), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_JVMTI=0
   JVM_EXCLUDE_FILES += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \

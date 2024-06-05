@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassReader;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.CustomAttribute;
@@ -60,7 +59,7 @@ public final class ClassImpl
         extends AbstractElement
         implements ClassModel {
 
-    final ClassReader reader;
+    final ClassReaderImpl reader;
     private final int attributesPos;
     private final List<MethodModel> methods;
     private final List<FieldModel> fields;
@@ -69,7 +68,6 @@ public final class ClassImpl
 
     public ClassImpl(byte[] cfbytes, ClassFileImpl context) {
         this.reader = new ClassReaderImpl(cfbytes, context);
-        ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
         int icnt = reader.readU2(p);
         p += 2 + icnt * 2;
