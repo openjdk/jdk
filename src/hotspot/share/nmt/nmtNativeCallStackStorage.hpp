@@ -73,6 +73,7 @@ private:
   using LinkPtr = typename Allocator::I;
   Allocator::I null() { return Allocator::nil; }
   Allocator _allocator;
+
   struct Link {
     LinkPtr next;
     const StackIndex stack;
@@ -81,6 +82,7 @@ private:
         stack(v) {
     }
   };
+
   StackIndex put(const NativeCallStack& value) {
     int bucket = value.calculate_hash() % _table_size;
     LinkPtr link = _table[bucket];
