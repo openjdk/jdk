@@ -1042,7 +1042,9 @@ public final class StackMapGenerator {
         }
 
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
-            localsSize = 0;
+            int localsSize = 0;
+            // Pre-emptively create a locals array that encompass all parameter slots
+            checkLocal(methodDesc.parameterCount() + (isStatic ? 0 : -1));
             if (!isStatic) {
                 localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
@@ -1054,7 +1056,7 @@ public final class StackMapGenerator {
             }
             for (int i = 0; i < methodDesc.parameterCount(); i++) {
                 var desc = methodDesc.parameterType(i);
-                if (desc.isClassOrInterface() || desc.isArray()) {
+                if (!desc.isPrimitive()) {
                     setLocalRawInternal(localsSize++, Type.referenceType(desc));
                 } else switch (desc.descriptorString().charAt(0)) {
                     case 'J' -> {
@@ -1072,6 +1074,7 @@ public final class StackMapGenerator {
                     default -> throw new AssertionError("Should not reach here");
                 }
             }
+            this.localsSize = localsSize;
         }
 
         void copyFrom(Frame src) {
