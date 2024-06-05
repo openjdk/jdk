@@ -21,6 +21,8 @@
  * questions.
  */
 
+package compiler.lib.test_generator;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
