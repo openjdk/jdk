@@ -42,7 +42,6 @@ import java.util.stream.LongStream;
 public class TemplateGenerator {
 
     static final String JAVA_HOME = System.getProperty("java.home");
-    // static final String JAVA_HOME = "/Users/tholenst/dev/jdk/build/macosx-aarch64-debug/jdk";
     static final String[] FLAGS = {
             "-Xcomp",
             "-XX:CompileCommand=compileonly,GeneratedTest::test*",
