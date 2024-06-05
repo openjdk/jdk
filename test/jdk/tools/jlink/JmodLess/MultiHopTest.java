@@ -66,7 +66,9 @@ public class MultiHopTest extends AbstractLinkableRuntimeTest {
         if (analyzer.getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to including jdk.jlink");
         }
-        String expectedMsg = "Including jdk.jlink module for run-time image based links is not allowed.";
+        String expectedMsg = "This linkable run-time image does not contain packaged modules " +
+                             "and cannot be used to create another run-time image that includes " +
+                             "the jdk.jlink module.";
         analyzer.stdoutShouldContain(expectedMsg);
         analyzer.stdoutShouldNotContain("Exception"); // ensure error message is sane
     }
