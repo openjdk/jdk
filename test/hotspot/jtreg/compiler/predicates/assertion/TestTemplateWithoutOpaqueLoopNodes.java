@@ -22,12 +22,21 @@
  */
 
 /*
- * @test
+ * @test id=Xcomp
  * @bug 8333252
  * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one iteration loop.
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,*TestTemplateWithoutOpaqueLoopNodes::test
  *                   compiler.predicates.assertion.TestTemplateWithoutOpaqueLoopNodes
  */
+
+/*
+ * @test id=Xbatch
+ * @bug 8333252
+ * @summary Test that no Template Assertion Predicate is created in Loop Prediction for one iteration loop.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestTemplateWithoutOpaqueLoopNodes::test
+ *                   compiler.predicates.assertion.TestTemplateWithoutOpaqueLoopNodes
+ */
+
 package compiler.predicates.assertion;
 
 public class TestTemplateWithoutOpaqueLoopNodes {
@@ -35,7 +44,9 @@ public class TestTemplateWithoutOpaqueLoopNodes {
     static long lArr[] = new long[10];
 
     public static void main(String[] args) {
-        test();
+        for (int i = 0; i < 10; i++) {
+            test();
+        }
     }
 
     static void test() {
