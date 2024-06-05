@@ -272,7 +272,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
-    MetaspaceShared::writing_error();
+    MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
 }

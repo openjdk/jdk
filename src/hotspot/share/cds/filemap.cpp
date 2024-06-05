@@ -1359,7 +1359,6 @@ void FileMapInfo::seek_to_position(size_t pos) {
   if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
     log_error(cds)("Unable to seek to position " SIZE_FORMAT, pos);
     MetaspaceShared::unrecoverable_loading_error();
-    //MetaspaceShared::writing_error();
   }
 }
 
