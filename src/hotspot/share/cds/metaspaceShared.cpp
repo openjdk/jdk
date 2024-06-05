@@ -793,19 +793,20 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
 
-  if (op.failed()) {
+  if (op.failed() || !write_static_archive(&builder, op.map_info(), op.heap_info())) {
     THROW_MSG(vmSymbols::java_io_IOException(), "Encountered error while dumping");
   }
-
-  write_static_archive(&builder, op.map_info(), op.heap_info());
 }
 
-void MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info) {
+bool MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info) {
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
   // without runtime relocation.
   builder->relocate_to_requested();
 
   map_info->open_for_write();
+  if (!map_info->is_open()) {
+    return false;
+  }
   builder->write_archive(map_info, heap_info);
 
   if (PrintSystemDictionaryAtExit) {
@@ -816,6 +817,7 @@ void MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo*
     log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
+  return true;
 }
 
 // Returns true if the class's status has changed.

@@ -1359,6 +1359,7 @@ void FileMapInfo::seek_to_position(size_t pos) {
   if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
     log_error(cds)("Unable to seek to position " SIZE_FORMAT, pos);
     MetaspaceShared::unrecoverable_loading_error();
+    //MetaspaceShared::writing_error();
   }
 }
 
@@ -1407,6 +1408,7 @@ void FileMapInfo::open_for_write() {
     log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
                    os::strerror(errno));
     MetaspaceShared::writing_error();
+    return;
   }
   _fd = fd;
   _file_open = true;
