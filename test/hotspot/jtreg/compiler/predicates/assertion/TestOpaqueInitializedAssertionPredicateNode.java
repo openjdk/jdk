@@ -59,7 +59,7 @@
  * @bug 8333644
  * @modules java.base/jdk.internal.misc:+open
  * @summary Test that using OpaqueInitializedAssertionPredicate for Initialized Assertion Predicates instead of Opaque4
- *          nodes also work with clone_loop_handle_data_uses() which missed a case before.
+ *          nodes also works with clone_loop_handle_data_uses() which missed a case before.
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,*TestOpaqueInitializedAssertionPredicateNode::test*
  *                   -XX:CompileCommand=dontinline,*TestOpaqueInitializedAssertionPredicateNode::dontInline
  *                   compiler.predicates.assertion.TestOpaqueInitializedAssertionPredicateNode
