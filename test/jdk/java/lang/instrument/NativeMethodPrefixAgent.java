@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 6263319
- * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
- * @summary test setNativeMethodPrefix
- * @author Robert Field, Sun Microsystems
- *
- * @enablePreview
- * @modules java.management
- *          java.instrument
- * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-CheckIntrinsics -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp
  */
 
 import asmlib.Instrumentor;

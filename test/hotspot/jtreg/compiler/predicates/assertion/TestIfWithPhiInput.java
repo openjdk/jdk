@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-package nsk.share;
-
-
-/**
- * This class is a simple example of finalizable object, that
- * implements interface <code>Finalizable</code>.
  *
- * @see Finalizable
- * @see Finalizer
  */
-public class FinalizableObject implements Finalizable {
-    /**
-     * Subclasses should override this method to provide the specific
-     * cleanup actions that they need.
-     */
-    public void cleanup() {}
+
+/*
+ * @test
+ * @bug 8333394
+ * @summary Test bailout of range check policy with an If with a Phi as condition.
+ * @run main/othervm -XX:CompileCommand=compileonly,*TestIfWithPhiInput*::* -Xcomp -XX:-TieredCompilation
+ *                   compiler.predicates.assertion.TestIfWithPhiInput
+ */
+
+package compiler.predicates.assertion;
+
+public class TestIfWithPhiInput {
+    static int x;
+    static int y;
+
+    public static void main(String[] strArr) {
+        test();
+    }
+
+    static int test() {
+        int i = 1;
+        do {
+            try {
+                y = y / y;
+            } catch (ArithmeticException a_e) {
+            }
+            for (int j = i; j < 6; j++) {
+                y = i;
+            }
+        } while (++i < 52);
+        return x;
+    }
 }

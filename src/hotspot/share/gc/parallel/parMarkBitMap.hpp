@@ -32,9 +32,9 @@
 class PSVirtualSpace;
 
 class ParMarkBitMap: public CHeapObj<mtGC> {
-public:
   typedef BitMap::idx_t idx_t;
 
+public:
   inline ParMarkBitMap();
   bool initialize(MemRegion covered_region);
 
