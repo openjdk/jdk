@@ -64,7 +64,3 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
     os::print_hex_dump(st, from1, to2, 1);
   }
 }
-
-bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _mst_marker);
-}
