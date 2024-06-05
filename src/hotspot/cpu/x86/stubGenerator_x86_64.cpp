@@ -3044,10 +3044,8 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
  *    c_rarg3   - y length
  * not Win64
  *    c_rarg4   - z address
- *    c_rarg5   - z length
  * Win64
  *    rsp+40    - z address
- *    rsp+48    - z length
  */
 address StubGenerator::generate_multiplyToLen() {
   __ align(CodeEntryAlignment);
@@ -3061,9 +3059,9 @@ address StubGenerator::generate_multiplyToLen() {
   const Register y     = rsi;
   const Register ylen  = rcx;
   const Register z     = r8;
-  const Register zlen  = r11;
 
   // Next registers will be saved on stack in multiply_to_len().
+  const Register tmp0  = r11;
   const Register tmp1  = r12;
   const Register tmp2  = r13;
   const Register tmp3  = r14;
@@ -3073,21 +3071,17 @@ address StubGenerator::generate_multiplyToLen() {
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifndef _WIN64
-  __ movptr(zlen, r9); // Save r9 in r11 - zlen
-#endif
   setup_arg_regs(4); // x => rdi, xlen => rsi, y => rdx
-                     // ylen => rcx, z => r8, zlen => r11
+                     // ylen => rcx, z => r8
                      // r9 and r10 may be used to save non-volatile registers
 #ifdef _WIN64
-  // last 2 arguments (#4, #5) are on stack on Win64
+  // last argument (#4) is on stack on Win64
   __ movptr(z, Address(rsp, 6 * wordSize));
-  __ movptr(zlen, Address(rsp, 7 * wordSize));
 #endif
 
   __ movptr(xlen, rsi);
   __ movptr(y,    rdx);
-  __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5);
+  __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
 
   restore_arg_regs();
 
@@ -3994,6 +3988,54 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   return start;
 }
 
+address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass = rax,
+      r_sub_klass   = rsi,
+      result        = rdi;
+
+  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                   rdx, rcx, rbx, r11, // temps
+                                   result,
+                                   super_klass_index);
+  __ ret(0);
+
+  return start;
+}
+
+// Slow path implementation for UseSecondarySupersTable.
+address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass  = rax,
+      r_array_base   = rbx,
+      r_array_index  = rdx,
+      r_sub_klass    = rsi,
+      r_bitmap       = r11,
+      result         = rdi;
+
+  Label L_success;
+  __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap,
+                                             rcx, rdi, // temps
+                                             &L_success);
+  // bind(L_failure);
+  __ movl(result, 1);
+  __ ret(0);
+
+  __ bind(L_success);
+  __ movl(result, 0);
+  __ ret(0);
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked, flags specialized
   StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
@@ -4009,8 +4051,8 @@ void StubGenerator::generate_initial_stubs() {
   create_control_words();
 
   // Initialize table for unsafe copy memeory check.
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(16);
+  if (UnsafeMemoryAccess::_table == nullptr) {
+    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
   }
 
   // entry points that exist in all platforms Note: This is code
@@ -4207,6 +4249,11 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 
+  if (UseIntPolyIntrinsics) {
+    StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_assign = generate_intpoly_assign();
+  }
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true, "md5_implCompressMB");
@@ -4278,6 +4325,14 @@ void StubGenerator::generate_compiler_stubs() {
   if (VM_Version::supports_avx512_vbmi2()) {
     StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
+  }
+  if (UseSecondarySupersTable) {
+    StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+    if (! InlineSecondarySupersTest) {
+      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+      }
+    }
   }
   if (UseMontgomeryMultiplyIntrinsic) {
     StubRoutines::_montgomeryMultiply
@@ -4372,6 +4427,7 @@ void StubGenerator::generate_compiler_stubs() {
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
   }
+
 #endif // COMPILER2
 #endif // COMPILER2_OR_JVMCI
 }

@@ -1007,7 +1007,7 @@ class ConsoleIOContext extends IOContext {
             input.setState(State.WAIT);
             Display.DISABLE_CR = true;
             in.setHistory(userInputHistory);
-            return in.readLine(prompt, mask);
+            return in.readLine(prompt.replace("%", "%%"), mask);
         } catch (UserInterruptException ex) {
             throw new InterruptedIOException();
         } finally {

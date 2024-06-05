@@ -1002,6 +1002,14 @@ void VM_Version::get_processor_features() {
     }
   }
 
+  // APX support not enabled yet
+  if (UseAPX) {
+    if (!FLAG_IS_DEFAULT(UseAPX)) {
+        warning("APX is not supported on this CPU.");
+    }
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
   } else {
@@ -1364,6 +1372,18 @@ void VM_Version::get_processor_features() {
   if (UsePoly1305Intrinsics) {
     warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, false);
+  }
+
+#ifdef _LP64
+  if (supports_avx512ifma() && supports_avx512vlbw()) {
+    if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+      FLAG_SET_DEFAULT(UseIntPolyIntrinsics, true);
+    }
+  } else
+#endif
+  if (UseIntPolyIntrinsics) {
+    warning("Intrinsics for Polynomial crypto functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseIntPolyIntrinsics, false);
   }
 
 #ifdef _LP64
@@ -2951,6 +2971,8 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       if (sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
         result |= CPU_AVX_IFMA;
     }
+    if (sef_cpuid7_ecx.bits.gfni != 0)
+        result |= CPU_GFNI;
     if (sef_cpuid7_ebx.bits.avx512f != 0 &&
         xem_xcr0_eax.bits.opmask != 0 &&
         xem_xcr0_eax.bits.zmm512 != 0 &&
@@ -2976,8 +2998,6 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
         result |= CPU_AVX512_VPCLMULQDQ;
       if (sef_cpuid7_ecx.bits.vaes != 0)
         result |= CPU_AVX512_VAES;
-      if (sef_cpuid7_ecx.bits.gfni != 0)
-        result |= CPU_GFNI;
       if (sef_cpuid7_ecx.bits.avx512_vnni != 0)
         result |= CPU_AVX512_VNNI;
       if (sef_cpuid7_ecx.bits.avx512_bitalg != 0)

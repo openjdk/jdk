@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -961,7 +961,7 @@ class StubGenerator: public StubCodeGenerator {
     // need to copy backwards
   }
 
-  // This is common errorexit stub for UnsafeCopyMemory.
+  // This is common errorexit stub for UnsafeMemoryAccess.
   address generate_unsafecopy_common_error_exit() {
     address start_pc = __ pc();
     Register tmp1 = R6_ARG4;
@@ -1013,8 +1013,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9, l_10;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
 
       // Don't try anything fancy if arrays don't have many elements.
       __ li(tmp3, 0);
@@ -1195,8 +1195,8 @@ class StubGenerator: public StubCodeGenerator {
     // that we don't have to optimize it.
     Label l_1, l_2;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ b(l_2);
       __ bind(l_1);
       __ stbx(tmp1, R4_ARG2, R5_ARG3);
@@ -1282,8 +1282,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       // don't try anything fancy if arrays don't have many elements
       __ li(tmp3, 0);
       __ cmpwi(CCR0, R5_ARG3, 9);
@@ -1466,8 +1466,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2;
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ sldi(tmp1, R5_ARG3, 1);
       __ b(l_2);
       __ bind(l_1);
@@ -1625,8 +1625,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_int_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -1777,8 +1777,8 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 2);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_int_copy_core(aligned);
     }
 
@@ -1903,8 +1903,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -2034,8 +2034,8 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 3);
     {
-      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -3129,7 +3129,7 @@ class StubGenerator: public StubCodeGenerator {
     // the conjoint stubs use them.
 
     address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     // non-aligned disjoint versions
     StubRoutines::_jbyte_disjoint_arraycopy       = generate_disjoint_byte_copy(false, "jbyte_disjoint_arraycopy");
@@ -3204,7 +3204,6 @@ class StubGenerator: public StubCodeGenerator {
   //    R5 - y address
   //    R6 - y length
   //    R7 - z address
-  //    R8 - z length
   //
   address generate_multiplyToLen() {
 
@@ -3217,7 +3216,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = R5;
     const Register ylen  = R6;
     const Register z     = R7;
-    const Register zlen  = R8;
 
     const Register tmp1  = R2; // TOC not used.
     const Register tmp2  = R9;
@@ -3240,7 +3238,6 @@ class StubGenerator: public StubCodeGenerator {
     // C2 does not respect int to long conversion for stub calls.
     __ clrldi(xlen, xlen, 32);
     __ clrldi(ylen, ylen, 32);
-    __ clrldi(zlen, zlen, 32);
 
     // Save non-volatile regs (frameless).
     int current_offs = 8;
@@ -3253,7 +3250,7 @@ class StubGenerator: public StubCodeGenerator {
     __ std(R30, -current_offs, R1_SP); current_offs += 8;
     __ std(R31, -current_offs, R1_SP);
 
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5,
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5,
                        tmp6, tmp7, tmp8, tmp9, tmp10, tmp11, tmp12, tmp13);
 
     // Restore non-volatile regs.
@@ -4745,8 +4742,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_call_stub_entry                  = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     // Build this early so it's available for the interpreter.

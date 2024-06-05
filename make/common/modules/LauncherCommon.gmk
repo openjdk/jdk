@@ -23,6 +23,7 @@
 # questions.
 #
 
+include CopyFiles.gmk
 include JdkNativeCompilation.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
@@ -107,22 +108,7 @@ define SetupBuildLauncherBody
     ))
 
     $1_LDFLAGS += -sectcreate __TEXT __info_plist $$($1_PLIST_FILE)
-
-    ifeq ($(STATIC_BUILD), true)
-      $1_LDFLAGS += -exported_symbols_list \
-              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
-      $1_LIBS += \
-          $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
-          -framework CoreFoundation \
-          -framework Foundation \
-          -framework SystemConfiguration \
-          -lstdc++ -liconv
-    endif
   endif
-
-  $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
 
@@ -134,6 +120,10 @@ define SetupBuildLauncherBody
     $1_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
   endif
 
+  ##############################################################################
+  ## Build launcher "$1"
+  ##############################################################################
+
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \
@@ -144,17 +134,13 @@ define SetupBuildLauncherBody
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
+      EXTRA_HEADER_DIRS := java.base:libjvm, \
       DISABLED_WARNINGS_gcc := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
-      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      JDK_LIBS_unix := -ljli, \
-      JDK_LIBS_windows := \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
-          $$($1_WINDOWS_JLI_LIB), \
+      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      JDK_LIBS := java.base:libjli, \
+      JDK_LIBS_windows := java.base:libjava, \
       LIBS := $$($1_LIBS), \
       LIBS_unix := $(LIBZ_LIBS), \
       LIBS_linux := $(LIBDL) -lpthread, \
@@ -173,15 +159,6 @@ define SetupBuildLauncherBody
   TARGETS += $$($1)
 
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
-
-  ifeq ($(call isTargetOs, aix), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli)
-  endif
-
-  ifeq ($(call isTargetOs, windows), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
-        $$($1_WINDOWS_JLI_LIB)
-  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     $$(BUILD_LAUNCHER_$1): $$($1_PLIST_FILE)

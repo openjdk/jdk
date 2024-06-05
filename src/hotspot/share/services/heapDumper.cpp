@@ -626,17 +626,21 @@ public:
   DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor);
   ~DumpWriter();
   julong bytes_written() const override        { return (julong) _bytes_written; }
-  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
   char const* error() const override           { return _error; }
   void set_error(const char* error)            { _error = (char*)error; }
   bool has_error() const                       { return _error != nullptr; }
   const char* get_file_path() const            { return _writer->get_file_path(); }
   AbstractCompressor* compressor()             { return _compressor; }
-  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
   bool is_overwrite() const                    { return _writer->is_overwrite(); }
-  int get_fd() const                           { return _writer->get_fd(); }
 
   void flush() override;
+
+private:
+  // internals for DumpMerger
+  friend class DumpMerger;
+  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
+  int get_fd() const                           { return _writer->get_fd(); }
+  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
 };
 
 DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor) :
@@ -2126,13 +2130,14 @@ void DumpMerger::merge_file(const char* path) {
 
   jlong total = 0;
   size_t cnt = 0;
-  char read_buf[4096];
-  while ((cnt = segment_fs.read(read_buf, 1, 4096)) != 0) {
-    _writer->write_raw(read_buf, cnt);
+
+  // Use _writer buffer for reading.
+  while ((cnt = segment_fs.read(_writer->buffer(), 1, _writer->buffer_size())) != 0) {
+    _writer->set_position(cnt);
+    _writer->flush();
     total += cnt;
   }
 
-  _writer->flush();
   if (segment_fs.fileSize() != total) {
     set_error("Merged heap dump is incomplete");
   }
@@ -2165,20 +2170,6 @@ void DumpMerger::do_merge() {
   _writer->set_compressor(saved_compressor);
   merge_done();
 }
-
-// The VM operation wraps DumpMerger so that it could be performed by VM thread
-class VM_HeapDumpMerge : public VM_Operation {
-private:
-  DumpMerger* _merger;
-public:
-  VM_HeapDumpMerge(DumpMerger* merger) : _merger(merger) {}
-  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
-  // heap dump merge could happen outside safepoint
-  virtual bool evaluate_at_safepoint() const { return false; }
-  void doit() {
-    _merger->do_merge();
-  }
-};
 
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public UnmountedVThreadDumper {
@@ -2618,6 +2609,18 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     out->print_cr("Dumping heap to %s ...", path);
     timer()->start();
   }
+
+  if (_oome && num_dump_threads > 1) {
+    // Each additional parallel writer requires several MB of internal memory
+    // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
+    // For the OOM handling we may already be limited in memory.
+    // Lets ensure we have at least 20MB per thread.
+    julong max_threads = os::free_memory() / (20 * M);
+    if (num_dump_threads > max_threads) {
+      num_dump_threads = MAX2<uint>(1, (uint)max_threads);
+    }
+  }
+
   // create JFR event
   EventHeapDump event;
 
@@ -2659,17 +2662,10 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   //          This is done by DumpMerger, which is performed outside safepoint
 
   DumpMerger merger(path, &writer, dumper.dump_seq());
-  Thread* current_thread = Thread::current();
-  if (current_thread->is_AttachListener_thread()) {
-    // perform heapdump file merge operation in the current thread prevents us
-    // from occupying the VM Thread, which in turn affects the occurrence of
-    // GC and other VM operations.
-    merger.do_merge();
-  } else {
-    // otherwise, performs it by VM thread
-    VM_HeapDumpMerge op(&merger);
-    VMThread::execute(&op);
-  }
+  // Perform heapdump file merge operation in the current thread prevents us
+  // from occupying the VM Thread, which in turn affects the occurrence of
+  // GC and other VM operations.
+  merger.do_merge();
   if (writer.error() != nullptr) {
     set_error(writer.error());
   }

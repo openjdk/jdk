@@ -411,10 +411,14 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   PairSet _pairset;
   PackSet _packset;
+
+  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // by adjusting the pre-loop limit.
+  MemNode const* _mem_ref_for_main_loop_alignment;
+  int _aw_for_main_loop_alignment;
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -425,7 +429,7 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  // VLoop Accessors
+  // VLoop accessors
   PhaseIdealLoop* phase()     const { return _vloop.phase(); }
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   IdealLoopTree* lpt()        const { return _vloop.lpt(); }
@@ -434,7 +438,7 @@ class SuperWord : public ResourceObj {
   int iv_stride()             const { return cl()->stride_con(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  // VLoopReductions Accessors
+  // VLoopReductions accessors
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
@@ -443,12 +447,12 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
   }
 
-  // VLoopMemorySlices Accessors
+  // VLoopMemorySlices accessors
   bool same_memory_slice(MemNode* n1, MemNode* n2) const {
     return _vloop_analyzer.memory_slices().same_memory_slice(n1, n2);
   }
 
-  // VLoopBody Accessors
+  // VLoopBody accessors
   const GrowableArray<Node*>& body() const {
     return _vloop_analyzer.body().body();
   }
@@ -457,7 +461,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.body().bb_idx(n);
   }
 
-  // VLoopTypes Accessors
+  // VLoopTypes accessors
   const Type* velt_type(Node* n) const {
     return _vloop_analyzer.types().velt_type(n);
   }
@@ -482,7 +486,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().vector_width_in_bytes(n);
   }
 
-  // VLoopDependencyGraph Accessors
+  // VLoopDependencyGraph accessors
   const VLoopDependencyGraph& dependency_graph() const {
     return _vloop_analyzer.dependency_graph();
   }
@@ -493,6 +497,11 @@ class SuperWord : public ResourceObj {
 
   bool mutually_independent(const Node_List* nodes) const {
     return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  }
+
+  // VLoopVPointer accessors
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
 #ifndef PRODUCT
@@ -558,8 +567,6 @@ class SuperWord : public ResourceObj {
   Arena* arena()                   { return &_arena; }
 
   int get_vw_bytes_special(MemNode* s);
-  const MemNode* align_to_ref() const { return _align_to_ref; }
-  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -665,6 +672,7 @@ private:
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 };
 
