@@ -14281,31 +14281,92 @@ static void emit_copy(CodeSection* code_section, u_char* src, int src_len) {
   code_section->set_end(end + src_len);
 }
 
+
+// Does not actually store the value of rsp on the stack.
+// The slot for rsp just contains an arbitrary value.
+void Assembler::pusha() { // 64bit
+  emit_copy(code_section(), pusha_code, pusha_len);
+}
+
+// Does not actually store the value of rsp on the stack.
+// The slot for rsp just contains an arbitrary value.
+void Assembler::pusha_uncached() { // 64bit
+  if (UseAPX) {
+    // Data being pushed by PUSH2 must be 16B-aligned on the stack.
+    pushp(rax);
+    // Move original stack pointer to RAX and align stack pointer to 16B boundary.
+    movq(rax, rsp);
+    andq(rsp, -(StackAlignmentInBytes));
+    // Push pair of original stack pointer along with remaining registers
+    // at 16B aligned boundary.
+    push2p(rax, r31);
+    push2p(r30, r29);
+    push2p(r28, r27);
+    push2p(r26, r25);
+    push2p(r24, r23);
+    push2p(r22, r21);
+    push2p(r20, r19);
+    push2p(r18, r17);
+    push2p(r16, r15);
+    push2p(r14, r13);
+    push2p(r12, r11);
+    push2p(r10, r9);
+    push2p(r8, rdi);
+    push2p(rsi, rbp);
+    push2p(rbx, rdx);
+    pushp(rcx);
+  } else {
+    subq(rsp, 16 * wordSize);
+    movq(Address(rsp, 15 * wordSize), rax);
+    movq(Address(rsp, 14 * wordSize), rcx);
+    movq(Address(rsp, 13 * wordSize), rdx);
+    movq(Address(rsp, 12 * wordSize), rbx);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
+    // FIXME: For APX any such direct access should also consider EGPR size
+    // during address compution.
+    movq(Address(rsp, 10 * wordSize), rbp);
+    movq(Address(rsp, 9 * wordSize), rsi);
+    movq(Address(rsp, 8 * wordSize), rdi);
+    movq(Address(rsp, 7 * wordSize), r8);
+    movq(Address(rsp, 6 * wordSize), r9);
+    movq(Address(rsp, 5 * wordSize), r10);
+    movq(Address(rsp, 4 * wordSize), r11);
+    movq(Address(rsp, 3 * wordSize), r12);
+    movq(Address(rsp, 2 * wordSize), r13);
+    movq(Address(rsp, wordSize), r14);
+    movq(Address(rsp, 0), r15);
+  }
+}
+
 void Assembler::popa() { // 64bit
   emit_copy(code_section(), popa_code, popa_len);
 }
 
 void Assembler::popa_uncached() { // 64bit
   if (UseAPX) {
+    popp(rcx);
+    // Data being popped by POP2 must be 16B-aligned on the stack.
+    pop2p(rdx, rbx);
+    pop2p(rbp, rsi);
+    pop2p(rdi, r8);
+    pop2p(r9, r10);
+    pop2p(r11, r12);
+    pop2p(r13, r14);
+    pop2p(r15, r16);
+    pop2p(r17, r18);
+    pop2p(r19, r20);
+    pop2p(r21, r22);
+    pop2p(r23, r24);
+    pop2p(r25, r26);
+    pop2p(r27, r28);
+    pop2p(r29, r30);
+    // Popped value in RAX holds original unaligned stack pointer.
+    pop2p(r31, rax);
+    // Reinstantiate original stack pointer.
+    movq(rsp, rax);
     popp(rax);
-    // Skip rsp as the value is normally not used. There are a few places where
-    // the original value of rsp needs to be known but that can be computed
-    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-    pop2p(rcx,rdx);
-    pop2p(rbx,rbp);
-    pop2p(rsi,rdi);
-    pop2p(r8, r9);
-    pop2p(r10,r11);
-    pop2p(r12,r13);
-    pop2p(r14,r15);
-    pop2p(r16,r17);
-    pop2p(r18,r19);
-    pop2p(r20,r21);
-    pop2p(r22,r23);
-    pop2p(r24,r25);
-    pop2p(r26,r27);
-    pop2p(r28,r29);
-    pop2p(r30,r31);
   } else {
     movq(r15, Address(rsp, 0));
     movq(r14, Address(rsp, wordSize));
@@ -14328,61 +14389,6 @@ void Assembler::popa_uncached() { // 64bit
     addq(rsp, 16 * wordSize);
   }
 }
-
-// Does not actually store the value of rsp on the stack.
-// The slot for rsp just contains an arbitrary value.
-void Assembler::pusha() { // 64bit
-  emit_copy(code_section(), pusha_code, pusha_len);
-}
-
-// Does not actually store the value of rsp on the stack.
-// The slot for rsp just contains an arbitrary value.
-void Assembler::pusha_uncached() { // 64bit
-  if (UseAPX) {
-    // Data being pushed/popped by PUSH2/POP2 must be 16B-aligned on the stack.
-    andq(rsp, -(StackAlignmentInBytes));
-    push2p(r31, r30);
-    push2p(r29, r28);
-    push2p(r27, r26);
-    push2p(r25, r24);
-    push2p(r23, r22);
-    push2p(r21, r20);
-    push2p(r19, r18);
-    push2p(r17, r16);
-    push2p(r15, r14);
-    push2p(r13, r12);
-    push2p(r11, r10);
-    push2p(r9, r8);
-    push2p(rdi, rsi);
-    push2p(rbp, rbx);
-    // Skip rsp as the value is normally not used. There are a few places where
-    // the original value of rsp needs to be known but that can be computed
-    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-    push2p(rdx, rcx);
-    pushp(rax);
-  } else {
-    subq(rsp, 16 * wordSize);
-    movq(Address(rsp, 15 * wordSize), rax);
-    movq(Address(rsp, 14 * wordSize), rcx);
-    movq(Address(rsp, 13 * wordSize), rdx);
-    movq(Address(rsp, 12 * wordSize), rbx);
-    // Skip rsp as the value is normally not used. There are a few places where
-    // the original value of rsp needs to be known but that can be computed
-    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-    movq(Address(rsp, 10 * wordSize), rbp);
-    movq(Address(rsp, 9 * wordSize), rsi);
-    movq(Address(rsp, 8 * wordSize), rdi);
-    movq(Address(rsp, 7 * wordSize), r8);
-    movq(Address(rsp, 6 * wordSize), r9);
-    movq(Address(rsp, 5 * wordSize), r10);
-    movq(Address(rsp, 4 * wordSize), r11);
-    movq(Address(rsp, 3 * wordSize), r12);
-    movq(Address(rsp, 2 * wordSize), r13);
-    movq(Address(rsp, wordSize), r14);
-    movq(Address(rsp, 0), r15);
-  }
-}
-
 void Assembler::vzeroupper() {
   emit_copy(code_section(), vzup_code, vzup_len);
 }
