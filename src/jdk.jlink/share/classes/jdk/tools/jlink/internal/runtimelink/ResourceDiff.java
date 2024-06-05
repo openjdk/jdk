@@ -212,7 +212,6 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
             throw e;
         }
     }
