@@ -45,9 +45,9 @@ public class MouseDragPopupTest {
         String instructions = """
                 1) Press and hold the right mouse button down on the JLabel with the text
                 "Right click and drag from here"
-                
+                                
                 2) Move the mouse to the JLabel with the text "to here"
-                
+                                
                 3) Observe that the popup menu assigned to the inner JPanel appears
                 (macOS) or does not appear (Windows, Linux)
                 """;
