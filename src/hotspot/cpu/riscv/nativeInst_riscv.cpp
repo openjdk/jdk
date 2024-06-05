@@ -113,9 +113,13 @@ class NativeShortCall: private NativeInstruction {
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);
 
+  enum RISCV_specific_constants {
+    return_address_offset       =    1 * NativeInstruction::instruction_size // jal
+  };
+
   address instruction_address() const       { return addr_at(0); }
-  address next_instruction_address() const  { return addr_at(NativeInstruction::instruction_size); }
-  address return_address() const            { return addr_at(NativeInstruction::instruction_size); }
+  address next_instruction_address() const  { return addr_at(return_address_offset); }
+  address return_address() const            { return addr_at(return_address_offset); }
   address destination() const;
   address reloc_destination(address orig_address);
 
@@ -327,7 +331,7 @@ class NativeFarCall: public NativeInstruction {
   friend NativeCall* nativeCall_before(address return_address);
 
   enum RISCV_specific_constants {
-    return_address_offset       =    3 * NativeInstruction::instruction_size, // ld auipc jalr
+    return_address_offset       =    3 * NativeInstruction::instruction_size, // auipc + ld + jalr
   };
 
   address instruction_address() const       { return addr_at(0); }
@@ -633,7 +637,7 @@ NativeCall* nativeCall_before(address return_address) {
   if (NativeFarCall::is_call_before(return_address)) {
     call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
   } else {
-    call = (NativeCall*)(return_address - NativeShortCall::instruction_size);
+    call = (NativeCall*)(return_address - NativeShortCall::return_address_offset);
   }
   DEBUG_ONLY(call->verify());
   return call;
