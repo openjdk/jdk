@@ -39,7 +39,6 @@ import org.junit.jupiter.api.condition.OS;
  * @bug 8332161
  * @summary Tests JdkConsoleImpl restores the echo state after readPassword() call
  * @library /test/lib
- * @modules java.base/jdk.internal.io:+open
  * @run junit RestoreEchoTest
  */
 public class RestoreEchoTest {
