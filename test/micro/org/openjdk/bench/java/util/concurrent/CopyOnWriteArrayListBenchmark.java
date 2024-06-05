@@ -22,6 +22,11 @@
  */
 package org.openjdk.bench.java.util.concurrent;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,14 +50,36 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 public class CopyOnWriteArrayListBenchmark {
+
+    private static byte[] getSerializedBytes(CopyOnWriteArrayList<?> list) throws IOException {
+        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+        ObjectOutputStream objectOut = new ObjectOutputStream(bytesOut);
+        objectOut.writeObject(list);
+
+        objectOut.close();
+        return bytesOut.toByteArray();
+    }
+
     private Collection<Object> emptyCollection = new ArrayList<>();
     private Object[] emptyArray = new Object[0];
 
     private Collection<Object> oneItemCollection = Arrays.asList("");
     private Object[] oneItemArray = new Object[] { "" };
 
-    private CopyOnWriteArrayList<?> defaultInstance = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<?> emptyInstance = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<?> oneItemInstance = new CopyOnWriteArrayList<>(oneItemArray);
+
+    private byte[] emptyInstanceBytes;
+    private byte[] oneInstanceBytes;
+
+    public CopyOnWriteArrayListBenchmark() {
+        try {
+            emptyInstanceBytes = getSerializedBytes(emptyInstance);
+            oneInstanceBytes = getSerializedBytes(oneItemInstance);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Benchmark
     public void clear() {
@@ -62,7 +89,7 @@ public class CopyOnWriteArrayListBenchmark {
 
     @Benchmark
     public void clearEmpty() {
-        defaultInstance.clear();
+        emptyInstance.clear();
     }
 
     @Benchmark
@@ -88,5 +115,19 @@ public class CopyOnWriteArrayListBenchmark {
     @Benchmark
     public CopyOnWriteArrayList<?> createInstanceDefault() {
         return new CopyOnWriteArrayList<Object>();
+    }
+
+    @Benchmark
+    public CopyOnWriteArrayList<?> readInstance() throws IOException, ClassNotFoundException {
+        try (ObjectInputStream objIn = new ObjectInputStream(new ByteArrayInputStream(oneInstanceBytes))) {
+            return (CopyOnWriteArrayList<?>) objIn.readObject();
+        }
+    }
+
+    @Benchmark
+    public CopyOnWriteArrayList<?> readInstanceEmpty() throws IOException, ClassNotFoundException {
+        try (ObjectInputStream objIn = new ObjectInputStream(new ByteArrayInputStream(emptyInstanceBytes))) {
+            return (CopyOnWriteArrayList<?>) objIn.readObject();
+        }
     }
 }
