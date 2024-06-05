@@ -5328,7 +5328,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
 
 // Compute field offsets of all the classes in this file
 void JavaClasses::compute_offsets() {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
                                                          JvmtiExport::has_early_class_hook_env()),
                       "JavaClasses::compute_offsets() must be called in early JVMTI phase."));

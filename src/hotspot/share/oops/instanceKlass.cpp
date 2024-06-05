@@ -502,7 +502,7 @@ static Monitor* create_init_monitor(const char* name) {
 }
 
 InstanceKlass::InstanceKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -4036,7 +4036,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
+        ((CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {
