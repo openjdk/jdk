@@ -34,7 +34,6 @@ import java.util.List;
 
 import tests.Helper;
 import tests.JImageGenerator;
-import tests.JImageHelper;
 
 /*
  * @test
