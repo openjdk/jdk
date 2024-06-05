@@ -28,7 +28,6 @@ package jdk.internal.org.jline;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
@@ -51,18 +50,134 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      */
     @Override
     public JdkConsole console(boolean isTTY, Charset charset) {
-        try {
-            Terminal terminal = TerminalBuilder.builder().encoding(charset)
-                                               .exec(false)
-                                               .systemOutput(SystemOutput.SysOut)
-                                               .build();
-            return new JdkConsoleImpl(terminal);
-        } catch (IllegalStateException ise) {
-            //cannot create a non-dumb, non-exec terminal,
-            //use the standard Console:
-            return null;
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
+        return new LazyDelegatingJdkConsoleImpl(charset);
+    }
+
+    private static class LazyDelegatingJdkConsoleImpl implements JdkConsole {
+        private final Charset charset;
+        private volatile boolean jlineInitialized;
+        private volatile JdkConsole delegate;
+
+        public LazyDelegatingJdkConsoleImpl(Charset charset) {
+            this.charset = charset;
+            this.delegate = new jdk.internal.io.JdkConsoleImpl(charset);
+        }
+
+        @Override
+        public PrintWriter writer() {
+            return getDelegate(true).writer();
+        }
+
+        @Override
+        public Reader reader() {
+            return getDelegate(true).reader();
+        }
+
+        @Override
+        public JdkConsole println(Object obj) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.println(obj);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public JdkConsole print(Object obj) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.print(obj);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public String readln(String prompt) {
+            return getDelegate(true).readln(prompt);
+        }
+
+        @Override
+        public JdkConsole format(Locale locale, String format, Object... args) {
+            JdkConsole delegate = getDelegate(false);
+
+            delegate.format(locale, format, args);
+            flushOldDelegateIfNeeded(delegate);
+
+            return this;
+        }
+
+        @Override
+        public String readLine(Locale locale, String format, Object... args) {
+            return getDelegate(true).readLine(locale, format, args);
+        }
+
+        @Override
+        public String readLine() {
+            return getDelegate(true).readLine();
+        }
+
+        @Override
+        public char[] readPassword(Locale locale, String format, Object... args) {
+            return getDelegate(true).readPassword(locale, format, args);
+        }
+
+        @Override
+        public char[] readPassword() {
+            return getDelegate(true).readPassword();
+        }
+
+        @Override
+        public void flush() {
+            getDelegate(false).flush();
+        }
+
+        @Override
+        public Charset charset() {
+            return charset;
+        }
+
+        private void flushOldDelegateIfNeeded(JdkConsole oldDelegate) {
+            if (oldDelegate != getDelegate(false)) {
+                //if the delegate changed in the mean time, make sure the original
+                //delegate is flushed:
+                oldDelegate.flush();
+            }
+        }
+
+        private JdkConsole getDelegate(boolean needsJLine) {
+            if (!needsJLine || jlineInitialized) {
+                return delegate;
+            }
+
+            return initializeJLineDelegate();
+        }
+
+        private synchronized JdkConsole initializeJLineDelegate() {
+            JdkConsole newDelegate = delegate;
+
+            if (jlineInitialized) {
+                return newDelegate;
+            }
+
+            try {
+                Terminal terminal = TerminalBuilder.builder().encoding(charset)
+                                                   .exec(false)
+                                                   .systemOutput(SystemOutput.SysOut)
+                                                   .build();
+                newDelegate = new JdkConsoleImpl(terminal);
+            } catch (IllegalStateException ise) {
+                //cannot create a non-dumb, non-exec terminal,
+                //use the standard Console:
+            } catch (IOException ioe) {
+                //something went wrong, keep the existing delegate
+            }
+
+            delegate = newDelegate;
+            jlineInitialized = true;
+
+            return newDelegate;
         }
     }
 
