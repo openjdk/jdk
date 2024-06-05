@@ -178,8 +178,8 @@ abstract public class TLSBase {
                         try {
                             write(c, read(c));
                         } catch (Exception e) {
-                            System.out.println("Caught " + e.getMessage() +
-                                " put in list");
+                            System.out.println("Caught " + e.getMessage());
+                            e.printStackTrace();
                             exceptionList.add(e);
                         }
                     }
@@ -226,8 +226,8 @@ abstract public class TLSBase {
                             try {
                                 write(c, read(c));
                             } catch (Exception e) {
-                                System.out.println("Caught " + e.getMessage() +
-                                    " put in list");
+                                System.out.println("Caught " + e.getMessage());
+                                e.printStackTrace();
                                 exceptionList.add(e);
                             }
                         }
