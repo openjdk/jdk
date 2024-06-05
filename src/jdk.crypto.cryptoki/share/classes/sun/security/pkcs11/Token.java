@@ -66,8 +66,7 @@ final class Token implements Serializable {
     @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
 
-    @SuppressWarnings("serial") // Type of field is not Serializable
-    final CTSVariant ctsVariant;
+    final transient CTSVariant ctsVariant;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
