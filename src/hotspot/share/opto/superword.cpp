@@ -2987,8 +2987,8 @@ void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
 }
 
 void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
+  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
+    Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
     VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
     set_vtnode(n, vtn);
@@ -3042,8 +3042,8 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
 }
 
 void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_dependencies) {
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
+  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
+    Node* n = _vloop_analyzer.body().body().at(i);
     VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
     if (vtn == nullptr) { continue; }
     vtn_dependencies.clear(); // Add every dependency only once per vtn.
@@ -3082,7 +3082,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_graph.arena()) VTransformBoolVectorNode(_graph, pack_size, kind);
-  } else if (is_marked_reduction(p0)) {
+  } else if (_vloop_analyzer.reductions().is_marked_reduction(p0)) {
     vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
@@ -3246,7 +3246,7 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet
     VTransformNode* dependency = get_vtnode(pred);
 
     // Reduction self-cycle?
-    if (vtn == dependency && is_marked_reduction(n)) { continue; }
+    if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
 
     if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
     vtn->add_dependency(dependency); // Add every dependency only once per vtn.

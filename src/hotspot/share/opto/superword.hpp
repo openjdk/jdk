@@ -693,15 +693,6 @@ private:
   void build_edges_for_vector_vtnodes(VectorSet& dependency_set);
   void build_edges_for_scalar_vtnodes(VectorSet& dependency_set);
 
-  // VLoop accessors.
-  bool is_marked_reduction(const Node* n) const {
-    return _vloop_analyzer.reductions().is_marked_reduction(n);
-  }
-
-  const GrowableArray<Node*>& body() const {
-    return _vloop_analyzer.body().body();
-  }
-
   // Helper methods for building VTransformGraph.
   VTransformNode* get_vtnode_or_null(Node* n) const {
     VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
