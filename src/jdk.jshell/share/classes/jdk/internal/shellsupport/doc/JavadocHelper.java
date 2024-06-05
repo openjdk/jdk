@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -57,6 +59,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Elements.DocCommentKind;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
@@ -70,12 +73,15 @@ import javax.tools.ToolProvider;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.InheritDocTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
@@ -90,6 +96,12 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
+
+import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.IncludeSourceSpans;
+import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
 
 /**Helper to find javadoc and resolve @inheritDoc.
  */
@@ -222,16 +234,18 @@ public abstract class JavadocHelper implements AutoCloseable {
             if (docComment == null)
                 return null;
 
-            Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment);
+            DocCommentKind docCommentKind = trees.getDocCommentKind(el);
+            Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment, docCommentKind);
             DocCommentTree docCommentTree = parsed.fst;
             int offset = parsed.snd;
             IOException[] exception = new IOException[1];
             Comparator<int[]> spanComp =
                     (span1, span2) -> span1[0] != span2[0] ? span2[0] - span1[0]
-                                                           : span2[1] - span1[0];
+                                                           : span2[1] - span1[1];
             //spans in the docComment that should be replaced with the given Strings:
             Map<int[], List<String>> replace = new TreeMap<>(spanComp);
-            DocSourcePositions sp = trees.getSourcePositions();
+            SyntheticAwareTreeDocSourcePositions sp =
+                    new SyntheticAwareTreeDocSourcePositions(trees.getSourcePositions());
 
             //fill in missing elements and resolve {@inheritDoc}
             //if an element is (silently) missing in the javadoc, a synthetic {@inheritDoc}
@@ -252,6 +266,29 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private Map<DocTree, String> syntheticTrees = new IdentityHashMap<>();
                 /* Position on which the synthetic trees should be inserted.*/
                 private long insertPos = offset;
+                @Override
+                public Void scan(Iterable<? extends DocTree> nodes, Void p) {
+                    if (nodes != null && containsMarkdown(nodes)) {
+                        JoinedMarkdown joinedMarkdowns = joinMarkdown(sp, dcTree, nodes);
+                        String source = joinedMarkdowns.source();
+                        Parser parser = Parser.builder()
+                                .extensions(List.of(TablesExtension.create()))
+                                .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
+                                .build();
+                        Node document = parser.parse(source);
+                        String htmlWithPlaceHolders = stripParagraphs(HtmlRenderer.builder()
+                                                                                  .build()
+                                                                                  .render(document));
+
+                        for (String part : htmlWithPlaceHolders.split(PLACEHOLDER_PATTERN, -1)) {
+                            int[] replaceSpan = joinedMarkdowns.replaceSpans.remove(0);
+
+                            replace.computeIfAbsent(replaceSpan, _ -> new ArrayList<>())
+                                   .add(part);
+                        }
+                    }
+                    return super.scan(nodes, p);
+                }
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Void visitDocComment(DocCommentTree node, Void p) {
                     dcTree = node;
@@ -260,21 +297,19 @@ public abstract class JavadocHelper implements AutoCloseable {
                         if (node.getFullBody().isEmpty()) {
                             //there is no body in the javadoc, add synthetic {@inheritDoc}, which
                             //will be automatically filled in visitInheritDoc:
-                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}").fst;
+                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", DocCommentKind.TRADITIONAL).fst;
                             syntheticTrees.put(dc, "*\n");
                             interestingParent.push(dc);
                             boolean prevInSynthetic = inSynthetic;
                             try {
                                 inSynthetic = true;
-                                scan(dc.getFirstSentence(), p);
-                                scan(dc.getBody(), p);
+                                scan(dc.getFullBody(), p);
                             } finally {
                                 inSynthetic = prevInSynthetic;
                                 interestingParent.pop();
                             }
                         } else {
-                            scan(node.getFirstSentence(), p);
-                            scan(node.getBody(), p);
+                            scan(node.getFullBody(), p);
                         }
                         //add missing @param, @throws and @return, augmented with {@inheritDoc}
                         //which will be resolved in visitInheritDoc:
@@ -401,7 +436,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         return null;
                     }
                     Pair<DocCommentTree, Integer> parsed =
-                            parseDocComment(inheritedJavacTask, inherited);
+                            parseDocComment(inheritedJavacTask, inherited, DocCommentKind.TRADITIONAL);
                     DocCommentTree inheritedDocTree = parsed.fst;
                     int offset = parsed.snd;
                     List<List<? extends DocTree>> inheritedText = new ArrayList<>();
@@ -478,6 +513,21 @@ public abstract class JavadocHelper implements AutoCloseable {
                     }
                     return super.visitInheritDoc(node, p);
                 }
+                @Override
+                public Void visitLink(LinkTree node, Void p) {
+                    if (sp.isRewrittenTree(null, dcTree, node)) {
+                        //this link is a synthetic rewritten link, replace
+                        //the original span with the new link:
+                        int start = (int) sp.getStartPosition(null, dcTree, node);
+                        int end   = (int) sp.getEndPosition(null, dcTree, node);
+
+                        replace.computeIfAbsent(new int[] {start, end}, _ -> new ArrayList<>())
+                               .add(node.toString());
+
+                        return null;
+                    }
+                    return super.visitLink(node, p);
+                }
                 private boolean inSynthetic;
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Void scan(DocTree tree, Void p) {
@@ -552,7 +602,10 @@ public abstract class JavadocHelper implements AutoCloseable {
                     tags.add(toInsert);
                 }
 
-                private final List<DocTree.Kind> tagOrder = Arrays.asList(DocTree.Kind.PARAM, DocTree.Kind.THROWS, DocTree.Kind.RETURN);
+                private static final List<DocTree.Kind> tagOrder =
+                        Arrays.asList(DocTree.Kind.PARAM, DocTree.Kind.THROWS,
+                                      DocTree.Kind.RETURN, DocTree.Kind.SEE,
+                                      DocTree.Kind.SINCE);
             }.scan(docCommentTree, null);
 
             if (replace.isEmpty())
@@ -604,25 +657,38 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
          private DocTree parseBlockTag(JavacTask task, String blockTag) {
-            DocCommentTree dc = parseDocComment(task, blockTag).fst;
+            DocCommentTree dc = parseDocComment(task, blockTag, DocCommentKind.TRADITIONAL).fst;
 
             return dc.getBlockTags().get(0);
         }
 
-        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc) {
+        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc, DocCommentKind docCommentKind) {
             DocTrees trees = DocTrees.instance(task);
             try {
-                SimpleJavaFileObject fo =
-                        new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
-                    @Override @DefinedBy(Api.COMPILER)
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                            throws IOException {
-                        return "<body>" + javadoc + "</body>";
-                    }
-                };
+                URI uri;
+                Kind kind;
+                String content;
+                int offset;
+                if (docCommentKind == DocCommentKind.TRADITIONAL) {
+                    uri = new URI("mem:///doc.html");
+                    kind = Kind.HTML;
+                    content = "<body>" + javadoc + "</body>";
+                    offset = "<body>".length();
+                } else {
+                    uri = new URI("mem:///doc.md");
+                    kind = Kind.OTHER;
+                    content = javadoc;
+                    offset = 0;
+                }
+                SimpleJavaFileObject fo = new SimpleJavaFileObject(uri, kind) {
+                        @Override @DefinedBy(Api.COMPILER)
+                        public CharSequence getCharContent(boolean ignoreEncodingErrors)
+                                throws IOException {
+                            return content;
+                        }
+                    };
                 DocCommentTree tree = trees.getDocCommentTree(fo);
-                int offset = (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
-                offset += "<body>".length();
+                offset += (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
@@ -774,6 +840,164 @@ public abstract class JavadocHelper implements AutoCloseable {
         @Override
         public void close() throws IOException {
             fm.close();
+        }
+
+        private static boolean containsMarkdown(Iterable<? extends DocTree> trees) {
+            return StreamSupport.stream(trees.spliterator(), false)
+                                .anyMatch(t -> t.getKind() == DocTree.Kind.MARKDOWN);
+        }
+
+        private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
+
+        private static JoinedMarkdown joinMarkdown(SyntheticAwareTreeDocSourcePositions sp,
+                                                   DocCommentTree comment,
+                                                   Iterable<? extends DocTree> trees) {
+            StringBuilder sourceBuilder = new StringBuilder();
+            List<int[]> replaceSpans = new ArrayList<>();
+            int currentSpanStart = (int) sp.getStartPosition(null, comment, trees.iterator().next());
+            DocTree lastTree = null;
+
+            for (DocTree tree : trees) {
+                if (tree instanceof RawTextTree t) {
+                    if (t.getKind() != DocTree.Kind.MARKDOWN) {
+                        throw new IllegalStateException(t.getKind().toString());
+                    }
+                    String code = t.getContent();
+                    // handle the (unlikely) case of any U+FFFC characters existing in the code
+                    int start = 0;
+                    int pos;
+                    while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
+                        replaceSpans.add(new int[] {currentSpanStart, currentSpanStart + pos - start});
+                        currentSpanStart += pos - start + 1;
+                        start = pos + 1;
+                    }
+                    sourceBuilder.append(code);
+                } else {
+                    int treeStart = (int) sp.getStartPosition(null, comment, tree);
+                    int treeEnd = (int) sp.getEndPosition(null, comment, tree);
+                    replaceSpans.add(new int[] {currentSpanStart, treeStart});
+                    currentSpanStart = treeEnd;
+                    sourceBuilder.append(PLACEHOLDER);
+                }
+                lastTree = tree;
+            }
+
+            int end = (int) sp.getEndPosition(null, comment, lastTree);
+
+            replaceSpans.add(new int[] {currentSpanStart, end});
+
+            return new JoinedMarkdown(sourceBuilder.toString(), replaceSpans);
+        }
+
+        private static String stripParagraphs(String input) {
+            input = input.replace("</p>", "");
+
+            if (input.startsWith("<p>")) {
+                input = input.substring(3);
+            }
+
+            if (input.endsWith("\n")) {
+                input = input.substring(0, input.length() - 1);
+            }
+
+            return input.replace("<p>", "\n<p>");
+        }
+
+        private static final String PLACEHOLDER_PATTERN = Pattern.quote("" + PLACEHOLDER);
+
+        private record JoinedMarkdown(String source, List<int[]> replaceSpans) {}
+
+        //embedded transformers may produce rewritten trees for link,
+        //there re-written trees has start position -1, the DocSourcePositions
+        //will provide an adjusted span based on the link nested nodes:
+        private static final class SyntheticAwareTreeDocSourcePositions implements DocSourcePositions {
+
+            private final DocSourcePositions delegate;
+            private final Map<DocTree, long[]> adjustedSpan = new HashMap<>();
+            private final Set<DocTree> rewrittenTrees = new HashSet<>();
+
+            public SyntheticAwareTreeDocSourcePositions(DocSourcePositions delegate) {
+                this.delegate = delegate;
+            }
+
+            @Override
+            public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(file, comment, tree);
+
+                long[] adjusted = adjustedSpan.get(tree);
+
+                if (adjusted != null) {
+                    return adjusted[0];
+                }
+
+                return delegate.getStartPosition(file, comment, tree);
+            }
+
+            @Override
+            public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(file, comment, tree);
+
+                long[] adjusted = adjustedSpan.get(tree);
+
+                if (adjusted != null) {
+                    return adjusted[1];
+                }
+
+                return delegate.getEndPosition(file, comment, tree);
+            }
+
+            @Override
+            public long getStartPosition(CompilationUnitTree file, Tree tree) {
+                return delegate.getStartPosition(file, tree);
+            }
+
+            @Override
+            public long getEndPosition(CompilationUnitTree file, Tree tree) {
+                return delegate.getEndPosition(file, tree);
+            }
+
+            boolean isRewrittenTree(CompilationUnitTree file,
+                                    DocCommentTree comment,
+                                    DocTree tree) {
+                ensureAdjustedSpansFilled(file, comment, tree);
+                return rewrittenTrees.contains(tree);
+            }
+
+            private void ensureAdjustedSpansFilled(CompilationUnitTree file,
+                                                   DocCommentTree comment,
+                                                   DocTree tree) {
+                if (tree.getKind() != DocTree.Kind.LINK &&
+                    tree.getKind() != DocTree.Kind.LINK_PLAIN) {
+                    return ;
+                }
+
+                long[] span;
+                long treeStart = delegate.getStartPosition(file, comment, tree);
+
+                if (treeStart == (-1)) {
+                    LinkTree link = (LinkTree) tree;
+                    Iterable<? extends DocTree> nested = () -> Stream.concat(link.getLabel().stream(),
+                                                                             Stream.of(link.getReference()))
+                                                                     .iterator();
+                    long start = Long.MAX_VALUE;
+                    long end = Long.MIN_VALUE;
+
+                    for (DocTree t : nested) {
+                        start = Math.min(start,
+                                         delegate.getStartPosition(file, comment, t));
+                        end   = Math.max(end,
+                                         delegate.getEndPosition(file, comment, t));
+                    }
+
+                    span = new long[] {(int) start - 1, (int) end + 1};
+                    rewrittenTrees.add(tree);
+                } else {
+                    long treeEnd = delegate.getEndPosition(file, comment, tree);
+                    span = new long[] {treeStart, treeEnd};
+                }
+
+                adjustedSpan.put(tree, span);
+            }
         }
 
         private static final class PatchModuleFileManager

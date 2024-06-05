@@ -1385,8 +1385,16 @@ public:
     vmslt_vv(vd, vs1, vs2, vm);
   }
 
+  inline void vmsgtu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsltu_vv(vd, vs1, vs2, vm);
+  }
+
   inline void vmsge_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
     vmsle_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsgeu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsleu_vv(vd, vs1, vs2, vm);
   }
 
   inline void vmfgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
