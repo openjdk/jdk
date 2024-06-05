@@ -236,7 +236,9 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
 void StatSampler::add_optional_property_constant(CounterNS name_space, const char* name, TRAPS) {
   const char* value = Arguments::get_property(name);
 
-  if (value != nullptr) add_property_constant(name_space, name, value, CHECK);
+  if (value != nullptr) {
+    add_property_constant(name_space, name, value, CHECK);
+  }
 }
 
 /*
