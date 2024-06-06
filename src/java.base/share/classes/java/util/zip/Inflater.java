@@ -53,9 +53,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * {@code setInput()} methods. The output byte sequence is written to the
  * output byte array or byte buffer passed to the {@code inflate()} methods.
  * <p>
- * The {@linkplain Deflater##compdecomp code fragment in Deflater} demonstrates
- * a trivial compression and decompression of a string using {@code Deflater} and
+ * The following code fragment demonstrates a trivial compression and
+ * decompression of a string using {@code Deflater} and
  * {@code Inflater}.
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
  * To release resources used by this {@code Inflater}, the {@link #end()} method

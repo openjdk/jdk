@@ -57,65 +57,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and
  * {@code Inflater}.
- *
- * {@snippet id="compdecomp" lang="java":
- *    // Encode a String into bytes
- *    String inputString = "blahblahblah\u20AC\u20AC";
- *    byte[] input = inputString.getBytes(StandardCharsets.UTF_8);
- *
- *    // Compress the bytes
- *    ByteArrayOutputStream compressedBaos = new ByteArrayOutputStream();
- *    Deflater compressor = new Deflater();
- *    try {
- *        compressor.setInput(input);
- *        // Let the compressor know that the complete input
- *        // has been made available
- *        compressor.finish();
- *        // Keep compressing the input till the compressor
- *        // is finished compressing
- *        while (!compressor.finished()) {
- *            // Use some reasonable size for the temporary buffer
- *            // based on the data being compressed
- *            byte[] tmpBuffer = new byte[100];
- *            int numCompressed = compressor.deflate(tmpBuffer);
- *            // Copy over the compressed bytes from the temporary
- *            // buffer into the final byte array
- *            compressedBaos.write(tmpBuffer, 0, numCompressed);
- *        }
- *    } finally {
- *        // Release the resources held by the compressor
- *        compressor.end();
- *    }
- *
- *    // Decompress the bytes
- *    Inflater decompressor = new Inflater();
- *    ByteArrayOutputStream decompressedBaos = new ByteArrayOutputStream();
- *    try {
- *        byte[] compressed = compressedBaos.toByteArray();
- *        decompressor.setInput(compressed, 0, compressed.length);
- *        while (!decompressor.finished()) {
- *            // Use some reasonable size for the temporary buffer
- *            // based on the data being decompressed
- *            byte[] tmpBuffer = new byte[100];
- *            int numDecompressed = 0;
- *            try {
- *                numDecompressed = decompressor.inflate(tmpBuffer);
- *            } catch (DataFormatException dfe) {
- *                // Handle exception
- *                ...
- *            }
- *            // Copy over the decompressed bytes from the temporary
- *            // buffer into the final byte array
- *            decompressedBaos.write(tmpBuffer, 0, numDecompressed);
- *        }
- *    } finally {
- *        // Release the resources held by the decompressor
- *        decompressor.end();
- *    }
- *    // Decode the bytes into a String
- *    byte[] decompressed = decompressedBaos.toByteArray();
- *    String outputString = new String(decompressed, 0, decompressed.length, StandardCharsets.UTF_8);
- * }
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
  * To release resources used by this {@code Deflater}, the {@link #end()} method
