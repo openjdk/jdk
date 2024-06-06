@@ -965,13 +965,13 @@ bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
 // implementation for Java API into an execution node with long type plus
 // another node converting long to int.
 bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc) {
-  switch(opc) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-      return true;
-    default:
-      return false;
+  switch (opc) {
+  case Op_PopCountL:
+  case Op_CountLeadingZerosL:
+  case Op_CountTrailingZerosL:
+    return true;
+  default:
+    return false;
   }
 }
 
