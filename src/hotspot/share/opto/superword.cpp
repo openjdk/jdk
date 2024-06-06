@@ -1649,7 +1649,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
 // that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
-  if (!vectors_should_be_aligned()) {
+  if (!VLoop::vectors_should_be_aligned()) {
     return;
   }
 
@@ -2267,15 +2267,12 @@ bool SuperWord::apply(Node_List& memops_schedule) {
   phase()->C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
 
   apply_memops_reordering_with_schedule(memops_schedule);
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
 
   bool is_success = apply_vectorization();
-
   phase()->C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
 
   return is_success;
@@ -3386,7 +3383,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // determined by SuperWord::filter_packs_for_alignment().
 void SuperWord::determine_mem_ref_and_aw_for_main_loop_alignment() {
   if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
   }
 

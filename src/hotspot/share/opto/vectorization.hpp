@@ -129,6 +129,9 @@ public:
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
+  // should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
+
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
 
