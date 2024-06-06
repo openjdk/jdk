@@ -21,52 +21,91 @@
  * questions.
  */
 
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 /*
  * @test
  * @bug 8315655
  * @requires (os.family == "mac")
  * @key headful
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual MouseDragPopupTest
+ * @run main MouseDragPopupTest
  */
 public class MouseDragPopupTest {
+    static boolean failed;
     static JFrame frame;
     static JPanel panel;
     static JPanel innerPanel;
     static JPopupMenu menu;
+    static volatile Point srcPoint;
+    static volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
-        String instructions = """
-                1) Press and hold the right mouse button down on the JLabel with the text
-                "Right click and drag from here"
+        SwingUtilities.invokeAndWait(() -> {
+            createAndShowGUI();
+            srcPoint = frame.getLocationOnScreen();
+            d = frame.getSize();
+        });
+        srcPoint.translate(2*d.width/3, 3*d.height/4);
 
-                2) Move the mouse to the JLabel with the text "to here"
+        final Point dstPoint = new Point(srcPoint);
+        dstPoint.translate(4*d.width/15, 0);
 
-                3) Observe that the popup menu assigned to the inner JPanel appears
-                (macOS) or does not appear (Windows, Linux)
-                """;
+        failed = false;
+        Robot robot = new Robot();
+        robot.setAutoDelay(100);
 
-        PassFailJFrame.builder()
-                .title("FocusablePopupDismissTest")
-                .instructions(instructions)
-                .rows(10)
-                .columns(45)
-                .testUI(MouseDragPopupTest::createAndShowGUI)
-                .build()
-                .awaitAndCheck();
+        robot.mouseMove(srcPoint.x, srcPoint.y);
+        robot.waitForIdle();
+        robot.delay(500);
+
+        robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+
+        while (!srcPoint.equals(dstPoint)) {
+            srcPoint.translate(sign(dstPoint.x - srcPoint.x), 0);
+            robot.mouseMove(srcPoint.x, srcPoint.y);
+        }
+        robot.waitForIdle();
+
+        robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+        robot.waitForIdle();
+
+        if (failed) {
+            throw new RuntimeException("Popup was shown, Test Failed.");
+        }
     }
 
-    static JFrame createAndShowGUI() {
+    public static int sign(int n) {
+        return n < 0 ? -1 : n == 0 ? 0 : 1;
+    }
+
+    static void createAndShowGUI() {
         frame = new JFrame("MouseDragPopupTest");
         panel = new JPanel();
         innerPanel = new JPanel();
         menu = new JPopupMenu();
+
+        menu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                failed = true;
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
 
         menu.add("This should not appear (and does not under Linux/Windows)");
         innerPanel.setComponentPopupMenu(menu);
@@ -78,7 +117,7 @@ public class MouseDragPopupTest {
         frame.add(panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-
-        return frame;
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 }
