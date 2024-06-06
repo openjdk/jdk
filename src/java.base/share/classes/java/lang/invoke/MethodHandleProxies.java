@@ -253,14 +253,14 @@ public class MethodHandleProxies {
 
             // the field name holding the method handle for this method
             String fieldName = "m" + count++;
-            var mt = methodDesc(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
+            var md = methodDesc(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
             var thrown = JLRA.getExecutableSharedExceptionTypes(m);
             var exceptionTypeDescs =
                     thrown.length == 0 ? DEFAULT_RETHROWS
                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
                                                        Arrays.stream(thrown).map(ConstantUtils::classDesc))
                                                .distinct().toList();
-            methods.add(new MethodInfo(mt, exceptionTypeDescs, fieldName));
+            methods.add(new MethodInfo(md, exceptionTypeDescs, fieldName));
 
             // find the types referenced by this method
             addElementType(referencedTypes, m.getReturnType());
