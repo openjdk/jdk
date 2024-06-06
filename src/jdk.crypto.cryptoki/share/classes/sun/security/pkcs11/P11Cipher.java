@@ -953,14 +953,6 @@ final class P11Cipher extends CipherSpi {
                 if (bytesBuffered == 0 && padBufferLen == 0) {
                     return 0;
                 }
-                if (blockMode == Mode.CTS) {
-                    convertCTSVariant(null, padBuffer, padBufferLen);
-                    k = token.p11.C_DecryptUpdate(session.id(),
-                            0, padBuffer, 0, padBufferLen,
-                            0, out, outOfs, outLen);
-                    outOfs += k;
-                    outLen -= k;
-                }
                 if (paddingObj != null) {
                     if (padBufferLen != 0) {
                         k = token.p11.C_DecryptUpdate(session.id(), 0,
@@ -980,6 +972,14 @@ final class P11Cipher extends CipherSpi {
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
+                    if (blockMode == Mode.CTS) {
+                        convertCTSVariant(null, padBuffer, padBufferLen);
+                        k = token.p11.C_DecryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                0, out, outOfs, outLen);
+                        outOfs += k;
+                        outLen -= k;
+                    }
                     doCancel = false;
                     k += token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
                             outLen);
@@ -1066,14 +1066,6 @@ final class P11Cipher extends CipherSpi {
                     if (bytesBuffered == 0 && padBufferLen == 0) {
                         return 0;
                     }
-                    if (blockMode == Mode.CTS) {
-                        convertCTSVariant(null, padBuffer, padBufferLen);
-                        k = token.p11.C_DecryptUpdate(session.id(),
-                                0, padBuffer, 0, padBufferLen,
-                                outAddr, outArray, outOfs, outLen);
-                        outOfs += k;
-                        outLen -= k;
-                    }
                     if (paddingObj != null) {
                         if (padBufferLen != 0) {
                             k = token.p11.C_DecryptUpdate(session.id(),
@@ -1095,6 +1087,14 @@ final class P11Cipher extends CipherSpi {
                         outArray = padBuffer;
                         outOfs = 0;
                     } else {
+                        if (blockMode == Mode.CTS) {
+                            convertCTSVariant(null, padBuffer, padBufferLen);
+                            k = token.p11.C_DecryptUpdate(session.id(),
+                                    0, padBuffer, 0, padBufferLen,
+                                    outAddr, outArray, outOfs, outLen);
+                            outOfs += k;
+                            outLen -= k;
+                        }
                         doCancel = false;
                         k += token.p11.C_DecryptFinal(session.id(),
                                 outAddr, outArray, outOfs, outLen);
@@ -1169,6 +1169,9 @@ final class P11Cipher extends CipherSpi {
             ciphertextBuf = ByteBuffer.wrap(ciphertextArr);
         }
         if (ciphertextBuf != null) {
+            // No assumptions should be made about the current ciphertextBuf
+            // position. Use offsets to read and write bytes from the last two
+            // blocks. Other blocks should not be modified.
             pad = pad == 0 ? blockSize : pad;
             if (encrypt) {
                 // .... pp[pp] ffff -> .... ffff pp[pp]
