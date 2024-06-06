@@ -388,12 +388,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     } while (JNI_FALSE)
 
 /*
- * Locates, on the mainClass, a static method named "main" which takes String[]
- * as an argument and invokes that method. Returns 1 (true) if the method was found
- * and invoked. Returns 0 (false) if the method could not be found. If an exception
- * occurred while trying to locate the method or the invoked main method threw an
- * exception, then that exception will be available through the
- * ExceptionOccurred(JNIEnv *env) JNI method.
+ * Locates a static main(String[]) method and invokes that method.
+ * Returns 1 (true) if the method was found and invoked. Returns 0 (false) if
+ * the method was not found.
+ * Any exception thrown while locating the method or from within the invoked main
+ * method will be available through ExceptionOccurred(JNIEnv *env).
  */
 int
 invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
@@ -408,12 +407,11 @@ invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
 }
 
 /*
- * Locates, on the mainClass, an instance method named "main" which takes String[]
- * as an argument and invokes that method. Returns 1 (true) if the method was found
- * and invoked. Returns 0 (false) if the method could not be found. If an exception
- * occurred while trying to locate the method or the invoked main method threw an
- * exception, then that exception will be available through the
- * ExceptionOccurred(JNIEnv *env) JNI method.
+ * Locates a main(String[]) instance method and invokes that method.
+ * Returns 1 (true) if the method was found and invoked. Returns 0 (false) if
+ * the method was not found.
+ * Any exception thrown while locating the method or from within the invoked main
+ * method will be available through ExceptionOccurred(JNIEnv *env).
  */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
@@ -438,12 +436,11 @@ invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs)
 }
 
 /*
- * Locates, on the mainClass, a static method named "main" which takes no arguments
- * and invokes that method. Returns 1 (true) if the method was found
- * and invoked. Returns 0 (false) if the method could not be found. If an exception
- * occurred while trying to locate the method or the invoked main method threw an
- * exception, then that exception will be available through the
- * ExceptionOccurred(JNIEnv *env) JNI method.
+ * Locates a no-arg static "main" method and invokes that method.
+ * Returns 1 (true) if the method was found and invoked. Returns 0 (false) if
+ * the method was not found.
+ * Any exception thrown while locating the method or from within the invoked main
+ * method will be available through ExceptionOccurred(JNIEnv *env).
  */
 int
 invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
@@ -458,12 +455,11 @@ invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
 }
 
 /*
- * Locates, on the mainClass, an instance method named "main" which takes no arguments
- * and invokes that method. Returns 1 (true) if the method was found
- * and invoked. Returns 0 (false) if the method could not be found. If an exception
- * occurred while trying to locate the method or the invoked main method threw an
- * exception, then that exception will be available through the
- * ExceptionOccurred(JNIEnv *env) JNI method.
+ * Locates a no-arg instance method "main" and invokes that method.
+ * Returns 1 (true) if the method was found and invoked. Returns 0 (false) if
+ * the method could not be found.
+ * Any exception thrown while locating the method or from within the invoked main
+ * method will be available through ExceptionOccurred(JNIEnv *env).
  */
 int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
