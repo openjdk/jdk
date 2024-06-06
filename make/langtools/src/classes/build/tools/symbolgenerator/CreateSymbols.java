@@ -338,12 +338,12 @@ public class CreateSymbols {
             "Ljdk/internal/PreviewFeature;";
     private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
             "Ljdk/internal/javac/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
+            "Ljdk/internal/PreviewFeature+Annotation;";
     private static final String RESTRICTED_ANNOTATION =
             "Ljdk/internal/javac/Restricted;";
     private static final String RESTRICTED_ANNOTATION_INTERNAL =
             "Ljdk/internal/javac/Restricted+Annotation;";
-    private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
-            "Ljdk/internal/PreviewFeature+Annotation;";
     private static final String VALUE_BASED_ANNOTATION =
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
