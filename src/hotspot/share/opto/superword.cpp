@@ -2264,24 +2264,26 @@ bool SuperWord::schedule_and_apply() {
 
 bool SuperWord::apply(Node_List& memops_schedule) {
   CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-  phase()->C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
 
   apply_memops_reordering_with_schedule(memops_schedule);
 
-  phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
 
+  phase()->C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
+
   bool is_success = apply_vectorization();
 
-  phase()->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
+  phase()->C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
 
   return is_success;
 }
 
 // Reorder the memory graph for all slices in parallel. We walk over the schedule once,
 // and track the current memory state of each slice.
-void SuperWord::apply_memops_reordering_with_schedule(Node_List &memops_schedule) {
+void SuperWord::apply_memops_reordering_with_schedule(Node_List& memops_schedule) {
 #ifndef PRODUCT
   if (is_trace_superword_info()) {
     tty->print_cr("\nSuperWord::apply_memops_reordering_with_schedule:");
