@@ -511,6 +511,37 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   return true;
 }
 
+// Following routine generates IR corresponding to AbstractShuffle::partiallyWrapIndex method,
+// which partially wraps index by modulo VEC_LENGTH and generates a negative index value if original
+// index is out of valid index range [0, VEC_LENGTH)
+//
+//   wrapped_index = (VEC_LENGTH - 1) & index
+//   if (index u> VEC_LENGTH) {
+//     wrapped_index -= VEC_LENGTH;
+//
+// Note: Unsigned greater than comparison treat both <0 and >VEC_LENGTH indices as out-of-bound
+// indexes.
+Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
+  assert(elem_bt == T_BYTE, "Shuffles use byte array based backing storage.");
+  const TypeVect* vt  = TypeVect::make(elem_bt, num_elem);
+  const Type* type_bt = Type::get_const_basic_type(elem_bt);
+
+  Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
+  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, type_bt));
+
+  BoolTest::mask pred = BoolTest::ugt;
+  ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(pred));
+  Node* lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
+  Node* bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
+  const TypeVect* vmask_type = TypeVect::makemask(type_bt, num_elem);
+  Node*  mask = gvn().transform(new VectorMaskCmpNode(pred, bcast_lane_cnt, index_vec, pred_node, vmask_type));
+
+  // Make the indices greater than lane count as -ve values to match the java side implementation.
+  index_vec = gvn().transform(VectorNode::make(Op_AndV, index_vec, bcast_mod_mask, vt));
+  Node* biased_val = gvn().transform(VectorNode::make(Op_SubVB, index_vec, bcast_lane_cnt, vt));
+  return gvn().transform(new VectorBlendNode(biased_val, index_vec, mask));
+}
+
 // <Sh extends VectorShuffle<E>,  E>
 //  Sh ShuffleIota(Class<?> E, Class<?> shuffleClass, Vector.Species<E> s, int length,
 //                  int start, int step, int wrap, ShuffleIotaOperation<Sh, E> defaultImpl)
@@ -596,18 +627,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
 
   if (do_wrap)  {
     // Wrap the indices greater than lane count.
-     res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
-  } else {
-    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::ugt));
-    Node * lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
-    Node * bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
-    const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
-    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::ugt, bcast_lane_cnt, res, pred_node, vmask_type));
-
-    // Make the indices greater than lane count as -ve values to match the java side implementation.
     res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
-    Node * biased_val = gvn().transform(VectorNode::make(Op_SubVB, res, bcast_lane_cnt, vt));
-    res = gvn().transform(new VectorBlendNode(biased_val, res, mask));
+  } else {
+    res = partially_wrap_indexes(res, num_elem, elem_bt);
   }
 
   ciKlass* sbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2286,6 +2308,18 @@ bool LibraryCallKit::inline_vector_convert() {
     return false;
   }
 
+
+  if (is_vector_shuffle(vbox_klass_to) &&
+      (!arch_supports_vector(Op_SubVB, num_elem_to, elem_bt_to, VecMaskNotUsed)           ||
+       !arch_supports_vector(Op_VectorBlend, num_elem_to, elem_bt_to, VecMaskNotUsed)     ||
+       !arch_supports_vector(Op_VectorMaskCmp, num_elem_to, elem_bt_to, VecMaskNotUsed)   ||
+       !arch_supports_vector(Op_AndV, num_elem_to, elem_bt_to, VecMaskNotUsed)            ||
+       !arch_supports_vector(Op_Replicate, num_elem_to, elem_bt_to, VecMaskNotUsed))) {
+    log_if_needed("  ** not supported: arity=1 op=shuffle_index_wrap vlen2=%d etype2=%s",
+                    num_elem_to, type2name(elem_bt_to));
+    return false;
+  }
+
   // At this point, we know that both input and output vector registers are supported
   // by the architecture. Next check if the casted type is simply to same type - which means
   // that it is actually a resize and not a cast.
@@ -2381,6 +2415,10 @@ bool LibraryCallKit::inline_vector_convert() {
   } else if (!Type::equals(src_type, dst_type)) {
     assert(!is_cast, "must be reinterpret");
     op = gvn().transform(new VectorReinterpretNode(op, src_type, dst_type));
+  }
+
+  if (is_vector_shuffle(vbox_klass_to)) {
+     op = partially_wrap_indexes(op, num_elem_to, elem_bt_to);
   }
 
   const TypeInstPtr* vbox_type_to = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass_to);

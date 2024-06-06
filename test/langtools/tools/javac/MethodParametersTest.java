@@ -175,8 +175,8 @@ public class MethodParametersTest {
         if (!baz.methods().get(0).methodName().equalsString("<init>"))
             throw new Exception("Classfile Baz badly formed: method has name " +
                                 baz.methods().get(0).methodName().stringValue());
-        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
-        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.CODE).orElse(null);;
+        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.methodParameters()).orElse(null);
+        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.code()).orElse(null);;
         if (null == mpattr)
             throw new Exception("Classfile Baz badly formed: no method parameters info");
         if (null == cattr)
