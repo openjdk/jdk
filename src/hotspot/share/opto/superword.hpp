@@ -633,13 +633,10 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
-
-  // Convert packs into vector node operations
-  bool output();
+  bool schedule_and_apply();
+  bool apply(Node_List& memops_schedule);
+  void apply_memops_reordering_with_schedule(Node_List& memops_schedule);
+  bool apply_vectorization();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
 

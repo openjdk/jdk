@@ -485,10 +485,9 @@ bool SuperWord::SLP_extract() {
   filter_packs_for_profitable();
 
   DEBUG_ONLY(verify_packs();)
+  DEBUG_ONLY(verify_no_extract());
 
-  schedule();
-
-  return output();
+  return schedule_and_apply();
 }
 
 //------------------------------find_adjacent_refs---------------------------
@@ -2216,7 +2215,9 @@ public:
   }
 };
 
-// The C2 graph (specifically the memory graph), needs to be re-ordered.
+// We want to replace the packed scalars from the PackSet and replace them
+// with vector operations. This requires scheduling and re-ordering the memory
+// graph. We take these steps:
 // (1) Build the PacksetGraph. It combines the dependency graph with the
 //     packset. The PacksetGraph gives us the dependencies that must be
 //     respected after scheduling.
@@ -2224,10 +2225,11 @@ public:
 //     a linear order of all memops in the body. The order respects the
 //     dependencies of the PacksetGraph.
 // (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
-// (4) Use the memops_schedule to re-order the memops in all slices.
-void SuperWord::schedule() {
+// (4) Apply the vectorization, including re-ordering the memops and replacing
+//     packed scalars with vector operations.
+bool SuperWord::schedule_and_apply() {
   if (_packset.length() == 0) {
-    return; // empty packset
+    return false; // empty packset
   }
   ResourceMark rm;
 
@@ -2253,9 +2255,10 @@ void SuperWord::schedule() {
     }
 #endif
     _packset.clear();
-    return;
+    return false;
   }
 
+  // TODO move?
 #ifndef PRODUCT
   if (is_trace_superword_info()) {
     tty->print_cr("SuperWord::schedule: memops_schedule:");
@@ -2263,17 +2266,30 @@ void SuperWord::schedule() {
   }
 #endif
 
+  // (4) Apply the vectorization, including re-ordering the memops.
+  return apply(memops_schedule);
+}
+
+bool SuperWord::apply(Node_List& memops_schedule) {
   CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
   phase()->C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
 
-  // (4) Use the memops_schedule to re-order the memops in all slices.
-  schedule_reorder_memops(memops_schedule);
-}
+  apply_memops_reordering_with_schedule(memops_schedule);
 
+  phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
+
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
+
+  bool is_success = apply_vectorization();
+
+  phase()->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
+
+  return is_success;
+}
 
 // Reorder the memory graph for all slices in parallel. We walk over the schedule once,
 // and track the current memory state of each slice.
-void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
+void SuperWord::apply_memops_reordering_with_schedule(Node_List &memops_schedule) {
   int max_slices = phase()->C->num_alias_types();
   // When iterating over the memops_schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
@@ -2354,32 +2370,24 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   }
 }
 
-//------------------------------output---------------------------
 // Convert packs into vector node operations
 // At this point, all correctness and profitability checks have passed.
 // We start the irreversible process of editing the C2 graph. Should
 // there be an unexpected situation (assert fails), then we can only
 // bail out of the compilation, as the graph has already been partially
 // modified. We bail out, and retry without SuperWord.
-bool SuperWord::output() {
+bool SuperWord::apply_vectorization() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = phase()->C;
-  if (_packset.is_empty()) {
-    return false;
-  }
+  assert(!_packset.is_empty(), "vectorization requires non-empty packset");
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("SuperWord::output    ");
+    tty->print("SuperWord::apply_vectorization ");
     lpt()->dump_head();
   }
 #endif
-  phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
-
-  adjust_pre_loop_limit_to_align_main_loop_vectors();
-
-  DEBUG_ONLY(verify_no_extract());
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
@@ -2388,7 +2396,7 @@ bool SuperWord::output() {
     Node* n = body().at(i);
     Node_List* p = get_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
-      // After schedule_reorder_memops, we know that the memops have the same order in the pack
+      // After apply_memops_reordering_with_schedule, we know that the memops have the same order in the pack
       // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
       // and "n" is the last node in the slice from the pack.
       Node* first = p->at(0);
@@ -2689,8 +2697,6 @@ bool SuperWord::output() {
       }
     }
   }
-
-  phase()->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
 
   return true;
 }
