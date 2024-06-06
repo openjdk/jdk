@@ -1249,7 +1249,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-bool Node::dominates(Node* sub, Node_Stack &nstack) {
+bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1259,7 +1259,8 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
   Node* orig_sub = sub;
   Node* dom      = this;
   bool  met_dom  = false;
-  nstack.clear();
+  dead_code      = false;
+  nlist.clear();
 
   // Walk 'sub' backward up the chain to 'dom', watching for regions.
   // After seeing 'dom', continue up to Root or Start.
@@ -1270,28 +1271,12 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
   // (If we get confused, break out and return a conservative 'false'.)
   while (sub != nullptr) {
     if (sub->is_top()) {
-      // We reached a dead code, try another path of the last multi-input Region we met.
-      bool found = false;
-      for (uint i = nstack.size(); i > 0; i--) {
-        Node* n = nstack.node_at(i - 1);
-        for (uint index = nstack.index_at(i - 1); index < n->req(); index++) {
-          Node* in = n->in(index);
-          if (in != nullptr && !in->is_top()) {
-            found = true;
-            sub = n->find_exact_control(in);
-            nstack.set_index_at(i - 1, index + 1);
-            break;
-          }
-        }
-        if (found) break;
-      }
-      if (found) continue;
-      // Give a conservative answer if we have no other choices.
+      // Conservative answer for dead code.
+      dead_code = true;
       break;
     }
-
     if (sub == dom) {
-      if (nstack.is_empty()) {
+      if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
         return true;
@@ -1302,7 +1287,7 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
         // to make sure that it did not walk in a cycle.
         met_dom = true; // first time meet
         iterations_without_region_limit = DominatorSearchLimit; // Reset
-      }
+     }
     }
     if (sub->is_Start() || sub->is_Root()) {
       // Success if we met 'dom' along a path to Start or Root.
@@ -1310,7 +1295,6 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
       // (This assumption is up to the caller to ensure!)
       return met_dom;
     }
-
     Node* up = sub->in(0);
     // Normalize simple pass-through regions and projections:
     up = sub->find_exact_control(up);
@@ -1322,7 +1306,9 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
       // Take in(1) path on the way up to 'dom' for regions with only one input
       up = sub->in(1);
     } else if (sub == up && sub->is_Region()) {
-      // Try all paths for Regions with multiple input paths (it may be a loop head).
+      // Try both paths for Regions with 2 input paths (it may be a loop head).
+      // It could give conservative 'false' answer without information
+      // which region's input is the entry path.
       iterations_without_region_limit = DominatorSearchLimit; // Reset
 
       bool region_was_visited_before = false;
@@ -1331,38 +1317,40 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
       // loop-back edge from 'sub' back into the body of the loop,
       // and worked our way up again to the loop header 'sub'.
       // So, take the first unexplored path on the way up to 'dom'.
-      for (uint i = nstack.size(); i > 0; i--) {
-        Node* visited = nstack.node_at(i - 1);
+      for (int j = nlist.size() - 1; j >= 0; j--) {
+        intptr_t ni = (intptr_t)nlist.at(j);
+        Node* visited = (Node*)(ni & ~1);
+        bool  visited_twice_already = ((ni & 1) != 0);
         if (visited == sub) {
-          // The Region node was visited before, just visit the next input.
-          for (uint index = nstack.index_at(i - 1); index < sub->req(); index++) {
-            Node* in = sub->in(index);
-            if (in != nullptr && !in->is_top() && in != sub) {
-              region_was_visited_before = true;
-              up = in;
-              nstack.set_index_at(i - 1, index + 1);
-              break;
-            }
-          }
-          if (!region_was_visited_before) {
-            // Visited all paths, but still stuck in loop body. Give up.
+          if (visited_twice_already) {
+            // Visited 2 paths, but still stuck in loop body.  Give up.
             return false;
           }
+          // The Region node was visited before only once.
+          // (We will repush with the low bit set, below.)
+          nlist.remove(j);
+          // We will find a new edge and re-insert.
+          region_was_visited_before = true;
           break;
         }
       }
 
-      // Record this Region if it's not visited before, and visit its first input.
-      if (!region_was_visited_before) {
-        for (uint i = 1; i < sub->req(); i++) {
-          Node* in = sub->in(i);
-          if (in != nullptr && !in->is_top() && in != sub) {
+      // Find an incoming edge which has not been seen yet; walk through it.
+      assert(up == sub, "");
+      uint skip = region_was_visited_before ? 1 : 0;
+      for (uint i = 1; i < sub->req(); i++) {
+        Node* in = sub->in(i);
+        if (in != nullptr && !in->is_top() && in != sub) {
+          if (skip == 0) {
             up = in;
-            nstack.push(sub, i + 1);
             break;
           }
+          --skip;               // skip this nontrivial input
         }
       }
+
+      // Set 0 bit to indicate that both paths were taken.
+      nlist.push((Node*)((intptr_t)sub + (region_was_visited_before ? 1 : 0)));
     }
 
     if (up == sub) {
@@ -1375,8 +1363,7 @@ bool Node::dominates(Node* sub, Node_Stack &nstack) {
     if (--iterations_without_region_limit < 0) {
       break;    // dead cycle
     }
-    // Skip simple pass-through control nodes in chain.
-    sub = sub->find_exact_control(up);
+    sub = up;
   }
 
   // Did not meet Root or Start node in pred. chain.
