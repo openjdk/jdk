@@ -474,6 +474,7 @@ protected:
     uint32_t     dcp_cpuid4_edx; // unused currently
 
     // cpuid function 7 (structured extended features enumeration leaf)
+    // eax = 7, ecx = 0
     SefCpuid7Eax sef_cpuid7_eax;
     SefCpuid7Ebx sef_cpuid7_ebx;
     SefCpuid7Ecx sef_cpuid7_ecx;
@@ -617,8 +618,7 @@ public:
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
   static long long egpr_test_value()   { return 0xCAFEBABECAFEBABEULL; }
-  static void report_apx_state_restore_error() { report_vm_error(__FILE__, __LINE__,"Unsuccessful APX state restoration.\n"); }
-
+  static void report_apx_state_restore_warning();
   static void get_cpu_info_wrapper();
   static void set_cpuinfo_segv_addr(address pc) { _cpuinfo_segv_addr = pc; }
   static bool  is_cpuinfo_segv_addr(address pc) { return _cpuinfo_segv_addr == pc; }
@@ -630,7 +630,7 @@ public:
   static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
   static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
   // address of apx state restore error handler.
-  static address _apx_state_restore_error_handler;
+  static address _apx_state_restore_warning_handler;
 
   static void clear_apx_test_state();
 

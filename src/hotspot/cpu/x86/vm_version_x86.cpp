@@ -61,7 +61,7 @@ address VM_Version::_cpuinfo_segv_addr_apx = 0;
 // Address of instruction after the one which causes APX specific SEGV
 address VM_Version::_cpuinfo_cont_addr_apx = 0;
 // Address of apx state restore error handler.
-address VM_Version::_apx_state_restore_error_handler = (address)VM_Version::report_apx_state_restore_error;
+address VM_Version::_apx_state_restore_warning_handler = (address)VM_Version::report_apx_state_restore_warning;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
@@ -113,11 +113,16 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
-    //__ mov64(r15, 0L);
-    // FIXME Uncomment following code after OS enablement of
+    /* FIXME Uncomment following code after OS enablement of
+    bool save_apx = UseAPX;
+    VM_Version::set_apx_cpuFeatures();
+    UseAPX = true;
     // EGPR state save/restoration.
-    //__ mov64(r16, 0L);
-    //__ mov64(r31, 0L);
+    __ mov64(r16, 0L);
+    __ mov64(r31, 0L);
+    UseAPX = save_apx;
+    VM_Version::clean_cpuFeatures();
+    */
     __ ret(0);
     return start;
   }
@@ -134,7 +139,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
-    Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_error;
+    Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
     StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
@@ -430,8 +435,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
-    /* FIXME: Uncomment after integration of JDK-8328998
-    __ mov64(r15, VM_Version::egpr_test_value());
+    /* FIXME: Uncomment while integrating JDK-8329032
+    bool save_apx = UseAPX;
+    VM_Version::set_apx_cpuFeatures();
+    UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
     __ mov64(r31, VM_Version::egpr_test_value());
     */
@@ -441,19 +448,18 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, Address(rsi, 0));
 
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
-    // Validate the contents of r15, r16 and r31
-    /* FIXME: Uncomment after integration of JDK-8328998
+    // Validate the contents of r16 and r31
+    /* FIXME: Uncomment after integration of JDK-8329032
     __ mov64(rax, VM_Version::egpr_test_value());
-    __ cmpq(rax, r15);
-    __ jccb(Assembler::notEqual, apx_save_restore_error);
     __ cmpq(rax, r16);
-    __ jccb(Assembler::notEqual, apx_save_restore_error);
+    __ jccb(Assembler::notEqual, apx_save_restore_warning);
     __ cmpq(rax, r31);
     __ jccb(Assembler::equal, vector_save_restore);
 
-    // Generate SEGV to signal unsuccessful save/restore.
-    __ bind(apx_save_restore_error);
-    __ lea(rax, ExternalAddress(VM_Version::_apx_state_restore_error_handler));
+    UseAPX = save_apx;
+
+    __ bind(apx_save_restore_warning);
+    __ lea(rax, ExternalAddress(VM_Version::_apx_state_restore_warning_handler));
     __ call(rax);
     */
 #endif
@@ -867,6 +873,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     return start;
   };
 };
+
+void VM_Version::report_apx_state_restore_warning() {
+  tty->print("warning: Unsuccessful EGPRs state restoration across signal handling, setting UseAPX to false.\n");
+  _cpuid_info.sefsl1_cpuid7_edx.bits.apx_f = 0;
+}
 
 void VM_Version::get_processor_features() {
 
