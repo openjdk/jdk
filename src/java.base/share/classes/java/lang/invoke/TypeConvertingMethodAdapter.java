@@ -26,11 +26,13 @@
 package java.lang.invoke;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
+import sun.invoke.util.Wrapper;
 
 import static java.lang.constant.ConstantDescs.*;
 
@@ -40,7 +42,7 @@ class TypeConvertingMethodAdapter {
         private static final ConstantPoolBuilder CP = ConstantPoolBuilder.of();
 
         private static MethodRefEntry box(ClassDesc primitive, ClassDesc target) {
-            return CP.methodRefEntry(target, "valueOf", MethodTypeDesc.of(target, primitive));
+            return CP.methodRefEntry(target, "valueOf", MethodTypeDescImpl.ofValidated(target, primitive));
         }
 
         private static final MethodRefEntry BOX_BOOLEAN = box(CD_boolean, CD_Boolean),
@@ -53,7 +55,7 @@ class TypeConvertingMethodAdapter {
                                             BOX_DOUBLE  = box(CD_double, CD_Double);
 
         private static MethodRefEntry unbox(ClassDesc owner, String methodName, ClassDesc primitiveTarget) {
-            return CP.methodRefEntry(owner, methodName, MethodTypeDesc.of(primitiveTarget));
+            return CP.methodRefEntry(owner, methodName, MethodTypeDescImpl.ofValidated(primitiveTarget));
         }
 
         private static final MethodRefEntry UNBOX_BOOLEAN = unbox(CD_Boolean, "booleanValue", CD_boolean),
@@ -197,8 +199,9 @@ class TypeConvertingMethodAdapter {
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return cls == Object.class ? CD_Object
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+             : cls == Object.class ? CD_Object
              : cls == String.class ? CD_String
-             : ClassDesc.ofDescriptor(cls.descriptorString());
+             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 }

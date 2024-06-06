@@ -27,6 +27,8 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -40,7 +42,6 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -1038,8 +1039,10 @@ abstract class MethodHandleImpl {
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
-        private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-        private static MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
+
+        private static final ClassDesc CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
+        private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+        private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
@@ -1266,24 +1269,24 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            return ClassFile.of().build(ClassDesc.of("InjectedInvoker"), clb -> clb
+            return ClassFile.of().build(ReferenceClassDescImpl.ofValidated("LInjectedInvoker;"), clb -> clb
                     .withFlags(ACC_PRIVATE | ACC_SUPER)
                     .withMethodBody(
                         "invoke_V",
-                        MethodTypeDesc.of(CD_Object, CD_MethodHandle, CD_Object.arrayType()),
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object_array),
                         ACC_STATIC,
                         cob -> cob.aload(0)
                                   .aload(1)
-                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()))
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array))
                                   .areturn())
                     .withMethodBody(
                         "reflect_invoke_V",
-                        MethodTypeDesc.of(CD_Object, CD_MethodHandle, CD_Object, CD_Object.arrayType()),
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object, CD_Object_array),
                         ACC_STATIC,
                         cob -> cob.aload(0)
                                   .aload(1)
                                   .aload(2)
-                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDesc.of(CD_Object, CD_Object, CD_Object.arrayType()))
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Object_array))
                                   .areturn()));
         }
     }

@@ -41,9 +41,12 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeName;
+import sun.invoke.util.Wrapper;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
@@ -61,8 +64,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
-    private static final ClassDesc CD_LambdaForm = ClassDesc.ofDescriptor("Ljava/lang/invoke/LambdaForm;");
-    private static final ClassDesc CD_BoundMethodHandle = ClassDesc.ofDescriptor("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -581,7 +584,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         // These are named like constants because there is only one per specialization scheme:
 
         private final ClassDesc CD_SPECIES_DATA = classDesc(metaType);
-        private final MethodTypeDesc MTD_SPECIES_DATA = MethodTypeDesc.of(CD_SPECIES_DATA);
+        private final MethodTypeDesc MTD_SPECIES_DATA = MethodTypeDescImpl.ofValidated(CD_SPECIES_DATA);
         private final String SPECIES_DATA_NAME = sdAccessor.getName();
         private final int SPECIES_DATA_MODS = sdAccessor.getModifiers();
         private final List<String> TRANSFORM_NAMES;  // derived from transformMethods
@@ -603,7 +606,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             TRANSFORM_TYPES = List.of(tts.toArray(new MethodType[0]));
             TRANSFORM_MODS = List.of(tms.toArray(new Integer[0]));
         }
-        private static final MethodTypeDesc MTD_TRANFORM_HELPER = MethodTypeDesc.of(CD_MethodHandle, CD_int);
+        private static final MethodTypeDesc MTD_TRANFORM_HELPER = MethodTypeDescImpl.ofValidated(CD_MethodHandle, CD_int);
         private static final int ACC_PPP = ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED;
 
         /*non-public*/
@@ -945,14 +948,19 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return cls == Object.class ? CD_Object
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+             : cls == Object.class ? CD_Object
              : cls == MethodType.class ? CD_MethodType
              : cls == LambdaForm.class ? CD_LambdaForm
              : cls == BoundMethodHandle.class ? CD_BoundMethodHandle
-             : ClassDesc.ofDescriptor(cls.descriptorString());
+             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {
-        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
+        var params = new ClassDesc[mt.parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            params[i] = classDesc(mt.parameterType(i));
+        }
+        return MethodTypeDescImpl.ofValidated(classDesc(mt.returnType()), params);
     }
 }

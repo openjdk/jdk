@@ -25,6 +25,10 @@
 
 package java.lang.invoke;
 
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -48,10 +52,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.TypeKind;
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -338,7 +339,7 @@ public class MethodHandleProxies {
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
-    private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
+    private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable);
     private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle =
             methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
     private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle =
@@ -346,12 +347,12 @@ public class MethodHandleProxies {
     private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
     private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle =
             desc(MT_void_Lookup_MethodHandle_MethodHandle);
-    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
-    private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
-    private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
-    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
-    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
-    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
+    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDescImpl.ofValidated(CD_void, CD_MethodHandles_Lookup);
+    private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDescImpl.ofValidated(CD_MethodHandle, CD_MethodType);
+    private static final MethodTypeDesc MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class);
+    private static final MethodTypeDesc MTD_int = MethodTypeDescImpl.ofValidated(CD_int);
+    private static final MethodTypeDesc MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
     private static final String TARGET_NAME = "target";
     private static final String TYPE_NAME = "interfaceType";
     private static final String ENSURE_ORIGINAL_LOOKUP = "ensureOriginalLookup";

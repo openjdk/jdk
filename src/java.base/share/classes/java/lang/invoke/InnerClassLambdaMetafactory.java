@@ -52,6 +52,9 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
+import sun.invoke.util.Wrapper;
 
 /**
  * Lambda metafactory implementation which dynamically creates an
@@ -63,22 +66,22 @@ import static java.lang.invoke.MethodType.methodType;
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
 
     // Serialization support
-    private static final ClassDesc CD_SERIALIZED_LAMBDA = ClassDesc.ofDescriptor("Ljava/lang/invoke/SerializedLambda;");
-    private static final ClassDesc CD_NOT_SERIALIZABLE_EXCEPTION = ClassDesc.ofDescriptor("Ljava/io/NotSerializableException;");
-    private static final ClassDesc CD_OBJECTOUTPUTSTREAM = ClassDesc.ofDescriptor("Ljava/io/ObjectOutputStream;");
-    private static final ClassDesc CD_OBJECTINPUTSTREAM = ClassDesc.ofDescriptor("Ljava/io/ObjectInputStream;");
-    private static final MethodTypeDesc MTD_METHOD_WRITE_REPLACE = MethodTypeDesc.of(CD_Object);
-    private static final MethodTypeDesc MTD_METHOD_WRITE_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTOUTPUTSTREAM);
-    private static final MethodTypeDesc MTD_METHOD_READ_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTINPUTSTREAM);
+    private static final ClassDesc CD_SERIALIZED_LAMBDA = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/SerializedLambda;");
+    private static final ClassDesc CD_NOT_SERIALIZABLE_EXCEPTION = ReferenceClassDescImpl.ofValidated("Ljava/io/NotSerializableException;");
+    private static final ClassDesc CD_OBJECTOUTPUTSTREAM = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectOutputStream;");
+    private static final ClassDesc CD_OBJECTINPUTSTREAM = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectInputStream;");
+    private static final MethodTypeDesc MTD_METHOD_WRITE_REPLACE = MethodTypeDescImpl.ofValidated(CD_Object);
+    private static final MethodTypeDesc MTD_METHOD_WRITE_OBJECT = MethodTypeDescImpl.ofValidated(CD_void, CD_OBJECTOUTPUTSTREAM);
+    private static final MethodTypeDesc MTD_METHOD_READ_OBJECT = MethodTypeDescImpl.ofValidated(CD_void, CD_OBJECTINPUTSTREAM);
 
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
     private static final String NAME_METHOD_READ_OBJECT = "readObject";
     private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
 
-    private static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDesc.of(CD_void,
-            CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, CD_Object.arrayType());
+    private static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDescImpl.ofValidated(CD_void,
+            CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"));
 
-    private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDesc.of(CD_void, CD_String);
+    private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
@@ -560,15 +563,20 @@ import static java.lang.invoke.MethodType.methodType;
     }
 
     static ClassDesc implClassDesc(Class<?> cls) {
-        return cls.isHidden() ? ClassDesc.ofInternalName(cls.getName().replace('.', '/'))
-                              : classDesc(cls);
+        return cls.isHidden() ? ReferenceClassDescImpl.ofValidatedBinaryName(cls.getName())
+                              : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return ClassDesc.ofDescriptor(cls.descriptorString());
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+                                 : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {
-        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
+        var params = new ClassDesc[mt.parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            params[i] = classDesc(mt.parameterType(i));
+        }
+        return MethodTypeDescImpl.ofValidated(classDesc(mt.returnType()), params);
     }
 }
