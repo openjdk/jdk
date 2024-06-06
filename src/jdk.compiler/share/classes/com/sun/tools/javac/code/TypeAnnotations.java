@@ -510,7 +510,7 @@ public class TypeAnnotations {
                             Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
                             Fragments.TypeAnnotation(onlyTypeAnnotations);
                     log.error(typetree.pos(), Errors.TypeAnnotationInadmissible(
-                            annotationFragment, annotated.tsym.owner, annotated));
+                            annotationFragment, annotated.tsym.owner, new JCDiagnostic.AnnotatedType(annotated)));
                     return type;
                 }
 
