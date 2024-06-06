@@ -1825,20 +1825,16 @@ bool SuperWord::requires_long_to_int_conversion(int opc) {
   }
 }
 
-//------------------------------same_inputs--------------------------
-// For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(const Node_List* p, int idx) const {
-  Node* p0 = p->at(0);
-  uint vlen = p->size();
-  Node* p0_def = p0->in(idx);
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* pi_def = pi->in(idx);
-    if (p0_def != pi_def) {
-      return false;
+// If the j-th input for all nodes in the pack is the same unique input: return it, else nullptr.
+Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
+  Node* p0 = pack->at(0);
+  Node* unique = p0->in(j);
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(j) != unique) {
+      return nullptr; // not unique
     }
   }
-  return true;
+  return unique;
 }
 
 //------------------------------profitable---------------------------
@@ -1875,10 +1871,9 @@ bool SuperWord::profitable(const Node_List* p) const {
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
     Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr)
+    if (cnt_pk != nullptr || _packset.isa_unique_input_or_null(p, 2) == nullptr) {
       return false;
-    if (!same_inputs(p, 2))
-      return false;
+    }
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -2716,13 +2711,13 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  bool have_same_inputs = same_inputs(p, opd_idx);
+  Node* unique_input = _packset.isa_unique_input_or_null(p, opd_idx);
 
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
   // all inputs are the same iv, so we do a same inputs check here.
-  if (opd == iv() && !have_same_inputs) {
+  if (opd == iv() && unique_input == nullptr) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -2733,7 +2728,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     return vn;
   }
 
-  if (have_same_inputs) {
+  if (unique_input != nullptr) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
         assert(false, "shift's count can't be vector");

@@ -362,6 +362,8 @@ public:
     }
   }
 
+  Node* isa_unique_input_or_null(const Node_List* pack, int j) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -580,8 +582,6 @@ class SuperWord : public ResourceObj {
 
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   static bool requires_long_to_int_conversion(int opc);
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx) const;
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
