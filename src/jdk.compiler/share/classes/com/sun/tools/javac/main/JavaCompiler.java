@@ -30,7 +30,7 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -41,6 +41,7 @@ import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
@@ -986,10 +987,7 @@ public class JavaCompiler {
 
             // In case an Abort was thrown before processAnnotations could be called,
             // we could have deferred diagnostics that haven't been reported.
-            if (deferredDiagnosticHandler != null) {
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
-            }
+            reportDeferredDiagnosticAndClearHandler();
         } finally {
             if (verbose) {
                 elapsed_msec = elapsed(start_msec);
@@ -1193,8 +1191,7 @@ public class JavaCompiler {
             // or other errors during enter which cannot be fixed by running
             // any annotation processors.
             if (processAnnotations) {
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
+                reportDeferredDiagnosticAndClearHandler();
                 return ;
             }
         }
@@ -1230,8 +1227,7 @@ public class JavaCompiler {
                  // processing
                 if (!explicitAnnotationProcessingRequested()) {
                     log.error(Errors.ProcNoExplicitAnnotationProcessingRequested(classnames));
-                    deferredDiagnosticHandler.reportDeferredDiagnostics();
-                    log.popDiagnosticHandler(deferredDiagnosticHandler);
+                    reportDeferredDiagnosticAndClearHandler();
                     return ; // TODO: Will this halt compilation?
                 } else {
                     boolean errors = false;
@@ -1265,8 +1261,7 @@ public class JavaCompiler {
                         }
                     }
                     if (errors) {
-                        deferredDiagnosticHandler.reportDeferredDiagnostics();
-                        log.popDiagnosticHandler(deferredDiagnosticHandler);
+                        reportDeferredDiagnosticAndClearHandler();
                         return ;
                     }
                 }
@@ -1283,10 +1278,7 @@ public class JavaCompiler {
             }
         } catch (CompletionFailure ex) {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
-            if (deferredDiagnosticHandler != null) {
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
-            }
+            reportDeferredDiagnosticAndClearHandler();
         }
     }
 
@@ -1617,12 +1609,6 @@ public class JavaCompiler {
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
 
-            if (shouldStop(CompileState.TRANSLITERALS))
-                return;
-
-            env.tree = TransLiterals.instance(context).translateTopLevelClass(env, env.tree, localMake);
-            compileStates.put(env, CompileState.TRANSLITERALS);
-
             if (shouldStop(CompileState.TRANSPATTERNS))
                 return;
 
@@ -1853,6 +1839,18 @@ public class JavaCompiler {
         } finally {
             log.popDiagnosticHandler(dh);
             log.useSource(prevSource);
+        }
+    }
+
+    public void reportDeferredDiagnosticAndClearHandler() {
+        if (deferredDiagnosticHandler != null) {
+            ToIntFunction<JCDiagnostic> diagValue =
+                    d -> d.isFlagSet(RECOVERABLE) ? 1 : 0;
+            Comparator<JCDiagnostic> compareDiags =
+                    (d1, d2) -> diagValue.applyAsInt(d1) - diagValue.applyAsInt(d2);
+            deferredDiagnosticHandler.reportDeferredDiagnostics(compareDiags);
+            log.popDiagnosticHandler(deferredDiagnosticHandler);
+            deferredDiagnosticHandler = null;
         }
     }
 

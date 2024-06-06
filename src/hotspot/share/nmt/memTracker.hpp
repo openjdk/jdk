@@ -27,6 +27,7 @@
 
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -40,25 +41,6 @@
                     NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
-
-// Tracker is used for guarding 'release' semantics of virtual memory operation, to avoid
-// the other thread obtains and records the same region that is just 'released' by current
-// thread but before it can record the operation.
-class Tracker : public StackObj {
- public:
-  enum TrackerType {
-     uncommit,
-     release
-  };
-
- public:
-  Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size);
- private:
-  enum TrackerType  _type;
-  // Virtual memory tracking data structures are protected by ThreadCritical lock.
-  ThreadCritical    _tc;
-};
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -148,6 +130,22 @@ class MemTracker : AllStatic {
     }
   }
 
+  static inline void record_virtual_memory_release(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_released_region((address)addr, size);
+    }
+  }
+
+  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
+    }
+  }
+
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
     assert_post_init();
@@ -169,18 +167,51 @@ class MemTracker : AllStatic {
     }
   }
 
+  static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
+    assert_post_init();
+    if (!enabled()) return nullptr;
+    MemoryFileTracker::Instance::Locker lock;
+    return MemoryFileTracker::Instance::make_file(descriptive_name);
+  }
+
+  static inline void remove_file(MemoryFileTracker::MemoryFile* file) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_file(file);
+  }
+
+  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
+                                       const NativeCallStack& stack, MEMFLAGS flag) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
+  }
+
+  static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
+                                        size_t offset, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_memory(file, offset, size);
+  }
+
   // Given an existing memory mapping registered with NMT and a splitting
   //  address, split the mapping in two. The memory region is supposed to
   //  be fully uncommitted.
   //
   // The two new memory regions will be both registered under stack and
   //  memory flags of the original region.
-  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
+  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
+      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
 

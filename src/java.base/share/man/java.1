@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAVA" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -63,7 +63,7 @@ or
 \f[V]java\f[R] [\f[I]options\f[R]] \f[V]--module\f[R]
 \f[I]module\f[R][\f[V]/\f[R]\f[I]mainclass\f[R]] [\f[I]args\f[R] ...]
 .PP
-To launch a single source-file program:
+To launch a source-file program:
 .PP
 \f[V]java\f[R] [\f[I]options\f[R]] \f[I]source-file\f[R] [\f[I]args\f[R]
 \&...]
@@ -100,11 +100,10 @@ See \f[B]Standard Options for Java\f[R].
 .RE
 .TP
 \f[I]source-file\f[R]
-Only used to launch a single source-file program.
+Only used to launch a source-file program.
 Specifies the source file that contains the main class when using
 source-file mode.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R]
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R]
 .TP
 \f[I]args\f[R] ...
 Optional: Arguments following \f[I]mainclass\f[R],
@@ -128,8 +127,8 @@ The method declaration has the following form:
 .PP
 In source-file mode, the \f[V]java\f[R] command can launch a class
 declared in a source file.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R] for a description of using the source-file mode.
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R] for
+a description of using the source-file mode.
 .RS
 .PP
 \f[B]Note:\f[R] You can use the \f[V]JDK_JAVA_OPTIONS\f[R] launcher
@@ -157,7 +156,7 @@ Use \f[V]javaw\f[R] when you don\[aq]t want a command prompt window to
 appear.
 The \f[V]javaw\f[R] launcher will, however, display a dialog box with
 error information if a launch fails.
-.SH USING SOURCE-FILE MODE TO LAUNCH SINGLE-FILE SOURCE-CODE PROGRAMS
+.SH USING SOURCE-FILE MODE TO LAUNCH SOURCE-CODE PROGRAMS
 .PP
 To launch a class declared in a source file, run the \f[V]java\f[R]
 launcher in source-file mode.
@@ -187,7 +186,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]22\f[R]) and a limited number of previous releases, detailed in
+(\f[V]23\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -205,25 +204,24 @@ Any arguments placed after the name of the source file in the original
 command line are passed to the compiled class when it is executed.
 .PP
 For example, if a file were named \f[V]HelloWorld.java\f[R] and
-contained a class named \f[V]hello.World\f[R], then the source-file mode
+contained a class named \f[V]HelloWorld\f[R], then the source-file mode
 command to launch the class would be:
 .RS
 .PP
 \f[V]java HelloWorld.java\f[R]
 .RE
 .PP
-The example illustrates that the class can be in a named package, and
-does not need to be in the unnamed package.
 This use of source-file mode is informally equivalent to using the
-following two commands where \f[V]hello.World\f[R] is the name of the
-class in the package:
+following two commands:
 .IP
 .nf
 \f[CB]
-javac -d <memory> HelloWorld.java
-java -cp <memory> hello.World
+javac -d <memory> --source-path <source-root> HelloWorld.java
+java --class-path <memory> HelloWorld
 \f[R]
 .fi
+.PP
+where \f[V]<source-root>\f[R] is computed
 .PP
 \f[B]In source-file mode, any additional command-line options are
 processed as follows:\f[R]
@@ -253,9 +251,24 @@ filename with an \f[V]\[at]\f[R] character.
 .IP \[bu] 2
 Any command-line options that are relevant to the compilation
 environment are taken into account.
+These include:
+\f[V]--class-path\f[R]/\f[V]-classpath\f[R]/\f[V]-cp\f[R],
+\f[V]--module-path\f[R]/\f[V]-p\f[R], \f[V]--add-exports\f[R],
+\f[V]--add-modules\f[R], \f[V]--limit-modules\f[R],
+\f[V]--patch-module\f[R], \f[V]--upgrade-module-path\f[R],
+\f[V]--enable-preview\f[R].
 .IP \[bu] 2
-No other source files are found and compiled, as if the source path is
-set to an empty value.
+The root of the source tree, \f[V]<source-root>\f[R] is computed from
+the package of the class being launched.
+For example, if \f[V]HelloWorld.java\f[R] declared its classes to be in
+the \f[V]hello\f[R] package, then the file \f[V]HelloWorld.java\f[R] is
+expected to reside in the directory \f[V]somedir/hello/\f[R].
+In this case, \f[V]somedir\f[R] is computed to be the root of the source
+tree.
+.IP \[bu] 2
+The root of the source tree serves as the source-path for compilation,
+so that other source files found in that tree and are needed by
+\f[V]HelloWorld\f[R] could be compiled.
 .IP \[bu] 2
 Annotation processing is disabled, as if \f[V]-proc:none\f[R] is in
 effect.
@@ -266,45 +279,59 @@ the compilation.
 This sets both the source version accepted by compiler and the system
 API that may be used by the code in the source file.
 .IP \[bu] 2
-The source file is compiled in the context of an unnamed module.
+If \f[V]--enable-preview\f[R] is specified, the \f[V]--source N\f[R]
+arguments can be omitted.
+If the Java runtime version is \f[V]N\f[R], then \f[V]--release N\f[R]
+is implied when compiling source files.
 .IP \[bu] 2
-The source file should contain one or more top-level classes, the first
-of which is taken as the class to be executed.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, its module declaration is used to
+define a named module that will contain all the classes compiled from
+\f[V].java\f[R] files in the source tree.
+If \f[V]module-info.java\f[R] does not exist, all the classes compiled
+from source files will be compiled in the context of the unnamed module.
 .IP \[bu] 2
-The compiler does not enforce the optional restriction defined at the
-end of JLS 7.6, that a type in a named package should exist in a file
-whose name is composed from the type name followed by the
-\f[V].java\f[R] extension.
+The source file that is launched should contain one or more top-level
+classes, the first of which is taken as the class to be executed.
 .IP \[bu] 2
-If the source file contains errors, appropriate error messages are
-written to the standard error stream, and the launcher exits with a
-non-zero exit code.
+For the source file that is launched, the compiler does not enforce the
+optional restriction defined at the end of JLS 7.6, that a type in a
+named package should exist in a file whose name is composed from the
+type name followed by the \f[V].java\f[R] extension.
+.IP \[bu] 2
+If a source file contains errors, appropriate error messages are written
+to the standard error stream, and the launcher exits with a non-zero
+exit code.
 .PP
 \f[B]In source-file mode, execution proceeds as follows:\f[R]
 .IP \[bu] 2
 The class to be executed is the first top-level class found in the
 source file.
-It must contain a declaration of the standard
-\f[V]public static void main(String[])\f[R] method.
+It must contain a declaration of an entry \f[V]main\f[R] method.
 .IP \[bu] 2
 The compiled classes are loaded by a custom class loader, that delegates
 to the application class loader.
 This implies that classes appearing on the application class path cannot
-refer to any classes declared in the source file.
+refer to any classes declared in source files.
 .IP \[bu] 2
-The compiled classes are executed in the context of an unnamed module,
-as though \f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, then all the classes compiled from
+\f[V].java\f[R] files in the source tree will be in that module, which
+will serve as the root module for the execution of the program.
+If \f[V]module-info.java\f[R] does not exist, the compiled classes are
+executed in the context of an unnamed module, as though
+\f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
 This is in addition to any other \f[V]--add-module\f[R] options that may
 be have been specified on the command line.
 .IP \[bu] 2
 Any arguments appearing after the name of the file on the command line
-are passed to the standard main method in the obvious way.
+are passed to the main method in the obvious way.
 .IP \[bu] 2
 It is an error if there is a class on the application class path whose
 name is the same as that of the class to be executed.
 .PP
-See \f[B]JEP 330: Launch Single-File Source-Code Programs\f[R]
-[https://openjdk.org/jeps/330] for complete details.
+See \f[B]JEP 458: Launch Multi-File Source-Code Programs\f[R]
+[https://openjdk.org/jeps/458] for complete details.
 .SH USING THE JDK_JAVA_OPTIONS LAUNCHER ENVIRONMENT VARIABLE
 .PP
 \f[V]JDK_JAVA_OPTIONS\f[R] prepends its content to the options parsed
@@ -1076,14 +1103,28 @@ following:
 .RS
 .TP
 \f[V]all\f[R]
-Shows all categories of settings.
-This is the default value.
+Shows all categories of settings in \f[B]verbose\f[R] detail.
 .TP
 \f[V]locale\f[R]
 Shows settings related to locale.
 .TP
 \f[V]properties\f[R]
 Shows settings related to system properties.
+.TP
+\f[V]security\f[R]
+Shows all settings related to security.
+.RS
+.PP
+sub-category arguments for \f[V]security\f[R] include the following:
+.IP \[bu] 2
+\f[V]security:all\f[R] : shows all security settings
+.IP \[bu] 2
+\f[V]security:properties\f[R] : shows security properties
+.IP \[bu] 2
+\f[V]security:providers\f[R] : shows static security provider settings
+.IP \[bu] 2
+\f[V]security:tls\f[R] : shows TLS related security settings
+.RE
 .TP
 \f[V]vm\f[R]
 Shows the settings of the JVM.
@@ -1153,6 +1194,30 @@ or directories.
 .TP
 \f[V]--source\f[R] \f[I]version\f[R]
 Sets the version of the source in source-file mode.
+.TP
+\f[V]--sun-misc-unsafe-memory-acces=\f[R] \f[I]value\f[R]
+Allow or deny usage of unsupported API \f[V]sun.misc.Unsafe\f[R].
+\f[I]value\f[R] is one of:
+.RS
+.TP
+\f[V]allow\f[R]
+Allow use of the memory-access methods with no warnings at run time.
+.TP
+\f[V]warn\f[R]
+Allow use of the memory-access methods, but issues a warning on the
+first occasion that any memory-access method is used.
+At most one warning is issued.
+.TP
+\f[V]debug\f[R]
+Allow use of the memory-access methods, but issue a one-line warning and
+a stack trace when any memory-access method is used.
+.TP
+\f[V]deny\f[R]
+Disallow use of the memory-access methods by throwing an
+\f[V]UnsupportedOperationException\f[R] on every usage.
+.PP
+The default value when the option is not specified is \f[V]allow\f[R].
+.RE
 .SH EXTRA OPTIONS FOR MACOS
 .PP
 The following extra options are macOS specific.
@@ -1460,6 +1525,17 @@ usage by individual \f[V]CallSite\f[R], individual virtual memory region
 and its committed regions.
 .RE
 .TP
+\f[V]-XX:TrimNativeHeapInterval=\f[R]\f[I]millis\f[R]
+Interval, in ms, at which the JVM will trim the native heap.
+Lower values will reclaim memory more eagerly at the cost of higher
+overhead.
+A value of 0 (default) disables native heap trimming.
+Native heap trimming is performed in a dedicated thread.
+.RS
+.PP
+This option is only supported on Linux with GNU C Library (glibc).
+.RE
+.TP
 \f[V]-XX:+NeverActAsServerClassMachine\f[R]
 Enable the \[dq]Client VM emulation\[dq] mode which only uses the C1 JIT
 compiler, a 32Mb CodeCache and the Serial GC.
@@ -1578,6 +1654,15 @@ Specifies the path and name of the class data sharing (CDS) archive file
 .PP
 See \f[B]Application Class Data Sharing\f[R].
 .RE
+.TP
+\f[V]-XX:+VerifySharedSpaces\f[R]
+If this option is specified, the JVM will load a CDS archive file only
+if it passes an integrity check based on CRC32 checksums.
+The purpose of this flag is to check for unintentional damage to CDS
+archive files in transmission or storage.
+To guarantee the security and proper operation of CDS, the user must
+ensure that the CDS archive files used by Java applications cannot be
+modified without proper authorization.
 .TP
 \f[V]-XX:SharedArchiveConfigFile=\f[R]\f[I]shared_config_file\f[R]
 Specifies additional shared data added to the archive file.
@@ -2430,24 +2515,6 @@ This option has a limit of 2 GB; otherwise, an error is generated.
 The maximum code cache size shouldn\[aq]t be less than the initial code
 cache size; see the option \f[V]-XX:InitialCodeCacheSize\f[R].
 .TP
-\f[V]-XX:RTMAbortRatio=\f[R]\f[I]abort_ratio\f[R]
-Specifies the RTM abort ratio is specified as a percentage (%) of all
-executed RTM transactions.
-If a number of aborted transactions becomes greater than this ratio,
-then the compiled code is deoptimized.
-This ratio is used when the \f[V]-XX:+UseRTMDeopt\f[R] option is
-enabled.
-The default value of this option is 50.
-This means that the compiled code is deoptimized if 50% of all
-transactions are aborted.
-.TP
-\f[V]-XX:RTMRetryCount=\f[R]\f[I]number_of_retries\f[R]
-Specifies the number of times that the RTM locking code is retried, when
-it is aborted or busy, before falling back to the normal locking
-mechanism.
-The default value for this option is 5.
-The \f[V]-XX:UseRTMLocking\f[R] option must be enabled.
-.TP
 \f[V]-XX:+SegmentedCodeCache\f[R]
 Enables segmentation of the code cache, without which the code cache
 consists of one large segment.
@@ -2680,65 +2747,6 @@ FMA intrinsics are generated for the
 \f[I]b\f[R]\f[V],\f[R] \f[I]c\f[R]\f[V])\f[R] methods that calculate the
 value of \f[V](\f[R] \f[I]a\f[R] \f[V]*\f[R] \f[I]b\f[R] \f[V]+\f[R]
 \f[I]c\f[R] \f[V])\f[R] expressions.
-.TP
-\f[V]-XX:+UseRTMDeopt\f[R]
-Autotunes RTM locking depending on the abort ratio.
-This ratio is specified by the \f[V]-XX:RTMAbortRatio\f[R] option.
-If the number of aborted transactions exceeds the abort ratio, then the
-method containing the lock is deoptimized and recompiled with all locks
-as normal locks.
-This option is disabled by default.
-The \f[V]-XX:+UseRTMLocking\f[R] option must be enabled.
-.TP
-\f[V]-XX:+UseRTMLocking\f[R]
-Generates Restricted Transactional Memory (RTM) locking code for all
-inflated locks, with the normal locking mechanism as the fallback
-handler.
-This option is disabled by default.
-Options related to RTM are available only on x86 CPUs that support
-Transactional Synchronization Extensions (TSX).
-.RS
-.PP
-RTM is part of Intel\[aq]s TSX, which is an x86 instruction set
-extension and facilitates the creation of multithreaded applications.
-RTM introduces the new instructions \f[V]XBEGIN\f[R], \f[V]XABORT\f[R],
-\f[V]XEND\f[R], and \f[V]XTEST\f[R].
-The \f[V]XBEGIN\f[R] and \f[V]XEND\f[R] instructions enclose a set of
-instructions to run as a transaction.
-If no conflict is found when running the transaction, then the memory
-and register modifications are committed together at the \f[V]XEND\f[R]
-instruction.
-The \f[V]XABORT\f[R] instruction can be used to explicitly abort a
-transaction and the \f[V]XTEST\f[R] instruction checks if a set of
-instructions is being run in a transaction.
-.PP
-A lock on a transaction is inflated when another thread tries to access
-the same transaction, thereby blocking the thread that didn\[aq]t
-originally request access to the transaction.
-RTM requires that a fallback set of operations be specified in case a
-transaction aborts or fails.
-An RTM lock is a lock that has been delegated to the TSX\[aq]s system.
-.PP
-RTM improves performance for highly contended locks with low conflict in
-a critical region (which is code that must not be accessed by more than
-one thread concurrently).
-RTM also improves the performance of coarse-grain locking, which
-typically doesn\[aq]t perform well in multithreaded applications.
-(Coarse-grain locking is the strategy of holding locks for long periods
-to minimize the overhead of taking and releasing locks, while
-fine-grained locking is the strategy of trying to achieve maximum
-parallelism by locking only when necessary and unlocking as soon as
-possible.)
-Also, for lightly contended locks that are used by different threads,
-RTM can reduce false cache line sharing, also known as cache line
-ping-pong.
-This occurs when multiple threads from different processors are
-accessing different resources, but the resources share the same cache
-line.
-As a result, the processors repeatedly invalidate the cache lines of
-other processors, which forces them to read from main memory instead of
-their cache.
-.RE
 .TP
 \f[V]-XX:+UseSuperWord\f[R]
 Enables the transformation of scalar operations into superword
@@ -3778,6 +3786,83 @@ The default value is 2.
 .PP
 Use the option \f[V]-XX:MinRAMPercentage\f[R] instead.
 .RE
+.TP
+\f[V]-XX:RTMAbortRatio=\f[R]\f[I]abort_ratio\f[R]
+Specifies the RTM abort ratio is specified as a percentage (%) of all
+executed RTM transactions.
+If a number of aborted transactions becomes greater than this ratio,
+then the compiled code is deoptimized.
+This ratio is used when the \f[V]-XX:+UseRTMDeopt\f[R] option is
+enabled.
+The default value of this option is 50.
+This means that the compiled code is deoptimized if 50% of all
+transactions are aborted.
+.TP
+\f[V]-XX:RTMRetryCount=\f[R]\f[I]number_of_retries\f[R]
+Specifies the number of times that the RTM locking code is retried, when
+it is aborted or busy, before falling back to the normal locking
+mechanism.
+The default value for this option is 5.
+The \f[V]-XX:UseRTMLocking\f[R] option must be enabled.
+.TP
+\f[V]-XX:+UseRTMDeopt\f[R]
+Autotunes RTM locking depending on the abort ratio.
+This ratio is specified by the \f[V]-XX:RTMAbortRatio\f[R] option.
+If the number of aborted transactions exceeds the abort ratio, then the
+method containing the lock is deoptimized and recompiled with all locks
+as normal locks.
+This option is disabled by default.
+The \f[V]-XX:+UseRTMLocking\f[R] option must be enabled.
+.TP
+\f[V]-XX:+UseRTMLocking\f[R]
+Generates Restricted Transactional Memory (RTM) locking code for all
+inflated locks, with the normal locking mechanism as the fallback
+handler.
+This option is disabled by default.
+Options related to RTM are available only on x86 CPUs that support
+Transactional Synchronization Extensions (TSX).
+.RS
+.PP
+RTM is part of Intel\[aq]s TSX, which is an x86 instruction set
+extension and facilitates the creation of multithreaded applications.
+RTM introduces the new instructions \f[V]XBEGIN\f[R], \f[V]XABORT\f[R],
+\f[V]XEND\f[R], and \f[V]XTEST\f[R].
+The \f[V]XBEGIN\f[R] and \f[V]XEND\f[R] instructions enclose a set of
+instructions to run as a transaction.
+If no conflict is found when running the transaction, then the memory
+and register modifications are committed together at the \f[V]XEND\f[R]
+instruction.
+The \f[V]XABORT\f[R] instruction can be used to explicitly abort a
+transaction and the \f[V]XTEST\f[R] instruction checks if a set of
+instructions is being run in a transaction.
+.PP
+A lock on a transaction is inflated when another thread tries to access
+the same transaction, thereby blocking the thread that didn\[aq]t
+originally request access to the transaction.
+RTM requires that a fallback set of operations be specified in case a
+transaction aborts or fails.
+An RTM lock is a lock that has been delegated to the TSX\[aq]s system.
+.PP
+RTM improves performance for highly contended locks with low conflict in
+a critical region (which is code that must not be accessed by more than
+one thread concurrently).
+RTM also improves the performance of coarse-grain locking, which
+typically doesn\[aq]t perform well in multithreaded applications.
+(Coarse-grain locking is the strategy of holding locks for long periods
+to minimize the overhead of taking and releasing locks, while
+fine-grained locking is the strategy of trying to achieve maximum
+parallelism by locking only when necessary and unlocking as soon as
+possible.)
+Also, for lightly contended locks that are used by different threads,
+RTM can reduce false cache line sharing, also known as cache line
+ping-pong.
+This occurs when multiple threads from different processors are
+accessing different resources, but the resources share the same cache
+line.
+As a result, the processors repeatedly invalidate the cache lines of
+other processors, which forces them to read from main memory instead of
+their cache.
+.RE
 .SH OBSOLETE JAVA OPTIONS
 .PP
 These \f[V]java\f[R] options are still accepted but ignored, and a
@@ -3790,6 +3875,14 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
+.SH REMOVED JAVA OPTIONS
+.PP
+These \f[V]java\f[R] options have been removed in JDK 23 and using them
+results in an error of:
+.RS
+.PP
+\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
+.RE
 .TP
 \f[V]-XX:+UseHugeTLBFS\f[R]
 \f[B]Linux only:\f[R] This option is the equivalent of specifying
@@ -3803,12 +3896,12 @@ you want this behavior.
 \f[V]-XX:+UseSHM\f[R]
 \f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
 large pages.
-.SH REMOVED JAVA OPTIONS
-.PP
-No documented java options have been removed in JDK 22.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 22\f[R]
+[https://docs.oracle.com/en/java/javase/22/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 21\f[R]
 [https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html]
@@ -4253,9 +4346,9 @@ The \f[V]-Xlog\f[R] option supports the following types of outputs:
 .IP \[bu] 2
 \f[V]file=\f[R]\f[I]filename\f[R] --- Sends output to text file(s).
 .PP
-When using \f[V]file=\f[R]\f[I]filename\f[R], specifying \f[V]%p\f[R]
-and/or \f[V]%t\f[R] in the file name expands to the JVM\[aq]s PID and
-startup timestamp, respectively.
+When using \f[V]file=\f[R]\f[I]filename\f[R], specifying \f[V]%p\f[R],
+\f[V]%t\f[R] and/or \f[V]%hn\f[R] in the file name expands to the
+JVM\[aq]s PID, startup timestamp and host name, respectively.
 You can also configure text files to handle file rotation based on file
 size and a number of files to rotate.
 For example, to rotate the log file every 10 MB and keep 5 files in

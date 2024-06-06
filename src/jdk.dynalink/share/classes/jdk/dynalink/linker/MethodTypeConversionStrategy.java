@@ -70,6 +70,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * of
  * {@link DynamicLinkerFactory#setAutoConversionStrategy(MethodTypeConversionStrategy)
  * method invocation conversions}.
+ * @since 9
  */
 @FunctionalInterface
 public interface MethodTypeConversionStrategy {

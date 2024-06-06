@@ -65,9 +65,9 @@ import java.util.concurrent.ConcurrentMap;
  * @since 1.5
  */
 
-public sealed abstract class CalendarSystem permits AbstractCalendar {
+public abstract sealed class CalendarSystem permits AbstractCalendar {
 
-    /////////////////////// Calendar Factory Methods /////////////////////////
+    //--------------------- Calendar Factory Methods -------------------------
 
     private static volatile boolean initialized;
 
@@ -173,7 +173,7 @@ public sealed abstract class CalendarSystem permits AbstractCalendar {
         return (cs == null) ? cal : cs;
     }
 
-    //////////////////////////////// Calendar API //////////////////////////////////
+    //------------------------------ Calendar API ----------------------------------
 
     /**
      * Returns the name of this calendar system.

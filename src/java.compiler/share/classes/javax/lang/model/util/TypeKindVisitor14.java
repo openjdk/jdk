@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,15 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="TypeKindVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see TypeKindVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see TypeKindVisitor6
  * @see TypeKindVisitor7
  * @see TypeKindVisitor8
  * @see TypeKindVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_22)
+@SupportedSourceVersion(RELEASE_23)
 public class TypeKindVisitor14<R, P> extends TypeKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}

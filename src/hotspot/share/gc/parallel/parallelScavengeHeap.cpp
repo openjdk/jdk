@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCache.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
@@ -35,7 +34,6 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
@@ -49,6 +47,7 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
@@ -101,7 +100,6 @@ jint ParallelScavengeHeap::initialize() {
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
   const size_t eden_capacity = _young_gen->eden_space()->capacity_in_bytes();
   const size_t old_capacity = _old_gen->capacity_in_bytes();
@@ -112,7 +110,6 @@ jint ParallelScavengeHeap::initialize() {
                              young_gen()->to_space()->capacity_in_bytes(),
                              GenAlignment,
                              max_gc_pause_sec,
-                             max_gc_minor_pause_sec,
                              GCTimeRatio
                              );
 
@@ -123,9 +120,12 @@ jint ParallelScavengeHeap::initialize() {
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
-  if (!PSParallelCompact::initialize()) {
+  if (!PSParallelCompact::initialize_aux_data()) {
     return JNI_ENOMEM;
   }
+
+  // Create CPU time counter
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
 
   ParallelInitLogger::print();
 
@@ -192,6 +192,7 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
+  update_parallel_worker_threads_cpu_time();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -205,7 +206,8 @@ size_t ParallelScavengeHeap::used() const {
 }
 
 bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  return old_gen()->is_maximal_no_gc() && young_gen()->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return old_gen()->is_maximal_no_gc();
 }
 
 
@@ -455,7 +457,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
 HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!is_gc_active(), "not reentrant");
+  assert(!is_stw_gc_active(), "not reentrant");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   // We assume that allocation in eden will fail unless we collect.
@@ -525,6 +527,14 @@ HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t reques
 
 void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
+}
+
+void ParallelScavengeHeap::prune_scavengable_nmethods() {
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void ParallelScavengeHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
 }
 
 // This method is used by System.gc() and JVMTI.
@@ -775,6 +785,9 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+
+    log_debug(gc, verify)("CardTable");
+    card_table()->verify_all_young_refs_imprecise();
   }
 }
 
@@ -828,24 +841,6 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
   _old_gen->complete_loaded_archive_space(archive_space);
 }
 
-#ifndef PRODUCT
-void ParallelScavengeHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->record_spaces_top();
-    old_gen()->record_spaces_top();
-  }
-}
-
-void ParallelScavengeHeap::gen_mangle_unused_area() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->eden_space()->mangle_unused_area();
-    young_gen()->to_space()->mangle_unused_area();
-    young_gen()->from_space()->mangle_unused_area();
-    old_gen()->object_space()->mangle_unused_area();
-  }
-}
-#endif
-
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
 }
@@ -856,10 +851,6 @@ void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
 
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void ParallelScavengeHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
 }
 
 GrowableArray<GCMemoryManager*> ParallelScavengeHeap::memory_managers() {
@@ -883,4 +874,24 @@ void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
 
 void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
   GCLocker::unlock_critical(thread);
+}
+
+void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads in GCTaskManager never terminate, so it
+    // is safe for VMThread to read their CPU times. If upstream changes this
+    // behavior, we should rethink if it is still safe.
+    gc_threads_do(&tttc);
+  }
+
+  CPUTimeCounters::publish_gc_total_cpu_time();
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -63,7 +64,7 @@ public class LayoutPath {
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
     private static final MethodHandle MH_SLICE_LAYOUT;
-    private static final MethodHandle MH_CHECK_ALIGN;
+    private static final MethodHandle MH_CHECK_ENCL_LAYOUT;
     private static final MethodHandle MH_SEGMENT_RESIZE;
     private static final MethodHandle MH_ADD;
 
@@ -76,7 +77,7 @@ public class LayoutPath {
                     MethodType.methodType(MemorySegment.class, long.class, long.class));
             MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
                     MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
-            MH_CHECK_ALIGN = lookup.findStatic(LayoutPath.class, "checkAlign",
+            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(LayoutPath.class, "checkEnclosingLayout",
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
@@ -204,19 +205,16 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        // If we have an enclosing layout, drop the alignment check for the accessed element,
-        // we check the root layout instead
-        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
-        VarHandle handle = accessedLayout.varHandle();
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
 
         // we only have to check the alignment of the root layout for the first dereference we do,
         // as each dereference checks the alignment of the target address when constructing its segment
         // (see Utils::longToAddress)
-        if (derefAdapters.length == 0 && enclosing != null) {
+        if (derefAdapters.length == 0) {
             // insert align check for the root layout on the initial MS + offset
             List<Class<?>> coordinateTypes = handle.coordinateTypes();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
             handle = MethodHandles.collectCoordinates(handle, 0, alignCheck);
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
             handle = MethodHandles.permuteCoordinates(handle, coordinateTypes, reorder);
@@ -277,7 +275,7 @@ public class LayoutPath {
         if (enclosing != null) {
             // insert align check for the root layout on the initial MS + offset
             MethodType oldType = sliceHandle.type();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
             sliceHandle = MethodHandles.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, oldType.parameterCount())).toArray();
             sliceHandle = MethodHandles.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
@@ -286,11 +284,12 @@ public class LayoutPath {
         return sliceHandle;
     }
 
-    private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
-        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
+    private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
+        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
+        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
             throw new IllegalArgumentException(String.format(
                     "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , offset, constraint.byteAlignment(), constraint, segment));
+                    , offset, enclosing.byteAlignment(), enclosing, segment));
         }
     }
 
@@ -363,45 +362,141 @@ public class LayoutPath {
                 .collect(joining(", selected from: "));
     }
 
-    /**
-     * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation
-     * is simply a pointer to one of the selector methods provided by the {@code LayoutPath} class.
-     */
-    public static final class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+    public record GroupElementByName(String name)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
-        public enum PathKind {
-            SEQUENCE_ELEMENT("unbound sequence element"),
-            SEQUENCE_ELEMENT_INDEX("bound sequence element"),
-            SEQUENCE_RANGE("sequence range"),
-            GROUP_ELEMENT("group element"),
-            DEREF_ELEMENT("dereference element");
-
-            final String description;
-
-            PathKind(String description) {
-                this.description = description;
-            }
-
-            public String description() {
-                return description;
-            }
-        }
-
-        final PathKind kind;
-        final UnaryOperator<LayoutPath> pathOp;
-
-        public PathElementImpl(PathKind kind, UnaryOperator<LayoutPath> pathOp) {
-            this.kind = kind;
-            this.pathOp = pathOp;
+        // Assert invariants
+        public GroupElementByName {
+            Objects.requireNonNull(name);
         }
 
         @Override
         public LayoutPath apply(LayoutPath layoutPath) {
-            return pathOp.apply(layoutPath);
+            return layoutPath.groupElement(name);
         }
 
-        public PathKind kind() {
-            return kind;
+        @Override
+        public String toString() {
+            return "groupElement(\"" + name + "\")";
         }
     }
+
+    public record GroupElementByIndex(long index)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public GroupElementByIndex {
+            if (index < 0) {
+                throw new IllegalArgumentException("Index < 0");
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.groupElement(index);
+        }
+
+        @Override
+        public String toString() {
+            return "groupElement(" + index + ")";
+        }
+
+    }
+
+    public record SequenceElementByIndex(long index)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public SequenceElementByIndex {
+            if (index < 0) {
+                throw new IllegalArgumentException("Index < 0");
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement(index);
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement(" + index + ")";
+        }
+
+    }
+
+    public record SequenceElementByRange(long start, long step)
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        // Assert invariants
+        public SequenceElementByRange {
+            if (start < 0) {
+                throw new IllegalArgumentException("Start index must be positive: " + start);
+            }
+            if (step == 0) {
+                throw new IllegalArgumentException("Step must be != 0: " + step);
+            }
+        }
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement(start, step);
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement(" + start + ", " + step + ")";
+        }
+
+    }
+
+    public record SequenceElement()
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        private static final SequenceElement INSTANCE = new SequenceElement();
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.sequenceElement();
+        }
+
+        @Override
+        public String toString() {
+            return "sequenceElement()";
+        }
+
+        public static MemoryLayout.PathElement instance() {
+            return INSTANCE;
+        }
+
+    }
+
+    public record DereferenceElement()
+            implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+
+        private static final DereferenceElement INSTANCE = new DereferenceElement();
+
+        @Override
+        public LayoutPath apply(LayoutPath layoutPath) {
+            return layoutPath.derefElement();
+        }
+
+        // Overriding here will ensure DereferenceElement will have a hash code
+        // that is different from the hash code of SequenceElement.
+        @Override
+        public int hashCode() {
+            return 31;
+        }
+
+        @Override
+        public String toString() {
+            return "dereferenceElement()";
+        }
+
+        public static MemoryLayout.PathElement instance() {
+            return INSTANCE;
+        }
+
+    }
+
 }

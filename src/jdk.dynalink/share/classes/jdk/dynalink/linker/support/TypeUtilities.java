@@ -70,6 +70,7 @@ import jdk.dynalink.linker.MethodTypeConversionStrategy;
 
 /**
  * Various static utility methods for working with Java types.
+ * @since 9
  */
 public final class TypeUtilities {
     private TypeUtilities() {

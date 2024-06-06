@@ -104,7 +104,7 @@ public class WellKnownTypeSignatures {
 
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString("main")) {
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement i : code.elementList()) {
                     if (i instanceof InvokeDynamicInstruction) {
                         InvokeDynamicInstruction indy = (InvokeDynamicInstruction) i;

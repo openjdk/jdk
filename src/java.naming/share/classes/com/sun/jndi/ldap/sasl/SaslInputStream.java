@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class SaslInputStream extends InputStream {
         byte[] inBuf = new byte[1];
         int count = read(inBuf, 0, 1);
         if (count > 0) {
-            return inBuf[0];
+            return inBuf[0] & 0xff;
         } else {
             return -1;
         }

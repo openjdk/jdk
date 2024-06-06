@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,8 +36,8 @@
  *
  * ... JNIEnv* env ...
  *  jclass klass = env->GetObjectClass(o);
- *  if (klass == NULL) {
- *      printf("Error: GetObjectClass returned NULL\n");
+ *  if (klass == nullptr) {
+ *      printf("Error: GetObjectClass returned null\n");
  *      return;
  *  }
  *  if (env->ExceptionCheck()) {
@@ -48,7 +48,7 @@
  * ... ExceptionCheckingJniEnv* env ...
  *  jclass klass = env->GetObjectClass(o, TRACE_JNI_CALL);
  *
- *  Where now the JNI Exception checking and the NULL return checking are done
+ *  Where now the JNI Exception checking and the null return checking are done
  *  internally and will perform whatever action the ErrorHandler requires.
  *
  *  Note the TRACE_JNI_CALL parameter that allows to trace where the call is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -331,9 +330,6 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
-          "Suspend concurrent GC worker threads at safepoints")             \
-                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
@@ -354,9 +350,6 @@
                                                                             \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
-                                                                            \
-  product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
-          "Attempt more loop opts after barrier expansion.")                \
                                                                             \
 
 // end of GC_SHENANDOAH_FLAGS

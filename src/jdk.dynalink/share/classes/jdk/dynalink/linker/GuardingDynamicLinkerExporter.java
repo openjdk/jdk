@@ -45,6 +45,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * security manager is present, to ensure that only trusted runtimes can
  * automatically export their linkers into other runtimes.
  * @see DynamicLinkerFactory#setClassLoader(ClassLoader)
+ * @since 9
  */
 public abstract class GuardingDynamicLinkerExporter implements Supplier<List<GuardingDynamicLinker>> {
     /**

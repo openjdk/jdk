@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionsOnNodes.hpp"
-#include "gc/g1/heapRegion.hpp"
 
 G1RegionsOnNodes::G1RegionsOnNodes() : _count_per_node(nullptr), _numa(G1NUMA::numa()) {
   _count_per_node = NEW_C_HEAP_ARRAY(uint, _numa->num_active_nodes(), mtGC);
@@ -36,7 +36,7 @@ G1RegionsOnNodes::~G1RegionsOnNodes() {
   FREE_C_HEAP_ARRAY(uint, _count_per_node);
 }
 
-uint G1RegionsOnNodes::add(HeapRegion* hr) {
+uint G1RegionsOnNodes::add(G1HeapRegion* hr) {
   uint node_index = hr->node_index();
 
   // Update only if the node index is valid.

@@ -137,7 +137,7 @@ public:
       // Note that these tables still point to the *original* objects, so
       // they would need to call DynamicArchive::original_to_target() to
       // get the correct addresses.
-      assert(current_dump_space() == ro_region(), "Must be RO space");
+      assert(current_dump_region() == ro_region(), "Must be RO space");
       SymbolTable::write_to_archive(symbols());
 
       ArchiveBuilder::OtherROAllocMark mark;
@@ -180,7 +180,7 @@ public:
   void iterate_primitive_array_klasses(MetaspaceClosure* it) {
     for (int i = T_BOOLEAN; i <= T_LONG; i++) {
       assert(is_java_primitive((BasicType)i), "sanity");
-      Klass* k = Universe::typeArrayKlassObj((BasicType)i);  // this give you "[I", etc
+      Klass* k = Universe::typeArrayKlass((BasicType)i);  // this give you "[I", etc
       assert(MetaspaceShared::is_shared_static((void*)k),
         "one-dimensional primitive array should be in static archive");
       ArrayKlass* ak = ArrayKlass::cast(k);

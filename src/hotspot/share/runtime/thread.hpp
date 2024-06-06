@@ -48,7 +48,9 @@ class HandleArea;
 class HandleMark;
 class ICRefillVerifier;
 class JvmtiRawMonitor;
+class NMethodClosure;
 class Metadata;
+class OopClosure;
 class OSThread;
 class ParkEvent;
 class ResourceArea;
@@ -58,8 +60,6 @@ class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
 
-class OopClosure;
-class CodeBlobClosure;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -207,16 +207,9 @@ class Thread: public ThreadShadow {
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
   DEBUG_ONLY(bool _indirectly_suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
   void set_suspendible_thread()   { _suspendible_thread = true; }
   void clear_suspendible_thread() { _suspendible_thread = false; }
@@ -225,6 +218,10 @@ class Thread: public ThreadShadow {
   void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
   void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
   bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
+
+  void set_indirectly_safepoint_thread()   { _indirectly_safepoint_thread = true; }
+  void clear_indirectly_safepoint_thread() { _indirectly_safepoint_thread = false; }
+  bool is_indirectly_safepoint_thread()    { return _indirectly_safepoint_thread; }
 #endif
 
  private:
@@ -438,10 +435,10 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
-  virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  // Apply "cf->do_nmethod" (if !nullptr) to all nmethods active in frames
+  virtual void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
+  virtual void oops_do_frames(OopClosure* f, NMethodClosure* cf) {}
+  void oops_do(OopClosure* f, NMethodClosure* cf);
 
   // Handles the parallel case for claim_threads_do.
  private:
@@ -478,9 +475,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -599,8 +593,6 @@ protected:
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
 
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
-
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
@@ -652,15 +644,17 @@ protected:
 class ThreadInAsgct {
  private:
   Thread* _thread;
+  bool _saved_in_asgct;
  public:
   ThreadInAsgct(Thread* thread) : _thread(thread) {
     assert(thread != nullptr, "invariant");
-    assert(!thread->in_asgct(), "invariant");
+    // Allow AsyncGetCallTrace to be reentrant - save the previous state.
+    _saved_in_asgct = thread->in_asgct();
     thread->set_in_asgct(true);
   }
   ~ThreadInAsgct() {
     assert(_thread->in_asgct(), "invariant");
-    _thread->set_in_asgct(false);
+    _thread->set_in_asgct(_saved_in_asgct);
   }
 };
 

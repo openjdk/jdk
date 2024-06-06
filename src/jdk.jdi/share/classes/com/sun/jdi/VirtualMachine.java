@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,7 +262,7 @@ public interface VirtualMachine extends Mirror {
      * with <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>.
      *
      * <p> It is implementation dependent if the list contains elements for live
-     * <a href=../../api/java.base/java/lang/Thread.html#virtual-threads>virtual threads</a>
+     * <a href={@docRoot}/java.base/java/lang/Thread.html#virtual-threads>virtual threads</a>
      * in the target VM. The target VM may not return any references to virtual threads,
      * or it may be configured to return a reference to some or all virtual threads.
      * Tools that want to track all virtual threads may enable {@link ThreadStartRequest}
@@ -427,7 +427,7 @@ public interface VirtualMachine extends Mirror {
      * @return a {@link StringReference} that mirrors the newly created
      * string in the target VM.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     StringReference mirrorOf(String value);
 
@@ -448,7 +448,7 @@ public interface VirtualMachine extends Mirror {
      * @return the {@link java.lang.Process} object for this virtual
      * machine, or null if it was not launched by a {@link LaunchingConnector}.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     Process process();
 
@@ -678,7 +678,8 @@ public interface VirtualMachine extends Mirror {
      * Determines if the target VM supports the filtering of
      * class prepare events by source name.
      *
-     * see {@link ClassPrepareRequest#addSourceNameFilter}.
+     * @see ClassPrepareRequest#addSourceNameFilter
+     *
      * @return <code>true</code> if the feature is supported,
      * <code>false</code> otherwise.
      *

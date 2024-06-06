@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ public class Contents {
     public final Content functionalInterfaceMessage;
     public final Content helpLabel;
     public final Content helpSubNavLabel;
+    public final Content hideSidebar;
     public final Content hierarchyForAllPackages;
     public final Content implementation;
     public final Content implementingClassesLabel;
@@ -169,9 +170,11 @@ public class Contents {
     public final Content referencedIn;
     public final Content relatedPackages;
     public final Content returns;
+    public final Content searchLabel;
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
+    public final Content showSidebar;
     public final Content specificationLabel;
     public final Content specifiedByLabel;
     public final Content subclassesLabel;
@@ -179,6 +182,7 @@ public class Contents {
     public final Content summaryLabel;
     public final Content systemPropertiesLabel;
     public final Content systemPropertiesSummaryLabel;
+    public final Content tableOfContentsLabel;
     public final Content throws_;
     public final Content treeLabel;
     public final Content typeLabel;
@@ -253,6 +257,7 @@ public class Contents {
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
         helpSubNavLabel = getContent("doclet.Help_Sub_Nav");
+        hideSidebar = getContent("doclet.hide_sidebar");
         hierarchyForAllPackages = getContent("doclet.Hierarchy_For_All_Packages");
         implementation = getContent("doclet.Implementation");
         implementingClassesLabel = getContent("doclet.Implementing_Classes");
@@ -318,9 +323,11 @@ public class Contents {
         referencedIn = getContent("doclet.ReferencedIn");
         relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
+        searchLabel = getContent("doclet.search");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
+        showSidebar = getContent("doclet.show_sidebar");
         specificationLabel = getContent("doclet.Specification");
         specifiedByLabel = getContent("doclet.Specified_By");
         subclassesLabel = getContent("doclet.Subclasses");
@@ -328,6 +335,7 @@ public class Contents {
         summaryLabel = getContent("doclet.Summary");
         systemPropertiesLabel = getContent("doclet.systemProperties");
         systemPropertiesSummaryLabel = getContent("doclet.systemPropertiesSummary");
+        tableOfContentsLabel = getContent("doclet.table_of_contents");
         throws_ = getContent("doclet.Throws");
         treeLabel = getContent("doclet.Tree");
         typeLabel = getContent("doclet.Type");
@@ -434,7 +442,7 @@ public class Contents {
      * @param items     the items
      * @return the composition
      */
-    public Content join(Content separator, Collection<Content> items) {
+    public Content join(Content separator, Collection<? extends Content> items) {
         Content result = new ContentBuilder();
         boolean first = true;
         for (Content c : items) {

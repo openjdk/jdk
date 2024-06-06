@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -65,17 +66,17 @@
 // The structure of the CodeBuffer while code is being accumulated:
 //
 //    _total_start ->    \
-//    _insts._start ->              +----------------+
+//    _consts._start ->             +----------------+
+//                                  |                |
+//                                  |   Constants    |
+//                                  |                |
+//    _insts._start ->              |----------------|
 //                                  |                |
 //                                  |     Code       |
 //                                  |                |
 //    _stubs._start ->              |----------------|
 //                                  |                |
 //                                  |    Stubs       | (also handlers for deopt/exception)
-//                                  |                |
-//    _consts._start ->             |----------------|
-//                                  |                |
-//                                  |   Constants    |
 //                                  |                |
 //                                  +----------------+
 //    + _total_size ->              |                |
@@ -524,7 +525,7 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     CodeSection* cs = code_section(n);
-    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
+    if (cs->is_empty() || (cs->locs_count() == 0)) continue;  // skip trivial section
     RelocIterator iter(cs);
     while (iter.next()) {
       if (iter.type() == relocInfo::metadata_type) {
@@ -790,10 +791,8 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   // call) is relocated. Stubs are placed behind the main code
   // section, so that section has to be copied before relocating.
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
-    // pull code out of each section
-    const CodeSection* cs = code_section(n);
-    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     CodeSection* dest_cs = dest->code_section(n);
+    if (dest_cs->is_empty() || (dest_cs->locs_count() == 0)) continue;  // skip trivial section
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
       while (iter.next()) {
@@ -1054,7 +1053,7 @@ void CodeSection::print(const char* name) {
                 name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity());
   tty->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
                 name, p2i(locs_start()), p2i(locs_end()), p2i(locs_limit()), locs_size, locs_capacity(), locs_point_off());
-  if (PrintRelocations) {
+  if (PrintRelocations && (locs_size != 0)) {
     RelocIterator iter(this);
     iter.print();
   }

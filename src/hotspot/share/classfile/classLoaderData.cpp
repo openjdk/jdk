@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,9 +407,6 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
-  // To call this, one must have the MultiArray_lock held, but the _klasses list still has lock free reads.
-  assert_locked_or_safepoint(MultiArray_lock);
-
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the
@@ -599,7 +596,7 @@ void ClassLoaderData::unload() {
   free_deallocate_list_C_heap_structures();
 
   // Clean up class dependencies and tell serviceability tools
-  // these classes are unloading.  Must be called
+  // these classes are unloading.  This must be called
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
@@ -838,10 +835,10 @@ OopHandle ClassLoaderData::add_handle(Handle h) {
 
 void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
-  oop* ptr = h.ptr_raw();
-  if (ptr != nullptr) {
-    assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-    NativeAccess<>::oop_store(ptr, oop(nullptr));
+  if (!h.is_empty()) {
+    assert(_handles.owner_of(h.ptr_raw()),
+           "Got unexpected handle " PTR_FORMAT, p2i(h.ptr_raw()));
+    h.replace(oop(nullptr));
   }
 }
 
@@ -1003,7 +1000,11 @@ void ClassLoaderData::print_on(outputStream* out) const {
     _holder.print_on(out);
     out->print_cr("");
   }
-  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  if (!_unloading) {
+    out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.peek()));
+  } else {
+    out->print_cr(" - class loader        <unloading, oop is bad>");
+  }
   out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");

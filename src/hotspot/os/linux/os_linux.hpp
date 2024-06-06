@@ -93,6 +93,8 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
+  static void kernel_version(long* major, long* minor);
+
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
   static bool _stack_is_executable;
@@ -174,6 +176,17 @@ class os::Linux {
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
+
+  // Tells if the user asked for transparent huge pages.
+  static bool _thp_requested;
+
+  static void large_page_init();
+
+  static bool thp_requested();
+  static bool should_madvise_anonymous_thps();
+  static bool should_madvise_shmem_thps();
+
+  static void madvise_transparent_huge_pages(void* addr, size_t bytes);
 
   // Stack repair handling
 

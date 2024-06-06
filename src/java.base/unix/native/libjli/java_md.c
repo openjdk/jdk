@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,6 +495,8 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     char libjava[MAXPATHLEN];
     struct stat s;
 
+    JLI_TraceLauncher("Attempt to get JRE path from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
@@ -502,19 +504,9 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
             JLI_TraceLauncher("JRE path is %s\n", path);
             return JNI_TRUE;
         }
-        /* ensure storage for path + /jre + NULL */
-        if ((JLI_StrLen(path) + 4  + 1) > (size_t) pathsize) {
-            JLI_TraceLauncher("Insufficient space to store JRE path\n");
-            return JNI_FALSE;
-        }
-        /* Does the app ship a private JRE in <apphome>/jre directory? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            JLI_StrCat(path, "/jre");
-            JLI_TraceLauncher("JRE path is %s\n", path);
-            return JNI_TRUE;
-        }
     }
+
+    JLI_TraceLauncher("Attempt to get JRE path from shared lib of the image\n");
 
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
@@ -523,6 +515,17 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
             return JNI_TRUE;
         }
     }
+
+#if defined(AIX)
+    /* at least on AIX try also the LD_LIBRARY_PATH / LIBPATH */
+    if (GetApplicationHomeFromLibpath(path, pathsize)) {
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
+        if (stat(libjava, &s) == 0) {
+            JLI_TraceLauncher("JRE path is %s\n", path);
+            return JNI_TRUE;
+        }
+    }
+#endif
 
     if (!speculative)
       JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);

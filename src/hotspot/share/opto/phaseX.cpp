@@ -671,16 +671,9 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
 }
 
 //------------------------------transform--------------------------------------
-// Return a node which computes the same function as this node, but in a
-// faster or cheaper fashion.
-Node *PhaseGVN::transform( Node *n ) {
-  return transform_no_reclaim(n);
-}
-
-//------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
-Node *PhaseGVN::transform_no_reclaim(Node *n) {
+Node* PhaseGVN::transform(Node* n) {
   NOT_PRODUCT( set_transforms(); )
 
   // Apply the Ideal call in a loop until it no longer applies
@@ -692,7 +685,7 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
     k = i;
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
-      dump_infinite_loop_info(i, "PhaseGVN::transform_no_reclaim");
+      dump_infinite_loop_info(i, "PhaseGVN::transform");
     }
 #endif
     i = apply_ideal(k, /*can_reshape=*/false);
@@ -894,7 +887,7 @@ void PhaseIterGVN::verify_step(Node* n) {
 void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
   const Type* newtype = type_or_null(n);
   if (nn != n || oldtype != newtype) {
-    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 4, n);
+    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 5, n);
   }
   if (TraceIterativeGVN) {
     uint wlsize = _worklist.size();
@@ -1025,6 +1018,7 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 void PhaseIterGVN::optimize() {
   DEBUG_ONLY(uint num_processed  = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
+  NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
   C->print_method(PHASE_BEFORE_ITER_GVN, 3);
   if (StressIGVN) {
     shuffle_worklist();
@@ -1927,8 +1921,9 @@ void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
   if (use_op == Op_AddI || use_op == Op_SubI) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* cmpu = use->fast_out(i);
-      if (cmpu->Opcode() == Op_CmpU) {
-        // Got a CmpU which might need the new type information from node n.
+      const uint cmpu_opcode = cmpu->Opcode();
+      if (cmpu_opcode == Op_CmpU || cmpu_opcode == Op_CmpU3) {
+        // Got a CmpU or CmpU3 which might need the new type information from node n.
         push_if_not_bottom_type(worklist, cmpu);
       }
     }
@@ -2279,7 +2274,15 @@ void PhasePeephole::print_statistics() {
 //------------------------------set_req_X--------------------------------------
 void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   assert( is_not_dead(n), "can not use dead node");
-  assert( igvn->hash_find(this) != this, "Need to remove from hash before changing edges" );
+#ifdef ASSERT
+  if (igvn->hash_find(this) == this) {
+    tty->print_cr("Need to remove from hash before changing edges");
+    this->dump(1);
+    tty->print_cr("Set at i = %d", i);
+    n->dump();
+    assert(false, "Need to remove from hash before changing edges");
+  }
+#endif
   Node *old = in(i);
   set_req(i, n);
 

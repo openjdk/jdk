@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
 
 #ifdef AIX
 #include "loadlib_aix.hpp"
+#include "os_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -186,6 +187,17 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// breakpoint support
+
+void os::breakpoint() {
+  BREAKPOINT;
+}
+
+extern "C" void breakpoint() {
+  // use debugger to set breakpoint here
+}
+
 // Return true if user is running as root.
 bool os::have_special_privileges() {
   static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
@@ -264,7 +276,7 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
-static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
+static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MEMFLAGS flag) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
   if (requested_addr != nullptr) {
@@ -279,13 +291,14 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
-    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC, flag);
     return addr;
   }
   return nullptr;
 }
 
 static int util_posix_fallocate(int fd, off_t offset, off_t len) {
+  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
 #ifdef __APPLE__
   fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, len };
   // First we try to get a continuous chunk of disk space
@@ -391,7 +404,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
   // - we later chop away parts of the mapping using os::release_memory and that could fail if the
@@ -399,7 +412,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
   //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
   //   chopping off and unmapping excess bits back and front (see below) would not work.
-  char* extra_base = reserve_mmapped_memory(extra_size, nullptr);
+  char* extra_base = reserve_mmapped_memory(extra_size, nullptr, flag);
   if (extra_base == nullptr) {
     return nullptr;
   }
@@ -410,17 +423,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
-}
-
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // All supported POSIX platforms provide C99 semantics.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
 }
 
 int os::get_fileno(FILE* fp) {
@@ -495,7 +497,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 #if defined(AIX)
   st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
+  st->print("%ld", sysconf(_SC_CHILD_MAX));
 
   print_rlimit(st, ", THREADS", RLIMIT_THREADS);
 #else
@@ -608,9 +610,14 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
-  uname(&name);
-  jio_snprintf(buf, buflen, "%s", name.nodename);
-  return true;
+  int retcode = uname(&name);
+  if (retcode != -1) {
+    jio_snprintf(buf, buflen, "%s", name.nodename);
+    return true;
+  }
+  const char* errmsg = os::strerror(errno);
+  log_warning(os)("Failed to get host name, error message: %s", errmsg);
+  return false;
 }
 
 #ifndef _LP64
@@ -709,7 +716,16 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
+  ::dlerror(); // Clear any previous error
+  void* ret = ::dlsym(handle, name);
+  if (ret == nullptr) {
+    const char* tmp = ::dlerror();
+    // It is possible that we found a NULL symbol, hence no error.
+    if (tmp != nullptr) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    }
+  }
+  return ret;
 }
 
 void os::dll_unload(void *lib) {
@@ -731,36 +747,31 @@ void os::dll_unload(void *lib) {
   if (l_path == nullptr) {
     l_path = "<not available>";
   }
-  int res = ::dlclose(lib);
 
-  if (res == 0) {
+  char ebuf[1024];
+  bool res = os::pd_dll_unload(lib, ebuf, sizeof(ebuf));
+
+  if (res) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
     JFR_ONLY(unload_event.set_result(true);)
   } else {
-    const char* error_report = ::dlerror();
-    if (error_report == nullptr) {
-      error_report = "dlerror returned no error description";
-    }
-
     Events::log_dll_message(nullptr, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                            l_path, p2i(lib), error_report);
+                            l_path, p2i(lib), ebuf);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                  l_path, p2i(lib), error_report);
-    JFR_ONLY(unload_event.set_error_msg(error_report);)
+                  l_path, p2i(lib), ebuf);
+    JFR_ONLY(unload_event.set_error_msg(ebuf);)
   }
-  // Update the dll cache
-  AIX_ONLY(LoadedLibraries::reload());
   LINUX_ONLY(os::free(l_pathdup));
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+  return (jlong) ::lseek(fd, offset, whence);
 }
 
 int os::ftruncate(int fd, jlong length) {
-   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+   return ::ftruncate(fd, length);
 }
 
 const char* os::get_current_directory(char *buf, size_t buflen) {
@@ -830,6 +841,14 @@ void os::exit(int num) {
 
 void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
+}
+
+bool os::dont_yield() {
+  return DontYieldALot;
+}
+
+void os::naked_yield() {
+  sched_yield();
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -2034,3 +2053,53 @@ void os::die() {
 const char* os::file_separator() { return "/"; }
 const char* os::line_separator() { return "\n"; }
 const char* os::path_separator() { return ":"; }
+
+// Map file into memory; uses mmap().
+// Notes:
+// - if caller specifies addr, MAP_FIXED is used. That means existing
+//   mappings will be replaced.
+// - The file descriptor must be valid (to create anonymous mappings, use
+//   os::reserve_memory()).
+// Returns address to mapped memory, nullptr on error
+char* os::pd_map_memory(int fd, const char* unused,
+                        size_t file_offset, char *addr, size_t bytes,
+                        bool read_only, bool allow_exec) {
+
+  assert(fd != -1, "Specify a valid file descriptor");
+
+  int prot;
+  int flags = MAP_PRIVATE;
+
+  if (read_only) {
+    prot = PROT_READ;
+  } else {
+    prot = PROT_READ | PROT_WRITE;
+  }
+
+  if (allow_exec) {
+    prot |= PROT_EXEC;
+  }
+
+  if (addr != nullptr) {
+    flags |= MAP_FIXED;
+  }
+
+  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+                                     fd, file_offset);
+  if (mapped_address == MAP_FAILED) {
+    return nullptr;
+  }
+
+  // If we did specify an address, and the mapping succeeded, it should
+  // have returned that address since we specify MAP_FIXED
+  assert(addr == nullptr || addr == mapped_address,
+         "mmap+MAP_FIXED returned " PTR_FORMAT ", expected " PTR_FORMAT,
+         p2i(mapped_address), p2i(addr));
+
+  return mapped_address;
+}
+
+// Unmap a block of memory. Uses munmap.
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
+  return munmap(addr, bytes) == 0;
+}

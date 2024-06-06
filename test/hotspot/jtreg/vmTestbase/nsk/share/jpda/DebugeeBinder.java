@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import java.util.*;
  * @see nsk.share.jdi.Binder
  * @see nsk.share.jdwp.Binder
  */
-public class DebugeeBinder extends Log.Logger implements Finalizable {
+public class DebugeeBinder extends Log.Logger {
 
     private static final boolean IS_WINDOWS = System.getProperty("os.name")
                                                     .toLowerCase()
@@ -118,8 +118,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     public DebugeeBinder (DebugeeArgumentHandler argumentHandler, Log log) {
         super(log, LOG_PREFIX);
         this.argumentHandler = argumentHandler;
-
-        registerCleanup();
     }
 
     /**
@@ -180,7 +178,7 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
             try {
                 pipeServerSocket = new ServerSocket();
                 pipeServerSocket.setReuseAddress(false);
-                pipeServerSocket.bind(null);
+                pipeServerSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
             } catch (IOException e) {
                 e.printStackTrace(getOutStream());
@@ -544,14 +542,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
             bindServerListener.close();
         }
         closePipeServerSocket();
-    }
-
-    /**
-     * Finalize binder by invoking <code>close()</code>.
-     *
-     */
-    public void cleanup() {
-        close();
     }
 
     /**

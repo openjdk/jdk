@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
 }
 
 // Skip any leading spaces
-void skip_leading_spaces(char*& line, int* total_bytes_read ) {
+static void skip_leading_spaces(char*& line, int* total_bytes_read ) {
   int bytes_read = 0;
   sscanf(line, "%*[ \t]%n", &bytes_read);
   if (bytes_read > 0) {
@@ -286,7 +286,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     // In very rare case, the method name happens to be same as option type/name, so look ahead to make sure
     // it doesn't show up again.
     if ((OptionType::Unknown != CompilerOracle::parse_option_type(method_name) ||
-        CompileCommand::Unknown != CompilerOracle::parse_option_name(method_name)) &&
+        CompileCommandEnum::Unknown != CompilerOracle::parse_option_name(method_name)) &&
         *(line + bytes_read) != '\0' &&
         strstr(line + bytes_read, method_name) == nullptr) {
       error_msg = "Did not specify any method name";

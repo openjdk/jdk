@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * protected by patents. It is fully described in the specifications at
  * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a method
+ * in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * <p>
  * This class deflates sequences of bytes into ZLIB compressed data format.
  * The input byte sequence is provided in either byte array or byte buffer,
@@ -196,6 +200,7 @@ public class Deflater {
      * @param level the compression level (0-9)
      * @param nowrap if true then use GZIP compatible compression
      */
+    @SuppressWarnings("this-escape")
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
@@ -331,6 +336,8 @@ public class Deflater {
      * @param dictionary the dictionary data bytes
      * @see Inflater#inflate
      * @see Inflater#getAdler()
+     *
+     * @since 11
      */
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
@@ -817,12 +824,16 @@ public class Deflater {
     /**
      * Returns the total number of uncompressed bytes input so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesRead()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesRead()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of uncompressed bytes input so far
      */
+    @Deprecated(since = "23")
     public int getTotalIn() {
         return (int) getBytesRead();
     }
@@ -843,12 +854,16 @@ public class Deflater {
     /**
      * Returns the total number of compressed bytes output so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesWritten()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesWritten()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of compressed bytes output so far
      */
+    @Deprecated(since = "23")
     public int getTotalOut() {
         return (int) getBytesWritten();
     }

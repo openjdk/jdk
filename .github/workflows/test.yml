@@ -63,6 +63,7 @@ jobs:
           - 'hs/tier1 compiler part 1'
           - 'hs/tier1 compiler part 2'
           - 'hs/tier1 compiler part 3'
+          - 'hs/tier1 compiler not-xcomp'
           - 'hs/tier1 gc'
           - 'hs/tier1 runtime'
           - 'hs/tier1 serviceability'
@@ -90,11 +91,15 @@ jobs:
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 compiler part 2'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2 test/hotspot/jtreg/:tier1_compiler_not_xcomp'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 compiler part 3'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler not-xcomp'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_not_xcomp'
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 gc'
@@ -206,7 +211,7 @@ jobs:
         if: always()
 
       - name: 'Upload test results'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: results
           name: ${{ steps.package.outputs.artifact-name }}
@@ -214,7 +219,7 @@ jobs:
 
         # This is the best way I found to abort the job with an error message
       - name: 'Notify about test failures'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
         if: steps.run-tests.outputs.failure == 'true'

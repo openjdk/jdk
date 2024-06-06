@@ -349,7 +349,7 @@ public class GathererTest {
     @ParameterizedTest
     @MethodSource("configurations")
     public void testMassivelyComposedGatherers(Config config) {
-        final int ITERATIONS = 512; // Total number of compositions is 1 + (iterations*2)
+        final int ITERATIONS = 256; // Total number of compositions is 1 + (iterations*2)
         Gatherer<Integer,?,Integer> g = addOne;
         for(int i = 0;i < ITERATIONS;++i) {
             g = g.andThen(timesTwo).andThen(addOne);

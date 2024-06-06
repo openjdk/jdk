@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,15 @@ import javax.lang.model.SourceVersion;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="ElementKindVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see ElementKindVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see ElementKindVisitor6
  * @see ElementKindVisitor7
  * @see ElementKindVisitor8
  * @see ElementKindVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_22)
+@SupportedSourceVersion(RELEASE_23)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -118,7 +118,7 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
      * @param p {@inheritDoc ElementKindVisitor6}
      * @return  the result of {@code defaultAction}
      *
-     * @since 14
+     * @since 16
      */
     @Override
     public R visitVariableAsBindingVariable(VariableElement e, P p) {

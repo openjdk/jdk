@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,27 @@
 
 package sun.invoke.util;
 
+import static sun.invoke.util.Wrapper.NumericClasses.*;
 import jdk.internal.vm.annotation.DontInline;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+
 public enum Wrapper {
-    //        wrapperType      simple     primitiveType  simple     char  emptyArray     format
-    BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1)),
+    //        wrapperType      simple     primitiveType  simple     char  emptyArray     format               numericClass  superClass  classDescriptor
+    BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1), 0, 0, ConstantDescs.CD_boolean),
     // These must be in the order defined for widening primitive conversions in JLS 5.1.2
     // Avoid boxing integral types here to defer initialization of internal caches
-    BYTE   (     Byte.class,      "Byte",    byte.class,    "byte", 'B', new    byte[0], Format.signed(   8)),
-    SHORT  (    Short.class,     "Short",   short.class,   "short", 'S', new   short[0], Format.signed(  16)),
-    CHAR   (Character.class, "Character",    char.class,    "char", 'C', new    char[0], Format.unsigned(16)),
-    INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', new     int[0], Format.signed(  32)),
-    LONG   (     Long.class,      "Long",    long.class,    "long", 'J', new    long[0], Format.signed(  64)),
-    FLOAT  (    Float.class,     "Float",   float.class,   "float", 'F', new   float[0], Format.floating(32)),
-    DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', new  double[0], Format.floating(64)),
-    OBJECT (   Object.class,    "Object",  Object.class,  "Object", 'L', new  Object[0], Format.other(    1)),
+    BYTE   (     Byte.class,      "Byte",    byte.class,    "byte", 'B', new    byte[0], Format.signed(   8), BYTE_CLASS, BYTE_SUPERCLASSES, ConstantDescs.CD_byte),
+    SHORT  (    Short.class,     "Short",   short.class,   "short", 'S', new   short[0], Format.signed(  16), SHORT_CLASS, SHORT_SUPERCLASSES, ConstantDescs.CD_short),
+    CHAR   (Character.class, "Character",    char.class,    "char", 'C', new    char[0], Format.unsigned(16), CHAR_CLASS, CHAR_SUPERCLASSES, ConstantDescs.CD_char),
+    INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', new     int[0], Format.signed(  32), INT_CLASS, INT_SUPERCLASSES, ConstantDescs.CD_int),
+    LONG   (     Long.class,      "Long",    long.class,    "long", 'J', new    long[0], Format.signed(  64), LONG_CLASS, LONG_SUPERCLASSES, ConstantDescs.CD_long),
+    FLOAT  (    Float.class,     "Float",   float.class,   "float", 'F', new   float[0], Format.floating(32), FLOAT_CLASS, FLOAT_SUPERCLASSES, ConstantDescs.CD_float),
+    DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', new  double[0], Format.floating(64), DOUBLE_CLASS, DOUBLE_CLASS, ConstantDescs.CD_double),
+    OBJECT (   Object.class,    "Object",  Object.class,  "Object", 'L', new  Object[0], Format.other(    1), 0, 0, ConstantDescs.CD_Object),
     // VOID must be the last type, since it is "assignable" from any other type:
-    VOID   (     Void.class,      "Void",    void.class,    "void", 'V',           null, Format.other(    0)),
+    VOID   (     Void.class,      "Void",    void.class,    "void", 'V',           null, Format.other(    0), 0, 0, ConstantDescs.CD_void),
     ;
 
     public static final int COUNT = 10;
@@ -52,18 +56,33 @@ public enum Wrapper {
     private final String   basicTypeString;
     private final Object   emptyArray;
     private final int      format;
+    private final int      numericClass;
+    private final int      superClasses;
     private final String   wrapperSimpleName;
     private final String   primitiveSimpleName;
+    private final ClassDesc classDesc;
 
-    private Wrapper(Class<?> wtype, String wtypeName, Class<?> ptype, String ptypeName, char tchar, Object emptyArray, int format) {
+    private Wrapper(Class<?> wtype,
+                    String wtypeName,
+                    Class<?> ptype,
+                    String ptypeName,
+                    char tchar,
+                    Object emptyArray,
+                    int format,
+                    int numericClass,
+                    int superClasses,
+                    ClassDesc classDesc) {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
         this.basicTypeString = String.valueOf(this.basicTypeChar);
         this.emptyArray = emptyArray;
         this.format = format;
+        this.numericClass = numericClass;
+        this.superClasses = superClasses;
         this.wrapperSimpleName = wtypeName;
         this.primitiveSimpleName = ptypeName;
+        this.classDesc = classDesc;
     }
 
     /** For debugging, give the details of this wrapper. */
@@ -109,7 +128,7 @@ public enum Wrapper {
         static int other(int slots)   { return slots << SLOT_SHIFT; }
     }
 
-    /// format queries:
+    //--- format queries:
 
     /** How many bits are in the wrapped value?  Returns 0 for OBJECT or VOID. */
     public int     bitWidth()      { return (format >> Format.SIZE_SHIFT) & Format.SIZE_MASK; }
@@ -370,6 +389,9 @@ public enum Wrapper {
         }
     }
 
+    /** A nominal descriptor of the wrapped type */
+    public ClassDesc classDescriptor() { return classDesc; }
+
     /** What is the primitive type wrapped by this wrapper? */
     public Class<?> primitiveType() { return primitiveType; }
 
@@ -422,6 +444,11 @@ public enum Wrapper {
     /** Query:  Is the given type a wrapper, such as {@code Integer} or {@code Void}? */
     public static boolean isWrapperType(Class<?> type) {
         return findWrapperType(type) != null;
+    }
+
+    /** Query:  Is the given type a wrapper, such as {@code Integer}, {@code Byte}, etc excluding {@code Void} and {@code Object}? */
+    public static boolean isWrapperNumericOrBooleanType(Class<?> type) {
+        return isWrapperType(type) && findWrapperType(type) != VOID && findWrapperType(type) != OBJECT;
     }
 
     /** Query:  Is the given type a primitive, such as {@code int} or {@code void}? */
@@ -627,5 +654,35 @@ public enum Wrapper {
             assert(value.getClass() == wrapperType);
             values[i+vpos] = value;
         }
+    }
+
+    // NumericClasses should be in sync with com.sun.tools.javac.code.TypeTag.NumericClasses
+    public static class NumericClasses {
+        public static final int BYTE_CLASS = 1;
+        public static final int CHAR_CLASS = 2;
+        public static final int SHORT_CLASS = 4;
+        public static final int INT_CLASS = 8;
+        public static final int LONG_CLASS = 16;
+        public static final int FLOAT_CLASS = 32;
+        public static final int DOUBLE_CLASS = 64;
+
+        static final int BYTE_SUPERCLASSES = BYTE_CLASS | SHORT_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int CHAR_SUPERCLASSES = CHAR_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int SHORT_SUPERCLASSES = SHORT_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int INT_SUPERCLASSES = INT_CLASS | LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int LONG_SUPERCLASSES = LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int FLOAT_SUPERCLASSES = FLOAT_CLASS | DOUBLE_CLASS;
+    }
+
+    public boolean isStrictSubRangeOf(Wrapper target) {
+        return (this.superClasses & target.numericClass) != 0 && this != target;
     }
 }

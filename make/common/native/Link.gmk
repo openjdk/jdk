@@ -1,0 +1,196 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to linking a native binary;
+# creating either a dynamic library, a static library or an executable.
+
+################################################################################
+# GetEntitlementsFile
+# Find entitlements file for executable when signing on macosx. If no
+# specialized file is found, returns the default file.
+# This macro might be called from custom makefiles.
+# $1 Executable to find entitlements file for.
+ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+ifeq ($(MACOSX_CODESIGN_MODE), debug)
+  CODESIGN_PLIST_SUFFIX := -debug
+else
+  CODESIGN_PLIST_SUFFIX :=
+endif
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
+
+GetEntitlementsFile = \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
+      $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
+    )
+
+################################################################################
+define SetupLinking
+  # Unless specifically set, stripping should only happen if symbols are also
+  # being copied.
+  $$(call SetIfEmpty, $1_STRIP_SYMBOLS, $$($1_COPY_DEBUG_SYMBOLS))
+
+  # Default to using the global STRIPFLAGS. Allow for overriding with an
+  # empty value
+  $1_STRIPFLAGS ?= $(STRIPFLAGS)
+endef
+
+################################################################################
+define CreateLinkedResult
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $$(eval $$(call CreateStaticLibrary,$1))
+  else
+    $$(eval $$(call CreateDynamicLibraryOrExecutable,$1))
+  endif
+endef
+
+################################################################################
+define CreateStaticLibrary
+  # Include partial linking when building the static library with clang on linux
+  ifeq ($(call isTargetOs, linux), true)
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
+      $1_ENABLE_PARTIAL_LINKING := true
+    endif
+  endif
+
+  $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_LIBS) \
+      $$($1_EXTRA_LIBS)
+  ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+    $1_VARDEPS += $$($1_LD) $$($1_SYSROOT_LDFLAGS)
+  endif
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_EXTRA_LINK_DEPS) $$($1_VARDEPS_FILE)
+
+  $1_AR_OBJ_ARG := $$($1_LD_OBJ_ARG)
+  # With clang on linux, partial linking is enabled and 'AR' takes the output
+  # object from the partial linking step.
+  ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+    $1_TARGET_RELOCATABLE := $$($1_OBJECT_DIR)/$$($1_PREFIX)$$($1_NAME)_relocatable$(OBJ_SUFFIX)
+    $1_AR_OBJ_ARG := $$($1_TARGET_RELOCATABLE)
+  endif
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+          ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+          else
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+          endif
+        endif
+	$$(call LogInfo, Building static library $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+        # Do partial linking.
+        ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_partial_link, \
+	      $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
+	          -o $$($1_TARGET_RELOCATABLE) $$($1_LD_OBJ_ARG))
+        endif
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ar, \
+	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	    $$($1_AR) $$(ARFLAGS) -r -cs $$($1_TARGET) \
+	        $$($1_AR_OBJ_ARG) $$($1_RES))
+endef
+
+################################################################################
+define CreateDynamicLibraryOrExecutable
+  # A shared dynamic library or an executable binary has been specified
+  ifeq ($$($1_TYPE), LIBRARY)
+    # Generating a dynamic library.
+    $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+  endif
+
+  ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+    $1_CODESIGN_OPTS := "$(MACOSX_CODESIGN_IDENTITY)" --timestamp \
+        --options runtime
+  else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+    $1_CODESIGN_OPTS := -
+  endif
+
+  $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) \
+      $$($1_EXTRA_LDFLAGS) $$($1_LIBS) $$($1_EXTRA_LIBS) \
+      $$($1_DEBUGINFO_FILES) $$($1_STRIPFLAGS)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_EXTRA_LINK_DEPS) $$($1_VARDEPS_FILE)
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+          ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+          else
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+          endif
+        endif
+	$$(call LogInfo, Linking $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ld, \
+	    $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
+	        $$($1_SYSROOT_LDFLAGS) -o $$($1_TARGET) $$($1_LD_OBJ_ARG) \
+	        $$($1_LIBS) $$($1_EXTRA_LIBS))
+        ifeq ($$($1_CREATE_DEBUGINFO), true)
+          ifeq ($(call isTargetOs, linux), true)
+            # This cannot be run separately since it updates the original target
+            # file.
+	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
+	        $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES))
+	    $$(CHMOD) -x $$($1_DEBUGINFO_FILES)
+          else ifeq ($(call isTargetOs, aix), true)
+            # AIX does not provide the equivalent of objcopy to extract debug
+            # symbols, so we copy unstripped library instead.
+	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
+	        $(CP) $$($1_TARGET) $$($1_DEBUGINFO_FILES))
+          else ifeq ($(call isTargetOs, macosx), true)
+	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
+	        $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET))
+          endif
+        endif
+        ifneq ($$($1_STRIP_SYMBOLS), false)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_strip, \
+	      $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET))
+        endif
+        ifeq ($$($1_CREATE_DEBUGINFO), true)
+          ifeq ($(call isTargetOs, linux), true)
+            # Run this after strip is called, since strip can sometimes mangle
+            # the embedded debuglink, which we want to avoid.
+	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_add_debuginfo_link, \
+	        $(CD) $$($1_SYMBOLS_DIR) && \
+	            $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET))
+          endif
+        endif
+        ifneq ($(MACOSX_CODESIGN_MODE), disabled)
+          # Remove signature explicitly first to avoid warnings if the linker
+          # added a default adhoc signature.
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_codesign_clear, \
+	      $(CODESIGN) --remove-signature $$@)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_codesign_add, \
+	      $(CODESIGN) -f -s $$($1_CODESIGN_OPTS) --entitlements \
+	          $$(call GetEntitlementsFile, $$@) $$@)
+        endif
+endef

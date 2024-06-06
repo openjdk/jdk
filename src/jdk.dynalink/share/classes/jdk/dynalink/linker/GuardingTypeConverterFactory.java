@@ -75,6 +75,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * these conversions, will cause more ambiguity for {@link BeansLinker} in
  * selecting the correct overload when trying to link to an overloaded Java
  * method.
+ * @since 9
  */
 public interface GuardingTypeConverterFactory {
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.lang.classfile.attribute.CharacterRangeInfo;
 import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
+import java.util.List;
 import static java.util.Objects.requireNonNull;
 import jdk.internal.javac.PreviewFeature;
 
@@ -179,7 +180,7 @@ public sealed interface ClassFile
 
     /**
      * Option describing whether to filter unresolved labels.
-     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalStateException
+     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalArgumentException
      * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
      * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
      * reference to unresolved {@link Label} during bytecode serialization.
@@ -480,6 +481,33 @@ public sealed interface ClassFile
      * @return the bytes of the new class
      */
     byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform);
+
+    /**
+     * Verify a classfile.  Any verification errors found will be returned.
+     * @param model the class model to verify
+     * @return a list of verification errors, or an empty list if no errors are
+     * found
+     */
+    List<VerifyError> verify(ClassModel model);
+
+    /**
+     * Verify a classfile.  Any verification errors found will be returned.
+     * @param bytes the classfile bytes to verify
+     * @return a list of verification errors, or an empty list if no errors are
+     * found
+     */
+    List<VerifyError> verify(byte[] bytes);
+
+    /**
+     * Verify a classfile.  Any verification errors found will be returned.
+     * @param path the classfile path to verify
+     * @return a list of verification errors, or an empty list if no errors are
+     * found
+     * @throws java.io.IOException if an I/O error occurs
+     */
+    default List<VerifyError> verify(Path path) throws IOException {
+        return verify(Files.readAllBytes(path));
+    }
 
     /** 0xCAFEBABE */
     int MAGIC_NUMBER = 0xCAFEBABE;
@@ -1448,6 +1476,12 @@ public sealed interface ClassFile
     int JAVA_22_VERSION = 66;
 
     /**
+     * The class major version of JAVA_23.
+     * @since 23
+     */
+    int JAVA_23_VERSION = 67;
+
+    /**
      * A minor version number indicating a class uses preview features
      * of a Java SE version since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
@@ -1458,7 +1492,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_22_VERSION;
+        return JAVA_23_VERSION;
     }
 
     /**

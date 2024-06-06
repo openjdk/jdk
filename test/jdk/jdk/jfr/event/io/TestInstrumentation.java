@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,14 @@
 
 package jdk.jfr.event.io;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
@@ -31,15 +39,14 @@ import java.security.ProtectionDomain;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.IllegalClassFormatException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_void;
 
 /*
  * @test
@@ -48,10 +55,11 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  *          jdk.jfr
+ * @enablePreview
+ * @comment update --enable-preview in launchTest() too
  *
  * @run main/othervm jdk.jfr.event.io.TestInstrumentation
  */
@@ -90,7 +98,7 @@ public class TestInstrumentation implements ClassFileTransformer {
     private static TestInstrumentation testTransformer = null;
 
     // All methods that will be instrumented.
-    private static final String[] instrMethodKeys = {
+    private static final Set<MethodKey> instrMethodKeys = Stream.of(
         "java/io/RandomAccessFile::seek::(J)V",
         "java/io/RandomAccessFile::read::()I",
         "java/io/RandomAccessFile::read::([B)I",
@@ -116,31 +124,24 @@ public class TestInstrumentation implements ClassFileTransformer {
         "java/nio/channels/SocketChannel::read::([Ljava/nio/ByteBuffer;)J",
         "java/nio/channels/SocketChannel::write::([Ljava/nio/ByteBuffer;)J",
         "sun/nio/ch/FileChannelImpl::read::(Ljava/nio/ByteBuffer;)I",
-        "sun/nio/ch/FileChannelImpl::write::(Ljava/nio/ByteBuffer;)I",
-    };
-
-    private static String getInstrMethodKey(String className, String methodName, String signature) {
-        // This key is used to identify a class and method. It is sent to callback(key)
-        return className + "::" + methodName + "::" + signature;
-    }
-
-    private static String getClassFromMethodKey(String methodKey) {
-        return methodKey.split("::")[0];
-    }
+        "sun/nio/ch/FileChannelImpl::write::(Ljava/nio/ByteBuffer;)I"
+    ).map(s -> {
+        String[] a = s.split("::");
+        return new MethodKey(a[0], a[1], a[2]);
+    }).collect(Collectors.toUnmodifiableSet());
 
     // Set of all classes targeted for instrumentation.
-    private static Set<String> instrClassesTarget = null;
+    private static Set<ClassDesc> instrClassesTarget = null;
 
     // Set of all classes where instrumentation has been completed.
-    private static Set<String> instrClassesDone = null;
+    private static Set<ClassDesc> instrClassesDone = null;
 
     static {
         // Split class names from InstrMethodKeys.
-        instrClassesTarget = new HashSet<String>();
-        instrClassesDone = new HashSet<String>();
-        for (String s : instrMethodKeys) {
-            String className = getClassFromMethodKey(s);
-            instrClassesTarget.add(className);
+        instrClassesTarget = new HashSet<>();
+        instrClassesDone = new HashSet<>();
+        for (MethodKey key : instrMethodKeys) {
+            instrClassesTarget.add(key.owner());
         }
     }
 
@@ -164,9 +165,10 @@ public class TestInstrumentation implements ClassFileTransformer {
             runAllTests(TransformStatus.Transformed);
 
             // Retransform all classes and then repeat tests
-            Set<Class<?>> classes = new HashSet<Class<?>>();
-            for (String className : instrClassesTarget) {
-                Class<?> clazz = Class.forName(className.replaceAll("/", "."));
+            Set<Class<?>> classes = new HashSet<>();
+            for (ClassDesc className : instrClassesTarget) {
+                var desc = className.descriptorString();
+                Class<?> clazz = Class.forName(desc.substring(1, desc.length() - 1).replace('/', '.'));
                 classes.add(clazz);
                 log("Will retransform " + clazz.getName());
             }
@@ -197,10 +199,10 @@ public class TestInstrumentation implements ClassFileTransformer {
 
                 // Verify that all expected callbacks have been called.
                 Set<String> callbackKeys = InstrumentationCallback.getKeysCopy();
-                for (String key : instrMethodKeys) {
-                    boolean gotCallback = callbackKeys.contains(key);
+                for (MethodKey key : instrMethodKeys) {
+                    boolean gotCallback = callbackKeys.contains(key.toString());
                     boolean expectsCallback = isClassInstrumented(status, key);
-                    String msg = String.format("key:%s, expects:%b", key, expectsCallback);
+                    String msg = String.format("status:%s, key:%s, expects:%b", status, key, expectsCallback);
                     if (gotCallback != expectsCallback) {
                         throw new Exception("Wrong callback() for " + msg);
                     } else {
@@ -214,14 +216,14 @@ public class TestInstrumentation implements ClassFileTransformer {
             }
         }
 
-        private static boolean isClassInstrumented(TransformStatus status, String key) throws Throwable {
+        private static boolean isClassInstrumented(TransformStatus status, MethodKey key) throws Throwable {
             switch (status) {
             case Retransformed:
                 return true;
             case Removed:
                 return false;
             case Transformed:
-                String className = getClassFromMethodKey(key);
+                var className = key.owner();
                 return instrClassesDone.contains(className);
             }
             throw new Exception("Test error: Unknown TransformStatus: " + status);
@@ -279,11 +281,11 @@ public class TestInstrumentation implements ClassFileTransformer {
 
         String[] args = {
             "-Xbootclasspath/a:" + testClassDir + "InstrumentationCallback.jar",
-            "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+            "--enable-preview",
             "-classpath", classpath,
             "-javaagent:" + testClassDir + "TestInstrumentation.jar",
             "jdk.jfr.event.io.TestInstrumentation$TestMain" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 
@@ -305,67 +307,52 @@ public class TestInstrumentation implements ClassFileTransformer {
             ClassLoader classLoader, String className, Class<?> classBeingRedefined,
             ProtectionDomain pd, byte[] bytes) throws IllegalClassFormatException {
         // Check if this class should be instrumented.
-        if (!instrClassesTarget.contains(className)) {
+        ClassDesc target = ClassDesc.ofInternalName(className);
+        if (!instrClassesTarget.contains(target)) {
             return null;
         }
 
         boolean isRedefinition = classBeingRedefined != null;
         log("instrument class(" + className + ") " + (isRedefinition ? "redef" : "load"));
 
-        ClassReader reader = new ClassReader(bytes);
-        ClassWriter writer = new ClassWriter(
-                reader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        CallbackClassVisitor classVisitor = new CallbackClassVisitor(writer);
-        reader.accept(classVisitor, 0);
-        instrClassesDone.add(className);
-        return writer.toByteArray();
-    }
+        instrClassesDone.add(target);
+        var cf = ClassFile.of();
+        return cf.transform(cf.parse(bytes), (clb, ce) -> {
+            MethodKey key;
+            if (ce instanceof MethodModel mm && instrMethodKeys.contains(key = new MethodKey(
+                    target, mm.methodName().stringValue(), mm.methodTypeSymbol()))) {
+                clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {
+                    private static final MethodTypeDesc MTD_callback = MethodTypeDesc.of(CD_void, CD_String);
+                    private static final ClassDesc CD_InstrumentationCallback = InstrumentationCallback.class
+                            .describeConstable().orElseThrow();
 
-    private static class CallbackClassVisitor extends ClassVisitor {
-        private String className;
+                    @Override
+                    public void atStart(CodeBuilder cb) {
+                        cb.loadConstant(key.toString());
+                        cb.invokestatic(CD_InstrumentationCallback, "callback", MTD_callback);
+                        log("instrumented " + key);
+                    }
 
-        public CallbackClassVisitor(ClassVisitor cv) {
-            super(Opcodes.ASM7, cv);
-        }
-
-        @Override
-        public void visit(
-                int version, int access, String name, String signature,
-                String superName, String[] interfaces) {
-            cv.visit(version, access, name, signature, superName, interfaces);
-            className = name;
-        }
-
-        @Override
-        public MethodVisitor visitMethod(
-                int access, String methodName, String desc, String signature, String[] exceptions) {
-            String methodKey = getInstrMethodKey(className, methodName, desc);
-            boolean isInstrumentedMethod = Arrays.asList(instrMethodKeys).contains(methodKey);
-            MethodVisitor mv = cv.visitMethod(access, methodName, desc, signature, exceptions);
-            if (isInstrumentedMethod && mv != null) {
-                mv = new CallbackMethodVisitor(mv, methodKey);
-                log("instrumented " + methodKey);
+                    @Override
+                    public void accept(CodeBuilder cb, CodeElement ce) {
+                        cb.with(ce);
+                    }
+                }));
+            } else {
+                clb.with(ce);
             }
-            return mv;
-        }
+        });
     }
 
-    public static class CallbackMethodVisitor extends MethodVisitor {
-        private String logMessage;
-
-        public CallbackMethodVisitor(MethodVisitor mv, String logMessage) {
-            super(Opcodes.ASM7, mv);
-            this.logMessage = logMessage;
+    public record MethodKey(ClassDesc owner, String name, MethodTypeDesc desc) {
+        public MethodKey(String className, String methodName, String signature) {
+            this(ClassDesc.ofInternalName(className), methodName, MethodTypeDesc.ofDescriptor(signature));
         }
 
         @Override
-        public void visitCode() {
-            mv.visitCode();
-            String methodDescr = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(String.class));
-            String className = InstrumentationCallback.class.getName().replace('.', '/');
-            mv.visitLdcInsn(logMessage);
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, "callback", methodDescr);
+        public String toString() {
+            var ownerDesc = owner.descriptorString();
+            return ownerDesc.substring(1, ownerDesc.length() - 1) + "::" + name + "::" + desc.descriptorString();
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,9 @@ public class DocFilesHandler {
                     configuration.messages.warning("doclet.Copy_Overwrite_warning",
                             srcfile.getPath(), dstdir.getPath());
                 } else {
-                    if (Utils.toLowerCase(srcfile.getPath()).endsWith(".html")) {
-                        handleHtmlFile(srcfile, dstDocPath);
+                    var path = Utils.toLowerCase(srcfile.getPath());
+                    if (path.endsWith(".html") || path.endsWith(".md")) {
+                        handleDocFile(srcfile, dstDocPath);
                     } else {
                         configuration.messages.notice("doclet.Copying_File_0_To_Dir_1",
                                 srcfile.getPath(), dstdir.getPath());
@@ -186,10 +187,10 @@ public class DocFilesHandler {
         }
     }
 
-    private void handleHtmlFile(DocFile srcFile, DocPath dstPath) throws DocletException {
+    private void handleDocFile(DocFile srcFile, DocPath dstPath) throws DocletException {
         var fileObject = srcFile.getFileObject();
         var dfElement = new DocFileElement(utils, element, fileObject);
-        var path = dstPath.resolve(srcFile.getName());
+        var path = dstPath.resolve(srcFile.getName().replaceAll("\\.[a-z]+$", ".html"));
 
         writerFactory.newDocFileWriter(path, dfElement).buildPage();
     }
@@ -214,17 +215,6 @@ public class DocFilesHandler {
         }
 
         @Override
-        protected Navigation getNavBar(PageMode pageMode, Element element) {
-            var pkg = dfElement.getPackageElement();
-            Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                    contents.moduleLabel);
-            Content pkgLinkContent = getPackageLink(pkg, contents.packageLabel);
-            return super.getNavBar(pageMode, element)
-                    .setNavLinkModule(mdleLinkContent)
-                    .setNavLinkPackage(pkgLinkContent);
-        }
-
-        @Override
         public void buildPage() throws DocFileIOException {
 
             List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
@@ -244,8 +234,8 @@ public class DocFilesHandler {
             printHtmlDocument(List.of(), null, localTagsContent, List.of(), htmlContent);
         }
 
-        private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {
-            String t = configuration.utils.getHTMLTitle(element);
+        private String getWindowTitle(HtmlDocletWriter docletWriter, DocFileElement element) {
+            var t = docletWriter.getFileTitle(element);
             return docletWriter.getWindowTitle(t);
         }
 

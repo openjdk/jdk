@@ -71,7 +71,6 @@ final class PKCS5Padding implements Padding {
 
         byte paddingOctet = (byte) (len & 0xff);
         Arrays.fill(in, off, idx, paddingOctet);
-        return;
     }
 
     /**

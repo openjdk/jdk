@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define SHARE_GC_G1_G1MONOTONICARENA_HPP
 
 #include "gc/shared/freeListAllocator.hpp"
-#include "memory/allocation.hpp"
+#include "nmt/memflags.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 
@@ -125,7 +125,7 @@ class G1MonotonicArena::Segment {
   char* _bottom;  // Actual data.
   // Do not add class member variables beyond this point
 
-  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_CACHE_LINE_SIZE); }
+  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_PADDING_SIZE); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
     // The cast (size_t) is required to guard against overflow wrap around.

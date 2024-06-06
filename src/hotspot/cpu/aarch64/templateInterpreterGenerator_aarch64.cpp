@@ -1383,6 +1383,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
+  // Restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(rscratch1, rscratch2);
+
   // make room for the pushes we're about to do
   __ sub(rscratch1, esp, 4 * wordSize);
   __ andr(sp, rscratch1, -16);

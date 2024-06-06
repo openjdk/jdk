@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Testing ClassFile advanced transformations.
+ * @bug 8332505
  * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
@@ -65,6 +66,7 @@ import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.runtime.ObjectMethods;
 import java.util.ArrayDeque;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
@@ -75,7 +77,7 @@ class AdvancedTransformationsTest {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
-            var remapped = cc.parse(cc.transform(clm, (clb, cle) -> {
+            cc.verify(cc.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -99,7 +101,6 @@ class AdvancedTransformationsTest {
                 else
                     clb.with(cle);
             }));
-            remapped.verify(null);
         }
     }
 
@@ -115,15 +116,15 @@ class AdvancedTransformationsTest {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
             var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
-            assertEmpty(remapped.verify(
+            assertEmpty(ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.defaultResolver())
-                    , null)); //System.out::print));
-            remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
+                    )).verify(remapped));
+            remapped.fields().forEach(f -> f.findAttribute(Attributes.signature()).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
-            remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
+            remapped.methods().forEach(m -> m.findAttribute(Attributes.signature()).ifPresent(sa -> {
                     var md = m.methodTypeSymbol();
                     var ms = sa.asMethodSignature();
                     verifySignature(md.returnType(), ms.result());
@@ -174,7 +175,7 @@ class AdvancedTransformationsTest {
                         cc.parse(
                                 cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
-                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
+                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.module()).get();
         assertEquals(ma.uses().get(0).asSymbol(), bar);
         var provides = ma.provides().get(0);
         assertEquals(provides.provides().asSymbol(), bar);
@@ -188,9 +189,10 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
+        var objectMethods = ClassDesc.ofDescriptor(ObjectMethods.class.descriptorString());
         var cc = ClassFile.of();
         var remapped = cc.parse(
-                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno, objectMethods, bar)).remapClass(
                         cc,
                         cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
@@ -212,7 +214,8 @@ class AdvancedTransformationsTest {
                 "PUTSTATIC, owner: AdvancedTransformationsTest$Bar, field name: fooField, field type: LAdvancedTransformationsTest$Bar;",
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
-                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;",
+                "bootstrap method: STATIC AdvancedTransformationsTest$Bar::bootstrap");
         assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 
@@ -239,7 +242,7 @@ class AdvancedTransformationsTest {
         var instrumentor = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
         var target = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));
-        assertEmpty(cc.parse(instrumentedBytes).verify(null)); //System.out::print));
+        assertEmpty(cc.verify(instrumentedBytes));
         var targetClass = new ByteArrayClassLoader(AdvancedTransformationsTest.class.getClassLoader(), "AdvancedTransformationsTest$TargetClass", instrumentedBytes).loadClass("AdvancedTransformationsTest$TargetClass");
         assertEquals(targetClass.getDeclaredMethod("instrumentedMethod", Boolean.class).invoke(targetClass.getDeclaredConstructor().newInstance(), false), 34);
     }

@@ -77,7 +77,6 @@ public class TestSurvivorRatioFlag {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:MaxNewSize=" + NEW_SIZE,
                 "-XX:NewSize=" + NEW_SIZE,
                 "-Xmx" + HEAP_SIZE,
@@ -87,8 +86,7 @@ public class TestSurvivorRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createLimitedTestJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
     }
 

@@ -26,14 +26,14 @@
 #define SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1FullCollector;
 class G1FullGCCompactionPoint;
-class HeapRegion;
+class G1HeapRegion;
 
 // Determines the regions in the heap that should be part of the compaction and
 // distributes them among the compaction queues in round-robin fashion.
@@ -42,9 +42,9 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
   uint _cur_worker;
 
-  inline void free_empty_humongous_region(HeapRegion* hr);
+  inline void free_empty_humongous_region(G1HeapRegion* hr);
 
-  inline bool should_compact(HeapRegion* hr) const;
+  inline bool should_compact(G1HeapRegion* hr) const;
 
   // Returns the current worker id to assign a compaction point to, and selects
   // the next one round-robin style.
@@ -52,12 +52,12 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
 
   inline G1FullGCCompactionPoint* next_compaction_point();
 
-  inline void add_to_compaction_queue(HeapRegion* hr);
+  inline void add_to_compaction_queue(G1HeapRegion* hr);
 
 public:
   G1DetermineCompactionQueueClosure(G1FullCollector* collector);
 
-  inline bool do_heap_region(HeapRegion* hr) override;
+  inline bool do_heap_region(G1HeapRegion* hr) override;
 };
 
 class G1FullGCPrepareTask : public G1FullGCTask {
@@ -80,13 +80,13 @@ private:
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
 
-    void prepare_for_compaction(HeapRegion* hr);
+    void prepare_for_compaction(G1HeapRegion* hr);
 
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
-    bool do_heap_region(HeapRegion* hr);
+    bool do_heap_region(G1HeapRegion* hr);
   };
 
   class G1PrepareCompactLiveClosure : public StackObj {

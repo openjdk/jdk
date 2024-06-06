@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,15 @@ import static javax.lang.model.SourceVersion.*;
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
- * @see <a href="SimpleAnnotationValueVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see SimpleAnnotationValueVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see SimpleAnnotationValueVisitor6
  * @see SimpleAnnotationValueVisitor7
  * @see SimpleAnnotationValueVisitor8
  * @see SimpleAnnotationValueVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_22)
+@SupportedSourceVersion(RELEASE_23)
 public class SimpleAnnotationValueVisitor14<R, P> extends SimpleAnnotationValueVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zGCIdPrinter.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
@@ -47,6 +47,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
                      VM_Version::jdk_debug_level());
 
   // Early initialization
+  ZNMT::initialize();
   ZGlobalsPointers::initialize();
   ZNUMA::initialize();
   ZCPU::initialize();
@@ -54,7 +55,6 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZThreadLocalAllocBuffer::initialize();
   ZTracer::initialize();
   ZLargePages::initialize();
-  ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
   ZJNICritical::initialize();
   ZDriver::initialize();

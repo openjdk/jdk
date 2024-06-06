@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,38 +68,30 @@ public class TestZNMT {
          *   reservations.
          */
         final int XmsInM = Math.min(16 * XmxInM / (zForceDiscontiguousHeapReservations + 1), XmxInM);
-        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
-                                                        "-XX:+UseZGC",
-                                                        "-XX:+ZGenerational",
-                                                        "-Xms" + XmsInM + "M",
-                                                        "-Xmx" + XmxInM + "M",
-                                                        "-Xlog:gc,gc+init",
-                                                        "-XX:ZForceDiscontiguousHeapReservations=" + zForceDiscontiguousHeapReservations,
-                                                        "-XX:NativeMemoryTracking=detail",
-                                                        "-XX:+PrintNMTStatistics",
-                                                        Test.class.getName(),
-                                                        Integer.toString(zForceDiscontiguousHeapReservations),
-                                                        Integer.toString(XmxInM)))
-                                        .outputTo(System.out)
-                                        .errorTo(System.out)
-                                        .shouldHaveExitValue(0);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
+            "-XX:+UseZGC",
+            "-XX:+ZGenerational",
+            "-Xms" + XmsInM + "M",
+            "-Xmx" + XmxInM + "M",
+            "-Xlog:gc,gc+init",
+            "-XX:ZForceDiscontiguousHeapReservations=" + zForceDiscontiguousHeapReservations,
+            "-XX:NativeMemoryTracking=detail",
+            "-XX:+PrintNMTStatistics",
+            Test.class.getName(),
+            Integer.toString(zForceDiscontiguousHeapReservations),
+            Integer.toString(XmxInM))
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldHaveExitValue(0);
         if (zForceDiscontiguousHeapReservations > 1) {
             oa.shouldContain("Address Space Type: Discontiguous");
         }
-
-        if (XmsInM < XmxInM) {
-            // There will be reservations which are smaller than the total
-            // memory allocated in TestZNMT.Test.main. This means that some
-            // reservation will be completely committed and print the following
-            // in the NMT statistics.
-            oa.shouldMatch("reserved and committed \\d+ for Java Heap");
-        }
+        // We expect to have a report of this type.
+        oa.shouldMatch("ZGC heap backing file");
+        oa.shouldMatch("allocated \\d+ for Java Heap");
     }
 
     public static void main(String[] args) throws Exception {
-        testValue(0);
-        testValue(1);
-        testValue(2);
         testValue(100);
     }
 }

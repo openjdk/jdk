@@ -125,6 +125,7 @@ public class ClassFile {
         V64(64, 0),   // JDK 20
         V65(65, 0),   // JDK 21
         V66(66, 0),   // JDK 22
+        V67(67, 0),   // JDK 23
         ; // Reduce code churn when appending new constants
         Version(int major, int minor) {
             this.major = major;
@@ -142,7 +143,7 @@ public class ClassFile {
     }
 
 
-/************************************************************************
+/* **********************************************************************
  * String Translation Routines
  ***********************************************************************/
 

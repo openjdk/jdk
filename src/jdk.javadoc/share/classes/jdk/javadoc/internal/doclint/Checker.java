@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,10 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SinceTree;
@@ -150,6 +152,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private int implicitHeadingRank;
     private boolean inIndex;
     private boolean inLink;
+    private boolean inSee;
     private boolean inSummary;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
@@ -192,7 +195,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()
+                        && !isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -308,6 +312,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     private void reportReference(String code, Object... args) {
         env.messages.report(REFERENCE, Kind.WARNING, env.currPath.getLeaf(), code, args);
+    }
+
+    @Override
+    public Void scan(DocTreePath path, Void unused) {
+        // interposition point for all scans
+        return super.scan(path, unused);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -895,6 +905,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
+    @Override
+    public Void visitSee(SeeTree node, Void unused) {
+        try {
+            inSee = true;
+            return super.visitSee(node, unused);
+        } finally {
+            inSee = false;
+        }
+    }
+
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLiteral(LiteralTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
@@ -976,6 +996,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         Element e = env.trees.getElement(getCurrentPath());
         if (e == null) {
             reportBadReference(tree);
+        } else if ((inLink || inSee)
+                && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
+            reportBadReference(tree);
         }
         return super.visitReference(tree, ignore);
     }
@@ -1005,8 +1028,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             env.messages.warning(REFERENCE, tree, "dc.exists.return");
         }
         if (tree.isInline()) {
-            DocCommentTree dct = getCurrentPath().getDocComment();
-            if (dct.getFirstSentence().isEmpty() || tree != dct.getFirstSentence().get(0)) {
+            var dct = getCurrentPath().getDocComment();
+            var first = dct.getFirstSentence().stream()
+                    .filter(t -> !isBlank(t))
+                    .findFirst();
+            if (first.isEmpty() || first.get() != tree) {
                 env.messages.warning(SYNTAX, tree, "dc.return.not.first");
             }
         }
@@ -1018,6 +1044,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         foundReturn = true;
         warnIfEmpty(tree, tree.getDescription());
         return super.visitReturn(tree, ignore);
+    }
+
+    private static boolean isBlank(DocTree t) {
+        return switch (t.getKind()) {
+            case TEXT -> ((TextTree) t).getBody().isBlank();
+            case MARKDOWN -> ((RawTextTree) t).getContent().isBlank();
+            default -> false;
+        };
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1275,9 +1309,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isNormalClass(TreePath p) {
         return switch (p.getLeaf().getKind()) {
             case ENUM, RECORD -> false;
-            case CLASS -> true;
+            case CLASS -> !isImplicitlyDeclaredClass(p.getLeaf());
             default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
         };
+    }
+
+    /*
+     * If a similar query is ever added to com.sun.source.tree, use that instead.
+     */
+    private boolean isImplicitlyDeclaredClass(Tree t) {
+        return t.getKind() == Tree.Kind.CLASS
+                && t instanceof com.sun.tools.javac.tree.JCTree.JCClassDecl classDecl
+                && (classDecl.mods.flags & com.sun.tools.javac.code.Flags.IMPLICIT_CLASS) != 0;
     }
 
     void markEnclosingTag(Flag flag) {

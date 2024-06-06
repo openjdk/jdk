@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,6 @@ protected:
   // The covered regions should be in address order.
   MemRegion _covered[max_covered_regions];
 
-  // The last card is a guard card; never committed.
-  MemRegion _guard_region;
-
   inline size_t compute_byte_map_size(size_t num_bytes);
 
   enum CardValues {
@@ -111,7 +108,7 @@ public:
   void clear_MemRegion(MemRegion mr);
 
   // Return true if "p" is at the start of a card.
-  bool is_card_aligned(HeapWord* p) {
+  static bool is_card_aligned(HeapWord* p) {
     return is_aligned(p, card_size());
   }
 
@@ -133,8 +130,6 @@ public:
   CardValue* byte_after(const void* p) const {
     return byte_for(p) + 1;
   }
-
-  void invalidate(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {

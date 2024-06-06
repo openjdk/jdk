@@ -27,6 +27,7 @@
 #ifndef CPU_RISCV_NATIVEINST_RISCV_HPP
 #define CPU_RISCV_NATIVEINST_RISCV_HPP
 
+#include "macroAssembler_riscv.hpp"
 #include "asm/assembler.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
@@ -52,172 +53,24 @@ class NativeCall;
 
 class NativeInstruction {
   friend class Relocation;
-  friend bool is_NativeCallTrampolineStub_at(address);
  public:
   enum {
-    instruction_size = 4,
-    compressed_instruction_size = 2,
+    instruction_size = MacroAssembler::instruction_size,
+    compressed_instruction_size = MacroAssembler::compressed_instruction_size,
   };
 
   juint encoding() const {
     return uint_at(0);
   }
 
-  bool is_jal()                             const { return is_jal_at(addr_at(0));         }
-  bool is_movptr()                          const { return is_movptr_at(addr_at(0));      }
-  bool is_call()                            const { return is_call_at(addr_at(0));        }
-  bool is_jump()                            const { return is_jump_at(addr_at(0));        }
-
-  static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
-  static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
-  static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
-  static bool is_ld_at(address instr)         { assert_cond(instr != nullptr); return is_load_at(instr) && extract_funct3(instr) == 0b011; }
-  static bool is_load_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000011; }
-  static bool is_float_load_at(address instr) { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000111; }
-  static bool is_auipc_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010111; }
-  static bool is_jump_at(address instr)       { assert_cond(instr != nullptr); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
-  static bool is_addi_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
-  static bool is_addiw_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
-  static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
-  static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
-  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
-
-  static bool is_srli_at(address instr) {
-    assert_cond(instr != nullptr);
-    return extract_opcode(instr) == 0b0010011 &&
-           extract_funct3(instr) == 0b101 &&
-           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
-  }
-
-  static bool is_slli_shift_at(address instr, uint32_t shift) {
-    assert_cond(instr != nullptr);
-    return (extract_opcode(instr) == 0b0010011 && // opcode field
-            extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
-            Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
-  }
-
-  static Register extract_rs1(address instr);
-  static Register extract_rs2(address instr);
-  static Register extract_rd(address instr);
-  static uint32_t extract_opcode(address instr);
-  static uint32_t extract_funct3(address instr);
-
-  // the instruction sequence of movptr is as below:
-  //     lui
-  //     addi
-  //     slli
-  //     addi
-  //     slli
-  //     addi/jalr/load
-  static bool check_movptr_data_dependency(address instr) {
-    address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address last_instr = slli2 + instruction_size;
-    return extract_rs1(addi1) == extract_rd(lui) &&
-           extract_rs1(addi1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(slli2) &&
-           extract_rs1(last_instr) == extract_rd(slli2);
-  }
-
-  // the instruction sequence of li64 is as below:
-  //     lui
-  //     addi
-  //     slli
-  //     addi
-  //     slli
-  //     addi
-  //     slli
-  //     addi
-  static bool check_li64_data_dependency(address instr) {
-    address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address addi3 = slli2 + instruction_size;
-    address slli3 = addi3 + instruction_size;
-    address addi4 = slli3 + instruction_size;
-    return extract_rs1(addi1) == extract_rd(lui) &&
-           extract_rs1(addi1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(slli3) &&
-           extract_rs1(addi4) == extract_rd(slli3) &&
-           extract_rs1(addi4) == extract_rd(addi4);
-  }
-
-  // the instruction sequence of li16u is as below:
-  //     lui
-  //     srli
-  static bool check_li16u_data_dependency(address instr) {
-    address lui = instr;
-    address srli = lui + instruction_size;
-
-    return extract_rs1(srli) == extract_rd(lui) &&
-           extract_rs1(srli) == extract_rd(srli);
-  }
-
-  // the instruction sequence of li32 is as below:
-  //     lui
-  //     addiw
-  static bool check_li32_data_dependency(address instr) {
-    address lui = instr;
-    address addiw = lui + instruction_size;
-
-    return extract_rs1(addiw) == extract_rd(lui) &&
-           extract_rs1(addiw) == extract_rd(addiw);
-  }
-
-  // the instruction sequence of pc-relative is as below:
-  //     auipc
-  //     jalr/addi/load/float_load
-  static bool check_pc_relative_data_dependency(address instr) {
-    address auipc = instr;
-    address last_instr = auipc + instruction_size;
-
-    return extract_rs1(last_instr) == extract_rd(auipc);
-  }
-
-  // the instruction sequence of load_label is as below:
-  //     auipc
-  //     load
-  static bool check_load_pc_relative_data_dependency(address instr) {
-    address auipc = instr;
-    address load = auipc + instruction_size;
-
-    return extract_rd(load) == extract_rd(auipc) &&
-           extract_rs1(load) == extract_rd(load);
-  }
-
-  static bool is_movptr_at(address instr);
-  static bool is_li16u_at(address instr);
-  static bool is_li32_at(address instr);
-  static bool is_li64_at(address instr);
-  static bool is_pc_relative_at(address branch);
-  static bool is_load_pc_relative_at(address branch);
-
-  static bool is_call_at(address instr) {
-    if (is_jal_at(instr) || is_jalr_at(instr)) {
-      return true;
-    }
-    return false;
-  }
-  static bool is_lwu_to_zr(address instr);
+  bool is_jal()                             const { return MacroAssembler::is_jal_at(addr_at(0));         }
+  bool is_movptr()                          const { return MacroAssembler::is_movptr1_at(addr_at(0)) ||
+                                                           MacroAssembler::is_movptr2_at(addr_at(0));     }
+  bool is_movptr1()                         const { return MacroAssembler::is_movptr1_at(addr_at(0));     }
+  bool is_movptr2()                         const { return MacroAssembler::is_movptr2_at(addr_at(0));     }
+  bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
+  bool is_call()                            const { return MacroAssembler::is_call_at(addr_at(0));        }
+  bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
 
   inline bool is_nop() const;
   inline bool is_jump_or_nop();
@@ -246,11 +99,7 @@ class NativeInstruction {
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
-    return is_auipc_at(instr);
-  }
-
-  bool is_membar() {
-    return (uint_at(0) & 0x7f) == 0b1111 && extract_funct3(addr_at(0)) == 0;
+    return MacroAssembler::is_auipc_at(instr);
   }
 };
 
@@ -306,7 +155,7 @@ class NativeCall: public NativeInstruction {
   inline friend NativeCall* nativeCall_before(address return_address);
 
   static bool is_call_before(address return_address) {
-    return is_call_at(return_address - NativeCall::return_address_offset);
+    return MacroAssembler::is_call_at(return_address - NativeCall::return_address_offset);
   }
 
   // MT-safe patching of a call instruction.
@@ -351,28 +200,35 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
-    movptr_instruction_size             =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr().
-    load_pc_relative_instruction_size   =    2 * NativeInstruction::instruction_size, // auipc, ld
-    instruction_offset                  =    0,
-    displacement_offset                 =    0
+    movptr1_instruction_size            =    MacroAssembler::movptr1_instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size            =    MacroAssembler::movptr2_instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size   =    MacroAssembler::load_pc_relative_instruction_size // auipc, ld
   };
 
-  address instruction_address() const       { return addr_at(instruction_offset); }
+  address instruction_address() const       { return addr_at(0); }
   address next_instruction_address() const  {
     // if the instruction at 5 * instruction_size is addi,
     // it means a lui + addi + slli + addi + slli + addi instruction sequence,
     // and the next instruction address should be addr_at(6 * instruction_size).
     // However, when the instruction at 5 * instruction_size isn't addi,
     // the next instruction address should be addr_at(5 * instruction_size)
-    if (nativeInstruction_at(instruction_address())->is_movptr()) {
-      if (is_addi_at(addr_at(movptr_instruction_size - NativeInstruction::instruction_size))) {
+    if (MacroAssembler::is_movptr1_at(instruction_address())) {
+      if (MacroAssembler::is_addi_at(addr_at(movptr1_instruction_size - NativeInstruction::instruction_size))) {
         // Assume: lui, addi, slli, addi, slli, addi
-        return addr_at(movptr_instruction_size);
+        return addr_at(movptr1_instruction_size);
       } else {
         // Assume: lui, addi, slli, addi, slli
-        return addr_at(movptr_instruction_size - NativeInstruction::instruction_size);
+        return addr_at(movptr1_instruction_size - NativeInstruction::instruction_size);
       }
-    } else if (is_load_pc_relative_at(instruction_address())) {
+    } else if (MacroAssembler::is_movptr2_at(instruction_address())) {
+      if (MacroAssembler::is_addi_at(addr_at(movptr2_instruction_size - NativeInstruction::instruction_size))) {
+        // Assume: lui, lui, slli, add, addi
+        return addr_at(movptr2_instruction_size);
+      } else {
+        // Assume: lui, lui, slli, add
+        return addr_at(movptr2_instruction_size - NativeInstruction::instruction_size);
+      }
+    } else if (MacroAssembler::is_load_pc_relative_at(instruction_address())) {
       // Assume: auipc, ld
       return addr_at(load_pc_relative_instruction_size);
     }
@@ -382,12 +238,6 @@ class NativeMovConstReg: public NativeInstruction {
 
   intptr_t data() const;
   void set_data(intptr_t x);
-
-  void flush() {
-    if (!maybe_cpool_ref(instruction_address())) {
-      ICache::invalidate_range(instruction_address(), movptr_instruction_size);
-    }
-  }
 
   void verify();
   void print();
@@ -399,14 +249,14 @@ class NativeMovConstReg: public NativeInstruction {
 
 inline NativeMovConstReg* nativeMovConstReg_at(address addr) {
   assert_cond(addr != nullptr);
-  NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_offset);
+  NativeMovConstReg* test = (NativeMovConstReg*)(addr);
   DEBUG_ONLY(test->verify());
   return test;
 }
 
 inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
   assert_cond(addr != nullptr);
-  NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_size - NativeMovConstReg::instruction_offset);
+  NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_size);
   DEBUG_ONLY(test->verify());
   return test;
 }
@@ -484,10 +334,7 @@ inline NativeJump* nativeJump_at(address addr) {
 class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
-    instruction_size            =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, jalr
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    6 * NativeInstruction::instruction_size  // lui, addi, slli, addi, slli, jalr
+    instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
   };
 
   address jump_destination() const;
@@ -524,8 +371,8 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
   enum RISCV_specific_constants {
     // Refer to function emit_trampoline_stub.
-    instruction_size = 3 * NativeInstruction::instruction_size + wordSize, // auipc + ld + jr + target address
-    data_offset      = 3 * NativeInstruction::instruction_size,            // auipc + ld + jr
+    instruction_size = MacroAssembler::trampoline_stub_instruction_size, // auipc + ld + jr + target address
+    data_offset      = MacroAssembler::trampoline_stub_data_offset,      // auipc + ld + jr
   };
 
   address destination(nmethod *nm = nullptr) const;
@@ -533,47 +380,10 @@ class NativeCallTrampolineStub : public NativeInstruction {
   ptrdiff_t destination_offset() const;
 };
 
-inline bool is_NativeCallTrampolineStub_at(address addr) {
-  // Ensure that the stub is exactly
-  //      ld   t0, L--->auipc + ld
-  //      jr   t0
-  // L:
-
-  // judge inst + register + imm
-  // 1). check the instructions: auipc + ld + jalr
-  // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
-  // 3). check if the offset in ld[31:20] equals the data_offset
-  assert_cond(addr != nullptr);
-  const int instr_size = NativeInstruction::instruction_size;
-  if (NativeInstruction::is_auipc_at(addr) &&
-      NativeInstruction::is_ld_at(addr + instr_size) &&
-      NativeInstruction::is_jalr_at(addr + 2 * instr_size) &&
-      (NativeInstruction::extract_rd(addr)                    == x5) &&
-      (NativeInstruction::extract_rd(addr + instr_size)       == x5) &&
-      (NativeInstruction::extract_rs1(addr + instr_size)      == x5) &&
-      (NativeInstruction::extract_rs1(addr + 2 * instr_size)  == x5) &&
-      (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == NativeCallTrampolineStub::data_offset)) {
-    return true;
-  }
-  return false;
-}
-
 inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
   assert_cond(addr != nullptr);
-  assert(is_NativeCallTrampolineStub_at(addr), "no call trampoline found");
+  assert(MacroAssembler::is_trampoline_stub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
-}
-
-class NativeMembar : public NativeInstruction {
-public:
-  uint32_t get_kind();
-  void set_kind(uint32_t order_kind);
-};
-
-inline NativeMembar *NativeMembar_at(address addr) {
-  assert_cond(addr != nullptr);
-  assert(nativeInstruction_at(addr)->is_membar(), "no membar found");
-  return (NativeMembar*)addr;
 }
 
 // A NativePostCallNop takes the form of three instructions:
@@ -589,10 +399,10 @@ public:
     // These instructions only ever appear together in a post-call
     // NOP, so it's unnecessary to check that the third instruction is
     // an addiw as well.
-    return is_nop() && is_lui_to_zr_at(addr_at(4));
+    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(4));
   }
-  int displacement() const;
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 

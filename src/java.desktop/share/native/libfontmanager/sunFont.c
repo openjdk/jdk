@@ -67,7 +67,7 @@ int isNullScalerContext(void *context) {
  */
 JNIEXPORT jlong JNICALL Java_sun_font_NullFontScaler_getGlyphImage
   (JNIEnv *env, jobject scaler, jlong pContext, jint glyphCode) {
-    void *nullscaler = calloc(sizeof(GlyphInfo), 1);
+    void *nullscaler = calloc(1, sizeof(GlyphInfo));
     return ptr_to_jlong(nullscaler);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,7 +389,7 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
 
 // Limits on vector size (number of elements) for auto-vectorization.
 bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
-  return Matcher::superword_max_vector_size(bt) >= size &&
+  return Matcher::max_vector_size_auto_vectorization(bt) >= size &&
          Matcher::min_vector_size(bt) <= size;
 }
 
@@ -409,35 +409,25 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
 }
 
 bool VectorNode::is_type_transition_short_to_int(Node* n) {
-  switch (n->Opcode()) {
-  case Op_MulAddS2I:
-    return true;
-  }
-  return false;
+  return n->Opcode() == Op_MulAddS2I;
 }
 
 bool VectorNode::is_type_transition_to_int(Node* n) {
   return is_type_transition_short_to_int(n);
 }
 
-bool VectorNode::is_muladds2i(Node* n) {
-  if (n->Opcode() == Op_MulAddS2I) {
-    return true;
-  }
-  return false;
+bool VectorNode::is_muladds2i(const Node* n) {
+  return n->Opcode() == Op_MulAddS2I;
 }
 
 bool VectorNode::is_roundopD(Node* n) {
-  if (n->Opcode() == Op_RoundDoubleMode) {
-    return true;
-  }
-  return false;
+  return n->Opcode() == Op_RoundDoubleMode;
 }
 
 bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
@@ -584,10 +574,7 @@ bool VectorNode::is_rotate_opcode(int opc) {
 }
 
 bool VectorNode::is_scalar_rotate(Node* n) {
-  if (is_rotate_opcode(n->Opcode())) {
-    return true;
-  }
-  return false;
+  return is_rotate_opcode(n->Opcode());
 }
 
 bool VectorNode::is_vshift_cnt_opcode(int opc) {
@@ -1434,7 +1421,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported_superword(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
+    return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
   }
   return false;
 }
@@ -1528,7 +1515,7 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported_superword(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
 }
@@ -1668,7 +1655,7 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
     // "VectorReinterpret (VectorReinterpret node) ==> node" if:
     //   1) Types of 'node' and 'this' are identical
     //   2) Truncations are not introduced by the first VectorReinterpret
-    if (Type::cmp(bottom_type(), n->in(1)->bottom_type()) == 0 &&
+    if (Type::equals(bottom_type(), n->in(1)->bottom_type()) &&
         length_in_bytes() <= n->bottom_type()->is_vect()->length_in_bytes()) {
       return n->in(1);
     }
@@ -1676,16 +1663,16 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   return this;
 }
 
-Node* VectorInsertNode::make(Node* vec, Node* new_val, int position) {
+Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& gvn) {
   assert(position < (int)vec->bottom_type()->is_vect()->length(), "pos in range");
-  ConINode* pos = ConINode::make(position);
+  ConINode* pos = gvn.intcon(position);
   return new VectorInsertNode(vec, new_val, pos, vec->bottom_type()->is_vect());
 }
 
 Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* n = obj()->uncast();
   if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
-    if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
+    if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
@@ -1722,7 +1709,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* VectorUnboxNode::Identity(PhaseGVN* phase) {
   Node* n = obj()->uncast();
   if (EnableVectorReboxing && n->Opcode() == Op_VectorBox) {
-    if (Type::cmp(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type()) == 0) {
+    if (Type::equals(bottom_type(), n->in(VectorBoxNode::Value)->bottom_type())) {
       return n->in(VectorBoxNode::Value); // VectorUnbox (VectorBox v) ==> v
     } else {
       // Handled by VectorUnboxNode::Ideal().

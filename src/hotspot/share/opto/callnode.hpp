@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,7 +508,7 @@ public:
 class SafePointScalarObjectNode: public TypeNode {
   uint _first_index;              // First input edge relative index of a SafePoint node where
                                   // states of the scalarized object fields are collected.
-                                  // It is relative to the last (youngest) jvms->_scloff.
+  uint _depth;                    // Depth of the JVM state the _first_index field refers to
   uint _n_fields;                 // Number of non-static fields of the scalarized object.
 
   Node* _alloc;                   // Just for debugging purposes.
@@ -519,7 +519,7 @@ class SafePointScalarObjectNode: public TypeNode {
   uint first_index() const { return _first_index; }
 
 public:
-  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields);
+  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint depth, uint n_fields);
 
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
@@ -529,7 +529,7 @@ public:
 
   uint first_index(JVMState* jvms) const {
     assert(jvms != nullptr, "missed JVMS");
-    return jvms->scloff() + _first_index;
+    return jvms->of_depth(_depth)->scloff() + _first_index;
   }
   uint n_fields()    const { return _n_fields; }
 

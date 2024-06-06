@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -127,26 +127,17 @@ void ShenandoahCodeRoots::disarm_nmethods() {
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
 private:
   bool                      _unloading_occurred;
-  volatile bool             _failed;
   ShenandoahHeap* const     _heap;
   BarrierSetNMethod* const  _bs;
-
-  void set_failed() {
-    Atomic::store(&_failed, true);
-  }
 
 public:
   ShenandoahNMethodUnlinkClosure(bool unloading_occurred) :
       _unloading_occurred(unloading_occurred),
-      _failed(false),
       _heap(ShenandoahHeap::heap()),
       _bs(ShenandoahBarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
     assert(_heap->is_concurrent_weak_root_in_progress(), "Only this phase");
-    if (failed()) {
-      return;
-    }
 
     ShenandoahNMethod* nm_data = ShenandoahNMethod::gc_data(nm);
     assert(!nm_data->is_unregistered(), "Should not see unregistered entry");
@@ -157,39 +148,34 @@ public:
       return;
     }
 
-    ShenandoahReentrantLocker locker(nm_data->lock());
+    {
+      ShenandoahReentrantLocker locker(nm_data->lock());
 
-    // Heal oops and disarm
-    if (_bs->is_armed(nm)) {
-      ShenandoahEvacOOMScope oom_evac_scope;
-      ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
-      // mark_as_maybe_on_stack() callbacks when they are used again.
-      _bs->set_guard_value(nm, 0);
+      // Heal oops and disarm
+      if (_bs->is_armed(nm)) {
+        ShenandoahEvacOOMScope oom_evac_scope;
+        ShenandoahNMethod::heal_nmethod_metadata(nm_data);
+        // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_stack() callbacks when they are used again.
+        _bs->set_guard_value(nm, 0);
+      }
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
-  }
-
-  bool failed() const {
-    return Atomic::load(&_failed);
+    ShenandoahReentrantLocker locker(nm_data->ic_lock());
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
 
 class ShenandoahUnlinkTask : public WorkerTask {
 private:
   ShenandoahNMethodUnlinkClosure      _cl;
-  ICRefillVerifier*                   _verifier;
   ShenandoahConcurrentNMethodIterator _iterator;
 
 public:
-  ShenandoahUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
+  ShenandoahUnlinkTask(bool unloading_occurred) :
     WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
-    _verifier(verifier),
     _iterator(ShenandoahCodeRoots::table()) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _iterator.nmethods_do_begin();
@@ -201,41 +187,21 @@ public:
   }
 
   virtual void work(uint worker_id) {
-    ICRefillVerifierMark mark(_verifier);
     _iterator.nmethods_do(&_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      ShenandoahUnlinkTask task(unloading_occurred, &verifier);
-      workers->run_task(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  ShenandoahUnlinkTask task(unloading_occurred);
+  workers->run_task(&task);
 }
 
 void ShenandoahCodeRoots::purge() {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  CodeCache::flush_unlinked_nmethods();
+  ClassUnloadingContext::context()->purge_and_free_nmethods();
 }
 
 ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
@@ -252,8 +218,8 @@ ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
   locker.notify_all();
 }
 
-void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
+void ShenandoahCodeRootsIterator::possibly_parallel_nmethods_do(NMethodClosure *f) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   assert(_table_snapshot != nullptr, "Sanity");
-  _table_snapshot->parallel_blobs_do(f);
+  _table_snapshot->parallel_nmethods_do(f);
 }

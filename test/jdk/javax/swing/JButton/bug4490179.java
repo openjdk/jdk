@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@
 
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -49,13 +47,16 @@ public class bug4490179 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
         try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame("bug4490179");
                 button = new JButton("Button");
                 frame.getContentPane().add(button);
-                button.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
+                button.addActionListener(e -> {
+                    if ((e.getModifiers() & InputEvent.BUTTON1_MASK)
+                            != InputEvent.BUTTON1_MASK) {
+                        System.out.println("Status: Failed");
                         passed = false;
                     }
                 });
@@ -80,6 +81,8 @@ public class bug4490179 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(500);
 
             if (!passed) {
                 throw new RuntimeException("Test Failed");

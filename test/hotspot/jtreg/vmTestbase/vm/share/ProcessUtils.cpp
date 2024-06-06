@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 #include "jni.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 #ifdef _WIN32
 #include <windows.h>
 #include <process.h>
@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <signal.h>
 #endif /* _WIN32 */
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 
@@ -49,12 +49,12 @@ JNIEXPORT jboolean JNICALL Java_vm_share_ProcessUtils_sendSignal
         if (!GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, 0)) {
                 dw = GetLastError();
                 FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                                NULL,
+                                nullptr,
                                 dw,
                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                 (LPTSTR) &lpMsgBuf,
                                 0,
-                                NULL
+                                nullptr
                              );
                 printf("%s\n", (LPTSTR)lpMsgBuf);
                 LocalFree(lpMsgBuf);
@@ -82,12 +82,12 @@ JNIEXPORT jboolean JNICALL Java_vm_share_ProcessUtils_sendCtrlBreak
         if (!GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, 0)) {
                 dw = GetLastError();
                 FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                                NULL,
+                                nullptr,
                                 dw,
                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                 (LPTSTR) &lpMsgBuf,
                                 0,
-                                NULL
+                                nullptr
                              );
                 printf("%s\n", (LPTSTR)lpMsgBuf);
                 LocalFree(lpMsgBuf);
@@ -111,12 +111,12 @@ void reportLastError(const char *msg) {
                 char *buf;
                 size_t n = (size_t)FormatMessage(
                                 FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                                NULL,
+                                nullptr,
                                 errcode,
                                 0,
                                 (LPSTR) &buf,
                                 (DWORD)len,
-                                NULL);
+                                nullptr);
                 if (n > 3) {
                         /* Drop final '.', CR, LF */
                         if (buf[n - 1] == '\n') n--;
@@ -152,25 +152,25 @@ jboolean doDumpCore() {
                 strcat(path, "\\");
                 strcat(path, name);
                 dbghelp = LoadLibrary(path);
-                if (dbghelp == NULL)
+                if (dbghelp == nullptr)
                         reportLastError("Load DBGHELP.DLL from system directory");
         } else {
                 printf("GetSystemDirectory returned 0\n");
         }
 
         // try Windows directory
-        if (dbghelp == NULL) {
+        if (dbghelp == nullptr) {
                 size = GetWindowsDirectory(path, pathLen);
                 if (size > 6) {
                         strcat(path, "\\");
                         strcat(path, name);
                         dbghelp = LoadLibrary(path);
-                        if (dbghelp == NULL) {
+                        if (dbghelp == nullptr) {
                                 reportLastError("Load DBGHELP.DLL from Windows directory");
                         }
                 }
         }
-        if (dbghelp == NULL) {
+        if (dbghelp == nullptr) {
                 printf("Failed to load DBGHELP.DLL\n");
                 return JNI_FALSE;
         }
@@ -180,7 +180,7 @@ jboolean doDumpCore() {
                                         PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION))
                                         GetProcAddress(dbghelp, "MiniDumpWriteDump");
 
-        if (_MiniDumpWriteDump == NULL) {
+        if (_MiniDumpWriteDump == nullptr) {
                 printf("Failed to find MiniDumpWriteDump() in module dbghelp.dll");
                 return JNI_FALSE;
         }
@@ -193,19 +193,19 @@ jboolean doDumpCore() {
                         MiniDumpWithUnloadedModules);
 #endif
 
-        dumpFile = CreateFile("core.mdmp", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        dumpFile = CreateFile("core.mdmp", GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
         if (dumpFile == INVALID_HANDLE_VALUE) {
                 reportLastError("Failed to create file for dumping");
                 return JNI_FALSE;
         }
-        pmei = NULL;
+        pmei = nullptr;
 
 
         // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
         // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
-        if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == FALSE &&
-                        _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == FALSE) {
+        if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, nullptr, nullptr) == FALSE &&
+                        _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, nullptr, nullptr) == FALSE) {
                 reportLastError("Call to MiniDumpWriteDump() failed");
                 return JNI_FALSE;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -84,8 +84,10 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
 
 public:
   G1CodeRootSetHashTable() :
-    _table(Log2DefaultNumBuckets,
-           HashTable::DEFAULT_MAX_SIZE_LOG2),
+    _table(Mutex::service-1,
+           nullptr,
+           Log2DefaultNumBuckets,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize), _num_entries(0) {
     clear();
   }
@@ -150,7 +152,7 @@ public:
     clean(always_true);
   }
 
-  void iterate_at_safepoint(CodeBlobClosure* blk) {
+  void iterate_at_safepoint(NMethodClosure* blk) {
     assert_at_safepoint();
     // A lot of code root sets are typically empty.
     if (is_empty()) {
@@ -159,7 +161,7 @@ public:
 
     auto do_value =
       [&] (nmethod** value) {
-        blk->do_code_blob(*value);
+        blk->do_nmethod(*value);
         return true;
       };
     _table_scanner.do_safepoint_scan(do_value);
@@ -185,6 +187,15 @@ public:
       size_t current_size = Atomic::sub(&_num_entries, num_deleted);
       shrink_to_match(current_size);
     }
+  }
+
+  // Removes dead/unlinked entries.
+  void bulk_remove() {
+    auto delete_check = [&] (nmethod** value) {
+      return (*value)->is_unlinked();
+    };
+
+    clean(delete_check);
   }
 
   // Calculate the log2 of the table size we want to shrink to.
@@ -255,6 +266,11 @@ bool G1CodeRootSet::remove(nmethod* method) {
   return _table->remove(method);
 }
 
+void G1CodeRootSet::bulk_remove() {
+  assert(!_is_iterating, "should not mutate while iterating the table");
+  _table->bulk_remove();
+}
+
 bool G1CodeRootSet::contains(nmethod* method) {
   return _table->contains(method);
 }
@@ -272,7 +288,7 @@ void G1CodeRootSet::reset_table_scanner() {
   _table->reset_table_scanner();
 }
 
-void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {
+void G1CodeRootSet::nmethods_do(NMethodClosure* blk) const {
   DEBUG_ONLY(_is_iterating = true;)
   _table->iterate_at_safepoint(blk);
   DEBUG_ONLY(_is_iterating = false;)
@@ -282,7 +298,7 @@ class CleanCallback : public StackObj {
   NONCOPYABLE(CleanCallback); // can not copy, _blobs will point to old copy
 
   class PointsIntoHRDetectionClosure : public OopClosure {
-    HeapRegion* _hr;
+    G1HeapRegion* _hr;
 
     template <typename T>
     void do_oop_work(T* p) {
@@ -293,7 +309,7 @@ class CleanCallback : public StackObj {
 
    public:
     bool _points_into;
-    PointsIntoHRDetectionClosure(HeapRegion* hr) : _hr(hr), _points_into(false) {}
+    PointsIntoHRDetectionClosure(G1HeapRegion* hr) : _hr(hr), _points_into(false) {}
 
     void do_oop(narrowOop* o) { do_oop_work(o); }
 
@@ -301,19 +317,19 @@ class CleanCallback : public StackObj {
   };
 
   PointsIntoHRDetectionClosure _detector;
-  CodeBlobToOopClosure _blobs;
+  NMethodToOopClosure _nmethod_cl;
 
  public:
-  CleanCallback(HeapRegion* hr) : _detector(hr), _blobs(&_detector, !CodeBlobToOopClosure::FixRelocations) {}
+  CleanCallback(G1HeapRegion* hr) : _detector(hr), _nmethod_cl(&_detector, !NMethodToOopClosure::FixRelocations) {}
 
   bool operator()(nmethod** value) {
     _detector._points_into = false;
-    _blobs.do_code_blob(*value);
+    _nmethod_cl.do_nmethod(*value);
     return !_detector._points_into;
   }
 };
 
-void G1CodeRootSet::clean(HeapRegion* owner) {
+void G1CodeRootSet::clean(G1HeapRegion* owner) {
   assert(!_is_iterating, "should not mutate while iterating the table");
 
   CleanCallback eval(owner);

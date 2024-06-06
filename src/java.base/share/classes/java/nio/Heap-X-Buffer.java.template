@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package java.nio;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
 #if[rw]
@@ -705,6 +706,9 @@ class Heap$Type$Buffer$RW$
                                                                    addr, segment)));
     }
 
+    public int hashCode() {
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
+    }
 
 #end[byte]
 
@@ -733,6 +737,9 @@ class Heap$Type$Buffer$RW$
                                       offset, segment);
     }
 
+    public int hashCode() {
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
+    }
 #end[char]
 
 

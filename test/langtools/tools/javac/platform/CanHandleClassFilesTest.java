@@ -110,9 +110,11 @@ public class CanHandleClassFilesTest {
             var main = createSymbolsClass.getMethod("main", String[].class);
             var symbols = targetDir.resolve("symbols");
             var modules = targetDir.resolve("modules");
+            var modulesList = targetDir.resolve("modules-list");
 
             try (Writer w = Files.newBufferedWriter(symbols)) {}
             Files.createDirectories(modules);
+            try (Writer w = Files.newBufferedWriter(modulesList)) {}
 
             main.invoke(null,
                         (Object) new String[] {"build-description-incremental",
@@ -127,7 +129,8 @@ public class CanHandleClassFilesTest {
                                                Long.toString(System.currentTimeMillis() / 1000),
                                                "" + SourceVersion.latest().ordinal(),
                                                "",
-                                               modules.toAbsolutePath().toString()});
+                                               modules.toAbsolutePath().toString(),
+                                               modulesList.toAbsolutePath().toString()});
         }
     }
 

@@ -69,148 +69,91 @@
 #define MEMORY_IDX     3
 #define PIDS_IDX       4
 
-typedef char * cptr;
+#define CONTAINER_READ_NUMBER_CHECKED(controller, filename, log_string, retval)       \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_number(filename, &retval);                                 \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return OSCONTAINER_ERROR;                                                         \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
+}
+
+#define CONTAINER_READ_NUMBER_CHECKED_MAX(controller, filename, log_string, retval)   \
+{                                                                                     \
+  bool is_ok;                                                                         \
+  is_ok = controller->read_number_handle_max(filename, &retval);                      \
+  if (!is_ok) {                                                                       \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
+    return OSCONTAINER_ERROR;                                                         \
+  }                                                                                   \
+  log_trace(os, container)(log_string " is: " JLONG_FORMAT, retval);                  \
+}
+
+#define CONTAINER_READ_STRING_CHECKED(controller, filename, log_string, retval, buf_size) \
+{                                                                                         \
+  bool is_ok;                                                                             \
+  is_ok = controller->read_string(filename, retval, buf_size);                            \
+  if (!is_ok) {                                                                           \
+    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);                \
+    return nullptr;                                                                       \
+  }                                                                                       \
+  log_trace(os, container)(log_string " is: %s", retval);                                 \
+}
 
 class CgroupController: public CHeapObj<mtInternal> {
   public:
-    virtual char *subsystem_path() = 0;
+    virtual char* subsystem_path() = 0;
+
+    /* Read a numerical value as unsigned long
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value is set in the provided julong pointer.
+     */
+    bool read_number(const char* filename, julong* result);
+
+    /* Convenience method to deal with numbers as well as the string 'max'
+     * in interface files. Otherwise same as read_number().
+     *
+     * returns: false if any error occurred. true otherwise and
+     * the parsed value (which might be negative) is being set in
+     * the provided jlong pointer.
+     */
+    bool read_number_handle_max(const char* filename, jlong* result);
+
+    /* Read a string of at most buf_size - 1 characters from the interface file.
+     * The provided buffer must be at least buf_size in size so as to account
+     * for the null terminating character. Callers must ensure that the buffer
+     * is appropriately in-scope and of sufficient size.
+     *
+     * returns: false if any error occured. true otherwise and the passed
+     * in buffer will contain the first buf_size - 1 characters of the string
+     * or up to the first new line character ('\n') whichever comes first.
+     */
+    bool read_string(const char* filename, char* buf, size_t buf_size);
+
+    /* Read a tuple value as a number. Tuple is: '<first> <second>'.
+     * Handles 'max' (for unlimited) for any tuple value. This is handy for
+     * parsing interface files like cpu.max which contain such tuples.
+     *
+     * returns: false if any error occurred. true otherwise and the parsed
+     * value of the appropriate tuple entry set in the provided jlong pointer.
+     */
+    bool read_numerical_tuple_value(const char* filename, bool use_first, jlong* result);
+
+    /* Read a numerical value from a multi-line interface file. The matched line is
+     * determined by the provided 'key'. The associated numerical value is being set
+     * via the passed in julong pointer. Example interface file 'memory.stat'
+     *
+     * returns: false if any error occurred. true otherwise and the parsed value is
+     * being set in the provided julong pointer.
+     */
+    bool read_numerical_key_value(const char* filename, const char* key, julong* result);
+
+  private:
+    static jlong limit_from_str(char* limit_str);
 };
-
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-// Parses a subsystem's file, looking for a matching line.
-// If key is null, then the first line will be matched with scan_fmt.
-// If key isn't null, then each line will be matched, looking for something that matches "$key $scan_fmt".
-// The matching value will be assigned to returnval.
-// scan_fmt uses scanf() syntax.
-// Return value: 0 on match, OSCONTAINER_ERROR on error.
-template <typename T> int subsystem_file_line_contents(CgroupController* c,
-                                              const char *filename,
-                                              const char *key,
-                                              const char *scan_fmt,
-                                              T returnval) {
-  if (c == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is null");
-    return OSCONTAINER_ERROR;
-  }
-  if (c->subsystem_path() == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: subsystem path is null");
-    return OSCONTAINER_ERROR;
-  }
-
-  stringStream file_path;
-  file_path.print_raw(c->subsystem_path());
-  file_path.print_raw(filename);
-
-  if (file_path.size() > (MAXPATHLEN-1)) {
-    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
-    return OSCONTAINER_ERROR;
-  }
-  const char* absolute_path = file_path.freeze();
-  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
-
-  FILE* fp = os::fopen(absolute_path, "r");
-  if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
-    return OSCONTAINER_ERROR;
-  }
-
-  const int buf_len = MAXPATHLEN+1;
-  char buf[buf_len];
-  char* line = fgets(buf, buf_len, fp);
-  if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", absolute_path);
-    fclose(fp);
-    return OSCONTAINER_ERROR;
-  }
-
-  bool found_match = false;
-  if (key == nullptr) {
-    // File consists of a single line according to caller, with only a value
-    int matched = sscanf(line, scan_fmt, returnval);
-    found_match = matched == 1;
-  } else {
-    // File consists of multiple lines in a "key value"
-    // fashion, we have to find the key.
-    const int key_len = (int)strlen(key);
-    for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-      char* key_substr = strstr(line, key);
-      char after_key = line[key_len];
-      if (key_substr == line
-          && isspace(after_key) != 0
-          && after_key != '\n') {
-        // Skip key, skip space
-        const char* value_substr = line + key_len + 1;
-        int matched = sscanf(value_substr, scan_fmt, returnval);
-        found_match = matched == 1;
-        if (found_match) {
-          break;
-        }
-      }
-    }
-  }
-  fclose(fp);
-  if (found_match) {
-    return 0;
-  }
-  log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
-                           (key == nullptr ? "null" : key), absolute_path);
-  return OSCONTAINER_ERROR;
-}
-PRAGMA_DIAG_POP
-
-// log_fmt can be different than scan_fmt. For example
-// cpu_period() for cgv2 uses log_fmt='%d' and scan_fmt='%*s %d'
-#define GET_CONTAINER_INFO(return_type, subsystem, filename,              \
-                           logstring, log_fmt, scan_fmt, variable)        \
-  return_type variable;                                                   \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(subsystem,                           \
-                                     filename,                            \
-                                     nullptr,                             \
-                                     scan_fmt,                            \
-                                     &variable);                          \
-  if (err != 0) {                                                         \
-    log_trace(os, container)(logstring "%d", OSCONTAINER_ERROR);          \
-    return (return_type) OSCONTAINER_ERROR;                               \
-  }                                                                       \
-                                                                          \
-  log_trace(os, container)(logstring log_fmt, variable);                  \
-}
-
-#define GET_CONTAINER_INFO_CPTR(return_type, subsystem, filename,         \
-                               logstring, scan_fmt, variable, bufsize)    \
-  char variable[bufsize];                                                 \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(subsystem,                           \
-                                     filename,                            \
-                                     nullptr,                             \
-                                     scan_fmt,                            \
-                                     variable);                           \
-  if (err != 0)                                                           \
-    return (return_type) nullptr;                                         \
-                                                                          \
-  log_trace(os, container)(logstring, variable);                          \
-}
-
-#define GET_CONTAINER_INFO_LINE(return_type, controller, filename,        \
-                           matchline, logstring, scan_fmt, variable)      \
-  return_type variable;                                                   \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(controller,                          \
-                                filename,                                 \
-                                matchline,                                \
-                                scan_fmt,                                 \
-                                &variable);                               \
-  if (err != 0)                                                           \
-    return (return_type) OSCONTAINER_ERROR;                               \
-                                                                          \
-  log_trace(os, container)(logstring, variable);                          \
-}
-
 
 class CachedMetric : public CHeapObj<mtInternal>{
   private:
@@ -255,7 +198,6 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
-    jlong limit_from_str(char* limit_str);
 
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
@@ -264,8 +206,11 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual jlong pids_current() = 0;
     virtual jlong memory_usage_in_bytes() = 0;
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
+    virtual jlong memory_and_swap_usage_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
+    virtual jlong rss_usage_in_bytes() = 0;
+    virtual jlong cache_usage_in_bytes() = 0;
 
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;

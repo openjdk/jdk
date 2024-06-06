@@ -71,42 +71,42 @@ class TestMaxHeapSizeTools {
     long maxHeapSize = largeValue + (2 * 1024 * 1024);
 
     // -Xms is not set
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue }, values, smallValue, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue }, values, largeValue, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=0" }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + smallValue }, values, -1, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + largeValue }, values, -1, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=0" }, values, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue }, smallValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue }, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=0" }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + smallValue }, -1, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + largeValue }, -1, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=0" }, -1, -1);
     // Some extra checks when both are set.
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, values, largeValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, smallValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, largeValue, largeValue);
 
     // -Xms is set to zero
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0" }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue }, values, smallValue, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue }, values, largeValue, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=0" }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + smallValue }, values, -1, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + largeValue }, values, -1, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=0" }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, values, largeValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0" }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue }, smallValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue }, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=0" }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + smallValue }, -1, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + largeValue }, -1, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=0" }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, smallValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, largeValue, largeValue);
 
     // -Xms is set to small value
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue }, values, -1, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=" + smallValue }, values, smallValue, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=0" }, values, -1, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=0" }, values, smallValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue }, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=" + smallValue }, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=0" }, -1, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + smallValue }, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + largeValue }, smallValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=0" }, smallValue, -1);
 
     // -Xms is set to large value
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue }, values, largeValue, largeValue);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:InitialHeapSize=0" }, values, largeValue, -1);
-    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:MinHeapSize=0" }, values, -1, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue }, largeValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:InitialHeapSize=0" }, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:MinHeapSize=0" }, -1, largeValue);
   }
 
   private static long align_up(long value, long alignment) {
@@ -115,9 +115,8 @@ class TestMaxHeapSizeTools {
   }
 
   private static void getNewOldSize(String gcflag, long[] values) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(gcflag,
+    OutputAnalyzer output = GCArguments.executeTestJava(gcflag,
       "-XX:+PrintFlagsFinal", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
 
     String stdout = output.getStdout();
@@ -208,8 +207,7 @@ class TestMaxHeapSizeTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(finalargs.toArray(String[]::new));
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(finalargs.toArray(String[]::new));
     output.shouldHaveExitValue(0);
 
     return output;
@@ -246,7 +244,7 @@ class TestMaxHeapSizeTools {
    * Verify whether the VM automatically synchronizes minimum and initial heap size if only
    * one is given for the GC specified.
    */
-  public static void checkErgonomics(String[] args, long[] newoldsize,
+  public static void checkErgonomics(String[] args,
     long expectedMin, long expectedInitial) throws Exception {
 
     MinInitialMaxValues v = new MinInitialMaxValues();
@@ -308,8 +306,7 @@ class TestMaxHeapSizeTools {
   }
 
   private static void expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flags);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(flags);
     shouldContainOrNot(output, hasWarning, "Warning");
     shouldContainOrNot(output, hasError, "Error");
     output.shouldHaveExitValue(errorcode);

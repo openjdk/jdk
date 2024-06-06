@@ -29,10 +29,10 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
@@ -67,7 +67,7 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
-  _num_vtimes(G1ConcurrentRefine::max_num_threads()),
+  _num_vtimes(G1ConcRefinementThreads),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
@@ -190,23 +190,23 @@ private:
   RegionTypeCounter _all;
 
   size_t _max_rs_mem_sz;
-  HeapRegion* _max_rs_mem_sz_region;
+  G1HeapRegion* _max_rs_mem_sz_region;
 
   size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
   size_t total_cards_occupied() const       { return _all.cards_occupied(); }
 
   size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
-  HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
+  G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
 
   size_t _max_code_root_mem_sz;
-  HeapRegion* _max_code_root_mem_sz_region;
+  G1HeapRegion* _max_code_root_mem_sz_region;
 
   size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
   size_t total_code_root_elems() const      { return _all.code_root_elems(); }
 
   size_t max_code_root_mem_sz() const       { return _max_code_root_mem_sz; }
-  HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
+  G1HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
@@ -215,7 +215,7 @@ public:
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr)
   {}
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the
