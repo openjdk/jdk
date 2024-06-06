@@ -639,14 +639,6 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
 
   thread->rebind_to_jvmti_thread_state_of(vt);
 
-  JvmtiThreadState* state = thread->jvmti_thread_state();
-  if (state != nullptr && state->is_pending_interp_only_mode()) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    state = thread->jvmti_thread_state();
-    if (state != nullptr && state->is_pending_interp_only_mode()) {
-      JvmtiEventController::enter_interp_only_mode();
-    }
-  }
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ true);

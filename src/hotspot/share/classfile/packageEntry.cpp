@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -316,7 +317,7 @@ void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_pac
 }
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   for (int i = 0; i < archived_packages->length(); i++) {
     PackageEntry* archived_entry = archived_packages->at(i);
