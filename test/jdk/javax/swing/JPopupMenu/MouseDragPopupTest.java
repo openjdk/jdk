@@ -66,9 +66,9 @@ public class MouseDragPopupTest {
 
         robot.mouseMove(srcPoint.x, srcPoint.y);
         robot.waitForIdle();
-        robot.delay(500);
 
-        robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.waitForIdle();
 
         while (!srcPoint.equals(dstPoint)) {
             srcPoint.translate(sign(dstPoint.x - srcPoint.x), 0);
@@ -76,7 +76,7 @@ public class MouseDragPopupTest {
         }
         robot.waitForIdle();
 
-        robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.waitForIdle();
 
         if (failed) {
@@ -107,7 +107,7 @@ public class MouseDragPopupTest {
             public void popupMenuCanceled(PopupMenuEvent e) {}
         });
 
-        menu.add("This should not appear (and does not under Linux/Windows)");
+        menu.add("This should not appear");
         innerPanel.setComponentPopupMenu(menu);
 
         panel.add(new JLabel("Right click and drag from here"));
