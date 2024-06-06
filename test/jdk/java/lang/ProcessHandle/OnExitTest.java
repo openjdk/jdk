@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 import org.testng.annotations.Test;
@@ -68,6 +69,8 @@ public class OnExitTest extends ProcessUtil {
         try {
             int[] exitValues = {0, 1, 10, 259};
             for (int value : exitValues) {
+                // Linux & Mac don't support exit codes longer than 8 bits, skip
+                if (value == 259 && !Platform.isWindows()) continue;
                 Process p = JavaChild.spawn("exit", Integer.toString(value));
                 CompletableFuture<Process> future = p.onExit();
                 future.thenAccept( (ph) -> {
