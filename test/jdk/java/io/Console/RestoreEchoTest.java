@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -59,7 +60,6 @@ public class RestoreEchoTest {
     private static void expectRunner(String initialEcho) throws Throwable {
         // invoking "expect" command
         var testSrc = System.getProperty("test.src", ".");
-        var testClasses = System.getProperty("test.classes", ".");
         var jdkDir = System.getProperty("test.jdk");
         OutputAnalyzer output = ProcessTools.executeProcess(
                 "expect",
@@ -67,15 +67,10 @@ public class RestoreEchoTest {
                 testSrc + "/restoreEcho.exp",
                 initialEcho,
                 jdkDir + "/bin/java",
-                "--add-opens=java.base/jdk.internal.io=ALL-UNNAMED",
                 "-Djdk.console=java.base",
-                "-classpath", testClasses,
                 "RestoreEchoTest");
         output.reportDiagnosticSummary();
-        var eval = output.getExitValue();
-        if (eval != 0) {
-            throw new RuntimeException("Test failed. Exit value from 'expect' command: " + eval);
-        }
+        assertEquals(0, output.getExitValue());
     }
 
     public static void main(String... args) throws Throwable {
@@ -90,10 +85,10 @@ public class RestoreEchoTest {
 
         // testing readLine()
         String input = con.readLine("prompt: ");
-        con.printf("input is %s\n", input);
+        con.printf("input is %s%n", input);
 
         // testing readPassword()
         input = String.valueOf(con.readPassword("password prompt: "));
-        con.printf("password is %s\n", input);
+        con.printf("password is %s%n", input);
     }
 }

@@ -54,5 +54,5 @@ test "$rlprompt" "$rlinput" "$initialEcho" "$rlexpected"
 # readPassword() - input is not displayed
 test "$rpprompt" "$rpinput" "-echo" "$rpexpected"
 # See if the initialEcho is restored with `stty -a`
-expect " $initialEcho "
+expect -- " $initialEcho "
 expect eof
