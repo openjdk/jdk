@@ -887,6 +887,7 @@ class ZSetupArguments {
 #define __ masm->
 
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   __ block_comment("generate_c2_load_barrier_stub (zgc) {");
 
   __ bind(*stub->entry());
@@ -910,6 +911,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 }
 
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   __ block_comment("ZStoreBarrierStubC2");
 
   // Stub entry

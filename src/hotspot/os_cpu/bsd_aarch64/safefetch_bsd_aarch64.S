@@ -23,30 +23,7 @@
  *
  */
 
-#ifdef __APPLE__
-# Darwin uses _ prefixed global symbols
-#define SYMBOL(s) _ ## s
-#define ELF_TYPE(name, description)
-#else
-#define SYMBOL(s) s
-#define ELF_TYPE(name, description) .type name,description
-#endif
-
-    .global SYMBOL(SafeFetchN_impl)
-    .global SYMBOL(_SafeFetchN_fault)
-    .global SYMBOL(_SafeFetchN_continuation)
-    .global SYMBOL(SafeFetch32_impl)
-    .global SYMBOL(_SafeFetch32_fault)
-    .global SYMBOL(_SafeFetch32_continuation)
-
-#ifdef __APPLE__
-    .private_extern SYMBOL(SafeFetchN_impl)
-    .private_extern SYMBOL(_SafeFetchN_fault)
-    .private_extern SYMBOL(_SafeFetchN_continuation)
-    .private_extern SYMBOL(SafeFetch32_impl)
-    .private_extern SYMBOL(_SafeFetch32_fault)
-    .private_extern SYMBOL(_SafeFetch32_continuation)
-#endif
+#include "defs.S.inc"
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
@@ -55,12 +32,11 @@
 
     # needed to align function start to 4 byte
     .align  6
-    ELF_TYPE(SafeFetch32_impl,@function)
-SYMBOL(SafeFetch32_impl):
-SYMBOL(_SafeFetch32_fault):
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     ldr      w0, [x0]
     ret
-SYMBOL(_SafeFetch32_continuation):
+DECLARE_FUNC(_SafeFetch32_continuation):
     mov      x0, x1
     ret
 
@@ -70,11 +46,10 @@ SYMBOL(_SafeFetch32_continuation):
     #  x0 : defaultval
 
     .align  6
-    ELF_TYPE(SafeFetchN_impl,@function)
-SYMBOL(SafeFetchN_impl):
-SYMBOL(_SafeFetchN_fault):
+DECLARE_FUNC(SafeFetchN_impl):
+DECLARE_FUNC(_SafeFetchN_fault):
     ldr      x0, [x0]
     ret
-SYMBOL(_SafeFetchN_continuation):
+DECLARE_FUNC(_SafeFetchN_continuation):
     mov      x0, x1
     ret

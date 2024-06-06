@@ -216,8 +216,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
-  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                                 JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
@@ -782,24 +780,6 @@ public:
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
-};
-
-// HandshakeClosure to get virtual thread thread at safepoint.
-class VirtualThreadGetThreadClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jthread* _carrier_thread_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
-    : HandshakeClosure("VirtualThreadGetThread"),
-      _vthread_h(vthread_h),
-      _carrier_thread_ptr(carrier_thread_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
 };
 
 // ResourceTracker
