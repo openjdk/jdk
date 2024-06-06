@@ -26,7 +26,6 @@
 package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
-import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -50,6 +49,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.classDesc;
+import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
 import sun.invoke.util.Wrapper;
 
@@ -323,7 +324,7 @@ public class SwitchBootstraps {
             }
             return label;
         } else if (labelClass == String.class) {
-            return EnumDesc.of(classDesc(enumClassTemplate), (String) label);
+            return EnumDesc.of(referenceClassDesc(enumClassTemplate), (String) label);
         } else {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
@@ -466,7 +467,7 @@ public class SwitchBootstraps {
                             // Object o = ...
                             // o instanceof Wrapped(float)
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceOf(classDesc(Wrapper.forBasicType(classLabel)
+                            cb.instanceOf(referenceClassDesc(Wrapper.forBasicType(classLabel)
                                     .wrapperType()));
                             cb.ifeq(next);
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
@@ -515,7 +516,7 @@ public class SwitchBootstraps {
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
                             String methodName = TypePairs.typePairToName.get(typePair);
-                            cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
+                            cb.invokestatic(referenceClassDesc(ExactConversionsSupport.class),
                                     methodName,
                                     MethodTypeDesc.of(ConstantDescs.CD_boolean, classDesc(typePair.from)));
                             cb.ifeq(next);
@@ -553,7 +554,7 @@ public class SwitchBootstraps {
                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
                                     ConstantDescs.CD_int));
                     cb.aload(SELECTOR_OBJ);
-                    cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
+                    cb.invokeinterface(referenceClassDesc(BiPredicate.class),
                             "test",
                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
                                     ConstantDescs.CD_Object,
@@ -601,10 +602,10 @@ public class SwitchBootstraps {
                     } else {
                         cb.loadConstant((ConstantDesc) element.caseLabel());
                     }
-                    cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                    cb.invokestatic(referenceClassDesc(element.caseLabel().getClass()),
                             "valueOf",
-                            MethodTypeDesc.of(classDesc(element.caseLabel().getClass()),
-                                    classDesc(Wrapper.asPrimitiveType(element.caseLabel().getClass()))));
+                            MethodTypeDesc.of(referenceClassDesc(element.caseLabel().getClass()),
+                                    Wrapper.forWrapperType(element.caseLabel().getClass()).classDescriptor()));
                     cb.aload(SELECTOR_OBJ);
                     cb.invokevirtual(ConstantDescs.CD_Object,
                             "equals",
@@ -631,7 +632,7 @@ public class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = new ArrayList<>();
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
-        byte[] classBytes = ClassFile.of().build(ReferenceClassDescImpl.ofValidatedBinaryName(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",

@@ -70,8 +70,7 @@ import java.util.List;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.TypeKind.*;
-import static jdk.internal.constant.ConstantUtils.classDesc;
-import static jdk.internal.constant.ConstantUtils.methodDesc;
+import static jdk.internal.constant.ConstantUtils.*;
 
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR
@@ -82,24 +81,24 @@ public class BindingSpecializer {
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
 
-    private static final ClassDesc CD_Arena = classDesc(Arena.class);
-    private static final ClassDesc CD_MemorySegment = classDesc(MemorySegment.class);
-    private static final ClassDesc CD_MemorySegment_Scope = classDesc(MemorySegment.Scope.class);
-    private static final ClassDesc CD_SharedUtils = classDesc(SharedUtils.class);
-    private static final ClassDesc CD_AbstractMemorySegmentImpl = classDesc(AbstractMemorySegmentImpl.class);
-    private static final ClassDesc CD_MemorySessionImpl = classDesc(MemorySessionImpl.class);
-    private static final ClassDesc CD_Utils = classDesc(Utils.class);
-    private static final ClassDesc CD_SegmentAllocator = classDesc(SegmentAllocator.class);
-    private static final ClassDesc CD_ValueLayout = classDesc(ValueLayout.class);
-    private static final ClassDesc CD_ValueLayout_OfBoolean = classDesc(ValueLayout.OfBoolean.class);
-    private static final ClassDesc CD_ValueLayout_OfByte = classDesc(ValueLayout.OfByte.class);
-    private static final ClassDesc CD_ValueLayout_OfShort = classDesc(ValueLayout.OfShort.class);
-    private static final ClassDesc CD_ValueLayout_OfChar = classDesc(ValueLayout.OfChar.class);
-    private static final ClassDesc CD_ValueLayout_OfInt = classDesc(ValueLayout.OfInt.class);
-    private static final ClassDesc CD_ValueLayout_OfLong = classDesc(ValueLayout.OfLong.class);
-    private static final ClassDesc CD_ValueLayout_OfFloat = classDesc(ValueLayout.OfFloat.class);
-    private static final ClassDesc CD_ValueLayout_OfDouble = classDesc(ValueLayout.OfDouble.class);
-    private static final ClassDesc CD_AddressLayout = classDesc(AddressLayout.class);
+    private static final ClassDesc CD_Arena = referenceClassDesc(Arena.class);
+    private static final ClassDesc CD_MemorySegment = referenceClassDesc(MemorySegment.class);
+    private static final ClassDesc CD_MemorySegment_Scope = referenceClassDesc(MemorySegment.Scope.class);
+    private static final ClassDesc CD_SharedUtils = referenceClassDesc(SharedUtils.class);
+    private static final ClassDesc CD_AbstractMemorySegmentImpl = referenceClassDesc(AbstractMemorySegmentImpl.class);
+    private static final ClassDesc CD_MemorySessionImpl = referenceClassDesc(MemorySessionImpl.class);
+    private static final ClassDesc CD_Utils = referenceClassDesc(Utils.class);
+    private static final ClassDesc CD_SegmentAllocator = referenceClassDesc(SegmentAllocator.class);
+    private static final ClassDesc CD_ValueLayout = referenceClassDesc(ValueLayout.class);
+    private static final ClassDesc CD_ValueLayout_OfBoolean = referenceClassDesc(ValueLayout.OfBoolean.class);
+    private static final ClassDesc CD_ValueLayout_OfByte = referenceClassDesc(ValueLayout.OfByte.class);
+    private static final ClassDesc CD_ValueLayout_OfShort = referenceClassDesc(ValueLayout.OfShort.class);
+    private static final ClassDesc CD_ValueLayout_OfChar = referenceClassDesc(ValueLayout.OfChar.class);
+    private static final ClassDesc CD_ValueLayout_OfInt = referenceClassDesc(ValueLayout.OfInt.class);
+    private static final ClassDesc CD_ValueLayout_OfLong = referenceClassDesc(ValueLayout.OfLong.class);
+    private static final ClassDesc CD_ValueLayout_OfFloat = referenceClassDesc(ValueLayout.OfFloat.class);
+    private static final ClassDesc CD_ValueLayout_OfDouble = referenceClassDesc(ValueLayout.OfDouble.class);
+    private static final ClassDesc CD_AddressLayout = referenceClassDesc(AddressLayout.class);
 
     private static final MethodTypeDesc MTD_NEW_BOUNDED_ARENA = MethodTypeDesc.of(CD_Arena, CD_long);
     private static final MethodTypeDesc MTD_NEW_EMPTY_ARENA = MethodTypeDesc.of(CD_Arena);
@@ -198,7 +197,7 @@ public class BindingSpecializer {
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
 
-            clb.withMethodBody(METHOD_NAME, methodDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
+            clb.withMethodBody(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
                     cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize());
         });
 
@@ -364,7 +363,7 @@ public class BindingSpecializer {
             cb.loadLocal(TypeKind.from(leafArgTypes.get(i)), leafArgSlots[i]);
         }
         // call leaf MH
-        cb.invokevirtual(CD_MethodHandle, "invokeExact", methodDesc(leafType));
+        cb.invokevirtual(CD_MethodHandle, "invokeExact", methodTypeDesc(leafType));
 
         // for downcalls, store the result of the leaf handle call away, until
         // it is requested by a VM_LOAD in the return recipe.

@@ -49,8 +49,7 @@ import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.constant.ConstantUtils.classDesc;
-import static jdk.internal.constant.ConstantUtils.methodDesc;
+import static jdk.internal.constant.ConstantUtils.*;
 
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -166,7 +165,7 @@ final class ProxyGenerator {
     private ProxyGenerator(String className, List<Class<?>> interfaces,
                            int accessFlags) {
         this.cp = ConstantPoolBuilder.of();
-        this.classEntry = cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(className));
+        this.classEntry = cp.classEntry(ConstantUtils.binaryNameToDesc(className));
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
@@ -230,7 +229,7 @@ final class ProxyGenerator {
     private static List<ClassEntry> toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ArrayList<ClassEntry>(types.size());
         for (var t : types)
-            ces.add(cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(t.getName())));
+            ces.add(cp.classEntry(ConstantUtils.binaryNameToDesc(t.getName())));
         return ces;
     }
 
@@ -644,7 +643,7 @@ final class ProxyGenerator {
          */
         private void generateMethod(ProxyGenerator pg, ClassBuilder clb) {
             var cp = pg.cp;
-            var desc = methodDesc(returnType, parameterTypes);
+            var desc = methodTypeDesc(returnType, parameterTypes);
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
@@ -655,7 +654,7 @@ final class ProxyGenerator {
                            .getfield(pg.handlerField)
                            .aload(0)
                            .ldc(DynamicConstantDesc.of(pg.bsm,
-                                classDesc(fromClass),
+                                referenceClassDesc(fromClass),
                                 method.getName(),
                                 desc));
                         if (parameterTypes.length > 0) {
@@ -683,7 +682,7 @@ final class ProxyGenerator {
                         if (!catchList.isEmpty()) {
                             var c1 = cob.newBoundLabel();
                             for (var exc : catchList) {
-                                cob.exceptionCatch(cob.startLabel(), c1, c1, classDesc(exc));
+                                cob.exceptionCatch(cob.startLabel(), c1, c1, referenceClassDesc(exc));
                             }
                             cob.athrow();   // just rethrow the exception
                             var c2 = cob.newBoundLabel();
@@ -729,7 +728,7 @@ final class ProxyGenerator {
                    .invokevirtual(prim.unwrapMethodRef(cob.constantPool()))
                    .return_(TypeKind.from(type).asLoadable());
             } else {
-                cob.checkcast(classDesc(type))
+                cob.checkcast(referenceClassDesc(type))
                    .areturn();
             }
         }

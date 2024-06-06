@@ -43,6 +43,7 @@ public final class ConstantUtils {
     public static final ConstantDesc[] EMPTY_CONSTANTDESC = new ConstantDesc[0];
     public static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     public static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
+    public static final ClassDesc CD_module_info = binaryNameToDesc("module-info");
 
     private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 
@@ -56,6 +57,17 @@ public final class ConstantUtils {
     // behavior, so they are not suitable as public APIs.
 
     /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated binary name
+     * for a class or interface type. Validated version of {@link
+     * ClassDesc#of(String)}.
+     *
+     * @param binaryName a binary name
+     */
+    public static ClassDesc binaryNameToDesc(String binaryName) {
+        return ReferenceClassDescImpl.ofValidated("L" + binaryToInternal(binaryName) + ";");
+    }
+
+    /**
      * Creates a ClassDesc from a Class object, requires that this class
      * can always be described nominally, i.e. this class is not a
      * hidden class or interface or an array with a hidden component
@@ -65,6 +77,14 @@ public final class ConstantUtils {
         if (type.isPrimitive()) {
             return Wrapper.forPrimitiveType(type).classDescriptor();
         }
+        return referenceClassDesc(type);
+    }
+
+    /**
+     * Creates a ClassDesc from a Class object representing a non-hidden
+     * class or interface or an array type with a non-hidden component type.
+     */
+    public static ClassDesc referenceClassDesc(Class<?> type) {
         return ReferenceClassDescImpl.ofValidated(type.descriptorString());
     }
 
@@ -73,7 +93,7 @@ public final class ConstantUtils {
      * the type can be described nominally, i.e. all of its return
      * type and parameter types can be described nominally.
      */
-    public static MethodTypeDesc methodDesc(MethodType type) {
+    public static MethodTypeDesc methodTypeDesc(MethodType type) {
         var returnDesc = classDesc(type.returnType());
         if (type.parameterCount() == 0) {
             return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
@@ -90,7 +110,7 @@ public final class ConstantUtils {
      * class objects, requires that all of them can be described nominally.
      * This version is mainly useful for working with Method objects.
      */
-    public static MethodTypeDesc methodDesc(Class<?> returnType, Class<?>[] parameterTypes) {
+    public static MethodTypeDesc methodTypeDesc(Class<?> returnType, Class<?>[] parameterTypes) {
         var returnDesc = classDesc(returnType);
         if (parameterTypes.length == 0) {
             return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
