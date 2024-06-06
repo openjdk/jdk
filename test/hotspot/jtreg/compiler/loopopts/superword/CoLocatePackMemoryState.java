@@ -24,7 +24,6 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8238438
  * @summary Tests to select the memory state of the last load in a load pack in SuperWord::co_locate_pack.
  *

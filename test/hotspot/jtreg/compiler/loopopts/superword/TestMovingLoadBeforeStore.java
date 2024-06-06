@@ -24,7 +24,6 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8316679 8316594
  * @summary In SuperWord::output, LoadVector can be moved before StoreVector, but only if it is proven to be safe.
  * @key randomness

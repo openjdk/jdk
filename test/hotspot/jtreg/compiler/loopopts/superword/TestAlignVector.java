@@ -39,7 +39,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector NoAlignVector
  */
 
@@ -49,7 +48,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector AlignVector
  */
 
@@ -59,7 +57,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector
  */
 
