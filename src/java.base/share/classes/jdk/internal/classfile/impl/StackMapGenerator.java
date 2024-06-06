@@ -25,17 +25,19 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.*;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,13 +45,10 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.lang.classfile.Attribute;
+import jdk.internal.constant.ReferenceClassDescImpl;
 
 import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.Label;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.Attributes;
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
