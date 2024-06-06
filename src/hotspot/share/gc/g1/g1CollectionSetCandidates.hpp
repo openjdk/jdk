@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
@@ -36,29 +35,29 @@
 
 class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
-class HeapRegion;
+class G1HeapRegion;
 class HeapRegionClosure;
 
-using G1CollectionCandidateRegionListIterator = GrowableArrayIterator<HeapRegion*>;
+using G1CollectionCandidateRegionListIterator = GrowableArrayIterator<G1HeapRegion*>;
 
-// A set of HeapRegion*, a thin wrapper around GrowableArray.
+// A set of G1HeapRegion*, a thin wrapper around GrowableArray.
 class G1CollectionCandidateRegionList {
-  GrowableArray<HeapRegion*> _regions;
+  GrowableArray<G1HeapRegion*> _regions;
 
 public:
   G1CollectionCandidateRegionList();
 
-  // Append a HeapRegion to the end of this list. The region must not be in the list
+  // Append a G1HeapRegion to the end of this list. The region must not be in the list
   // already.
-  void append(HeapRegion* r);
-  // Remove the given list of HeapRegion* from this list. The given list must be a prefix
+  void append(G1HeapRegion* r);
+  // Remove the given list of G1HeapRegion* from this list. The given list must be a prefix
   // of this list.
   void remove_prefix(G1CollectionCandidateRegionList* list);
 
   // Empty contents of the list.
   void clear();
 
-  HeapRegion* at(uint index);
+  G1HeapRegion* at(uint index);
 
   uint length() const { return (uint)_regions.length(); }
 
@@ -67,12 +66,12 @@ public:
 };
 
 struct G1CollectionSetCandidateInfo {
-  HeapRegion* _r;
+  G1HeapRegion* _r;
   double _gc_efficiency;
   uint _num_unreclaimed;          // Number of GCs this region has been found unreclaimable.
 
   G1CollectionSetCandidateInfo() : G1CollectionSetCandidateInfo(nullptr, 0.0) { }
-  G1CollectionSetCandidateInfo(HeapRegion* r, double gc_efficiency) : _r(r), _gc_efficiency(gc_efficiency), _num_unreclaimed(0) { }
+  G1CollectionSetCandidateInfo(G1HeapRegion* r, double gc_efficiency) : _r(r), _gc_efficiency(gc_efficiency), _num_unreclaimed(0) { }
 
   bool update_num_unreclaimed() {
     ++_num_unreclaimed;
@@ -106,8 +105,8 @@ public:
 
   // Put the given set of candidates into this list, preserving the efficiency ordering.
   void set(G1CollectionSetCandidateInfo* candidate_infos, uint num_infos);
-  // Add the given HeapRegion to this list at the end, (potentially) making the list unsorted.
-  void append_unsorted(HeapRegion* r);
+  // Add the given G1HeapRegion to this list at the end, (potentially) making the list unsorted.
+  void append_unsorted(G1HeapRegion* r);
   // Restore sorting order by decreasing gc efficiency, using the existing efficiency
   // values.
   void sort_by_efficiency();
@@ -129,7 +128,9 @@ public:
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
-  static int compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+  static int compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+
+  static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   G1CollectionCandidateListIterator begin() {
     return G1CollectionCandidateListIterator(this, 0);
@@ -150,7 +151,7 @@ class G1CollectionSetCandidatesIterator : public StackObj {
   G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint position);
 
   G1CollectionSetCandidatesIterator& operator++();
-  HeapRegion* operator*();
+  G1HeapRegion* operator*();
 
   bool operator==(const G1CollectionSetCandidatesIterator& rhs);
   bool operator!=(const G1CollectionSetCandidatesIterator& rhs);
@@ -189,7 +190,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   // The number of regions from the last merge of candidates from the marking.
   uint _last_marking_candidates_length;
 
-  bool is_from_marking(HeapRegion* r) const;
+  bool is_from_marking(G1HeapRegion* r) const;
 
 public:
   G1CollectionSetCandidates();
@@ -213,16 +214,18 @@ public:
 
   void sort_by_efficiency();
 
+  void sort_marking_by_efficiency();
+
   // Add the given region to the set of retained regions without regards to the
   // gc efficiency sorting. The retained regions must be re-sorted manually later.
-  void add_retained_region_unsorted(HeapRegion* r);
+  void add_retained_region_unsorted(G1HeapRegion* r);
   // Remove the given regions from the candidates. All given regions must be part
   // of the candidates.
   void remove(G1CollectionCandidateRegionList* other);
 
-  bool contains(const HeapRegion* r) const;
+  bool contains(const G1HeapRegion* r) const;
 
-  const char* get_short_type_str(const HeapRegion* r) const;
+  const char* get_short_type_str(const G1HeapRegion* r) const;
 
   bool is_empty() const;
 

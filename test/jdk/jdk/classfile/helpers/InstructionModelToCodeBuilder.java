@@ -35,53 +35,53 @@ public class InstructionModelToCodeBuilder {
     public static void toBuilder(CodeElement model, CodeBuilder cb) {
         switch (model) {
             case LoadInstruction im ->
-                cb.loadInstruction(im.typeKind(), im.slot());
+                cb.loadLocal(im.typeKind(), im.slot());
             case StoreInstruction im ->
-                cb.storeInstruction(im.typeKind(), im.slot());
+                cb.storeLocal(im.typeKind(), im.slot());
             case IncrementInstruction im ->
-                cb.incrementInstruction(im.slot(), im.constant());
+                cb.iinc(im.slot(), im.constant());
             case BranchInstruction im ->
-                cb.branchInstruction(im.opcode(), im.target());
+                cb.branch(im.opcode(), im.target());
             case LookupSwitchInstruction im ->
-                cb.lookupSwitchInstruction(im.defaultTarget(), im.cases());
+                cb.lookupswitch(im.defaultTarget(), im.cases());
             case TableSwitchInstruction im ->
-                cb.tableSwitchInstruction(im.lowValue(), im.highValue(), im.defaultTarget(), im.cases());
+                cb.tableswitch(im.lowValue(), im.highValue(), im.defaultTarget(), im.cases());
             case ReturnInstruction im ->
-                cb.returnInstruction(im.typeKind());
+                cb.return_(im.typeKind());
             case ThrowInstruction im ->
-                cb.throwInstruction();
+                cb.athrow();
             case FieldInstruction im ->
-                cb.fieldInstruction(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol());
+                cb.fieldAccess(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol());
             case InvokeInstruction im ->
-                cb.invokeInstruction(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol(), im.isInterface());
+                cb.invoke(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol(), im.isInterface());
             case InvokeDynamicInstruction im ->
-                cb.invokeDynamicInstruction(DynamicCallSiteDesc.of(im.bootstrapMethod(), im.name().stringValue(), MethodTypeDesc.ofDescriptor(im.type().stringValue()), im.bootstrapArgs().toArray(ConstantDesc[]::new)));
+                cb.invokedynamic(DynamicCallSiteDesc.of(im.bootstrapMethod(), im.name().stringValue(), MethodTypeDesc.ofDescriptor(im.type().stringValue()), im.bootstrapArgs().toArray(ConstantDesc[]::new)));
             case NewObjectInstruction im ->
-                cb.newObjectInstruction(im.className().asSymbol());
+                cb.new_(im.className().asSymbol());
             case NewPrimitiveArrayInstruction im ->
-                cb.newPrimitiveArrayInstruction(im.typeKind());
+                cb.newarray(im.typeKind());
             case NewReferenceArrayInstruction im ->
-                cb.newReferenceArrayInstruction(im.componentType());
+                cb.anewarray(im.componentType());
             case NewMultiArrayInstruction im ->
-                cb.newMultidimensionalArrayInstruction(im.dimensions(), im.arrayType());
+                cb.multianewarray(im.arrayType(), im.dimensions());
             case TypeCheckInstruction im ->
-                cb.typeCheckInstruction(im.opcode(), im.type().asSymbol());
+                cb.with(TypeCheckInstruction.of(im.opcode(), im.type().asSymbol()));
             case ArrayLoadInstruction im ->
-                cb.arrayLoadInstruction(im.typeKind());
+                cb.arrayLoad(im.typeKind());
             case ArrayStoreInstruction im ->
-                cb.arrayStoreInstruction(im.typeKind());
+                cb.arrayStore(im.typeKind());
             case StackInstruction im ->
-                cb.stackInstruction(im.opcode());
+                cb.with(StackInstruction.of(im.opcode()));
             case ConvertInstruction im ->
-                cb.convertInstruction(im.fromType(), im.toType());
+                cb.conversion(im.fromType(), im.toType());
             case OperatorInstruction im ->
-                cb.operatorInstruction(im.opcode());
+                cb.with(OperatorInstruction.of(im.opcode()));
             case ConstantInstruction im ->
-                cb.constantInstruction(im.opcode(), im.constantValue());
+                cb.loadConstant(im.opcode(), im.constantValue());
             case MonitorInstruction im ->
-                cb.monitorInstruction(im.opcode());
+                cb.with(MonitorInstruction.of(im.opcode()));
             case NopInstruction im ->
-                cb.nopInstruction();
+                cb.nop();
             case LabelTarget im ->
                 cb.labelBinding(im.label());
             case ExceptionCatch im ->

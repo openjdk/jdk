@@ -146,7 +146,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 }
 
 ArchiveBuilder::ArchiveBuilder() :
-  _current_dump_space(nullptr),
+  _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
   _last_verified_top(nullptr),
   _num_dump_regions_used(0),
@@ -341,10 +341,10 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_bottom = buffer_bottom;
   _last_verified_top = buffer_bottom;
-  _current_dump_space = &_rw_region;
+  _current_dump_region = &_rw_region;
   _num_dump_regions_used = 1;
   _other_region_used_bytes = 0;
-  _current_dump_space->init(&_shared_rs, &_shared_vs);
+  _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
 
@@ -560,21 +560,21 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   }
 }
 
-void ArchiveBuilder::start_dump_space(DumpRegion* next) {
+void ArchiveBuilder::start_dump_region(DumpRegion* next) {
   address bottom = _last_verified_top;
-  address top = (address)(current_dump_space()->top());
+  address top = (address)(current_dump_region()->top());
   _other_region_used_bytes += size_t(top - bottom);
 
-  current_dump_space()->pack(next);
-  _current_dump_space = next;
+  current_dump_region()->pack(next);
+  _current_dump_region = next;
   _num_dump_regions_used ++;
 
-  _last_verified_top = (address)(current_dump_space()->top());
+  _last_verified_top = (address)(current_dump_region()->top());
 }
 
 void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   address bottom = _last_verified_top;
-  address top = (address)(current_dump_space()->top());
+  address top = (address)(current_dump_region()->top());
   size_t used = size_t(top - bottom) + _other_region_used_bytes;
   int diff = int(estimate) - int(used);
 
@@ -630,7 +630,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RO objects ... ");
 
-  start_dump_space(&_ro_region);
+  start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
