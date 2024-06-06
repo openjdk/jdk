@@ -365,6 +365,8 @@ public:
   Node* isa_unique_input_or_null(const Node_List* pack, int j) const;
   // TODO same for pack input, maybe use after alignment things are updated!
 
+  VTransformBoolTest get_bool_test(const Node_List* pack) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:

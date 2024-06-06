@@ -519,7 +519,7 @@ bool VectorNode::is_shift_opcode(int opc) {
 // from Java Spec. But when the shift amount is a constant not greater than
 // the number of sign extended bits, the unsigned right shift can be
 // vectorized to a signed right shift.
-int VectorNode::can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt) {
+bool VectorNode::can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt) {
   if (n->Opcode() != Op_URShiftI) {
     return false;
   }

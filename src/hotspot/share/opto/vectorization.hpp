@@ -1318,4 +1318,11 @@ private:
 #endif
 };
 
+struct VTransformBoolTest {
+  const BoolTest::mask _mask;
+  const bool _is_negated;
+  VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
+    _mask(mask), _is_negated(is_negated) {}
+};
+
 #endif // SHARE_OPTO_VECTORIZATION_HPP
