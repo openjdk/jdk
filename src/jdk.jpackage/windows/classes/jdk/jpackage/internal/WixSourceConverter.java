@@ -176,7 +176,7 @@ final class WixSourceConverter {
                         e.getValue().saveToFile(e.getKey());
                     }
                 }
-                default -> {
+                case Wix4 -> {
                     var resourceDir = resources.values().stream().filter(res -> {
                         return null != res.getResourceDir();
                     }).findAny().map(OverridableResource::getResourceDir).orElse(null);
@@ -184,6 +184,9 @@ final class WixSourceConverter {
                     for (var e : resources.entrySet()) {
                         conv.appyTo(e.getValue(), e.getKey());
                     }
+                }
+                default -> {
+                    throw new IllegalArgumentException();
                 }
             }
         }

@@ -111,20 +111,22 @@ abstract class WixFragmentBuilder {
 
     final protected Map<WixNamespace, String> getWixNamespaces() {
         switch (wixType) {
-            case Wix4 -> {
-                return Map.of(WixNamespace.Default,
-                        "http://wixtoolset.org/schemas/v4/wxs",
-                        WixNamespace.Util,
-                        "http://wixtoolset.org/schemas/v4/wxs/util");
-            }
             case Wix3 -> {
                 return Map.of(WixNamespace.Default,
                         "http://schemas.microsoft.com/wix/2006/wi",
                         WixNamespace.Util,
                         "http://schemas.microsoft.com/wix/UtilExtension");
             }
-            default ->
+            case Wix4 -> {
+                return Map.of(WixNamespace.Default,
+                        "http://wixtoolset.org/schemas/v4/wxs",
+                        WixNamespace.Util,
+                        "http://wixtoolset.org/schemas/v4/wxs/util");
+            }
+            default -> {
                 throw new IllegalArgumentException();
+            }
+
         }
     }
 

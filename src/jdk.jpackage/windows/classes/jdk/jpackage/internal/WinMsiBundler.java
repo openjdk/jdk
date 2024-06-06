@@ -549,6 +549,11 @@ public class WinMsiBundler  extends AbstractBundler {
                     wixPipeline.addLightOptions("-sice:ICE91");
                 }
             }
+            case Wix4 -> {
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
 
         final Path configDir = CONFIG_ROOT.fetchFrom(params);
@@ -620,14 +625,17 @@ public class WinMsiBundler  extends AbstractBundler {
         Set<String> uniqueCultures = new LinkedHashSet<>();
         uniqueCultures.addAll(cultures);
         switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
+            }
             case Wix4 -> {
                 uniqueCultures.forEach(culture -> {
                     wixPipeline.addLightOptions("-culture", culture);
                 });
             }
-            case Wix3 -> {
-                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
-                        "-cultures:", "")));
+            default -> {
+                throw new IllegalArgumentException();
             }
         }
 

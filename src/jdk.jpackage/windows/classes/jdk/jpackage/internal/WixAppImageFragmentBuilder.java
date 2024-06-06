@@ -339,6 +339,9 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                         xml.writeAttribute("Guid", componentGuid);
                     }
                 }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
             }
             xml.writeAttribute("Id", componentId);
         }
@@ -411,6 +414,9 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 }
                 case Wix4 -> {
                     xml.writeAttribute("Condition", property);
+                }
+                default -> {
+                    throw new IllegalArgumentException();
                 }
             }
         }
@@ -489,8 +495,10 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                         switch (getWixType()) {
                             case Wix3 ->
                                 defineFolder = true;
-                            default ->
+                            case Wix4 ->
                                 defineFolder = !SYSTEM_DIRS.contains(folderPath);
+                            default ->
+                                throw new IllegalArgumentException();
                         }
                         if (defineFolder) {
                             defineShortcutFolders.add(folderPath);
@@ -624,13 +632,17 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             case Wix3 -> {
                 elementName = wix3ElementName;
             }
-            default -> {
+            case Wix4 -> {
                 if (SYSTEM_DIRS.contains(path)) {
                     elementName = "StandardDirectory";
                 } else {
                     elementName = wix3ElementName;
                 }
             }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+
         }
 
         final String directoryId;

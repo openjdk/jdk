@@ -85,6 +85,7 @@ public class WixPipeline {
         switch (toolset.getType()) {
             case Wix3 -> buildMsiWix3(msi);
             case Wix4 -> buildMsiWix4(msi);
+            default -> throw new IllegalArgumentException();
         }
     }
 

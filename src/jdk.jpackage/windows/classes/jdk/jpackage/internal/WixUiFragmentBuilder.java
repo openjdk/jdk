@@ -103,8 +103,8 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         if (withShortcutPromptDlg || withInstallDirChooserDlg || withLicenseDlg) {
             final String extName;
             switch (getWixType()) {
-                case Wix4 -> extName = "WixToolset.UI.wixext";
                 case Wix3 -> extName = "WixUIExtension";
+                case Wix4 -> extName = "WixToolset.UI.wixext";
                 default -> throw new IllegalArgumentException();
             }
             wixPipeline.addLightOptions("-ext", extName);
@@ -195,6 +195,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         void write(WixToolsetType wixType, WixUiFragmentBuilder outer, XMLStreamWriter xml) throws XMLStreamException, IOException {
             switch (wixType) {
+                case Wix3 -> {}
                 case Wix4 -> {
                     // https://wixtoolset.org/docs/fourthree/faqs/#converting-custom-wixui-dialog-sets
                     xml.writeProcessingInstruction("foreach WIXUIARCH in X86;X64;A64");
@@ -203,18 +204,24 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
                     writeWix4UIRef(xml, "JpUIInternal", "JpUI");
                 }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
             }
 
             xml.writeStartElement("UI");
             switch (wixType) {
-                case Wix4 -> {
-                    xml.writeAttribute("Id", "JpUIInternal");
-                }
                 case Wix3 -> {
                     xml.writeAttribute("Id", "JpUI");
                     xml.writeStartElement("UIRef");
                     xml.writeAttribute("Id", wixUIRef);
                     xml.writeEndElement(); // UIRef
+                }
+                case Wix4 -> {
+                    xml.writeAttribute("Id", "JpUIInternal");
+                }
+                default -> {
+                    throw new IllegalArgumentException();
                 }
             }
             writeContents(wixType, outer, xml);
@@ -493,8 +500,9 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Order", String.valueOf(publish.order));
         }
         switch (wixType) {
-            case Wix4 -> xml.writeAttribute("Condition", publish.condition);
             case Wix3 -> xml.writeCharacters(publish.condition);
+            case Wix4 -> xml.writeAttribute("Condition", publish.condition);
+            default -> throw new IllegalArgumentException();
         }
         xml.writeEndElement();
     }
