@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
@@ -1023,7 +1024,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
     output()->print("Dynamic dump: ");
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
     }
