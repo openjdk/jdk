@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,7 +509,31 @@ public enum HtmlTag {
         VERSION,
         VLINK,
         VSPACE,
-        WIDTH;
+        WIDTH,
+        ACCESSKEY,
+        AUTOCAPITALIZE,
+        AUTOFOCUS,
+        CONTENTEDITABLE,
+        DIR,
+        DRAGGABLE,
+        ENTERKEYHINT,
+        HIDDEN,
+        INERT,
+        INPUTMODE,
+        IS,
+        ITEMID,
+        ITEMPROP,
+        ITEMREF,
+        ITEMSCOPE,
+        ITEMTYPE,
+        LANG,
+        NONCE,
+        POPOVER,
+        SPELLCHECK,
+        TABINDEX,
+        TITLE,
+        TRANSLATE,
+        WRITINGSUGGESTIONS;
 
         private final String name;
 
@@ -528,6 +552,32 @@ public enum HtmlTag {
             }
         }
     }
+
+    private final EnumSet<Attr> GLOBAL_ATTRS = EnumSet.of(
+            Attr.ACCESSKEY,
+            Attr.AUTOCAPITALIZE,
+            Attr.AUTOFOCUS,
+            Attr.CONTENTEDITABLE,
+            Attr.DIR,
+            Attr.DRAGGABLE,
+            Attr.ENTERKEYHINT,
+            Attr.HIDDEN,
+            Attr.INERT,
+            Attr.INPUTMODE,
+            Attr.IS,
+            Attr.ITEMID,
+            Attr.ITEMPROP,
+            Attr.ITEMREF,
+            Attr.ITEMSCOPE,
+            Attr.ITEMTYPE,
+            Attr.LANG,
+            Attr.NONCE,
+            Attr.POPOVER,
+            Attr.SPELLCHECK,
+            Attr.TABINDEX,
+            Attr.TITLE,
+            Attr.TRANSLATE,
+            Attr.WRITINGSUGGESTIONS);
 
     public enum AttrKind {
         OK,
@@ -592,6 +642,10 @@ public enum HtmlTag {
         attrs.put(Attr.ARIA_SELECTED, AttrKind.OK);
         attrs.put(Attr.ARIA_SETSIZE, AttrKind.OK);
         attrs.put(Attr.ARIA_SORT, AttrKind.OK);
+        //this is to allow global attributes
+        for (Attr attr : GLOBAL_ATTRS) {
+            this.attrs.put(attr, AttrKind.OK);
+        }
     }
 
     public boolean accepts(HtmlTag t) {
