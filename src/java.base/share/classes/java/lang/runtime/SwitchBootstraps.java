@@ -59,6 +59,8 @@ import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.classDesc;
+
 import sun.invoke.util.Wrapper;
 
 /**
@@ -321,7 +323,7 @@ public class SwitchBootstraps {
             }
             return label;
         } else if (labelClass == String.class) {
-            return EnumDesc.of(enumClassTemplate.describeConstable().orElseThrow(), (String) label);
+            return EnumDesc.of(classDesc(enumClassTemplate), (String) label);
         } else {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
@@ -464,10 +466,8 @@ public class SwitchBootstraps {
                             // Object o = ...
                             // o instanceof Wrapped(float)
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceOf(Wrapper.forBasicType(classLabel)
-                                    .wrapperType()
-                                    .describeConstable()
-                                    .orElseThrow());
+                            cb.instanceOf(classDesc(Wrapper.forBasicType(classLabel)
+                                    .wrapperType()));
                             cb.ifeq(next);
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
                             // Integer i = ... or int i = ...
@@ -517,7 +517,7 @@ public class SwitchBootstraps {
                             String methodName = TypePairs.typePairToName.get(typePair);
                             cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
                                     methodName,
-                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
+                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, classDesc(typePair.from)));
                             cb.ifeq(next);
                         }
                     } else {
@@ -603,8 +603,8 @@ public class SwitchBootstraps {
                     }
                     cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
                             "valueOf",
-                            MethodTypeDesc.of(element.caseLabel().getClass().describeConstable().orElseThrow(),
-                                    Wrapper.asPrimitiveType(element.caseLabel().getClass()).describeConstable().orElseThrow()));
+                            MethodTypeDesc.of(classDesc(element.caseLabel().getClass()),
+                                    classDesc(Wrapper.asPrimitiveType(element.caseLabel().getClass()))));
                     cb.aload(SELECTOR_OBJ);
                     cb.invokevirtual(ConstantDescs.CD_Object,
                             "equals",

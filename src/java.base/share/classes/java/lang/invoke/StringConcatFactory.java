@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.Stable;
@@ -1096,7 +1097,7 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                                 .withMethodBody(METHOD_NAME,
-                                        MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
+                                        ConstantUtils.methodDesc(args),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
                                         generateMethod(constants, args));
                     }});
