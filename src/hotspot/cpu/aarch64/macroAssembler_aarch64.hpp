@@ -227,7 +227,6 @@ class MacroAssembler: public Assembler {
     }
   }
 
-  inline void moviw(Register Rd, unsigned imm) { orrw(Rd, zr, imm); }
   inline void movi(Register Rd, unsigned imm) { orr(Rd, zr, imm); }
 
   inline void tstw(Register Rd, Register Rn) { andsw(zr, Rd, Rn); }
@@ -243,23 +242,10 @@ class MacroAssembler: public Assembler {
     bfm(Rd, Rn, ((64 - lsb) & 63), (width - 1));
   }
 
-  inline void bfxilw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
-    bfmw(Rd, Rn, lsb, (lsb + width - 1));
-  }
-  inline void bfxil(Register Rd, Register Rn, unsigned lsb, unsigned width) {
-    bfm(Rd, Rn, lsb , (lsb + width - 1));
-  }
-
-  inline void sbfizw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
-    sbfmw(Rd, Rn, ((32 - lsb) & 31), (width - 1));
-  }
   inline void sbfiz(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     sbfm(Rd, Rn, ((64 - lsb) & 63), (width - 1));
   }
 
-  inline void sbfxw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
-    sbfmw(Rd, Rn, lsb, (lsb + width - 1));
-  }
   inline void sbfx(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     sbfm(Rd, Rn, lsb , (lsb + width - 1));
   }
@@ -423,9 +409,6 @@ class MacroAssembler: public Assembler {
     smaddl(Rd, Rn, Rm, zr);
   }
 
-  inline void umnegl(Register Rd, Register Rn, Register Rm) {
-    umsubl(Rd, Rn, Rm, zr);
-  }
   inline void umull(Register Rd, Register Rn, Register Rm) {
     umaddl(Rd, Rn, Rm, zr);
   }
@@ -571,11 +554,6 @@ public:
     mrs(0b11, 0b0100, 0b0100, 0b001, reg);
   }
 
-  inline void set_fpsr(Register reg)
-  {
-    msr(0b011, 0b0100, 0b0100, 0b001, reg);
-  }
-
   inline void clear_fpsr()
   {
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
@@ -592,24 +570,6 @@ public:
 
   inline void set_fpcr(Register reg) {
     msr(0b011, 0b0100, 0b0100, 0b000, reg);
-  }
-
-  // DCZID_EL0: op1 == 011
-  //            CRn == 0000
-  //            CRm == 0000
-  //            op2 == 111
-  inline void get_dczid_el0(Register reg)
-  {
-    mrs(0b011, 0b0000, 0b0000, 0b111, reg);
-  }
-
-  // CTR_EL0:   op1 == 011
-  //            CRn == 0000
-  //            CRm == 0000
-  //            op2 == 001
-  inline void get_ctr_el0(Register reg)
-  {
-    mrs(0b011, 0b0000, 0b0000, 0b001, reg);
   }
 
   inline void get_nzcv(Register reg) {

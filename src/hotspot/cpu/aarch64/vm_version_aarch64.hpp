@@ -148,9 +148,6 @@ enum Ampere_CPU_Model {
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
-  static int cpu_model2()                     { return _model2; }
-  static int cpu_variant()                    { return _variant; }
-  static int cpu_revision()                   { return _revision; }
 
   static bool model_is(int cpu_model) {
     return _model == cpu_model || _model2 == cpu_model;

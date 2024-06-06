@@ -513,6 +513,7 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_CompareBranch()             { _features[0] |= GnrlInstrExtFacilityMask; }
   static void set_has_CompareTrap()               { _features[0] |= GnrlInstrExtFacilityMask; }
   static void set_has_RelativeLoadStore()         { _features[0] |= GnrlInstrExtFacilityMask; }
+  static void set_has_ProcessorAssist()           { _features[0] |= ProcessorAssistMask; }
   static void set_has_CompareSwapStore()          { _features[0] |= CompareSwapStoreMask; }
   static void set_has_HFPMultiplyAndAdd()         { _features[0] |= HFPMultiplyAndAddMask; }
   static void set_has_HFPUnnormalized()           { _features[0] |= HFPUnnormalizedMask; }
@@ -540,6 +541,7 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_MiscInstrExt3()             { _features[0] |= MiscInstrExt3Mask; }
   static void set_has_InterlockedAccessV2()       { _features[0] |= InterlockedAccess2Mask; }
   static void set_has_LoadAndALUAtomicV2()        { _features[0] |= InterlockedAccess2Mask; }
+  static void set_has_ProcessorAssist()           { _features[0] |= ProcessorAssistMask; }
   static void set_has_TxMem()                     { _features[0] |= ConstrainedTxExecutionMask; _features[1] |= TransactionalExecutionMask; }
   static void set_has_LoadStoreConditional2()     { _features[0] |= LoadStoreConditional2Mask; }
   static void set_has_CryptoExt3()                { _features[1] |= CryptoExtension3Mask; }
@@ -550,6 +552,8 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_VectorFacility()            { _features[2] |= VectorFacilityMask; }
   static void set_has_VectorEnhancements1()       { _features[2] |= VectorEnhancements1Mask; }
   static void set_has_VectorEnhancements2()       { _features[2] |= VectorEnhancements2Mask; }
+  static void set_has_VectorPackedDecimal()       { _features[2] |= VectorPackedDecimalMask; }
+  static void set_has_VectorPackedDecimalEnh()    { _features[2] |= VectorPackedDecimalEnhMask; }
 
   static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
 
