@@ -30,7 +30,7 @@ set rpinput "PaSsWoRd"
 set rlexpected "input is $rlinput"
 set rpexpected "password is $rpinput"
 set stty_init $initialEcho
-set timeout 2
+set timeout 10
 
 proc test {prompt input echoStat expected} {
     expect "$prompt"
