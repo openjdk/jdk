@@ -557,8 +557,14 @@ final class ProcessImpl extends Process {
 
     public int exitValue() {
         int exitCode = getExitCodeProcess(handle);
-        if (exitCode == STILL_ACTIVE)
-            throw new IllegalThreadStateException("process has not exited");
+        if (exitCode == STILL_ACTIVE) {
+            // STILL_ACTIVE (259) might be the real exit code
+            if (isProcessAlive(handle)) {
+                throw new IllegalThreadStateException("process has not exited");
+            }
+            // call again, in case the process just exited
+            return getExitCodeProcess(handle);
+        }
         return exitCode;
     }
     private static native int getExitCodeProcess(long handle);

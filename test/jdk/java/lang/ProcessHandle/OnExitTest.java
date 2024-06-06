@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import org.testng.TestNG;
 
 /*
  * @test
+ * @bug 8333742
  * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.management
@@ -65,7 +66,7 @@ public class OnExitTest extends ProcessUtil {
     @Test
     public static void test1() {
         try {
-            int[] exitValues = {0, 1, 10};
+            int[] exitValues = {0, 1, 10, 259};
             for (int value : exitValues) {
                 Process p = JavaChild.spawn("exit", Integer.toString(value));
                 CompletableFuture<Process> future = p.onExit();
