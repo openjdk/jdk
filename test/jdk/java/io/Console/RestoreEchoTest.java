@@ -60,6 +60,7 @@ public class RestoreEchoTest {
     private static void expectRunner(String initialEcho) throws Throwable {
         // invoking "expect" command
         var testSrc = System.getProperty("test.src", ".");
+        var testClasses = System.getProperty("test.classes", ".");
         var jdkDir = System.getProperty("test.jdk");
         OutputAnalyzer output = ProcessTools.executeProcess(
                 "expect",
@@ -68,6 +69,7 @@ public class RestoreEchoTest {
                 initialEcho,
                 jdkDir + "/bin/java",
                 "-Djdk.console=java.base",
+                "-classpath", testClasses,
                 "RestoreEchoTest");
         output.reportDiagnosticSummary();
         assertEquals(0, output.getExitValue());
