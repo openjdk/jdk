@@ -1361,17 +1361,9 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             }
 
             public Point getLocationOnScreen() {
-                Point parentLocation;
-                if (parent != null) {
-                    try {
-                        parentLocation = parent.getLocationOnScreen();
-                    } catch (IllegalComponentStateException icse) {
-                        return null;
-                    }
+                if (parent != null && parent.isShowing()) {
+                    Point parentLocation = parent.getLocationOnScreen();
                     Point componentLocation = getLocation();
-                    if (parentLocation == null || componentLocation == null) {
-                        return null;
-                    }
                     componentLocation.translate(parentLocation.x, parentLocation.y);
                     return componentLocation;
                 } else {
