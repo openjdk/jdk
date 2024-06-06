@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class TestVectorizationUnsafeNegativeScale {
             }
         }
     }
-    
+
     static short[] shortArray = new short[1000];
 
     @Test
@@ -137,4 +137,3 @@ public class TestVectorizationUnsafeNegativeScale {
         }
     }
 }
-    
