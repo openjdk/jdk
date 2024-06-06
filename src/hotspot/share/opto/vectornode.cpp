@@ -928,6 +928,33 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
   return false;
 }
 
+bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
+  switch (opc) {
+  case Op_SqrtF:
+  case Op_SqrtD:
+  case Op_AbsF:
+  case Op_AbsD:
+  case Op_AbsI:
+  case Op_AbsL:
+  case Op_NegF:
+  case Op_NegD:
+  case Op_RoundF:
+  case Op_RoundD:
+  case Op_ReverseBytesI:
+  case Op_ReverseBytesL:
+  case Op_ReverseBytesUS:
+  case Op_ReverseBytesS:
+  case Op_ReverseI:
+  case Op_ReverseL:
+  case Op_PopCountI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+    return true;
+  default:
+    return false;
+  }
+}
+
 Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
   int vopc = node->Opcode();
   uint vlen = vt->length();

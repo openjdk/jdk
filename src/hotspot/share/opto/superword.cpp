@@ -2592,16 +2592,7 @@ bool SuperWord::output() {
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
-                 opc == Op_AbsF || opc == Op_AbsD ||
-                 opc == Op_AbsI || opc == Op_AbsL ||
-                 opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
-                 opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
-                 opc == Op_ReverseI || opc == Op_ReverseL ||
-                 opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
-                 opc == Op_CountTrailingZerosI) {
+      } else if (VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));

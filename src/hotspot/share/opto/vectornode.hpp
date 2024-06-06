@@ -132,6 +132,8 @@ class VectorNode : public TypeNode {
     return is_vector_shift_count(n->Opcode());
   }
 
+  static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
+
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
     if (TraceNewVectors) {
