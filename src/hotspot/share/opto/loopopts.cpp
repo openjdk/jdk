@@ -2154,18 +2154,19 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 #endif
     if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {
 
-      // If the Data use is an IF, that means we have an IF outside of the
-      // loop that is switching on a condition that is set inside of the
+      // If the Data use is an IF, that means we have an IF outside the
+      // loop that is switching on a condition that is set inside the
       // loop.  Happens if people set a loop-exit flag; then test the flag
-      // in the loop to break the loop, then test is again outside of the
+      // in the loop to break the loop, then test is again outside the
       // loop to determine which way the loop exited.
-      // Loop predicate If node connects to Bool node through Opaque1 node.
       //
-      // If the use is an AllocateArray through its ValidLengthTest input,
-      // make sure the Bool/Cmp input is cloned down to avoid a Phi between
-      // the AllocateArray node and its ValidLengthTest input that could cause
+      // For several uses we need to make sure that there is no phi between,
+      // the use and the Bool/Cmp. We therefore clone the Bool/Cmp down here
+      // to avoid such a phi in between.
+      // For example, it is unexpected that there is a Phi between an
+      // AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->is_Opaque4() ||
+      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
