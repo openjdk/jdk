@@ -64,6 +64,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
+import sun.lwawt.LWKeyboardFocusManagerPeer;
 import sun.lwawt.LWLightweightFramePeer;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
@@ -1056,6 +1057,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         execute(ptr -> nativeSetEnabled(ptr, !blocked));
+
+        Window currFocus = LWKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
+        if (!blocked && target.equals(currFocus)) {
+            requestWindowFocus();
+        }
         checkBlockingAndOrder();
     }
 
