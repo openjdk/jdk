@@ -2258,14 +2258,6 @@ bool SuperWord::schedule_and_apply() {
     return false;
   }
 
-  // TODO move?
-#ifndef PRODUCT
-  if (is_trace_superword_info()) {
-    tty->print_cr("SuperWord::schedule: memops_schedule:");
-    memops_schedule.dump();
-  }
-#endif
-
   // (4) Apply the vectorization, including re-ordering the memops.
   return apply(memops_schedule);
 }
@@ -2290,6 +2282,13 @@ bool SuperWord::apply(Node_List& memops_schedule) {
 // Reorder the memory graph for all slices in parallel. We walk over the schedule once,
 // and track the current memory state of each slice.
 void SuperWord::apply_memops_reordering_with_schedule(Node_List &memops_schedule) {
+#ifndef PRODUCT
+  if (is_trace_superword_info()) {
+    tty->print_cr("\nSuperWord::apply_memops_reordering_with_schedule:");
+    memops_schedule.dump();
+  }
+#endif
+
   int max_slices = phase()->C->num_alias_types();
   // When iterating over the memops_schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
