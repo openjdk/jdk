@@ -91,14 +91,14 @@ public:
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
@@ -108,7 +108,7 @@ public:
       return true;
     }
 
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }
@@ -138,7 +138,7 @@ void ShenandoahUnload::unload() {
 
   ClassUnloadingContext ctx(heap->workers()->active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   {

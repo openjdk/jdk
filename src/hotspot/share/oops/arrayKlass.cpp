@@ -43,7 +43,7 @@
 #include "runtime/handles.inline.hpp"
 
 ArrayKlass::ArrayKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 int ArrayKlass::static_size(int header_size) {
@@ -179,7 +179,8 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   assert(num_extra_slots == 0, "sanity of primitive array type");
   assert(transitive_interfaces == nullptr, "sanity");
   // Must share this for correct bootstrapping!
-  set_secondary_supers(Universe::the_array_interfaces_array());
+  set_secondary_supers(Universe::the_array_interfaces_array(),
+                       Universe::the_array_interfaces_bitmap());
   return nullptr;
 }
 

@@ -120,10 +120,8 @@ static const char* format_insn_close(const char* close,
                                      disassemble_info* dinfo,
                                      char* buf, size_t bufsize);
 
+JNIEXPORT
 void*
-#ifdef DLL_ENTRY
-  DLL_ENTRY
-#endif
 decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                             unsigned char* buffer, uintptr_t length,
                             event_callback_t  event_callback_arg,  void* event_stream_arg,
@@ -145,10 +143,8 @@ decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 }
 
 /* This is the compatability interface for older version of hotspot */
+JNIEXPORT
 void*
-#ifdef DLL_ENTRY
-  DLL_ENTRY
-#endif
 decode_instructions(void* start_pv, void* end_pv,
                     event_callback_t  event_callback_arg,  void* event_stream_arg,
                     printf_callback_t printf_callback_arg, void* printf_stream_arg,

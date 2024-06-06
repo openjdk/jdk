@@ -34,6 +34,8 @@
 class JavaThread;
 class OopClosure;
 class outputStream;
+template<typename>
+class GrowableArray;
 
 class LockStack {
   friend class LockStackTest;

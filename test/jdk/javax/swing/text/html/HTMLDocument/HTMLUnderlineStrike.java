@@ -31,7 +31,7 @@ import javax.swing.text.html.HTMLEditorKit;
 
 /*
  * @test
- * @bug 8323801
+ * @bug 8323801 8326734
  * @summary Tests that '<u><s>' produce underlined and struck-through text
  */
 public final class HTMLUnderlineStrike {

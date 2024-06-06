@@ -214,12 +214,15 @@ class TestGenCollectorPolicy {
 
 // If NewSize has been ergonomically set, the collector policy
 // should use it for min
+// This test doesn't work with 64k pages. See JDK-8331675.
+#if !defined(PPC)
 TEST_VM(CollectorPolicy, young_min_ergo) {
   TestGenCollectorPolicy::SetNewSizeErgo setter(20 * M);
   TestGenCollectorPolicy::CheckYoungMin checker(20 * M);
 
   TestGenCollectorPolicy::TestWrapper::test(&setter, &checker);
 }
+#endif
 
 // If NewSize has been ergonomically set, the collector policy
 // should use it for min but calculate the initial young size

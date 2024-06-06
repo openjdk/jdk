@@ -29,9 +29,8 @@
 #include "utilities/macros.hpp"
 
 class BoolObjectClosure;
-class CodeBlobClosure;
-class CodeBlobToOopClosure;
 class nmethod;
+class NMethodToOopClosure;
 
 class ScavengableNMethods : public AllStatic {
   friend class VMStructs;
@@ -53,10 +52,10 @@ public:
 
   // Apply closure to every scavengable nmethod.
   // Remove nmethods that no longer have scavengable oops.
-  static void nmethods_do(CodeBlobToOopClosure* cl);
+  static void nmethods_do(NMethodToOopClosure* cl);
 
 private:
-  static void nmethods_do_and_prune(CodeBlobToOopClosure* cl);
+  static void nmethods_do_and_prune(NMethodToOopClosure* cl);
   static void unlist_nmethod(nmethod* nm, nmethod* prev);
 
   static bool has_scavengable_oops(nmethod* nm);

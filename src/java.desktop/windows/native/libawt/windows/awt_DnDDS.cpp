@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,6 @@ public:
     }
     static const FORMATETC *FindFormat(const FORMATETC &format)
     {
-        static FORMATETC fm = {0};
         CDataMap::iterator i = st.find(format);
         if (st.end() != i) {
             return &i->first;
@@ -1267,8 +1266,6 @@ AwtDragSource::call_dSCmouseMoved(JNIEnv* env, jobject self, jint targetActions,
         env->ExceptionClear();
     }
 }
-
-DECLARE_JAVA_CLASS(awtIEClazz, "java/awt/event/InputEvent")
 
 /**
  * Constructor

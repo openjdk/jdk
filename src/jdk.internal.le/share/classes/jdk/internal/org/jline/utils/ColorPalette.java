@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -21,7 +21,8 @@ import jdk.internal.org.jline.terminal.Terminal;
  */
 public class ColorPalette {
 
-    public static final String XTERM_INITC = "\\E]4;%p1%d;rgb\\:%p2%{255}%*%{1000}%/%2.2X/%p3%{255}%*%{1000}%/%2.2X/%p4%{255}%*%{1000}%/%2.2X\\E\\\\";
+    public static final String XTERM_INITC =
+            "\\E]4;%p1%d;rgb\\:%p2%{255}%*%{1000}%/%2.2X/%p3%{255}%*%{1000}%/%2.2X/%p4%{255}%*%{1000}%/%2.2X\\E\\\\";
 
     public static final ColorPalette DEFAULT = new ColorPalette();
 
@@ -41,6 +42,7 @@ public class ColorPalette {
         this(terminal, null);
     }
 
+    @SuppressWarnings("this-escape")
     public ColorPalette(Terminal terminal, String distance) throws IOException {
         this.terminal = terminal;
         this.distanceName = distance;
@@ -245,10 +247,13 @@ public class ColorPalette {
                 if (rgb.size() != 3) {
                     return null;
                 }
-                double r = Integer.parseInt(rgb.get(0), 16) / ((1 << (4 * rgb.get(0).length())) - 1.0);
-                double g = Integer.parseInt(rgb.get(1), 16) / ((1 << (4 * rgb.get(1).length())) - 1.0);
-                double b = Integer.parseInt(rgb.get(2), 16) / ((1 << (4 * rgb.get(2).length())) - 1.0);
-                palette[idx] = (int)((Math.round(r * 255) << 16) + (Math.round(g * 255) << 8) + Math.round(b * 255));
+                double r = Integer.parseInt(rgb.get(0), 16)
+                        / ((1 << (4 * rgb.get(0).length())) - 1.0);
+                double g = Integer.parseInt(rgb.get(1), 16)
+                        / ((1 << (4 * rgb.get(1).length())) - 1.0);
+                double b = Integer.parseInt(rgb.get(2), 16)
+                        / ((1 << (4 * rgb.get(2).length())) - 1.0);
+                palette[idx] = (int) ((Math.round(r * 255) << 16) + (Math.round(g * 255) << 8) + Math.round(b * 255));
                 black &= palette[idx] == 0;
             }
             if (black) {
@@ -256,7 +261,13 @@ public class ColorPalette {
             }
         }
         int max = 256;
-        while (max > 0 && palette[--max] == 0);
+        while (max > 0 && palette[--max] == 0)
+            ;
         return Arrays.copyOfRange(palette, 0, max + 1);
+    }
+
+    @Override
+    public String toString() {
+        return "ColorPalette[" + "length=" + getLength() + ", " + "distance='" + getDist() + "\']";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8325485
  * @summary Testing ClassFile on small Corpus.
  * @build helpers.* testdata.*
  * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
@@ -82,7 +83,7 @@ class CorpusTest {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
             switch (coe) {
-                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LINE_NUMBER_TABLE) {
+                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
@@ -90,14 +91,14 @@ class CorpusTest {
                         b.writeU2(ln.line());
                     }
                 });
-                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TABLE) {
+                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
                         lv.writeTo(b);
                     }
                 });
-                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);

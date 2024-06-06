@@ -502,7 +502,7 @@ static Monitor* create_init_monitor(const char* name) {
 }
 
 InstanceKlass::InstanceKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -1427,29 +1427,37 @@ bool InstanceKlass::can_be_primary_super_slow() const {
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
                                                                Array<InstanceKlass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
-  Array<InstanceKlass*>* interfaces = transitive_interfaces;
+  // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
+  // (but it's safe to do here because we won't write into _secondary_supers from this point on).
+  Array<Klass*>* interfaces = (Array<Klass*>*)(address)transitive_interfaces;
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
-    set_secondary_supers(Universe::the_empty_klass_array());
+    set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
     return nullptr;
   } else if (num_extra_slots == 0) {
     // The secondary super list is exactly the same as the transitive interfaces, so
     // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
-    // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
-    // (but it's safe to do here because we won't write into _secondary_supers from this point on).
-    set_secondary_supers((Array<Klass*>*)(address)interfaces);
-    return nullptr;
-  } else {
-    // Copy transitive interfaces to a temporary growable array to be constructed
-    // into the secondary super list with extra slots.
-    GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      secondaries->push(interfaces->at(i));
+    if (!UseSecondarySupersTable) {
+      set_secondary_supers(interfaces);
+      return nullptr;
+    } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
+      // We will reuse the transitive interfaces list if we're certain
+      // it's in hash order.
+      uintx bitmap = compute_secondary_supers_bitmap(interfaces);
+      set_secondary_supers(interfaces, bitmap);
+      return nullptr;
     }
-    return secondaries;
+    // ... fall through if that didn't work.
   }
+  // Copy transitive interfaces to a temporary growable array to be constructed
+  // into the secondary super list with extra slots.
+  GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
+  for (int i = 0; i < interfaces->length(); i++) {
+    secondaries->push(interfaces->at(i));
+  }
+  return secondaries;
 }
 
 bool InstanceKlass::implements_interface(Klass* k) const {
@@ -1501,16 +1509,9 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
-  bool has_finalizer_flag = has_finalizer(); // Query before possible GC
+  assert(!is_abstract() && !is_interface(), "Should not create this object");
   size_t size = size_helper();  // Query before forming handle.
-
-  instanceOop i;
-
-  i = (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
-  if (has_finalizer_flag && !RegisterFinalizersAtInit) {
-    i = register_finalizer(i, CHECK_NULL);
-  }
-  return i;
+  return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
@@ -1633,16 +1634,17 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
-  // Lazily create the _oop_map_cache at first request
-  // Lock-free access requires load_acquire.
+  // Lazily create the _oop_map_cache at first request.
+  // Load_acquire is needed to safely get instance published with CAS by another thread.
   OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
-    MutexLocker x(OopMapCacheAlloc_lock);
-    // Check if _oop_map_cache was allocated while we were waiting for this lock
-    if ((oop_map_cache = _oop_map_cache) == nullptr) {
-      oop_map_cache = new OopMapCache();
-      // Ensure _oop_map_cache is stable, since it is examined without a lock
-      Atomic::release_store(&_oop_map_cache, oop_map_cache);
+    // Try to install new instance atomically.
+    oop_map_cache = new OopMapCache();
+    OopMapCache* other = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    if (other != nullptr) {
+      // Someone else managed to install before us, ditch local copy and use the existing one.
+      delete oop_map_cache;
+      oop_map_cache = other;
     }
   }
   // _oop_map_cache is constant after init; lookup below does its own locking.
@@ -3355,7 +3357,7 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
-  assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(NMethodState_lock);
 #ifndef PRODUCT
   nmethod* prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
   assert(prev == nullptr || !prev->is_in_use() COMPILER2_PRESENT(|| StressRecompilation),
@@ -3380,7 +3382,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3421,7 +3423,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3436,7 +3438,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {
@@ -3537,7 +3539,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
 
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
-  st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
+  st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
     for (int i = 0; i < method_array->length(); i++) {
@@ -3545,11 +3547,13 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
   st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);      st->cr();
-  st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);      st->cr();
-  if (Verbose && default_methods() != nullptr) {
-    Array<Method*>* method_array = default_methods();
-    for (int i = 0; i < method_array->length(); i++) {
-      st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+  if (default_methods() != nullptr) {
+    st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);    st->cr();
+    if (Verbose) {
+      Array<Method*>* method_array = default_methods();
+      for (int i = 0; i < method_array->length(); i++) {
+        st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+      }
     }
   }
   if (default_vtable_indices() != nullptr) {
@@ -3557,6 +3561,29 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
+
+  st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
+  if (UseSecondarySupersTable) {
+    st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
+    st->print(BULLET"bitmap:            " UINTX_FORMAT_X_0, _bitmap); st->cr();
+  }
+  if (secondary_supers() != nullptr) {
+    if (Verbose) {
+      bool is_hashed = UseSecondarySupersTable && (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
+      st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+      for (int i = 0; i < _secondary_supers->length(); i++) {
+        ResourceMark rm; // for external_name()
+        Klass* secondary_super = _secondary_supers->at(i);
+        st->print(BULLET"%2d:", i);
+        if (is_hashed) {
+          int home_slot = compute_home_slot(secondary_super, _bitmap);
+          int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
+          st->print(" dist:%02d:", distance);
+        }
+        st->print_cr(" %p %s", secondary_super, secondary_super->external_name());
+      }
+    }
+  }
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
   if (class_loader_data() != nullptr) {
     st->print(BULLET"class loader data:  ");
@@ -3614,6 +3641,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+
   FieldPrinter print_static_field(st);
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
@@ -4008,7 +4036,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
+        ((CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {

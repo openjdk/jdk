@@ -67,7 +67,7 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // we'll leave that optimization for another time.
 
   if (LockingMode == LM_LEGACY) {
-    if (displaced_header().is_unlocked()) {
+    if (displaced_header().is_neutral()) {
       // The object is locked and the resulting ObjectMonitor* will also be
       // locked so it can't be async deflated until ownership is dropped.
       ObjectSynchronizer::inflate_helper(obj);
