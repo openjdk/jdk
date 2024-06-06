@@ -1249,14 +1249,14 @@ public final class StackMapGenerator {
         //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = referenceType(CD_Object),
             THROWABLE_TYPE = referenceType(CD_Throwable),
-            INT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[I")),
-            BOOLEAN_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[Z")),
-            BYTE_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[B")),
-            CHAR_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[C")),
-            SHORT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[S")),
-            LONG_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[J")),
-            DOUBLE_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[D")),
-            FLOAT_ARRAY_TYPE = referenceType(ClassDesc.ofDescriptor("[F")),
+            INT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[I")),
+            BOOLEAN_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[Z")),
+            BYTE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[B")),
+            CHAR_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[C")),
+            SHORT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[S")),
+            LONG_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[J")),
+            DOUBLE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[D")),
+            FLOAT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[F")),
             STRING_TYPE = referenceType(CD_String),
             CLASS_TYPE = referenceType(CD_Class),
             METHOD_HANDLE_TYPE = referenceType(CD_MethodHandle),
@@ -1321,8 +1321,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ClassDesc.ofDescriptor("Ljava/lang/Cloneable;");
-        private static final ClassDesc CD_Serializable = ClassDesc.ofDescriptor("Ljava/io/Serializable;");
+        private static final ClassDesc CD_Cloneable = ReferenceClassDescImpl.ofValidated("Ljava/lang/Cloneable;");
+        private static final ClassDesc CD_Serializable = ReferenceClassDescImpl.ofValidated("Ljava/io/Serializable;");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {
