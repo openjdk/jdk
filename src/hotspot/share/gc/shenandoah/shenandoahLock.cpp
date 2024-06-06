@@ -50,8 +50,9 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
       // Synchronizing for safepoint. This condition preempts everything else.
       // Do not do anything else, suspend until safepoint is over.
       ThreadBlockInVM block(java_thread, true);
-    } else if (ctr < 0x1F) {
-      // Lightly contended. Spin a little.
+    } else if (ctr < 0x1F && os::is_MP()) {
+      // Lightly contended, Spin a little if there are multiple processors,
+      // there is no point in spinning and not giving up on CPU if there is single CPU processor.
       ctr++;
       SpinPause();
     } else if (ALLOW_BLOCK) {
