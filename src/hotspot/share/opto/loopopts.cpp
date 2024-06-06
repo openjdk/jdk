@@ -3058,6 +3058,9 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
 //        v         v
 //   exit-proj   stay-in-loop-proj
 //
+// Note: The dummy-if is inserted to create a region to merge the loop exits between the original to be killed unsigned
+//       loop exit test and its exit projection while keeping the exit projection (also see insert_region_before_proj()).
+//
 // Requirements
 // ------------
 // Note that we can only split off a signed loop exit test from the unsigned loop exit test when the behavior is exactly
