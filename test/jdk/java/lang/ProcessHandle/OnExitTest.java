@@ -82,7 +82,9 @@ public class OnExitTest extends ProcessUtil {
                 Assert.assertEquals(h, p);
                 Assert.assertEquals(p.exitValue(), value);
                 Assert.assertFalse(p.isAlive(), "Process should not be alive");
-                p.waitFor();
+                Assert.assertEquals(p.waitFor(), value);
+                Assert.assertTrue(p.waitFor(1, TimeUnit.MILLISECONDS),
+                        "waitFor should return true");
             }
         } catch (IOException | InterruptedException | ExecutionException ex) {
             Assert.fail(ex.getMessage(), ex);

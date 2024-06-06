@@ -588,7 +588,7 @@ final class ProcessImpl extends Process {
         throws InterruptedException
     {
         long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
-        if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
+        if (!isProcessAlive(handle)) return true;
         if (timeout <= 0) return false;
 
         long deadline = System.nanoTime() + remainingNanos;
@@ -607,13 +607,13 @@ final class ProcessImpl extends Process {
             }
             if (Thread.interrupted())
                 throw new InterruptedException();
-            if (getExitCodeProcess(handle) != STILL_ACTIVE) {
+            if (!isProcessAlive(handle)) {
                 return true;
             }
             remainingNanos = deadline - System.nanoTime();
         } while (remainingNanos > 0);
 
-        return (getExitCodeProcess(handle) != STILL_ACTIVE);
+        return !isProcessAlive(handle);
     }
 
     private static native void waitForTimeoutInterruptibly(
