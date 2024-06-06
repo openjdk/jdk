@@ -147,7 +147,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *                         compression method used is unsupported
      * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
-     * @since     23
+     * @since     24
      */
     public GZIPInputStream(InputStream in, int size,
             boolean allowConcatenation, boolean ignoreExtraBytes) throws IOException {
