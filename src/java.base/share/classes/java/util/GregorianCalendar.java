@@ -354,9 +354,9 @@ public class GregorianCalendar extends Calendar {
      * accurate.
      */
 
-//////////////////
+//----------------
 // Class Variables
-//////////////////
+//----------------
 
     /**
      * Value of the {@code ERA} field indicating
@@ -513,9 +513,9 @@ public class GregorianCalendar extends Calendar {
     // The default value of gregorianCutover.
     static final long DEFAULT_GREGORIAN_CUTOVER = -12219292800000L;
 
-/////////////////////
+//-------------------
 // Instance Variables
-/////////////////////
+//-------------------
 
     /**
      * The point at which the Gregorian calendar rules are used, measured in
@@ -579,9 +579,9 @@ public class GregorianCalendar extends Calendar {
      */
     private transient int[] originalFields;
 
-///////////////
+//-------------
 // Constructors
-///////////////
+//-------------
 
     /**
      * Constructs a default {@code GregorianCalendar} using the current time
@@ -748,9 +748,9 @@ public class GregorianCalendar extends Calendar {
         gdate = gcal.newCalendarDate(getZone());
     }
 
-/////////////////
+//---------------
 // Public methods
-/////////////////
+//---------------
 
     /**
      * Sets the {@code GregorianCalendar} change date. This is the point when the switch
@@ -2254,9 +2254,9 @@ public class GregorianCalendar extends Calendar {
         return gc.getActualMaximum(WEEK_OF_YEAR);
     }
 
-/////////////////////////////
+//---------------------------
 // Time => Fields computation
-/////////////////////////////
+//---------------------------
 
     /**
      * The fixed date corresponding to gdate. If the value is

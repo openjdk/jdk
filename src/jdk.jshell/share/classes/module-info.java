@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.internal.javac.ParticipatesInPreview;
  * and programmatically launching the existing Java shell tool.
  * <p>
  *     The {@link jdk.jshell} is the package for creating 'snippet' evaluating tools.
- *     Generally, this is only package that would be needed for creating tools.
+ *     Generally, this is the only package that would be needed for creating tools.
  * </p>
  * <p>
  *     The {@link jdk.jshell.spi} package specifies a Service Provider Interface (SPI)
@@ -71,6 +71,7 @@ module jdk.jshell {
     requires jdk.compiler;
     requires jdk.internal.ed;
     requires jdk.internal.le;
+    requires jdk.internal.md;
     requires jdk.internal.opt;
 
     requires transitive java.compiler;

@@ -27,7 +27,7 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -99,28 +99,12 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
-  // The largest number of contiguous free bytes in this or any higher generation.
-  virtual size_t max_contiguous_available() const;
 
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
-  }
-
-  // Returns "true" iff this generation should be used to allocate an
-  // object of the given size.  Young generations might
-  // wish to exclude very large objects, for example, since, if allocated
-  // often, they would greatly increase the frequency of young-gen
-  // collection.
-  virtual bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab || supports_tlab_allocation()) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
   }
 
   // Allocate and returns a block of the requested size, or returns "null".
@@ -132,31 +116,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
-
-  // Returns "true" iff collect() should subsequently be called on this
-  // this generation. See comment below.
-  // This is a generic implementation which can be overridden.
-  //
-  // Note: in the current (1.4) implementation, when serialHeap's
-  // incremental_collection_will_fail flag is set, all allocations are
-  // slow path (the only fast-path place to allocate is DefNew, which
-  // will be full if the flag is set).
-  // Thus, older generations which collect younger generations should
-  // test this flag and collect if it is set.
-  virtual bool should_collect(bool   full,
-                              size_t word_size,
-                              bool   is_tlab) {
-    return (full || should_allocate(word_size, is_tlab));
-  }
-
-  // Perform a garbage collection.
-  // If full is true attempt a full garbage collection of this generation.
-  // Otherwise, attempting to (at least) free enough space to support an
-  // allocation of the given "word_size".
-  virtual void collect(bool   full,
-                       bool   clear_all_soft_refs,
-                       size_t word_size,
-                       bool   is_tlab) = 0;
 
   // Perform a heap collection, attempting to create (at least) enough
   // space to support an allocation of the given "word_size".  If
@@ -174,20 +133,7 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual void verify() = 0;
 
-  struct StatRecord {
-    int invocations;
-    elapsedTimer accumulated_time;
-    StatRecord() :
-      invocations(0),
-      accumulated_time(elapsedTimer()) {}
-  };
-private:
-  StatRecord _stat_record;
 public:
-  StatRecord* stat_record() { return &_stat_record; }
-
-  virtual void print_summary_info_on(outputStream* st);
-
   // Performance Counter support
   virtual void update_counters() = 0;
   virtual CollectorCounters* counters() { return _gc_counters; }
@@ -200,32 +146,6 @@ public:
   void set_gc_manager(GCMemoryManager* gc_manager) {
     _gc_manager = gc_manager;
   }
-
-  // Apply "blk->do_oop" to the addresses of all reference fields in objects
-  // starting with the _saved_mark_word, which was noted during a generation's
-  // save_marks and is required to denote the head of an object.
-  // Fields in objects allocated by applications of the closure
-  // *are* included in the iteration.
-  // Updates saved_mark_word to point to just after the last object iterated over.
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word);
 };
-
-template <typename OopClosureType>
-void Generation::oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word) {
-  HeapWord* t;
-  HeapWord* p = saved_mark_word;
-  assert(p != nullptr, "expected saved mark");
-
-  const intx interval = PrefetchScanIntervalInBytes;
-  do {
-    t = space->top();
-    while (p < t) {
-      Prefetch::write(p, interval);
-      oop m = cast_to_oop(p);
-      p += m->oop_iterate_size(blk);
-    }
-  } while (t < space->top());
-}
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

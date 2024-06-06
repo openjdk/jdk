@@ -251,6 +251,8 @@
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
+  nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
+  nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
                                                                                                                                      \
   nonstatic_field(LocalVariableTableElement,   start_bci,                                     u2)                                    \
   nonstatic_field(LocalVariableTableElement,   length,                                        u2)                                    \
@@ -342,6 +344,7 @@
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
   static_field(StubRoutines,                _array_sort,                                      address)                               \
   static_field(StubRoutines,                _array_partition,                                 address)                               \
+  static_field(StubRoutines,                _unsafe_setmemory,                                address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
@@ -358,6 +361,8 @@
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
   static_field(StubRoutines,                _chacha20Block,                                   address)                               \
   static_field(StubRoutines,                _poly1305_processBlocks,                          address)                               \
+  static_field(StubRoutines,                _intpoly_montgomeryMult_P256,                     address)                               \
+  static_field(StubRoutines,                _intpoly_assign,                                  address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
@@ -380,6 +385,7 @@
   static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
   static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
   static_field(StubRoutines,                _cont_thaw,                                       address)                               \
+  static_field(StubRoutines,                _lookup_secondary_supers_table_slow_path_stub,    address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
@@ -799,46 +805,40 @@
   declare_function(Deoptimization::uncommon_trap)                         \
   declare_function(Deoptimization::unpack_frames)                         \
                                                                           \
-  declare_function(JVMCIRuntime::new_instance) \
-  declare_function(JVMCIRuntime::new_array) \
-  declare_function(JVMCIRuntime::new_multi_array) \
-  declare_function(JVMCIRuntime::dynamic_new_array) \
-  declare_function(JVMCIRuntime::dynamic_new_instance) \
-  \
-  declare_function(JVMCIRuntime::new_instance_or_null) \
-  declare_function(JVMCIRuntime::new_array_or_null) \
-  declare_function(JVMCIRuntime::new_multi_array_or_null) \
-  declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
-  declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
-  \
-  declare_function(JVMCIRuntime::invoke_static_method_one_arg) \
-  \
-  declare_function(JVMCIRuntime::vm_message) \
-  declare_function(JVMCIRuntime::identity_hash_code) \
-  declare_function(JVMCIRuntime::exception_handler_for_pc) \
-  declare_function(JVMCIRuntime::monitorenter) \
-  declare_function(JVMCIRuntime::monitorexit) \
-  declare_function(JVMCIRuntime::object_notify) \
-  declare_function(JVMCIRuntime::object_notifyAll) \
-  declare_function(JVMCIRuntime::throw_and_post_jvmti_exception) \
-  declare_function(JVMCIRuntime::throw_klass_external_name_exception) \
-  declare_function(JVMCIRuntime::throw_class_cast_exception) \
-  declare_function(JVMCIRuntime::log_primitive) \
-  declare_function(JVMCIRuntime::log_object) \
-  declare_function(JVMCIRuntime::log_printf) \
-  declare_function(JVMCIRuntime::vm_error) \
-  declare_function(JVMCIRuntime::load_and_clear_exception) \
-  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre)) \
-  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_post)) \
-  declare_function(JVMCIRuntime::validate_object) \
-  \
+  declare_function(JVMCIRuntime::new_instance_or_null)                    \
+  declare_function(JVMCIRuntime::new_array_or_null)                       \
+  declare_function(JVMCIRuntime::new_multi_array_or_null)                 \
+  declare_function(JVMCIRuntime::dynamic_new_array_or_null)               \
+  declare_function(JVMCIRuntime::dynamic_new_instance_or_null)            \
+                                                                          \
+  declare_function(JVMCIRuntime::invoke_static_method_one_arg)            \
+                                                                          \
+  declare_function(JVMCIRuntime::vm_message)                              \
+  declare_function(JVMCIRuntime::identity_hash_code)                      \
+  declare_function(JVMCIRuntime::exception_handler_for_pc)                \
+  declare_function(JVMCIRuntime::monitorenter)                            \
+  declare_function(JVMCIRuntime::monitorexit)                             \
+  declare_function(JVMCIRuntime::object_notify)                           \
+  declare_function(JVMCIRuntime::object_notifyAll)                        \
+  declare_function(JVMCIRuntime::throw_and_post_jvmti_exception)          \
+  declare_function(JVMCIRuntime::throw_klass_external_name_exception)     \
+  declare_function(JVMCIRuntime::throw_class_cast_exception)              \
+  declare_function(JVMCIRuntime::log_primitive)                           \
+  declare_function(JVMCIRuntime::log_object)                              \
+  declare_function(JVMCIRuntime::log_printf)                              \
+  declare_function(JVMCIRuntime::vm_error)                                \
+  declare_function(JVMCIRuntime::load_and_clear_exception)                \
+  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre))            \
+  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_post))           \
+  declare_function(JVMCIRuntime::validate_object)                         \
+                                                                          \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
 
 
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, uint)
+  static_field(G1HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \

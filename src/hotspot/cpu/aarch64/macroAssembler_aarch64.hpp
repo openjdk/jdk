@@ -444,6 +444,15 @@ class MacroAssembler: public Assembler {
 
   // macro assembly operations needed for aarch64
 
+public:
+
+  enum FpPushPopMode {
+    PushPopFull,
+    PushPopSVE,
+    PushPopNeon,
+    PushPopFp
+  };
+
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
@@ -453,8 +462,8 @@ private:
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
 
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
+  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
 
   int push_p(unsigned int bitset, Register stack);
   int pop_p(unsigned int bitset, Register stack);
@@ -462,11 +471,12 @@ private:
   void mov(Register dst, Address a);
 
 public:
+
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
-  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
+  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
 
   static RegSet call_clobbered_gp_registers();
 
@@ -1500,7 +1510,7 @@ public:
   void ghash_load_wide(int index, Register data, FloatRegister result, FloatRegister state);
 public:
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
-                       Register zlen, Register tmp1, Register tmp2, Register tmp3,
+                       Register tmp0, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
   void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,

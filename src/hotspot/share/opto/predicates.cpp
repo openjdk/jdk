@@ -42,13 +42,15 @@ bool AssertionPredicatesWithHalt::is_assertion_predicate_success_proj(const Node
   if (predicate_proj == nullptr || !predicate_proj->is_IfProj() || !predicate_proj->in(0)->is_If()) {
     return false;
   }
-  return has_opaque4(predicate_proj) && has_halt(predicate_proj);
+  return has_assertion_predicate_opaque(predicate_proj) && has_halt(predicate_proj);
 }
 
-// Check if the If node of `predicate_proj` has an Opaque4 node as input.
-bool AssertionPredicatesWithHalt::has_opaque4(const Node* predicate_proj) {
+// Check if the If node of `predicate_proj` has an Opaque4 (Template Assertion Predicate) or an
+// OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
+bool AssertionPredicatesWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
-  return iff->in(1)->Opcode() == Op_Opaque4;
+  Node* bol = iff->in(1);
+  return bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
@@ -323,7 +325,7 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
-  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpression::maybe_contains,
+  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpressionNode::is_maybe_in_expression,
                                                           is_opaque_loop_node);
   const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
@@ -331,4 +333,26 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   assert(orig_to_new.contains(_opaque4_node), "must exist");
   Node* opaque4_clone = *orig_to_new.get(_opaque4_node);
   return opaque4_clone->as_Opaque4();
+}
+
+// Check if this node belongs a Template Assertion Predicate Expression (including OpaqueLoop* nodes).
+bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
+  if (is_maybe_in_expression(node)) {
+    ResourceMark rm;
+    Unique_Node_List list;
+    list.push(node);
+    for (uint i = 0; i < list.size(); i++) {
+      Node* next = list.at(i);
+      if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
+        return true;
+      } else if (is_maybe_in_expression(next)) {
+        list.push_non_cfg_inputs_of(next);
+      }
+    }
+  }
+  return false;
+}
+
+bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(Node* node) {
+  return node->is_If() && node->in(1)->is_Opaque4();
 }

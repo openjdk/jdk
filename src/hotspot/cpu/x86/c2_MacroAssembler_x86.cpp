@@ -1796,6 +1796,130 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
   }
 }
 
+#ifdef _LP64
+void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
+                                                XMMRegister dst, Register base,
+                                                Register idx_base,
+                                                Register offset, Register mask,
+                                                Register mask_idx, Register rtmp,
+                                                int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
+  if (elem_bt == T_SHORT) {
+    for (int i = 0; i < 4; i++) {
+      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      Label skip_load;
+      btq(mask, mask_idx);
+      jccb(Assembler::carryClear, skip_load);
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
+      bind(skip_load);
+      incq(mask_idx);
+    }
+  } else {
+    assert(elem_bt == T_BYTE, "");
+    for (int i = 0; i < 8; i++) {
+      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      Label skip_load;
+      btq(mask, mask_idx);
+      jccb(Assembler::carryClear, skip_load);
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrb(dst, Address(base, rtmp), i);
+      bind(skip_load);
+      incq(mask_idx);
+    }
+  }
+}
+#endif // _LP64
+
+void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
+                                         Register base, Register idx_base,
+                                         Register offset, Register rtmp,
+                                         int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
+  if (elem_bt == T_SHORT) {
+    for (int i = 0; i < 4; i++) {
+      // dst[i] = src[offset + idx_base[i]]
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
+    }
+  } else {
+    assert(elem_bt == T_BYTE, "");
+    for (int i = 0; i < 8; i++) {
+      // dst[i] = src[offset + idx_base[i]]
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrb(dst, Address(base, rtmp), i);
+    }
+  }
+}
+
+/*
+ * Gather using hybrid algorithm, first partially unroll scalar loop
+ * to accumulate values from gather indices into a quad-word(64bit) slice.
+ * A slice may hold 8 bytes or 4 short values. This is followed by a vector
+ * permutation to place the slice into appropriate vector lane
+ * locations in destination vector. Following pseudo code describes the
+ * algorithm in detail:
+ *
+ * DST_VEC = ZERO_VEC
+ * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
+ * TWO_VEC    = {2, 2, 2, 2, 2, 2, 2, 2, 2..}
+ * FOREACH_ITER:
+ *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
+ *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
+ *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
+ *     PERM_INDEX = PERM_INDEX - TWO_VEC
+ *
+ * With each iteration, doubleword permute indices (0,1) corresponding
+ * to gathered quadword gets right shifted by two lane positions.
+ *
+ */
+void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
+                                        Register base, Register idx_base,
+                                        Register offset, Register mask,
+                                        XMMRegister xtmp1, XMMRegister xtmp2,
+                                        XMMRegister temp_dst, Register rtmp,
+                                        Register mask_idx, Register length,
+                                        int vector_len, int vlen_enc) {
+  Label GATHER8_LOOP;
+  assert(is_subword_type(elem_ty), "");
+  movl(length, vector_len);
+  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
+  vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
+  vallones(xtmp2, vlen_enc);
+  vpsubd(xtmp2, xtmp1, xtmp2, vlen_enc);
+  vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
+  load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
+
+  bind(GATHER8_LOOP);
+    // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
+    if (mask == noreg) {
+      vgather8b_offset(elem_ty, temp_dst, base, idx_base, offset, rtmp, vlen_enc);
+    } else {
+      LP64_ONLY(vgather8b_masked_offset(elem_ty, temp_dst, base, idx_base, offset, mask, mask_idx, rtmp, vlen_enc));
+    }
+    // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
+    vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
+    // PERM_INDEX(xtmp1) = PERM_INDEX(xtmp1) - TWO_VEC(xtmp2)
+    vpsubd(xtmp1, xtmp1, xtmp2, vlen_enc);
+    // DST_VEC = DST_VEC OR TEMP_PERM_VEC
+    vpor(dst, dst, temp_dst, vlen_enc);
+    addptr(idx_base,  32 >> (type2aelembytes(elem_ty) - 1));
+    subl(length, 8 >> (type2aelembytes(elem_ty) - 1));
+    jcc(Assembler::notEqual, GATHER8_LOOP);
+}
+
 void C2_MacroAssembler::vgather(BasicType typ, XMMRegister dst, Register base, XMMRegister idx, XMMRegister mask, int vector_len) {
   switch(typ) {
     case T_INT:
@@ -5507,7 +5631,6 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(dst, rtmp2);
 }
 
-#ifdef _LP64
 void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src,
                                                     XMMRegister mask, Register rtmp, Register rscratch,
                                                     XMMRegister permv, XMMRegister xtmp, BasicType bt,
@@ -5541,7 +5664,6 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // compressing/expanding the source vector lanes.
   vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
 }
-#endif
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
                                                bool merge, BasicType bt, int vec_enc) {

@@ -108,8 +108,6 @@ private:
   static zaddress blocking_load_barrier_on_weak_slow_path(volatile zpointer* p, zaddress addr);
   static zaddress blocking_load_barrier_on_phantom_slow_path(volatile zpointer* p, zaddress addr);
 
-  static zaddress verify_old_object_live_slow_path(zaddress addr);
-
   static zaddress mark_slow_path(zaddress addr);
   static zaddress mark_young_slow_path(zaddress addr);
   static zaddress mark_from_young_slow_path(zaddress addr);

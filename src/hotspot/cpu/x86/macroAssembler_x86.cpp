@@ -1150,20 +1150,20 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src, Register rscratc
 // Stub code is generated once and never copied.
 // NMethods can't use this because they get copied and we can't force alignment > 32 bytes.
 void MacroAssembler::align64() {
-  align(64, (unsigned long long) pc());
+  align(64, (uint)(uintptr_t)pc());
 }
 
 void MacroAssembler::align32() {
-  align(32, (unsigned long long) pc());
+  align(32, (uint)(uintptr_t)pc());
 }
 
-void MacroAssembler::align(int modulus) {
+void MacroAssembler::align(uint modulus) {
   // 8273459: Ensure alignment is possible with current segment alignment
-  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
+  assert(modulus <= (uintx)CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
-void MacroAssembler::align(int modulus, int target) {
+void MacroAssembler::align(uint modulus, uint target) {
   if (target % modulus != 0) {
     nop(modulus - (target % modulus));
   }
@@ -3570,8 +3570,18 @@ void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src,
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
 }
 
+void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
+  assert(((dst->encoding() < 16 && src1->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqb(dst, src1, src2, vector_len);
+}
+
 void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqw(dst, nds, src, vector_len);
 }
 
@@ -6299,7 +6309,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     orl(value, rtmp);
   }
 
-  cmpl(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+  cmpptr(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
   jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
   if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
     Label L_skip_align2;
@@ -6319,13 +6329,13 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     jccb(Assembler::zero, L_skip_align2);
     movw(Address(to, 0), value);
     addptr(to, 2);
-    subl(count, 1<<(shift-1));
+    subptr(count, 1<<(shift-1));
     BIND(L_skip_align2);
   }
   if (UseSSE < 2) {
     Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
     // Fill 32-byte chunks
-    subl(count, 8 << shift);
+    subptr(count, 8 << shift);
     jcc(Assembler::less, L_check_fill_8_bytes);
     align(16);
 
@@ -6336,10 +6346,10 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     }
 
     addptr(to, 32);
-    subl(count, 8 << shift);
+    subptr(count, 8 << shift);
     jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
     BIND(L_check_fill_8_bytes);
-    addl(count, 8 << shift);
+    addptr(count, 8 << shift);
     jccb(Assembler::zero, L_exit);
     jmpb(L_fill_8_bytes);
 
@@ -6351,7 +6361,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     movl(Address(to, 4), value);
     addptr(to, 8);
     BIND(L_fill_8_bytes);
-    subl(count, 1 << (shift + 1));
+    subptr(count, 1 << (shift + 1));
     jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
     // fall through to fill 4 bytes
   } else {
@@ -6362,7 +6372,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       jccb(Assembler::zero, L_fill_32_bytes);
       movl(Address(to, 0), value);
       addptr(to, 4);
-      subl(count, 1<<shift);
+      subptr(count, 1<<shift);
     }
     BIND(L_fill_32_bytes);
     {
@@ -6376,19 +6386,19 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           Label L_fill_64_bytes_loop_avx3, L_check_fill_64_bytes_avx2;
 
           // If number of bytes to fill < VM_Version::avx3_threshold(), perform fill using AVX2
-          cmpl(count, VM_Version::avx3_threshold());
+          cmpptr(count, VM_Version::avx3_threshold());
           jccb(Assembler::below, L_check_fill_64_bytes_avx2);
 
           vpbroadcastd(xtmp, xtmp, Assembler::AVX_512bit);
 
-          subl(count, 16 << shift);
+          subptr(count, 16 << shift);
           jccb(Assembler::less, L_check_fill_32_bytes);
           align(16);
 
           BIND(L_fill_64_bytes_loop_avx3);
           evmovdqul(Address(to, 0), xtmp, Assembler::AVX_512bit);
           addptr(to, 64);
-          subl(count, 16 << shift);
+          subptr(count, 16 << shift);
           jcc(Assembler::greaterEqual, L_fill_64_bytes_loop_avx3);
           jmpb(L_check_fill_32_bytes);
 
@@ -6398,7 +6408,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         Label L_fill_64_bytes_loop;
         vpbroadcastd(xtmp, xtmp, Assembler::AVX_256bit);
 
-        subl(count, 16 << shift);
+        subptr(count, 16 << shift);
         jcc(Assembler::less, L_check_fill_32_bytes);
         align(16);
 
@@ -6406,15 +6416,15 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         vmovdqu(Address(to, 0), xtmp);
         vmovdqu(Address(to, 32), xtmp);
         addptr(to, 64);
-        subl(count, 16 << shift);
+        subptr(count, 16 << shift);
         jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
 
         BIND(L_check_fill_32_bytes);
-        addl(count, 8 << shift);
+        addptr(count, 8 << shift);
         jccb(Assembler::less, L_check_fill_8_bytes);
         vmovdqu(Address(to, 0), xtmp);
         addptr(to, 32);
-        subl(count, 8 << shift);
+        subptr(count, 8 << shift);
 
         BIND(L_check_fill_8_bytes);
         // clean upper bits of YMM registers
@@ -6424,7 +6434,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         // Fill 32-byte chunks
         pshufd(xtmp, xtmp, 0);
 
-        subl(count, 8 << shift);
+        subptr(count, 8 << shift);
         jcc(Assembler::less, L_check_fill_8_bytes);
         align(16);
 
@@ -6441,12 +6451,12 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         }
 
         addptr(to, 32);
-        subl(count, 8 << shift);
+        subptr(count, 8 << shift);
         jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
 
         BIND(L_check_fill_8_bytes);
       }
-      addl(count, 8 << shift);
+      addptr(count, 8 << shift);
       jccb(Assembler::zero, L_exit);
       jmpb(L_fill_8_bytes);
 
@@ -6457,7 +6467,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       movq(Address(to, 0), xtmp);
       addptr(to, 8);
       BIND(L_fill_8_bytes);
-      subl(count, 1 << (shift + 1));
+      subptr(count, 1 << (shift + 1));
       jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
     }
   }
@@ -6973,7 +6983,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rsi: y
  * rcx: ylen
  * r8:  z
- * r11: zlen
+ * r11: tmp0
  * r12: tmp1
  * r13: tmp2
  * r14: tmp3
@@ -6981,11 +6991,12 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rbx: tmp5
  *
  */
-void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
   ShortBranchVerifier sbv(this);
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
 
+  push(tmp0);
   push(tmp1);
   push(tmp2);
   push(tmp3);
@@ -6993,7 +7004,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   push(tmp5);
 
   push(xlen);
-  push(zlen);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -7002,7 +7012,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -7018,9 +7028,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movl(idx, ylen);      // idx = ylen;
-  movl(kdx, zlen);      // kdx = xlen+ylen;
-  xorq(carry, carry);   // carry = 0;
+  movl(idx, ylen);               // idx = ylen;
+  lea(kdx, Address(xlen, ylen)); // kdx = xlen+ylen;
+  xorq(carry, carry);            // carry = 0;
 
   Label L_done;
 
@@ -7124,7 +7134,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
   bind(L_done);
 
-  pop(zlen);
   pop(xlen);
 
   pop(tmp5);
@@ -7132,6 +7141,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   pop(tmp3);
   pop(tmp2);
   pop(tmp1);
+  pop(tmp0);
 }
 
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,

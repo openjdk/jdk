@@ -1779,11 +1779,10 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  int index = pool->decode_invokedynamic_index(indy_index);
-  int pool_index = pool->resolved_indy_entry_at(index)->constant_pool_index();
+  int pool_index = pool->resolved_indy_entry_at(indy_index)->constant_pool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
-  BootstrapInfo bootstrap_specifier(pool, pool_index, index);
+  BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
 
   // Check if CallSite has been bound already or failed already, and short circuit:
   {

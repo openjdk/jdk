@@ -1103,14 +1103,28 @@ following:
 .RS
 .TP
 \f[V]all\f[R]
-Shows all categories of settings.
-This is the default value.
+Shows all categories of settings in \f[B]verbose\f[R] detail.
 .TP
 \f[V]locale\f[R]
 Shows settings related to locale.
 .TP
 \f[V]properties\f[R]
 Shows settings related to system properties.
+.TP
+\f[V]security\f[R]
+Shows all settings related to security.
+.RS
+.PP
+sub-category arguments for \f[V]security\f[R] include the following:
+.IP \[bu] 2
+\f[V]security:all\f[R] : shows all security settings
+.IP \[bu] 2
+\f[V]security:properties\f[R] : shows security properties
+.IP \[bu] 2
+\f[V]security:providers\f[R] : shows static security provider settings
+.IP \[bu] 2
+\f[V]security:tls\f[R] : shows TLS related security settings
+.RE
 .TP
 \f[V]vm\f[R]
 Shows the settings of the JVM.
@@ -1180,6 +1194,30 @@ or directories.
 .TP
 \f[V]--source\f[R] \f[I]version\f[R]
 Sets the version of the source in source-file mode.
+.TP
+\f[V]--sun-misc-unsafe-memory-acces=\f[R] \f[I]value\f[R]
+Allow or deny usage of unsupported API \f[V]sun.misc.Unsafe\f[R].
+\f[I]value\f[R] is one of:
+.RS
+.TP
+\f[V]allow\f[R]
+Allow use of the memory-access methods with no warnings at run time.
+.TP
+\f[V]warn\f[R]
+Allow use of the memory-access methods, but issues a warning on the
+first occasion that any memory-access method is used.
+At most one warning is issued.
+.TP
+\f[V]debug\f[R]
+Allow use of the memory-access methods, but issue a one-line warning and
+a stack trace when any memory-access method is used.
+.TP
+\f[V]deny\f[R]
+Disallow use of the memory-access methods by throwing an
+\f[V]UnsupportedOperationException\f[R] on every usage.
+.PP
+The default value when the option is not specified is \f[V]allow\f[R].
+.RE
 .SH EXTRA OPTIONS FOR MACOS
 .PP
 The following extra options are macOS specific.

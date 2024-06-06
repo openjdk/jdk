@@ -1,0 +1,2 @@
+IncompatibleTypes.java:12:12: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.util.List<java.lang.String>, java.util.List<java.lang.Number>)
+1 error

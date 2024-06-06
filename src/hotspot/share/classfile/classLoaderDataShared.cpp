@@ -102,7 +102,7 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
 }
 
 void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   assert_valid(loader_data);
   if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
@@ -120,7 +120,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 }
 
 void ArchivedClassLoaderData::clear_archived_oops() {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
       _modules->at(i)->clear_archived_oops();
