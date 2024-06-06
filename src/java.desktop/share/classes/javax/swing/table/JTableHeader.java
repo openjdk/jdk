@@ -31,7 +31,6 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.FocusListener;
@@ -1364,6 +1363,9 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
                 if (parent != null && parent.isShowing()) {
                     Point parentLocation = parent.getLocationOnScreen();
                     Point componentLocation = getLocation();
+                    if (parentLocation == null || componentLocation == null) {
+                        return null;
+                    }
                     componentLocation.translate(parentLocation.x, parentLocation.y);
                     return componentLocation;
                 } else {
