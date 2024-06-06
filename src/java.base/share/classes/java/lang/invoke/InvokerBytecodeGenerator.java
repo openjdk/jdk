@@ -32,10 +32,6 @@ import sun.invoke.util.Wrapper;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -79,17 +75,13 @@ class InvokerBytecodeGenerator {
     private static final ClassDesc CD_MethodHandle_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/invoke/MethodHandle;");
     private static final ClassDesc CD_MethodHandle_array2 = ReferenceClassDescImpl.ofValidated("[[Ljava/lang/invoke/MethodHandle;");
 
+    private static final MethodTypeDesc MTD_boolean_Object = MethodTypeDescImpl.ofValidated(CD_boolean, CD_Object);
+    private static final MethodTypeDesc MTD_Object_int = MethodTypeDescImpl.ofValidated(CD_Object, CD_int);
+    private static final MethodTypeDesc MTD_Object_Class = MethodTypeDescImpl.ofValidated(CD_Object, CD_Class);
+    private static final MethodTypeDesc MTD_Object_Object = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object);
+
     private static final String CLASS_PREFIX = "java/lang/invoke/LambdaForm$";
     private static final String SOURCE_PREFIX = "LambdaForm$";
-
-    private static final ConstantPoolBuilder CP = ConstantPoolBuilder.of();
-    private static final ClassEntry CE_Object = CP.classEntry(CD_Object);
-    private static final ClassEntry CE_OBJARY = CP.classEntry(CD_Object_array);
-    private static final ClassEntry CE_MethodHandle = CP.classEntry(CD_MethodHandle);
-    private static final InterfaceMethodRefEntry MRE_List_get = CP.interfaceMethodRefEntry(CD_List, "get", MethodTypeDescImpl.ofValidated(CD_Object, CD_int));
-    private static final MethodRefEntry MRE_MethodHandles_classData = CP.methodRefEntry(CD_MethodHandles, "classData", MethodTypeDescImpl.ofValidated(CD_Object, CD_Class));
-    private static final MethodRefEntry MRE_Class_cast = CP.methodRefEntry(CD_Class, "cast", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object));
-    private static final MethodRefEntry MRE_Class_isInstance = CP.methodRefEntry(CD_Class, "isInstance", MethodTypeDescImpl.ofValidated(CD_boolean, CD_Object));
 
     // Static builders to avoid lambdas
     private static final Consumer<FieldBuilder> STATIC_FINAL_FIELD = new Consumer<FieldBuilder>() {
@@ -98,6 +90,7 @@ class InvokerBytecodeGenerator {
             fb.withFlags(ACC_STATIC | ACC_FINAL);
         }
     };
+
     record MethodBody(Consumer<CodeBuilder> code) implements Consumer<MethodBuilder> {
         @Override
         public void accept(MethodBuilder mb) {
@@ -343,7 +336,7 @@ class InvokerBytecodeGenerator {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.loadConstant(classDesc)
-                   .invokestatic(MRE_MethodHandles_classData);
+                   .invokestatic(CD_MethodHandles, "classData", MTD_Object_Class);
                 if (classData.size() == 1) {
                     ClassData p = classData.get(0);
                     cob.checkcast(p.desc)
@@ -352,11 +345,12 @@ class InvokerBytecodeGenerator {
                     cob.checkcast(CD_List)
                        .astore(0);
                     int index = 0;
+                    var listGet = cob.constantPool().interfaceMethodRefEntry(CD_List, "get", MTD_Object_int);
                     for (ClassData p : classData) {
                         // initialize the static field
                         cob.aload(0)
                            .loadConstant(index++)
-                           .invokeinterface(MRE_List_get)
+                           .invokeinterface(listGet)
                            .checkcast(p.desc)
                            .putstatic(classDesc, p.name, p.desc);
                     }
@@ -457,11 +451,11 @@ class InvokerBytecodeGenerator {
         } else {
             cob.getstatic(classDesc, classData(cls), CD_Class)
                .swap()
-               .invokevirtual(MRE_Class_cast);
+               .invokevirtual(CD_Class, "cast", MTD_Object_Object);
             if (Object[].class.isAssignableFrom(cls))
-                cob.checkcast(CE_OBJARY);
+                cob.checkcast(CD_Object_array);
             else if (PROFILE_LEVEL > 0)
-                cob.checkcast(CE_Object);
+                cob.checkcast(CD_Object);
         }
         if (writeBack != null) {
             cob.dup();
@@ -602,7 +596,7 @@ class InvokerBytecodeGenerator {
                             // It enables more efficient code generation in some situations, since embedded constants
                             // are compile-time constants for JIT compiler.
                             cob.getstatic(classDesc, classData(lambdaForm.customized), CD_MethodHandle)
-                               .checkcast(CE_MethodHandle);
+                               .checkcast(CD_MethodHandle);
                             assert(checkActualReceiver(cob)); // expects MethodHandle on top of the stack
                             cob.astore(0);
                         }
@@ -1000,7 +994,7 @@ class InvokerBytecodeGenerator {
         // load exception class
         emitPushArgument(cob, invoker, 1);
         cob.swap();
-        cob.invokevirtual(MRE_Class_isInstance);
+        cob.invokevirtual(CD_Class, "isInstance", MTD_boolean_Object);
         Label L_rethrow = cob.newLabel();
         cob.ifeq(L_rethrow);
 
