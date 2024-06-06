@@ -47,13 +47,15 @@ public class SynchronizedAccess {
     public static void main0(String[] args) throws Exception {
         var providersCountBefore = Security.getProviders().length;
         AccessorThread[] acc = new AccessorThread[200];
-        for (int i = 0; i < acc.length; i++)
+        for (int i = 0; i < acc.length; i++) {
             acc[i] = new AccessorThread("thread" + i);
-        for (int i = 0; i < acc.length; i++)
+        }
+        for (int i = 0; i < acc.length; i++) {
             acc[i].start();
-        for (int i = 0; i < acc.length; i++)
+        }
+        for (int i = 0; i < acc.length; i++) {
             acc[i].join();
-
+        }
         var providersCountAfter = Security.getProviders().length;
         Asserts.assertEquals(providersCountBefore + 1, providersCountAfter);
     }
@@ -66,8 +68,9 @@ public class SynchronizedAccess {
 
         public void run() {
             Provider[] provs = new Provider[10];
-            for (int i = 0; i < provs.length; i++)
+            for (int i = 0; i < provs.length; i++) {
                 provs[i] = new MyProvider("name" + i, "1", "test");
+            }
 
             int rounds = 20;
             while (rounds-- > 0) {
@@ -76,12 +79,13 @@ public class SynchronizedAccess {
                         Security.addProvider(provs[i]);
                     }
                     Signature.getInstance("sigalg");
-                    // skipping first provider so there is always 1 available for getInstance
+                    // Skip the first provider to ensure one is always available for getInstance.
+                    // This prevents issues if other threads remove providers in parallel.
                     for (int i = 1; i < provs.length; i++) {
                         Security.removeProvider("name" + i);
                     }
                 } catch (NoSuchAlgorithmException nsae) {
-                    throw new RuntimeException("Should not reach here " + nsae);
+                    throw new RuntimeException("Expected algorithm sigalg not found", nsae);
                 }
             } // while
         }
