@@ -1775,12 +1775,8 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     } else if (p0->is_Cmp()) {
       // Cmp -> Bool -> Cmove
       retValue = UseVectorCmov;
-    } else if (requires_long_to_int_conversion(opc)) {
-      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-      // returns int type, but Vector API for them returns long type. To unify
-      // the implementation in backend, superword splits the vector implementation
-      // for Java API into an execution node with long type plus another node
-      // converting long to int.
+    } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+      // Requires extra vector long -> int conversion.
       retValue = VectorNode::implemented(opc, size, T_LONG) &&
                  VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
@@ -1810,17 +1806,6 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
       }
     }
     return 0; // not implementable at all
-  }
-}
-
-bool SuperWord::requires_long_to_int_conversion(int opc) {
-  switch(opc) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-      return true;
-    default:
-      return false;
   }
 }
 
@@ -2603,16 +2588,12 @@ bool SuperWord::apply_vectorization() {
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (requires_long_to_int_conversion(opc)) {
-        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-        // returns int type, but Vector API for them returns long type. To unify
-        // the implementation in backend, superword splits the vector implementation
-        // for Java API into an execution node with long type plus another node
-        // converting long to int.
+      } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         phase()->register_new_node_with_ctrl_of(longval, first);
+        // Requires extra vector long -> int conversion.
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -3148,7 +3129,7 @@ void SuperWord::initialize_node_info() {
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        requires_long_to_int_conversion(n->Opcode())) ||
+        VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }

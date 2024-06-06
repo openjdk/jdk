@@ -133,6 +133,7 @@ class VectorNode : public TypeNode {
   }
 
   static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
+  static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
