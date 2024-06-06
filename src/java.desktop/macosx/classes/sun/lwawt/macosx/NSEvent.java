@@ -269,7 +269,12 @@ final class NSEvent {
      */
     static native char nsToJavaChar(char nsChar, int modifierFlags, boolean spaceKeyTyped);
 
-    static boolean isPopupTrigger(int jmodifiers) {
+    static boolean isPopupTrigger(int jmodifiers, int jeventType) {
+        if (jeventType != MouseEvent.MOUSE_PRESSED
+                && jeventType != MouseEvent.MOUSE_RELEASED) {
+            return false;
+        }
+
         final boolean isRightButtonDown = ((jmodifiers & InputEvent.BUTTON3_DOWN_MASK) != 0);
         final boolean isLeftButtonDown = ((jmodifiers & InputEvent.BUTTON1_DOWN_MASK) != 0);
         final boolean isControlDown = ((jmodifiers & InputEvent.CTRL_DOWN_MASK) != 0);
