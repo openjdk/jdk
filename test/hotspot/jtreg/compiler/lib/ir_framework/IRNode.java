@@ -378,19 +378,24 @@ public class IRNode {
         beforeMatchingNameRegex(CAST_LL, "CastLL");
     }
 
-    public static final String CBNZW_GT = PREFIX + "CBNZW_GT" + POSTFIX;
+    public static final String CBNZW_HI = PREFIX + "CBNZW_HI" + POSTFIX;
     static {
-        optoOnly(CBNZW_GT, "cbwgt");
+        optoOnly(CBNZW_HI, "cbwhi");
     }
 
-    public static final String CBZW_LE = PREFIX + "CBZW_LE" + POSTFIX;
+    public static final String CBZW_LS = PREFIX + "CBZW_LS" + POSTFIX;
     static {
-        optoOnly(CBZW_LE, "cbwle");
+        optoOnly(CBZW_LS, "cbwls");
     }
 
-    public static final String CBZ_LE = PREFIX + "CBZ_LE" + POSTFIX;
+    public static final String CBZ_LS = PREFIX + "CBZ_LS" + POSTFIX;
     static {
-        optoOnly(CBZ_LE, "cble");
+        optoOnly(CBZ_LS, "cbls");
+    }
+
+    public static final String CBZ_HI = PREFIX + "CBZ_HI" + POSTFIX;
+    static {
+        optoOnly(CBZ_HI, "cbhi");
     }
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ public class TestArrLenCheckOptimization {
     int result = 0;
 
     @Test
-    @IR(counts = {IRNode.CBZW_LE, "1"})
+    @IR(counts = {IRNode.CBZW_LS, "1"})
     void test_le_int(int ia[]) {
         result += ia[0];
     }
 
     @Test
-    @IR(counts = {IRNode.CBNZW_GT, "1"})
+    @IR(counts = {IRNode.CBNZW_HI, "1"})
     void test_gt_int(int ia[]) {
         if (ia.length > 0) {
             result += 0x88;
@@ -56,20 +56,33 @@ public class TestArrLenCheckOptimization {
     }
 
     @Test
-    @IR(counts = {IRNode.CBZ_LE, "1"})
+    @IR(counts = {IRNode.CBZ_LS, "1"})
     void test_le_long(int ia[]) {
-        int limit = ia.length-1;
-        for (int i = 0; i < ia.length; i += 1) {
-            ia[limit-i] = -123;
+        if (Long.compareUnsigned(ia.length, 0) > 0) {
+            result += 0x80;
+        } else {
+            result -= 1;
         }
     }
 
-    @Run(test = {"test_le_int", "test_gt_int", "test_le_long"}, mode = RunMode.STANDALONE)
+    @Test
+    @IR(counts = {IRNode.CBZ_HI, "1"})
+    void test_gt_long(int ia[]) {
+        if (Long.compareUnsigned(ia.length, 0) > 0) {
+            result += 0x82;
+        } else {
+            result -= 1;
+        }
+    }
+
+    @Run(test = {"test_le_int", "test_gt_int", "test_le_long", "test_gt_long"},
+         mode = RunMode.STANDALONE)
     public void test_runner() {
         for (int i = 0; i < 10_000; i++) {
             test_le_int(new int[1]);
             test_gt_int(new int[0]);
-            test_le_long(new int[i]);
+            test_le_long(new int[1]);
+            test_gt_long(new int[0]);
         }
     }
 
