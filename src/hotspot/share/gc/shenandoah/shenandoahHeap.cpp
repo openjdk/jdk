@@ -472,6 +472,7 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   assert(_gc_mode != nullptr, "Must be initialized");
   _heuristics = _gc_mode->initialize_heuristics();
+  _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedGCInterval);
 
   if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
     vm_exit_during_initialization(

@@ -70,6 +70,8 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
 protected:
+  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+
   typedef struct {
     ShenandoahHeapRegion* _region;
     size_t _garbage;
@@ -80,12 +82,14 @@ protected:
 
   RegionData* _region_data;
 
+  size_t _guaranteed_gc_interval;
+
   double _cycle_start;
   double _last_cycle_end;
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_time_history;
+  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -106,6 +110,10 @@ public:
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
   bool has_metaspace_oom() const  { return _metaspace_oom.is_set(); }
 
+  void set_guaranteed_gc_interval(size_t guaranteed_gc_interval) {
+    _guaranteed_gc_interval = guaranteed_gc_interval;
+  }
+
   virtual void record_cycle_start();
 
   virtual void record_cycle_end();
@@ -114,7 +122,7 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_success_concurrent(bool abbreviated);
 
   virtual void record_success_degenerated();
 
@@ -134,7 +142,7 @@ public:
   virtual bool is_experimental() = 0;
   virtual void initialize();
 
-  double time_since_last_gc() const;
+  double elapsed_cycle_time() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
