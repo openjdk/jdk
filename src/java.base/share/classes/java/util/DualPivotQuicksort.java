@@ -171,8 +171,9 @@ final class DualPivotQuicksort {
          * @param high the index of the last element, exclusive, to be partitioned
          * @param pivotIndex1 the index of pivot1, the first pivot
          * @param pivotIndex2 the index of pivot2, the second pivot
+         * @param result the indices of pivots after partitioning
          */
-        int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
+        void partition(A a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result);
     }
 
     /**
@@ -187,12 +188,13 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be partitioned
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
+     * @param result the indices of pivots after partitioning
      * @param po the method reference for the fallback implementation
      */
     @IntrinsicCandidate
     @ForceInline
-    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
-        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+    private static <A> void partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, int[] result, PartitionOperation<A> po) {
+        po.partition(array, low, high, pivotIndex1, pivotIndex2, result);
     }
 
     /**
@@ -351,11 +353,10 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = new int[2];
+                partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e1, e5, pivotIndices, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
-
-
 
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
@@ -375,7 +376,8 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = new int[2];
+                partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e3, e3, pivotIndices, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -396,15 +398,15 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -477,21 +479,22 @@ final class DualPivotQuicksort {
         a[low] = a[lower]; a[lower] = pivot1;
         a[end] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
 
         int end = high - 1;
         int lower = low;
@@ -550,7 +553,9 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
@@ -1155,7 +1160,8 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = new int[2];
+                partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e1, e5, pivotIndices, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1176,7 +1182,8 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = new int[2];
+                partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e3, e3, pivotIndices, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1197,15 +1204,15 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -1278,21 +1285,22 @@ final class DualPivotQuicksort {
         a[low] = a[lower]; a[lower] = pivot1;
         a[end] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
 
         int end = high - 1;
         int lower = low;
@@ -1352,7 +1360,9 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
@@ -2744,7 +2754,8 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = new int[2];
+                partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e1, e5, pivotIndices, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2765,7 +2776,8 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = new int[2];
+                partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e3, e3, pivotIndices, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2786,15 +2798,15 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -2867,21 +2879,22 @@ final class DualPivotQuicksort {
         a[low] = a[lower]; a[lower] = pivot1;
         a[end] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -2940,7 +2953,9 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
@@ -3596,7 +3611,8 @@ final class DualPivotQuicksort {
                 * the pivots. These values are inexpensive approximation
                 * of tertiles. Note, that pivot1 < pivot2.
                 */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = new int[2];
+                partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e1, e5, pivotIndices, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3617,7 +3633,8 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = new int[2];
+                partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e3, e3, pivotIndices, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -3639,15 +3656,15 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -3720,20 +3737,22 @@ final class DualPivotQuicksort {
         a[low] = a[lower]; a[lower] = pivot1;
         a[end] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
+     * @param result the indices of pivots after partitioning
      */
     @ForceInline
-    private static int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+    private static void partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2, int[] result) {
 
         int end = high - 1;
         int lower = low;
@@ -3793,7 +3812,9 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        result[0] = lower;
+        result[1] = upper;
     }
 
     /**
