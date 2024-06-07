@@ -41,19 +41,25 @@ import java.util.function.Supplier;
  * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
  * <p>
+ * A StableValue can be created and computed by a background thread like this:
+ * {@snippet lang = java:
+ *     StableValue<Value> stableValue = StableValues.ofBackground(
+ *         Thread.ofVirtual().factory(), Value::new);
+ *}
+ * A new background thread will be created from a factory (e.g. `Thread.ofVirtual.factory`)
+ * and said thread will compute the returned StableValue's value using a supplier
+ * (e.g. `Value::new`).
+ * <p>
  * A List of stable values with a given {@code size} can be created the following way:
  * {@snippet lang = java :
- *     List<StableValue<E>> list = Stream.generate(StableValue::<E>newInstance)
- *             .limit(size)
- *             .toList();
+ *     List<StableValue<E>> list = StableValues.ofList(size);
  * }
  * The list can be used to model stable arrays of one dimensions. If two or more
  * dimensional arrays are to be modeled, List of List of ... of StableValue can be used.
  * <p>
  * A Map of stable values with a given set of {@code keys} can be created like this:
  * {@snippet lang = java :
- *     Map<K, StableValue<V>> map = keys.stream()
- *                 .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+ *     Map<K, StableValue<V>> map = StableValues.ofMap(keys);
  * }
  * A memoized Supplier, where the given {@code original} supplier is guaranteed to be
  * successfully invoked at most once even in a multi-threaded environment, can be
@@ -71,9 +77,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     static <R> IntFunction<R> memoizedIntFunction(int size,
  *                                                   IntFunction<? extends R> original) {
- *         List<StableValue<R>> backing = Stream.generate(StableValue::<R>newInstance)
- *                 .limit(size)
- *                 .toList();
+ *         List<StableValue<R>> backing = StableValues.ofList(size);
  *         return i -> backing.get(i)
  *                       .computeIfUnset(() -> original.apply(i));
  *     }
@@ -84,8 +88,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
  *                                                   Function<? super T, ? extends R> original) {
- *         Map<T, StableValue<R>> backing = inputs.stream()
- *                 .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+ *         Map<T, StableValue<R>> backing = StableValues.ofMap(keys);
  *         return t -> {
  *             if (!backing.containsKey(t)) {
  *                 throw new IllegalArgumentException("Input not allowed: "+t);
