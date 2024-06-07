@@ -27,6 +27,7 @@ package java.lang.invoke;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.AbstractConstantGroup.BSCIWithCache;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import static java.lang.invoke.BootstrapCallInfo.makeBootstrapCallInfo;
@@ -87,7 +88,11 @@ final class BootstrapMethodInvoker {
             if (info == null) {
                 // VM is allowed to pass up a null meaning no BSM args
                 if (type instanceof Class<?> c) {
-                    result = bootstrapMethod.invoke(caller, name, c);
+                    if (bootstrapMethod.type() == CONDY_GET_STATIC_FINAL_MT) {
+                        result = bootstrapMethod.invokeExact(caller, name, c);
+                    } else {
+                        result = bootstrapMethod.invoke(caller, name, c);
+                    }
                 } else {
                     result = bootstrapMethod.invoke(caller, name, (MethodType)type);
                 }
@@ -97,14 +102,18 @@ final class BootstrapMethodInvoker {
 
                 // Call to StringConcatFactory::makeConcatWithConstants
                 // with empty constant arguments?
-                if (isStringConcatFactoryBSM(bootstrapMethod.type())) {
+                if (bootstrapMethod.type() == SCF_MT) {
                     result = (CallSite)bootstrapMethod
                             .invokeExact(caller, name, (MethodType)type,
                                          (String)info, new Object[0]);
                 } else {
                     info = maybeReBox(info);
                     if (type instanceof Class<?> c) {
-                        result = bootstrapMethod.invoke(caller, name, c, info);
+                        if (bootstrapMethod.type() == CONDY_GET_STATIC_FINAL_CLASS_MT) {
+                            result = bootstrapMethod.invokeExact(caller, name, c, (Class<?>)info);
+                        } else {
+                            result = bootstrapMethod.invoke(caller, name, c, info);
+                        }
                     } else {
                         result = bootstrapMethod.invoke(caller, name, (MethodType)type, info);
                     }
@@ -129,25 +138,27 @@ final class BootstrapMethodInvoker {
                 Object[] argv = (Object[]) info;
 
                 MethodType bsmType = bootstrapMethod.type();
-                if (isLambdaMetafactoryIndyBSM(bsmType) && argv.length == 3) {
+                if (bsmType == LMF_INDY_MT) {
                     result = (CallSite)bootstrapMethod
                             .invokeExact(caller, name, (MethodType)type, (MethodType)argv[0],
                                     (MethodHandle)argv[1], (MethodType)argv[2]);
-                } else if (isLambdaMetafactoryCondyBSM(bsmType) && argv.length == 3) {
-                    result = bootstrapMethod
-                            .invokeExact(caller, name, (Class<?>)type, (MethodType)argv[0],
-                                    (MethodHandle)argv[1], (MethodType)argv[2]);
-                } else if (isStringConcatFactoryBSM(bsmType) && argv.length >= 1) {
+                } else if (argv.length >= 1 && bsmType == SCF_MT) {
                     String recipe = (String)argv[0];
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
                     maybeReBoxElements(shiftedArgs);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, recipe, shiftedArgs);
-                } else if (isLambdaMetafactoryAltMetafactoryBSM(bsmType)) {
+                } else if (bsmType == LMF_ALT_MT) {
                     maybeReBoxElements(argv);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
-                } else if (isObjectMethodsBootstrapBSM(bsmType)) {
+                } else if (bsmType == OBJECT_METHODS_MT) {
                     MethodHandle[] mhs = Arrays.copyOfRange(argv, 2, argv.length, MethodHandle[].class);
                     result = bootstrapMethod.invokeExact(caller, name, (TypeDescriptor)type, (Class<?>)argv[0], (String)argv[1], mhs);
+                } else if (bsmType == PROXY_GET_METHOD_MT) {
+                    result = (Method)bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (Class<?>)argv[0], (String)argv[1], (MethodType)argv[2]);
+                } else if (bsmType == CONDY_GET_STATIC_FINAL_MT) {
+                    result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type);
+                } else if (bsmType == CONDY_GET_STATIC_FINAL_CLASS_MT) {
+                    result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (Class<?>)argv[0]);
                 } else {
                     maybeReBoxElements(argv);
                     if (type instanceof Class<?> c) {
@@ -243,65 +254,54 @@ final class BootstrapMethodInvoker {
         }
     }
 
+
+    /**
+     * Exact type used by the {@link java.lang.invoke.LambdaMetafactory#metafactory(
+     * MethodHandles.Lookup,String,MethodType,MethodType,MethodHandle,MethodType)} bootstrap method.
+     */
     private static final MethodType LMF_INDY_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class);
 
+    /**
+     * Exact type used by the {@link java.lang.invoke.LambdaMetafactory#altMetafactory(
+     * MethodHandles.Lookup,String,MethodType,Object[])} bootstrap method.
+     */
     private static final MethodType LMF_ALT_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, Object[].class);
 
+    /**
+     * Exact type used for the {@link java.lang.runtime.ObjectMethods#bootstrap(
+     * MethodHandles.Lookup,String,TypeDescriptor,Class,String,MethodHandle[])} bootstrap method.
+     */
     private static final MethodType OBJECT_METHODS_MT = MethodType.methodType(Object.class,
             Lookup.class, String.class, TypeDescriptor.class, Class.class, String.class, MethodHandle[].class);
 
-    private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
-            Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
+    /**
+     * Exact type of the bootstrap methods generated for {@link java.lang.reflect.Proxy} classes.
+     */
+    private static final MethodType PROXY_GET_METHOD_MT = MethodType.methodType(Method.class,
+            Lookup.class, String.class, Class.class, Class.class, String.class, MethodType.class);
 
+    /**
+     * Exact type used of the {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class)}
+     * bootstrap method.
+     */
+    private static final MethodType CONDY_GET_STATIC_FINAL_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, Class.class);
+
+    /**
+     * Exact type of the {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class, Class)}
+     * bootstrap method.
+     */
+    private static final MethodType CONDY_GET_STATIC_FINAL_CLASS_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, Class.class, Class.class);
+
+    /**
+     * Exact type of the {@link java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
+     * String,MethodType,String,Object...))} bootstrap method.
+     */
     private static final MethodType SCF_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, String.class, Object[].class);
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
-     *                 String,MethodType,String,Object...))}
-     */
-    private static boolean isStringConcatFactoryBSM(MethodType bsmType) {
-        return bsmType == SCF_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
-     *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
-     */
-    private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
-        return bsmType == LMF_CONDY_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
-     *          MethodHandles.Lookup,String,MethodType,MethodType,MethodHandle,MethodType)}
-     */
-    private static boolean isLambdaMetafactoryIndyBSM(MethodType bsmType) {
-        return bsmType == LMF_INDY_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.LambdaMetafactory#altMetafactory(
-     *          MethodHandles.Lookup,String,MethodType,Object[])}
-     */
-    private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {
-        return bsmType == LMF_ALT_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.runtime.ObjectMethods#bootstrap(
-     *          MethodHandles.Lookup,String,TypeDescriptor,Class,String,MethodHandle[])}
-     */
-    private static boolean isObjectMethodsBootstrapBSM(MethodType bsmType) {
-        return bsmType == OBJECT_METHODS_MT;
-    }
 
     /** The JVM produces java.lang.Integer values to box
      *  CONSTANT_Integer boxes but does not intern them.
