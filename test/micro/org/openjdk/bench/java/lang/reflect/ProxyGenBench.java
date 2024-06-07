@@ -68,13 +68,13 @@ public class ProxyGenBench {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if (method.getName().equals("hashCode")) {
-                return proxy.hashCode();
+                return 17;
             }
             if (method.getName().equals("equals")) {
-                return proxy.equals(args[0]);
+                return false;
             }
             if (method.getName().equals("toString")) {
-                return proxy.toString();
+                return "proxy";
             }
             return null;
         }
