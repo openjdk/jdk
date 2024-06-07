@@ -553,8 +553,7 @@ public class ReflectionFactory {
     }
 
     public static boolean useLegacyProxyImpl() {
-        var config = config();
-        return config.useLegacyProxyImpl && !config.useOldSerializableConstructor;
+        return config().useLegacyProxyImpl;
     }
 
     private static boolean disableSerialConstructorChecks() {
@@ -621,7 +620,7 @@ public class ReflectionFactory {
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        useLegacyProxyImpl &= !useOldSerializableConstructor;
+        useLegacyProxyImpl |= useOldSerializableConstructor;
 
         return new Config(useNativeAccessorOnly, useOldSerializableConstructor, useLegacyProxyImpl, disableSerialConstructorChecks);
     }
