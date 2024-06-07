@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,6 +735,7 @@ public class Main {
         Map<String,PKCS7> sigMap = new HashMap<>();
         Map<String,String> sigNameMap = new HashMap<>();
         Map<String,String> unparsableSignatures = new HashMap<>();
+        Map<String,Set<String>> signedEntries = new HashMap<>();
 
         try {
             jf = new JarFile(jarName, true);
@@ -782,6 +783,7 @@ public class Main {
                                         break;
                                     }
                                 }
+                                signedEntries.put(alias, sf.getEntries().keySet());
                                 if (!found) {
                                     unparsableSignatures.putIfAbsent(alias,
                                         String.format(
@@ -880,6 +882,9 @@ public class Main {
                                 sb.append(si);
                                 sb.append('\n');
                             }
+                        }
+                        for (var signed : signedEntries.values()) {
+                            signed.remove(name);
                         }
                     } else if (showcerts && !verbose.equals("all")) {
                         // Print no info for unsigned entries when -verbose:all,
@@ -1075,6 +1080,11 @@ public class Main {
                         }
                         if (verbose != null) {
                             System.out.println(history);
+                            var signed = signedEntries.get(s);
+                            if (!signed.isEmpty()) {
+                                System.out.println(rb.getString("history.removed.entries") + signed);
+                            }
+
                         }
                     } else {
                         unparsableSignatures.putIfAbsent(s, String.format(

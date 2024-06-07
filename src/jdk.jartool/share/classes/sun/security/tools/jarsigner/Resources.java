@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,7 @@ public class Resources extends java.util.ListResourceBundle {
 
         {"history.with.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s, %4$s\n  Timestamped by \"%6$s\" on %5$tc\n    Timestamp digest algorithm: %7$s\n    Timestamp signature algorithm: %8$s, %9$s"},
         {"history.without.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s, %4$s"},
+        {"history.removed.entries", "    Warning: nonexistent signed entries detected: "},
         {"history.unparsable", "- Unparsable signature-related file %s"},
         {"history.nosf", "- Missing signature-related file META-INF/%s.SF"},
         {"history.nobk", "- Missing block file for signature-related file META-INF/%s.SF"},
