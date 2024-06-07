@@ -90,7 +90,7 @@ private:
     int bucket = value.calculate_hash() % _table_size;
     LinkPtr link = _table[bucket];
     while (link != null()) {
-      Link& l = _allocator.translate(link);
+      Link& l = _allocator.at(link);
       if (value.equals(get(l.stack))) {
         return l.stack;
       }
