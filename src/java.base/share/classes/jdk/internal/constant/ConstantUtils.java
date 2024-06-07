@@ -75,7 +75,7 @@ public final class ConstantUtils {
      */
     public static ClassDesc classDesc(Class<?> type) {
         if (type.isPrimitive()) {
-            return Wrapper.forPrimitiveType(type).classDescriptor();
+            return Wrapper.forPrimitiveType(type).basicClassDescriptor();
         }
         return referenceClassDesc(type);
     }
@@ -306,7 +306,7 @@ public final class ConstantUtils {
 
     private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
+            return Wrapper.forPrimitiveType(descriptor.charAt(start)).basicClassDescriptor();
         }
         // Pre-verified in parseMethodDescriptor; avoid redundant verification
         return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));

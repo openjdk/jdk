@@ -467,8 +467,7 @@ public class SwitchBootstraps {
                             // Object o = ...
                             // o instanceof Wrapped(float)
                             cb.aload(SELECTOR_OBJ);
-                            cb.instanceOf(referenceClassDesc(Wrapper.forBasicType(classLabel)
-                                    .wrapperType()));
+                            cb.instanceOf(Wrapper.forBasicType(classLabel).wrapperClassDescriptor());
                             cb.ifeq(next);
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
                             // Integer i = ... or int i = ...
@@ -605,7 +604,7 @@ public class SwitchBootstraps {
                     cb.invokestatic(referenceClassDesc(element.caseLabel().getClass()),
                             "valueOf",
                             MethodTypeDesc.of(referenceClassDesc(element.caseLabel().getClass()),
-                                    Wrapper.forWrapperType(element.caseLabel().getClass()).classDescriptor()));
+                                    Wrapper.forWrapperType(element.caseLabel().getClass()).basicClassDescriptor()));
                     cb.aload(SELECTOR_OBJ);
                     cb.invokevirtual(ConstantDescs.CD_Object,
                             "equals",
