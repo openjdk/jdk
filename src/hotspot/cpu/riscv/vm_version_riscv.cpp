@@ -245,6 +245,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  // UseZvbb (depends on RVV).
+  if (UseZvbb && !UseRVV) {
+    FLAG_SET_DEFAULT(UseZvbb, false);
+    warning("Cannot enable UseZvbb on cpu without RVV support.");
+  }
+
   // SHA's
   if (FLAG_IS_DEFAULT(UseSHA)) {
     FLAG_SET_DEFAULT(UseSHA, true);

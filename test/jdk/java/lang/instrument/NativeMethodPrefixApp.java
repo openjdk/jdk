@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,30 @@
  */
 
 
-import java.io.PrintStream;
-import java.util.*;
+import java.io.File;
+import java.nio.file.Path;
 import java.lang.management.*;
-import bootreporter.*;
 
+import bootreporter.*;
+import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+/*
+ * @test
+ * @bug 6263319
+ * @summary test setNativeMethodPrefix
+ * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
+ * @modules java.management
+ *          java.instrument
+ * @library /test/lib
+ * @build bootreporter.StringIdCallback bootreporter.StringIdCallbackReporter
+ *        asmlib.Instrumentor NativeMethodPrefixAgent
+ * @enablePreview
+ * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
+ * @run driver/timeout=240 NativeMethodPrefixApp roleDriver
+ * @comment The test uses a higher timeout to prevent test timeouts noted in JDK-6528548
+ */
 public class NativeMethodPrefixApp implements StringIdCallback {
 
     // This test is fragile like a golden file test.
@@ -34,13 +53,56 @@ public class NativeMethodPrefixApp implements StringIdCallback {
     // native method.  The below may need to be updated based on library changes.
     static String goldenNativeMethodName = "getStartupTime";
 
-    static boolean gotIt[] = {false, false, false};
+    static boolean[] gotIt = {false, false, false};
 
-    public static void main(String args[]) throws Exception {
-        (new NativeMethodPrefixApp()).run(args, System.err);
+    public static void main(String[] args) throws Exception {
+        if (args.length == 1) {
+            if (!"roleDriver".equals(args[0])) {
+                throw new Exception("unexpected program argument: " + args[0]);
+            }
+            // launch the NativeMethodPrefixApp java process after creating the necessary
+            // infrastructure
+            System.out.println("creating agent jar");
+            final Path agentJar = createAgentJar();
+            System.out.println("launching app, with javaagent jar: " + agentJar);
+            launchApp(agentJar);
+        } else {
+            System.err.println("running app");
+            new NativeMethodPrefixApp().run();
+        }
     }
 
-    public void run(String args[], PrintStream out) throws Exception {
+    private static Path createAgentJar() throws Exception {
+        final String testClassesDir = System.getProperty("test.classes");
+        final Path agentJar = Path.of("NativeMethodPrefixAgent.jar");
+        final String manifest = """
+                Manifest-Version: 1.0
+                Premain-Class: NativeMethodPrefixAgent
+                Can-Retransform-Classes: true
+                Can-Set-Native-Method-Prefix: true
+                """
+                + "Boot-Class-Path: " + testClassesDir.replace(File.separatorChar, '/') + "/"
+                + "\n";
+        System.out.println("Manifest is:\n" + manifest);
+        // create the agent jar
+        ClassFileInstaller.writeJar(agentJar.getFileName().toString(),
+                ClassFileInstaller.Manifest.fromString(manifest),
+                "NativeMethodPrefixAgent",
+                "asmlib.Instrumentor");
+        return agentJar;
+    }
+
+    private static void launchApp(final Path agentJar) throws Exception {
+        final OutputAnalyzer oa = ProcessTools.executeTestJava(
+                "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
+                "-javaagent:" + agentJar.toString(),
+                NativeMethodPrefixApp.class.getName());
+        oa.shouldHaveExitValue(0);
+        // make available stdout/stderr in the logs, even in case of successful completion
+        oa.reportDiagnosticSummary();
+    }
+
+    private void run() throws Exception {
         StringIdCallbackReporter.registerCallback(this);
         System.err.println("start");
 
@@ -57,6 +119,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         }
     }
 
+    @Override
     public void tracker(String name, int id) {
         if (name.endsWith(goldenNativeMethodName)) {
             System.err.println("Tracked #" + id + ": MATCHED -- " + name);

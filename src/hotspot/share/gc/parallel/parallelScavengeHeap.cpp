@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCache.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
@@ -35,7 +34,6 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
@@ -459,7 +457,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
 HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!is_gc_active(), "not reentrant");
+  assert(!is_stw_gc_active(), "not reentrant");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   // We assume that allocation in eden will fail unless we collect.
@@ -787,6 +785,9 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 
     log_debug(gc, verify)("Eden");
     young_gen()->verify();
+
+    log_debug(gc, verify)("CardTable");
+    card_table()->verify_all_young_refs_imprecise();
   }
 }
 
@@ -839,24 +840,6 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
          "Archive space not contained in old gen");
   _old_gen->complete_loaded_archive_space(archive_space);
 }
-
-#ifndef PRODUCT
-void ParallelScavengeHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->record_spaces_top();
-    old_gen()->record_spaces_top();
-  }
-}
-
-void ParallelScavengeHeap::gen_mangle_unused_area() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->eden_space()->mangle_unused_area();
-    young_gen()->to_space()->mangle_unused_area();
-    young_gen()->from_space()->mangle_unused_area();
-    old_gen()->object_space()->mangle_unused_area();
-  }
-}
-#endif
 
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);

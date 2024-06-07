@@ -253,6 +253,7 @@
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(InstanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
   JVMTI_ONLY(nonstatic_field(InstanceKlass,    _breakpoints,                                  BreakpointInfo*))                      \
+  volatile_nonstatic_field(InstanceKlass,      _methods_jmethod_ids,                          jmethodID*)                            \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
@@ -576,14 +577,15 @@
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            u2)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
-  nonstatic_field(nmethod,                     _dependencies_offset,                          u2)                                    \
-  nonstatic_field(nmethod,                     _handler_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
+  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
   nonstatic_field(nmethod,                     _entry_offset,                                 u2)                                    \
   nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
+  nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
+  nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
