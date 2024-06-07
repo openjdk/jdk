@@ -314,6 +314,8 @@ static jlong host_free_swap() {
 }
 
 jlong os::free_swap_space() {
+  // os::total_swap_space() might return the containerized limit which might be
+  // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
   jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
   assert(host_free_swap_val >= 0, "sysinfo failed?");
   if (OSContainer::is_containerized()) {
