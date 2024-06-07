@@ -27,7 +27,7 @@ public:
     }
 
     I(int32_t idx DEBUG_ONLY(COMMA IndexedFreeListAllocator<E COMMA flag>* owner))
-    : _idx(idx), _owner(owner) {}
+    : _idx(idx) DEBUG_ONLY(COMMA _owner(owner)) {}
   };
   static const I nil;
 
