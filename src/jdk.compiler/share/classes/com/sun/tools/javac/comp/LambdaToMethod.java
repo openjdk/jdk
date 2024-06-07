@@ -2116,17 +2116,29 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             void addSymbol(Symbol sym, LambdaSymbolKind skind) {
-                if (skind == CAPTURED_THIS && sym != null && sym.kind == TYP && !typesUnderConstruction.isEmpty()) {
+                if (skind == CAPTURED_THIS && sym != null && sym.kind == TYP) {
                     ClassSymbol currentClass = currentClass();
-                    if (currentClass != null && typesUnderConstruction.contains(currentClass)) {
-                        // reference must be to enclosing outer instance, mutate capture kind.
-                        Assert.check(sym != currentClass); // should have been caught right in Attr
+                    if (currentClass != null && currentClass != sym && !outerThisReachable(currentClass.type, sym)) {
+                        // This is a reference to an enclosing instance that is not reachable via this$n.
+                        // This can happen when a lambda expression occurs in a pre-construction context,
+                        // either directly, or indirectly (e.g. via one or more enclosing local/anonymous classes).
                         skind = CAPTURED_OUTER_THIS;
                     }
                 }
                 Map<Symbol, Symbol> transMap = getSymbolMap(skind);
                 if (!transMap.containsKey(sym)) {
                     transMap.put(sym, translate(sym, skind));
+                }
+            }
+
+            private boolean outerThisReachable(Type current, Symbol target) {
+                if (current == Type.noType || typesUnderConstruction.contains(current.tsym)) {
+                    return false;
+                } else if (current.tsym.isSubClass(target, types)) {
+                    return true;
+                } else {
+                    return current.tsym.hasOuterInstance() &&
+                            outerThisReachable(current.getEnclosingType(), target);
                 }
             }
 
