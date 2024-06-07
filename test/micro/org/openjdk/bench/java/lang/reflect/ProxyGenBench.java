@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.SingleShotTime)
 @Fork(1)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5, time = 1)
+@Warmup(iterations = 5S, time = 1)
 @Measurement(iterations = 10, time = 2)
 @State(Scope.Benchmark)
 public class ProxyGenBench {
