@@ -28,6 +28,8 @@ public:
     }
   };
   static constexpr const I nil = I{-1};
+
+private:
   // A free list allocator element is either a link to the next free space
   // Or an actual element.
   union alignas(E) BackingElement {
@@ -42,24 +44,25 @@ public:
       this->link = link;
     }
   };
-  GrowableArrayCHeap<BackingElement, flag> backing_storage;
-  I free_start;
+  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
+  I _free_start;
 
+public:
   IndexedFreeListAllocator()
-  : backing_storage(8),
-  free_start(I{0}) {}
+  : _backing_storage(8),
+  _free_start(I{0}) {}
 
   template<typename... Args>
   I allocate(Args... args) {
-    int32_t i = free_start._idx;
-    backing_storage.at_grow(i);
-    BackingElement& be = backing_storage.at(i);
+    int32_t i = _free_start._idx;
+    _backing_storage.at_grow(i);
+    BackingElement& be = _backing_storage.at(i);
     if (be.link == nil) {
       // Must be at end, simply increment
-      free_start._idx += 1;
+      _free_start._idx += 1;
     } else {
       // Follow the link to the next free element
-      free_start = be.link;
+      _free_start = be.link;
     }
     ::new (&be) E(args...);
     return I{i DEBUG_ONLY(COMMA this)};
@@ -68,19 +71,19 @@ public:
   void free(I i) {
     assert(i == nil || i._owner == this, "attempt to free to wrong allocator");
 
-    BackingElement& be_freed = backing_storage.at(i._idx);
-    be_freed.link = free_start;
-    free_start = i;
+    BackingElement& be_freed = _backing_storage.at(i._idx);
+    be_freed.link = _free_start;
+    _free_start = i;
   }
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<E&>(backing_storage.at(i._idx).e);
+    return reinterpret_cast<E&>(_backing_storage.at(i._idx).e);
   }
 
   const E& at(I i) const {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<const E&>(backing_storage.at(i._idx).e);
+    return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
   }
 };
 
