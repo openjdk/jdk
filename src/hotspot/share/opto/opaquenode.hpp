@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,6 @@ class Opaque3Node : public Node {
   virtual uint hash() const;
   virtual bool cmp(const Node &n) const;
   public:
-  enum { RTM_OPT };
   Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
@@ -108,7 +107,6 @@ class Opaque3Node : public Node {
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
-  bool rtm_opt() const { return (_opt == RTM_OPT); }
 };
 
 // Input 1 is a check that we know implicitly is always true or false

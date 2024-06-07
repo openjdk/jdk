@@ -597,12 +597,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       // Add check to deoptimize the nmethod once the holder class is fully initialized
       clinit_deopt();
     }
-
-    // Add check to deoptimize the nmethod if RTM state was changed
-    rtm_deopt();
   }
 
-  // Check for bailouts during method entry or RTM state check setup.
+  // Check for bailouts during method entry.
   if (failing()) {
     if (log)  log->done("parse");
     C->set_default_node_notes(caller_nn);
@@ -2199,42 +2196,6 @@ void Parse::clinit_deopt() {
 
   Node* holder = makecon(TypeKlassPtr::make(method()->holder(), Type::trust_interfaces));
   guard_klass_being_initialized(holder);
-}
-
-// Add check to deoptimize if RTM state is not ProfileRTM
-void Parse::rtm_deopt() {
-#if INCLUDE_RTM_OPT
-  if (C->profile_rtm()) {
-    assert(C->has_method(), "only for normal compilations");
-    assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
-    assert(depth() == 1, "generate check only for main compiled method");
-
-    // Set starting bci for uncommon trap.
-    set_parse_bci(is_osr_parse() ? osr_bci() : 0);
-
-    // Load the rtm_state from the MethodData.
-    const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
-    Node* mdo = makecon(adr_type);
-    int offset = in_bytes(MethodData::rtm_state_offset());
-    Node* adr_node = basic_plus_adr(mdo, mdo, offset);
-    Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-    // Separate Load from Cmp by Opaque.
-    // In expand_macro_nodes() it will be replaced either
-    // with this load when there are locks in the code
-    // or with ProfileRTM (cmp->in(2)) otherwise so that
-    // the check will fold.
-    Node* profile_state = makecon(TypeInt::make(ProfileRTM));
-    Node* opq   = _gvn.transform( new Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
-    Node* chk   = _gvn.transform( new CmpINode(opq, profile_state) );
-    Node* tst   = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
-    // Branch to failure if state was changed
-    { BuildCutout unless(this, tst, PROB_ALWAYS);
-      uncommon_trap(Deoptimization::Reason_rtm_state_change,
-                    Deoptimization::Action_make_not_entrant);
-    }
-  }
-#endif
 }
 
 //------------------------------return_current---------------------------------
