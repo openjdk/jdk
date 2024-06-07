@@ -78,6 +78,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/tuple.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
@@ -176,7 +177,8 @@ pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
-
+long os::Linux::kernel_version_major = -1;
+long os::Linux::kernel_version_minor = -1;
 bool os::Linux::_thp_requested{false};
 
 #ifdef __GLIBC__
@@ -2966,6 +2968,15 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_HUGEPAGE 14
 #endif
 
+// Define MADV_POPULATE_READ here so we can build HotSpot on old systems.
+#define MADV_POPULATE_READ_value 22
+#ifndef MADV_POPULATE_READ
+  #define MADV_POPULATE_READ MADV_POPULATE_READ_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  STATIC_ASSERT(MADV_POPULATE_READ == MADV_POPULATE_READ_value);
+#endif
+
 // Define MADV_POPULATE_WRITE here so we can build HotSpot on old systems.
 #define MADV_POPULATE_WRITE_value 23
 #ifndef MADV_POPULATE_WRITE
@@ -2973,6 +2984,24 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
   STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+#endif
+
+// Define MADV_DONTNEED_LOCKED here so we can build HotSpot on old systems.
+#define MADV_DONTNEED_LOCKED_value 24
+#ifndef MADV_DONTNEED_LOCKED
+  #define MADV_DONTNEED_LOCKED MADV_DONTNEED_LOCKED_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  STATIC_ASSERT(MADV_DONTNEED_LOCKED == MADV_DONTNEED_LOCKED_value);
+#endif
+
+// Define MADV_COLLAPSE here so we can build HotSpot on old systems.
+#define MADV_COLLAPSE_value 25
+#ifndef MADV_COLLAPSE
+  #define MADV_COLLAPSE MADV_COLLAPSE_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  STATIC_ASSERT(MADV_COLLAPSE == MADV_COLLAPSE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -2984,6 +3013,27 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   // Sanity-check our assumed default value if we build with a new enough libc.
   STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
+
+// Guard newer madv numbers by checking kernel versions, as downstream kernels
+// might use the numbers as unexpected behaviors.
+bool os::Linux::can_use_madvise_flag(int advice) {
+  static constexpr Tuple<int, long, long> adviceVersions[] = {
+    { MADV_POPULATE_READ,   5, 14 },
+    { MADV_POPULATE_WRITE,  5, 14 },
+    { MADV_DONTNEED_LOCKED, 5, 18 },
+    { MADV_COLLAPSE,        6,  1 }
+  };
+
+  for (auto &t : adviceVersions) {
+    if (advice == t.get<0>()) {
+      return kernel_version_major > t.get<1>() ||
+        (kernel_version_major == t.get<1>() &&
+         kernel_version_minor >= t.get<2>());
+    }
+  }
+
+  return true;
+}
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
                                   size_t alignment_hint, bool exec) {
@@ -4522,6 +4572,8 @@ void os::init(void) {
 
   check_pax();
 
+  Linux::kernel_version(&Linux::kernel_version_major, &Linux::kernel_version_minor);
+
   os::Posix::init();
 }
 
@@ -4803,17 +4855,15 @@ jint os::init_2(void) {
     // Some downstream kernels recognize MADV_POPULATE_WRITE (23) as another
     // advice, so the check of versions is required here.
     // See https://github.com/oracle/linux-uek/issues/23
-    long major, minor;
-    Linux::kernel_version(&major, &minor);
     bool supportMadvPopulateWrite =
-      ((major > 5 || (major == 5 && minor >= 14)) &&
+      (Linux::can_use_madvise_flag(MADV_POPULATE_WRITE) &&
        (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
     if (!supportMadvPopulateWrite) {
       if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite)) {
         warning("Platform does not support MADV_POPULATE_WRITE, "
                 "disabling using it to pretouch (-XX:-UseMadvPopulateWrite)");
       }
-      UseMadvPopulateWrite = false;
+      FLAG_SET_ERGO(UseMadvPopulateWrite, false);
     }
   }
 
