@@ -64,14 +64,10 @@ TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
 }
 
 TEST_VM_F(NativeCallStackStorageTest, PerfTest) {
-      using std::chrono::high_resolution_clock;
-    using std::chrono::duration_cast;
-    using std::chrono::duration;
-    using std::chrono::milliseconds;
-
-    /* Getting number of milliseconds as an integer. */
-
-    /* Getting number of milliseconds as a double. */
+  using std::chrono::duration;
+  using std::chrono::duration_cast;
+  using std::chrono::high_resolution_clock;
+  using std::chrono::milliseconds;
 
   NativeCallStackStorage ncss(true);
   NativeCallStackStorageWithAllocator<CHeapAllocator> ncss_cheap(true);
