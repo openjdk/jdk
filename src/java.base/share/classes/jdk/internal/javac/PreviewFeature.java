@@ -69,13 +69,11 @@ public @interface PreviewFeature {
         FOREIGN,
         @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
-        UNNAMED_CLASSES,
-        @JEP(number=463, title="Implicitly Declared Classes and Instance Main Methods", status="Preview")
+        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
         IMPLICIT_CLASSES,
-        @JEP(number=464, title="Scoped Values", status="Second Preview")
+        @JEP(number=481, title="Scoped Values", status="Third Preview")
         SCOPED_VALUES,
-        @JEP(number=462, title="Structured Concurrency", status="Second Preview")
+        @JEP(number=480, title="Structured Concurrency", status="Third Preview")
         STRUCTURED_CONCURRENCY,
         @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,

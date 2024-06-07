@@ -397,6 +397,8 @@ public abstract sealed class MappedByteBuffer
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
      * {@code [position(),limit())}.
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer slice();
@@ -410,12 +412,16 @@ public abstract sealed class MappedByteBuffer
      * of this buffer that the returned buffer represents, namely
      * {@code [index,index+length)}, where {@code index} and {@code length} are
      * assumed to satisfy the preconditions.
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer slice(int index, int length);
 
     /**
      * {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer duplicate();
@@ -423,6 +429,8 @@ public abstract sealed class MappedByteBuffer
     /**
      * {@inheritDoc}
      * @throws  ReadOnlyBufferException {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer compact();

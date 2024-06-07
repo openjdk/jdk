@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ bool ClassLoaderExt::_has_platform_classes = false;
 bool ClassLoaderExt::_has_non_jar_in_classpath = false;
 
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
     if (DynamicArchive::is_mapped()) {

@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.cant.type.annotate.scoping
+// key: compiler.err.type.annotation.inadmissible
+// key: compiler.misc.type.annotation
 
 import java.lang.annotation.*;
 

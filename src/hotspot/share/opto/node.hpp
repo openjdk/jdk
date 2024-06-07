@@ -138,6 +138,7 @@ class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
 class Opaque4Node;
+class OpaqueInitializedAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -180,8 +181,10 @@ class LoadVectorNode;
 class LoadVectorMaskedNode;
 class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
+class LoadVectorGatherMaskedNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class StoreVectorScatterMaskedNode;
 class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
@@ -795,9 +798,10 @@ public:
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
     DEFINE_CLASS_ID(Opaque4,  Node, 17)
-    DEFINE_CLASS_ID(Move,     Node, 18)
-    DEFINE_CLASS_ID(LShift,   Node, 19)
-    DEFINE_CLASS_ID(Neg,      Node, 20)
+    DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
+    DEFINE_CLASS_ID(Move,     Node, 19)
+    DEFINE_CLASS_ID(LShift,   Node, 20)
+    DEFINE_CLASS_ID(Neg,      Node, 21)
 
     _max_classes  = ClassMask_Neg
   };
@@ -966,6 +970,7 @@ public:
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
@@ -996,8 +1001,12 @@ public:
   DEFINE_CLASS_QUERY(CompressM)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
+  DEFINE_CLASS_QUERY(LoadVectorMasked)
+  DEFINE_CLASS_QUERY(LoadVectorGatherMasked)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(StoreVectorMasked)
+  DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1143,7 +1152,6 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
-  void add_prec_from(Node* n);
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
@@ -1254,8 +1262,6 @@ public:
 
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
-
-  bool is_div_or_mod(BasicType bt) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -2026,10 +2032,6 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
-Op_IL(Div)
-Op_IL(Mod)
-Op_IL(UDiv)
-Op_IL(UMod)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

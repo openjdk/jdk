@@ -468,7 +468,10 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
-  update_gc_stats(_young_gen, false);
+  // Only update stats for successful young-gc
+  if (result) {
+    _old_gen->update_promote_stats();
+  }
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
@@ -558,9 +561,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   if (result != nullptr) {
     return result;
   }
-
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-    "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
@@ -763,6 +763,8 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
 
   // Need to clear claim bits for the next mark.
   ClassLoaderDataGraph::clear_claimed_marks();
+
+  _old_gen->update_promote_stats();
 
   // Resize the metaspace capacity after full collections
   MetaspaceGC::compute_new_size();

@@ -1598,6 +1598,9 @@ public class Modules extends JCTree.Visitor {
                 addVisiblePackages(msym, seen, exportsFrom, exports);
             }
         });
+
+        //module readability is reflexive:
+        msym.readModules.add(msym);
     }
 
     private void addVisiblePackages(ModuleSymbol msym,
