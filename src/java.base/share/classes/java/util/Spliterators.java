@@ -86,7 +86,6 @@ public final class Spliterators {
         return EmptySpliterator.OfLong.EMPTY_LONG_SPLITERATOR;
     }
 
-
     /**
      * Creates an empty {@code Spliterator.OfDouble}
      *
