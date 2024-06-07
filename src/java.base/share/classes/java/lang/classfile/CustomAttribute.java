@@ -60,12 +60,6 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public final void writeTo(BufWriter buf) {
-        mapper.writeAttribute(buf, (T) this);
-    }
-
-    @Override
     public String toString() {
         return String.format("CustomAttribute[name=%s]", mapper.name());
     }

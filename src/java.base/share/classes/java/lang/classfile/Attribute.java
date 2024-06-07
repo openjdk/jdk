@@ -80,7 +80,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Attribute<A extends Attribute<A>>
-        extends WritableElement<A>
+        extends WritableElement
         permits AnnotationDefaultAttribute, BootstrapMethodsAttribute,
                 CharacterRangeTableAttribute, CodeAttribute, CompilationIDAttribute,
                 ConstantValueAttribute, DeprecatedAttribute, EnclosingMethodAttribute,

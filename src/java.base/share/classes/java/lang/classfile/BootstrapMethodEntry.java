@@ -43,7 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodEntry
-        extends WritableElement<BootstrapMethodEntry>
+        extends WritableElement
         permits BootstrapMethodEntryImpl {
 
     /**

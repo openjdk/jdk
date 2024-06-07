@@ -49,7 +49,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
+public sealed interface AnnotationValue extends WritableElement
         permits AnnotationValue.OfAnnotation, AnnotationValue.OfArray,
                 AnnotationValue.OfConstant, AnnotationValue.OfClass,
                 AnnotationValue.OfEnum {

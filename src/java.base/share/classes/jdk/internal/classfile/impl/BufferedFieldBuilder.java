@@ -121,7 +121,7 @@ public final class BufferedFieldBuilder
         }
 
         @Override
-        public void writeTo(BufWriter buf) {
+        public void writeTo(BufWriterImpl buf) {
             DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
             elements.forEach(fb);
             fb.writeTo(buf);

@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.AccessFlags;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
@@ -206,7 +205,7 @@ public final class BufferedMethodBuilder
         }
 
         @Override
-        public void writeTo(BufWriter buf) {
+        public void writeTo(BufWriterImpl buf) {
             DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, context, name, desc, methodFlags(), null);
             elements.forEach(mb);
             mb.writeTo(buf);

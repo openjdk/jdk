@@ -29,12 +29,10 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.util.Objects;
@@ -56,7 +54,7 @@ import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
 import static java.lang.classfile.ClassFile.TAG_PACKAGE;
 import static java.lang.classfile.ClassFile.TAG_STRING;
 
-public final class SplitConstantPool implements ConstantPoolBuilder {
+public final class SplitConstantPool implements ConstantPoolBuilder, Util.Writable {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
@@ -135,27 +133,27 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return this == other || parent == other;
     }
 
-    public boolean writeBootstrapMethods(BufWriter buf) {
+    public boolean writeBootstrapMethods(BufWriterImpl buf) {
         if (bsmSize == 0)
             return false;
         int pos = buf.size();
         if (parent != null && parentBsmSize != 0) {
             parent.writeBootstrapMethods(buf);
             for (int i = parentBsmSize; i < bsmSize; i++)
-                bootstrapMethodEntry(i).writeTo(buf);
+                Util.write(bootstrapMethodEntry(i), buf);
             int attrLen = buf.size() - pos;
             buf.patchInt(pos + 2, 4, attrLen - 6);
             buf.patchInt(pos + 6, 2, bsmSize);
         }
         else {
-            Attribute<BootstrapMethodsAttribute> a
+            UnboundAttribute<BootstrapMethodsAttribute> a
                     = new UnboundAttribute.AdHocAttribute<>(Attributes.bootstrapMethods()) {
 
                 @Override
-                public void writeBody(BufWriter b) {
+                public void writeBody(BufWriterImpl b) {
                     buf.writeU2(bsmSize);
                     for (int i = 0; i < bsmSize; i++)
-                        bootstrapMethodEntry(i).writeTo(buf);
+                        Util.write(bootstrapMethodEntry(i), buf);
                 }
             };
             a.writeTo(buf);
@@ -164,7 +162,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         int writeFrom = 1;
         if (size() >= 65536) {
             throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
@@ -176,7 +174,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         }
         for (int i = writeFrom; i < size(); ) {
             PoolEntry info = entryByIndex(i);
-            info.writeTo(buf);
+            Util.write(info, buf);
             i += info.width();
         }
     }

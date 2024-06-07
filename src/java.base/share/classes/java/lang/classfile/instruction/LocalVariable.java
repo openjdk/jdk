@@ -85,14 +85,6 @@ public sealed interface LocalVariable extends PseudoInstruction
     Label endScope();
 
     /**
-     * Writes the local variable to the specified writer
-     *
-     * @param buf the writer
-     * @return true if the variable has been written
-     */
-    boolean writeTo(BufWriter buf);
-
-    /**
      * {@return a local variable pseudo-instruction}
      *
      * @param slot the local variable slot

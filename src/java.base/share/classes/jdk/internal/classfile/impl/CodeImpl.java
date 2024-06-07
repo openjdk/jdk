@@ -141,7 +141,7 @@ public final class CodeImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(classReader)) {
             super.writeTo(buf);
         }
@@ -154,7 +154,7 @@ public final class CodeImpl
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
-                                    ((BufWriterImpl)buf).context(),
+                                    buf.context(),
                                     null).writeTo(buf);
         }
     }

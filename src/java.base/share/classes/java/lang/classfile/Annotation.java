@@ -51,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Annotation
-        extends WritableElement<Annotation>
+        extends WritableElement
         permits TypeAnnotation, AnnotationImpl {
 
     /**

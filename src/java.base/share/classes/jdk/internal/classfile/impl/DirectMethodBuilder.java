@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
@@ -42,7 +41,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
-        implements TerminalMethodBuilder, WritableElement<MethodModel>, MethodInfo {
+        implements TerminalMethodBuilder, WritableElement, MethodInfo, Util.Writable {
 
     final Utf8Entry name;
     final Utf8Entry desc;
@@ -148,8 +147,7 @@ public final class DirectMethodBuilder
     }
 
     @Override
-    public void writeTo(BufWriter b) {
-        BufWriterImpl buf = (BufWriterImpl) b;
+    public void writeTo(BufWriterImpl buf) {
         buf.writeU2(flags);
         buf.writeIndex(name);
         buf.writeIndex(desc);

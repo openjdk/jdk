@@ -61,7 +61,7 @@ import static java.util.Objects.requireNonNull;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
-        extends ConstantPool, WritableElement<ConstantPool>
+        extends ConstantPool, WritableElement
         permits SplitConstantPool, TemporaryConstantPool {
 
     /**

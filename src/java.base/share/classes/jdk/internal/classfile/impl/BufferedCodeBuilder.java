@@ -206,7 +206,8 @@ public final class BufferedCodeBuilder
             });
         }
 
-        public void writeTo(BufWriter buf) {
+        @Override
+        public void writeTo(BufWriterImpl buf) {
             DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, context, null).writeTo(buf);
         }
 

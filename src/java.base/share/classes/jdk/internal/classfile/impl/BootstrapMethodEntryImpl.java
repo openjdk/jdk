@@ -28,13 +28,12 @@ import java.util.List;
 
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
-public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
+public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry, Util.Writable {
 
     final int index;
     final int hash;
@@ -88,8 +87,8 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     }
 
     @Override
-    public void writeTo(BufWriter writer) {
+    public void writeTo(BufWriterImpl writer) {
         writer.writeIndex(bootstrapMethod());
-        writer.writeListIndices(arguments());
+        Util.writeListIndices(writer, arguments());
     }
 }
