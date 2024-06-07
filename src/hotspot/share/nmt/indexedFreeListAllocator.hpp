@@ -14,6 +14,9 @@ public:
   // Make the index opaque.
   struct I {
     int32_t idx;
+#ifdef ASSERT
+    IndexedFreeListAllocator<E, flag>* _owner;
+#endif
     bool operator !=(I other) {
       return idx != other.idx;
     }
@@ -56,10 +59,12 @@ public:
       free_start = be.link;
     }
     ::new (&be) E(args...);
-    return I{i};
+    return I{i DEBUG_ONLY(COMMA this)};
   }
 
   void free(I i) {
+    assert(i == nil || i._owner == this, "attempt to free to wrong allocator");
+
     BackingElement& be_freed = backing_storage.at(i.idx);
     be_freed.link = free_start;
     free_start = i;
