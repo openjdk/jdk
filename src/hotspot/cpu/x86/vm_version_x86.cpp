@@ -113,6 +113,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
+    // EGPRs are call clobbered registers, Explicit clearing of r16 and r31 during signal
+    // handling guarantees that preserved register values post signal handling were
+    // re-instantiated by operating system and not because they were not modified externally.
+
     /* FIXME Uncomment following code after OS enablement of
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
@@ -1023,6 +1027,7 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
     }
   }
+
   if (UseAVX > use_avx_limit) {
     if (UseSSE < 4) {
       warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
@@ -1046,6 +1051,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VBMI2;
     _features &= ~CPU_AVX512_BITALG;
     _features &= ~CPU_AVX512_IFMA;
+    _features &= ~CPU_APX_F;
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
@@ -1055,7 +1061,6 @@ void VM_Version::get_processor_features() {
   } else if (FLAG_IS_DEFAULT(UseAPX)) {
     FLAG_SET_DEFAULT(UseAPX, (supports_apx_f() && supports_avx512vl()) ? true : false);
   }
-
 
   if (UseAVX < 2) {
     _features &= ~CPU_AVX2;

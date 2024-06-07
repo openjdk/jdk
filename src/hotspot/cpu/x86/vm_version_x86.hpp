@@ -334,7 +334,7 @@ protected:
   static address   _cpuinfo_segv_addr;     // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr;     // address of instruction after the one which causes SEGV
   static address   _cpuinfo_segv_addr_apx; // address of instruction which causes APX specific SEGV
-  static address   _cpuinfo_cont_addr_apx; // address of instruction which causes APX specific SEGV
+  static address   _cpuinfo_cont_addr_apx; // address of instruction after the one which causes APX specific SEGV
 
   /*
    * Update following files when declaring new flags:
