@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_DEBUG_HPP
 #define SHARE_UTILITIES_DEBUG_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/breakpoint.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
@@ -106,11 +105,10 @@ public:
 // constant evaluation in the compiler. We don't do something like that now,
 // because we need a fallback when we don't have any mechanism for detecting
 // constant evaluation.
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
-// gcc10 added both __has_builtin and __builtin_is_constant_evaluated.
-// clang has had __has_builtin for a long time, so likely also in xlclang++.
-// Similarly, clang has had __builtin_is_constant_evaluated for a long time.
+// Both __has_builtin and __builtin_is_constant_evaluated are available in our
+// minimum required versions of gcc and clang.
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_is_constant_evaluated)
@@ -255,32 +253,32 @@ enum VMErrorType : unsigned int {
 };
 
 // error reporting helper functions
-ATTRIBUTE_NORETURN
+[[noreturn]]
 void report_vm_error(const char* file, int line, const char* error_msg);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(4, 5)
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(4, 5)
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(5, 6)
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN void report_should_not_call(const char* file, int line);
-ATTRIBUTE_NORETURN void report_should_not_reach_here(const char* file, int line);
-ATTRIBUTE_NORETURN void report_unimplemented(const char* file, int line);
+[[noreturn]] void report_should_not_call(const char* file, int line);
+[[noreturn]] void report_should_not_reach_here(const char* file, int line);
+[[noreturn]] void report_unimplemented(const char* file, int line);
 
-// NOT ATTRIBUTE_NORETURN
+// NOT [[noreturn]]
 void report_untested(const char* file, int line, const char* message);
 
 ATTRIBUTE_PRINTF(1, 2)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276 7066203 7085757 8008577 8030696 8170840 8255086 8263202 8287868
+ * 6786276 7066203 7085757 8008577 8030696 8170840 8174269 8255086 8263202 8287868
  * @summary test Locales
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI LocaleTest
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI -Djava.locale.useOldISOCodes=true LocaleTest
+ * @run junit LocaleTest
+ * @run junit/othervm -Djava.locale.useOldISOCodes=true LocaleTest
  */
 /*
  * This file is available under and governed by the GNU General Public
@@ -155,43 +155,43 @@ public class LocaleTest {
         // display name (English)
         // Updated no_NO_NY English display name for new pattern-based algorithm
         // (part of Euro support).
-        {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway,Nynorsk)", "Italian", "xx (YY)" },
+        {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway, Nynorsk)", "Italian", "xx (YY)" },
 
-        // display langage (French)
+        // display language (French)
         {   "anglais",  "fran\u00e7ais",   "croate", "grec",    "norv\u00e9gien",    "italien", "xx" },
         // display country (French)
         {   "\u00c9tats-Unis",    "France",   "Croatie",  "Gr\u00e8ce",   "Norv\u00e8ge", "",     "YY" },
         // display variant (French)
         {   "",     "",     "",     "",     "",     "",    "" },
         // display name (French)
-        {   "anglais (\u00c9tats-Unis)", "fran\u00e7ais (France)", "croate (Croatie)", "grec (Gr\u00e8ce)", "norv\u00e9gien (Norv\u00e8ge,Nynorsk)", "italien", "xx (YY)" },
+        {   "anglais (\u00c9tats-Unis)", "fran\u00e7ais (France)", "croate (Croatie)", "grec (Gr\u00e8ce)", "norv\u00e9gien (Norv\u00e8ge, Nynorsk)", "italien", "xx (YY)" },
 
-        // display langage (Croatian)
-        {   "",  "", "hrvatski", "",    "", "", "xx" },
+        // display language (Croatian)
+        {   "engleski",  "francuski", "hrvatski", "gr\u010dki",    "norve\u0161ki", "talijanski", "xx" },
         // display country (Croatian)
-        {   "",    "",   "Hrvatska",  "",   "", "", "YY" },
+        {   "Sjedinjene Ameri\u010dke Dr\u017eave",    "Francuska",   "Hrvatska",  "Gr\u010dka",   "Norve\u0161ka", "", "YY" },
         // display variant (Croatian)
         {   "",     "",     "",     "",     "", "", ""},
         // display name (Croatian)
-        {   "", "", "hrvatski (Hrvatska)", "", "", "", "xx (YY)" },
+        {   "engleski (Sjedinjene Ameri\u010dke Dr\u017eave)", "francuski (Francuska)", "hrvatski (Hrvatska)", "gr\u010dki (Gr\u010dka)", "norve\u0161ki (Norve\u0161ka, Nynorsk)", "talijanski", "xx (YY)" },
 
-        // display langage (Greek)
+        // display language (Greek)
         {   "\u0391\u03b3\u03b3\u03bb\u03b9\u03ba\u03ac",  "\u0393\u03b1\u03bb\u03bb\u03b9\u03ba\u03ac", "\u039a\u03c1\u03bf\u03b1\u03c4\u03b9\u03ba\u03ac", "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",    "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03b9\u03ba\u03ac", "\u0399\u03c4\u03b1\u03bb\u03b9\u03ba\u03ac", "xx" },
         // display country (Greek)
         {   "\u0397\u03bd\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03a0\u03bf\u03bb\u03b9\u03c4\u03b5\u03af\u03b5\u03c2",    "\u0393\u03b1\u03bb\u03bb\u03af\u03b1",   "\u039a\u03c1\u03bf\u03b1\u03c4\u03af\u03b1",  "\u0395\u03bb\u03bb\u03ac\u03b4\u03b1",   "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03af\u03b1", "", "YY" },
         // display variant (Greek)
         {   "",     "",     "",     "",     "", "", "" },
         // display name (Greek)
-        {   "\u0391\u03b3\u03b3\u03bb\u03b9\u03ba\u03ac (\u0397\u03bd\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03a0\u03bf\u03bb\u03b9\u03c4\u03b5\u03af\u03b5\u03c2)", "\u0393\u03b1\u03bb\u03bb\u03b9\u03ba\u03ac (\u0393\u03b1\u03bb\u03bb\u03af\u03b1)", "\u039a\u03c1\u03bf\u03b1\u03c4\u03b9\u03ba\u03ac (\u039a\u03c1\u03bf\u03b1\u03c4\u03af\u03b1)", "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac (\u0395\u03bb\u03bb\u03ac\u03b4\u03b1)", "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03b9\u03ba\u03ac (\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03af\u03b1,Nynorsk)", "\u0399\u03c4\u03b1\u03bb\u03b9\u03ba\u03ac", "xx (YY)" },
+        {   "\u0391\u03b3\u03b3\u03bb\u03b9\u03ba\u03ac (\u0397\u03bd\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03a0\u03bf\u03bb\u03b9\u03c4\u03b5\u03af\u03b5\u03c2)", "\u0393\u03b1\u03bb\u03bb\u03b9\u03ba\u03ac (\u0393\u03b1\u03bb\u03bb\u03af\u03b1)", "\u039a\u03c1\u03bf\u03b1\u03c4\u03b9\u03ba\u03ac (\u039a\u03c1\u03bf\u03b1\u03c4\u03af\u03b1)", "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac (\u0395\u03bb\u03bb\u03ac\u03b4\u03b1)", "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03b9\u03ba\u03ac (\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03af\u03b1, Nynorsk)", "\u0399\u03c4\u03b1\u03bb\u03b9\u03ba\u03ac", "xx (YY)" },
 
-        // display langage (<root>)
+        // display language (<root>)
         {   "English",  "French",   "Croatian", "Greek",    "Norwegian",  "Italian",  "xx" },
         // display country (<root>)
         {   "United States",    "France",   "Croatia",  "Greece",   "Norway",  "",     "YY" },
         // display variant (<root>)
         {   "",     "",     "",     "",     "Nynorsk",   "",     ""},
         // display name (<root>)
-        {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway,Nynorsk)", "Italian", "xx (YY)" },
+        {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway, Nynorsk)", "Italian", "xx (YY)" },
     };
 
     @Test
@@ -984,7 +984,7 @@ test commented out pending API-change approval
      */
     @Test
     public void Test4143951() {
-        Calendar cal = Calendar.getInstance(Locale.of("ru"));
+        Calendar cal = Calendar.getInstance(Locale.of("ru", "RU"));
         if (cal.getFirstDayOfWeek() != Calendar.MONDAY) {
             fail("Fail: First day of week in Russia should be Monday");
         }
@@ -1050,12 +1050,12 @@ test commented out pending API-change approval
             Locale.of("no", "NO", "NY"), Locale.of("nb", "NO"),
             Locale.of("nn", "NO")};
         String[] englishDisplayNames = {"Norwegian (Norway)",
-            "Norwegian (Norway,Bokm\u00e5l)",
-            "Norwegian (Norway,Nynorsk)",
+            "Norwegian (Norway, Bokm\u00e5l)",
+            "Norwegian (Norway, Nynorsk)",
             "Norwegian Bokm\u00e5l (Norway)",
             "Norwegian Nynorsk (Norway)"};
         String[] norwegianDisplayNames = {"norsk (Norge)",
-            "norsk (Norge,bokm\u00e5l)", "norsk (Noreg,nynorsk)",
+            "norsk (Norge, Bokm\u00e5l)", "norsk (Noreg, Nynorsk)",
             "norsk bokm\u00e5l (Norge)", "norsk nynorsk (Noreg)"};
 
         for (int i = 0; i < locales.length; i++) {

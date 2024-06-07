@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary flat-map operations
- * @bug 8044047 8076458 8075939
+ * @bug 8044047 8076458 8075939 8196106
  */
 
 package org.openjdk.tests.java.util.stream;
@@ -272,5 +272,32 @@ public class FlatMapOpTest extends OpTestCase {
                 peek(i -> count.incrementAndGet()).
                 limit(10).toArray();
         assertEquals(count.get(), 10);
+    }
+
+    @Test
+    public void testTerminationOfNestedInfiniteStreams() {
+        var refExpected = Stream.generate(() -> "").limit(5).toList();
+        var refResult = Stream.generate(() -> "")
+              .flatMap(c -> Stream.generate(() -> c).flatMap(x -> Stream.generate(() -> x)))
+              .limit(5).toList();
+        assertEquals(refResult, refExpected);
+
+        var intExpected = IntStream.generate(() -> 1).limit(5).sum();
+        var intResult = IntStream.generate(() -> 1)
+                .flatMap(c -> IntStream.generate(() -> c).flatMap(x -> IntStream.generate(() -> x)))
+                .limit(5).sum();
+        assertEquals(intResult, intExpected);
+
+        var longExpected = LongStream.generate(() -> 1L).limit(5).sum();
+        var longResult = LongStream.generate(() -> 1L)
+                .flatMap(c -> LongStream.generate(() -> c).flatMap(x -> LongStream.generate(() -> x)))
+                .limit(5).sum();
+        assertEquals(longResult, longExpected);
+
+        var doubleExpected = DoubleStream.generate(() -> 0d).limit(5).sum();
+        var doubleResult = DoubleStream.generate(() -> 0d)
+                .flatMap(c -> DoubleStream.generate(() -> c).flatMap(x -> DoubleStream.generate(() -> x)))
+                .limit(5).sum();
+        assertEquals(doubleResult, doubleExpected);
     }
 }

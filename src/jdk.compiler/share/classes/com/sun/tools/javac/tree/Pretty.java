@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,12 +380,12 @@ public class Pretty extends JCTree.Visitor {
                  (cdef == null ||
                   l.head.hasTag(IMPORT) || l.head.hasTag(PACKAGEDEF));
              l = l.tail) {
-            if (l.head.hasTag(IMPORT)) {
-                JCImport imp = (JCImport)l.head;
-                Name name = TreeInfo.name(imp.qualid);
+            if (l.head instanceof JCImportBase imp) {
+                Name name = TreeInfo.name(imp.getQualifiedIdentifier());
                 if (name == name.table.names.asterisk ||
                         cdef == null ||
-                        isUsed(TreeInfo.symbol(imp.qualid), cdef)) {
+                        imp instanceof JCModuleImport ||
+                        isUsed(TreeInfo.symbol(imp.getQualifiedIdentifier()), cdef)) {
                     if (firstImport) {
                         firstImport = false;
                         println();
@@ -417,7 +417,7 @@ public class Pretty extends JCTree.Visitor {
         return v.result;
     }
 
-    /**************************************************************************
+    /* ************************************************************************
      * Visitor methods
      *************************************************************************/
 
@@ -540,6 +540,17 @@ public class Pretty extends JCTree.Visitor {
             print("import ");
             if (tree.staticImport) print("static ");
             printExpr(tree.qualid);
+            print(';');
+            println();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitModuleImport(JCModuleImport tree) {
+        try {
+            print("import module ");
+            printExpr(tree.module);
             print(';');
             println();
         } catch (IOException e) {
@@ -1471,21 +1482,6 @@ public class Pretty extends JCTree.Visitor {
                     print('"');
                     break;
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public void visitStringTemplate(JCStringTemplate tree) {
-        try {
-            JCExpression processor = tree.processor;
-            print("[");
-            printExpr(processor);
-            print("]");
-            print("\"" + tree.fragments.stream().collect(Collectors.joining("\\{}")) + "\"");
-            print("(");
-            printExprs(tree.expressions);
-            print(")");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
@@ -50,21 +51,22 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   uint8_t* entry_for_addr(const void* const p) const {
     assert(_covered_region.contains(p),
            "out of bounds access to object start array");
-    uint8_t* result = &_offset_base[uintptr_t(p) >> BOTConstants::log_card_size()];
+    uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
     return result;
   }
 
   // Mapping from object start array entry to address of first word
   HeapWord* addr_for_entry(const uint8_t* const p) const {
-    size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
-    HeapWord* result = (HeapWord*) (delta << BOTConstants::log_card_size());
+    // _offset_base can be "negative", so can't use pointer_delta().
+    size_t delta = p - _offset_base;
+    HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
     assert(_covered_region.contains(result),
            "out of bounds accessor from card marking array");
     return result;
   }
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
-    return align_up(addr, BOTConstants::card_size());
+    return align_up(addr, CardTable::card_size());
   }
 
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);

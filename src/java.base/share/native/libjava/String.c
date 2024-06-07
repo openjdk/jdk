@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,4 @@ JNIEXPORT jobject JNICALL
 Java_java_lang_String_intern(JNIEnv *env, jobject this)
 {
     return JVM_InternString(env, this);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_java_lang_StringUTF16_isBigEndian(JNIEnv *env, jclass cls)
-{
-  unsigned int endianTest = 0xff000000;
-  if (((char*)(&endianTest))[0] != 0) {
-    return JNI_TRUE;
-  } else {
-    return JNI_FALSE;
-  }
 }

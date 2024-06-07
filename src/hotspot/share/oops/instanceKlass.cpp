@@ -502,7 +502,7 @@ static Monitor* create_init_monitor(const char* name) {
 }
 
 InstanceKlass::InstanceKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -1427,29 +1427,37 @@ bool InstanceKlass::can_be_primary_super_slow() const {
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
                                                                Array<InstanceKlass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
-  Array<InstanceKlass*>* interfaces = transitive_interfaces;
+  // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
+  // (but it's safe to do here because we won't write into _secondary_supers from this point on).
+  Array<Klass*>* interfaces = (Array<Klass*>*)(address)transitive_interfaces;
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
-    set_secondary_supers(Universe::the_empty_klass_array());
+    set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
     return nullptr;
   } else if (num_extra_slots == 0) {
     // The secondary super list is exactly the same as the transitive interfaces, so
     // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
-    // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
-    // (but it's safe to do here because we won't write into _secondary_supers from this point on).
-    set_secondary_supers((Array<Klass*>*)(address)interfaces);
-    return nullptr;
-  } else {
-    // Copy transitive interfaces to a temporary growable array to be constructed
-    // into the secondary super list with extra slots.
-    GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      secondaries->push(interfaces->at(i));
+    if (!UseSecondarySupersTable) {
+      set_secondary_supers(interfaces);
+      return nullptr;
+    } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
+      // We will reuse the transitive interfaces list if we're certain
+      // it's in hash order.
+      uintx bitmap = compute_secondary_supers_bitmap(interfaces);
+      set_secondary_supers(interfaces, bitmap);
+      return nullptr;
     }
-    return secondaries;
+    // ... fall through if that didn't work.
   }
+  // Copy transitive interfaces to a temporary growable array to be constructed
+  // into the secondary super list with extra slots.
+  GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
+  for (int i = 0; i < interfaces->length(); i++) {
+    secondaries->push(interfaces->at(i));
+  }
+  return secondaries;
 }
 
 bool InstanceKlass::implements_interface(Klass* k) const {
@@ -1501,16 +1509,9 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
-  bool has_finalizer_flag = has_finalizer(); // Query before possible GC
+  assert(!is_abstract() && !is_interface(), "Should not create this object");
   size_t size = size_helper();  // Query before forming handle.
-
-  instanceOop i;
-
-  i = (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
-  if (has_finalizer_flag && !RegisterFinalizersAtInit) {
-    i = register_finalizer(i, CHECK_NULL);
-  }
-  return i;
+  return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
@@ -1545,23 +1546,22 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
 ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
-    ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD;
-    {
-      // Atomic creation of array_klasses
-      MutexLocker ma(THREAD, MultiArray_lock);
 
-      // Check if update has already taken place
-      if (array_klasses() == nullptr) {
-        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
-        // use 'release' to pair with lock-free load
-        release_set_array_klasses(k);
-      }
+    // Recursively lock array allocation
+    RecursiveLocker rl(MultiArray_lock, THREAD);
+
+    // Check if another thread created the array klass while we were waiting for the lock.
+    if (array_klasses() == nullptr) {
+      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+      // use 'release' to pair with lock-free load
+      release_set_array_klasses(k);
     }
   }
+
   // array_klasses() will always be set at this point
-  ObjArrayKlass* oak = array_klasses();
-  return oak->array_klass(n, THREAD);
+  ObjArrayKlass* ak = array_klasses();
+  assert(ak != nullptr, "should be set");
+  return ak->array_klass(n, THREAD);
 }
 
 ArrayKlass* InstanceKlass::array_klass_or_null(int n) {
@@ -1634,16 +1634,17 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
-  // Lazily create the _oop_map_cache at first request
-  // Lock-free access requires load_acquire.
+  // Lazily create the _oop_map_cache at first request.
+  // Load_acquire is needed to safely get instance published with CAS by another thread.
   OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
-    MutexLocker x(OopMapCacheAlloc_lock);
-    // Check if _oop_map_cache was allocated while we were waiting for this lock
-    if ((oop_map_cache = _oop_map_cache) == nullptr) {
-      oop_map_cache = new OopMapCache();
-      // Ensure _oop_map_cache is stable, since it is examined without a lock
-      Atomic::release_store(&_oop_map_cache, oop_map_cache);
+    // Try to install new instance atomically.
+    oop_map_cache = new OopMapCache();
+    OopMapCache* other = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    if (other != nullptr) {
+      // Someone else managed to install before us, ditch local copy and use the existing one.
+      delete oop_map_cache;
+      oop_map_cache = other;
     }
   }
   // _oop_map_cache is constant after init; lookup below does its own locking.
@@ -2268,16 +2269,26 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
   }
 }
 
+jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, int idnum) {
+  if (method->is_old() && !method->is_obsolete()) {
+    // If the method passed in is old (but not obsolete), use the current version.
+    method = method_with_idnum((int)idnum);
+    assert(method != nullptr, "old and but not obsolete, so should exist");
+  }
+  jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
+  Atomic::release_store(&jmeths[idnum + 1], new_id);
+  return new_id;
+}
+
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
 // locking has to be done very carefully to avoid deadlocks
 // and/or other cache consistency problems.
 //
 jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
-  size_t idnum = (size_t)method_h->method_idnum();
+  Method* method = method_h();
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  size_t length = 0;
-  jmethodID id = nullptr;
 
   // We use a double-check locking idiom here because this cache is
   // performance sensitive. In the normal system, this cache only
@@ -2289,80 +2300,63 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   // seen either. Cache reads of existing jmethodIDs proceed without a
   // lock, but cache writes of a new jmethodID requires uniqueness and
   // creation of the cache itself requires no leaks so a lock is
-  // generally acquired in those two cases.
+  // acquired in those two cases.
   //
-  // If the RedefineClasses() API has been used, then this cache can
-  // grow and we'll have transitions from non-null to bigger non-null.
-  // Cache creation requires no leaks and we require safety between all
-  // cache accesses and freeing of the old cache so a lock is generally
-  // acquired when the RedefineClasses() API has been used.
+  // If the RedefineClasses() API has been used, then this cache grows
+  // in the redefinition safepoint.
 
-  if (jmeths != nullptr) {
-    // the cache already exists
-    if (!idnum_can_increment()) {
-      // the cache can't grow so we can just get the current values
-      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
-    } else {
-      MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
+  if (jmeths == nullptr) {
+    MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+    jmeths = methods_jmethod_ids_acquire();
+    // Still null?
+    if (jmeths == nullptr) {
+      size_t size = idnum_allocated_count();
+      assert(size > (size_t)idnum, "should already have space");
+      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
+      // cache size is stored in element[0], other elements offset by one
+      jmeths[0] = (jmethodID)size;
+      jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
+
+      // publish jmeths
+      release_set_methods_jmethod_ids(jmeths);
+      return new_id;
     }
   }
-  // implied else:
-  // we need to allocate a cache so default length and id values are good
 
-  if (jmeths == nullptr ||   // no cache yet
-      length <= idnum ||     // cache is too short
-      id == nullptr) {       // cache doesn't contain entry
-
-    // This function can be called by the VMThread or GC worker threads so we
-    // have to do all things that might block on a safepoint before grabbing the lock.
-    // Otherwise, we can deadlock with the VMThread or have a cache
-    // consistency issue. These vars keep track of what we might have
-    // to free after the lock is dropped.
-    jmethodID  to_dealloc_id     = nullptr;
-    jmethodID* to_dealloc_jmeths = nullptr;
-
-    // may not allocate new_jmeths or use it if we allocate it
-    jmethodID* new_jmeths = nullptr;
-    if (length <= idnum) {
-      // allocate a new cache that might be used
-      size_t size = MAX2(idnum+1, (size_t)idnum_allocated_count());
-      new_jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(new_jmeths, 0, (size+1)*sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      new_jmeths[0] = (jmethodID)size;
-    }
-
-    // allocate a new jmethodID that might be used
-    {
-      MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-      jmethodID new_id = nullptr;
-      if (method_h->is_old() && !method_h->is_obsolete()) {
-        // The method passed in is old (but not obsolete), we need to use the current version
-        Method* current_method = method_with_idnum((int)idnum);
-        assert(current_method != nullptr, "old and but not obsolete, so should exist");
-        new_id = Method::make_jmethod_id(class_loader_data(), current_method);
-      } else {
-        // It is the current version of the method or an obsolete method,
-        // use the version passed in
-        new_id = Method::make_jmethod_id(class_loader_data(), method_h());
-      }
-
-      id = get_jmethod_id_fetch_or_update(idnum, new_id, new_jmeths,
-                                          &to_dealloc_id, &to_dealloc_jmeths);
-    }
-
-    // The lock has been dropped so we can free resources.
-    // Free up either the old cache or the new cache if we allocated one.
-    if (to_dealloc_jmeths != nullptr) {
-      FreeHeap(to_dealloc_jmeths);
-    }
-    // free up the new ID since it wasn't needed
-    if (to_dealloc_id != nullptr) {
-      Method::destroy_jmethod_id(class_loader_data(), to_dealloc_id);
+  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+  if (id == nullptr) {
+    MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+    id = jmeths[idnum + 1];
+    // Still null?
+    if (id == nullptr) {
+      return update_jmethod_id(jmeths, method, idnum);
     }
   }
   return id;
+}
+
+void InstanceKlass::update_methods_jmethod_cache() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  jmethodID* cache = _methods_jmethod_ids;
+  if (cache != nullptr) {
+    size_t size = idnum_allocated_count();
+    size_t old_size = (size_t)cache[0];
+    if (old_size < size + 1) {
+      // Allocate a larger one and copy entries to the new one.
+      // They've already been updated to point to new methods where applicable (i.e., not obsolete).
+      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+      memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
+      // The cache size is stored in element[0]; the other elements are offset by one.
+      new_cache[0] = (jmethodID)size;
+
+      for (int i = 1; i <= (int)old_size; i++) {
+        new_cache[i] = cache[i];
+      }
+      _methods_jmethod_ids = new_cache;
+      FREE_C_HEAP_ARRAY(jmethodID, cache);
+    }
+  }
 }
 
 // Figure out how many jmethodIDs haven't been allocated, and make
@@ -2385,88 +2379,11 @@ void InstanceKlass::ensure_space_for_methodids(int start_offset) {
   }
 }
 
-// Common code to fetch the jmethodID from the cache or update the
-// cache with the new jmethodID. This function should never do anything
-// that causes the caller to go to a safepoint or we can deadlock with
-// the VMThread or have cache consistency issues.
-//
-jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
-            size_t idnum, jmethodID new_id,
-            jmethodID* new_jmeths, jmethodID* to_dealloc_id_p,
-            jmethodID** to_dealloc_jmeths_p) {
-  assert(new_id != nullptr, "sanity check");
-  assert(to_dealloc_id_p != nullptr, "sanity check");
-  assert(to_dealloc_jmeths_p != nullptr, "sanity check");
-  assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
-
-  // reacquire the cache - we are locked, single threaded or at a safepoint
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
-  jmethodID  id     = nullptr;
-  size_t     length = 0;
-
-  if (jmeths == nullptr ||                      // no cache yet
-      (length = (size_t)jmeths[0]) <= idnum) {  // cache is too short
-    if (jmeths != nullptr) {
-      // copy any existing entries from the old cache
-      for (size_t index = 0; index < length; index++) {
-        new_jmeths[index+1] = jmeths[index+1];
-      }
-      *to_dealloc_jmeths_p = jmeths;  // save old cache for later delete
-    }
-    release_set_methods_jmethod_ids(jmeths = new_jmeths);
-  } else {
-    // fetch jmethodID (if any) from the existing cache
-    id = jmeths[idnum+1];
-    *to_dealloc_jmeths_p = new_jmeths;  // save new cache for later delete
-  }
-  if (id == nullptr) {
-    // No matching jmethodID in the existing cache or we have a new
-    // cache or we just grew the cache. This cache write is done here
-    // by the first thread to win the foot race because a jmethodID
-    // needs to be unique once it is generally available.
-    id = new_id;
-
-    // The jmethodID cache can be read while unlocked so we have to
-    // make sure the new jmethodID is complete before installing it
-    // in the cache.
-    Atomic::release_store(&jmeths[idnum+1], id);
-  } else {
-    *to_dealloc_id_p = new_id; // save new id for later delete
-  }
-  return id;
-}
-
-
-// Common code to get the jmethodID cache length and the jmethodID
-// value at index idnum if there is one.
-//
-void InstanceKlass::get_jmethod_id_length_value(jmethodID* cache,
-       size_t idnum, size_t *length_p, jmethodID* id_p) {
-  assert(cache != nullptr, "sanity check");
-  assert(length_p != nullptr, "sanity check");
-  assert(id_p != nullptr, "sanity check");
-
-  // cache size is stored in element[0], other elements offset by one
-  *length_p = (size_t)cache[0];
-  if (*length_p <= idnum) {  // cache is too short
-    *id_p = nullptr;
-  } else {
-    *id_p = cache[idnum+1];  // fetch jmethodID (if any)
-  }
-}
-
-
 // Lookup a jmethodID, null if not found.  Do no blocking, no allocations, no handles
 jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
-  size_t idnum = (size_t)method->method_idnum();
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  size_t length;                                // length assigned as debugging crumb
-  jmethodID id = nullptr;
-  if (jmeths != nullptr &&                      // If there is a cache
-      (length = (size_t)jmeths[0]) > idnum) {   // and if it is long enough,
-    id = jmeths[idnum+1];                       // Look up the id (may be null)
-  }
-  return id;
+  return (jmeths != nullptr) ? jmeths[idnum + 1] : nullptr;
 }
 
 inline DependencyContext InstanceKlass::dependencies() {
@@ -2705,7 +2622,7 @@ void InstanceKlass::init_shared_package_entry() {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
     }
   } else if (CDSConfig::is_dumping_dynamic_archive() &&
-             CDSConfig::is_loading_full_module_graph() &&
+             CDSConfig::is_using_full_module_graph() &&
              MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
     // _package_entry is an archived package in the base archive. Leave it as is.
   } else {
@@ -2762,7 +2679,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != nullptr) {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
-    MutexLocker ml(MultiArray_lock);
+    RecursiveLocker rl(MultiArray_lock, THREAD);
     assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
@@ -2885,7 +2802,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   set_jni_ids(nullptr);
 
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  if (jmeths != (jmethodID*)nullptr) {
+  if (jmeths != nullptr) {
     release_set_methods_jmethod_ids(nullptr);
     FreeHeap(jmeths);
   }
@@ -3031,7 +2948,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 
   if (is_shared() && _package_entry != nullptr) {
-    if (CDSConfig::is_loading_full_module_graph() && _package_entry == pkg_entry) {
+    if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
       assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
@@ -3440,7 +3357,7 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
-  assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(NMethodState_lock);
 #ifndef PRODUCT
   nmethod* prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
   assert(prev == nullptr || !prev->is_in_use() COMPILER2_PRESENT(|| StressRecompilation),
@@ -3465,7 +3382,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3506,7 +3423,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3521,7 +3438,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {
@@ -3622,7 +3539,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
 
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
-  st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
+  st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
     for (int i = 0; i < method_array->length(); i++) {
@@ -3630,11 +3547,13 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
   st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);      st->cr();
-  st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);      st->cr();
-  if (Verbose && default_methods() != nullptr) {
-    Array<Method*>* method_array = default_methods();
-    for (int i = 0; i < method_array->length(); i++) {
-      st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+  if (default_methods() != nullptr) {
+    st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);    st->cr();
+    if (Verbose) {
+      Array<Method*>* method_array = default_methods();
+      for (int i = 0; i < method_array->length(); i++) {
+        st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+      }
     }
   }
   if (default_vtable_indices() != nullptr) {
@@ -3642,6 +3561,29 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
+
+  st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
+  if (UseSecondarySupersTable) {
+    st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
+    st->print(BULLET"bitmap:            " UINTX_FORMAT_X_0, _bitmap); st->cr();
+  }
+  if (secondary_supers() != nullptr) {
+    if (Verbose) {
+      bool is_hashed = UseSecondarySupersTable && (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
+      st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+      for (int i = 0; i < _secondary_supers->length(); i++) {
+        ResourceMark rm; // for external_name()
+        Klass* secondary_super = _secondary_supers->at(i);
+        st->print(BULLET"%2d:", i);
+        if (is_hashed) {
+          int home_slot = compute_home_slot(secondary_super, _bitmap);
+          int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
+          st->print(" dist:%02d:", distance);
+        }
+        st->print_cr(" %p %s", secondary_super, secondary_super->external_name());
+      }
+    }
+  }
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
   if (class_loader_data() != nullptr) {
     st->print(BULLET"class loader data:  ");
@@ -3699,6 +3641,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+
   FieldPrinter print_static_field(st);
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
@@ -4093,7 +4036,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
+        ((CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {

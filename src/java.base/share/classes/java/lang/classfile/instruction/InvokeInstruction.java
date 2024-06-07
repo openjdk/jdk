@@ -104,6 +104,8 @@ public sealed interface InvokeInstruction extends Instruction
      * @param op the opcode for the specific type of invocation instruction,
      *           which must be of kind {@link Opcode.Kind#INVOKE}
      * @param method a constant pool entry describing the method
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#INVOKE}.
      */
     static InvokeInstruction of(Opcode op, MemberRefEntry method) {
         Util.checkKind(op, Opcode.Kind.INVOKE);

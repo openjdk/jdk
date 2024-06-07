@@ -56,12 +56,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CachingCgroupController* _memory = nullptr;
     CachingCgroupController* _cpu = nullptr;
 
-    char *mem_limit_val();
-    char *mem_swp_limit_val();
-    char *mem_swp_current_val();
-    char *mem_soft_limit_val();
-    char *cpu_quota_val();
-    char *pids_max_val();
+    jlong mem_swp_limit_val();
+    jlong mem_swp_current_val();
 
   public:
     CgroupV2Subsystem(CgroupController * unified) {
@@ -75,6 +71,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     int cpu_period();
     int cpu_shares();
     jlong memory_and_swap_limit_in_bytes();
+    jlong memory_and_swap_usage_in_bytes();
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();

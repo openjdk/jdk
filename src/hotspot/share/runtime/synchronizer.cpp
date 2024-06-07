@@ -602,7 +602,7 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
       }
 
       markWord mark = obj()->mark_acquire();
-      while (mark.is_neutral()) {
+      while (mark.is_unlocked()) {
         // Retry until a lock state change has been observed. cas_set_mark() may collide with non lock bits modifications.
         // Try to swing into 'fast-locked' state.
         assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
@@ -625,7 +625,7 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
       return false;
     } else if (LockingMode == LM_LEGACY) {
       markWord mark = obj->mark();
-      if (mark.is_neutral()) {
+      if (mark.is_unlocked()) {
         // Anticipate successful CAS -- the ST of the displaced mark must
         // be visible <= the ST performed by the CAS.
         lock->set_displaced_header(mark);
@@ -696,7 +696,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
           // Only do diagnostics if we are not racing an inflation. Simply
           // exiting a recursive enter of a Java Monitor that is being
           // inflated is safe; see the has_monitor() comment below.
-          assert(!mark.is_neutral(), "invariant");
+          assert(!mark.is_unlocked(), "invariant");
           assert(!mark.has_locker() ||
                  current->is_lock_owned((address)mark.locker()), "invariant");
           if (mark.has_monitor()) {
@@ -1009,7 +1009,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       assert(LockingMode == LM_MONITOR, "+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
       guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
     }
-    if (mark.is_neutral() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
+    if (mark.is_unlocked() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
@@ -1056,7 +1056,9 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (LockingMode == LM_LEGACY && mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+    } else if (LockingMode == LM_LEGACY && mark.has_locker()
+               && current->is_Java_thread()
+               && JavaThread::cast(current)->is_lock_owned((address)mark.locker())) {
       // This is a stack-lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
       temp = mark.displaced_mark_helper();
@@ -1077,9 +1079,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
     // Inflate the monitor to set the hash.
 
-    // An async deflation can race after the inflate() call and before we
-    // can update the ObjectMonitor's header with the hash value below.
-    monitor = inflate(current, obj, inflate_cause_hash_code);
+    // There's no need to inflate if the mark has already got a monitor.
+    // NOTE: an async deflation can race after we get the monitor and
+    // before we can update the ObjectMonitor's header with the hash
+    // value below.
+    monitor = mark.has_monitor() ? mark.monitor() : inflate(current, obj, inflate_cause_hash_code);
     // Load ObjectMonitor's header/dmw field and see if it has a hash.
     mark = monitor->header();
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
@@ -1139,7 +1143,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
     return monitor->is_entered(current) != 0;
   }
   // Unlocked case, header in place
-  assert(mark.is_neutral(), "sanity check");
+  assert(mark.is_unlocked(), "sanity check");
   return false;
 }
 
@@ -1172,7 +1176,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   // Unlocked case, header in place
   // Cannot have assertion since this object may have been
   // locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
+  // assert(mark.is_unlocked(), "sanity check");
 
   return nullptr;
 }
@@ -1423,7 +1427,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     // *  stack-locked - Coerce it to inflated from stack-locked.
     // *  INFLATING    - Busy wait for conversion from stack-locked to
     //                   inflated.
-    // *  neutral      - Aggressively inflate the object.
+    // *  unlocked     - Aggressively inflate the object.
 
     // CASE: inflated
     if (mark.has_monitor()) {
@@ -1601,7 +1605,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       return m;
     }
 
-    // CASE: neutral
+    // CASE: unlocked
     // TODO-FIXME: for entry we currently inflate and then try to CAS _owner.
     // If we know we're inflating for entry it's better to inflate by swinging a
     // pre-locked ObjectMonitor pointer into the object header.   A successful
@@ -1610,9 +1614,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     // to inflate and then CAS() again to try to swing _owner from null to current.
     // An inflateTry() method that we could call from enter() would be useful.
 
-    // Catch if the object's header is not neutral (not locked and
-    // not marked is what we care about here).
-    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    assert(mark.is_unlocked(), "invariant: header=" INTPTR_FORMAT, mark.value());
     ObjectMonitor* m = new ObjectMonitor(object);
     // prepare m for installation - set monitor to initial state
     m->set_header(mark);
@@ -1635,7 +1637,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
     OM_PERFDATA_OP(Inflations, inc());
     if (log_is_enabled(Trace, monitorinflation)) {
       ResourceMark rm;
-      lsh.print_cr("inflate(neutral): object=" INTPTR_FORMAT ", mark="
+      lsh.print_cr("inflate(unlocked): object=" INTPTR_FORMAT ", mark="
                    INTPTR_FORMAT ", type='%s'", p2i(object),
                    object->mark().value(), object->klass()->external_name());
     }
@@ -1950,38 +1952,18 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
-    // The other audit_and_print_stats() call is done at the Debug
-    // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
-    audit_and_print_stats(true /* on_exit */);
+    LogStreamHandle(Info, monitorinflation) ls;
+    audit_and_print_stats(&ls, true /* on_exit */);
   }
 }
 
-// This function can be called at a safepoint or it can be called when
-// we are trying to exit the VM. When we are trying to exit the VM, the
-// list walker functions can run in parallel with the other list
-// operations so spin-locking is used for safety.
-//
+// This function can be called by the MonitorDeflationThread or it can be called when
+// we are trying to exit the VM. The list walker functions can run in parallel with
+// the other list operations.
 // Calls to this function can be added in various places as a debugging
-// aid; pass 'true' for the 'on_exit' parameter to have in-use monitor
-// details logged at the Info level and 'false' for the 'on_exit'
-// parameter to have in-use monitor details logged at the Trace level.
+// aid.
 //
-void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
-  assert(on_exit || SafepointSynchronize::is_at_safepoint(), "invariant");
-
-  LogStreamHandle(Debug, monitorinflation) lsh_debug;
-  LogStreamHandle(Info, monitorinflation) lsh_info;
-  LogStreamHandle(Trace, monitorinflation) lsh_trace;
-  LogStream* ls = nullptr;
-  if (log_is_enabled(Trace, monitorinflation)) {
-    ls = &lsh_trace;
-  } else if (log_is_enabled(Debug, monitorinflation)) {
-    ls = &lsh_debug;
-  } else if (log_is_enabled(Info, monitorinflation)) {
-    ls = &lsh_info;
-  }
-  assert(ls != nullptr, "sanity check");
-
+void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
   int error_cnt = 0;
 
   ls->print_cr("Checking in_use_list:");
@@ -1993,12 +1975,14 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     log_error(monitorinflation)("found in_use_list errors: error_cnt=%d", error_cnt);
   }
 
-  if ((on_exit && log_is_enabled(Info, monitorinflation)) ||
-      (!on_exit && log_is_enabled(Trace, monitorinflation))) {
-    // When exiting this log output is at the Info level. When called
-    // at a safepoint, this log output is at the Trace level since
-    // there can be a lot of it.
-    log_in_use_monitor_details(ls, !on_exit /* log_all */);
+  // When exiting, only log the interesting entries at the Info level.
+  // When called at intervals by the MonitorDeflationThread, log output
+  // at the Trace level since there can be a lot of it.
+  if (!on_exit && log_is_enabled(Trace, monitorinflation)) {
+    LogStreamHandle(Trace, monitorinflation) ls_tr;
+    log_in_use_monitor_details(&ls_tr, true /* log_all */);
+  } else if (on_exit) {
+    log_in_use_monitor_details(ls, false /* log_all */);
   }
 
   ls->flush();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
 import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
-import com.sun.jmx.remote.security.SubjectDelegator;
 import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
@@ -110,21 +109,13 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.connectionId = connectionId;
         this.defaultClassLoader = defaultClassLoader;
 
-        this.subjectDelegator = new SubjectDelegator();
         this.subject = subject;
         if (subject == null) {
             this.acc = null;
-            this.removeCallerContext = false;
         } else {
-            this.removeCallerContext =
-                SubjectDelegator.checkRemoveCallerContext(subject);
-            if (this.removeCallerContext) {
-                this.acc =
-                    JMXSubjectDomainCombiner.getDomainCombinerContext(subject);
-            } else {
-                this.acc =
-                    JMXSubjectDomainCombiner.getContext(subject);
-            }
+            // An authenticated Subject was provided.
+            // Subject Delegation has been removed.
+            this.acc = JMXSubjectDomainCombiner.getContext(subject);
         }
         this.mbeanServer = rmiServer.getMBeanServer();
 
@@ -236,6 +227,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     // MBeanServerConnection Wrapper
     //-------------------------------------------------------------------------
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
                                       Subject delegationSubject)
@@ -278,6 +270,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
                                       ObjectName loaderName,
@@ -326,6 +319,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
@@ -386,6 +380,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                  ObjectName name,
@@ -453,6 +448,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void unregisterMBean(ObjectName name, Subject delegationSubject)
         throws
         InstanceNotFoundException,
@@ -481,6 +477,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance getObjectInstance(ObjectName name,
                                             Subject delegationSubject)
         throws
@@ -511,6 +508,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectInstance>
         queryMBeans(ObjectName name,
@@ -546,6 +544,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectName>
         queryNames(ObjectName name,
@@ -581,6 +580,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public boolean isRegistered(ObjectName name,
                                 Subject delegationSubject) throws IOException {
         try {
@@ -598,6 +598,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public Integer getMBeanCount(Subject delegationSubject)
         throws IOException {
         try {
@@ -619,6 +620,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public Object getAttribute(ObjectName name,
                                String attribute,
                                Subject delegationSubject)
@@ -656,6 +658,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public AttributeList getAttributes(ObjectName name,
                                        String[] attributes,
                                        Subject delegationSubject)
@@ -688,6 +691,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void setAttribute(ObjectName name,
                              MarshalledObject attribute,
@@ -741,6 +745,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public AttributeList setAttributes(ObjectName name,
                          MarshalledObject attributes,
@@ -787,6 +792,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Object invoke(ObjectName name,
                          String operationName,
@@ -844,6 +850,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public String getDefaultDomain(Subject delegationSubject)
         throws IOException {
         try {
@@ -865,6 +872,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public String[] getDomains(Subject delegationSubject) throws IOException {
         try {
             final Object params[] = new Object[] { };
@@ -885,6 +893,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public MBeanInfo getMBeanInfo(ObjectName name, Subject delegationSubject)
         throws
         InstanceNotFoundException,
@@ -920,6 +929,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public boolean isInstanceOf(ObjectName name,
                                 String className,
                                 Subject delegationSubject)
@@ -950,6 +960,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Integer[] addNotificationListeners(ObjectName[] names,
                       MarshalledObject[] filters,
@@ -959,12 +971,17 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         if (names == null || filters == null) {
             throw new IllegalArgumentException("Got null arguments.");
         }
-
-        Subject[] sbjs = (delegationSubjects != null) ? delegationSubjects :
-        new Subject[names.length];
-        if (names.length != filters.length || filters.length != sbjs.length) {
-            final String msg =
-                "The value lengths of 3 parameters are not same.";
+        // Accept an array of delegationSubjects from e.g. earlier JDKs,
+        // but throw if it contains any non-null values.
+        if (delegationSubjects != null) {
+            for (Subject s: delegationSubjects) {
+                if (s != null) {
+                    throw new UnsupportedOperationException("Subject Delegation has been removed.");
+                }
+            }
+        }
+        if (names.length != filters.length) {
+            final String msg = "The lengths of names and filters parameters are not same.";
             throw new IllegalArgumentException(msg);
         }
 
@@ -992,7 +1009,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
                 filterValues[i] =
                     unwrap(filters[i], targetCl, defaultClassLoader,
-                           NotificationFilter.class, sbjs[i]);
+                           NotificationFilter.class, null);
 
                 if (debug) logger.debug("addNotificationListener"+
                                         "(ObjectName,NotificationFilter)",
@@ -1004,7 +1021,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     doPrivilegedOperation(ADD_NOTIFICATION_LISTENERS,
                                           new Object[] { names[i],
                                                          filterValues[i] },
-                                          sbjs[i]);
+                                          null);
             }
 
             return ids;
@@ -1037,6 +1054,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void addNotificationListener(ObjectName name,
                        ObjectName listener,
@@ -1096,6 +1114,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void removeNotificationListeners(ObjectName name,
                                             Integer[] listenerIDs,
                                             Subject delegationSubject)
@@ -1137,6 +1156,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void removeNotificationListener(ObjectName name,
                                            ObjectName listener,
                                            Subject delegationSubject)
@@ -1173,6 +1193,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void removeNotificationListener(ObjectName name,
                         ObjectName listener,
@@ -1375,32 +1396,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("removal")
     private Object doPrivilegedOperation(final int operation,
                                          final Object[] params,
                                          final Subject delegationSubject)
         throws PrivilegedActionException, IOException {
 
+        // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
+        // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
+        if (delegationSubject != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
         serverCommunicatorAdmin.reqIncoming();
         try {
-
-            final AccessControlContext reqACC;
-            if (delegationSubject == null)
-                reqACC = acc;
-            else {
-                if (subject == null) {
-                    final String msg =
-                        "Subject delegation cannot be enabled unless " +
-                        "an authenticated subject is put in place";
-                    throw new SecurityException(msg);
-                }
-                reqACC = subjectDelegator.delegatedContext(
-                    acc, delegationSubject, removeCallerContext);
-            }
-
-            PrivilegedOperation op =
-                new PrivilegedOperation(operation, params);
-            if (reqACC == null) {
+            PrivilegedOperation op = new PrivilegedOperation(operation, params);
+            if (acc == null) {
                 try {
                     return op.run();
                 } catch (Exception e) {
@@ -1409,7 +1420,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     throw new PrivilegedActionException(e);
                 }
             } else {
-                return AccessController.doPrivileged(op, reqACC);
+                return AccessController.doPrivileged(op, acc);
             }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
@@ -1563,29 +1574,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                 final Class<T> wrappedClass,
                                 Subject delegationSubject)
             throws IOException {
+
+        // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
+        // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
+        if (delegationSubject != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
         if (mo == null) {
             return null;
         }
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try{
-                final AccessControlContext reqACC;
-                if (delegationSubject == null)
-                    reqACC = acc;
-                else {
-                    if (subject == null) {
-                        final String msg =
-                            "Subject delegation cannot be enabled unless " +
-                            "an authenticated subject is put in place";
-                        throw new SecurityException(msg);
-                    }
-                    reqACC = subjectDelegator.delegatedContext(
-                        acc, delegationSubject, removeCallerContext);
-                }
-                if(reqACC != null){
+                if (acc != null) {
                     return AccessController.doPrivileged(
                             (PrivilegedExceptionAction<T>) () ->
-                                    wrappedClass.cast(mo.get()), reqACC);
+                                    wrappedClass.cast(mo.get()), acc);
                 }else{
                     return wrappedClass.cast(mo.get());
                 }
@@ -1703,10 +1707,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     //------------------------------------------------------------------------
 
     private final Subject subject;
-
-    private final SubjectDelegator subjectDelegator;
-
-    private final boolean removeCallerContext;
 
     @SuppressWarnings("removal")
     private final AccessControlContext acc;

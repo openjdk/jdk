@@ -44,7 +44,7 @@
 //   * choice of collection set.
 //   * when to collect.
 
-class HeapRegion;
+class G1HeapRegion;
 class G1CollectionSet;
 class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
@@ -122,12 +122,12 @@ public:
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
-  void set_region_eden(HeapRegion* hr) {
+  void set_region_eden(G1HeapRegion* hr) {
     hr->set_eden();
     hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 
-  void set_region_survivor(HeapRegion* hr) {
+  void set_region_survivor(G1HeapRegion* hr) {
     assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
@@ -145,14 +145,14 @@ private:
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
 
   // Copy time for a region is copying live data.
-  double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Merge-scan time for a region is handling card-based remembered sets of that region
   // (as a single unit).
-  double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
-  double predict_region_code_root_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
 public:
 
@@ -163,7 +163,7 @@ public:
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
   // Total time for a region is handling remembered sets (as a single unit), copying its live data
   // and other time.
-  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -184,9 +184,10 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
+  G1CollectionSetCandidates* candidates() const;
+
 private:
   G1CollectionSet* _collection_set;
-  G1CollectionSetCandidates* candidates() const;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -244,7 +245,7 @@ private:
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
 
-  size_t predict_bytes_to_copy(HeapRegion* hr) const;
+  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
@@ -399,7 +400,7 @@ public:
   void record_concurrent_refinement_stats(size_t pending_cards,
                                           size_t thread_buffer_cards);
 
-  bool should_retain_evac_failed_region(HeapRegion* r) const {
+  bool should_retain_evac_failed_region(G1HeapRegion* r) const {
     return should_retain_evac_failed_region(r->hrm_index());
   }
   bool should_retain_evac_failed_region(uint index) const;

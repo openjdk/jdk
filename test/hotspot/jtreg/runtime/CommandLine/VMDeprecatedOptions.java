@@ -57,11 +57,18 @@ public class VMDeprecatedOptions {
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
+            {"ZGenerational", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isX86() || Platform.isX64()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+            })
+          );
+        }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});
         }

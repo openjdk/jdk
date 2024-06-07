@@ -89,9 +89,11 @@ public class WorstCaseTests {
         failures += testWorstAcos();
         failures += testWorstTan();
         failures += testWorstAtan();
+        failures += testWorstAtan2();
         failures += testWorstPow2();
         failures += testWorstSinh();
         failures += testWorstCosh();
+        failures += testWorstHypot();
 
         if (failures > 0) {
             System.err.printf("Testing worst cases incurred %d failures.%n", failures);
@@ -482,6 +484,32 @@ public class WorstCaseTests {
     }
 
     /*
+     * 2 ulp stated error bound
+     */
+    private static int testWorstAtan2() {
+        int failures = 0;
+        double [][] testCases = {
+            // Input with large worst-case observed error for another math library
+            {-0x0.00000000039a2p-1022, 0x0.000fdf02p-1022, -0x1.d0ce6fac85de8p-27},
+        };
+
+        for(double[] testCase: testCases) {
+            failures += testAtan2Case(testCase[0], testCase[1], testCase[2]);
+        }
+
+        return failures;
+    }
+
+    private static int testAtan2Case(double input1, double input2, double expected) {
+        int failures = 0;
+         // Cannot represent exact result, allow 1 additional ulp on top of documented bound.
+        double ulps = 2.0 + 1.0;
+        failures += Tests.testUlpDiff("Math.atan2",       input1, input2, Math::atan2,       expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.atan2", input1, input2, StrictMath::atan2, expected, ulps);
+        return failures;
+    }
+
+    /*
      * 1 ulp stated error bound
      */
     private static int testWorstPow2() {
@@ -568,6 +596,32 @@ public class WorstCaseTests {
         double out = Tests.nextOut(expected);
         failures += Tests.testBounds("Math.cosh",       input, Math::cosh,       expected, out);
         failures += Tests.testBounds("StrictMath.cosh", input, StrictMath::cosh, expected, out);
+        return failures;
+    }
+
+    /*
+     * 1.5 ulp stated error bound
+     */
+    private static int testWorstHypot() {
+        int failures = 0;
+        double [][] testCases = {
+            // Input with large worst-case observed error for another math library
+            {-0x0.fffffffffffffp-1022, 0x0.0000000000001p-1022, 0x0.fffffffffffffp-1022},
+        };
+
+        for(double[] testCase: testCases) {
+            failures += testHypotCase(testCase[0], testCase[1], testCase[2]);
+        }
+
+        return failures;
+    }
+
+    private static int testHypotCase(double input1, double input2, double expected) {
+        int failures = 0;
+         // Cannot represent exact result, allow 1 additional ulp on top of documented bound, rounding up.
+        double ulps = 3.0; // 1.5 + 1.0, rounded up
+        failures += Tests.testUlpDiff("Math.hypot",       input1, input2, Math::hypot,       expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.hypot", input1, input2, StrictMath::hypot, expected, ulps);
         return failures;
     }
 }

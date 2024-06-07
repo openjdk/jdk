@@ -11,7 +11,7 @@
 #
 # A test flagged with cgroups uses cgroups.
 #
-# Notes on "client" keywords : headful sound printer multimon 
+# Notes on "client" keywords : headful sound printer multimon
 # ===========================================================
 #
 # These keywords are there to help with test selection so that
@@ -31,7 +31,7 @@
 # Tests may not fail if there is none, instead just silently return.
 # But they also may legitimately throw an Exception depending on the test.
 # Also printer tests are not necessarily headful, but some are, and some are automated.
-# 
+#
 # "sound". Similarly, not all sound tests require audio devices, but many do.
 # A test flagged with key "sound" needs audio devices on the system.
 # Also they are not necessarily "headful", since they don't require a display etc.
@@ -99,6 +99,7 @@ requires.properties= \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.jvmti \
+    vm.cpu.features \
     docker.support \
     release.implementor \
     jdk.containerized \
