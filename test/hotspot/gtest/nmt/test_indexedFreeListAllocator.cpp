@@ -128,7 +128,7 @@ TEST_VM(IFLATest, TestIt) {
   }
   {
     TIFLA::LL2<int, IndexedFreeListAllocator> list;
-    tty->print_cr("size: %lu", sizeof(TIFLA::LL2<int, IndexedFreeListAllocator>::Node));
+    tty->print_cr("size: %zu", sizeof(TIFLA::LL2<int, IndexedFreeListAllocator>::Node));
     list.append(1);
     list.append(2);
     tty->print_cr("%d", list.pop());
@@ -136,7 +136,7 @@ TEST_VM(IFLATest, TestIt) {
   }
   {
     TIFLA::LL2<int, CHeapAllocator> list;
-    tty->print_cr("size: %lu", sizeof(TIFLA::LL2<int, CHeapAllocator>::Node));
+    tty->print_cr("size: %zu", sizeof(TIFLA::LL2<int, CHeapAllocator>::Node));
     list.append(1);
     list.append(2);
     tty->print_cr("%d", list.pop());
