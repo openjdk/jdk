@@ -1171,7 +1171,7 @@ void Method::remove_unshareable_flags() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
-  if (Arguments::perf_class_link()) {
+  if (log_is_enabled(Info, perf, class, link)) {
     ClassLoader::perf_ik_link_methods_count()->inc();
   }
 

@@ -828,7 +828,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     MetaspaceShared::preload_and_dump();
   }
 
-  if (Arguments::perf_class_link()) {
+  if (log_is_enabled(Info, perf, class, link)) {
     LogStreamHandle(Info, perf, class, link) log;
     log.print_cr("At VM initialization completion:");
     log_vm_stats(&log);
