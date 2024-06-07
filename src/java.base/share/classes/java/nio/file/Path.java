@@ -289,7 +289,7 @@ public interface Path
      * @see #withExtension
      * @see #withoutExtension
      *
-     * @since 23
+     * @since 24
      */
     default String getExtension() {
         Path fileName = getFileName();
@@ -347,7 +347,7 @@ public interface Path
      * @see #getExtension
      * @see #withExtension
      *
-     * @since 23
+     * @since 24
      */
     default Path withoutExtension() {
         String ext = getExtension();
@@ -410,7 +410,7 @@ public interface Path
      * @see #getExtension
      * @see #withoutExtension
      *
-     * @since 23
+     * @since 24
      */
     default Path withExtension(String extension) {
         Objects.requireNonNull(extension);
