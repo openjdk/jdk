@@ -24,17 +24,16 @@ public:
   static constexpr const I nil = I{-1};
   // A free list allocator element is either a link to the next free space
   // Or an actual element.
-  union BackingElement {
+  union alignas(E) BackingElement {
     I link;
-    E e;
+    char e[sizeof(E)];
+
     BackingElement() {
       this->link = nil;
     }
+
     BackingElement(I link) {
       this->link = link;
-    }
-    BackingElement(E& e) {
-      this->e = e;
     }
   };
   GrowableArrayCHeap<BackingElement, flag> backing_storage;
@@ -71,11 +70,11 @@ public:
   }
 
   E& at(I i) {
-    return backing_storage.at(i.idx).e;
+    return reinterpret_cast<E>(backing_storage.at(i.idx).e);
   }
 
   const E& at(I i) const {
-    return backing_storage.at(i.idx).e;
+    return reinterpret_cast<E>(backing_storage.at(i.idx).e);
   }
 };
 
