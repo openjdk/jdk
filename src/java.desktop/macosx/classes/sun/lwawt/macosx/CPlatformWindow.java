@@ -1059,7 +1059,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         execute(ptr -> nativeSetEnabled(ptr, !blocked));
 
         Window currFocus = LWKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
-        if (!blocked && target.equals(currFocus)) {
+        if (!blocked && (target == currFocus)) {
             requestWindowFocus();
         }
         checkBlockingAndOrder();
