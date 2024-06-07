@@ -50,7 +50,7 @@ public class ProxyGenBench {
     static final IHandler HANDLER = new IHandler();
 
     @Benchmark
-    public int generate100Proxies() {
+    public int generateAndProxy100() {
         int hash = 0;
         for (int i = 0; i < 100; i++) {
             hash += Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER).hashCode();
@@ -88,6 +88,6 @@ public class ProxyGenBench {
     }
 
     public static void main(String[] args) {
-        new ProxyGenBench().generate100Proxies();
+        new ProxyGenBench().generateAndProxy100();
     }
 }
