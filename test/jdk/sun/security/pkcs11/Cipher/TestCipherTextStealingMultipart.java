@@ -168,7 +168,10 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
             actualCiphertextBuf.get(ciphertextChunk);
             actualPlaintextBuf.put(cipher.update(ciphertextChunk));
         }
-        actualPlaintextBuf.put(cipher.doFinal());
+
+        outArray = new byte[cipher.getOutputSize(0) + outOfs];
+        cipher.doFinal(outArray, outOfs);
+        actualPlaintextBuf.put(outArray, outOfs, outArray.length - outOfs);
 
         check(CheckType.PLAINTEXT, OutputType.BYTE_ARRAY,
                 jointPlaintext, actualPlaintextBuf);
@@ -183,7 +186,13 @@ public class TestCipherTextStealingMultipart extends PKCS11Test {
             actualCiphertextBuf.get(ciphertextChunk);
             cipher.update(ByteBuffer.wrap(ciphertextChunk), actualPlaintextDir);
         }
-        cipher.doFinal(ByteBuffer.allocate(0), actualPlaintextDir);
+
+        outBuffer = ByteBuffer.allocateDirect(
+                cipher.getOutputSize(0) + outOfs);
+        outBuffer.position(outOfs);
+        cipher.doFinal(ByteBuffer.allocate(0), outBuffer);
+        outBuffer.position(outOfs);
+        actualPlaintextDir.put(outBuffer);
 
         check(CheckType.PLAINTEXT, OutputType.DIRECT_BYTE_BUFFER,
                 jointPlaintext, actualPlaintextDir);
