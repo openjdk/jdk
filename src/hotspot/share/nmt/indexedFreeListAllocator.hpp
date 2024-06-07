@@ -56,6 +56,7 @@ public:
     I(int32_t idx DEBUG_ONLY(COMMA IndexedFreeListAllocator<E COMMA flag>* owner))
     : _idx(idx) DEBUG_ONLY(COMMA _owner(owner)) {}
   };
+
   static const I nil;
 
 private:
@@ -81,7 +82,7 @@ public:
   template<typename... Args>
   I allocate(Args... args) {
     BackingElement* be;
-    int i = -1;
+    int i;
     if (_free_start != nil) {
       // Must point to already existing index
       be = &_backing_storage.at(_free_start._idx);
