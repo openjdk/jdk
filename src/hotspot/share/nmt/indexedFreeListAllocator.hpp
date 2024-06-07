@@ -11,7 +11,6 @@
 template<typename E, MEMFLAGS flag>
 class IndexedFreeListAllocator {
 public:
-  // Make the index opaque.
   class I {
     friend IndexedFreeListAllocator<E, flag>;
     int32_t _idx;
@@ -44,46 +43,49 @@ private:
       this->link = link;
     }
   };
-  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
-  I _free_start;
+
+  GrowableArrayCHeap<BackingElement, flag> backing_storage;
+  I free_start;
 
 public:
   IndexedFreeListAllocator()
-  : _backing_storage(8),
-  _free_start(I{0}) {}
+  : backing_storage(8),
+  free_start(I{0}) {}
 
   template<typename... Args>
   I allocate(Args... args) {
-    int32_t i = _free_start._idx;
-    _backing_storage.at_grow(i);
-    BackingElement& be = _backing_storage.at(i);
+    int32_t i = free_start._idx;
+    backing_storage.at_grow(i);
+    BackingElement& be = backing_storage.at(i);
     if (be.link == nil) {
       // Must be at end, simply increment
-      _free_start._idx += 1;
+      free_start._idx += 1;
     } else {
       // Follow the link to the next free element
-      _free_start = be.link;
+      free_start = be.link;
     }
     ::new (&be) E(args...);
     return I{i DEBUG_ONLY(COMMA this)};
   }
 
   void free(I i) {
-    assert(i == nil || i._owner == this, "attempt to free to wrong allocator");
+    assert(i == nil || i._owner == this, "attempt to free via wrong allocator");
 
-    BackingElement& be_freed = _backing_storage.at(i._idx);
-    be_freed.link = _free_start;
-    _free_start = i;
+    BackingElement& be_freed = backing_storage.at(i._idx);
+    be_freed.link = free_start;
+    free_start = i;
   }
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<E&>(_backing_storage.at(i._idx).e);
+    assert(i._owner == this, "attempt to access via wrong allocator");
+    return reinterpret_cast<E&>(backing_storage.at(i._idx).e);
   }
 
   const E& at(I i) const {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
+    assert(i._owner == this, "attempt to access via wrong allocator");
+    return reinterpret_cast<const E&>(backing_storage.at(i._idx).e);
   }
 };
 
