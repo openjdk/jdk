@@ -2832,7 +2832,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
   assert(is_java_primitive(def_bt), "sanity %s", type2name(def_bt));
 
   // Nodes like Long.bitCount: expect long input, and int output.
-  if (requires_long_to_int_conversion(use->Opcode())) {
+  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(use->Opcode())) {
     return type2aelembytes(def_bt) == 8 &&
            type2aelembytes(use_bt) == 4;
   }

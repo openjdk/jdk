@@ -628,8 +628,6 @@ private:
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n) const;
 
-  static bool requires_long_to_int_conversion(int opc);
-
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
