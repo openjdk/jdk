@@ -3,5 +3,9 @@
     static void [[TEST]]Reduce$vectorteststype$Masked(IntFunction<$type$[]> fa, IntFunction<boolean[]> fm) {
 [[KERNEL]]
         assertReductionArraysEqualsMasked(r, ra, a, mask,
+#if[FP]
+                $vectorteststype$::[[TEST]]ReduceMasked, $vectorteststype$::[[TEST]]ReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+#else[FP]
                 $vectorteststype$::[[TEST]]ReduceMasked, $vectorteststype$::[[TEST]]ReduceAllMasked);
+#end[FP]
     }

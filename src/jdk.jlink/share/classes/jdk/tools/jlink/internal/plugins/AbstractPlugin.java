@@ -35,8 +35,8 @@ import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public abstract class AbstractPlugin implements Plugin {
@@ -85,10 +85,10 @@ public abstract class AbstractPlugin implements Plugin {
         }
     }
 
-    ClassModel newClassReader(String path, ResourcePoolEntry resource, Classfile.Option... options) {
+    ClassModel newClassReader(String path, ResourcePoolEntry resource, ClassFile.Option... options) {
         byte[] content = resource.contentBytes();
         try {
-            return Classfile.of(options).parse(content);
+            return ClassFile.of(options).parse(content);
         } catch (Exception e) {
             if (JlinkTask.DEBUG) {
                 System.err.printf("Failed to parse class file: %s from resource of type %s\n", path,
@@ -100,9 +100,9 @@ public abstract class AbstractPlugin implements Plugin {
         }
     }
 
-    protected ClassModel newClassReader(String path, byte[] buf, Classfile.Option... options) {
+    protected ClassModel newClassReader(String path, byte[] buf, ClassFile.Option... options) {
         try {
-            return Classfile.of(options).parse(buf);
+            return ClassFile.of(options).parse(buf);
         } catch (Exception e) {
             if (JlinkTask.DEBUG) {
                 System.err.printf("Failed to parse class file: %s\n", path);

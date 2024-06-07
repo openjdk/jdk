@@ -47,9 +47,9 @@ private:
 public:
   PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
@@ -60,9 +60,9 @@ public:
     ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
     _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
@@ -106,14 +106,18 @@ inline void ParCompactionManager::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
-      push(obj);
-
+    if (mark_bitmap()->mark_obj(obj)) {
       if (StringDedup::is_enabled() &&
           java_lang_String::is_instance(obj) &&
           psStringDedup::is_candidate_from_mark(obj)) {
         _string_dedup_requests.add(obj);
       }
+
+      ContinuationGCSupport::transform_stack_chunk(obj);
+
+      assert(_marking_stats_cache != nullptr, "inv");
+      _marking_stats_cache->push(obj, obj->size());
+      push(obj);
     }
   }
 }
@@ -155,13 +159,6 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
   }
 }
 
-inline void ParCompactionManager::update_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
-    PCAdjustPointerClosure apc(this);
-    obj->oop_iterate(&apc);
-  }
-}
-
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
   PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
@@ -172,6 +169,75 @@ inline void ParCompactionManager::follow_contents(oop obj) {
   } else {
     obj->oop_iterate(&cl);
   }
+}
+
+inline void ParCompactionManager::MarkingStatsCache::push(size_t region_id, size_t live_words) {
+  size_t index = (region_id & entry_mask);
+  if (entries[index].region_id == region_id) {
+    // Hit
+    entries[index].live_words += live_words;
+    return;
+  }
+  // Miss
+  if (entries[index].live_words != 0) {
+    evict(index);
+  }
+  entries[index].region_id = region_id;
+  entries[index].live_words = live_words;
+}
+
+inline void ParCompactionManager::MarkingStatsCache::push(oop obj, size_t live_words) {
+  ParallelCompactData& data = PSParallelCompact::summary_data();
+  const size_t region_size = ParallelCompactData::RegionSize;
+
+  HeapWord* addr = cast_from_oop<HeapWord*>(obj);
+  const size_t start_region_id = data.addr_to_region_idx(addr);
+  const size_t end_region_id = data.addr_to_region_idx(addr + live_words - 1);
+  if (start_region_id == end_region_id) {
+    // Completely inside this region
+    push(start_region_id, live_words);
+    return;
+  }
+
+  // First region
+  push(start_region_id, region_size - data.region_offset(addr));
+
+  // Middle regions; bypass cache
+  for (size_t i = start_region_id + 1; i < end_region_id; ++i) {
+    data.region(i)->set_partial_obj_size(region_size);
+    data.region(i)->set_partial_obj_addr(addr);
+  }
+
+  // Last region; bypass cache
+  const size_t end_offset = data.region_offset(addr + live_words - 1);
+  data.region(end_region_id)->set_partial_obj_size(end_offset + 1);
+  data.region(end_region_id)->set_partial_obj_addr(addr);
+}
+
+inline void ParCompactionManager::MarkingStatsCache::evict(size_t index) {
+  ParallelCompactData& data = PSParallelCompact::summary_data();
+  // flush to global data
+  data.region(entries[index].region_id)->add_live_obj(entries[index].live_words);
+}
+
+inline void ParCompactionManager::MarkingStatsCache::evict_all() {
+  for (size_t i = 0; i < num_entries; ++i) {
+    if (entries[i].live_words != 0) {
+      evict(i);
+      entries[i].live_words = 0;
+    }
+  }
+}
+
+inline void ParCompactionManager::create_marking_stats_cache() {
+  assert(_marking_stats_cache == nullptr, "precondition");
+  _marking_stats_cache = new MarkingStatsCache();
+}
+
+inline void ParCompactionManager::flush_and_destroy_marking_stats_cache() {
+  _marking_stats_cache->evict_all();
+  delete _marking_stats_cache;
+  _marking_stats_cache = nullptr;
 }
 
 #endif // SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP

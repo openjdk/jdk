@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@ package org.openjdk.bench.java.lang.foreign.pointers;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 
 public sealed abstract class NativeType<X> {
-
     public abstract MemoryLayout layout();
 
     public non-sealed static abstract class OfInt<X> extends NativeType<X> {
@@ -39,8 +39,20 @@ public sealed abstract class NativeType<X> {
         public abstract ValueLayout.OfDouble layout();
     }
 
+    private static Linker LINKER = Linker.nativeLinker();
+
+    /**
+     * The layout for the {@code int} C type
+     */
+    private static final ValueLayout.OfInt CANONICAL_INT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
+    /**
+     * The layout for the {@code double} C type
+     */
+    private static final ValueLayout.OfDouble CANONICAL_DOUBLE = (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
+
+
     private static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
 
     public final static class OfPointer<X> extends NativeType<X> {
         public AddressLayout layout() {
@@ -56,14 +68,14 @@ public sealed abstract class NativeType<X> {
     public static final OfInt<Integer> C_INT = new OfInt<>() {
         @Override
         public ValueLayout.OfInt layout() {
-            return ValueLayout.JAVA_INT;
+            return CANONICAL_INT;
         }
     };
 
     public static final OfDouble<Double> C_DOUBLE = new OfDouble<>() {
         @Override
         public ValueLayout.OfDouble layout() {
-            return ValueLayout.JAVA_DOUBLE;
+            return CANONICAL_DOUBLE;
         }
     };
 

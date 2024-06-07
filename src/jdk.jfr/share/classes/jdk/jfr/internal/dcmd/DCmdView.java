@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.query.Configuration;
@@ -62,6 +65,10 @@ public class DCmdView extends AbstractDCmd {
             Utils.waitFlush(10_000);
             configuration.endTime = Instant.now();
         }
+
+        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "JFR.view time range: " + configuration.startTime + " - " + configuration.endTime);
+        }
         try (QueryRecording recording = new QueryRecording(configuration, parser)) {
             ViewPrinter printer = new ViewPrinter(configuration, recording.getStream());
             printer.execute(view);
@@ -77,7 +84,12 @@ public class DCmdView extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    protected final boolean isInteractive() {
+        return true;
+    }
+
+    @Override
+    public String[] getHelp() {
         List<String> lines = new ArrayList<>();
         lines.addAll(getOptions().lines().toList());
         lines.add("");

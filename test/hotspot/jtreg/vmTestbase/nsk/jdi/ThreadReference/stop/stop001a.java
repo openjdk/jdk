@@ -189,7 +189,7 @@ class Threadstop001a extends NamedTask {
 
     public static Object lockingObject2 = new Object();
 
-    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
     private int i1 = 0, i2 = 10;
 

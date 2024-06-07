@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,20 @@ private:
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
 
-  typedef ResourceHashtable<size_t, oop,
-      36137, // prime number
+  // We sort _source_objs_order to minimize the number of bits in ptrmap and oopmap.
+  // See comments near the body of ArchiveHeapWriter::compare_objs_by_oop_fields().
+  // The objects will be written in the order of:
+  //_source_objs->at(_source_objs_order->at(0)._index)
+  // source_objs->at(_source_objs_order->at(1)._index)
+  // source_objs->at(_source_objs_order->at(2)._index)
+  // ...
+  struct HeapObjOrder {
+    int _index;    // The location of this object in _source_objs
+    int _rank;     // A lower rank means the object will be written at a lower location.
+  };
+  static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
+
+  typedef ResizeableResourceHashtable<size_t, oop,
       AnyObj::C_HEAP,
       mtClassShared> BufferOffsetToSourceObjectTable;
   static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;
@@ -188,7 +200,7 @@ private:
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
   static size_t filler_array_byte_size(int length);
   static int filler_array_length(size_t fill_bytes);
-  static void init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
+  static HeapWord* init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
   static void set_requested_address(ArchiveHeapInfo* info);
   static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveHeapInfo* info);
@@ -210,6 +222,10 @@ private:
   template <typename T> static void relocate_root_at(oop requested_roots, int index, CHeapBitMap* oopmap);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
+
+  static int compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder* b);
+  static void sort_source_objs();
+
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
   static void add_source_obj(oop src_obj);
@@ -225,8 +241,10 @@ public:
   static size_t heap_roots_word_size() {
     return _heap_roots_word_size;
   }
+  static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
+  static bool is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset);
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);

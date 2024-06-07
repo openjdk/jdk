@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -53,9 +54,37 @@ volatile intx JVMCI::_fatal_log_init_thread = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = nullptr;
 
+CompilerThreadCanCallJava::CompilerThreadCanCallJava(JavaThread* current, bool new_state) {
+  _current = nullptr;
+  if (current->is_Compiler_thread()) {
+    CompilerThread* ct = CompilerThread::cast(current);
+    if (ct->_can_call_java != new_state &&
+        ct->_compiler != nullptr &&
+        ct->_compiler->is_jvmci())
+    {
+      // Only enter a new context if the ability of the
+      // current thread to call Java actually changes
+      _reset_state = ct->_can_call_java;
+      ct->_can_call_java = new_state;
+      _current = ct;
+    }
+  }
+}
+
+CompilerThreadCanCallJava::~CompilerThreadCanCallJava() {
+  if (_current != nullptr) {
+    _current->_can_call_java = _reset_state;
+  }
+}
+
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
 bool JVMCI::can_initialize_JVMCI() {
+  if (UseJVMCINativeLibrary) {
+    // Initializing libjvmci does not execute Java code so
+    // can be done any time.
+    return true;
+  }
   // Initializing JVMCI requires the module system to be initialized past phase 3.
   // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
   // JVMCI initialization requires) isn't usable until after phase 3. Testing
@@ -170,6 +199,10 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
     java_lang_Integer_IntegerCache::symbol(),
     java_lang_Long_LongCache::symbol()
   };
+
+  // Class resolution and initialization below
+  // requires calling into Java
+  CompilerThreadCanCallJava ccj(THREAD, true);
 
   for (unsigned i = 0; i < sizeof(box_classes) / sizeof(Symbol*); i++) {
     Klass* k = SystemDictionary::resolve_or_fail(box_classes[i], true, CHECK);

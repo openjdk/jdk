@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1162,6 +1162,30 @@ public final class Instant
         return unit.between(this, end);
     }
 
+    /**
+     * Calculates the {@code Duration} until another {@code Instant}.
+     * <p>
+     * The start and end points are {@code this} and the specified instant.
+     * The result will be negative if the end is before the start. Calling
+     * this method is equivalent to
+     * {@link Duration#between(Temporal, Temporal) Duration.between(this,
+     * endExclusive)}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param endExclusive the end {@code Instant}, exclusive, not null
+     * @return the {@code Duration} from this {@code Instant} until the
+     *      specified {@code endExclusive} {@code Instant}
+     * @see Duration#between(Temporal, Temporal)
+     * @since 23
+     */
+    public Duration until(Instant endExclusive) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
+        long secsDiff = Math.subtractExact(endExclusive.seconds, seconds);
+        int nanosDiff = endExclusive.nanos - nanos;
+        return Duration.ofSeconds(secsDiff, nanosDiff);
+    }
+
     private long nanosUntil(Instant end) {
         long secsDiff = Math.subtractExact(end.seconds, seconds);
         long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
@@ -1272,8 +1296,11 @@ public final class Instant
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherInstant  the other instant to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this instant is before {@code otherInstant},
+     *          zero if they are equal, or greater than zero if this instant is after {@code otherInstant}
      * @throws NullPointerException if otherInstant is null
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(Instant otherInstant) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ final class LCMS implements PCMM {
         }
     }
 
-    /* Helper method used from LCMSColorTransfrom */
+    /* Helper method used from LCMSColorTransform */
     static long createTransform(LCMSProfile[] profiles, int renderingIntent,
                                 int inFormatter, int outFormatter,
                                 Object disposerRef)

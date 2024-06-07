@@ -1,7 +1,7 @@
 <!--
-Copyright © 1991-2023 Unicode, Inc.
+Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "43" >
+<!ATTLIST version cldrVersion CDATA #FIXED "45" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 
@@ -69,6 +69,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST type since CDATA #IMPLIED >
     <!--@MATCH:version-->
     <!--@METADATA-->
+<!ATTLIST type iana CDATA #IMPLIED >
+    <!--@MATCH:regex/^[A-Za-z]+(/[A-Za-z_\-]+)+$-->
+    <!--@VALUE-->
 
 <!ELEMENT attribute EMPTY >
 <!ATTLIST attribute name NMTOKEN #REQUIRED >

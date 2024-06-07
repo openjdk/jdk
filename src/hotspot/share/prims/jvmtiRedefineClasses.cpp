@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -48,6 +49,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -62,7 +64,9 @@
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
+#include "utilities/macros.hpp"
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -242,7 +246,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -1170,6 +1174,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
+      JFR_ONLY(k_new_method->copy_trace_flags(*k_old_method->trace_flags_addr());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1284,35 +1289,6 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 
   return value;
 } // end find_new_operand_index()
-
-
-// Returns true if the current mismatch is due to a resolved/unresolved
-// class pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& cp1,
-       int index1, const constantPoolHandle& cp2, int index2) {
-
-  jbyte t1 = cp1->tag_at(index1).value();
-  if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  jbyte t2 = cp2->tag_at(index2).value();
-  if (t2 != JVM_CONSTANT_Class && t2 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  if (t1 == t2) {
-    return false;  // not a mismatch; not our special case
-  }
-
-  char *s1 = cp1->klass_name_at(index1)->as_C_string();
-  char *s2 = cp2->klass_name_at(index2)->as_C_string();
-  if (strcmp(s1, s2) != 0) {
-    return false;  // strings don't match; not our special case
-  }
-
-  return true;  // made it through the gauntlet; this is our special case
-} // end is_unresolved_class_mismatch()
 
 
 // The bug 6214132 caused the verification to fail.
@@ -1704,14 +1680,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
-      } else if (is_unresolved_class_mismatch(scratch_cp, scratch_i,
-                                              *merge_cp_p, scratch_i)) {
-        // The mismatch in compare_entry_to() above is because of a
-        // resolved versus unresolved class entry at the same index
-        // with the same string value. Since Pass 0 reverted any
-        // class entries to unresolved class entries in *merge_cp_p,
-        // we go with the unresolved class entry.
-        continue;
       }
 
       int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
@@ -1724,13 +1692,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         map_index(scratch_cp, scratch_i, found_i);
         continue;
       }
-
-      // The find_matching_entry() call above could fail to find a match
-      // due to a resolved versus unresolved class or string entry situation
-      // like we solved above with the is_unresolved_*_mismatch() calls.
-      // However, we would have to call is_unresolved_*_mismatch() over
-      // all of *merge_cp_p (potentially) and that doesn't seem to be
-      // worth the time.
 
       // No match found so we have to append this entry and any unique
       // referenced entries to *merge_cp_p.
@@ -1863,6 +1824,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
+    return JVMTI_ERROR_INTERNAL;
+  }
+
+  // ensure merged constant pool size does not overflow u2
+  if (merge_cp_length > 0xFFFF) {
+    log_warning(redefine, class, constantpool)("Merged constant pool overflow: %d entries", merge_cp_length);
     return JVMTI_ERROR_INTERNAL;
   }
 
@@ -4103,21 +4070,22 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
-// phase then the compiler has recorded all dependencies from startup.
-// In that case we need only deoptimize and throw away all compiled code
-// that depends on the class.
+// phase or 'AlwaysRecordEvolDependencies' is true, then the compiler has
+// recorded all dependencies from startup. In that case we need only
+// deoptimize and throw away all compiled code that depends on the class.
 //
-// If can_redefine_classes is obtained sometime after the onload
-// phase then the dependency information may be incomplete. In that case
-// the first call to RedefineClasses causes all compiled code to be
-// thrown away. As can_redefine_classes has been obtained then
-// all future compilations will record dependencies so second and
-// subsequent calls to RedefineClasses need only throw away code
-// that depends on the class.
+// If can_redefine_classes is obtained sometime after the onload phase
+// (and 'AlwaysRecordEvolDependencies' is false) then the dependency
+// information may be incomplete. In that case the first call to
+// RedefineClasses causes all compiled code to be thrown away. As
+// can_redefine_classes has been obtained then all future compilations will
+// record dependencies so second and subsequent calls to RedefineClasses
+// need only throw away code that depends on the class.
 //
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  assert(JvmtiExport::all_dependencies_are_recorded() || !AlwaysRecordEvolDependencies, "sanity check");
 
   DeoptimizationScope deopt_scope;
 
@@ -4383,7 +4351,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

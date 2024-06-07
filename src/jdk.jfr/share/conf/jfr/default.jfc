@@ -200,16 +200,6 @@
       <setting name="threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SafepointCleanup">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanupTask">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
     <event name="jdk.SafepointEnd">
       <setting name="enabled">false</setting>
       <setting name="threshold">10 ms</setting>
@@ -663,12 +653,22 @@
       <setting name="period">5 s</setting>
     </event>
 
+    <event name="jdk.CompilerQueueUtilization">
+      <setting name="enabled">true</setting>
+      <setting name="period">10 s</setting>
+    </event>
+
     <event name="jdk.InitialEnvironmentVariable">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.PhysicalMemory">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.SwapSpace">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
     </event>
@@ -692,6 +692,18 @@
     <event name="jdk.NativeLibrary">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.NativeLibraryLoad">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.NativeLibraryUnload">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.ModuleRequire">
@@ -737,6 +749,10 @@
     <event name="jdk.Deserialization">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.SerializationMisdeclaration">
+        <setting name="enabled">false</setting>
     </event>
 
     <event name="jdk.InitialSecurityProperty">
@@ -807,6 +823,7 @@
 
     <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -896,6 +913,12 @@
     <event name="jdk.NativeAgent">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
+    </event>
+
+    <event name="jdk.DeprecatedInvocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="level">forRemoval</setting>
     </event>
 
 

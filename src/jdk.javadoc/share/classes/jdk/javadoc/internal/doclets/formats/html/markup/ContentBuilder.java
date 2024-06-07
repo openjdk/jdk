@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A sequence of Content nodes.
@@ -75,6 +75,13 @@ public class ContentBuilder extends Content {
         return this;
     }
 
+    /**
+     * {@return the contents of this builder}
+     */
+    public List<Content> getContents() {
+        return contents;
+    }
+
     @Override
     public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         for (Content content: contents) {
@@ -98,6 +105,11 @@ public class ContentBuilder extends Content {
         for (Content c : contents)
             n += c.charCount();
         return n;
+    }
+
+    @Override
+    public boolean isPhrasingContent() {
+        return contents.stream().allMatch(Content::isPhrasingContent);
     }
 
     private void ensureMutableContents() {

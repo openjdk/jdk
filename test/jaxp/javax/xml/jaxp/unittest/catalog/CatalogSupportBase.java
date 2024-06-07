@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,9 @@ public class CatalogSupportBase {
         if (setUseCatalog) {
             factory.setFeature(XMLConstants.USE_CATALOG, useCatalog);
         }
-        factory.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        if (catalog != null) {
+            factory.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        }
 
         Schema schema = factory.newSchema(new StreamSource(new StringReader(xsd)));
         success("XMLSchema.dtd and datatypes.dtd are resolved.");
@@ -472,7 +474,9 @@ public class CatalogSupportBase {
         }
 
         SAXParser parser = spf.newSAXParser();
-        parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        if (catalog != null) {
+            parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        }
         return parser;
     }
 
@@ -495,7 +499,9 @@ public class CatalogSupportBase {
         if (setUseCatalog) {
             reader.setFeature(XMLConstants.USE_CATALOG, useCatalog);
         }
-        reader.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        if (catalog != null) {
+            reader.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        }
         return reader;
     }
 
@@ -566,7 +572,9 @@ public class CatalogSupportBase {
             if (setUseCatalog) {
                 xif.setProperty(XMLConstants.USE_CATALOG, useCatalog);
             }
-            xif.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+            if (catalog != null) {
+                xif.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+            }
             ss = new StAXSource(xif.createXMLEventReader(
                         xmlFileId, new FileInputStream(xmlFile)));
         } catch (Exception e) {}
@@ -1013,6 +1021,7 @@ public class CatalogSupportBase {
      * Simple policy implementation that grants a set of permissions to all code
      * sources and protection domains.
      */
+    @SuppressWarnings("removal")
     static class SimplePolicy extends Policy {
 
         private final Permissions perms;

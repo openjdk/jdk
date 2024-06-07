@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -522,7 +523,7 @@ inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
 
 #ifndef PRODUCT
 
-int compare_depth_first(BlockBegin** a, BlockBegin** b) {
+static int compare_depth_first(BlockBegin** a, BlockBegin** b) {
   return (*a)->depth_first_number() - (*b)->depth_first_number();
 }
 
@@ -998,8 +999,8 @@ void GraphBuilder::load_constant() {
     // Unbox the value at runtime, if needed.
     // ConstantDynamic entry can be of a primitive type, but it is cached in boxed form.
     if (patch_state != nullptr) {
-      int index = stream()->get_constant_pool_index();
-      BasicType type = stream()->get_basic_type_for_constant_at(index);
+      int cp_index = stream()->get_constant_pool_index();
+      BasicType type = stream()->get_basic_type_for_constant_at(cp_index);
       if (is_java_primitive(type)) {
         ciInstanceKlass* box_klass = ciEnv::current()->get_box_klass_for_primitive_type(type);
         assert(box_klass->is_loaded(), "sanity");
@@ -1246,7 +1247,7 @@ void GraphBuilder::shift_op(ValueType* type, Bytecodes::Code code) {
             } else {
               // pattern: (a << s0c) >>> s0c => simplify to: a & m, with m constant
               assert(0 < s0c && s0c < BitsPerInt, "adjust code below to handle corner cases");
-              const int m = (1 << (BitsPerInt - s0c)) - 1;
+              const int m = checked_cast<int>(right_n_bits(BitsPerInt - s0c));
               Value s = append(new Constant(new IntConstant(m)));
               ipush(append(new LogicOp(Bytecodes::_iand, l->x(), s)));
             }
@@ -1314,8 +1315,8 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
   Instruction *i = append(new If(x, cond, false, y, tsux, fsux, (is_bb || compilation()->is_optimistic()) ? state_before : nullptr, is_bb));
 
   assert(i->as_Goto() == nullptr ||
-         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == tsux->bci() < stream()->cur_bci()) ||
-         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == fsux->bci() < stream()->cur_bci()),
+         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == (tsux->bci() < stream()->cur_bci())) ||
+         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == (fsux->bci() < stream()->cur_bci())),
          "safepoint state of Goto returned by canonicalizer incorrect");
 
   if (is_profiling()) {
@@ -1450,7 +1451,7 @@ void GraphBuilder::table_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.dest_offset_at(i) < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.dest_offset_at(i) < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -1499,7 +1500,7 @@ void GraphBuilder::lookup_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.pair_at(i).offset() < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.pair_at(i).offset() < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -1555,8 +1556,7 @@ void GraphBuilder::call_register_finalizer() {
 
 
 void GraphBuilder::method_return(Value x, bool ignore_return) {
-  if (RegisterFinalizersAtInit &&
-      method()->intrinsic_id() == vmIntrinsics::_Object_init) {
+  if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
   }
 
@@ -2026,8 +2026,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
-      if (type != nullptr && type->is_loaded() &&
-          type->is_instance_klass() && !type->as_instance_klass()->is_interface()) {
+      if (type != nullptr && type->is_loaded()) {
+        assert(!type->is_instance_klass() || !type->as_instance_klass()->is_interface(), "Must not be an interface");
+        // Detects non-interface instances, primitive arrays, and some object arrays.
+        // Array receivers can only call Object methods, so we should be able to allow
+        // all object arrays here too, even those with unloaded types.
         receiver_klass = (ciInstanceKlass*) type;
         type_is_exact = true;
       }
@@ -2087,9 +2090,10 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         assert(singleton != declared_interface, "not a unique implementor");
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != nullptr) {
-          if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            ciInstanceKlass* holder = cha_monomorphic_target->holder();
-            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          ciInstanceKlass* holder = cha_monomorphic_target->holder();
+          ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          if (holder != compilation()->env()->Object_klass() &&
+              (!type_is_exact || receiver_klass->is_subtype_of(constraint))) {
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
@@ -2102,7 +2106,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
             dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
-            cha_monomorphic_target = nullptr; // subtype check against Object is useless
+            cha_monomorphic_target = nullptr;
           }
         }
       }
@@ -2242,7 +2246,7 @@ void GraphBuilder::new_instance(int klass_index) {
 
 void GraphBuilder::new_type_array() {
   ValueStack* state_before = copy_state_exhandling();
-  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before)));
+  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before, true)));
 }
 
 
@@ -2314,7 +2318,6 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
-  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -2515,6 +2518,8 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
 
         // xhandler start with an empty expression stack
         if (cur_state->stack_size() != 0) {
+          // locals are preserved
+          // stack will be truncated
           cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
         }
         if (instruction->exception_state() == nullptr) {
@@ -2564,15 +2569,19 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
       // This scope and all callees do not handle exceptions, so the local
       // variables of this scope are not needed. However, the scope itself is
       // required for a correct exception stack trace -> clear out the locals.
-      if (_compilation->env()->should_retain_local_variables()) {
-        cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
-      } else {
-        cur_state = cur_state->copy(ValueStack::EmptyExceptionState, cur_state->bci());
-      }
+      // Stack and locals are invalidated but not truncated in caller state.
       if (prev_state != nullptr) {
+        assert(instruction->exception_state() != nullptr, "missed set?");
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind(true /* caller */);
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
+        // reset caller exception state
         prev_state->set_caller_state(cur_state);
-      }
-      if (instruction->exception_state() == nullptr) {
+      } else {
+        assert(instruction->exception_state() == nullptr, "already set");
+        // set instruction exception state
+        // truncate stack
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
         instruction->set_exception_state(cur_state);
       }
     }
@@ -3485,11 +3494,9 @@ ValueStack* GraphBuilder::copy_state_exhandling_with_bci(int bci) {
 ValueStack* GraphBuilder::copy_state_for_exception_with_bci(int bci) {
   ValueStack* s = copy_state_exhandling_with_bci(bci);
   if (s == nullptr) {
-    if (_compilation->env()->should_retain_local_variables()) {
-      s = state()->copy(ValueStack::ExceptionState, bci);
-    } else {
-      s = state()->copy(ValueStack::EmptyExceptionState, bci);
-    }
+    // no handler, no need to retain locals
+    ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+    s = state()->copy(exc_kind, bci);
   }
   return s;
 }
@@ -3504,6 +3511,14 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   return recur_level;
 }
 
+static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* callee) {
+  if (callee->has_reserved_stack_access()) {
+    compilation->set_has_reserved_stack_access(true);
+  }
+  if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
+    compilation->set_has_monitors(true);
+  }
+}
 
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
@@ -3521,9 +3536,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
     if (try_method_handle_inline(callee, ignore_return)) {
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     return false;
@@ -3534,9 +3547,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     // try normal inlining
@@ -3554,9 +3565,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
     bc = code();
   }
   if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
-    if (callee->has_reserved_stack_access()) {
-      compilation()->set_has_reserved_stack_access(true);
-    }
+    set_flags_for_inlined_callee(compilation(), callee);
     return true;
   }
 
@@ -3644,8 +3653,12 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
   case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
+  case vmIntrinsics::_clone                  : append_alloc_array_copy(callee); return;
   default:
     break;
+  }
+  if (_inline_bailout_msg != nullptr) {
+    return;
   }
 
   // create intrinsic node
@@ -3708,6 +3721,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     }
   }
   build_graph_for_intrinsic(callee, ignore_return);
+  if (_inline_bailout_msg != nullptr) {
+    return false;
+  }
   return true;
 }
 
@@ -4421,6 +4437,44 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   }
 }
 
+void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
+  const int args_base = state()->stack_size() - callee->arg_size();
+  ciType* receiver_type = state()->stack_at(args_base)->exact_type();
+  if (receiver_type == nullptr) {
+    inline_bailout("must have a receiver");
+    return;
+  }
+  if (!receiver_type->is_type_array_klass()) {
+    inline_bailout("clone array not primitive");
+    return;
+  }
+
+  ValueStack* state_before = copy_state_before();
+  state_before->set_force_reexecute();
+  Value src = apop();
+  BasicType basic_type = src->exact_type()->as_array_klass()->element_type()->basic_type();
+  Value length = append(new ArrayLength(src, state_before));
+  Value new_array = append_split(new NewTypeArray(length, basic_type, state_before, false));
+
+  ValueType* result_type = as_ValueType(callee->return_type());
+  vmIntrinsics::ID id = vmIntrinsics::_arraycopy;
+  Values* args = new Values(5);
+  args->push(src);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(new_array);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(length);
+  const bool has_receiver = true;
+  Intrinsic* array_copy = new Intrinsic(result_type, id,
+                                    args, has_receiver, state_before,
+                                    vmIntrinsics::preserves_state(id),
+                                    vmIntrinsics::can_trap(id));
+  array_copy->set_flag(Instruction::OmitChecksFlag, true);
+  append_split(array_copy);
+  apush(new_array);
+  append(new MemBar(lir_membar_storestore));
+}
+
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
   CompileLog* log = compilation()->log();
   if (log != nullptr) {
@@ -4436,12 +4490,12 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
     CompilerEvent::InlineEvent::post(event, compilation()->env()->task()->compile_id(), method()->get_Method(), callee, success, msg, bci());
   }
 
-  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), inlining_result_of(success), msg);
 
   if (!compilation()->directive()->PrintInliningOption) {
     return;
   }
-  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), inlining_result_of(success), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }
@@ -4463,7 +4517,9 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 
 #ifndef PRODUCT
 void GraphBuilder::print_stats() {
-  vmap()->print();
+  if (UseLocalValueNumbering) {
+    vmap()->print();
+  }
 }
 #endif // PRODUCT
 

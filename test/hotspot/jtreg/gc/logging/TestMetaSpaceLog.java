@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.ByteCodeLoader;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -91,55 +93,43 @@ public class TestMetaSpaceLog {
   }
 
   private static void testMetaSpaceUpdate() throws Exception {
-    // Propagate test.src for the jar file.
-    String testSrc= "-Dtest.src=" + System.getProperty("test.src", ".");
-
-    ProcessBuilder pb =
-      ProcessTools.createTestJvm(
-          "-Xlog:gc*",
-          "-Xbootclasspath/a:.",
-          "-XX:+UnlockDiagnosticVMOptions",
-          "-XX:+WhiteBoxAPI",
-          "-Xmx1000M",
-          "-Xms1000M",
-          testSrc, StressMetaSpace.class.getName());
-
     OutputAnalyzer output = null;
     try {
-      output = new OutputAnalyzer(pb.start());
+      output = ProcessTools.executeTestJava(
+            "-Xlog:gc*",
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-Xmx1000M",
+            "-Xms1000M",
+            StressMetaSpace.class.getName());
+
       verifyContainsMetaSpaceUpdate(output);
     } catch (Exception e) {
       // For error diagnosis: print and throw.
       e.printStackTrace();
-      output.reportDiagnosticSummary();
+      if (output != null) {
+        output.reportDiagnosticSummary();
+      }
       throw e;
     }
   }
 
   static class StressMetaSpace {
-    private static URL[] urls = new URL[1];
-
-    static {
-      try {
-        File jarFile = new File(System.getProperty("test.src") + "/testcases.jar");
-        urls[0] = jarFile.toURI().toURL();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
 
     public static void main(String args[]) {
-      WhiteBox wb = WhiteBox.getWhiteBox();
-      for(int i = 0; i < 10000; i++) {
-        loadClass(wb);
-      }
-      wb.fullGC();
+      loadManyClasses();
+      WhiteBox.getWhiteBox().fullGC();
     }
 
-    public static void loadClass(WhiteBox wb) {
+    public static void loadManyClasses() {
+      String className = "Tmp";
+      String sourceCode = "public class Tmp {}";
+      byte[] byteCode = InMemoryJavaCompiler.compile(className, sourceCode);
       try {
-        URLClassLoader ucl = new URLClassLoader(urls);
-        Class.forName("case00", false, ucl);
+        for (int i = 0; i < 10000; i++) {
+          ByteCodeLoader.load(className, byteCode);
+        }
       } catch (Exception e) {
         e.printStackTrace();
       }

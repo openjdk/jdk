@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -13,25 +13,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<dates>
 		<calendars>
-			<calendar type="buddhist">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="chinese">
 				<dateFormats>
 					<dateFormatLength type="short">
@@ -51,73 +32,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="coptic">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="dangi">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.r</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="UM">M.U</dateFormatItem>
-						<dateFormatItem id="UMd">dd.MM.U</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.r</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.r</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.r</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -160,34 +78,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="hebrew">
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="indian">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="islamic">
 				<dateFormats>
 					<dateFormatLength type="short">
@@ -207,68 +97,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="islamic-civil">
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="islamic-rgsa">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="islamic-tbla">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="islamic-umalqura">
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="japanese">
 				<dateFormats>
 					<dateFormatLength type="short">
@@ -277,54 +105,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="persian">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="roc">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd.MM.y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 	</dates>

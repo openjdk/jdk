@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,57 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
-#include "classfile/placeholders.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/symbolHandle.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
 #include "utilities/resourceHash.hpp"
 
-// Implementation Classes for Loader Constraints
+// Overview
+//
+// The LoaderConstraintTable controls whether two ClassLoaders can resolve the same class name N
+// to different InstanceKlasses.
+//
+//     The design of the algorithm can be found in the OOPSLA'98 paper "Dynamic Class Loading in
+//     the Java Virtual Machine" by Sheng Liang and Gilad Bracha.
+//
+//     To understand the implementation, start with LoaderConstraintTable::{add_entry, check_or_update}
+//
+// When a class name N is entered into the LoaderConstraintTable, it's mapped to a ConstraintSet which
+// contains one or more LoaderConstraints:
+//
+//   LoaderConstraint_a = { _klass_a, loader_a1, loader_a2, ...}
+//   LoaderConstraint_b = { _klass_b, loader_b1, loader_b2, ...}
+//   LoaderConstraint_c = { _klass_c, loader_c1, loader_c2, ...}
+//   ...
+//
+// If _klass_<m> is null, when the first loader_<m><n> resolves the name N to a class K,
+// we assign _klass_<m> = K.
+//
+// if _klass_<m> is non-null, when a loader loader_<m><n> tries to resolve the name N to a class K,
+// where _klass_<m> != K, a LinkageError is thrown, and the resolution fails.
+//
+// Management of LoaderConstraints
+//
+// When the SystemDictionary decides that loader_x and loader_y must resolve the name N to the same class:
+// For the name N, find two LoaderConstraints such that:
+//
+//     - LoaderConstraint_x contains loader_x
+//     - LoaderConstraint_y contains loader_y
+//
+//       (Note that no class loader will appear in more than one LoaderConstraint for
+//        each name N, as enforced by the following steps).
+//
+// If neither LoaderConstraint_x nor LoaderConstraint_y exist, add a new LoaderConstraint that contains
+// both loader_x and loader_y.
+//
+// Otherwise if LoaderConstraint_x exists but LoaderConstraint_y doesn't exist, add loader_y to LoaderConstraint_x,
+// or vice versa.
+//
+// Otherwise if both LoaderConstraints have different values for _klass, a LinkageError is thrown.
+//
+// Otherwise the two LoaderConstraints are merged into one.
 
 class LoaderConstraint : public CHeapObj<mtClass> {
   InstanceKlass*         _klass;
@@ -257,8 +296,8 @@ void LoaderConstraintTable::purge_loader_constraints() {
   _loader_constraint_table->unlink(&purge);
 }
 
-void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
-                        ClassLoaderData* loader1, ClassLoaderData* loader2) {
+static void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
+                                   ClassLoaderData* loader1, ClassLoaderData* loader2) {
   LogTarget(Info, class, loader, constraints) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -348,7 +387,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
   } else if (pp1 == nullptr) {
     pp2->extend_loader_constraint(class_name, loader1, klass);
   } else if (pp2 == nullptr) {
-    pp1->extend_loader_constraint(class_name, loader1, klass);
+    pp1->extend_loader_constraint(class_name, loader2, klass);
   } else {
     merge_loader_constraints(class_name, pp1, pp2, klass);
   }
@@ -402,6 +441,24 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
 
   // No constraints, or else no klass loaded yet.
   return nullptr;
+}
+
+// Removes a class that was added to the table then class loading subsequently failed for this class,
+// so we don't have a dangling pointer to InstanceKlass in the LoaderConstraintTable.
+void LoaderConstraintTable::remove_failed_loaded_klass(InstanceKlass* klass,
+                                                       ClassLoaderData* loader) {
+
+  MutexLocker ml(SystemDictionary_lock);
+  Symbol* name = klass->name();
+  LoaderConstraint *p = find_loader_constraint(name, loader);
+  if (p != nullptr && p->klass() != nullptr && p->klass() == klass) {
+    // If this is the klass in the constraint, the error was OOM from the ClassLoader.addClass() call.
+    // Other errors during loading (eg. constraint violations) will not have added this klass.
+    log_info(class, loader, constraints)("removing klass %s: failed to load", name->as_C_string());
+    // We only null out the class, since the constraint for the class name for this loader is still valid as
+    // it was added when checking signature loaders for a method or field resolution.
+    p->set_klass(nullptr);
+  }
 }
 
 void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
@@ -468,15 +525,8 @@ void LoaderConstraintTable::verify() {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
           guarantee(k == probe->klass(), "klass should be in dictionary");
-        } else {
-          // If we don't find the class in the dictionary, it
-          // has to be in the placeholders table.
-          PlaceholderEntry* entry = PlaceholderTable::get_entry(name, loader_data);
-
-          // The InstanceKlass might not be on the entry, so the only
-          // thing we can check here is whether we were successful in
-          // finding the class in the placeholders table.
-          guarantee(entry != nullptr, "klass should be in the placeholders");
+          // If we don't find the class in the dictionary, it is
+          // in the process of loading and may or may not be in the placeholder table.
         }
       }
       for (int n = 0; n< probe->num_loaders(); n++) {
@@ -495,7 +545,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);
-      sum += sizeof(*probe) + (probe->num_loaders() * sizeof(ClassLoaderData*));
+      sum += (int)(sizeof(*probe) + (probe->num_loaders() * sizeof(ClassLoaderData*)));
     }
     return sum;
   };

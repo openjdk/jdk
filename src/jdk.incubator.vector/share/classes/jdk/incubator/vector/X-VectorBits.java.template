@@ -1011,6 +1011,16 @@ final class $vectortype$ extends $abstractvectortype$ {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract($masktype$.class, $type$.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -1141,14 +1151,12 @@ final class $vectortype$ extends $abstractvectortype$ {
         return super.fromArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
-#if[!byteOrShort]
     @ForceInline
     @Override
     final
     $abstractvectortype$ fromArray0($type$[] a, int offset, int[] indexMap, int mapOffset, VectorMask<$Boxtype$> m) {
         return super.fromArray0Template($masktype$.class, a, offset, indexMap, mapOffset, ($masktype$) m);
     }
-#end[!byteOrShort]
 
 #if[short]
     @ForceInline

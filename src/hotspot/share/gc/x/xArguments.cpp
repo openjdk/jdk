@@ -37,7 +37,13 @@ void XArguments::initialize_alignments() {
   HeapAlignment = SpaceAlignment;
 }
 
+void XArguments::initialize_heap_flags_and_sizes() {
+  // Nothing extra to do
+}
+
 void XArguments::initialize() {
+  warning("Non-generational ZGC is deprecated.");
+
   // Check mark stack size
   const size_t mark_stack_space_limit = XAddressSpaceLimit::mark_stack();
   if (ZMarkStackSpaceLimit > mark_stack_space_limit) {

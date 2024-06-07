@@ -107,25 +107,25 @@ class TypeOrigin {
   } Origin;
 
   Origin _origin;
-  u2 _index;              // local, stack, or constant pool index
+  int _index;              // local, stack, or constant pool index
   StackMapFrame* _frame;  // source frame if CF or SM
   VerificationType _type; // The actual type
 
   TypeOrigin(
-      Origin origin, u2 index, StackMapFrame* frame, VerificationType type)
+      Origin origin, int index, StackMapFrame* frame, VerificationType type)
       : _origin(origin), _index(index), _frame(frame), _type(type) {}
 
  public:
   TypeOrigin() : _origin(NONE), _index(0), _frame(nullptr) {}
 
   static TypeOrigin null();
-  static TypeOrigin local(u2 index, StackMapFrame* frame);
-  static TypeOrigin stack(u2 index, StackMapFrame* frame);
-  static TypeOrigin sm_local(u2 index, StackMapFrame* frame);
-  static TypeOrigin sm_stack(u2 index, StackMapFrame* frame);
-  static TypeOrigin cp(u2 index, VerificationType vt);
+  static TypeOrigin local(int index, StackMapFrame* frame);
+  static TypeOrigin stack(int index, StackMapFrame* frame);
+  static TypeOrigin sm_local(int index, StackMapFrame* frame);
+  static TypeOrigin sm_stack(int index, StackMapFrame* frame);
+  static TypeOrigin cp(int index, VerificationType vt);
   static TypeOrigin signature(VerificationType vt);
-  static TypeOrigin bad_index(u2 index);
+  static TypeOrigin bad_index(int index);
   static TypeOrigin implicit(VerificationType t);
   static TypeOrigin frame(StackMapFrame* frame);
 
@@ -134,7 +134,7 @@ class TypeOrigin {
   void print_frame(outputStream* ss) const;
   const StackMapFrame* frame() const { return _frame; }
   bool is_valid() const { return _origin != NONE; }
-  u2 index() const { return _index; }
+  int index() const { return _index; }
 
 #ifdef ASSERT
   void print_on(outputStream* str) const;
@@ -174,45 +174,45 @@ class ErrorContext {
  public:
   ErrorContext() : _bci(-1), _fault(NO_FAULT) {}
 
-  static ErrorContext bad_code(u2 bci) {
+  static ErrorContext bad_code(int bci) {
     return ErrorContext(bci, INVALID_BYTECODE);
   }
-  static ErrorContext bad_type(u2 bci, TypeOrigin type) {
+  static ErrorContext bad_type(int bci, TypeOrigin type) {
     return ErrorContext(bci, WRONG_TYPE, type);
   }
-  static ErrorContext bad_type(u2 bci, TypeOrigin type, TypeOrigin exp) {
+  static ErrorContext bad_type(int bci, TypeOrigin type, TypeOrigin exp) {
     return ErrorContext(bci, WRONG_TYPE, type, exp);
   }
-  static ErrorContext bad_flags(u2 bci, StackMapFrame* frame) {
+  static ErrorContext bad_flags(int bci, StackMapFrame* frame) {
     return ErrorContext(bci, FLAGS_MISMATCH, TypeOrigin::frame(frame));
   }
-  static ErrorContext bad_flags(u2 bci, StackMapFrame* cur, StackMapFrame* sm) {
+  static ErrorContext bad_flags(int bci, StackMapFrame* cur, StackMapFrame* sm) {
     return ErrorContext(bci, FLAGS_MISMATCH,
                         TypeOrigin::frame(cur), TypeOrigin::frame(sm));
   }
-  static ErrorContext bad_cp_index(u2 bci, u2 index) {
+  static ErrorContext bad_cp_index(int bci, int index) {
     return ErrorContext(bci, BAD_CP_INDEX, TypeOrigin::bad_index(index));
   }
-  static ErrorContext bad_local_index(u2 bci, u2 index) {
+  static ErrorContext bad_local_index(int bci, int index) {
     return ErrorContext(bci, BAD_LOCAL_INDEX, TypeOrigin::bad_index(index));
   }
   static ErrorContext locals_size_mismatch(
-      u2 bci, StackMapFrame* frame0, StackMapFrame* frame1) {
+      int bci, StackMapFrame* frame0, StackMapFrame* frame1) {
     return ErrorContext(bci, LOCALS_SIZE_MISMATCH,
         TypeOrigin::frame(frame0), TypeOrigin::frame(frame1));
   }
   static ErrorContext stack_size_mismatch(
-      u2 bci, StackMapFrame* frame0, StackMapFrame* frame1) {
+      int bci, StackMapFrame* frame0, StackMapFrame* frame1) {
     return ErrorContext(bci, STACK_SIZE_MISMATCH,
         TypeOrigin::frame(frame0), TypeOrigin::frame(frame1));
   }
-  static ErrorContext stack_overflow(u2 bci, StackMapFrame* frame) {
+  static ErrorContext stack_overflow(int bci, StackMapFrame* frame) {
     return ErrorContext(bci, STACK_OVERFLOW, TypeOrigin::frame(frame));
   }
-  static ErrorContext stack_underflow(u2 bci, StackMapFrame* frame) {
+  static ErrorContext stack_underflow(int bci, StackMapFrame* frame) {
     return ErrorContext(bci, STACK_UNDERFLOW, TypeOrigin::frame(frame));
   }
-  static ErrorContext missing_stackmap(u2 bci) {
+  static ErrorContext missing_stackmap(int bci) {
     return ErrorContext(bci, MISSING_STACKMAP);
   }
   static ErrorContext bad_stackmap(int index, StackMapFrame* frame) {
@@ -304,22 +304,22 @@ class ClassVerifier : public StackObj {
     InstanceKlass* this_class, Klass* target_class,
     Symbol* field_name, Symbol* field_sig, bool is_method);
 
-  void verify_cp_index(u2 bci, const constantPoolHandle& cp, int index, TRAPS);
-  void verify_cp_type(u2 bci, int index, const constantPoolHandle& cp,
+  void verify_cp_index(int bci, const constantPoolHandle& cp, u2 index, TRAPS);
+  void verify_cp_type(int bci, u2 index, const constantPoolHandle& cp,
       unsigned int types, TRAPS);
-  void verify_cp_class_type(u2 bci, int index, const constantPoolHandle& cp, TRAPS);
+  void verify_cp_class_type(int bci, u2 index, const constantPoolHandle& cp, TRAPS);
 
   u2 verify_stackmap_table(
-    u2 stackmap_index, u2 bci, StackMapFrame* current_frame,
+    u2 stackmap_index, int bci, StackMapFrame* current_frame,
     StackMapTable* stackmap_table, bool no_control_flow, TRAPS);
 
   void verify_exception_handler_targets(
-    u2 bci, bool this_uninit, StackMapFrame* current_frame,
+    int bci, bool this_uninit, StackMapFrame* current_frame,
     StackMapTable* stackmap_table, TRAPS);
 
   void verify_ldc(
     int opcode, u2 index, StackMapFrame *current_frame,
-    const constantPoolHandle& cp, u2 bci, TRAPS);
+    const constantPoolHandle& cp, int bci, TRAPS);
 
   void verify_switch(
     RawBytecodeStream* bcs, u4 code_length, char* code_data,
@@ -351,24 +351,24 @@ class ClassVerifier : public StackObj {
     bool in_try_block, bool* this_uninit, VerificationType return_type,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS);
 
-  VerificationType get_newarray_type(u2 index, u2 bci, TRAPS);
-  void verify_anewarray(u2 bci, u2 index, const constantPoolHandle& cp,
+  VerificationType get_newarray_type(u2 index, int bci, TRAPS);
+  void verify_anewarray(int bci, u2 index, const constantPoolHandle& cp,
       StackMapFrame* current_frame, TRAPS);
   void verify_return_value(
-      VerificationType return_type, VerificationType type, u2 offset,
+      VerificationType return_type, VerificationType type, int bci,
       StackMapFrame* current_frame, TRAPS);
 
-  void verify_iload (u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_lload (u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_fload (u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_dload (u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_aload (u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_istore(u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_lstore(u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_fstore(u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_dstore(u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_astore(u2 index, StackMapFrame* current_frame, TRAPS);
-  void verify_iinc  (u2 index, StackMapFrame* current_frame, TRAPS);
+  void verify_iload (int index, StackMapFrame* current_frame, TRAPS);
+  void verify_lload (int index, StackMapFrame* current_frame, TRAPS);
+  void verify_fload (int index, StackMapFrame* current_frame, TRAPS);
+  void verify_dload (int index, StackMapFrame* current_frame, TRAPS);
+  void verify_aload (int index, StackMapFrame* current_frame, TRAPS);
+  void verify_istore(int index, StackMapFrame* current_frame, TRAPS);
+  void verify_lstore(int index, StackMapFrame* current_frame, TRAPS);
+  void verify_fstore(int index, StackMapFrame* current_frame, TRAPS);
+  void verify_dstore(int index, StackMapFrame* current_frame, TRAPS);
+  void verify_astore(int index, StackMapFrame* current_frame, TRAPS);
+  void verify_iinc  (int index, StackMapFrame* current_frame, TRAPS);
 
   bool name_in_supers(Symbol* ref_name, InstanceKlass* current);
 

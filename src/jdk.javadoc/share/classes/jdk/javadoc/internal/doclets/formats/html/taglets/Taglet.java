@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * This is the taglet interface used internally within the doclet.

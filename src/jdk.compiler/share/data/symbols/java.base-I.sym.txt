@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 # ##########################################################
 #
 module name java.base
-header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/vm/vector[jdk.incubator.vector] uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/InetAddressResolverProvider,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
+header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/access/foreign[jdk.incubator.foreign],jdk/internal/event[jdk.jfr],jdk/internal/misc[jdk.incubator.foreign],jdk/internal/vm/vector[jdk.incubator.vector] extraModulePackages sun/net,sun/net uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/InetAddressResolverProvider,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
 
 class name java/io/FileInputStream
 method name transferTo descriptor (Ljava/io/OutputStream;)J thrownTypes java/io/IOException flags 1
@@ -37,30 +37,11 @@ class name java/io/ObjectInputStream$GetField
 method name get descriptor (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object; thrownTypes java/io/IOException,java/lang/ClassNotFoundException flags 401
 
 class name java/io/PrintStream
-header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 method name charset descriptor ()Ljava/nio/charset/Charset; flags 1
-
-class name java/lang/AbstractStringBuilder
-header extends java/lang/Object implements java/lang/Appendable,java/lang/CharSequence flags 420
-innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/Compiler
-header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
-
-class name java/lang/Deprecated
-header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Documented;@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;RUNTIME;)@Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PACKAGE;eLjava/lang/annotation/ElementType;MODULE;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;TYPE;})
 
 class name java/lang/Enum
 -method name finalize descriptor ()V
 method name finalize descriptor ()V flags 14 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="18")
-
-class name java/lang/IllegalCallerException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/LayerInstantiationException
-header extends java/lang/RuntimeException flags 21
 
 class name java/lang/Math
 method name divideExact descriptor (II)I flags 9
@@ -76,9 +57,6 @@ method name ceilDiv descriptor (JJ)J flags 9
 method name ceilMod descriptor (II)I flags 9
 method name ceilMod descriptor (JI)I flags 9
 method name ceilMod descriptor (JJ)J flags 9
-
-class name java/lang/NamedPackage
-header extends java/lang/Object flags 20
 
 class name java/lang/Object
 -method name finalize descriptor ()V
@@ -109,9 +87,6 @@ method name ceilMod descriptor (II)I flags 9
 method name ceilMod descriptor (JI)I flags 9
 method name ceilMod descriptor (JJ)J flags 9
 
-class name java/lang/SuppressWarnings
-header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;TYPE;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;MODULE;})@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;SOURCE;)
-
 class name java/lang/System
 -method name runFinalization descriptor ()V
 method name runFinalization descriptor ()V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="18")
@@ -120,79 +95,9 @@ class name java/lang/Thread
 -method name stop descriptor ()V
 method name stop descriptor ()V flags 11 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 
-class name java/lang/constant/ClassDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
-innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
-
-class name java/lang/constant/ConstantDesc
-header extends java/lang/Object sealed true flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/constant/DirectMethodHandleDesc
-header extends java/lang/Object implements java/lang/constant/MethodHandleDesc nestMembers java/lang/constant/DirectMethodHandleDesc$Kind sealed true flags 601
-innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
-
-class name java/lang/constant/MethodHandleDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc sealed true flags 601
-innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
-
-class name java/lang/constant/MethodTypeDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfMethod sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfMethod<Ljava/lang/constant/ClassDesc;Ljava/lang/constant/MethodTypeDesc;>;
-innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
-innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/invoke/CallSite
-header extends java/lang/Object flags 421
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/invoke/LambdaMetafactory
-header extends java/lang/Object flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/lang/invoke/MethodHandle
 -method name asType descriptor (Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;
 method name asType descriptor (Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle; flags 11
-
-class name java/lang/invoke/StringConcatException
-header extends java/lang/Exception flags 21
-
-class name java/lang/module/Configuration
-header extends java/lang/Object flags 31
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/module/FindException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/InvalidModuleDescriptorException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/ModuleReader
-header extends java/lang/Object implements java/io/Closeable flags 601
-
-class name java/lang/module/ModuleReference
-header extends java/lang/Object flags 421
-
-class name java/lang/module/ResolutionException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/ResolvedModule
-header extends java/lang/Object flags 31
-
-class name java/lang/reflect/AccessibleObject
-header extends java/lang/Object implements java/lang/reflect/AnnotatedElement flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
-
-class name java/lang/reflect/AnnotatedElement
-header extends java/lang/Object flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/reflect/Executable
-header extends java/lang/reflect/AccessibleObject implements java/lang/reflect/Member,java/lang/reflect/GenericDeclaration sealed true flags 421
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/reflect/InaccessibleObjectException
-header extends java/lang/RuntimeException flags 21
 
 class name java/lang/reflect/Method
 -method name invoke descriptor (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
@@ -246,27 +151,13 @@ method name name descriptor ()Ljava/lang/String; flags 401
 method name <init> descriptor ()V flags 4
 
 class name java/net/spi/InetAddressResolverProvider$Configuration
-header extends java/lang/Object nestHost java/net/spi/InetAddressResolverProvider sealed true flags 601
+header extends java/lang/Object nestHost java/net/spi/InetAddressResolverProvider sealed true permittedSubclasses sun/net/ResolverProviderConfiguration flags 601
 innerclass innerClass java/net/spi/InetAddressResolverProvider$Configuration outerClass java/net/spi/InetAddressResolverProvider innerClassName Configuration flags 609
 method name builtinResolver descriptor ()Ljava/net/spi/InetAddressResolver; flags 401
 method name lookupLocalHostName descriptor ()Ljava/lang/String; flags 401
 
-class name java/net/spi/URLStreamHandlerProvider
-header extends java/lang/Object implements java/net/URLStreamHandlerFactory flags 421
-
-class name java/nio/CharBuffer
-header extends java/nio/Buffer implements java/lang/Comparable,java/lang/Appendable,java/lang/CharSequence,java/lang/Readable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/CharBuffer;>;Ljava/lang/Appendable;Ljava/lang/CharSequence;Ljava/lang/Readable;
-innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/nio/charset/Charset
 method name forName descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;)Ljava/nio/charset/Charset; flags 9
-
-class name java/security/Certificate
-header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
-
-class name java/security/Identity
-header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 
 class name java/security/KeyStore
 method name getAttributes descriptor (Ljava/lang/String;)Ljava/util/Set; thrownTypes java/security/KeyStoreException flags 11 signature (Ljava/lang/String;)Ljava/util/Set<Ljava/security/KeyStore$Entry$Attribute;>;
@@ -288,100 +179,8 @@ class name java/security/Provider
 -method name getServices descriptor ()Ljava/util/Set;
 method name getServices descriptor ()Ljava/util/Set; flags 1 signature ()Ljava/util/Set<Ljava/security/Provider$Service;>;
 
-class name java/security/SecureRandomParameters
-header extends java/lang/Object flags 601
-
-class name java/security/SignedObject
-header extends java/lang/Object implements java/io/Serializable flags 31
-innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
-
-class name java/security/cert/CertificateRevokedException
-header extends java/security/cert/CertificateException flags 21
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-
-class name java/security/cert/URICertStoreParameters
-header extends java/lang/Object implements java/security/cert/CertStoreParameters flags 31
-
-class name java/security/interfaces/RSAKey
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/MGF1ParameterSpec
--field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
--field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-
-class name java/security/spec/PSSParameterSpec
--field name TRAILER_FIELD_BC descriptor I
--method name toString descriptor ()Ljava/lang/String;
-field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
-method name toString descriptor ()Ljava/lang/String; flags 1
-
-class name java/security/spec/RSAKeyGenParameterSpec
--method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-
-class name java/security/spec/RSAPrivateCrtKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-
-class name java/security/spec/RSAPrivateKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/RSAPublicKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/text/DateFormatSymbols
-header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/text/RuleBasedCollator
-header extends java/text/Collator flags 21
-innerclass innerClass java/text/Normalizer$Form outerClass java/text/Normalizer innerClassName Form flags 4019
-
 class name java/time/Duration
 method name isPositive descriptor ()Z flags 1
-
-class name java/time/chrono/ChronoLocalDate
-header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDate;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/time/chrono/ChronoLocalDateTime
-header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature <D::Ljava/time/chrono/ChronoLocalDate;>Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDateTime<*>;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/time/format/DecimalStyle
-header extends java/lang/Object flags 31
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/time/temporal/TemporalAdjusters
-header extends java/lang/Object flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/Comparator
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/DoubleSummaryStatistics
-header extends java/lang/Object implements java/util/function/DoubleConsumer flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/GregorianCalendar
-header extends java/util/Calendar flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 
 class name java/util/HashMap
 header extends java/util/AbstractMap implements java/util/Map,java/lang/Cloneable,java/io/Serializable flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/Map<TK;TV;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
@@ -403,286 +202,9 @@ header extends java/util/AbstractMap implements java/util/Map,java/io/Serializab
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 
-class name java/util/Locale$IsoCountryCode
-header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
-innerclass innerClass java/util/Locale$IsoCountryCode outerClass java/util/Locale innerClassName IsoCountryCode flags 4409
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/Observable
-header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name java/util/Observer
-header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name java/util/TimeZone
-header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 421
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/util/TreeSet
-header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-
-class name java/util/concurrent/ConcurrentMap
-header extends java/lang/Object implements java/util/Map flags 601 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Map<TK;TV;>;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/ConcurrentSkipListSet
-header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/CountedCompleter
-header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/util/concurrent/ThreadPoolExecutor
 -method name finalize descriptor ()V
 method name finalize descriptor ()V flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
-
-class name java/util/concurrent/atomic/AtomicBoolean
-header extends java/lang/Object implements java/io/Serializable flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/atomic/AtomicReference
-header extends java/lang/Object implements java/io/Serializable flags 21 signature <V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/io/Serializable;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/atomic/AtomicReferenceArray
-header extends java/lang/Object implements java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/io/Serializable;
-innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/locks/StampedLock
-header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
--method name tryWriteLock descriptor ()J
--method name writeLockInterruptibly descriptor ()J
--method name tryReadLock descriptor ()J
--method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
--method name readLockInterruptibly descriptor ()J
--method name unlock descriptor (J)V
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
-
-class name java/util/function/BiConsumer
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BiFunction
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BiPredicate
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BinaryOperator
-header extends java/lang/Object implements java/util/function/BiFunction flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/function/BiFunction<TT;TT;TT;>; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Consumer
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoubleConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoublePredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoubleUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Function
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntPredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongPredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Predicate
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/UnaryOperator
-header extends java/lang/Object implements java/util/function/Function flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/function/Function<TT;TT;>; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/spi/AbstractResourceBundleProvider
-header extends java/lang/Object implements java/util/spi/ResourceBundleProvider flags 421
-innerclass innerClass java/util/ResourceBundle$Control outerClass java/util/ResourceBundle innerClassName Control flags 9
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/spi/CurrencyNameProvider
-header extends java/util/spi/LocaleServiceProvider flags 421
-innerclass innerClass java/util/ResourceBundle$Control outerClass java/util/ResourceBundle innerClassName Control flags 9
-
-class name java/util/spi/ResourceBundleProvider
-header extends java/lang/Object flags 601
-
-class name java/util/spi/ToolProvider
-header extends java/lang/Object flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/zip/CRC32C
-header extends java/lang/Object implements java/util/zip/Checksum flags 31
-
-class name javax/crypto/AEADBadTagException
-header extends javax/crypto/BadPaddingException flags 21
-
-class name javax/crypto/BadPaddingException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/CipherInputStream
-header extends java/io/FilterInputStream flags 21
-
-class name javax/crypto/CipherOutputStream
-header extends java/io/FilterOutputStream flags 21
-
-class name javax/crypto/CipherSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/EncryptedPrivateKeyInfo
-header extends java/lang/Object flags 21
-
-class name javax/crypto/ExemptionMechanism
-header extends java/lang/Object flags 21
-
-class name javax/crypto/ExemptionMechanismException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/ExemptionMechanismSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/IllegalBlockSizeException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/KeyAgreement
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/KeyAgreementSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/KeyGenerator
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/KeyGeneratorSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/Mac
-header extends java/lang/Object implements java/lang/Cloneable flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/MacSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/NoSuchPaddingException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/NullCipher
-header extends javax/crypto/Cipher flags 21
-
-class name javax/crypto/SealedObject
-header extends java/lang/Object implements java/io/Serializable flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name javax/crypto/SecretKey
-header extends java/lang/Object implements java/security/Key,javax/security/auth/Destroyable flags 601
-
-class name javax/crypto/SecretKeyFactory
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/SecretKeyFactorySpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/ShortBufferException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/interfaces/DHKey
-header extends java/lang/Object flags 601
-
-class name javax/crypto/interfaces/DHPrivateKey
-header extends java/lang/Object implements javax/crypto/interfaces/DHKey,java/security/PrivateKey flags 601
-
-class name javax/crypto/interfaces/DHPublicKey
-header extends java/lang/Object implements javax/crypto/interfaces/DHKey,java/security/PublicKey flags 601
-
-class name javax/crypto/interfaces/PBEKey
-header extends java/lang/Object implements javax/crypto/SecretKey flags 601
-
-class name javax/crypto/spec/DESKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DESedeKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DHGenParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/DHParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/DHPrivateKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DHPublicKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/GCMParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/IvParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/OAEPParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-innerclass innerClass javax/crypto/spec/PSource$PSpecified outerClass javax/crypto/spec/PSource innerClassName PSpecified flags 19
-
-class name javax/crypto/spec/PBEKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/PBEParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/RC2ParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/RC5ParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/SecretKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec,javax/crypto/SecretKey flags 21
 
 class name javax/security/auth/Subject
 header extends java/lang/Object implements java/io/Serializable flags 31
@@ -700,6 +222,33 @@ header extends java/lang/Object flags 21
 innerclass innerClass javax/security/auth/login/AppConfigurationEntry$LoginModuleControlFlag outerClass javax/security/auth/login/AppConfigurationEntry innerClassName LoginModuleControlFlag flags 9
 innerclass innerClass java/util/ServiceLoader$Provider outerClass java/util/ServiceLoader innerClassName Provider flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/internal/access/foreign/MemorySegmentProxy
+method name maxAlignMask descriptor ()J flags 401
+
+class name jdk/internal/misc/ScopedMemoryAccess
+header extends java/lang/Object nestMembers jdk/internal/misc/ScopedMemoryAccess$Scope flags 21
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+-method name loadFromByteBuffer descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector;
+method name isReadOnly descriptor (Ljava/nio/ByteBuffer;)Z flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name loadFromByteBuffer descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TE;>;ILjava/nio/ByteBuffer;ITS;Ljdk/internal/vm/vector/VectorSupport$LoadOperation<Ljava/nio/ByteBuffer;TV;TS;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name loadFromByteBufferMasked descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ILjava/nio/ByteBuffer;ITM;TS;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation<Ljava/nio/ByteBuffer;TV;TS;TM;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name storeIntoByteBufferMasked descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;Ljava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$StoreVectorMaskedOperation;)V flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ITV;TM;Ljava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$StoreVectorMaskedOperation<Ljava/nio/ByteBuffer;TV;TM;>;)V runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+
+class name jdk/internal/misc/ScopedMemoryAccess$Scope
+header extends java/lang/Object nestHost jdk/internal/misc/ScopedMemoryAccess flags 601
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+-method name isImplicit descriptor ()Z
+-method name acquire descriptor ()Ljdk/internal/misc/ScopedMemoryAccess$Scope$Handle;
+-method name release descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope$Handle;)V
+method name acquire0 descriptor ()V flags 401
+method name release0 descriptor ()V flags 401
+
+-class name jdk/internal/misc/ScopedMemoryAccess$Scope$Handle
 
 class name jdk/internal/vm/vector/VectorSupport
 header extends java/lang/Object nestMembers jdk/internal/vm/vector/VectorSupport$VectorMask,jdk/internal/vm/vector/VectorSupport$VectorShuffle,jdk/internal/vm/vector/VectorSupport$Vector,jdk/internal/vm/vector/VectorSupport$VectorPayload,jdk/internal/vm/vector/VectorSupport$VectorSpecies flags 21
@@ -753,4 +302,11 @@ method name blend descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class
 method name broadcastInt descriptor (ILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;ILjdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$VectorBroadcastIntOp;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;E:Ljava/lang/Object;>(ILjava/lang/Class<+TV;>;Ljava/lang/Class<+TM;>;Ljava/lang/Class<TE;>;ITV;ITM;Ljdk/internal/vm/vector/VectorSupport$VectorBroadcastIntOp<TV;TM;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name maybeRebox descriptor (Ljdk/internal/vm/vector/VectorSupport$VectorPayload;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload; flags 9 signature <VP:Ljdk/internal/vm/vector/VectorSupport$VectorPayload;>(TVP;)TVP; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name maskReductionCoerced descriptor (ILjava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp;)J flags 9 signature <M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;E:Ljava/lang/Object;>(ILjava/lang/Class<+TM;>;Ljava/lang/Class<*>;ITM;Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp<TM;>;)J runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+
+class name sun/net/ResolverProviderConfiguration
+header extends java/lang/Object implements java/net/spi/InetAddressResolverProvider$Configuration flags 31
+innerclass innerClass java/net/spi/InetAddressResolverProvider$Configuration outerClass java/net/spi/InetAddressResolverProvider innerClassName Configuration flags 609
+method name <init> descriptor (Ljava/net/spi/InetAddressResolver;Ljava/util/function/Supplier;)V flags 1 signature (Ljava/net/spi/InetAddressResolver;Ljava/util/function/Supplier<Ljava/lang/String;>;)V
+method name builtinResolver descriptor ()Ljava/net/spi/InetAddressResolver; flags 1
+method name lookupLocalHostName descriptor ()Ljava/lang/String; flags 1
 

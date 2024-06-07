@@ -32,7 +32,7 @@ void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
   CardValue *const first = byte_for(mr.start());
   CardValue *const last = byte_after(mr.last());
 
-  memset_with_concurrent_readers(first, g1_young_gen, last - first);
+  memset_with_concurrent_readers(first, g1_young_gen, pointer_delta(last, first, sizeof(CardValue)));
 }
 
 #ifndef PRODUCT
@@ -43,7 +43,7 @@ void G1CardTable::verify_g1_young_region(MemRegion mr) {
 
 void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * G1HeapRegion::GrainWords);
   _card_table->clear_MemRegion(mr);
 }
 

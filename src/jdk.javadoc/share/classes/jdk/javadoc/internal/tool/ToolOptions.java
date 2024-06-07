@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    private AccessKind expandRequires;
+    private AccessLevel expandRequires;
 
     /**
      * Argument for command-line option {@code --ignore-source-errors}.
@@ -106,22 +106,22 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    private AccessKind showMembersAccess;
+    private AccessLevel showMembersAccess;
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    private AccessKind showTypesAccess;
+    private AccessLevel showTypesAccess;
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    private AccessKind showPackagesAccess;
+    private AccessLevel showPackagesAccess;
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    private AccessKind showModuleContents;
+    private AccessLevel showModuleContents;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -399,6 +399,13 @@ public class ToolOptions {
                 @Override
                 public void process() throws InvalidValueException {
                     processCompilerOption(Option.PREVIEW, primaryName);
+                }
+            },
+
+            new ToolOption("--disable-line-doc-comments", EXTENDED) {
+                @Override
+                public void process() throws InvalidValueException {
+                    processCompilerOption(Option.DISABLE_LINE_DOC_COMMENTS, primaryName);
                 }
             },
 
@@ -717,7 +724,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    AccessKind expandRequires() {
+    AccessLevel expandRequires() {
         return expandRequires;
     }
 
@@ -746,28 +753,28 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    AccessKind showMembersAccess() {
+    AccessLevel showMembersAccess() {
         return showMembersAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    AccessKind showTypesAccess() {
+    AccessLevel showTypesAccess() {
         return showTypesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    AccessKind showPackagesAccess() {
+    AccessLevel showPackagesAccess() {
         return showPackagesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    AccessKind showModuleContents() {
+    AccessLevel showModuleContents() {
         return showModuleContents;
     }
 
@@ -885,40 +892,25 @@ public class ToolOptions {
 
     private void setExpandRequires(String arg) throws OptionException {
         switch (arg) {
-            case "transitive":
-                expandRequires = AccessKind.PUBLIC;
-                break;
-            case "all":
-                expandRequires = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "transitive" -> expandRequires = AccessLevel.PUBLIC;
+            case "all" -> expandRequires = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowModuleContents(String arg) throws OptionException {
         switch (arg) {
-            case "api":
-                showModuleContents = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showModuleContents = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "api" -> showModuleContents = AccessLevel.PUBLIC;
+            case "all" -> showModuleContents = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowPackageAccess(String arg) throws OptionException {
         switch (arg) {
-            case "exported":
-                showPackagesAccess = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showPackagesAccess = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "exported" -> showPackagesAccess = AccessLevel.PUBLIC;
+            case "all" -> showPackagesAccess = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
@@ -948,53 +940,37 @@ public class ToolOptions {
      * -private, so on, in addition to the new ones such as
      * --show-types:public and so on.
      */
-    private AccessKind getAccessValue(String arg) throws OptionException {
+    private AccessLevel getAccessValue(String arg) throws OptionException {
         int colon = arg.indexOf(':');
-        String value = (colon > 0)
-                ? arg.substring(colon + 1)
-                : arg;
-        switch (value) {
-            case "public":
-                return AccessKind.PUBLIC;
-            case "protected":
-                return AccessKind.PROTECTED;
-            case "package":
-                return AccessKind.PACKAGE;
-            case "private":
-                return AccessKind.PRIVATE;
-            default:
-                throw illegalOptionValue(value);
-        }
+        String value = (colon > 0) ? arg.substring(colon + 1) : arg;
+        return switch (value) {
+            case "public" -> AccessLevel.PUBLIC;
+            case "protected" -> AccessLevel.PROTECTED;
+            case "package" -> AccessLevel.PACKAGE;
+            case "private" -> AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(value);
+        };
     }
 
     /*
      * Sets all access members to PROTECTED; this is the default.
      */
     private void setAccessDefault() {
-        setAccess(AccessKind.PROTECTED);
+        setAccess(AccessLevel.PROTECTED);
     }
 
     /*
-     * This sets access to all the allowed kinds in the
+     * Sets access level to all the allowed kinds in the
      * access members.
      */
-    private void setAccess(AccessKind accessValue) {
+    private void setAccess(AccessLevel accessValue) {
         for (ElementKind kind : ElementsTable.ModifierFilter.ALLOWED_KINDS) {
             switch (kind) {
-                case METHOD:
-                    showMembersAccess = accessValue;
-                    break;
-                case CLASS:
-                    showTypesAccess = accessValue;
-                    break;
-                case PACKAGE:
-                    showPackagesAccess = accessValue;
-                    break;
-                case MODULE:
-                    showModuleContents = accessValue;
-                    break;
-                default:
-                    throw new AssertionError("unknown element kind:" + kind);
+                case METHOD -> showMembersAccess = accessValue;
+                case CLASS -> showTypesAccess = accessValue;
+                case PACKAGE -> showPackagesAccess = accessValue;
+                case MODULE -> showModuleContents = accessValue;
+                default -> throw new AssertionError("unknown element kind:" + kind);
             }
         }
     }

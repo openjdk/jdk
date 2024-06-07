@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -252,7 +253,7 @@ void PackageEntry::init_as_archived_entry() {
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
-  JFR_ONLY(set_trace_id(0)); // re-init at runtime
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)&_name);
   ArchivePtrMarker::mark_pointer((address*)&_module);
@@ -316,7 +317,7 @@ void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_pac
 }
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   for (int i = 0; i < archived_packages->length(); i++) {
     PackageEntry* archived_entry = archived_packages->at(i);

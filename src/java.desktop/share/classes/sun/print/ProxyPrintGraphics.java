@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ public class ProxyPrintGraphics extends ProxyGraphics
 
    /* Spec implies dispose() should flush the page, but the implementation
     * has in fact always done this on the getGraphics() call, thereby
-    * ensuring that multiple pages are cannot be rendered simultaneously.
-    * We will preserve that behaviour and there is consqeuently no need
+    * ensuring that multiple pages cannot be rendered simultaneously.
+    * We will preserve that behaviour and there is consequently no need
     * to take any action in this dispose method.
     */
     public void dispose() {

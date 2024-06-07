@@ -101,7 +101,7 @@ void ZParallelApply<Iterator>::apply(ClosureType* cl) {
 }
 
 void ZOopStorageSetIteratorStrong::apply(OopClosure* cl) {
-  ZRootStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet, _generation);
+  ZRootStatTimer timer(ZSubPhaseConcurrentRootsOopStorageSet, _generation);
   _iter.oops_do(cl);
 }
 

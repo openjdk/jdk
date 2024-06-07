@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -725,16 +725,6 @@ public class VM {
       shorts */
   public int buildIntFromShorts(short low, short high) {
     return (((int) high) << 16) | (((int) low) & 0xFFFF);
-  }
-
-  /** Utility routine for building a long from two "unsigned" 32-bit
-      ints in <b>platform-dependent</b> order */
-  public long buildLongFromIntsPD(int oneHalf, int otherHalf) {
-    if (isBigEndian) {
-      return (((long) otherHalf) << 32) | (((long) oneHalf) & 0x00000000FFFFFFFFL);
-    } else{
-      return (((long) oneHalf) << 32) | (((long) otherHalf) & 0x00000000FFFFFFFFL);
-    }
   }
 
   public TypeDataBase getTypeDataBase() {

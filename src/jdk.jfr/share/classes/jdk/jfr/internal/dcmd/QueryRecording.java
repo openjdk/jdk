@@ -57,9 +57,9 @@ final class QueryRecording implements AutoCloseable {
     private final EventStream eventStream;
     private final Instant endTime;
 
-    public QueryRecording(Configuration configuration, ArgumentParser parser) throws IOException, DCmdException {
+    public QueryRecording(Configuration configuration, ArgumentParser parser) throws IOException, DCmdException, UserDataException {
         if (!FlightRecorder.isInitialized()) {
-            throw new DCmdException("No recording data available. Start a recording with JFR.start");
+            throw new DCmdException("No recording data available. Start a recording with JFR.start.");
         }
         recorder = PrivateAccess.getInstance().getPlatformRecorder();
         Boolean verbose = parser.getOption("verbose");
@@ -92,6 +92,9 @@ final class QueryRecording implements AutoCloseable {
             startTime = endTime.minus(Duration.ofSeconds(DEFAULT_MAX_AGE));
         }
         chunks = acquireChunks(startTime);
+        if (chunks.isEmpty()) {
+            throw new UserDataException("No recording data found on disk.");
+        }
         Instant streamStart = determineStreamStart(maxSize, startTime);
         configuration.startTime = streamStart;
         eventStream = makeStream(streamStart);
@@ -100,7 +103,10 @@ final class QueryRecording implements AutoCloseable {
     private List<RepositoryChunk> acquireChunks(Instant startTime) {
         synchronized (recorder) {
             List<RepositoryChunk> list = recorder.makeChunkList(startTime, endTime);
-            list.add(currentChunk());
+            RepositoryChunk current = currentChunk();
+            if (current != null) {
+                list.add(current);
+            }
             for (RepositoryChunk r : list) {
                 r.use();
             }

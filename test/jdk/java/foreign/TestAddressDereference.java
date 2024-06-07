@@ -1,31 +1,29 @@
 /*
- *  Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestAddressDereference
  */
 
@@ -40,6 +38,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.testng.annotations.*;
 
@@ -128,7 +128,8 @@ public class TestAddressDereference extends UpcallTestHelper {
         if (!badAlign) return;
         runInNewProcess(UpcallTestRunner.class, true,
                 new String[] {Long.toString(alignment), layout.toString() })
-                .assertStdErrContains("alignment constraint for address");
+                .shouldNotHaveExitValue(0)
+                .stderrShouldContain("alignment constraint for address");
     }
 
     public static class UpcallTestRunner {
@@ -184,18 +185,23 @@ public class TestAddressDereference extends UpcallTestHelper {
             this.layout = segment;
         }
 
+        private static final Pattern LAYOUT_PATTERN = Pattern.compile("^(?<align>\\d+%)?(?<char>[azcsifjdAZCSIFJD])\\d+$");
+
         static LayoutKind parse(String layoutString) {
-            return switch (layoutString.charAt(0)) {
-                case 'A','a' -> ADDRESS;
-                case 'z','Z' -> BOOL;
-                case 'c','C' -> CHAR;
-                case 's','S' -> SHORT;
-                case 'i','I' -> INT;
-                case 'f','F' -> FLOAT;
-                case 'j','J' -> LONG;
-                case 'd','D' -> DOUBLE;
-                default -> throw new AssertionError("Invalid layout string: " + layoutString);
-            };
+            Matcher matcher = LAYOUT_PATTERN.matcher(layoutString);
+            if (matcher.matches()) {
+                switch (matcher.group("char")) {
+                    case "A","a": return ADDRESS;
+                    case "z","Z": return BOOL;
+                    case "c","C": return CHAR;
+                    case "s","S": return SHORT;
+                    case "i","I": return INT;
+                    case "f","F": return FLOAT;
+                    case "j","J": return LONG;
+                    case "d","D": return DOUBLE;
+                };
+            }
+            throw new AssertionError("Invalid layout string: " + layoutString);
         }
     }
 }

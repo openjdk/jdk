@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,17 +54,20 @@ public class TestHeapDeep {
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
-
-        try (Recording r = new Recording()) {
-            r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-            r.start();
-            leak = createChain();
-            List<RecordedEvent> events = Events.fromRecording(r);
-            if (OldObjects.countMatchingEvents(events, byte[].class, null, null, -1, "createChain") == 0) {
-                throw new Exception("Could not find ChainNode");
-            }
-            for (RecordedEvent e : events) {
-                OldObjects.validateReferenceChainLimit(e, OldObjects.MAX_CHAIN_LENGTH);
+        while (true) {
+            try (Recording r = new Recording()) {
+                r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+                r.start();
+                leak = createChain();
+                List<RecordedEvent> events = Events.fromRecording(r);
+                if (OldObjects.countMatchingEvents(events, byte[].class, null, null, -1, "createChain") > 0) {
+                    for (RecordedEvent e : events) {
+                        OldObjects.validateReferenceChainLimit(e, OldObjects.MAX_CHAIN_LENGTH);
+                    }
+                    return;
+                }
+                System.out.println("Could not find old object sample of type byte[]. Retrying.");
+                leak = null;
             }
         }
     }

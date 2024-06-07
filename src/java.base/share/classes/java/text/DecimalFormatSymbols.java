@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,7 +737,17 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Override equals.
+     * Compares the specified object with this {@code DecimalFormatSymbols} for equality.
+     * Returns true if the object is also a {@code DecimalFormatSymbols} and the two
+     * {@code DecimalFormatSymbols} objects represent the same set of symbols.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormatSymbols}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
@@ -767,7 +777,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Override hashCode.
+     * {@return the hash code for this {@code DecimalFormatSymbols}}
+     *
+     * @implSpec Non-transient instance fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}.
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -848,10 +862,13 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Obtains non-format single character from String
      */
     private char findNonFormatChar(String src, char defChar) {
-        return (char)src.chars()
-            .filter(c -> Character.getType(c) != Character.FORMAT)
-            .findFirst()
-            .orElse(defChar);
+        for (int i = 0; i < src.length(); i++) {
+            char c = src.charAt(i);
+            if (Character.getType(c) != Character.FORMAT) {
+                return c;
+            }
+        }
+        return defChar;
     }
 
     /**

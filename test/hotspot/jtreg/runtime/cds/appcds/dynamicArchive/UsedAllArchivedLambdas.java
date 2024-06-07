@@ -66,7 +66,7 @@ public class UsedAllArchivedLambdas extends DynamicArchiveTestBase {
             "-Xlog:cds=debug",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                output.shouldContain("Used all archived lambda proxy classes for: UsedAllArchivedLambdasApp run()Ljava/lang/Runnable;")
+                output.shouldContain("Used all dynamic archived lambda proxy classes for: UsedAllArchivedLambdasApp run()Ljava/lang/Runnable;")
                       .shouldHaveExitValue(0);
             });
     }

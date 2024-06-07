@@ -28,11 +28,11 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
@@ -95,7 +95,7 @@ void G1CollectionSet::abandon_all_candidates() {
   _optional_old_regions.clear();
 }
 
-void G1CollectionSet::add_old_region(HeapRegion* hr) {
+void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
   assert_at_safepoint_on_vm_thread();
 
   assert(_inc_build_state == Active,
@@ -134,7 +134,7 @@ void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
   OrderAccess::loadload();
 
   for (uint i = 0; i < len; i++) {
-    HeapRegion* r = _g1h->region_at(_collection_set_regions[i]);
+    G1HeapRegion* r = _g1h->region_at(_collection_set_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
       cl->set_incomplete();
@@ -152,7 +152,7 @@ void G1CollectionSet::par_iterate(HeapRegionClosure* cl,
 void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
   assert_at_safepoint();
 
-  for (HeapRegion* r : _optional_old_regions) {
+  for (G1HeapRegion* r : _optional_old_regions) {
     bool result = cl->do_heap_region(r);
     guarantee(!result, "Must not cancel iteration");
   }
@@ -176,7 +176,7 @@ void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
                                   worker_id);
 }
 
-void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
+void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
 
@@ -196,12 +196,12 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   _collection_set_cur_length++;
 }
 
-void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
+void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
   assert(hr->is_survivor(), "Must only add survivor regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
 
-void G1CollectionSet::add_eden_region(HeapRegion* hr) {
+void G1CollectionSet::add_eden_region(G1HeapRegion* hr) {
   assert(hr->is_eden(), "Must only add eden regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
@@ -213,7 +213,7 @@ public:
 
   G1VerifyYoungAgesClosure() : HeapRegionClosure(), _valid(true) { }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     guarantee(r->is_young(), "Region must be young but is %s", r->get_type_str());
 
     if (!r->has_surv_rate_group()) {
@@ -251,13 +251,14 @@ class G1PrintCollectionSetDetailClosure : public HeapRegionClosure {
 public:
   G1PrintCollectionSetDetailClosure(outputStream* st) : HeapRegionClosure(), _st(st) { }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
+    G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     _st->print_cr("  " HR_FORMAT ", TAMS: " PTR_FORMAT " PB: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
-                  p2i(r->top_at_mark_start()),
+                  p2i(cm->top_at_mark_start(r)),
                   p2i(r->parsable_bottom()),
-                  r->has_surv_rate_group() ? r->age_in_surv_rate_group() : -1);
+                  r->has_surv_rate_group() ? checked_cast<int>(r->age_in_surv_rate_group()) : -1);
     return false;
   }
 };
@@ -270,6 +271,9 @@ void G1CollectionSet::print(outputStream* st) {
 }
 #endif // !PRODUCT
 
+// Always evacuate out pinned regions (apart from object types that can actually be
+// pinned by JNI) to allow faster future evacuation. We already "paid" for this work
+// when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
   Ticks start_time = Ticks::now();
 
@@ -317,24 +321,57 @@ static int compare_region_idx(const uint a, const uint b) {
   return static_cast<int>(a-b);
 }
 
+// The current mechanism skips evacuation of pinned old regions like g1 does for
+// young regions:
+// * evacuating pinned marking collection set candidate regions (available during mixed
+//   gc) like young regions would not result in any memory gain but only take additional
+//   time away from processing regions that would actually result in memory being freed.
+//   To advance mixed gc progress (we committed to evacuate all marking collection set
+//   candidate regions within the maximum number of mixed gcs in the phase), move them
+//   to the optional collection set candidates to reclaim them asap as time permits.
+// * evacuating out retained collection set candidates would also just take up time with
+//   no actual space freed in old gen. Better to concentrate on others.
+//   Retained collection set candidates are aged out, ie. made to regular old regions
+//   without remembered sets after a few attempts to save computation costs of keeping
+//   them candidates for very long living pinned regions.
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
-  if (collector_state()->in_mixed_phase()) {
+  if (!candidates()->is_empty()) {
     candidates()->verify();
 
     G1CollectionCandidateRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
+    G1CollectionCandidateRegionList pinned_marking_regions;
+    G1CollectionCandidateRegionList pinned_retained_regions;
 
-    _policy->select_candidates_from_marking(&candidates()->marking_regions(),
-                                            time_remaining_ms,
-                                            &initial_old_regions,
-                                            &_optional_old_regions);
+    if (collector_state()->in_mixed_phase()) {
+      time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
+                                                                  time_remaining_ms,
+                                                                  &initial_old_regions,
+                                                                  &_optional_old_regions,
+                                                                  &pinned_marking_regions);
+    } else {
+      log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
+    }
+
+    _policy->select_candidates_from_retained(&candidates()->retained_regions(),
+                                             time_remaining_ms,
+                                             &initial_old_regions,
+                                             &_optional_old_regions,
+                                             &pinned_retained_regions);
 
     // Move initially selected old regions to collection set directly.
     move_candidates_to_collection_set(&initial_old_regions);
     // Only prepare selected optional regions for now.
     prepare_optional_regions(&_optional_old_regions);
+    // Move pinned marking regions we came across to retained candidates so that
+    // there is progress in the mixed gc phase.
+    move_pinned_marking_to_retained(&pinned_marking_regions);
+    // Drop pinned retained regions to make progress with retained regions. Regions
+    // in that list must have been pinned for at least G1NumCollectionsKeepPinned
+    // GCs and hence are considered "long lived".
+    drop_pinned_retained_regions(&pinned_retained_regions);
 
     candidates()->verify();
   } else {
@@ -350,7 +387,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
 }
 
 void G1CollectionSet::move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions) {
-  for (HeapRegion* r : *regions) {
+  for (G1HeapRegion* r : *regions) {
     _g1h->clear_region_attr(r);
     add_old_region(r);
   }
@@ -359,13 +396,39 @@ void G1CollectionSet::move_candidates_to_collection_set(G1CollectionCandidateReg
 
 void G1CollectionSet::prepare_optional_regions(G1CollectionCandidateRegionList* regions){
   uint cur_index = 0;
-  for (HeapRegion* r : *regions) {
+  for (G1HeapRegion* r : *regions) {
     assert(r->is_old(), "the region should be old");
     assert(!r->in_collection_set(), "should not already be in the CSet");
 
     _g1h->register_optional_region_with_region_attr(r);
 
     r->set_index_in_opt_cset(cur_index++);
+  }
+}
+
+void G1CollectionSet::move_pinned_marking_to_retained(G1CollectionCandidateRegionList* regions) {
+  if (regions->length() == 0) {
+    return;
+  }
+  candidates()->remove(regions);
+
+  for (G1HeapRegion* r : *regions) {
+    assert(r->has_pinned_objects(), "must be pinned");
+    assert(r->rem_set()->is_complete(), "must be complete");
+    candidates()->add_retained_region_unsorted(r);
+  }
+  candidates()->sort_by_efficiency();
+}
+
+void G1CollectionSet::drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions) {
+  if (regions->length() == 0) {
+    return;
+  }
+  candidates()->remove(regions);
+
+  // We can now drop these region's remembered sets.
+  for (G1HeapRegion* r : *regions) {
+    r->rem_set()->clear(true /* only_cardset */);
   }
 }
 
@@ -394,7 +457,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 }
 
 void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* pss) {
-  for (HeapRegion* r : _optional_old_regions) {
+  for (G1HeapRegion* r : _optional_old_regions) {
     pss->record_unused_optional_region(r);
     // Clear collection set marker and make sure that the remembered set information
     // is correct as we still need it later.
@@ -423,7 +486,7 @@ public:
     FREE_C_HEAP_ARRAY(int, _heap_region_indices);
   }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     const uint idx = r->young_index_in_cset();
 
     assert(idx > 0, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());

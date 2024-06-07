@@ -288,6 +288,7 @@ typedef CRITICAL_SECTION _cmsMutex;
 #ifdef _MSC_VER
 #    if (_MSC_VER >= 1800)
 #          pragma warning(disable : 26135)
+#          pragma warning(disable : 4127)
 #    endif
 #endif
 
@@ -545,7 +546,7 @@ struct _cmsContext_struct {
     struct _cmsContext_struct* Next;  // Points to next context in the new style
     _cmsSubAllocator* MemPool;        // The memory pool that stores context data
 
-    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is hold in the suballocator.
+    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is held in the suballocator.
                                       // If NULL, then it reverts to global Context0
 
     _cmsMemPluginChunkType DefaultMemoryManager;  // The allocators used for creating the context itself. Cannot be overridden
@@ -839,6 +840,9 @@ typedef struct _cms_iccprofile_struct {
     // Creation time
     struct tm                Created;
 
+    // Color management module identification
+    cmsUInt32Number          CMM;
+
     // Only most important items found in ICC profiles
     cmsUInt32Number          Version;
     cmsProfileClassSignature DeviceClass;
@@ -846,6 +850,7 @@ typedef struct _cms_iccprofile_struct {
     cmsColorSpaceSignature   PCS;
     cmsUInt32Number          RenderingIntent;
 
+    cmsPlatformSignature     platform;
     cmsUInt32Number          flags;
     cmsUInt32Number          manufacturer, model;
     cmsUInt64Number          attributes;

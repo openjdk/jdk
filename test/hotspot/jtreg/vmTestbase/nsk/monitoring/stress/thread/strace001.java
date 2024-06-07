@@ -150,6 +150,7 @@ public class strace001 {
                 "java.lang.Thread.currentThread",
                 "java.util.concurrent.TimeUnit.toNanos",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
+                "jdk.internal.event.ThreadSleepEvent.<init>",
                 "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled"
         };
@@ -210,7 +211,7 @@ public class strace001 {
         // recursionNative() methods must not be greater than depth,
         // also one run() and one waitForSign(), plus whatever can be
         // reached from Thread.yield or Thread.sleep.
-        int expectedLength = depth + 6;
+        int expectedLength = depth + 7;
         boolean result = true;
 
         // Check the length of the trace

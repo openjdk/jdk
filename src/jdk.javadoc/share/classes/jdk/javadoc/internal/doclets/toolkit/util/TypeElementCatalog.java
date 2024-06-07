@@ -79,7 +79,7 @@ public class TypeElementCatalog {
     public TypeElementCatalog(BaseConfiguration config) {
         this.configuration = config;
         this.utils = config.utils;
-        comparator = utils.comparators.makeGeneralPurposeComparator();
+        comparator = utils.comparators.generalPurposeComparator();
         allClasses = new HashMap<>();
         packageSet = new TreeSet<>(comparator);
     }

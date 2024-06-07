@@ -84,9 +84,6 @@ class G1PageBasedVirtualSpace {
   // Uncommit the given memory range.
   void uncommit_internal(size_t start_page, size_t end_page);
 
-  // Returns the index of the page which contains the given address.
-  size_t  addr_to_page_index(char* addr) const;
-
   // Is the given page index the last page?
   bool is_last_page(size_t index) const { return index == (_committed.size() - 1); }
   // Is the given page index the first after last page?

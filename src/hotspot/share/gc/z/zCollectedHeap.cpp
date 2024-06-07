@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "gc/z/zAddress.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -51,6 +50,7 @@
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
 
@@ -59,8 +59,7 @@ ZCollectedHeap* ZCollectedHeap::heap() {
 }
 
 ZCollectedHeap::ZCollectedHeap()
-  : _soft_ref_policy(),
-    _barrier_set(),
+  : _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
     _driver_minor(new ZDriverMinor()),
@@ -105,10 +104,6 @@ void ZCollectedHeap::stop() {
   ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
-}
-
-SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
-  return &_soft_ref_policy;
 }
 
 size_t ZCollectedHeap::max_capacity() const {
@@ -246,10 +241,6 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool ZCollectedHeap::uses_stack_watermark_barrier() const {
-  return true;
-}
-
 MemoryUsage ZCollectedHeap::memory_usage() {
   const size_t initial_size = ZHeap::heap()->initial_capacity();
   const size_t committed    = ZHeap::heap()->capacity();
@@ -344,6 +335,7 @@ bool ZCollectedHeap::contains_null(const oop* p) const {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
+  StackWatermarkSet::safepoint_synchronize_begin();
   ZGeneration::young()->synchronize_relocation();
   ZGeneration::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();

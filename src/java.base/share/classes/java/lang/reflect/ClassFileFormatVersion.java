@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,30 @@ public enum ClassFileFormatVersion {
      * <cite>The Java Virtual Machine Specification, Java SE 22 Edition</cite></a>
      */
     RELEASE_22(66),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se23/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23(67),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 24.
+     *
+     * @since 24
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se24/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 24 Edition</cite></a>
+     */
+    RELEASE_24(68),
     ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
@@ -309,7 +333,7 @@ public enum ClassFileFormatVersion {
      * {@return the latest class file format version}
      */
     public static ClassFileFormatVersion latest() {
-        return RELEASE_22;
+        return RELEASE_24;
     }
 
     /**

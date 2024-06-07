@@ -25,6 +25,7 @@ package gc.testlibrary;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
@@ -87,9 +88,9 @@ public class Helpers {
      * @param className class name
      * @param root      root directory - where .java and .class files will be put
      * @param source    class source
-     * @throws IOException if cannot write file to specified directory
+     * @throws Exception if cannot write file to specified directory
      */
-    public static void compileClass(String className, Path root, String source) throws IOException {
+    public static void compileClass(String className, Path root, String source) throws Exception {
         Path sourceFile = root.resolve(className + ".java");
         Files.write(sourceFile, source.getBytes());
 
@@ -100,8 +101,7 @@ public class Helpers {
                 .addToolArg(System.getProperty("java.class.path") + File.pathSeparator + root.toAbsolutePath())
                 .addToolArg(sourceFile.toAbsolutePath().toString());
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
         output.shouldHaveExitValue(0);
     }
 
@@ -199,12 +199,11 @@ public class Helpers {
      * @param prefix       prefix for service classes (ones we use to create chain of inheritance).
      *                     The names will be prefix_1, prefix_2,.., prefix_n
      * @return Class object of generated and compiled class loaded in specified class loader
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * @throws Exception
      */
     public static Class<?> generateCompileAndLoad(ClassLoader classLoader, String className, long instanceSize,
                                                   Path workDir, String prefix)
-            throws IOException, ClassNotFoundException {
+            throws Exception {
 
         generateByTemplateAndCompile(className, null, "public class ${ClassName} extends ${BaseClass} {\n${Fields}}\n",
                 "", instanceSize, workDir, prefix);
@@ -243,11 +242,11 @@ public class Helpers {
      * @param prefix       prefix for service classes (ones we use to create chain of inheritance).
      *                     The names will be prefix_1, prefix_2,.., prefix_n
      * @return Class object of generated and compiled class loaded in specified class loader
-     * @throws IOException if cannot write or read to workDir
+     * @throws Exception if cannot write or read to workDir
      */
     public static void generateByTemplateAndCompile(String className, String baseClass, String classTemplate,
                                                     String constructorTemplate, long instanceSize, Path workDir,
-                                                    String prefix) throws IOException {
+                                                    String prefix) throws Exception {
 
         if (instanceSize % SIZE_OF_LONG != 0L) {
             throw new Error(String.format("Test bug: only sizes aligned by %d bytes are supported and %d was specified",

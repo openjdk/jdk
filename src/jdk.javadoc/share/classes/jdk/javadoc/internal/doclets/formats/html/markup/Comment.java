@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * Class for generating a comment for HTML pages of javadoc output.

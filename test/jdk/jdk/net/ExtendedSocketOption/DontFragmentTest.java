@@ -26,7 +26,7 @@
  * @bug 8243099 8285671
  * @modules jdk.net
  * @library /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jdk.test.lib.net.IPSupport
  * @run main/othervm DontFragmentTest ipv4
  * @run main/othervm DontFragmentTest ipv6
  */
@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.channels.*;
 import jdk.test.lib.Platform;
+import jdk.test.lib.net.IPSupport;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.net.ExtendedSocketOptions.IP_DONTFRAGMENT;
@@ -45,19 +46,24 @@ public class DontFragmentTest {
 
     public static void main(String[] args) throws IOException {
         isMacos = Platform.isOSX();
-        testDatagramChannel();
-        StandardProtocolFamily fam = args[0].equals("ipv4") ? INET : INET6;
-        System.out.println("Family = " + fam);
-        testDatagramChannel(args, fam);
-        try (DatagramSocket c = new DatagramSocket()) {
-            testDatagramSocket(c);
-        }
-        try (DatagramChannel dc = DatagramChannel.open(fam)) {
-            var c = dc.socket();
-            testDatagramSocket(c);
-        }
-        try (MulticastSocket mc = new MulticastSocket()) {
-            testDatagramSocket(mc);
+        boolean ipv6 = args[0].equals("ipv6");
+        if (ipv6 && !IPSupport.hasIPv6()) {
+            System.out.println("No IPv6 support detected, skipping IPv6 test case");
+        } else {
+            testDatagramChannel();
+            StandardProtocolFamily fam = ipv6 ? INET6 : INET;
+            System.out.println("Family = " + fam);
+            testDatagramChannel(args, fam);
+            try (DatagramSocket c = new DatagramSocket()) {
+                testDatagramSocket(c);
+            }
+            try (DatagramChannel dc = DatagramChannel.open(fam)) {
+                var c = dc.socket();
+                testDatagramSocket(c);
+            }
+            try (MulticastSocket mc = new MulticastSocket()) {
+                testDatagramSocket(mc);
+            }
         }
     }
 

@@ -28,11 +28,12 @@
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/heapRegionType.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
@@ -88,14 +89,14 @@ void G1Allocator::release_mutator_alloc_regions() {
   }
 }
 
-bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
+bool G1Allocator::is_retained_old_region(G1HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
 void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             OldGCAllocRegion* old,
-                                            HeapRegion** retained_old) {
-  HeapRegion* retained_region = *retained_old;
+                                            G1HeapRegion** retained_old) {
+  G1HeapRegion* retained_region = *retained_old;
   *retained_old = nullptr;
 
   // We will discard the current GC alloc region if:
@@ -118,7 +119,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // it's retired again.
     _g1h->old_set_remove(retained_region);
     old->set(retained_region);
-    _g1h->hr_printer()->reuse(retained_region);
+    G1HeapRegionPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
 }
@@ -189,13 +190,16 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   // humongous objects.
 
   uint node_index = current_node_index();
-  HeapRegion* hr = mutator_alloc_region(node_index)->get();
+  G1HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
-  if (hr == nullptr) {
+
+  if (hr == nullptr || hr->free() < MinTLABSize) {
+    // The next TLAB allocation will most probably happen in a new region,
+    // therefore we can attempt to allocate the maximum allowed TLAB size.
     return max_tlab;
-  } else {
-    return clamp(hr->free(), MinTLABSize, max_tlab);
   }
+
+  return MIN2(hr->free(), max_tlab);
 }
 
 size_t G1Allocator::used_in_alloc_regions() {
@@ -339,7 +343,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   if (ResizePLAB) {
     // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
     // expected number of refills.
-    double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
+    double const ExpectedNumberOfRefills = (100 - G1LastPLABAverageOccupancy) / TargetPLABWastePct;
     // Add some padding to the threshold to not boost exactly when the targeted refills
     // were reached.
     // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries
@@ -358,14 +362,18 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   }
 }
 
-bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const {
-  return (allocation_word_sz * 100 < buffer_size * ParallelGCBufferWastePct);
+bool G1PLABAllocator::may_throw_away_buffer(size_t const words_remaining, size_t const buffer_size) const {
+  return (words_remaining * 100 < buffer_size * ParallelGCBufferWastePct);
 }
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
+  PLAB* alloc_buf = alloc_buffer(dest, node_index);
+  size_t words_remaining = alloc_buf->words_remaining();
+  assert(words_remaining < word_sz, "precondition");
+
   size_t plab_word_size = plab_size(dest.type());
   size_t next_plab_word_size = plab_word_size;
 
@@ -378,13 +386,10 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
   // Only get a new PLAB if the allocation fits into the to-be-allocated PLAB and
-  // it would not waste more than ParallelGCBufferWastePct in the current PLAB.
-  // Boosting the PLAB also increasingly allows more waste to occur.
+  // retiring the current PLAB would not waste more than ParallelGCBufferWastePct
+  // in the current PLAB. Boosting the PLAB also increasingly allows more waste to occur.
   if ((required_in_plab <= next_plab_word_size) &&
-    may_throw_away_buffer(required_in_plab, plab_word_size)) {
-
-    PLAB* alloc_buf = alloc_buffer(dest, node_index);
-    guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
+    may_throw_away_buffer(words_remaining, plab_word_size)) {
 
     alloc_buf->retire();
 

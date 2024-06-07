@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -631,7 +632,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
         for (int i = 0; i < localVariableTableLength; i++) {
             final int startBci = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementStartBciOffset);
-            final int endBci = startBci + UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementLengthOffset);
+            final int endBci = startBci + UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementLengthOffset) - 1;
             final int nameCpIndex = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementNameCpIndexOffset);
             final int typeCpIndex = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementDescriptorCpIndexOffset);
             final int slot = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementSlotOffset);
@@ -766,5 +767,16 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
         return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+    }
+
+    @Override
+    public BitSet getOopMapAt(int bci) {
+        if (getCodeSize() == 0) {
+            throw new IllegalArgumentException("has no bytecode");
+        }
+        int nwords = ((getMaxLocals() + getMaxStackSize() - 1) / 64) + 1;
+        long[] oopMap = new long[nwords];
+        compilerToVM().getOopMapAt(this, bci, oopMap);
+        return BitSet.valueOf(oopMap);
     }
 }

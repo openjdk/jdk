@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,29 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
-import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
-
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import jdk.internal.access.SharedSecrets;
+
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -52,6 +59,15 @@ import jdk.internal.access.SharedSecrets;
 public class Util {
 
     private Util() {
+    }
+
+    private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
+
+    public static boolean isAttributeAllowed(final Attribute<?> attr,
+                                             final ClassFile.AttributesProcessingOption processingOption) {
+        return attr instanceof BoundAttribute
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
+                : true;
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {
@@ -121,7 +137,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
@@ -129,7 +145,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static void checkKind(Opcode op, Opcode.Kind k) {
@@ -183,5 +199,42 @@ public class Util {
     public static boolean isDoubleSlot(ClassDesc desc) {
         char ch = desc.descriptorString().charAt(0);
         return ch == 'D' || ch == 'J';
+    }
+
+    public static void dumpMethod(SplitConstantPool cp,
+                                  ClassDesc cls,
+                                  String methodName,
+                                  MethodTypeDesc methodDesc,
+                                  int acc,
+                                  ByteBuffer bytecode,
+                                  Consumer<String> dump) {
+
+        // try to dump debug info about corrupted bytecode
+        try {
+            var cc = ClassFile.of();
+            var clm = cc.parse(cc.build(cp.classEntry(cls), cp, clb ->
+                    clb.withMethod(methodName, methodDesc, acc, mb ->
+                            ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
+                                @Override
+                                public void writeBody(BufWriter b) {
+                                    b.writeU2(-1);//max stack
+                                    b.writeU2(-1);//max locals
+                                    b.writeInt(bytecode.limit());
+                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
+                                    b.writeU2(0);//exception handlers
+                                    b.writeU2(0);//attributes
+                                }
+                    }))));
+            ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
+        } catch (Error | Exception _) {
+            // fallback to bytecode hex dump
+            bytecode.rewind();
+            while (bytecode.position() < bytecode.limit()) {
+                dump.accept("%n%04x:".formatted(bytecode.position()));
+                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
+                    dump.accept(" %02x".formatted(bytecode.get()));
+                }
+            }
+        }
     }
 }

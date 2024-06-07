@@ -52,6 +52,8 @@ package org.w3c.dom;
  * presence of this character sequence must generate a fatal error during
  * serialization.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface ProcessingInstruction extends Node {
     /**

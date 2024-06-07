@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,24 @@
 package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
+
+import static java.lang.classfile.Attributes.*;
 
 public abstract sealed class BoundAttribute<T extends Attribute<T>>
         extends AbstractElement
@@ -48,12 +51,12 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     static final int NAME_AND_LENGTH_PREFIX = 6;
     private final AttributeMapper<T> mapper;
-    final ClassReader classReader;
+    final ClassReaderImpl classReader;
     final int payloadStart;
 
     BoundAttribute(ClassReader classReader, AttributeMapper<T> mapper, int payloadStart) {
         this.mapper = mapper;
-        this.classReader = classReader;
+        this.classReader = (ClassReaderImpl)classReader;
         this.payloadStart = payloadStart;
     }
 
@@ -121,15 +124,16 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         for (int i = 0; p < end; i++, p += 2) {
             entries[i] = classReader.readEntry(p);
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(entries);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(entries);
     }
 
     public static List<Attribute<?>> readAttributes(AttributedElement enclosing, ClassReader reader, int pos,
                                                                   Function<Utf8Entry, AttributeMapper<?>> customAttributes) {
         int size = reader.readU2(pos);
-        var filled = new Object[size];
+        var filled = new ArrayList<Attribute<?>>(size);
         int p = pos + 2;
         int cfLen = reader.classfileLength();
+        var apo = ((ClassReaderImpl)reader).context().attributesProcessingOption();
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
@@ -138,13 +142,13 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 throw new IllegalArgumentException("attribute " + name.stringValue() + " too big to handle");
             }
 
-            var mapper = Attributes.standardAttribute(name);
+            var mapper = standardAttribute(name);
             if (mapper == null) {
                 mapper = customAttributes.apply(name);
             }
             if (mapper != null) {
-                filled[i] = mapper.readAttribute(enclosing, reader, p);
-            } else if (((ClassReaderImpl)reader).context().unknownAttributesOption() == Classfile.UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES) {
+                filled.add((Attribute)mapper.readAttribute(enclosing, reader, p));
+            } else {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public String name() {
@@ -159,54 +163,33 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
                     @Override
                     public void writeAttribute(BufWriter buf, UnknownAttribute attr) {
-                        throw new UnsupportedOperationException("Write of unknown attribute " + name() + " not supported");
+                        buf.writeIndex(name);
+                        var cont = attr.contents();
+                        buf.writeInt(cont.length);
+                        buf.writeBytes(cont);
                     }
 
                     @Override
                     public boolean allowMultiple() {
                         return true;
                     }
+
+                    @Override
+                    public AttributeMapper.AttributeStability stability() {
+                        return AttributeStability.UNKNOWN;
+                    }
                 };
-                filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
+                filled.add(new BoundUnknownAttribute(reader, fakeMapper, p));
             }
             p += len;
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(filled);
+        return Collections.unmodifiableList(filled);
     }
 
     public static final class BoundUnknownAttribute extends BoundAttribute<UnknownAttribute>
             implements UnknownAttribute {
         public BoundUnknownAttribute(ClassReader cf, AttributeMapper<UnknownAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-        }
-
-        @Override
-        public void writeTo(DirectClassBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(DirectMethodBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(DirectFieldBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            checkWriteSupported(buf::canWriteDirect);
-            super.writeTo(buf);
-        }
-
-        private void checkWriteSupported(Function<ConstantPool, Boolean> condition) {
-            if (!condition.apply(classReader))
-                throw new UnsupportedOperationException("Write of unknown attribute " + attributeName() + " not supported to alien constant pool");
         }
     }
 
@@ -502,7 +485,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         @Override
         public ConstantValueEntry constant() {
-            return (ConstantValueEntry) classReader.readEntry(payloadStart);
+            return classReader.readEntry(payloadStart, ConstantValueEntry.class);
         }
 
     }
@@ -649,7 +632,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 for (int i = 0; p < end; p += 6, i++) {
                     elements[i] = ModuleRequireInfo.of(classReader.readModuleEntry(p),
                             classReader.readU2(p + 2),
-                            (Utf8Entry) classReader.readEntryOrNull(p + 4));
+                            classReader.readEntryOrNull(p + 4, Utf8Entry.class));
                 }
                 requires = List.of(elements);
             }
@@ -788,15 +771,9 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 int p = payloadStart + 2;
                 InnerClassInfo[] elements = new InnerClassInfo[cnt];
                 for (int i = 0; i < cnt; i++) {
-                    ClassEntry innerClass = classReader.readClassEntry(p); // TODO FIXME
-                    int outerClassIndex = classReader.readU2(p + 2);
-                    ClassEntry outerClass = outerClassIndex == 0
-                            ? null
-                            : (ClassEntry) classReader.entryByIndex(outerClassIndex);
-                    int innerNameIndex = classReader.readU2(p + 4);
-                    Utf8Entry innerName = innerNameIndex == 0
-                            ? null
-                            : (Utf8Entry) classReader.entryByIndex(innerNameIndex);
+                    ClassEntry innerClass = classReader.readClassEntry(p);
+                    var outerClass = classReader.readEntryOrNull(p + 2, ClassEntry.class);
+                    var innerName = classReader.readEntryOrNull(p + 4, Utf8Entry.class);
                     int flags = classReader.readU2(p + 6);
                     p += 8;
                     elements[i] = InnerClassInfo.of(innerClass, Optional.ofNullable(outerClass), Optional.ofNullable(innerName), flags);
@@ -820,7 +797,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         @Override
         public Optional<NameAndTypeEntry> enclosingMethod() {
-            return Optional.ofNullable((NameAndTypeEntry) classReader.readEntryOrNull(payloadStart + 2));
+            return Optional.ofNullable(classReader.readEntryOrNull(payloadStart + 2, NameAndTypeEntry.class));
         }
     }
 
@@ -908,7 +885,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundRuntimeInvisibleAnnotationsAttribute(ClassReader cf,
                                                          int payloadStart) {
-            super(cf, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS, payloadStart);
+            super(cf, Attributes.runtimeInvisibleAnnotations(), payloadStart);
         }
 
         @Override
@@ -926,7 +903,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundRuntimeVisibleAnnotationsAttribute(ClassReader cf,
                                                        int payloadStart) {
-            super(cf, Attributes.RUNTIME_VISIBLE_ANNOTATIONS, payloadStart);
+            super(cf, Attributes.runtimeVisibleAnnotations(), payloadStart);
         }
 
         @Override
@@ -954,7 +931,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         }
     }
 
-    public static abstract sealed class BoundCodeAttribute
+    public abstract static sealed class BoundCodeAttribute
             extends BoundAttribute<CodeAttribute>
             implements CodeAttribute
             permits CodeImpl {
@@ -1001,5 +978,89 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         public byte[] codeArray() {
             return classReader.readBytes(payloadStart + 8, codeLength());
         }
+    }
+
+    /**
+     * {@return the attribute mapper for a standard attribute}
+     *
+     * @param name the name of the attribute to find
+     */
+    public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
+        // critical bootstrap path, so no lambdas nor method handles here
+        return switch (name.hashCode()) {
+            case 0x78147009 ->
+                name.equalsString(NAME_ANNOTATION_DEFAULT) ? annotationDefault() : null;
+            case 0x665e3a3a ->
+                name.equalsString(NAME_BOOTSTRAP_METHODS) ? bootstrapMethods() : null;
+            case 0xcb7e162 ->
+                name.equalsString(NAME_CHARACTER_RANGE_TABLE) ? characterRangeTable() : null;
+            case 0x21e41e7e ->
+                name.equalsString(NAME_CODE) ? code() : null;
+            case 0x5a306b41 ->
+                name.equalsString(NAME_COMPILATION_ID) ? compilationId() : null;
+            case 0x3e191c7c ->
+                name.equalsString(NAME_CONSTANT_VALUE) ? constantValue() : null;
+            case 0x5e88ed0c ->
+                name.equalsString(NAME_DEPRECATED) ? deprecated() : null;
+            case 0x7284695e ->
+                name.equalsString(NAME_ENCLOSING_METHOD) ? enclosingMethod() : null;
+            case 0x21df25db ->
+                name.equalsString(NAME_EXCEPTIONS) ? exceptions() : null;
+            case 0x11392da9 ->
+                name.equalsString(NAME_INNER_CLASSES) ? innerClasses() : null;
+            case 0x167536fc ->
+                name.equalsString(NAME_LINE_NUMBER_TABLE) ? lineNumberTable() : null;
+            case 0x46939abc ->
+                name.equalsString(NAME_LOCAL_VARIABLE_TABLE) ? localVariableTable() : null;
+            case 0x63ee67f4 ->
+                name.equalsString(NAME_LOCAL_VARIABLE_TYPE_TABLE) ? localVariableTypeTable() : null;
+            case 0x2b597e15 ->
+                name.equalsString(NAME_METHOD_PARAMETERS) ? methodParameters() : null;
+            case 0x19f20ade ->
+                name.equalsString(NAME_MODULE) ? module() : null;
+            case 0x47f6395e ->
+                name.equalsString(NAME_MODULE_HASHES) ? moduleHashes() : null;
+            case 0x54db809 ->
+                name.equalsString(NAME_MODULE_MAIN_CLASS) ? moduleMainClass() : null;
+            case 0x1abd1c2c ->
+                name.equalsString(NAME_MODULE_PACKAGES) ? modulePackages() : null;
+            case 0x6ba46dd ->
+                name.equalsString(NAME_MODULE_RESOLUTION) ? moduleResolution() : null;
+            case 0x46f7d91d ->
+                name.equalsString(NAME_MODULE_TARGET) ? moduleTarget() : null;
+            case 0x5137f53 ->
+                name.equalsString(NAME_NEST_HOST) ? nestHost() : null;
+            case 0x4a8fa3b6 ->
+                name.equalsString(NAME_NEST_MEMBERS) ? nestMembers() : null;
+            case 0x55c73cb6 ->
+                name.equalsString(NAME_PERMITTED_SUBCLASSES) ? permittedSubclasses() : null;
+            case 0x3fe76d4e ->
+                name.equalsString(NAME_RECORD) ? record() : null;
+            case 0x180d6925 ->
+                name.equalsString(NAME_RUNTIME_INVISIBLE_ANNOTATIONS) ? runtimeInvisibleAnnotations() : null;
+            case 0x7be22752 ->
+                name.equalsString(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS) ? runtimeInvisibleParameterAnnotations() : null;
+            case 0x5299824 ->
+                name.equalsString(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS) ? runtimeInvisibleTypeAnnotations() : null;
+            case 0x3534786e ->
+                name.equalsString(NAME_RUNTIME_VISIBLE_ANNOTATIONS) ? runtimeVisibleAnnotations() : null;
+            case 0xb4b4ac6 ->
+                name.equalsString(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS) ? runtimeVisibleParameterAnnotations() : null;
+            case 0x6926482 ->
+                name.equalsString(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS) ? runtimeVisibleTypeAnnotations() : null;
+            case 0x16a42b7c ->
+                name.equalsString(NAME_SIGNATURE) ? signature() : null;
+            case 0x400ab245 ->
+                name.equalsString(NAME_SOURCE_DEBUG_EXTENSION) ? sourceDebugExtension() : null;
+            case 0x2af490d4 ->
+                name.equalsString(NAME_SOURCE_FILE) ? sourceFile() : null;
+            case 0x303e0c58 ->
+                name.equalsString(NAME_SOURCE_ID) ? sourceId() : null;
+            case 0x19c7d0cd ->
+                name.equalsString(NAME_STACK_MAP_TABLE) ? stackMapTable() : null;
+            case 0x3dc79b7a ->
+                name.equalsString(NAME_SYNTHETIC) ? synthetic() : null;
+            default -> null;
+        };
     }
 }

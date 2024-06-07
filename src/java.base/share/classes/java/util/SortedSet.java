@@ -365,9 +365,9 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * to this SortedSet. Other operations on the view are implemented via calls to
      * public methods on this SortedSet. The exact relationship between calls on the
      * view and calls on this SortedSet is unspecified. However, order-sensitive
-     * operations generally delegate to the appropriate method with the opposite
-     * orientation. For example, calling {@code getFirst} on the view results in
-     * a call to {@code getLast} on this SortedSet.
+     * operations generally behave as if they delegate to the appropriate method
+     * with the opposite orientation. For example, calling {@code getFirst} on the
+     * view might result in a call to {@code getLast} on this SortedSet.
      *
      * @return a reverse-ordered view of this collection, as a {@code SortedSet}
      * @since 21

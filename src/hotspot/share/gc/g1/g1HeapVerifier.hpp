@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1HEAPVERIFIER_HPP
 #define SHARE_GC_G1_G1HEAPVERIFIER_HPP
 
-#include "gc/g1/heapRegionSet.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
@@ -70,6 +70,9 @@ public:
   void verify_before_gc();
   void verify_after_gc();
 
+  // Verify that marking state is set up correctly after a concurrent start pause.
+  void verify_marking_state();
+
   void verify_bitmap_clear(bool above_tams_only);
 
   // Do sanity check on the contents of the in-cset fast test table.
@@ -77,8 +80,8 @@ public:
 
   void verify_card_table_cleanup() PRODUCT_RETURN;
 
-  void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
+  void verify_not_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
+  void verify_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 };
 

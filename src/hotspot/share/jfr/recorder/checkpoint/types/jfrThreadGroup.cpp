@@ -305,7 +305,7 @@ traceid JfrThreadGroup::thread_group_id_internal(JfrThreadGroupsHelper& helper) 
   }
 
   JfrThreadGroupEntry* tge = nullptr;
-  int parent_thread_group_id = 0;
+  traceid parent_thread_group_id = 0;
   while (helper.has_next()) {
     JfrThreadGroupPointers& ptrs = helper.next();
     tge = tg_instance->find_entry(ptrs);

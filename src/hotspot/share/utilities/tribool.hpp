@@ -40,11 +40,15 @@ class TriBool{
 
  public:
   TriBool() : _value(0) {}
-  TriBool(bool value) : _value(((u1)value) | 2) {}
+  TriBool(bool value) : _value(value) {
+    // set to not-default in separate step to avoid conversion warnings
+    _value |= 2;
+  }
   TriBool(const TriBool& o): _value(o._value) {}
 
   TriBool& operator=(bool value) {
-    _value = ((u1)value) | 2;
+    _value = value;
+    _value |= 2; // set to not-default
     return *this;
   }
 
@@ -73,7 +77,8 @@ class TriBoolArray {
 
     TriBoolAssigner& operator=(bool newval) {
       _slot ^= ((u1)_value) << _offset;  // reset the tribool
-      _value = (u1)newval| 2;
+      _value = newval;
+      _value |= 2; // set to not-default
       _slot |= ((u1)_value) << _offset;
       return *this;
     };

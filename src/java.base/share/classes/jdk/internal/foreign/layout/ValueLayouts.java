@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,17 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.Wrapper;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.AddressLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -62,7 +61,7 @@ public final class ValueLayouts {
     // Suppresses default constructor, ensuring non-instantiability.
     private ValueLayouts() {}
 
-    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 
@@ -115,24 +114,6 @@ public final class ValueLayouts {
                             order.equals(otherValue.order);
         }
 
-        public final VarHandle arrayElementVarHandle(int... shape) {
-            Objects.requireNonNull(shape);
-            if (!Utils.isElementAligned((ValueLayout) this)) {
-                throw new UnsupportedOperationException("Layout alignment greater than its size");
-            }
-            MemoryLayout layout = self();
-            List<MemoryLayout.PathElement> path = new ArrayList<>();
-            for (int i = shape.length; i > 0; i--) {
-                int size = shape[i - 1];
-                if (size < 0) throw new IllegalArgumentException("Invalid shape size: " + size);
-                layout = MemoryLayout.sequenceLayout(size, layout);
-                path.add(MemoryLayout.PathElement.sequenceElement());
-            }
-            layout = MemoryLayout.sequenceLayout(layout);
-            path.add(MemoryLayout.PathElement.sequenceElement());
-            return layout.varHandle(path.toArray(new MemoryLayout.PathElement[0]));
-        }
-
         /**
          * {@return the carrier associated with this value layout}
          */
@@ -177,10 +158,13 @@ public final class ValueLayouts {
         }
 
         @ForceInline
-        public final VarHandle accessHandle() {
+        public final VarHandle varHandle() {
+            final class VarHandleCache {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            }
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self());
+                handle = VarHandleCache.HANDLE_MAP.computeIfAbsent(self().withoutName(), _ -> varHandleInternal());
             }
             return handle;
         }
@@ -299,7 +283,7 @@ public final class ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            return new OfLongImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfLongImpl(order, Long.BYTES, Optional.empty());
         }
     }
 
@@ -315,7 +299,7 @@ public final class ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            return new OfDoubleImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfDoubleImpl(order, Double.BYTES, Optional.empty());
         }
 
     }
@@ -393,7 +377,7 @@ public final class ValueLayouts {
      *     <li>{@link ValueLayout.OfFloat}, for {@code float.class}</li>
      *     <li>{@link ValueLayout.OfLong}, for {@code long.class}</li>
      *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
-     *     <li>{@link ValueLayout.OfAddress}, for {@code MemorySegment.class}</li>
+     *     <li>{@link AddressLayout}, for {@code MemorySegment.class}</li>
      * </ul>
      * @param carrier the value layout carrier.
      * @param order the value layout's byte order.

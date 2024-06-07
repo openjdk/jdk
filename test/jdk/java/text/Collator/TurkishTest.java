@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @library /java/text/testlib
  * @summary test Turkish Collation
  * @modules jdk.localedata
+ * @run junit TurkishTest
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -42,12 +43,12 @@ attribution to Taligent may not be removed.
 import java.util.Locale;
 import java.text.Collator;
 
-// Quick dummy program for printing out test results
-public class TurkishTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new TurkishTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+// Quick dummy program for printing out test results
+public class TurkishTest {
 
     /*
      * Data for TestPrimary()
@@ -105,13 +106,15 @@ public class TurkishTest extends CollatorTest {
         -1, -1, -1, -1,  1, -1, -1,  1, -1, -1
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
+    @Test
     public void TestTertiary() {
-        doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
     }
 

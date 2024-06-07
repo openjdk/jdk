@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Position.LineMap;
 
 import java.util.Optional;
+import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -147,13 +148,18 @@ public class VirtualParser extends JavacParser {
         }
 
         @Override
+        public Queue<Tokens.Comment> getDocComments() {
+            return S.getDocComments();
+        }
+
+        @Override
         public int errPos() {
-            throw new AssertionError();
+            return S.errPos();
         }
 
         @Override
         public void errPos(int pos) {
-            throw new AssertionError();
+            S.errPos(pos);
         }
 
         @Override

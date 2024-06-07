@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class SpinnerListModel extends AbstractSpinnerModel implements Serializab
      * The initial value (<i>current element</i>)
      * of the model will be <code>values.get(0)</code>.
      * If <code>values</code> is <code>null</code> or has zero
-     * size, an <code>IllegalArugmentException</code> is thrown.
+     * size, an <code>IllegalArgumentException</code> is thrown.
      *
      * @param values the sequence this model represents
      * @throws IllegalArgumentException if <code>values</code> is

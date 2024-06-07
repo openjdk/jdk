@@ -32,6 +32,7 @@
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
+#include "hugepages.hpp"
 #include "logging/log.hpp"
 #include "os_linux.hpp"
 #include "runtime/init.hpp"
@@ -446,8 +447,10 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_tmpfs(zoffset offset, size_
     return errno;
   }
 
-  // Advise mapping to use transparent huge pages
-  os::realign_memory((char*)addr, length, ZGranuleSize);
+  // Maybe madvise the mapping to use transparent huge pages
+  if (os::Linux::should_madvise_shmem_thps()) {
+    os::Linux::madvise_transparent_huge_pages(addr, length);
+  }
 
   // Touch the mapping (safely) to make sure it's backed by memory
   const bool backed = safe_touch_mapping(addr, length, _block_size);
@@ -594,7 +597,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate(bool punch_hole, zoffset offset, size_t
 
 bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
 retry:
   const ZErrno err = fallocate(false /* punch_hole */, offset, length);
@@ -694,7 +697,7 @@ size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
 
 size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const ZErrno err = fallocate(true /* punch_hole */, offset, length);
   if (err) {

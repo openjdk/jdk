@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
  * @bug 8294588
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx512f.*" | vm.cpu.features ~= ".*f16c.*")) | os.arch == "aarch64"
+ * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx512f.*" | vm.cpu.features ~= ".*f16c.*")) |
+ *           os.arch == "aarch64" |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVector
  */
@@ -51,7 +53,7 @@ public class TestFloatConversionsVector {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_F2HF, "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
     public void test_float_float16(short[] sout, float[] finp) {
         for (int i = 0; i < finp.length; i++) {
             sout[i] = Float.floatToFloat16(finp[i]);
@@ -94,7 +96,7 @@ public class TestFloatConversionsVector {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
     public void test_float16_float(float[] fout, short[] sinp) {
         for (int i = 0; i < sinp.length; i++) {
             fout[i] = Float.float16ToFloat(sinp[i]);

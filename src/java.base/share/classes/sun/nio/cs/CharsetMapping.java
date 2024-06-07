@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,7 @@
 package sun.nio.cs;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.*;
 import java.security.*;
 
@@ -244,7 +239,7 @@ public class CharsetMapping {
     void readINDEXC2B() {
         char[] map = readCharArray();
         for (int i = map.length - 1; i >= 0; i--) {
-            if (c2b == null && map[i] != -1) {
+            if (c2b == null) {
                 c2b = new char[map[i] + 256];
                 Arrays.fill(c2b, (char)UNMAPPABLE_ENCODING);
                 break;

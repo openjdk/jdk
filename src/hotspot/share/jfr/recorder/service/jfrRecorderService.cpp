@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -431,6 +432,7 @@ static void start_recorder() {
 
 static void stop_recorder() {
   assert(JfrRotationLock::is_owner(), "invariant");
+  JfrDeprecationManager::on_recorder_stop();
   set_recorder_state(RUNNING, STOPPED);
   log_debug(jfr, system)("Recording service STOPPED");
 }
@@ -478,6 +480,7 @@ void JfrRecorderService::safepoint_clear() {
   _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
   _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
   _checkpoint_manager.end_epoch_shift();
 }
@@ -506,6 +509,7 @@ void JfrRecorderService::vm_error_rotation() {
     Thread* const thread = Thread::current();
     _storage.flush_regular_buffer(thread->jfr_thread_local()->native_buffer(), thread);
     _chunkwriter.mark_chunk_final();
+    JfrDeprecationManager::write_edges(_chunkwriter, thread, true);
     invoke_flush();
     _chunkwriter.set_time_stamp();
     _repository.close_chunk();
@@ -569,9 +573,7 @@ void JfrRecorderService::pre_safepoint_write() {
     ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire());
   }
   write_storage(_storage, _chunkwriter);
-  if (_stack_trace_repository.is_modified()) {
-    write_stacktrace(_stack_trace_repository, _chunkwriter, false);
-  }
+  write_stacktrace(_stack_trace_repository, _chunkwriter, true);
 }
 
 void JfrRecorderService::invoke_safepoint_write() {
@@ -588,6 +590,7 @@ void JfrRecorderService::safepoint_write() {
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_write();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
   _checkpoint_manager.end_epoch_shift();
 }
@@ -685,4 +688,19 @@ void JfrRecorderService::process_full_buffers() {
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   JfrChunkRotation::evaluate(_chunkwriter);
+}
+
+void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
+  // Take the rotation lock to exclude flush() during event emits. This is because event emit
+  // also creates a number checkpoint events. Those checkpoint events require a future typeset checkpoint
+  // event for completeness, i.e. to be generated before being flushed to a segment.
+  // The upcoming flush() or rotation() after event emit completes this typeset checkpoint
+  // and serializes all event emit checkpoint events to the same segment.
+  JfrRotationLock lock;
+  // Take the rotation lock before the transition.
+  JavaThread* current_thread = JavaThread::current();
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
+  ThreadInVMfromNative transition(current_thread);
+  LeakProfiler::emit_events(cutoff_ticks, emit_all, skip_bfs);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,16 +544,18 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             MessageOutput.fatalError("Unable to launch target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             MessageOutput.fatalError("Internal debugger error.");
+            throw new RuntimeException(icae);
         } catch (VMStartException vmse) {
             MessageOutput.println("vmstartexception", vmse.getMessage());
             MessageOutput.println();
             dumpFailedLaunchInfo(vmse.process());
             MessageOutput.fatalError("Target VM failed to initialize.");
+            throw new RuntimeException(vmse);
         }
-        return null; // Shuts up the compiler
     }
 
     /* attach to running target vm */
@@ -564,11 +566,12 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             MessageOutput.fatalError("Unable to attach to target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             MessageOutput.fatalError("Internal debugger error.");
+            throw new RuntimeException(icae);
         }
-        return null; // Shuts up the compiler
     }
 
     /* listen for connection from target vm */
@@ -583,10 +586,11 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             MessageOutput.fatalError("Unable to attach to target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             MessageOutput.fatalError("Internal debugger error.");
+            throw new RuntimeException(icae);
         }
-        return null; // Shuts up the compiler
     }
 }

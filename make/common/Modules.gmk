@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,8 @@ endif
 # Filter out jvmci specific modules if jvmci is disabled
 ifeq ($(INCLUDE_JVMCI), false)
   MODULES_FILTER += jdk.internal.vm.ci
-  MODULES_FILTER += jdk.internal.vm.compiler
-  MODULES_FILTER += jdk.internal.vm.compiler.management
+  MODULES_FILTER += jdk.graal.compiler
+  MODULES_FILTER += jdk.graal.compiler.management
 endif
 
 # jpackage is only on windows, macosx, and linux

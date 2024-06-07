@@ -77,12 +77,14 @@ public class InstanceKlass extends Klass {
     constants            = new MetadataField(type.getAddressField("_constants"), 0);
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = type.getAddressField("_inner_classes");
+    nestMembers          = type.getAddressField("_nest_members");
     nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), 0);
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), 0);
     staticOopFieldCount  = new CIntField(type.getCIntegerField("_static_oop_field_count"), 0);
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), 0);
     initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
+    nestHostIndex        = new CIntField(type.getCIntegerField("_nest_host_index"), 0);
     if (VM.getVM().isJvmtiSupported()) {
       breakpoints        = type.getAddressField("_breakpoints");
     }
@@ -142,12 +144,14 @@ public class InstanceKlass extends Klass {
   private static MetadataField constants;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
+  private static AddressField  nestMembers;
   private static CIntField nonstaticFieldSize;
   private static CIntField staticFieldSize;
   private static CIntField staticOopFieldCount;
   private static CIntField nonstaticOopMapSize;
   private static CIntField initState;
   private static CIntField itableLen;
+  private static CIntField nestHostIndex;
   private static AddressField breakpoints;
 
   // type safe enum for ClassState from instanceKlass.hpp
@@ -374,6 +378,7 @@ public class InstanceKlass extends Klass {
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
+  public short     getNestHostIndex()       { return                (short) nestHostIndex.getValue(this); }
   public long      majorVersion()           { return                getConstants().majorVersion(); }
   public long      minorVersion()           { return                getConstants().minorVersion(); }
   public Symbol    getGenericSignature()    { return                getConstants().getGenericSignature(); }
@@ -898,6 +903,11 @@ public class InstanceKlass extends Klass {
     } else {
       return null;
     }
+  }
+
+  public U2Array getNestMembers() {
+    Address addr = getAddress().getAddressAt(nestMembers.getOffset());
+    return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
   //----------------------------------------------------------------------

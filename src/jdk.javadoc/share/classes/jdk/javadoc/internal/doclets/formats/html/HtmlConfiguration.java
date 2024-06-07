@@ -25,8 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -34,12 +37,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -61,13 +66,14 @@ import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.RestrictedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 
 /**
@@ -112,7 +118,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * 2. items for elements are added in bulk before generating the index files
      * 3. additional items are added as needed
      */
-    public HtmlIndexBuilder mainIndex;
+    public HtmlIndexBuilder indexBuilder;
 
     /**
      * The collection of deprecated items, if any, to be displayed on the deprecated-list page,
@@ -139,6 +145,14 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     protected NewAPIBuilder newAPIPageBuilder;
 
+    /**
+     * The collection of restricted methods, if any, to be displayed on the
+     * restricted-list page, or null if the page should not be generated.
+     * The page will not be generated if there are no restricted methods to be
+     * documented.
+     */
+    protected RestrictedAPIListBuilder restrictedAPIListBuilder;
+
     public Contents contents;
 
     public final Messages messages;
@@ -162,7 +176,8 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, EXTERNAL_SPECS, PREVIEW, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
+        CONSTANT_VALUES, DEPRECATED, EXTERNAL_SPECS, PREVIEW, RESTRICTED,
+        SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**
@@ -182,6 +197,23 @@ public class HtmlConfiguration extends BaseConfiguration {
      * The build date, to be recorded in generated files.
      */
     private ZonedDateTime buildDate;
+
+    /**
+     * The set of packages for which we have copied the doc files.
+     */
+    private final Set<PackageElement> containingPackagesSeen;
+
+    /**
+     * List of additional JavaScript files
+     */
+    private List<JavaScriptFile> additionalScripts;
+
+    /**
+     * Record for JavaScript file and module flag.
+     * @param path file path
+     * @param isModule module flag
+     */
+    public record JavaScriptFile(DocPath path, boolean isModule) {}
 
     /**
      * Constructs the full configuration needed by the doclet, including
@@ -220,6 +252,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         messages = new Messages(this, msgResources);
         options = new HtmlOptions(this);
+        containingPackagesSeen = new HashSet<>();
 
         Runtime.Version v;
         try {
@@ -233,6 +266,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
     }
 
+    @Override
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
@@ -271,6 +305,15 @@ public class HtmlConfiguration extends BaseConfiguration {
         return options;
     }
 
+    /**
+     * {@return the packages for which we have copied the doc files}
+     *
+     * @see ClassWriter#copyDocFiles()
+     */
+    public Set<PackageElement> getContainingPackagesSeen() {
+        return containingPackagesSeen;
+    }
+
     @Override
     public boolean finishOptionSettings() {
         if (!options.validateOptions()) {
@@ -290,14 +333,37 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
+        additionalScripts = options.additionalScripts().stream()
+                .map(this::detectJSModule)
+                .collect(Collectors.toList());
         if (options.createIndex()) {
-            mainIndex = new HtmlIndexBuilder(this);
+            indexBuilder = new HtmlIndexBuilder(this);
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
+    }
+
+    private JavaScriptFile detectJSModule(String fileName) {
+        DocFile file = DocFile.createFileForInput(this, fileName);
+        boolean isModule = fileName.toLowerCase(Locale.ROOT).endsWith(".mjs");
+        if (!isModule) {
+            // Regex to detect JavaScript modules
+            Pattern modulePattern = Pattern.compile("""
+                    (?:^|[;}])\\s*(?:\
+                    import\\s*["']|\
+                    import[\\s{*][^()]*from\\s*["']|\
+                    export(?:\\s+(?:let|const|function|class|var|default|async)|\\s*[{*]))""");
+            try (InputStream in = file.openInputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                isModule = reader.lines().anyMatch(s -> modulePattern.matcher(s).find());
+            } catch (DocFileIOException | IOException e) {
+                // Errors are handled when copying resources
+            }
+        }
+        return new JavaScriptFile(DocPath.create(file.getName()), isModule);
     }
 
     /**
@@ -316,9 +382,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      * if only classes are provided on the command line.
      */
     protected void setTopFile() {
-        if (!checkForDeprecation()) {
-            return;
-        }
         if (options.createOverview()) {
             topFile = DocPaths.INDEX;
         } else {
@@ -342,15 +405,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         return null;
     }
 
-    protected boolean checkForDeprecation() {
-        for (TypeElement te : getIncludedTypeElements()) {
-            if (isGeneratedDoc(te)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * Generate "overview.html" page if option "-overview" is used or number of
      * packages is more than one. Sets {@code HtmlOptions.createOverview} field to true.
@@ -365,9 +419,9 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
     }
 
-    @Override
     public WriterFactory getWriterFactory() {
-        return new WriterFactoryImpl(this);
+        // TODO: this is called many times: why not create and use a single instance?
+        return new WriterFactory(this);
     }
 
     @Override
@@ -407,11 +461,8 @@ public class HtmlConfiguration extends BaseConfiguration {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public List<DocPath> getAdditionalScripts() {
-        return options.additionalScripts().stream()
-                .map(sf -> DocFile.createFileForInput(this, sf))
-                .map(file -> DocPath.create(file.getName()))
-                .collect(Collectors.toCollection(ArrayList::new));
+    public List<JavaScriptFile> getAdditionalScripts() {
+        return additionalScripts;
     }
 
     @Override

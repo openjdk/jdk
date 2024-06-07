@@ -227,7 +227,6 @@ import sun.security.util.SecurityConstants;
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
- * @revised 9
  */
 public abstract class ClassLoader {
 
@@ -432,6 +431,7 @@ public abstract class ClassLoader {
      *
      * @since  9
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader(String name, ClassLoader parent) {
         this(checkCreateClassLoader(name), name, parent);
     }
@@ -458,6 +458,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader(ClassLoader parent) {
         this(checkCreateClassLoader(), null, parent);
     }
@@ -477,6 +478,7 @@ public abstract class ClassLoader {
      *          {@code checkCreateClassLoader} method doesn't allow creation
      *          of a new class loader.
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader() {
         this(checkCreateClassLoader(), null, getSystemClassLoader());
     }
@@ -881,7 +883,6 @@ public abstract class ClassLoader {
      * @see  java.security.SecureClassLoader
      *
      * @since  1.1
-     * @revised 9
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len)
         throws ClassFormatError
@@ -1015,8 +1016,6 @@ public abstract class ClassLoader {
      *          certificates than this class, or if {@code name} begins with
      *          "{@code java.}" and this class loader is not the platform
      *          class loader or its ancestor.
-     *
-     * @revised 9
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len,
                                          ProtectionDomain protectionDomain)
@@ -1091,7 +1090,6 @@ public abstract class ClassLoader {
      * @see      #defineClass(String, byte[], int, int, ProtectionDomain)
      *
      * @since  1.5
-     * @revised 9
      */
     protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
                                          ProtectionDomain protectionDomain)
@@ -1404,7 +1402,6 @@ public abstract class ClassLoader {
      * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
-     * @revised 9
      */
     public URL getResource(String name) {
         Objects.requireNonNull(name);
@@ -1469,7 +1466,6 @@ public abstract class ClassLoader {
      * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.2
-     * @revised 9
      */
     public Enumeration<URL> getResources(String name) throws IOException {
         Objects.requireNonNull(name);
@@ -1567,7 +1563,6 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.2
-     * @revised 9
      */
     protected URL findResource(String name) {
         return null;
@@ -1602,7 +1597,6 @@ public abstract class ClassLoader {
      *          If I/O errors occur
      *
      * @since  1.2
-     * @revised 9
      */
     protected Enumeration<URL> findResources(String name) throws IOException {
         return Collections.emptyEnumeration();
@@ -1687,7 +1681,6 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.1
-     * @revised 9
      */
     public static URL getSystemResource(String name) {
         return getSystemClassLoader().getResource(name);
@@ -1723,7 +1716,6 @@ public abstract class ClassLoader {
      *          If I/O errors occur
      *
      * @since  1.2
-     * @revised 9
      */
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
@@ -1755,7 +1747,6 @@ public abstract class ClassLoader {
      * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
-     * @revised 9
      */
     public InputStream getResourceAsStream(String name) {
         Objects.requireNonNull(name);
@@ -1788,7 +1779,6 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.1
-     * @revised 9
      */
     public static InputStream getSystemResourceAsStream(String name) {
         URL url = getSystemResource(name);
@@ -1948,9 +1938,6 @@ public abstract class ClassLoader {
      *          exception is thrown by that constructor when it is invoked. The
      *          underlying cause of the error can be retrieved via the
      *          {@link Throwable#getCause()} method.
-     *
-     * @revised  1.4
-     * @revised 9
      */
     @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
@@ -2217,7 +2204,6 @@ public abstract class ClassLoader {
      *
      *
      * @since  1.2
-     * @revised 9
      *
      * @jvms 5.3 Creation and Loading
      * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
@@ -2326,7 +2312,6 @@ public abstract class ClassLoader {
      * @see ClassLoader#getDefinedPackage(String)
      *
      * @since  1.2
-     * @revised 9
      */
     @Deprecated(since="9")
     protected Package getPackage(String name) {
@@ -2361,7 +2346,6 @@ public abstract class ClassLoader {
      * @see ClassLoader#getDefinedPackages()
      *
      * @since  1.2
-     * @revised 9
      */
     protected Package[] getPackages() {
         Stream<Package> pkgs = packages();

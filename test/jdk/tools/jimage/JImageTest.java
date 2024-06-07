@@ -47,8 +47,8 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * @summary Test jimage tool
  * @bug 8222100
  * @library ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.jlink/jdk.tools.jlink.internal

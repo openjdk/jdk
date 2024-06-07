@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -68,6 +71,8 @@ public class Debuggee implements Closeable {
         private String transport = "dt_socket";
         private String address = null;
         private boolean suspended = true;
+        private String onthrow = "";
+        private static final String LAUNCH_ECHO_STRING = "Listen Args:";
 
         private Launcher(String mainClass) {
             this.mainClass = mainClass;
@@ -100,35 +105,59 @@ public class Debuggee implements Closeable {
             return this;
         }
 
+        public Launcher enableOnThrow(String exceptionClassName) {
+            this.onthrow = exceptionClassName;
+            return this;
+        }
+
         public ProcessBuilder prepare() {
             List<String> debuggeeArgs = new LinkedList<>();
             if (vmOptions != null) {
                 debuggeeArgs.add(vmOptions);
             }
+            String onthrowArgs = onthrow.isEmpty() ? "" : ",onthrow=" + onthrow + ",launch=echo " + LAUNCH_ECHO_STRING;
             debuggeeArgs.add("-agentlib:jdwp=transport=" + transport
                     + (address == null ? "" : ",address=" + address)
-                    + ",server=y,suspend=" + (suspended ? "y" : "n"));
+                    + ",server=y,suspend=" + (suspended ? "y" : "n")
+                    + onthrowArgs);
             debuggeeArgs.addAll(options);
             debuggeeArgs.add(mainClass);
-            return ProcessTools.createTestJvm(debuggeeArgs);
+            return ProcessTools.createTestJavaProcessBuilder(debuggeeArgs);
         }
 
         public Debuggee launch(String name) {
-            return new Debuggee(prepare(), name);
+            return new Debuggee(prepare(), name,
+                onthrow.isEmpty() ?
+                    JDWP::parseListenAddress :
+                    Launcher::parseLaunchEchoListenAddress
+            );
         }
         public Debuggee launch() {
             return launch("debuggee");
         }
+
+        /**
+         * Parses debuggee output to get listening transport and address, printed by `launch=echo`.
+         * Returns null if the string specified does not contain required info.
+         */
+        private static JDWP.ListenAddress parseLaunchEchoListenAddress(String debuggeeOutput) {
+            Pattern listenRegexp = Pattern.compile(LAUNCH_ECHO_STRING + " \\b(.+)\\b \\b(.+)\\b");
+            Matcher m = listenRegexp.matcher(debuggeeOutput);
+            if (m.find()) {
+                return new JDWP.ListenAddress(m.group(1), m.group(2));
+            }
+            return null;
+        }
     }
 
-    // starts the process, waits for "Listening for transport" output and detects transport/address
-    private Debuggee(ProcessBuilder pb, String name) {
+    // starts the process, waits until the provided addressDetector detects transport/address from the process output
+    private Debuggee(ProcessBuilder pb, String name, Function<String, JDWP.ListenAddress> addressDetector) {
         JDWP.ListenAddress[] listenAddress = new JDWP.ListenAddress[1];
         try {
             p = ProcessTools.startProcess(name, pb,
                     s -> output.add(s),  // output consumer
-                    s -> {  // warm-up predicate
-                        listenAddress[0] = JDWP.parseListenAddress(s);
+                    s -> {
+                        listenAddress[0] = addressDetector.apply(s);
                         return listenAddress[0] != null;
                     },
                     30, TimeUnit.SECONDS);
@@ -167,10 +196,16 @@ public class Debuggee implements Closeable {
     }
 
     String getTransport() {
+        if (transport == null) {
+            throw new IllegalStateException("transport is not available");
+        }
         return transport;
     }
 
     public String getAddress() {
+        if (address == null) {
+            throw new IllegalStateException("address is not available");
+        }
         return address;
     }
 
@@ -180,5 +215,4 @@ public class Debuggee implements Closeable {
             p.destroy();
         }
     }
-
 }

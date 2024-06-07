@@ -37,7 +37,7 @@
   #endif
 #endif
 
-static int futex(volatile int *addr, int futex_op, int op_arg) {
+static long futex(volatile int *addr, int futex_op, int op_arg) {
   return syscall(SYS_futex, addr, futex_op, op_arg, nullptr, nullptr, 0);
 }
 
@@ -51,9 +51,9 @@ void LinuxWaitBarrier::arm(int barrier_tag) {
 void LinuxWaitBarrier::disarm() {
   assert(_futex_barrier != 0, "Should be armed/non-zero.");
   _futex_barrier = 0;
-  int s = futex(&_futex_barrier,
-                FUTEX_WAKE_PRIVATE,
-                INT_MAX /* wake a max of this many threads */);
+  long s = futex(&_futex_barrier,
+                 FUTEX_WAKE_PRIVATE,
+                 INT_MAX /* wake a max of this many threads */);
   guarantee_with_errno(s > -1, "futex FUTEX_WAKE failed");
 }
 
@@ -65,9 +65,9 @@ void LinuxWaitBarrier::wait(int barrier_tag) {
     return;
   }
   do {
-    int s = futex(&_futex_barrier,
-                  FUTEX_WAIT_PRIVATE,
-                  barrier_tag /* should be this tag */);
+    long s = futex(&_futex_barrier,
+                   FUTEX_WAIT_PRIVATE,
+                   barrier_tag /* should be this tag */);
     guarantee_with_errno((s == 0) ||
                          (s == -1 && errno == EAGAIN) ||
                          (s == -1 && errno == EINTR),

@@ -24,6 +24,7 @@
  /*
   @test
   @bug 8042713 8170578
+  @key printer
   @summary  Print Dialog does not update attribute set with page range
   @run main/manual PrintAttributeUpdateTest
  */

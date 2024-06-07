@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class PhaseGVN;
 const uint Node::NotAMachineReg = 0xffff0000;
 
 #ifndef PRODUCT
-extern int nodes_created;
+extern uint nodes_created;
 #endif
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -508,6 +508,10 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (n->is_ParsePredicate()) {
+    C->add_parse_predicate(n->as_ParsePredicate());
+  }
+
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
@@ -606,8 +610,11 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (Opcode() == Op_Opaque4) {
+  if (is_Opaque4()) {
     compile->remove_template_assertion_predicate_opaq(this);
+  }
+  if (is_ParsePredicate()) {
+    compile->remove_parse_predicate(as_ParsePredicate());
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
@@ -1085,8 +1092,8 @@ juint Node::max_flags() {
 // Print as assembly
 void Node::format( PhaseRegAlloc *, outputStream *st ) const {}
 //------------------------------emit-------------------------------------------
-// Emit bytes starting at parameter 'ptr'.
-void Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+// Emit bytes using C2_MacroAssembler
+void Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 //------------------------------size-------------------------------------------
 // Size of instruction in bytes
 uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
@@ -1625,7 +1632,7 @@ void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only
 }
 
 // BFS traverse from start, return node with idx
-Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
+static Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
   ResourceMark rm;
   Node* result = nullptr;
   auto callback = [&] (Node* n) {
@@ -1641,11 +1648,11 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
   return result;
 }
 
-int node_idx_cmp(const Node** n1, const Node** n2) {
+static int node_idx_cmp(const Node** n1, const Node** n2) {
   return (*n1)->_idx - (*n2)->_idx;
 }
 
-void find_nodes_by_name(Node* start, const char* name) {
+static void find_nodes_by_name(Node* start, const char* name) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -1660,7 +1667,7 @@ void find_nodes_by_name(Node* start, const char* name) {
   }
 }
 
-void find_nodes_by_dump(Node* start, const char* pattern) {
+static void find_nodes_by_dump(Node* start, const char* pattern) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -3004,7 +3011,7 @@ uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
 bool TypeNode::cmp(const Node& n) const {
-  return !Type::cmp(_type, ((TypeNode&)n)._type);
+  return Type::equals(_type, n.as_Type()->_type);
 }
 const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }

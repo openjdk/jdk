@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ public enum HtmlAttr {
     ARIA_LABELLEDBY("aria-labelledby"),
     ARIA_ORIENTATION("aria-orientation"),
     ARIA_SELECTED("aria-selected"),
+    AUTOCOMPLETE,
     CHECKED,
     CLASS,
     CLEAR,
@@ -88,6 +89,23 @@ public enum HtmlAttr {
 
         public String toString() {
             return role;
+        }
+    }
+
+    public enum InputType {
+
+        CHECKBOX,
+        RESET,
+        TEXT;
+
+        private final String type;
+
+        InputType() {
+            type = Utils.toLowerCase(name());
+        }
+
+        public String toString() {
+            return type;
         }
     }
 

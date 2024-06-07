@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,10 +120,12 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
                     <section class="class-description" id="class-description">
+                    <div class="horizontal-scroll">
                     <hr>
                     <div class="type-signature"><span class="modifiers">public abstract class </span\
                     ><span class="element-name type-name-label">DocumentedNonGenericChild</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
+                    </div>
                     </section>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
@@ -142,6 +144,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
                     -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\
@@ -169,10 +172,12 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentField">
                     <h3>parentField</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">parentField</\
                     span></div>
                     <div class="block">A field.</div>
+                    </div>
                     </section>""");
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
@@ -185,9 +190,11 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">metho\
                     d</span><wbr><span class="parameters">(java.lang.String&nbsp;t)</span></div>
+                    </div>
                     </section>""");
 
         checkOutput("index-all.html", true,
@@ -231,6 +238,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
                     -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\

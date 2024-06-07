@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,7 @@ public class Annotate {
             DiagnosticPosition prevLintPos =
                     deferPos != null
                             ? deferredLintHandler.setPos(deferPos)
-                            : deferredLintHandler.immediate();
+                            : deferredLintHandler.immediate(lint);
             Lint prevLint = deferPos != null ? null : chk.setLint(lint);
             try {
                 if (s.hasAnnotations() && annotations.nonEmpty())
@@ -378,6 +378,11 @@ public class Annotate {
                     && toAnnotate.kind == TYP
                     && types.isSameType(c.type, syms.valueBasedType)) {
                 toAnnotate.flags_field |= Flags.VALUE_BASED;
+            }
+
+            if (!c.type.isErroneous()
+                    && types.isSameType(c.type, syms.restrictedType)) {
+                toAnnotate.flags_field |= Flags.RESTRICTED;
             }
         }
 
@@ -551,7 +556,6 @@ public class Annotate {
 
         if (expectedElementType.hasTag(ARRAY)) {
             return getAnnotationArrayValue(expectedElementType, tree, env);
-
         }
 
         //error recovery
@@ -703,11 +707,15 @@ public class Annotate {
         }
 
         JCNewArray na = (JCNewArray)tree;
+        List<JCExpression> elems = na.elems;
         if (na.elemtype != null) {
             log.error(na.elemtype.pos(), Errors.NewNotAllowedInAnnotation);
+            if (elems == null) {
+                elems = List.nil();
+            }
         }
         ListBuffer<Attribute> buf = new ListBuffer<>();
-        for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
+        for (List<JCExpression> l = elems; l.nonEmpty(); l = l.tail) {
             buf.append(attributeAnnotationValue(types.elemtype(expectedElementType),
                     l.head,
                     env));
@@ -1007,7 +1015,7 @@ public class Annotate {
         return validRepeated;
     }
 
-    /********************
+    /* ******************
      * Type annotations *
      ********************/
 
@@ -1158,9 +1166,18 @@ public class Annotate {
             scan(tree.args);
             // the anonymous class instantiation if any will be visited separately.
         }
+
+        @Override
+        public void visitErroneous(JCErroneous tree) {
+            if (tree.errs != null) {
+                for (JCTree err : tree.errs) {
+                    scan(err);
+                }
+            }
+        }
     }
 
-    /*********************
+    /* *******************
      * Completer support *
      *********************/
 

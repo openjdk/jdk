@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,5 +226,22 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   }
   return subklass;
 }
+#endif
 
+uint SubTypeCheckNode::size_of() const {
+  return sizeof(*this);
+}
+
+uint SubTypeCheckNode::hash() const {
+  return NO_HASH;
+}
+
+#ifndef PRODUCT
+void SubTypeCheckNode::dump_spec(outputStream* st) const {
+  if (_method != nullptr) {
+    st->print(" profiled at:");
+    _method->print_short_name(st);
+    st->print(":%d", _bci);
+  }
+}
 #endif

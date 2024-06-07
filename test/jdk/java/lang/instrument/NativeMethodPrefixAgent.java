@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,15 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6263319
- * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
- * @summary test setNativeMethodPrefix
- * @author Robert Field, Sun Microsystems
- *
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.management
- *          java.instrument
- * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-CheckIntrinsics -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp
- */
+import asmlib.Instrumentor;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
 
-import asmlib.*;
+import static java.lang.constant.ConstantDescs.*;
 
 class NativeMethodPrefixAgent {
 
@@ -54,6 +44,8 @@ class NativeMethodPrefixAgent {
     }
 
     static class Tr implements ClassFileTransformer {
+        private static final ClassDesc CD_StringIdCallbackReporter = ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter");
+        private static final MethodTypeDesc MTD_void_String_int = MethodTypeDesc.of(CD_void, CD_String, CD_int);
         final String trname;
         final int transformId;
 
@@ -76,11 +68,13 @@ class NativeMethodPrefixAgent {
                 try {
                     byte[] newcf = Instrumentor.instrFor(classfileBuffer)
                                    .addNativeMethodTrackingInjection(
-                                        "wrapped_" + trname + "_",
-                                        (h)->{
-                                            h.push(h.getName());
-                                            h.push(transformId);
-                                            h.invokeStatic("bootreporter/StringIdCallbackReporter", "tracker", "(Ljava/lang/String;I)V", false);
+                                        "wrapped_" + trname + "_", (name, h) -> {
+                                            h.loadConstant(name);
+                                            h.loadConstant(transformId);
+                                            h.invokestatic(
+                                                    CD_StringIdCallbackReporter,
+                                                    "tracker",
+                                                    MTD_void_String_int);
                                         })
                                    .apply();
                     /*** debugging ...

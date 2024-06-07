@@ -30,8 +30,8 @@ typedef void (*arraycopy_fn)(address src, address dst, int count);
 
 // simple tests of generated arraycopy functions
 static void test_arraycopy_func(address func, int alignment) {
-  int v = 0xcc;
-  int v2 = 0x11;
+  u_char v = 0xcc;
+  u_char v2 = 0x11;
   jlong lbuffer[8];
   jlong lbuffer2[8];
   address fbuffer  = (address) lbuffer;

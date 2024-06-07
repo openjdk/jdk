@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +25,21 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.constant.ClassDesc;
 import java.util.LinkedList;
 import java.util.List;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.DynamicConstantPoolEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.LocalVariableInfo;
-import jdk.internal.classfile.Attributes;
+import java.util.stream.Collectors;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.Attributes;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.Util;
@@ -127,6 +131,10 @@ public final class VerificationWrapper {
             return m.methodType().stringValue();
         }
 
+        String parameters() {
+            return m.methodTypeSymbol().parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","));
+        }
+
         int codeLength() {
             return c == null ? 0 : c.codeLength();
         }
@@ -140,12 +148,12 @@ public final class VerificationWrapper {
         }
 
         List<LocalVariableInfo> localVariableTable() {
-            var attro = c.findAttribute(Attributes.LOCAL_VARIABLE_TABLE);
+            var attro = c.findAttribute(Attributes.localVariableTable());
             return attro.map(lvta -> lvta.localVariables()).orElse(List.of());
         }
 
         byte[] stackMapTableRawData() {
-            var attro = c.findAttribute(Attributes.STACK_MAP_TABLE);
+            var attro = c.findAttribute(Attributes.stackMapTable());
             return attro.map(attr -> ((BoundAttribute) attr).contents()).orElse(null);
         }
 
@@ -160,15 +168,15 @@ public final class VerificationWrapper {
         }
 
         int entryCount() {
-            return cp.entryCount();
+            return cp.size();
         }
 
         String classNameAt(int index) {
-            return ((ClassEntry)cp.entryByIndex(index)).asInternalName();
+            return cp.entryByIndex(index, ClassEntry.class).asInternalName();
         }
 
         String dynamicConstantSignatureAt(int index) {
-            return ((DynamicConstantPoolEntry)cp.entryByIndex(index)).type().stringValue();
+            return cp.entryByIndex(index, DynamicConstantPoolEntry.class).type().stringValue();
         }
 
         int tagAt(int index) {
@@ -190,7 +198,7 @@ public final class VerificationWrapper {
         }
 
         int refClassIndexAt(int index) {
-            return ((MemberRefEntry)cp.entryByIndex(index)).owner().index();
+            return cp.entryByIndex(index, MemberRefEntry.class).owner().index();
         }
     }
 }

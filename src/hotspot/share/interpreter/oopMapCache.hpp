@@ -84,7 +84,7 @@ class InterpreterOopMap: ResourceObj {
  private:
   Method*        _method;         // the method for which the mask is valid
   unsigned short _bci;            // the bci    for which the mask is valid
-  int            _mask_size;      // the mask size in bits
+  int            _mask_size;      // the mask size in bits (USHRT_MAX if invalid)
   int            _expression_stack_size; // the size of the expression stack in slots
 
  protected:
@@ -128,7 +128,6 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   InterpreterOopMap();
-  ~InterpreterOopMap();
 
   // Copy the OopMapCacheEntry in parameter "from" into this
   // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
@@ -146,6 +145,8 @@ class InterpreterOopMap: ResourceObj {
 
   int expression_stack_size() const              { return _expression_stack_size; }
 
+  // Determines if a valid mask has been computed
+  bool has_valid_mask() const { return _mask_size != USHRT_MAX; }
 };
 
 class OopMapCache : public CHeapObj<mtClass> {
@@ -178,7 +179,15 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry);
-  static void cleanup_old_entries();
+
+  // Check if we need to clean up old entries
+  static bool has_cleanup_work();
+
+  // Request cleanup if work is needed
+  static void trigger_cleanup();
+
+  // Clean up the old entries
+  static void cleanup();
 };
 
 #endif // SHARE_INTERPRETER_OOPMAPCACHE_HPP

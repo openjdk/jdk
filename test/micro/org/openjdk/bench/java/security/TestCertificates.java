@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,12 +115,12 @@ class TestCertificates {
     private TestCertificates() {}
 
     public static KeyStore getKeyStore() throws GeneralSecurityException, IOException {
-        KeyStore result = KeyStore.getInstance("JKS");
+        KeyStore result = KeyStore.getInstance(KeyStore.getDefaultType());
         result.load(null, null);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate serverCert = cf.generateCertificate(
                 new ByteArrayInputStream(
-                        TestCertificates.SERVER_CERT.getBytes(StandardCharsets.ISO_8859_1)));
+                        SERVER_CERT.getBytes(StandardCharsets.ISO_8859_1)));
         Certificate caCert = cf.generateCertificate(
                 new ByteArrayInputStream(
                         CA_CERT.getBytes(StandardCharsets.ISO_8859_1)));
@@ -135,7 +135,7 @@ class TestCertificates {
     }
 
     public static KeyStore getTrustStore() throws GeneralSecurityException, IOException {
-        KeyStore result = KeyStore.getInstance("JKS");
+        KeyStore result = KeyStore.getInstance(KeyStore.getDefaultType());
         result.load(null, null);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate rootcaCert = cf.generateCertificate(

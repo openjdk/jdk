@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,12 @@ public class TestUnorderedReductionPartialVectorization {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.OR_REDUCTION_V, "> 0",},
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.OR_REDUCTION_V,                                                 "> 0",},
         applyIfCPUFeatureOr = {"avx2", "true"})
     static long test1(int[] data, long sum) {
-        for (int i = 0; i < data.length; i++) {
+        for (int i = 0; i < data.length; i+=2) {
             // Mixing int and long ops means we only end up allowing half of the int
             // loads in one pack, and we have two int packs. The first pack has one
             // of the pairs missing because of the store, which creates a dependency.
@@ -75,7 +76,18 @@ public class TestUnorderedReductionPartialVectorization {
             // PhaseIdealLoop::move_unordered_reduction_out_of_loop
             int v = data[i]; // int read
             data[0] = 0;     // ruin the first pack
-            sum |= v;        // long reduction
+            sum |= v;        // long reduction (and implicit cast from int to long)
+
+            // This example used to rely on that reductions were ignored in SuperWord::unrolling_analysis,
+            // and hence the largest data type in the loop was the ints. This would then unroll the doubles
+            // for twice the vector length, and this resulted in us having twice as many packs. Because of
+            // the store "data[0] = 0", the first packs were destroyed, since they do not have power of 2
+            // size.
+            // Now, we no longer ignore reductions, and now we unroll half as much before SuperWord. This
+            // means we would only get one pack per operation, and that one would get ruined, and we have
+            // no vectorization. We now ensure there are again 2 packs per operation with a 2x hand unroll.
+            int v2 = data[i + 1];
+            sum |= v2;
         }
         return sum;
     }

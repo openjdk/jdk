@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@
  * javax.lang.model.util.Elements.Origin#SYNTHETIC synthetic}
  * constructs in a class file, such as accessor methods used in
  * implementing nested classes and {@linkplain
- * javax.lang.model.util.Elements.Origin#isBridge(ExecutableElement)
+ * javax.lang.model.util.Elements#isBridge(ExecutableElement)
  * bridge methods} used in implementing covariant returns, are
  * translation artifacts strictly outside of this model. However, when
  * operating on class files, it is helpful be able to operate on such
@@ -110,6 +110,7 @@
  * a {@code NullPointerException} if given a {@code null} argument.
  *
  * @see javax.lang.model.util.Elements
+ * @see javax.lang.model##elementsAndTypes Elements and Types
  * @see <a href="https://jcp.org/en/jsr/detail?id=269">
  * JSR 269: Pluggable Annotation Processing API</a>
  * @jls 6.1 Declarations

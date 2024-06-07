@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2015 Unicode, Inc.
+Copyright © 1991-2023 Unicode, Inc.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
-For terms of use, see http://www.unicode.org/copyright.html
+For terms of use, see https://www.unicode.org/copyright.html
 -->
 
 <supplementalData>
@@ -354,7 +354,7 @@ The printed version of ISO-4217:2001
         </region>
         <region iso3166="CU">
             <currency iso4217="CUP" from="1859-01-01"/>
-            <currency iso4217="CUC" from="1994-01-01"/>
+            <currency iso4217="CUC" from="1994-01-01" to="2021-01-01"/>
             <!-- currency iso4217="USD" from="1994"/ --><!-- Unofficially used -->
             <currency iso4217="USD" from="1899-01-01" to="1959-01-01"/>
         </region>
@@ -363,7 +363,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="PTE" from="1911-05-22" to="1975-07-05"/>
         </region>
         <region iso3166="CW">
-            <currency iso4217="ANG" from="2010-10-10"/>
+            <currency iso4217="XCG" from="2025-03-31" tz="America/Curacao"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2025-06-30" to-tz="America/Curacao"/>
         </region>
         <region iso3166="CX">
             <currency iso4217="AUD" from="1966-02-14"/>
@@ -545,8 +546,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="HNL" from="1926-04-03"/>
         </region>
         <region iso3166="HR">
-            <currency iso4217="EUR" from="2023-01-01" />
-            <currency iso4217="HRK" from="1994-05-30" to="2023-01-14"/>
+            <currency iso4217="EUR" from="2023-01-01" tz="Europe/Zagreb"/>
+            <currency iso4217="HRK" from="1994-05-30" to="2023-01-14" to-tz="Europe/Zagreb"/>
             <currency iso4217="HRD" from="1991-12-23" to="1995-01-01"/>
             <currency iso4217="YUN" from="1990-01-01" to="1991-12-23"/>
             <currency iso4217="YUD" from="1966-01-01" to="1990-01-01"/>
@@ -957,8 +958,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="CSK" from="1953-06-01" to="1992-12-31"/>
         </region>
         <region iso3166="SL">
-            <currency iso4217="SLE" from="2022-07-01"/>
-            <currency iso4217="SLL" from="1964-08-04" to="2023-12-31"/>
+            <currency iso4217="SLE" from="2022-07-01" tz="Africa/Freetown"/>
+            <currency iso4217="SLL" from="1964-08-04" to="2023-12-31" to-tz="Africa/Freetown"/>
             <currency iso4217="GBP" from="1808-11-30" to="1966-02-04"/>
         </region>
         <region iso3166="SM">
@@ -995,7 +996,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="SVC" from="1919-11-11" to="2001-01-01"/>
         </region>
         <region iso3166="SX">
-            <currency iso4217="ANG" from="2010-10-10"/>
+            <currency iso4217="XCG" from="2025-03-31" tz="America/Lower_Princes"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2025-06-30" to-tz="America/Lower_Princes"/>
         </region>
         <region iso3166="SY">
             <currency iso4217="SYP" from="1948-01-01"/>
@@ -1271,7 +1273,7 @@ XXX Code for transations where no currency is involved
         <group type="EZ" contains="AT BE CY DE EE ES FI FR GR IE IT LT LU LV MT NL PT SI SK" grouping="true"/> <!-- Eurozone, see https://en.wikipedia.org/wiki/Eurozone -->
         <group type="UN" contains="AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FR GA GB GD GE GH GM GN GQ GR GT GW GY HN HR HT HU ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MR MT MU MV MX MW MY MZ NA NE NG NI NL NO NR NP NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TZ UA UG US UY UZ VC VE VN VU WS YE ZA ZM ZW" grouping="true"/> <!-- United Nations, see https://en.wikipedia.org/wiki/Member_states_of_the_United_Nations -->
     </territoryContainment>
-    <!-- Start of Generated Data: see https://cldr.unicode.org/development/updating-codes/update-language-script-info -->
+    <!-- Start of Generated Data: see https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 	<languageData>
 		<language type="aa" scripts="Latn"/>
 		<language type="aa" territories="DJ ET" alt="secondary"/>
@@ -1396,6 +1398,7 @@ XXX Code for transations where no currency is involved
 		<language type="bku" scripts="Latn"/>
 		<language type="bku" scripts="Buhd" alt="secondary"/>
 		<language type="bla" scripts="Latn"/>
+		<language type="blo" scripts="Latn"/>
 		<language type="blt" scripts="Tavt"/>
 		<language type="bm" scripts="Latn Nkoo"/>
 		<language type="bm" territories="ML" alt="secondary"/>
@@ -1692,6 +1695,7 @@ XXX Code for transations where no currency is involved
 		<language type="ibb" territories="NG" alt="secondary"/>
 		<language type="id" scripts="Latn" territories="ID"/>
 		<language type="id" scripts="Arab" alt="secondary"/>
+		<language type="ie" scripts="Latn" alt="secondary"/>
 		<language type="ife" scripts="Latn"/>
 		<language type="ig" scripts="Latn"/>
 		<language type="ig" territories="NG" alt="secondary"/>
@@ -1813,6 +1817,8 @@ XXX Code for transations where no currency is involved
 		<language type="kxm" scripts="Thai"/>
 		<language type="kxm" territories="TH" alt="secondary"/>
 		<language type="kxp" scripts="Arab"/>
+		<language type="kxv" scripts="Latn"/>
+		<language type="kxv" scripts="Deva Orya Telu" alt="secondary"/>
 		<language type="ky" scripts="Arab Cyrl Latn" territories="KG"/>
 		<language type="kyu" scripts="Kali"/>
 		<language type="la" scripts="Latn" territories="VA" alt="secondary"/>
@@ -2564,6 +2570,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="35" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="fon" populationPercent="25"/>	<!--Fon-->
 			<languagePopulation type="yo" populationPercent="6.7"/>	<!--Yoruba-->
+			<languagePopulation type="blo" populationPercent="0.3" references="R1194"/>	<!--Anii-->
 		</territory>
 		<territory type="BL" gdp="255000000" literacyPercent="99" population="7122">	<!--St. Barthélemy-->
 			<languagePopulation type="fr" populationPercent="96" officialStatus="official"/>	<!--French-->
@@ -2668,7 +2675,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="chp" populationPercent="0.034" officialStatus="official_regional" references="R1329"/>	<!--Chipewyan-->
 			<languagePopulation type="moe" populationPercent="0.032" references="R1329"/>	<!--Innu-aimun-->
 			<languagePopulation type="cr" populationPercent="0.024" officialStatus="official_regional" references="R1329"/>	<!--Cree-->
-			<languagePopulation type="mic" populationPercent="0.021" references="R1329"/>	<!--Mi'kmaq-->
+			<languagePopulation type="mic" populationPercent="0.021" references="R1329"/>	<!--Mi'kmaw-->
 			<languagePopulation type="atj" populationPercent="0.017" references="R1329"/>	<!--Atikamekw-->
 			<languagePopulation type="bla" populationPercent="0.013" references="R1329"/>	<!--Siksiká-->
 			<languagePopulation type="crk" populationPercent="0.011" references="R1329"/>	<!--Plains Cree-->
@@ -2915,6 +2922,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="en" populationPercent="50"/>	<!--English-->
 			<languagePopulation type="fi" populationPercent="21"/>	<!--Finnish-->
 			<languagePopulation type="vro" populationPercent="5.7"/>	<!--Võro-->
+			<languagePopulation type="ie" literacyPercent="99" populationPercent="0.0001"/>	<!--Interlingue-->
 		</territory>
 		<territory type="EG" gdp="1204000000000" literacyPercent="73.9" population="104124000">	<!--Egypt-->
 			<languagePopulation type="ar" populationPercent="94" officialStatus="official"/>	<!--Arabic-->
@@ -3184,7 +3192,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ban" literacyPercent="10" populationPercent="1.8" references="R1144"/>	<!--Balinese-->
 			<languagePopulation type="bug" literacyPercent="10" populationPercent="1.6" references="R1145"/>	<!--Buginese-->
 			<languagePopulation type="bjn" literacyPercent="10" populationPercent="1.5"/>	<!--Banjar-->
-			<languagePopulation type="ace" populationPercent="1.4"/>	<!--Achinese-->
+			<languagePopulation type="ace" populationPercent="1.4"/>	<!--Acehnese-->
 			<languagePopulation type="ms_Arab" populationPercent="1.2"/>	<!--Malay (Arabic)-->
 			<languagePopulation type="sas" populationPercent="0.97"/>	<!--Sasak-->
 			<languagePopulation type="bbc" populationPercent="0.92"/>	<!--Batak Toba-->
@@ -3301,6 +3309,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bft" populationPercent="0.0062"/>	<!--Balti-->
 			<languagePopulation type="bra" populationPercent="0.0041"/>	<!--Braj-->
 			<languagePopulation type="lep" populationPercent="0.0035"/>	<!--Lepcha-->
+			<languagePopulation type="kxv" populationPercent="0.0029"/>	<!--Kuvi-->
 			<languagePopulation type="btv" populationPercent="0.0026"/>	<!--Bateri-->
 			<languagePopulation type="lif" populationPercent="0.0026"/>	<!--Limbu-->
 			<languagePopulation type="lah" populationPercent="0.0025"/>	<!--Western Panjabi-->
@@ -4141,6 +4150,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="61" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ee" populationPercent="17"/>	<!--Ewe-->
 			<languagePopulation type="ife" literacyPercent="15" populationPercent="1.3" references="R1048"/>	<!--Ifè-->
+			<languagePopulation type="blo" populationPercent="0.15" references="R1194"/>	<!--Anii-->
 		</territory>
 		<territory type="TH" gdp="1236000000000" literacyPercent="93.5" population="68977400">	<!--Thailand-->
 			<languagePopulation type="th" literacyPercent="93" populationPercent="80" officialStatus="official" references="R1090"/>	<!--Thai-->
@@ -4404,7 +4414,7 @@ XXX Code for transations where no currency is involved
 		<territory type="ZZ" gdp="0" literacyPercent="0" population="0">	<!--Unknown Region-->
 		</territory>
 	</territoryInfo>
-    <!-- End of Generated Data: see http://sites.google.com/site/cldr/Home/updating-codes -->
+    <!-- End of Generated Data: see https://cldr.unicode.org/development/updating-codes -->
     <calendarData>
         <calendar type="gregorian">
            <calendarSystem type="solar" />
@@ -4876,20 +4886,20 @@ XXX Code for transations where no currency is involved
 		<hours preferred="H" allowed="H h" regions="001 BI BY FO GL HU MG MT MU MV NO PL RW TH TJ TM VN ZW"/>
 		<hours preferred="H" allowed="H h hb hB" regions="AC AI BW BZ CC CK CX DG FK GB GG GI IE IM IO JE LT MK MN MS NF NG NR NU PN SH SX TA ZA"/>
 		<hours preferred="H" allowed="H h hB" regions="CF CM LU NP PF SC SM SN TF VA ca_ES fr_CA gl_ES it_CH it_IT"/>
-		<hours preferred="H" allowed="H h hB hb" regions="AR CL CR CU EA GT HN IC KG KM LK MA MX NI PY SV UY af_ZA es_BO es_BR es_EC es_ES es_GQ es_PE"/>
+		<hours preferred="H" allowed="H h hB hb" regions="EA IC KG KM LK MA af_ZA es_BR es_ES es_GQ"/>
 		<hours preferred="H" allowed="H K h" regions="JP"/>
 		<hours preferred="H" allowed="H hb hB h" regions="AF LA"/>
 		<hours preferred="H" allowed="H hB"
 			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV CW DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SR ST TG TR WF YT"/>
 		<hours preferred="H" allowed="H hB h" regions="AZ BA BG CH GE LI ME RS UA UZ XK"/>
-		<hours preferred="H" allowed="H hB h hb" regions="BO EC ES GQ PE"/>
+		<hours preferred="H" allowed="H hB h hb" regions="ES GQ"/>
 		<hours preferred="H" allowed="H hB hb h" regions="CN LV TL zu_ZA"/>
 		<hours preferred="H" allowed="hB H" regions="CD IR"/>
 		<hours preferred="H" allowed="hB hb H h" regions="KE MM TZ UG"/>
 		<hours preferred="h" allowed="h H" regions="AS BT DJ ER GH IN LS PG PW SO TO VU WS"/>
 		<hours preferred="h" allowed="h H hb hB" regions="CY GR"/>
 		<hours preferred="h" allowed="h H hB" regions="AL TD"/>
-		<hours preferred="h" allowed="h H hB hb" regions="CO DO KP KR NA PA PR VE"/>
+		<hours preferred="h" allowed="h H hB hb" regions="419 AR BO CL CO CR CU DO EC GT HN KP KR MX NI NA PA PE PR PY SV UY VE"/>
 		<hours preferred="h" allowed="h hb H hB"
 			regions="AG AU BB BM BS CA DM FJ FM GD GM GU GY JM KI KN KY LC LR MH MP MW NZ SB SG SL SS SZ TC TT UM US VC VG VI ZM en_001"/>
 		<hours preferred="h" allowed="h hB H" regions="BD PK"/>
@@ -4914,7 +4924,7 @@ XXX Code for transations where no currency is involved
 
 	<!-- <unitPreferenceData> moved to units.txt -->
 
-    <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+    <!-- start of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
     <codeMappings>
         <territoryCodes type="AA" numeric="958" alpha3="AAA"/>
         <territoryCodes type="AC" alpha3="ASC"/>
@@ -5225,7 +5235,7 @@ XXX Code for transations where no currency is involved
         <territoryCodes type="ZR" numeric="180" alpha3="ZAR"/>
         <territoryCodes type="ZW" numeric="716" alpha3="ZWE" fips10="ZI"/>
         <territoryCodes type="ZZ" numeric="999" alpha3="ZZZ"/>
-    <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+    <!-- end of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 
 	    <currencyCodes type="AED" numeric="784"/>
 		<currencyCodes type="AFN" numeric="971"/>
@@ -5413,26 +5423,22 @@ XXX Code for transations where no currency is involved
     </codeMappings>
 
 	<parentLocales>
-		<parentLocale parent="root" locales="az_Arab az_Cyrl bal_Latn blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ks_Deva ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
-		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MV en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
+		<parentLocale parent="root" localeRules="nonlikelyScript" locales="az_Arab az_Cyrl bal_Latn blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ks_Deva ku_Arab kxv_Deva kxv_Orya kxv_Telu ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
+		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_ID en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MV en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="en_IN" locales="hi_Latn"/>
-		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
+		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_JP es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
 		<parentLocale parent="fr_HT" locales="ht"/>
 		<parentLocale parent="no" locales="nb nn no_NO"/>
 		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
 	</parentLocales>
 
-	<parentLocales component="segmentations">
-		<parentLocale parent="zh" locales="zh_Hant"/>
+	<parentLocales component="segmentations grammaticalFeatures plurals">
 	</parentLocales>
 
 	<parentLocales component="collations">
-		<parentLocale parent="bs" locales="bs_Cyrl"/>
-		<parentLocale parent="sr" locales="sr_Latn"/>
 		<parentLocale parent="sr_ME" locales="sr_Cyrl_ME"/>
-		<parentLocale parent="zh" locales="zh_Hant"/>
 		<parentLocale parent="zh_Hant" locales="yue yue_Hant"/>
 		<parentLocale parent="zh_Hans" locales="yue_CN yue_Hans yue_Hans_CN"/>
 	</parentLocales>
@@ -5637,6 +5643,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1191" uri="https://www.cia.gov/library/publications/the-world-factbook/geos/bl.html">http://lanic.utexas.edu/project/tilan/reports/rtf359/bolivia1.html Spanish is the official language, only about 60-70% of the population speaks it at all ;</reference>
 		<reference type="R1192" uri="http://en.wikipedia.org/wiki/Demographics_of_Chile#Languages">Spanish &quot;&quot;universal&quot;&quot;, set to 98%</reference>
 		<reference type="R1193" uri="http://en.wikipedia.org/wiki/Costa_Rica">https://www.cia.gov/library/publications/the-world-factbook/geos/cs.html</reference>
+		<reference type="R1194" uri="https://en.wikipedia.org/wiki/Anii_language/">[missing]</reference>
 		<reference type="R1195" uri="https://www.cia.gov/library/publications/the-world-factbook/geos/in.html">[missing]</reference>
 		<reference type="R1196" uri="http://www.himachalonline.com/temp/languages.htm">Sirmauri (srx) Mahasui = Himachali, Pahari, Sirmouri, Sirmuri</reference>
 		<reference type="R1197" uri="http://en.wikipedia.org/wiki/Sanskrit">- 14k reported as native. Taught as elective subject in grades 5-8; not widely spoken as primary communication.</reference>

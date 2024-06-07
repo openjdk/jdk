@@ -64,14 +64,14 @@ public class BlackholeNonVoidWarningTest {
     }
 
     public static void shouldFail(String... args) throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmdline(args));
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdline(args));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain(MSG);
     }
 
     public static void shouldPass(String... args) throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmdline(args));
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdline(args));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldNotContain(MSG);

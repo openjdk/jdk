@@ -105,6 +105,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * {@link #setClassLoader(ClassLoader) automatically discovered} ones, and
  * finally the ones configured with {@link #setFallbackLinkers(List)}; this last
  * category usually includes {@link BeansLinker}.
+ * @since 9
  */
 public final class DynamicLinkerFactory {
     @SuppressWarnings("removal")

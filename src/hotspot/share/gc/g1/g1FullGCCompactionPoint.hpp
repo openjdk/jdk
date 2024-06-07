@@ -31,38 +31,50 @@
 #include "utilities/pair.hpp"
 
 class G1FullCollector;
-class HeapRegion;
+class G1HeapRegion;
+class PreservedMarks;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   G1FullCollector* _collector;
-  HeapRegion* _current_region;
-  HeapWord*   _compaction_top;
-  GrowableArray<HeapRegion*>* _compaction_regions;
-  GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;
+  G1HeapRegion* _current_region;
+  HeapWord* _compaction_top;
+  PreservedMarks* _preserved_stack;
+  GrowableArray<G1HeapRegion*>* _compaction_regions;
+  GrowableArrayIterator<G1HeapRegion*> _compaction_region_iterator;
 
   bool object_will_fit(size_t size);
   void initialize_values();
   void switch_region();
-  HeapRegion* next_region();
-  uint find_contiguous_before(HeapRegion* hr, uint num_regions);
+  G1HeapRegion* next_region();
+  uint find_contiguous_before(G1HeapRegion* hr, uint num_regions);
 
 public:
-  G1FullGCCompactionPoint(G1FullCollector* collector);
+  G1FullGCCompactionPoint(G1FullCollector* collector, PreservedMarks* preserved_stack);
   ~G1FullGCCompactionPoint();
 
   bool has_regions();
   bool is_initialized();
-  void initialize(HeapRegion* hr);
+  void initialize(G1HeapRegion* hr);
   void update();
   void forward(oop object, size_t size);
-  uint forward_humongous(HeapRegion* hr);
-  void add(HeapRegion* hr);
-  void add_humongous(HeapRegion* hr);
+  void forward_humongous(G1HeapRegion* hr);
+  void add(G1HeapRegion* hr);
+  void add_humongous(G1HeapRegion* hr);
 
   void remove_at_or_above(uint bottom);
-  HeapRegion* current_region();
+  G1HeapRegion* current_region();
 
-  GrowableArray<HeapRegion*>* regions();
+  GrowableArray<G1HeapRegion*>* regions();
+
+  PreservedMarks* preserved_stack() const {
+    assert(_preserved_stack != nullptr, "must be initialized");
+    return _preserved_stack;
+  }
+
+  void set_preserved_stack(PreservedMarks* preserved_stack) {
+    assert(_preserved_stack == nullptr, "only initialize once");
+    _preserved_stack = preserved_stack;
+  }
 };
 
 #endif // SHARE_GC_G1_G1FULLGCCOMPACTIONPOINT_HPP

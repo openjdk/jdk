@@ -86,6 +86,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
 #ifdef ASSERT
     cbnz(rscratch1, L);
     stop("SP is null");
@@ -98,6 +99,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
     cmp(sp, rscratch1);
     br(EQ, L);
     stop(msg);
@@ -138,9 +140,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
@@ -149,8 +148,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // load cpool->resolved_klass_at(index);
   void load_resolved_klass_at_offset(Register cpool, Register index, Register klass, Register temp);
-
-  void load_resolved_method_at_index(int byte_no, Register method, Register cache);
 
   void pop_ptr(Register r = r0);
   void pop_i(Register r = r0);
@@ -174,7 +171,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(RegSet regs, Register stack) { ((MacroAssembler*)this)->push(regs, stack); }
 
   void empty_expression_stack() {
-    ldr(esp, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    lea(esp, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
     // null last_sp until next java call
     str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
@@ -264,14 +262,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2, bool is_virtual_call);
+                               Register reg2);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
-                                      Label& done, bool is_virtual_call);
+                                      Label& done);
   void record_item_in_profile_helper(Register item, Register mdp,
                                      Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
-                                     int non_profiled_offset);
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -321,6 +318,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

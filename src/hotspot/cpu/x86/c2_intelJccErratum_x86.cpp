@@ -114,13 +114,13 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   }
 }
 
-#define __ _masm.
+#define __ _masm->
 
 uintptr_t IntelJccErratumAlignment::pc() {
   return (uintptr_t)__ pc();
 }
 
-IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler& masm, int jcc_size) :
+IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler* masm, int jcc_size) :
     _masm(masm),
     _start_pc(pc()) {
   if (!VM_Version::has_intel_jcc_erratum()) {
@@ -146,5 +146,6 @@ IntelJccErratumAlignment::~IntelJccErratumAlignment() {
     return;
   }
 
+  assert(pc() - _start_pc > 0, "No instruction aligned");
   assert(!IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(_start_pc, pc()), "Invalid jcc_size estimate");
 }

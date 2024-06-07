@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.lang.foreign.snippets;
 
 import java.lang.foreign.AddressLayout;
@@ -121,7 +122,7 @@ class Snippets {
             // @start region="slicing-arena-main":
             try (Arena slicingArena = new SlicingArena(1000)) {
                 for (int i = 0; i < 10; i++) {
-                    MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
+                    MemorySegment s = slicingArena.allocateFrom(JAVA_INT, 1, 2, 3, 4, 5);
                     // ...
                 }
             } // all memory allocated is released here
@@ -147,7 +148,7 @@ class Snippets {
         void withTargetLayout() {
             AddressLayout addressLayout = ADDRESS;
             AddressLayout unboundedLayout = addressLayout.withTargetLayout(
-                    sequenceLayout(ValueLayout.JAVA_BYTE));
+                    sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
         }
     }
 
@@ -162,12 +163,12 @@ class Snippets {
         void downcall() throws Throwable {
             Linker linker = Linker.nativeLinker();
             MethodHandle strlen = linker.downcallHandle(
-                    linker.defaultLookup().find("strlen").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("strlen"),
                     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment str = arena.allocateUtf8String("Hello");
+                MemorySegment str = arena.allocateFrom("Hello");
                 long len = (long) strlen.invokeExact(str);  // 5
             }
 
@@ -176,7 +177,7 @@ class Snippets {
         void qsort() throws Throwable {
             Linker linker = Linker.nativeLinker();
             MethodHandle qsort = linker.downcallHandle(
-                    linker.defaultLookup().find("qsort").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("qsort"),
                     FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
             );
 
@@ -196,7 +197,7 @@ class Snippets {
 
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment compareFunc = linker.upcallStub(comparHandle, comparDesc, arena);
-                MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+                MemorySegment array = arena.allocateFrom(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
                 qsort.invokeExact(array, 10L, 4L, compareFunc);
                 int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
@@ -207,12 +208,12 @@ class Snippets {
             Linker linker = Linker.nativeLinker();
 
             MethodHandle malloc = linker.downcallHandle(
-                    linker.defaultLookup().find("malloc").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("malloc"),
                     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
             );
 
             MethodHandle free = linker.downcallHandle(
-                    linker.defaultLookup().find("free").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("free"),
                     FunctionDescriptor.ofVoid(ADDRESS)
             );
 
@@ -281,13 +282,13 @@ class Snippets {
 
             Linker linker = Linker.nativeLinker();
             MethodHandle printf = linker.downcallHandle(
-                    linker.defaultLookup().find("printf").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("printf"),
                     FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
                     Linker.Option.firstVariadicArg(1) // first int is variadic
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                int res = (int) printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
+                int res = (int) printf.invokeExact(arena.allocateFrom("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
             }
 
         }
@@ -312,7 +313,7 @@ class Snippets {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment capturedState = arena.allocate(capturedStateLayout);
                 handle.invoke(capturedState);
-                int errno = (int) errnoHandle.get(capturedState);
+                int errno = (int) errnoHandle.get(capturedState, 0L);
                 // use errno
             }
         }
@@ -350,8 +351,8 @@ class Snippets {
 
             MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
                     PathElement.groupElement("kind"));
-            long offset1 = (long) offsetHandle.invokeExact(1L); // 8
-            long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+            long offset1 = (long) offsetHandle.invokeExact(0L, 1L); // 8
+            long offset2 = (long) offsetHandle.invokeExact(0L, 2L); // 16
         }
 
         void sliceHandle() {
@@ -395,7 +396,7 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT);
+                VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
                 MethodHandle multiplyExact = MethodHandles.lookup()
                         .findStatic(Math.class, "multiplyExact",
                                 MethodType.methodType(long.class, long.class, long.class));
@@ -407,8 +408,13 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
-                int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+                MemoryLayout segmentLayout = MemoryLayout.structLayout(
+                    ValueLayout.JAVA_INT.withName("size"),
+                    MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT).withName("data") // array of 4 elements
+                );
+                VarHandle intHandle = segmentLayout.varHandle(MemoryLayout.PathElement.groupElement("data"),
+                                                              MemoryLayout.PathElement.sequenceElement());
+                int value = (int) intHandle.get(segment, 0L, 3L); // get int element at offset 0 + offsetof(data) + 3 * 4 = 12
             }
 
             {
@@ -523,10 +529,8 @@ class Snippets {
             MemorySegment segment = null;
             byte value = 42;
 
-            var byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
-                    .varHandle(MemoryLayout.PathElement.sequenceElement());
             for (long l = 0; l < segment.byteSize(); l++) {
-                byteHandle.set(segment.address(), l, value);
+                segment.set(JAVA_BYTE, l, value);
             }
         }
 
@@ -564,12 +568,12 @@ class Snippets {
             Linker linker = Linker.nativeLinker();
             SymbolLookup stdlib = linker.defaultLookup();
             MethodHandle strlen = linker.downcallHandle(
-                    stdlib.find("strlen").orElseThrow(),
+                    stdlib.findOrThrow("strlen"),
                     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment cString = arena.allocateUtf8String("Hello");
+                MemorySegment cString = arena.allocateFrom("Hello");
                 long len = (long) strlen.invokeExact(cString); // 5
             }
 
@@ -622,14 +626,14 @@ class Snippets {
         void header() {
             try (Arena arena = Arena.ofConfined()) {
                 SymbolLookup libGL = libraryLookup("libGL.so", arena); // libGL.so loaded here
-                MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+                MemorySegment glGetString = libGL.findOrThrow("glGetString");
                 // ...
             } //  libGL.so unloaded here
 
             System.loadLibrary("GL"); // libGL.so loaded here
             // ...
             SymbolLookup libGL = loaderLookup();
-            MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+            MemorySegment glGetString = libGL.findOrThrow("glGetString");
 
 
             Arena arena = Arena.ofAuto();
@@ -643,7 +647,7 @@ class Snippets {
 
             Linker nativeLinker = Linker.nativeLinker();
             SymbolLookup stdlib = nativeLinker.defaultLookup();
-            MemorySegment malloc = stdlib.find("malloc").orElseThrow();
+            MemorySegment malloc = stdlib.findOrThrow("malloc");
         }
 
     }
@@ -652,17 +656,6 @@ class Snippets {
     }
 
     static class ValueLayoutSnippets {
-
-        void arrayElementVarHandle() {
-            VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
-
-            SequenceLayout arrayLayout = MemoryLayout.sequenceLayout(
-                    MemoryLayout.sequenceLayout(10,
-                            MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
-
-            int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-            int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
-        }
 
         void statics() {
             ADDRESS.withByteAlignment(1);

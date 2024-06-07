@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -32,6 +30,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.Extension;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 
@@ -45,6 +45,7 @@ import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.SubjectKeyIdentifierExtension;
 import sun.security.x509.BasicConstraintsExtension;
+import sun.security.x509.CertificateSerialNumber;
 import sun.security.x509.ExtendedKeyUsageExtension;
 import sun.security.x509.DNSName;
 import sun.security.x509.GeneralName;
@@ -501,7 +502,9 @@ public class CertificateBuilder {
         }
 
         // Serial Number
-        SerialNumber sn = new SerialNumber(serialNumber);
+        CertificateSerialNumber sn = (serialNumber != null) ?
+            new CertificateSerialNumber(serialNumber) :
+            CertificateSerialNumber.newRandom64bit(new SecureRandom());
         sn.encode(tbsCertItems);
 
         // Algorithm ID
@@ -518,8 +521,12 @@ public class CertificateBuilder {
 
         // Validity period (set as UTCTime)
         DerOutputStream valSeq = new DerOutputStream();
-        valSeq.putUTCTime(notBefore);
-        valSeq.putUTCTime(notAfter);
+        Instant now = Instant.now();
+        Date startDate = (notBefore != null) ? notBefore : Date.from(now);
+        valSeq.putUTCTime(startDate);
+        Date endDate = (notAfter != null) ? notAfter :
+            Date.from(now.plus(90, ChronoUnit.DAYS));
+        valSeq.putUTCTime(endDate);
         tbsCertItems.write(DerValue.tag_Sequence, valSeq);
 
         // Subject Name
@@ -559,6 +566,10 @@ public class CertificateBuilder {
      */
     private void encodeExtensions(DerOutputStream tbsStream)
             throws IOException {
+
+        if (extensions.isEmpty()) {
+            return;
+        }
         DerOutputStream extSequence = new DerOutputStream();
         DerOutputStream extItems = new DerOutputStream();
 

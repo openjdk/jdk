@@ -231,6 +231,7 @@ public class StreamHandler extends Handler {
             }
         }
     }
+
     private void publish0(LogRecord record) {
         if (!isLoggable(record)) {
             return;
@@ -246,6 +247,7 @@ public class StreamHandler extends Handler {
         }
 
         try {
+            Writer writer = this.writer;
             if (!doneHeader) {
                 writer.write(getFormatter().getHead(this));
                 doneHeader = true;
@@ -295,7 +297,9 @@ public class StreamHandler extends Handler {
             }
         }
     }
+
     private void flush0() {
+        Writer writer = this.writer;
         if (writer != null) {
             try {
                 writer.flush();
@@ -309,6 +313,7 @@ public class StreamHandler extends Handler {
 
     private void flushAndClose() throws SecurityException {
         checkPermission();
+        Writer writer = this.writer;
         if (writer != null) {
             try {
                 if (!doneHeader) {
@@ -323,8 +328,8 @@ public class StreamHandler extends Handler {
                 // report the exception to any registered ErrorManager.
                 reportError(null, ex, ErrorManager.CLOSE_FAILURE);
             }
-            writer = null;
             output = null;
+            this.writer = null;
         }
     }
 

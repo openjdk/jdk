@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,26 @@
 
 /*
  * @test
- * @library /java/text/testlib
  * @summary test Time Zone Boundary
+ * @run junit TimeZoneBoundaryTest
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * A test which discovers the boundaries of DST programmatically and verifies
  * that they are correct.
  */
-public class TimeZoneBoundaryTest extends IntlTest
+public class TimeZoneBoundaryTest
 {
     static final int ONE_SECOND = 1000;
     static final int ONE_MINUTE = 60*ONE_SECOND;
@@ -57,10 +65,6 @@ public class TimeZoneBoundaryTest extends IntlTest
     static final long AUSTRALIA_1997_BEG = 877797000000L;
     static final long AUSTRALIA_1997_END = 859653000000L;
 
-    public static void main(String[] args) throws Exception {
-        new TimeZoneBoundaryTest().run(args);
-    }
-
     /**
      * Date.toString().substring() Boundary Test
      * Look for a DST changeover to occur within 6 months of the given Date.
@@ -75,7 +79,7 @@ public class TimeZoneBoundaryTest extends IntlTest
 
         if (d.toString().indexOf(startMode) == -1)
         {
-            logln("Error: " + startMode + " not present in " + d);
+            System.out.println("Error: " + startMode + " not present in " + d);
         }
 
         // Use a binary search, assuming that we have a Standard
@@ -98,15 +102,15 @@ public class TimeZoneBoundaryTest extends IntlTest
             }
         }
 
-        logln("Date Before: " + showDate(min));
-        logln("Date After:  " + showDate(max));
+        System.out.println("Date Before: " + showDate(min));
+        System.out.println("Date After:  " + showDate(max));
         long mindelta = expectedBoundary - min;
         long maxdelta = max - expectedBoundary;
         if (mindelta >= 0 && mindelta <= INTERVAL &&
             mindelta >= 0 && mindelta <= INTERVAL)
-            logln("PASS: Expected boundary at " + expectedBoundary);
+            System.out.println("PASS: Expected boundary at " + expectedBoundary);
         else
-            errln("FAIL: Expected boundary at " + expectedBoundary);
+            fail("FAIL: Expected boundary at " + expectedBoundary);
     }
 
     void findDaylightBoundaryUsingTimeZone(Date d, boolean startsInDST, long expectedBoundary)
@@ -128,14 +132,14 @@ public class TimeZoneBoundaryTest extends IntlTest
 
         if (tz.inDaylightTime(d) != startsInDST)
         {
-            errln("FAIL: " + tz.getID() + " inDaylightTime(" +
+            fail("FAIL: " + tz.getID() + " inDaylightTime(" +
                   d + ") != " + startsInDST);
             startsInDST = !startsInDST; // Flip over; find the apparent value
         }
 
         if (tz.inDaylightTime(new Date(max)) == startsInDST)
         {
-            errln("FAIL: " + tz.getID() + " inDaylightTime(" +
+            fail("FAIL: " + tz.getID() + " inDaylightTime(" +
                   (new Date(max)) + ") != " + (!startsInDST));
             return;
         }
@@ -154,16 +158,16 @@ public class TimeZoneBoundaryTest extends IntlTest
             }
         }
 
-        logln(tz.getID() + " Before: " + showDate(min, tz));
-        logln(tz.getID() + " After:  " + showDate(max, tz));
+        System.out.println(tz.getID() + " Before: " + showDate(min, tz));
+        System.out.println(tz.getID() + " After:  " + showDate(max, tz));
 
         long mindelta = expectedBoundary - min;
         long maxdelta = max - expectedBoundary;
         if (mindelta >= 0 && mindelta <= INTERVAL &&
             mindelta >= 0 && mindelta <= INTERVAL)
-            logln("PASS: Expected boundary at " + expectedBoundary);
+            System.out.println("PASS: Expected boundary at " + expectedBoundary);
         else
-            errln("FAIL: Expected boundary at " + expectedBoundary);
+            fail("FAIL: Expected boundary at " + expectedBoundary);
     }
 
     private static String showDate(long l)
@@ -209,23 +213,23 @@ public class TimeZoneBoundaryTest extends IntlTest
                    boolean expUseDaylightTime, boolean expInDaylightTime,
                    int expZoneOffset, int expDSTOffset)
     {
-        logln("-- Verifying time " + d +
+        System.out.println("-- Verifying time " + d +
               " in zone " + time_zone.getID());
 
         if (time_zone.inDaylightTime(d) == expInDaylightTime)
-            logln("PASS: inDaylightTime = " + time_zone.inDaylightTime(d));
+            System.out.println("PASS: inDaylightTime = " + time_zone.inDaylightTime(d));
         else
-            errln("FAIL: inDaylightTime = " + time_zone.inDaylightTime(d));
+            fail("FAIL: inDaylightTime = " + time_zone.inDaylightTime(d));
 
         if (time_zone.useDaylightTime() == expUseDaylightTime)
-            logln("PASS: useDaylightTime = " + time_zone.useDaylightTime());
+            System.out.println("PASS: useDaylightTime = " + time_zone.useDaylightTime());
         else
-            errln("FAIL: useDaylightTime = " + time_zone.useDaylightTime());
+            fail("FAIL: useDaylightTime = " + time_zone.useDaylightTime());
 
         if (time_zone.getRawOffset() == expZoneOffset)
-            logln("PASS: getRawOffset() = " + expZoneOffset/(double)ONE_HOUR);
+            System.out.println("PASS: getRawOffset() = " + expZoneOffset/(double)ONE_HOUR);
         else
-            errln("FAIL: getRawOffset() = " + time_zone.getRawOffset()/(double)ONE_HOUR +
+            fail("FAIL: getRawOffset() = " + time_zone.getRawOffset()/(double)ONE_HOUR +
                   "; expected " + expZoneOffset/(double)ONE_HOUR);
 
         GregorianCalendar gc = new GregorianCalendar(time_zone);
@@ -237,13 +241,14 @@ public class TimeZoneBoundaryTest extends IntlTest
                                           gc.get(gc.SECOND)) * 1000 +
                                          gc.get(gc.MILLISECOND));
         if (offset == expDSTOffset)
-            logln("PASS: getOffset() = " + offset/(double)ONE_HOUR);
+            System.out.println("PASS: getOffset() = " + offset/(double)ONE_HOUR);
         else
-            errln("FAIL: getOffset() = " + offset/(double)ONE_HOUR +
+            fail("FAIL: getOffset() = " + offset/(double)ONE_HOUR +
                   "; expected " + expDSTOffset/(double)ONE_HOUR);
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void TestBoundaries()
     {
         TimeZone pst = TimeZone.getTimeZone("PST");
@@ -263,19 +268,19 @@ public class TimeZoneBoundaryTest extends IntlTest
                           inDST ? -7*ONE_HOUR : -8*ONE_HOUR);
             }
 
-            logln("========================================");
+            System.out.println("========================================");
             findDaylightBoundaryUsingDate(new Date(97,0,1), "PST", PST_1997_BEG);
-            logln("========================================");
+            System.out.println("========================================");
             findDaylightBoundaryUsingDate(new Date(97,6,1), "PDT", PST_1997_END);
 
             // Southern hemisphere test
-            logln("========================================");
+            System.out.println("========================================");
             TimeZone z = TimeZone.getTimeZone(AUSTRALIA);
             findDaylightBoundaryUsingTimeZone(new Date(97,0,1), true, AUSTRALIA_1997_END, z);
 
-            logln("========================================");
+            System.out.println("========================================");
             findDaylightBoundaryUsingTimeZone(new Date(97,0,1), false, PST_1997_BEG);
-            logln("========================================");
+            System.out.println("========================================");
             findDaylightBoundaryUsingTimeZone(new Date(97,6,1), true, PST_1997_END);
         } finally {
             TimeZone.setDefault(save);
@@ -297,7 +302,7 @@ public class TimeZoneBoundaryTest extends IntlTest
 
         if (tz.inDaylightTime(new Date(max)) == startsInDST)
         {
-            logln("Error: inDaylightTime(" + (new Date(max)) + ") != " + (!startsInDST));
+            System.out.println("Error: inDaylightTime(" + (new Date(max)) + ") != " + (!startsInDST));
         }
 
         while ((max - min) >  INTERVAL)
@@ -313,120 +318,49 @@ public class TimeZoneBoundaryTest extends IntlTest
             }
         }
 
-        logln("Binary Search Before: " + showDate(min));
-        logln("Binary Search After:  " + showDate(max));
+        System.out.println("Binary Search Before: " + showDate(min));
+        System.out.println("Binary Search After:  " + showDate(max));
 
         long mindelta = expectedBoundary - min;
         long maxdelta = max - expectedBoundary;
         if (mindelta >= 0 && mindelta <= INTERVAL &&
             mindelta >= 0 && mindelta <= INTERVAL)
-            logln("PASS: Expected boundary at " + expectedBoundary);
+            System.out.println("PASS: Expected boundary at " + expectedBoundary);
         else
-            errln("FAIL: Expected boundary at " + expectedBoundary);
+            fail("FAIL: Expected boundary at " + expectedBoundary);
     }
-
-    /*
-      static void testUsingMillis(Date d, boolean startsInDST)
-      {
-      long millis = d.getTime();
-      long max = millis + (long)(370 * ONE_DAY); // A year plus extra
-
-      boolean lastDST = startsInDST;
-      while (millis < max)
-      {
-      cal.setTime(new Date(millis));
-      boolean inDaylight = cal.inDaylightTime();
-
-      if (inDaylight != lastDST)
-      {
-      logln("Switch " + (inDaylight ? "into" : "out of")
-      + " DST at " + (new Date(millis)));
-      lastDST = inDaylight;
-      }
-
-      millis += 15*ONE_MINUTE;
-      }
-      }
-      */
 
     /**
      * Test new rule formats.
      */
     @SuppressWarnings("deprecation")
-    public void TestNewRules()
-    {
-        //logln(Locale.getDefault().getDisplayName());
-        //logln(TimeZone.getDefault().getID());
-        //logln(new Date(0));
+    @Test
+    public void TestNewRules() {
+        // Doesn't matter what the default TimeZone is here, since we
+        // are creating our own TimeZone objects.
 
-        if (true)
-        {
-            // Doesn't matter what the default TimeZone is here, since we
-            // are creating our own TimeZone objects.
+        SimpleTimeZone tz;
 
-            SimpleTimeZone tz;
+        System.out.println("-----------------------------------------------------------------");
+        System.out.println("Aug 2ndTues .. Mar 15");
+        tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_1",
+                                Calendar.AUGUST, 2, Calendar.TUESDAY, 2*ONE_HOUR,
+                                Calendar.MARCH, 15, 0, 2*ONE_HOUR);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,0,1), 858416400000L);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,6,1), 871380000000L);
 
-            logln("-----------------------------------------------------------------");
-            logln("Aug 2ndTues .. Mar 15");
-            tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_1",
-                                    Calendar.AUGUST, 2, Calendar.TUESDAY, 2*ONE_HOUR,
-                                    Calendar.MARCH, 15, 0, 2*ONE_HOUR);
-            //logln(tz.toString());
-            logln("========================================");
-            testUsingBinarySearch(tz, new Date(97,0,1), 858416400000L);
-            logln("========================================");
-            testUsingBinarySearch(tz, new Date(97,6,1), 871380000000L);
-
-            logln("-----------------------------------------------------------------");
-            logln("Apr Wed>=14 .. Sep Sun<=20");
-            tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_2",
-                                    Calendar.APRIL, 14, -Calendar.WEDNESDAY, 2*ONE_HOUR,
-                                    Calendar.SEPTEMBER, -20, -Calendar.SUNDAY, 2*ONE_HOUR);
-            //logln(tz.toString());
-            logln("========================================");
-            testUsingBinarySearch(tz, new Date(97,0,1), 861184800000L);
-            logln("========================================");
-            testUsingBinarySearch(tz, new Date(97,6,1), 874227600000L);
-        }
-
-        /*
-          if (true)
-          {
-          logln("========================================");
-          logln("Stepping using millis");
-          testUsingMillis(new Date(97,0,1), false);
-          }
-
-          if (true)
-          {
-          logln("========================================");
-          logln("Stepping using fields");
-          testUsingFields(1997, false);
-          }
-
-          if (false)
-          {
-          cal.clear();
-          cal.set(1997, 3, 5, 10, 0);
-          //    cal.inDaylightTime();
-          logln("Date = " + cal.getTime());
-          logln("Millis = " + cal.getTime().getTime()/3600000);
-          }
-          */
+        System.out.println("-----------------------------------------------------------------");
+        System.out.println("Apr Wed>=14 .. Sep Sun<=20");
+        tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_2",
+                                Calendar.APRIL, 14, -Calendar.WEDNESDAY, 2*ONE_HOUR,
+                                Calendar.SEPTEMBER, -20, -Calendar.SUNDAY, 2*ONE_HOUR);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,0,1), 861184800000L);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,6,1), 874227600000L);
     }
-
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    // Long Bug
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-
-    //public void Test3()
-    //{
-    //    findDaylightBoundaryUsingTimeZone(new Date(97,6,1), true);
-    //}
 
     /**
      * Find boundaries by stepping.
@@ -439,15 +373,15 @@ public class TimeZoneBoundaryTest extends IntlTest
         long limit = time + ONE_YEAR + ONE_DAY;
         boolean lastState = z.inDaylightTime(d);
         int changes = 0;
-        logln("-- Zone " + z.getID() + " starts in " + year + " with DST = " + lastState);
-        logln("useDaylightTime = " + z.useDaylightTime());
+        System.out.println("-- Zone " + z.getID() + " starts in " + year + " with DST = " + lastState);
+        System.out.println("useDaylightTime = " + z.useDaylightTime());
         while (time < limit)
         {
             d.setTime(time);
             boolean state = z.inDaylightTime(d);
             if (state != lastState)
             {
-                logln((state ? "Entry " : "Exit ") +
+                System.out.println((state ? "Entry " : "Exit ") +
                       "at " + d);
                 lastState = state;
                 ++changes;
@@ -456,23 +390,24 @@ public class TimeZoneBoundaryTest extends IntlTest
         }
         if (changes == 0)
         {
-            if (!lastState && !z.useDaylightTime()) logln("No DST");
-            else errln("FAIL: Timezone<" + z.getID() + "> DST all year, or no DST with true useDaylightTime");
+            if (!lastState && !z.useDaylightTime()) System.out.println("No DST");
+            else fail("FAIL: Timezone<" + z.getID() + "> DST all year, or no DST with true useDaylightTime");
         }
         else if (changes != 2)
         {
-            errln("FAIL: Timezone<" + z.getID() + "> " + changes + " changes seen; should see 0 or 2");
+            fail("FAIL: Timezone<" + z.getID() + "> " + changes + " changes seen; should see 0 or 2");
         }
         else if (!z.useDaylightTime())
         {
-            errln("FAIL: Timezone<" + z.getID() + "> useDaylightTime false but 2 changes seen");
+            fail("FAIL: Timezone<" + z.getID() + "> useDaylightTime false but 2 changes seen");
         }
         if (changes != expectedChanges)
         {
-            errln("FAIL: Timezone<" + z.getID() + "> " + changes + " changes seen; expected " + expectedChanges);
+            fail("FAIL: Timezone<" + z.getID() + "> " + changes + " changes seen; expected " + expectedChanges);
         }
     }
 
+    @Test
     public void TestStepwise()
     {
         findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("ACT"), 0);

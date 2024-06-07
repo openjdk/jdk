@@ -59,7 +59,7 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -222,7 +222,8 @@ public class SnippetTaglet extends BaseTaglet {
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
                         .add(new HtmlTree(TagName.IMG)
-                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                                             .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))
                         .addStyle(HtmlStyle.copy)
                         .addStyle(HtmlStyle.snippetCopy)
@@ -375,9 +376,10 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
-            Diags d = (text, pos) -> {
+            Diags d = (key, pos) -> {
                 var path = utils.getCommentHelper(holder)
                         .getDocTreePath(snippetTag.getBody());
+                var text = resources.getText(key);
                 config.getReporter().print(Diagnostic.Kind.WARNING,
                         path, pos, pos, pos, text);
             };
@@ -396,7 +398,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             var finalFileObject = fileObject;
-            Diags d = (text, pos) -> messages.warning(finalFileObject, pos, pos, pos, text);
+            Diags d = (key, pos) -> messages.warning(finalFileObject, pos, pos, pos, key);
             if (externalContent != null) {
                 externalSnippet = parse(resources, d, language, externalContent);
             }
@@ -483,7 +485,7 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     public interface Diags {
-        void warn(String text, int pos);
+        void warn(String key, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {

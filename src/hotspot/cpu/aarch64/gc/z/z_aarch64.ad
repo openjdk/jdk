@@ -33,40 +33,40 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_color(MacroAssembler& _masm, const MachNode* node, Register dst, Register src) {
+static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
   __ movzw(dst, barrier_Relocation::unpatched);
   __ orr(dst, dst, src, Assembler::LSL, ZPointerLoadShift);
 }
 
-static void z_uncolor(MacroAssembler& _masm, const MachNode* node, Register ref) {
+static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
   __ lsr(ref, ref, ZPointerLoadShift);
 }
 
-static void z_keep_alive_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
   __ movzw(tmp, barrier_Relocation::unpatched);
   __ tst(ref, tmp);
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  ZLoadBarrierStubC2Aarch64* const stub = ZLoadBarrierStubC2Aarch64::create(node, ref_addr, ref);
   __ br(Assembler::NE, *stub->entry());
-  z_uncolor(_masm, node, ref);
+  z_uncolor(masm, node, ref);
   __ bind(*stub->continuation());
 }
 
-static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
+static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
       ((node->barrier_data() & ZBarrierPhantom) != 0);
 
   if (on_non_strong) {
-    z_keep_alive_load_barrier(_masm, node, ref_addr, ref, tmp);
+    z_keep_alive_load_barrier(masm, node, ref_addr, ref, tmp);
     return;
   }
 
   if (node->barrier_data() == ZBarrierElided) {
-    z_uncolor(_masm, node, ref);
+    z_uncolor(masm, node, ref);
     return;
   }
 
@@ -81,19 +81,19 @@ static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
     __ b(*stub->entry());
     __ bind(good);
   }
-  z_uncolor(_masm, node, ref);
+  z_uncolor(masm, node, ref);
   __ bind(*stub->continuation());
 }
 
-static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, Register tmp, bool is_atomic) {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
+static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, Register tmp, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_color(_masm, node, rnew_zpointer, rnew_zaddress);
+    z_color(masm, node, rnew_zpointer, rnew_zaddress);
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
     ZStoreBarrierStubC2Aarch64* const stub = ZStoreBarrierStubC2Aarch64::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic);
     ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
-    bs_asm->store_barrier_fast(&_masm, ref_addr, rnew_zaddress, rnew_zpointer, tmp, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
+    bs_asm->store_barrier_fast(masm, ref_addr, rnew_zaddress, rnew_zpointer, tmp, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
   }
 }
 
@@ -113,7 +113,7 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   ins_encode %{
     const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ ldr($dst$$Register, ref_addr);
-    z_load_barrier(_masm, this, ref_addr, $dst$$Register, rscratch1);
+    z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
   %}
 
   ins_pipe(iload_reg_mem);
@@ -133,7 +133,7 @@ instruct zLoadPVolatile(iRegPNoSp dst, indirect mem /* sync_memory */, rFlagsReg
   ins_encode %{
     const Address ref_addr = Address($mem$$Register);
     __ ldar($dst$$Register, $mem$$Register);
-    z_load_barrier(_masm, this, ref_addr, $dst$$Register, rscratch1);
+    z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
   %}
 
   ins_pipe(pipe_serial);
@@ -150,7 +150,7 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   format %{ "movq    $mem, $src\t# ptr" %}
   ins_encode %{
     const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
-    z_store_barrier(_masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
+    z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
     __ str($tmp$$Register, ref_addr);
   %}
   ins_pipe(pipe_serial);
@@ -167,7 +167,7 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   format %{ "movq    $mem, $src\t# ptr" %}
   ins_encode %{
     const Address ref_addr = Address($mem$$Register);
-    z_store_barrier(_masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
+    z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
     __ stlr($tmp$$Register, $mem$$Register);
   %}
   ins_pipe(pipe_serial);
@@ -187,8 +187,8 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                false /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
@@ -211,8 +211,8 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                true /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
@@ -235,11 +235,11 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                false /* acquire */, true /* release */, false /* weak */, $res$$Register);
-    z_uncolor(_masm, this, $res$$Register);
+    z_uncolor(masm, this, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -258,11 +258,11 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                true /* acquire */, true /* release */, false /* weak */, $res$$Register);
-    z_uncolor(_masm, this, $res$$Register);
+    z_uncolor(masm, this, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -278,9 +278,9 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
 
   ins_encode %{
-    z_store_barrier(_masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
+    z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
     __ atomic_xchg($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(_masm, this, $prev$$Register);
+    z_uncolor(masm, this, $prev$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -296,9 +296,9 @@ instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) 
   format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
 
   ins_encode %{
-    z_store_barrier(_masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
+    z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
     __ atomic_xchgal($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(_masm, this, $prev$$Register);
+    z_uncolor(masm, this, $prev$$Register);
   %}
 
   ins_pipe(pipe_serial);

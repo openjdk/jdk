@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,11 +150,12 @@ public class Oid {
      * value, <code>false</code> otherwise.
      * @param other the Oid object that has to be compared to this one
      */
+    @Override
     public boolean equals(Object other) {
 
         //check if both reference the same object
         if (this == other)
-            return (true);
+            return true;
 
         if (other instanceof Oid)
             return this.oid.equals(((Oid) other).oid);
@@ -205,10 +206,9 @@ public class Oid {
 
 
     /**
-     * Returns a hashcode value for this Oid.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this Oid}
      */
+    @Override
     public int hashCode() {
         return oid.hashCode();
     }

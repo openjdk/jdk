@@ -62,7 +62,7 @@ inline frame FreezeBase::sender(const frame& f) {
   intptr_t** link_addr = link_address<FKind>(f);
 
   intptr_t* sender_sp = (intptr_t*)(link_addr + frame::sender_sp_offset); //  f.unextended_sp() + (fsize/wordSize); //
-  address sender_pc = (address) *(sender_sp-1);
+  address sender_pc = ContinuationHelper::return_address_at(sender_sp - 1);
   assert(sender_sp != f.sp(), "must have changed");
 
   int slot = 0;
@@ -83,7 +83,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
   intptr_t *sp, *fp; // sp is really our unextended_sp
   if (FKind::interpreted) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
-      || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
+      || f.unextended_sp() == (intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset), "");
     intptr_t locals_offset = *f.addr_at(frame::interpreter_frame_locals_offset);
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
@@ -123,41 +123,36 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
 
 void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0) || (f.unextended_sp() == f.sp()), "");
-  intptr_t* real_unextended_sp = (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset);
+  intptr_t* real_unextended_sp = (intptr_t*)f.at_relative_or_null(frame::interpreter_frame_last_sp_offset);
   if (real_unextended_sp != nullptr) {
     f.set_unextended_sp(real_unextended_sp); // can be null at a safepoint
   }
 }
 
-static inline void relativize_one(intptr_t* const vfp, intptr_t* const hfp, int offset) {
-  assert(*(hfp + offset) == *(vfp + offset), "");
-  intptr_t* addr = hfp + offset;
-  intptr_t value = *(intptr_t**)addr - vfp;
-  *addr = value;
-}
-
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
-  intptr_t* vfp = f.fp();
-  intptr_t* hfp = hf.fp();
-  assert(hfp == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
+  assert(hf.fp() == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0)
     || (f.unextended_sp() == f.sp()), "");
-  assert(f.fp() > (intptr_t*)f.at(frame::interpreter_frame_initial_sp_offset), "");
+  assert(f.fp() > (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset), "");
 
   // on AARCH64, we may insert padding between the locals and the rest of the frame
   // (see TemplateInterpreterGenerator::generate_normal_entry, and AbstractInterpreter::layout_activation)
   // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
   // locals value, we don't need to change the locals value here.
 
-  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
-  *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
+  // Make sure that last_sp is already relativized.
+  assert((intptr_t*)hf.at_relative(frame::interpreter_frame_last_sp_offset) == hf.unextended_sp(), "");
 
-  relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
-  relativize_one(vfp, hfp, frame::interpreter_frame_extended_sp_offset);
+  // Make sure that monitor_block_top is already relativized.
+  assert(hf.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
+
+  // extended_sp is already relativized by TemplateInterpreterGenerator::generate_normal_entry or
+  // AbstractInterpreter::layout_activation
 
   assert((hf.fp() - hf.unextended_sp()) == (f.fp() - f.unextended_sp()), "");
   assert(hf.unextended_sp() == (intptr_t*)hf.at(frame::interpreter_frame_last_sp_offset), "");
   assert(hf.unextended_sp() <= (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
+  assert(hf.unextended_sp() >  (intptr_t*)hf.at(frame::interpreter_frame_extended_sp_offset), "");
   assert(hf.fp()            >  (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
   assert(hf.fp()            <= (intptr_t*)hf.at(frame::interpreter_frame_locals_offset), "");
 }
@@ -282,17 +277,15 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   patch_callee_link(caller, caller.fp());
 }
 
-static inline void derelativize_one(intptr_t* const fp, int offset) {
-  intptr_t* addr = fp + offset;
-  *addr = (intptr_t)(fp + *addr);
-}
-
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
-  intptr_t* vfp = f.fp();
+  // Make sure that last_sp is kept relativized.
+  assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
 
-  derelativize_one(vfp, frame::interpreter_frame_last_sp_offset);
-  derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
-  derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
+  // Make sure that monitor_block_top is still relativized.
+  assert(f.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
+
+  // Make sure that extended_sp is kept relativized.
+  assert((intptr_t*)f.at_relative(frame::interpreter_frame_extended_sp_offset) < f.unextended_sp(), "");
 }
 
 #endif // CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP

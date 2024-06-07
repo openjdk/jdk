@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library /test/lib
  * @modules java.base/sun.nio.ch
  * @key randomness

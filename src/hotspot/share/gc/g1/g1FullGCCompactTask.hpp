@@ -28,7 +28,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 
 class G1CollectedHeap;
@@ -40,8 +40,8 @@ class G1FullGCCompactTask : public G1FullGCTask {
   HeapRegionClaimer _claimer;
   G1CollectedHeap* _g1h;
 
-  void compact_region(HeapRegion* hr);
-  void compact_humongous_obj(HeapRegion* hr);
+  void compact_region(G1HeapRegion* hr);
+  void compact_humongous_obj(G1HeapRegion* hr);
   void free_non_overlapping_regions(uint src_start_idx, uint dest_start_idx, uint num_regions);
 
   static void copy_object_to_new_location(oop obj);

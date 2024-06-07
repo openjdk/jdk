@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,6 @@ endif
 
 ifeq ($(call check-jvm-feature, dtrace), true)
   JVM_CFLAGS_FEATURES += -DDTRACE_ENABLED
-endif
-
-ifeq ($(call check-jvm-feature, static-build), true)
-  JVM_CFLAGS_FEATURES += -DSTATIC_BUILD=1
 endif
 
 ifneq ($(call check-jvm-feature, jvmti), true)
@@ -214,7 +210,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       frame_x86.cpp \
       genCollectedHeap.cpp \
       generation.cpp \
-      genMarkSweep.cpp \
       growableArray.cpp \
       handles.cpp \
       hashtable.cpp \

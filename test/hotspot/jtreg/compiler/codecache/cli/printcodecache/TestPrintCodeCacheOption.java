@@ -25,6 +25,7 @@
  * @test
  * @bug 8015774
  * @summary Verify that PrintCodeCache option print correct information.
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler

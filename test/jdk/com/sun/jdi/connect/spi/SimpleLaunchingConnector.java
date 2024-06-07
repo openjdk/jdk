@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class SimpleLaunchingConnector implements LaunchingConnector {
 
         String exe = System.getProperty("java.home") + File.separator + "bin" +
             File.separator + "java";
-        String cmd = exe + " -Xdebug -Xrunjdwp:transport=dt_socket,timeout=15000,address=" +
+        String cmd = exe + " -Xrunjdwp:transport=dt_socket,timeout=15000,address=" +
             key.address() +
             " -classpath " + System.getProperty("test.classes") +
             " " + className;

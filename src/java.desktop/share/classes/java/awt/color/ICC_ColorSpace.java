@@ -93,12 +93,12 @@ public class ICC_ColorSpace extends ColorSpace {
     private ICC_Profile thisProfile;
 
     /**
-     * The maximum normalized component values.
+     * The minimum normalized component values.
      */
     private float[] minVal;
 
     /**
-     * The minimum normalized component values.
+     * The maximum normalized component values.
      */
     private float[] maxVal;
 

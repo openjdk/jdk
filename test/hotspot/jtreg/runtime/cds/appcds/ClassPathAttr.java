@@ -55,9 +55,10 @@ public class ClassPathAttr {
         "CpAttr2", "CpAttr3", "CpAttr4", "CpAttr5");
     buildCpAttr("cpattr5_123456789_223456789_323456789_423456789_523456789_623456789", "cpattr5_extra_long.mf", "CpAttr5", "CpAttr5");
 
+    String[] classlist = { "CpAttr1", "CpAttr2", "CpAttr3", "CpAttr4", "CpAttr5"};
+    String jar4 = TestCommon.getTestJar("cpattr4.jar");
     for (int i=1; i<=2; i++) {
       String jar1 = TestCommon.getTestJar("cpattr1.jar");
-      String jar4 = TestCommon.getTestJar("cpattr4.jar");
       if (i == 2) {
         // Test case #2 -- same as #1, except we use cpattr1_long.jar, which has a super-long
         // Class-Path: attribute.
@@ -65,11 +66,7 @@ public class ClassPathAttr {
       }
       String cp = jar1 + File.pathSeparator + jar4;
 
-      TestCommon.testDump(cp, TestCommon.list("CpAttr1",
-                                                          "CpAttr2",
-                                                          "CpAttr3",
-                                                          "CpAttr4",
-                                                          "CpAttr5"));
+      TestCommon.testDump(cp, classlist);
 
       TestCommon.run(
           "-cp", cp,
@@ -86,6 +83,16 @@ public class ClassPathAttr {
             output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
           });
     }
+
+    // test duplicate jars in the "Class-path" attribute in the jar manifest
+    buildCpAttr("cpattr_dup", "cpattr_dup.mf", "CpAttr1", "CpAttr1");
+    String cp = TestCommon.getTestJar("cpattr_dup.jar") + File.pathSeparator + jar4;
+    TestCommon.testDump(cp, classlist);
+
+    TestCommon.run(
+        "-cp", cp,
+        "CpAttr1")
+      .assertNormalExit();
   }
 
   static void testNonExistentJars() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
@@ -86,7 +87,7 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces && !JvmtiExport::should_post_class_prepare()) {
+  if (CDSConfig::is_using_archive() && !JvmtiExport::should_post_class_prepare()) {
     InstanceKlass* k = *klassp;
     assert(k->is_shared_boot_class(), "must be");
 
@@ -128,7 +129,7 @@ void vmClasses::resolve_all(TRAPS) {
   resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // It's unsafe to access the archived heap regions before they
     // are fixed up, so we must do the fixup as early as possible
     // before the archived java objects are accessed by functions
@@ -167,7 +168,7 @@ void vmClasses::resolve_all(TRAPS) {
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // These should already have been initialized during CDS dump.
     assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
     assert(vmClasses::SoftReference_klass()->reference_type() == REF_SOFT, "sanity");
@@ -208,7 +209,7 @@ void vmClasses::resolve_all(TRAPS) {
   //_box_klasses[T_ARRAY]   = vmClasses::object_klass();
 
 #ifdef ASSERT
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
                       "All well known classes must be resolved in JVMTI early phase"));
     for (auto id : EnumRange<vmClassID>{}) {

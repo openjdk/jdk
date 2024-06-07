@@ -106,6 +106,9 @@ public class UpcallLinker {
             doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
             long entryPoint = makeUpcallStub(doBindings, abi, conv,
                     callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
+            if (entryPoint == 0) {
+                throw new OutOfMemoryError("Failed to allocate upcall stub");
+            }
             return UpcallStubs.makeUpcall(entryPoint, scope);
         };
     }
@@ -177,7 +180,7 @@ public class UpcallLinker {
             Object[] returnValues = new Object[invData.retIndexMap.size()];
             if (leaf.type().returnType() != void.class) {
                 BindingInterpreter.unbox(o, invData.callingSequence.returnBindings(),
-                        (storage, type, value) -> returnValues[invData.retIndexMap.get(storage)] = value, null);
+                        (storage, value) -> returnValues[invData.retIndexMap.get(storage)] = value, null);
             }
 
             if (returnValues.length == 0) {
@@ -187,15 +190,10 @@ public class UpcallLinker {
             } else {
                 assert invData.callingSequence.needsReturnBuffer();
 
-                Binding.VMStore[] retMoves = invData.callingSequence.returnBindings().stream()
-                        .filter(Binding.VMStore.class::isInstance)
-                        .map(Binding.VMStore.class::cast)
-                        .toArray(Binding.VMStore[]::new);
-
-                assert returnValues.length == retMoves.length;
+                assert returnValues.length == invData.retMoves().length;
                 int retBufWriteOffset = 0;
-                for (int i = 0; i < retMoves.length; i++) {
-                    Binding.VMStore store = retMoves[i];
+                for (int i = 0; i < invData.retMoves().length; i++) {
+                    Binding.VMStore store = invData.retMoves()[i];
                     Object value = returnValues[i];
                     SharedUtils.writeOverSized(returnBuffer.asSlice(retBufWriteOffset), store.type(), value);
                     retBufWriteOffset += invData.abi.arch.typeSize(store.storage().type());

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -336,7 +336,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL" draft="contributed">Israel</territory>
 			<territory type="IM" draft="contributed">Isle of Man</territory>
 			<territory type="IN" draft="contributed">Indie</territory>
-			<territory type="IO" draft="contributed">Britišes Territorium em indiše Ozean</territory>
+			<territory type="IO" draft="provisional">Britišes Territorium em indiše Ozean</territory>
 			<territory type="IQ" draft="contributed">Irak</territory>
 			<territory type="IR" draft="contributed">Iran</territory>
 			<territory type="IS" draft="contributed">Island</territory>
@@ -501,8 +501,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á ä ã b c č d e é f g h i í j k l m n o ó ö õ p q r s š t u ú ü ũ v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ă â å ā æ ç è ĕ ê ë ē ì ĭ î ï ī ñ ò ŏ ô ø ō œ ß ù ŭ û ū ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aáäã b cč d eé f g h ií j k l m n oóöõ p q r sš t uúüũ v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àăâåā æ ç èĕêëē ìĭîïī ñ òŏôøō œ ß ùŭûū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
@@ -522,7 +522,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
@@ -632,19 +631,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, d. MMMM y G</pattern>
-							<datetimeSkeleton draft="contributed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">d. MMMM y G</pattern>
-							<datetimeSkeleton draft="contributed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">d. MMM y G</pattern>
-							<datetimeSkeleton draft="contributed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -666,7 +662,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMEd" draft="contributed">E, d. MMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
@@ -826,20 +821,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="contributed">Win</month>
 							<month type="12" draft="contributed">Chr</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">J</month>
-							<month type="2" draft="contributed">H</month>
-							<month type="3" draft="contributed">M</month>
-							<month type="4" draft="contributed">A</month>
-							<month type="5" draft="contributed">M</month>
-							<month type="6" draft="contributed">B</month>
-							<month type="7" draft="contributed">H</month>
-							<month type="8" draft="contributed">Ö</month>
-							<month type="9" draft="contributed">H</month>
-							<month type="10" draft="contributed">W</month>
-							<month type="11" draft="contributed">W</month>
-							<month type="12" draft="contributed">C</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">Jenner</month>
 							<month type="2" draft="contributed">Hornig</month>
@@ -856,20 +837,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Jen</month>
-							<month type="2" draft="contributed">Hor</month>
-							<month type="3" draft="contributed">Mär</month>
-							<month type="4" draft="contributed">Abr</month>
-							<month type="5" draft="contributed">Mei</month>
-							<month type="6" draft="contributed">Brá</month>
-							<month type="7" draft="contributed">Hei</month>
-							<month type="8" draft="contributed">Öig</month>
-							<month type="9" draft="contributed">Her</month>
-							<month type="10" draft="contributed">Wím</month>
-							<month type="11" draft="contributed">Win</month>
-							<month type="12" draft="contributed">Chr</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">J</month>
 							<month type="2" draft="contributed">H</month>
@@ -884,20 +851,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="contributed">W</month>
 							<month type="12" draft="contributed">C</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">Jenner</month>
-							<month type="2" draft="contributed">Hornig</month>
-							<month type="3" draft="contributed">Märze</month>
-							<month type="4" draft="contributed">Abrille</month>
-							<month type="5" draft="contributed">Meije</month>
-							<month type="6" draft="contributed">Bráčet</month>
-							<month type="7" draft="contributed">Heiwet</month>
-							<month type="8" draft="contributed">Öigšte</month>
-							<month type="9" draft="contributed">Herbštmánet</month>
-							<month type="10" draft="contributed">Wímánet</month>
-							<month type="11" draft="contributed">Wintermánet</month>
-							<month type="12" draft="contributed">Chrištmánet</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -911,15 +864,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="contributed">Fri</day>
 							<day type="sat" draft="contributed">Sam</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">S</day>
-							<day type="mon" draft="contributed">M</day>
-							<day type="tue" draft="contributed">Z</day>
-							<day type="wed" draft="contributed">M</day>
-							<day type="thu" draft="contributed">F</day>
-							<day type="fri" draft="contributed">F</day>
-							<day type="sat" draft="contributed">S</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">Sunntag</day>
 							<day type="mon" draft="contributed">Mäntag</day>
@@ -931,15 +875,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">Sun</day>
-							<day type="mon" draft="contributed">Män</day>
-							<day type="tue" draft="contributed">Ziš</day>
-							<day type="wed" draft="contributed">Mit</day>
-							<day type="thu" draft="contributed">Fró</day>
-							<day type="fri" draft="contributed">Fri</day>
-							<day type="sat" draft="contributed">Sam</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="contributed">S</day>
 							<day type="mon" draft="contributed">M</day>
@@ -949,39 +884,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="contributed">F</day>
 							<day type="sat" draft="contributed">S</day>
 						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="contributed">Sunntag</day>
-							<day type="mon" draft="contributed">Mäntag</day>
-							<day type="tue" draft="contributed">Zištag</day>
-							<day type="wed" draft="contributed">Mittwuč</day>
-							<day type="thu" draft="contributed">Fróntag</day>
-							<day type="fri" draft="contributed">Fritag</day>
-							<day type="sat" draft="contributed">Samštag</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">Q1</quarter>
-							<quarter type="2" draft="contributed">Q2</quarter>
-							<quarter type="3" draft="contributed">Q3</quarter>
-							<quarter type="4" draft="contributed">Q4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="contributed">1</quarter>
-							<quarter type="2" draft="contributed">2</quarter>
-							<quarter type="3" draft="contributed">3</quarter>
-							<quarter type="4" draft="contributed">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="contributed">1. quartal</quarter>
-							<quarter type="2" draft="contributed">2. quartal</quarter>
-							<quarter type="3" draft="contributed">3. quartal</quarter>
-							<quarter type="4" draft="contributed">4. quartal</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1" draft="contributed">Q1</quarter>
 							<quarter type="2" draft="contributed">Q2</quarter>
@@ -1006,19 +912,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, d. MMMM y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">d. MMMM y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">d. MMM y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1042,7 +945,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMEd" draft="contributed">E, d. MMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
@@ -1455,34 +1357,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<group draft="contributed">’</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤ 0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤ 00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤ 000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤ 0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤ 00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤ 000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤ 0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤ 00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤ 000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤ 0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤ 00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤ 000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
 			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
 		</currencyFormats>
@@ -1499,13 +1373,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName draft="contributed">Euro</displayName>
-				<displayName count="one" draft="contributed">Euro</displayName>
-				<displayName count="other" draft="contributed">Euro</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="contributed">Pfund</displayName>
-				<displayName count="one" draft="contributed">Pfund</displayName>
-				<displayName count="other" draft="contributed">Pfund</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName draft="contributed">Indiši Rupie</displayName>
@@ -1514,62 +1384,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="JPY">
 				<displayName draft="contributed">Yen</displayName>
-				<displayName count="one" draft="contributed">Yen</displayName>
-				<displayName count="other" draft="contributed">Yen</displayName>
 				<symbol draft="contributed">¥</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName draft="contributed">Rubel</displayName>
-				<displayName count="one" draft="contributed">Rubel</displayName>
-				<displayName count="other" draft="contributed">Rubel</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName draft="contributed">Dollar</displayName>
-				<displayName count="one" draft="contributed">Dollar</displayName>
-				<displayName count="other" draft="contributed">Dollar</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName draft="contributed">Unbekannti Wãrig</displayName>
-				<displayName count="one" draft="contributed">Unbekannti Wãrig</displayName>
-				<displayName count="other" draft="contributed">Unbekannti Wãrig</displayName>
 			</currency>
 		</currencies>
 	</numbers>
 	<units>
 		<unitLength type="long">
 			<unit type="duration-year">
-				<displayName draft="contributed">jár</displayName>
 				<unitPattern count="one">{0} jár</unitPattern>
 				<unitPattern count="other">{0} jár</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="contributed">mánet</displayName>
 				<unitPattern count="one">{0} mánet</unitPattern>
 				<unitPattern count="other">{0} mánet</unitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName draft="contributed">wučä</displayName>
 				<unitPattern count="one">{0} wuča</unitPattern>
 				<unitPattern count="other">{0} wučä</unitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName draft="contributed">täg</displayName>
 				<unitPattern count="one">{0} täg</unitPattern>
 				<unitPattern count="other">{0} täg</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="contributed">stunde</displayName>
 				<unitPattern count="one">{0} stund</unitPattern>
 				<unitPattern count="other">{0} stunde</unitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName draft="contributed">minüte</displayName>
 				<unitPattern count="one">{0} minüta</unitPattern>
 				<unitPattern count="other">{0} minüte</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="contributed">sekunde</displayName>
 				<unitPattern count="one">{0} sekund</unitPattern>
 				<unitPattern count="other">{0} sekunde</unitPattern>
 			</unit>

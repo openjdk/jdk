@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ class SynthParser extends DefaultHandler {
     private List<ColorType> _colorTypes;
 
     /**
-     * defaultsPropertys are placed here.
+     * Default properties are placed here.
      */
     private Map<String, Object> _defaultsMap;
 

@@ -288,7 +288,7 @@ abstract class UnixFileStore
         if (value != null) {
             String[] values = value.split("\\s");
             for (String s: values) {
-                s = s.trim().toLowerCase();
+                s = s.trim().toLowerCase(Locale.ROOT);
                 if (s.equals(feature)) {
                     return FeatureStatus.PRESENT;
                 }

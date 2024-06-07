@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.StringJoiner;
  * This is a base class that every test class must extend if it needs to be run
  * with security mode.
  */
+@SuppressWarnings("removal")
 public class JAXPPolicyManager {
     /*
      * Backing up policy.
@@ -161,6 +162,7 @@ public class JAXPPolicyManager {
  * Simple Policy class that supports the required Permissions to validate the
  * JAXP concrete classes.
  */
+@SuppressWarnings("removal")
 class TestPolicy extends Policy {
     private final static Set<String> TEST_JARS =
          Set.of("jtreg.*jar", "javatest.*jar", "testng.*jar", "jcommander.*jar");

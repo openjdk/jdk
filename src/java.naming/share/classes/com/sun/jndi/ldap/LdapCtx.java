@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Enumeration;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -300,6 +301,7 @@ public final class LdapCtx extends ComponentDirContext
     private EventSupport eventSupport;       // Event support helper for this ctx
     private boolean unsolicited = false;     // if there unsolicited listeners
     private boolean sharable = true;         // can share connection with other ctx
+    private final ReentrantLock lock = new ReentrantLock(); // LdapCtx instance lock
 
     // -------------- Constructors  -----------------------------------
 
@@ -2649,26 +2651,31 @@ public final class LdapCtx extends ComponentDirContext
         }
     }
 
-    public synchronized void close() throws NamingException {
-        if (debug) {
-            System.err.println("LdapCtx: close() called " + this);
-            (new Throwable()).printStackTrace();
-        }
+    public void close() throws NamingException {
+        lock.lock();
+        try {
+            if (debug) {
+                System.err.println("LdapCtx: close() called " + this);
+                (new Throwable()).printStackTrace();
+            }
 
-        // Event (normal and unsolicited)
-        if (eventSupport != null) {
-            eventSupport.cleanup(); // idempotent
-            removeUnsolicited();
-        }
+            // Event (normal and unsolicited)
+            if (eventSupport != null) {
+                eventSupport.cleanup(); // idempotent
+                removeUnsolicited();
+            }
 
-        // Enumerations that are keeping the connection alive
-        if (enumCount > 0) {
-            if (debug)
-                System.err.println("LdapCtx: close deferred");
-            closeRequested = true;
-            return;
+            // Enumerations that are keeping the connection alive
+            if (enumCount > 0) {
+                if (debug)
+                    System.err.println("LdapCtx: close deferred");
+                closeRequested = true;
+                return;
+            }
+            closeConnection(SOFT_CLOSE);
+        } finally {
+            lock.unlock();
         }
-        closeConnection(SOFT_CLOSE);
 
 // %%%: RL: There is no need to set these to null, as they're just
 // variables whose contents and references will automatically
@@ -2785,13 +2792,17 @@ public final class LdapCtx extends ComponentDirContext
 
             } else if (!sharable || startTLS) {
 
-                synchronized (clnt) {
+                ReentrantLock clientLock = clnt.lock;
+                clientLock.lock();
+                try {
                     if (!clnt.isLdapv3
                         || clnt.referenceCount > 1
                         || clnt.usingSaslStreams()
                         || !clnt.conn.useable) {
                         closeConnection(SOFT_CLOSE);
                     }
+                } finally {
+                    clientLock.unlock();
                 }
                 // reset the cache before a new connection is established
                 schemaTrees = new Hashtable<>(11, 0.75f);
@@ -2891,10 +2902,14 @@ public final class LdapCtx extends ComponentDirContext
             }
 
             LdapResult answer;
-            synchronized (clnt.conn.startTlsLock) {
+            ReentrantLock startTlsLock = clnt.conn.startTlsLock;
+            startTlsLock.lock();
+            try {
                 ensureCanTransmitCredentials(authMechanism);
                 answer = clnt.authenticate(initial, user, passwd, ldapVersion,
                         authMechanism, bindCtls, envprops);
+            } finally {
+                startTlsLock.unlock();
             }
 
             respCtls = answer.resControls; // retrieve (bind) response controls
@@ -2967,21 +2982,31 @@ public final class LdapCtx extends ComponentDirContext
     private int enumCount = 0;
     private boolean closeRequested = false;
 
-    synchronized void incEnumCount() {
-        ++enumCount;
-        if (debug) System.err.println("LdapCtx: " + this + " enum inc: " + enumCount);
+    void incEnumCount() {
+        lock.lock();
+        try {
+            ++enumCount;
+            if (debug) System.err.println("LdapCtx: " + this + " enum inc: " + enumCount);
+        } finally {
+            lock.unlock();
+        }
     }
 
-    synchronized void decEnumCount() {
-        --enumCount;
-        if (debug) System.err.println("LdapCtx: " + this + " enum dec: " + enumCount);
+    void decEnumCount() {
+        lock.lock();
+        try {
+            --enumCount;
+            if (debug) System.err.println("LdapCtx: " + this + " enum dec: " + enumCount);
 
-        if (enumCount == 0 && closeRequested) {
-            try {
-                close();
-            } catch (NamingException e) {
-                // ignore failures
+            if (enumCount == 0 && closeRequested) {
+                try {
+                    close();
+                } catch (NamingException e) {
+                    // ignore failures
+                }
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -3576,17 +3601,20 @@ public final class LdapCtx extends ComponentDirContext
         }
     }
 
-    public void addNamingListener(String nm, String filter, SearchControls ctls,
-        NamingListener l) throws NamingException {
-            if (eventSupport == null)
-                eventSupport = new EventSupport(this);
-            eventSupport.addNamingListener(getTargetName(new CompositeName(nm)),
+    public void addNamingListener(String nm, String filter,
+                                  SearchControls ctls, NamingListener l)
+            throws NamingException {
+
+        if (eventSupport == null)
+            eventSupport = new EventSupport(this);
+
+        eventSupport.addNamingListener(getTargetName(new CompositeName(nm)),
                 filter, cloneSearchControls(ctls), l);
 
-            // If first time asking for unsol
-            if (l instanceof UnsolicitedNotificationListener && !unsolicited) {
-                addUnsolicited();
-            }
+        // If first time asking for unsol
+        if (l instanceof UnsolicitedNotificationListener && !unsolicited) {
+            addUnsolicited();
+        }
     }
 
     public void addNamingListener(Name nm, String filter, SearchControls ctls,
@@ -3653,9 +3681,13 @@ public final class LdapCtx extends ComponentDirContext
 
         // addNamingListener must have created EventSupport already
         ensureOpen();
-        synchronized (eventSupport) {
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
+        try {
             clnt.addUnsolicited(this);
             unsolicited = true;
+        } finally {
+            eventSupportLock.unlock();
         }
     }
 
@@ -3682,11 +3714,15 @@ public final class LdapCtx extends ComponentDirContext
         }
 
         // addNamingListener must have created EventSupport already
-        synchronized(eventSupport) {
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
+        try {
             if (unsolicited && clnt != null) {
                 clnt.removeUnsolicited(this);
             }
             unsolicited = false;
+        } finally {
+            eventSupportLock.unlock();
         }
     }
 
@@ -3699,7 +3735,9 @@ public final class LdapCtx extends ComponentDirContext
             System.out.println("LdapCtx.fireUnsolicited: " + obj);
         }
         // addNamingListener must have created EventSupport already
-        synchronized(eventSupport) {
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
+        try {
             if (unsolicited) {
                 eventSupport.fireUnsolicited(obj);
 
@@ -3710,6 +3748,8 @@ public final class LdapCtx extends ComponentDirContext
                     // unsol listeners and it will handle its own cleanup
                 }
             }
+        } finally {
+            eventSupportLock.unlock();
         }
     }
 }

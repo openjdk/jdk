@@ -24,12 +24,16 @@
 
 package sun.jvm.hotspot.tools.jcore;
 
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.runtime.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.jvm.hotspot.interpreter.Bytecodes;
+import sun.jvm.hotspot.oops.ConstantPool;
+import sun.jvm.hotspot.oops.ConstantPoolCache;
+import sun.jvm.hotspot.oops.Method;
+import sun.jvm.hotspot.runtime.Bytes;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.utilities.Assert;
 
 public class ByteCodeRewriter
 {
@@ -80,42 +84,6 @@ public class ByteCodeRewriter
         return (short)cpool.objectToCPIndex(refIndex);
      }
 
-    protected short getConstantPoolIndex(int rawcode, int bci) {
-       // get ConstantPool index from ConstantPoolCacheIndex at given bci
-       String fmt = Bytecodes.format(rawcode);
-       int cpCacheIndex;
-       switch (fmt.length()) {
-       case 2: cpCacheIndex = method.getBytecodeByteArg(bci); break;
-       case 3: cpCacheIndex = method.getBytecodeShortArg(bci); break;
-       case 5:
-           if (fmt.contains("__"))
-               cpCacheIndex = method.getBytecodeShortArg(bci);
-           else
-               cpCacheIndex = method.getBytecodeIntArg(bci);
-           break;
-       default: throw new IllegalArgumentException();
-       }
-
-       if (cpCache == null) {
-          return (short) cpCacheIndex;
-       } else if (fmt.contains("JJJJ")) {
-          // Invokedynamic require special handling
-          cpCacheIndex = ~cpCacheIndex;
-          cpCacheIndex = bytes.swapInt(cpCacheIndex);
-          short cpIndex = (short) cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
-          Assert.that(cpool.getTagAt(cpIndex).isInvokeDynamic(), "CP Entry should be InvokeDynamic");
-          return cpIndex;
-       } else if (fmt.contains("JJ")) {
-          // change byte-ordering and go via cache
-          return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();
-       } else if (fmt.contains("j")) {
-          // go via cache
-          return (short) cpCache.getEntryAt((int) (0xFF & cpCacheIndex)).getConstantPoolIndex();
-       } else {
-          return (short) cpCacheIndex;
-       }
-    }
-
     private static void writeShort(byte[] buf, int index, short value) {
         buf[index] = (byte) ((value >> 8) & 0x00FF);
         buf[index + 1] = (byte) (value & 0x00FF);
@@ -152,22 +120,29 @@ public class ByteCodeRewriter
                 case Bytecodes._getstatic:
                 case Bytecodes._putstatic:
                 case Bytecodes._getfield:
-                case Bytecodes._putfield:
+                case Bytecodes._putfield: {
+                    int fieldIndex = method.getNativeShortArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getFieldEntryAt(fieldIndex).getConstantPoolIndex();
+                    writeShort(code, bci + 1, cpoolIndex);
+                    break;
+                }
                 case Bytecodes._invokevirtual:
                 case Bytecodes._invokespecial:
                 case Bytecodes._invokestatic:
                 case Bytecodes._invokeinterface: {
-                    cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                    int methodIndex = method.getNativeShortArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getMethodEntryAt(methodIndex).getConstantPoolIndex();
                     writeShort(code, bci + 1, cpoolIndex);
                     break;
                 }
 
-                case Bytecodes._invokedynamic:
-                    cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                case Bytecodes._invokedynamic: {
+                    int indy_index = method.getNativeIntArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getIndyEntryAt(indy_index).getConstantPoolIndex();
                     writeShort(code, bci + 1, cpoolIndex);
                     writeShort(code, bci + 3, (short)0);  // clear out trailing bytes
                     break;
-
+                }
                 case Bytecodes._ldc_w:
                     if (hotspotcode != bytecode) {
                         // fast_aldc_w puts constant in reference map

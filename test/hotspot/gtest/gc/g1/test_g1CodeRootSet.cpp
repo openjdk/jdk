@@ -25,15 +25,7 @@
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "unittest.hpp"
 
-class G1CodeRootSetTest : public ::testing::Test {
- public:
-
-  size_t threshold() {
-    return G1CodeRootSet::Threshold;
-  }
-};
-
-TEST_VM_F(G1CodeRootSetTest, g1_code_cache_rem_set) {
+TEST_VM(G1CodeRootSet, g1_code_cache_rem_set) {
   G1CodeRootSet root_set;
 
   ASSERT_TRUE(root_set.is_empty()) << "Code root set must be initially empty "
@@ -43,7 +35,7 @@ TEST_VM_F(G1CodeRootSetTest, g1_code_cache_rem_set) {
   ASSERT_EQ(root_set.length(), (size_t) 1) << "Added exactly one element, but"
           " set contains " << root_set.length() << " elements";
 
-  const size_t num_to_add = (size_t) threshold() + 1;
+  const size_t num_to_add = 1000;
 
   for (size_t i = 1; i <= num_to_add; i++) {
     root_set.add((nmethod*) 1);
@@ -60,9 +52,6 @@ TEST_VM_F(G1CodeRootSetTest, g1_code_cache_rem_set) {
           << "After adding in total " << num_to_add << " distinct code roots, "
           "they need to be in the set, but there are only " << root_set.length();
 
-  ASSERT_EQ(root_set._table->table_size(), 512u)
-          << "should have grown to large hashtable";
-
   size_t num_popped = 0;
   for (size_t i = 1; i <= num_to_add; i++) {
     bool removed = root_set.remove((nmethod*) i);
@@ -76,5 +65,5 @@ TEST_VM_F(G1CodeRootSetTest, g1_code_cache_rem_set) {
           << "Managed to pop " << num_popped << " code roots, but only "
           << num_to_add << " were added";
   ASSERT_EQ(root_set.length(), 0u)
-          << "should have grown to large hashtable";
+          << "should be empty";
 }

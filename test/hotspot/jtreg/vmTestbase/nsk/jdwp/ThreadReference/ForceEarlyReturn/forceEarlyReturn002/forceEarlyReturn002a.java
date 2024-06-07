@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ public class forceEarlyReturn002a extends AbstractJDWPDebuggee {
 
     public final static String COMMAND_STOP_THREAD_IN_NATIVE = "stopInNative";
 
+    public final static String COMMAND_EXIT_THREAD_IN_NATIVE = "exitInNative";
+
     public final static String COMMAND_START_NEW_THREAD = "startNewThread";
 
     public boolean parseCommand(String command) {
@@ -50,21 +52,33 @@ public class forceEarlyReturn002a extends AbstractJDWPDebuggee {
             stopThreadInNative();
 
             return true;
-        } else if (command.equals(COMMAND_START_NEW_THREAD)) {
-            Thread thread = new Thread(new Runnable() {
-                public void run() {
-                    log.display("Thread exit");
-                }
-            });
+        } else if (command.equals(COMMAND_EXIT_THREAD_IN_NATIVE)) {
+            exitThreadInNative();
 
-            thread.setName("forceEarlyReturn002a_NewThread");
-            thread.start();
+            return true;
+        } else if (command.equals(COMMAND_START_NEW_THREAD)) {
+            testNewThread.start();
 
             return true;
         }
 
         return false;
     }
+
+    @Override
+    protected void init(String args[]) {
+        super.init(args);
+
+        // create thread for "NewThread" command in advance
+        testNewThread = new Thread(new Runnable() {
+            public void run() {
+                log.display("Thread exit");
+            }
+        });
+        testNewThread.setName("forceEarlyReturn002a_NewThread");
+    }
+
+    private static Thread testNewThread;
 
     private Thread testThreadInNative;
 
@@ -86,6 +100,8 @@ public class forceEarlyReturn002a extends AbstractJDWPDebuggee {
     public volatile boolean threadInNative;
 
     private static native int nativeMethod(Object object);
+
+    private static native void exitThreadInNative();
 
     public static void main(String args[]) {
         new forceEarlyReturn002a().doTest(args);

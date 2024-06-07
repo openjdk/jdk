@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8023130 8166026
  * @summary Unit test for java.lang.ProcessBuilder inheritance of standard output and standard error streams
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run testng InheritIOTest
@@ -54,7 +55,7 @@ public class InheritIOTest {
 
     @Test(dataProvider = "testCases")
     public void testInheritWithoutRedirect(List<String> arguments) throws Throwable {
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(arguments);
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(0);
         assertEquals(outputAnalyzer.getStdout(), EXPECTED_RESULT_STDOUT);

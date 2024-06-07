@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,13 @@ public:
     KIND_MANAGEABLE         = 1 << 5,
     KIND_DIAGNOSTIC         = 1 << 6,
     KIND_EXPERIMENTAL       = 1 << 7,
-    KIND_NOT_PRODUCT        = 1 << 8,
-    KIND_DEVELOP            = 1 << 9,
-    KIND_PLATFORM_DEPENDENT = 1 << 10,
-    KIND_C1                 = 1 << 11,
-    KIND_C2                 = 1 << 12,
-    KIND_ARCH               = 1 << 13,
-    KIND_LP64_PRODUCT       = 1 << 14,
-    KIND_JVMCI              = 1 << 15,
+    KIND_DEVELOP            = 1 << 8,
+    KIND_PLATFORM_DEPENDENT = 1 << 9,
+    KIND_C1                 = 1 << 10,
+    KIND_C2                 = 1 << 11,
+    KIND_ARCH               = 1 << 12,
+    KIND_LP64_PRODUCT       = 1 << 13,
+    KIND_JVMCI              = 1 << 14,
 
     // Note the difference:
     // f->get_origin() == COMMAND_LINE
@@ -114,8 +113,7 @@ public:
     NONE = 0,
     DIAGNOSTIC_FLAG_BUT_LOCKED,
     EXPERIMENTAL_FLAG_BUT_LOCKED,
-    DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
-    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
+    DEVELOPER_FLAG_BUT_PRODUCT_BUILD
   };
 
 #define JVM_FLAG_NON_STRING_TYPES_DO(f) \
@@ -248,7 +246,6 @@ public:
   bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;                   }
   bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;                   }
   bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;                 }
-  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;                  }
   bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;                      }
 
   bool is_constant_in_binary() const;

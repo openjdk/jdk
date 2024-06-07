@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "runtime/stubRoutines.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - FMOD()
@@ -72,6 +73,7 @@ ATTRIBUTE_ALIGNED(32) static const uint64_t CONST_e307[] = {
 };
 
 address StubGenerator::generate_libmFmod() {
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "libmFmod");
   address start = __ pc();
   __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -287,21 +289,11 @@ address StubGenerator::generate_libmFmod() {
     // {
     // double a, b, sgn_a, q, bs, bs2, corr, res;
     // unsigned eq;
-    // unsigned mxcsr, mxcsr_rz;
-
-    //   __asm { stmxcsr DWORD PTR[mxcsr] }
-    //   mxcsr_rz = 0x7f80 | mxcsr;
-    __ push(rax);
-    __ stmxcsr(Address(rsp, 0));
-    __ movl(rax, Address(rsp, 0));
-    __ movl(rcx, rax);
-    __ orl(rcx, 0x7f80);
-    __ movl(Address(rsp, 0x04), rcx);
 
     //     // |x|, |y|
     //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
     __ movq(xmm2, xmm0);
-    __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN), rcx);
+    __ movdqu(xmm3, ExternalAddress((address)CONST_NaN), rcx);
     __ vpand(xmm4, xmm2, xmm3, Assembler::AVX_128bit);
     //     b = DP_AND(y, DP_CONST(7fffffffffffffff));
     __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
@@ -313,18 +305,16 @@ address StubGenerator::generate_libmFmod() {
 
     //   if (a < b)  return x + sgn_a;
     __ ucomisd(xmm3, xmm4);
-    __ jcc(Assembler::belowEqual, L_104a);
+    __ jccb(Assembler::belowEqual, L_104a);
     __ vaddsd(xmm0, xmm2, xmm0);
     __ jmp(L_11bd);
 
-    //   if (((mxcsr & 0x6000)!=0x2000) && (a < b * 0x1p+260))
+    //   if (a < b * 0x1p+260)
     __ bind(L_104a);
-    __ andl(rax, 0x6000);
-    __ cmpl(rax, 0x2000);
-    __ jcc(Assembler::equal, L_10c1);
+
     __ vmulsd(xmm0, xmm3, ExternalAddress((address)CONST_1p260), rax);
     __ ucomisd(xmm0, xmm4);
-    __ jcc(Assembler::belowEqual, L_10c1);
+    __ jccb(Assembler::belowEqual, L_10c1);
     //   {
     //     q = DP_DIV(a, b);
     __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
@@ -340,7 +330,7 @@ address StubGenerator::generate_libmFmod() {
     __ vroundsd(xmm0, xmm0, xmm0, 3);
     //     a = DP_FNMA(b, q, a);
     __ vfnmadd213sd(xmm0, xmm3, xmm4);
-    __ align32();
+    __ align(16);
     //     while (b <= a)
     __ bind(L_1090);
     __ ucomisd(xmm0, xmm3);
@@ -359,14 +349,14 @@ address StubGenerator::generate_libmFmod() {
     __ vroundsd(xmm4, xmm4, xmm4, 3);
     //       a = DP_FNMA(b, q, a);
     __ vfnmadd231sd(xmm0, xmm3, xmm4);
-    __ jmp(L_1090);
+    __ jmpb(L_1090);
     //     }
     //     return DP_XOR(a, sgn_a);
     //   }
 
     //   __asm { ldmxcsr DWORD PTR [mxcsr_rz] }
     __ bind(L_10c1);
-    __ ldmxcsr(Address(rsp, 0x04));
+    __ ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_rz()), rax /*rscratch*/);
 
     //   q = DP_DIV(a, b);
     __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
@@ -378,7 +368,7 @@ address StubGenerator::generate_libmFmod() {
 
     //   if (__builtin_expect((eq >= 0x7fefffffu), (0==1))) goto SPECIAL_FMOD;
     __ cmpl(rax, 0x7feffffe);
-    __ jcc(Assembler::above, L_10e7);
+    __ jccb(Assembler::above, L_10e7);
 
     //   a = DP_FNMA(b, q, a);
     __ vfnmadd213sd(xmm0, xmm3, xmm4);
@@ -391,31 +381,31 @@ address StubGenerator::generate_libmFmod() {
     __ bind(L_10e7);
     __ vpxor(xmm5, xmm5, xmm5, Assembler::AVX_128bit);
     __ ucomisd(xmm3, xmm5);
-    __ jcc(Assembler::notEqual, L_10f3);
-    __ jcc(Assembler::noParity, L_111c);
+    __ jccb(Assembler::notEqual, L_10f3);
+    __ jccb(Assembler::noParity, L_111c);
 
     __ bind(L_10f3);
     __ movsd(xmm5, ExternalAddress((address)CONST_MAX), rax);
     __ ucomisd(xmm5, xmm4);
-    __ jcc(Assembler::below, L_111c);
+    __ jccb(Assembler::below, L_111c);
     //     return res;
     //   }
     //   // y is NaN?
     //   if (!(b <= DP_CONST(7ff0000000000000))) {
     __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
     __ ucomisd(xmm0, xmm3);
-    __ jcc(Assembler::aboveEqual, L_112a);
+    __ jccb(Assembler::aboveEqual, L_112a);
     //     res = y + y;
     __ vaddsd(xmm0, xmm1, xmm1);
     //     __asm { ldmxcsr DWORD PTR[mxcsr] }
-    __ ldmxcsr(Address(rsp, 0));
+    __ ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rax /*rscratch*/);
     __ jmp(L_11bd);
     //   {
     //     res = DP_FNMA(b, q, a);    // NaN
     __ bind(L_111c);
     __ vfnmadd213sd(xmm0, xmm3, xmm4);
     //     __asm { ldmxcsr DWORD PTR[mxcsr] }
-    __ ldmxcsr(Address(rsp, 0));
+    __ ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rax /*rscratch*/);
     __ jmp(L_11bd);
     //     return res;
     //   }
@@ -435,14 +425,14 @@ address StubGenerator::generate_libmFmod() {
 
     //   if (eq >= 0x7fefffffu)
     __ cmpl(rax, 0x7fefffff);
-    __ jcc(Assembler::below, L_116e);
+    __ jccb(Assembler::below, L_116e);
     //   {
     //     // b* 2*1023 * 2^1023
     //     bs2 = bs * DP_CONST(7fe0000000000000);
     __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
     //     while (bs2 <= a)
     __ ucomisd(xmm4, xmm0);
-    __ jcc(Assembler::below, L_1173);
+    __ jccb(Assembler::below, L_1173);
     //     {
     //       q = DP_DIV(a, bs2);
     __ bind(L_1157);
@@ -453,8 +443,8 @@ address StubGenerator::generate_libmFmod() {
     __ vfnmadd231sd(xmm4, xmm0, xmm5);
     //     while (bs2 <= a)
     __ ucomisd(xmm4, xmm0);
-    __ jcc(Assembler::aboveEqual, L_1157);
-    __ jmp(L_1173);
+    __ jccb(Assembler::aboveEqual, L_1157);
+    __ jmpb(L_1173);
     //     }
     //   }
     //   else
@@ -465,9 +455,9 @@ address StubGenerator::generate_libmFmod() {
     //   while (bs <= a)
     __ bind(L_1173);
     __ ucomisd(xmm4, xmm1);
-    __ jcc(Assembler::aboveEqual, L_117f);
+    __ jccb(Assembler::aboveEqual, L_117f);
     __ movapd(xmm0, xmm4);
-    __ jmp(L_11af);
+    __ jmpb(L_11af);
     //   {
     //     q = DP_DIV(a, bs);
     __ bind(L_117f);
@@ -480,9 +470,9 @@ address StubGenerator::generate_libmFmod() {
     //   while (bs <= a)
     __ ucomisd(xmm0, xmm1);
     __ movapd(xmm4, xmm0);
-    __ jcc(Assembler::aboveEqual, L_117f);
-    __ jmp(L_11af);
-    __ align32();
+    __ jccb(Assembler::aboveEqual, L_117f);
+    __ jmpb(L_11af);
+    __ align(16);
     //   {
     //     q = DP_DIV(a, b);
     __ bind(L_11a0);
@@ -496,11 +486,11 @@ address StubGenerator::generate_libmFmod() {
     //   while (b <= a)
     __ bind(L_11af);
     __ ucomisd(xmm0, xmm3);
-    __ jcc(Assembler::aboveEqual, L_11a0);
+    __ jccb(Assembler::aboveEqual, L_11a0);
     //   }
 
     //   __asm { ldmxcsr DWORD PTR[mxcsr] }
-    __ ldmxcsr(Address(rsp, 0));
+    __ ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rax /*rscratch*/);
     __ bind(L_11b9);
     __ vpxor(xmm0, xmm2, xmm0, Assembler::AVX_128bit);
     //   }
@@ -509,10 +499,23 @@ address StubGenerator::generate_libmFmod() {
 
     // }
     __ bind(L_11bd);
-    __ pop(rax);
 
   } else {                                       // SSE version
-    assert(false, "SSE not implemented");
+    Label x87_loop;
+    __ movsd(Address(rbp, -8), xmm1);
+    __ movsd(Address(rbp, -16), xmm0);
+    __ fld_d(Address(rbp, -8));
+    __ fld_d(Address(rbp, -16));
+
+    __ bind(x87_loop);
+    __ fprem();
+    __ fnstsw_ax();
+    __ testb(rax, 0x4, false);
+    __ jcc(Assembler::notZero, x87_loop);
+
+    __ fstp_d(1);
+    __ fstp_d(Address(rbp, -8));
+    __ movsd(xmm0, Address(rbp, -8));
   }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame

@@ -74,7 +74,7 @@
 
 #define read_csr(csr)                                           \
 ({                                                              \
-        register unsigned long __v;                             \
+        unsigned long __v;                                      \
         __asm__ __volatile__ ("csrr %0, %1"                     \
                               : "=r" (__v)                      \
                               : "i" (csr)                       \
@@ -108,13 +108,22 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s,", uarch);
+    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->enabled()) {
+      // Change flag default
+      _feature_list[i]->update_flag();
+
+      // Feature will be disabled by update_flag() if flag
+      // is set to false by the user on the command line.
+      if (!_feature_list[i]->enabled()) {
+        continue;
+      }
+
       log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
              _feature_list[i]->pretty(),
              _feature_list[i]->value());
@@ -122,13 +131,14 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
+          strcat(buf, " ");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
           // Turn Zxxx into zxxx
           char prebuf[3] = {};
           assert(strlen(tmp) > 1, "Must be");
-          prebuf[0] = '_';
+          prebuf[0] = ' ';
           prebuf[1] = (char)tolower(tmp[0]);
           strcat(buf, prebuf);
           strcat(buf, &tmp[1]);
@@ -138,8 +148,6 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_bit() != 0) {
         _features |= _feature_list[i]->feature_bit();
       }
-      // Change flag default
-      _feature_list[i]->update_flag();
     }
     i++;
   }
@@ -149,23 +157,32 @@ void VM_Version::setup_cpu_available_features() {
 
 void VM_Version::os_aux_features() {
   uint64_t auxv = getauxval(AT_HWCAP);
-  int i = 0;
-  while (_feature_list[i] != nullptr) {
+  for (int i = 0; _feature_list[i] != nullptr; i++) {
+    if (_feature_list[i]->feature_bit() == HWCAP_ISA_V) {
+      // Special case for V: some dev boards only support RVV version 0.7, while
+      // the OpenJDK only supports RVV version 1.0. These two versions are not
+      // compatible with each other. Given the V bit is set through HWCAP on
+      // some custom kernels, regardless of the version, it can lead to
+      // generating V instructions on boards that don't support RVV version 1.0
+      // (ex: Sipeed LicheePi), leading to a SIGILL.
+      // That is an acceptable workaround as only Linux Kernel v6.5+ supports V,
+      // and that version already support hwprobe anyway
+      continue;
+    }
     if ((_feature_list[i]->feature_bit() & auxv) != 0) {
       _feature_list[i]->enable_feature();
     }
-    i++;
   }
 }
 
 VM_Version::VM_MODE VM_Version::parse_satp_mode(const char* vm_mode) {
-  if (!strcmp(vm_mode, "sv39")) {
+  if (!strncmp(vm_mode, "sv39", sizeof "sv39" - 1)) {
     return VM_SV39;
-  } else if (!strcmp(vm_mode, "sv48")) {
+  } else if (!strncmp(vm_mode, "sv48", sizeof "sv48" - 1)) {
     return VM_SV48;
-  } else if (!strcmp(vm_mode, "sv57")) {
+  } else if (!strncmp(vm_mode, "sv57", sizeof "sv57" - 1)) {
     return VM_SV57;
-  } else if (!strcmp(vm_mode, "sv64")) {
+  } else if (!strncmp(vm_mode, "sv64", sizeof "sv64" - 1)) {
     return VM_SV64;
   } else {
     return VM_MBARE;
@@ -187,7 +204,7 @@ char* VM_Version::os_uarch_additional_features() {
     if ((p = strchr(buf, ':')) != nullptr) {
       if (mode == VM_NOTSET) {
         if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
-          mode = VM_Version::parse_satp_mode(p);
+          mode = VM_Version::parse_satp_mode(p + 2);
         }
       }
       if (ret == nullptr) {
@@ -207,14 +224,11 @@ char* VM_Version::os_uarch_additional_features() {
 }
 
 void VM_Version::vendor_features() {
-  // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
-  static constexpr int RIVOS_MVENDORID = 0x6cf; // JEDEC: 0x4f, Bank: 14
-
   if (!mvendorid.enabled()) {
     return;
   }
   switch (mvendorid.value()) {
-    case RIVOS_MVENDORID:
+    case RIVOS:
     rivos_features();
     break;
     default:
@@ -224,31 +238,34 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_I.enable_feature();
-  ext_M.enable_feature();
-  ext_A.enable_feature();
-  ext_F.enable_feature();
-  ext_D.enable_feature();
-  ext_C.enable_feature();
-  ext_H.enable_feature();
-  ext_V.enable_feature();
-
   ext_Zicbom.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
+  // If we running on a pre-6.5 kernel
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
 
+  ext_Zcb.enable_feature();
+
+  ext_Zfh.enable_feature();
+
+  ext_Zicboz.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
-  ext_Zihintpause.enable_feature();
+  ext_Ztso.enable_feature();
+
+  ext_Zvfh.enable_feature();
 
   unaligned_access.enable_feature(MISALIGNED_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
+  if (mimpid.value() > 0x100) {
+    ext_Zacas.enable_feature();
+    ext_Zihintpause.enable_feature();
+  }
 }

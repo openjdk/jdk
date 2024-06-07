@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,46 @@
  * questions.
  */
 
-/**
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.font.FontRenderContext;
+import java.awt.print.Book;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterJob;
+import java.text.AttributedCharacterIterator;
+import java.text.AttributedString;
+
+/*
  * @test
  * @bug 4185019
+ * @key printer
  * @summary Confirm that all of the drawString methods on Graphics2D
  *          work for printer graphics objects.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual DrawStringMethods
  */
-
-import java.awt.*;
-import java.text.*;
-import java.awt.font.*;
-import java.awt.print.*;
-
 public class DrawStringMethods implements Printable {
+    private static final String INSTRUCTIONS =
+            " This test will automatically initiate a print.\n" +
+            "\n" +
+            " Confirm that the following methods are printed:\n" +
+            " For Graphics: drawString, drawString, drawChars, drawBytes\n" +
+            " For Graphics2D: drawString, drawString, drawGlyphVector";
 
-    public static void main(String args[]) {
-        String[] instructions =
-        {
-            "Confirm that the methods are printed.",
-            " For Graphics: drawString, drawString, drawChars, drawBytes",
-            " For Graphics2D: drawString, drawString, drawGlyphVector"
-        };
-        Sysout.createDialogWithInstructions( instructions );
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build();
 
         PrinterJob pjob = PrinterJob.getPrinterJob();
         PageFormat pf = pjob.defaultPage();
@@ -52,18 +68,16 @@ public class DrawStringMethods implements Printable {
 
         book.append(new DrawStringMethods(), pf);
         pjob.setPageable(book);
+        pjob.print();
 
-        try {
-            pjob.print();
-        } catch (PrinterException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        passFailJFrame.awaitAndCheck();
     }
 
-    public static AttributedCharacterIterator getIterator(String s) {
+    private static AttributedCharacterIterator getIterator(String s) {
         return new AttributedString(s).getIterator();
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex) {
         int ix = (int) pf.getImageableX();
         int iy = (int) pf.getImageableY();
@@ -92,7 +106,7 @@ public class DrawStringMethods implements Printable {
 
         iy += 30;
         s = "drawBytes(byte data[], int offset, int length, int x, int y)";
-        byte data[] = new byte[s.length()];
+        byte[] data = new byte[s.length()];
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) s.charAt(i);
         }
@@ -115,7 +129,7 @@ public class DrawStringMethods implements Printable {
 
             iy += 30;
             s = "drawString(AttributedCharacterIterator iterator, "+
-                           "float x, float y)";
+                "float x, float y)";
             g.drawLine(ix, iy, ix+10, iy);
             g2d.drawString(getIterator(s), (float) ix+20, (float) iy);
 
@@ -132,119 +146,3 @@ public class DrawStringMethods implements Printable {
         return PAGE_EXISTS;
     }
 }
-
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
- }// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
- {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("South", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-     //chop up each into pieces maxSringLength long
-     remainingStr = instructions[ i ];
-     while( remainingStr.length() > 0 )
-      {
-        //if longer than max then chop off first max chars to print
-        if( remainingStr.length() >= maxStringLength )
-         {
-           //Try to chop on a word boundary
-           int posOfSpace = remainingStr.
-          lastIndexOf( ' ', maxStringLength - 1 );
-
-           if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-           printStr = remainingStr.substring( 0, posOfSpace + 1 );
-           remainingStr = remainingStr.substring( posOfSpace + 1 );
-         }
-        //else just print
-        else
-         {
-           printStr = remainingStr;
-           remainingStr = "";
-         }
-
-            instructionsText.append( printStr + "\n" );
-
-      }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

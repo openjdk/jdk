@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -822,7 +822,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">𑄄𑄎𑄴𑄢𑄠𑄬𑄣𑄴</territory>
 			<territory type="IM">𑄃𑄭𑄣𑄴 𑄃𑄧𑄜𑄴 𑄟𑄳𑄠𑄚𑄴</territory>
 			<territory type="IN">𑄞𑄢𑄧𑄖𑄴</territory>
-			<territory type="IO">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄞𑄢𑄧𑄖𑄴 𑄟𑄧𑄦𑄥𑄉𑄧𑄢𑄨𑄠𑄧 𑄞𑄨𑄘𑄳𑄠</territory>
+			<territory type="IO" draft="provisional">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄞𑄢𑄧𑄖𑄴 𑄟𑄧𑄦𑄥𑄉𑄧𑄢𑄨𑄠𑄧 𑄞𑄨𑄘𑄳𑄠</territory>
 			<territory type="IQ">𑄄𑄢𑄇𑄴</territory>
 			<territory type="IR">𑄄𑄢𑄚𑄴</territory>
 			<territory type="IS">𑄃𑄭𑄥𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴</territory>
@@ -1018,8 +1018,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">𑄉𑄳𑄢𑄉𑄮𑄢𑄨𑄠𑄚𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="hebrew">𑄦𑄨𑄝𑄳𑄢𑄪 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="indian">𑄞𑄢𑄧𑄘𑄧𑄢𑄴 𑄎𑄖𑄩𑄠𑄧 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
-			<type key="calendar" type="islamic">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
-			<type key="calendar" type="islamic-civil">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴-𑄥𑄨𑄞𑄨𑄣𑄴 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
+			<type key="calendar" type="islamic" draft="provisional">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴-𑄥𑄨𑄞𑄨𑄣𑄴 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
 			<type key="calendar" type="iso8601">ISO-861 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="japanese">𑄎𑄛𑄚𑄨 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="persian">𑄜𑄢𑄴𑄥𑄨 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
@@ -1042,7 +1042,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">𑄜𑄮𑄚𑄴𑄝𑄪𑄇𑄴 𑄥𑄎𑄚</type>
 			<type key="collation" type="phonetic">𑄢𑄳𑄦𑄧 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="collation" type="pinyin">𑄛𑄨𑄚𑄨𑄚𑄴 𑄥𑄎𑄚</type>
-			<type key="collation" type="reformed">𑄢𑄨𑄜𑄧𑄟𑄴𑄓𑄨 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="collation" type="search">𑄃𑄧𑄎𑄧𑄃𑄧𑄌𑄴-𑄅𑄪𑄘𑄨𑄌𑄴𑄥𑄳𑄠 𑄖𑄮𑄉𑄚</type>
 			<type key="collation" type="searchjl">𑄦𑄋𑄴𑄉𑄪𑄣𑄴 𑄛𑄧𑄖𑄴𑄗𑄧𑄟𑄴 𑄝𑄧𑄣𑄬𑄟𑄖𑄳𑄠𑄬 𑄦𑄧𑄢𑄧𑄇𑄴 𑄘𑄨𑄚𑄬𑄭 𑄖𑄮𑄉𑄚</type>
 			<type key="collation" type="standard">𑄉𑄧𑄟𑄴 𑄘𑄮𑄣𑄴 𑄝𑄬𑄭𑄣𑄧𑄚</type>
@@ -1125,26 +1124,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<codePattern type="territory">𑄎𑄉: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[\U00011100 \U00011101 \U00011102 𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦 \U00011127 \U00011128 \U00011129 \U0001112A \U0001112B 𑄬 \U0001112D \U0001112E \U0001112F \U00011130 \U00011131 \U00011132 \U00011133 \U00011134]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
+		<exemplarCharacters>[𑄀 𑄁 𑄂 𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦 𑄧 𑄨 𑄩 𑄪 𑄫 𑄬 𑄭 𑄮 𑄯 𑄰 𑄱 𑄲 𑄳 𑄴]</exemplarCharacters>
 		<exemplarCharacters type="index">[𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="unconfirmed">[\- ‑ , . % ‰ + 𑄶 𑄷 𑄸 𑄹 𑄺 𑄻 𑄼 𑄽 𑄾 𑄿]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? 𑅃 . … 𑅁 𑅂 𑅀 ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? 𑅃 . … 𑅁 𑅂 𑅀 '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<moreInformation draft="unconfirmed">𑅃</moreInformation>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -1152,19 +1138,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1196,29 +1179,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
@@ -1234,41 +1206,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1346,20 +1283,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">𑄚𑄧𑄞𑄬𑄟𑄴𑄝𑄧𑄢𑄴</month>
 							<month type="12">𑄓𑄨𑄥𑄬𑄟𑄴𑄝𑄢𑄴</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">𑄎</month>
-							<month type="2">𑄜𑄬</month>
-							<month type="3">𑄟</month>
-							<month type="4">𑄃𑄬</month>
-							<month type="5">𑄟𑄬</month>
-							<month type="6">𑄎𑄪𑄚𑄴</month>
-							<month type="7">𑄎𑄪</month>
-							<month type="8">𑄃</month>
-							<month type="9">𑄥𑄬</month>
-							<month type="10">𑄃𑄧</month>
-							<month type="11">𑄚𑄧</month>
-							<month type="12">𑄓𑄨</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">𑄎𑄚𑄪𑄠𑄢𑄨</month>
 							<month type="2">𑄜𑄬𑄛𑄴𑄝𑄳𑄢𑄪𑄠𑄢𑄨</month>
@@ -1431,15 +1354,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴</day>
 							<day type="sat">𑄥𑄧𑄚𑄨</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">𑄢𑄧</day>
-							<day type="mon">𑄥𑄧</day>
-							<day type="tue">𑄟𑄧</day>
-							<day type="wed">𑄝𑄪</day>
-							<day type="thu">𑄝𑄳𑄢𑄨</day>
-							<day type="fri">𑄥𑄪</day>
-							<day type="sat">𑄥𑄧</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">𑄢𑄧𑄝𑄨𑄝𑄢𑄴</day>
 							<day type="mon">𑄥𑄧𑄟𑄴𑄝𑄢𑄴</day>
@@ -1451,15 +1365,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">𑄢𑄧𑄝𑄨</day>
-							<day type="mon">𑄥𑄧𑄟𑄴</day>
-							<day type="tue">𑄟𑄧𑄁𑄉𑄧𑄣𑄴</day>
-							<day type="wed">𑄝𑄪𑄖𑄴</day>
-							<day type="thu">𑄝𑄳𑄢𑄨𑄥𑄪𑄛𑄴</day>
-							<day type="fri">𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴</day>
-							<day type="sat">𑄥𑄧𑄚𑄨</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">𑄢𑄧</day>
 							<day type="mon">𑄥𑄧</day>
@@ -1468,15 +1373,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">𑄝𑄳𑄢𑄨</day>
 							<day type="fri">𑄥𑄪</day>
 							<day type="sat">𑄥𑄧</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">𑄢𑄧𑄝𑄨𑄝𑄢𑄴</day>
-							<day type="mon">𑄥𑄧𑄟𑄴𑄝𑄢𑄴</day>
-							<day type="tue">𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</day>
-							<day type="wed">𑄝𑄪𑄖𑄴𑄝𑄢𑄴</day>
-							<day type="thu">𑄝𑄳𑄢𑄨𑄥𑄪𑄛𑄴𑄝𑄢𑄴</day>
-							<day type="fri">𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</day>
-							<day type="sat">𑄥𑄧𑄚𑄨𑄝𑄢𑄴</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1488,12 +1384,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">Q3</quarter>
 							<quarter type="4">Q4</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">𑄷</quarter>
-							<quarter type="2">𑄸</quarter>
-							<quarter type="3">𑄹</quarter>
-							<quarter type="4">𑄺</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
 							<quarter type="2">𑄘𑄨 𑄛𑄳𑄆𑄘𑄳𑄠𑄬 𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
@@ -1502,83 +1392,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">𑄷</quarter>
 							<quarter type="2">𑄸</quarter>
 							<quarter type="3">𑄹</quarter>
 							<quarter type="4">𑄺</quarter>
 						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
-							<quarter type="2">𑄘𑄨 𑄛𑄳𑄆𑄘𑄳𑄠𑄬 𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
-							<quarter type="3">𑄖𑄨𑄚𑄴 𑄛𑄳𑄆𑄘𑄳𑄠𑄬 𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
-							<quarter type="4">𑄌𑄳𑄆𑄬𑄢𑄴 𑄛𑄳𑄆𑄘𑄳𑄠𑄬 𑄖𑄨𑄚𑄴𑄟𑄎𑄧𑄢𑄴</quarter>
-						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
-							<dayPeriod type="afternoon2">𑄝𑄬𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="evening1">𑄥𑄎𑄧𑄚𑄳𑄠</dayPeriod>
-							<dayPeriod type="night1">𑄢𑄬𑄖𑄴</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
-							<dayPeriod type="afternoon2">𑄝𑄬𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="evening1">𑄥𑄎𑄧𑄚𑄳𑄠</dayPeriod>
-							<dayPeriod type="night1">𑄢𑄬𑄖𑄴</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
-							<dayPeriod type="afternoon2">𑄝𑄬𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="evening1">𑄥𑄎𑄧𑄚𑄳𑄠</dayPeriod>
-							<dayPeriod type="night1">𑄢𑄬𑄖𑄴</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
-							<dayPeriod type="afternoon2">𑄝𑄬𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="evening1">𑄥𑄎𑄧𑄚𑄳𑄠</dayPeriod>
-							<dayPeriod type="night1">𑄢𑄬𑄖𑄴</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
-							<dayPeriod type="afternoon2">𑄝𑄬𑄣𑄳𑄠𑄬</dayPeriod>
-							<dayPeriod type="evening1">𑄥𑄎𑄧𑄚𑄳𑄠</dayPeriod>
-							<dayPeriod type="night1">𑄢𑄬𑄖𑄴</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">𑄛𑄧𑄖𑄳𑄠𑄃𑄟𑄧𑄣𑄳𑄠𑄬</dayPeriod>
 							<dayPeriod type="morning2">𑄝𑄬𑄚𑄳𑄠𑄬</dayPeriod>
 							<dayPeriod type="afternoon1">𑄘𑄨𑄝𑄪𑄎𑄳𑄠</dayPeriod>
@@ -1590,9 +1414,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄴𑄛𑄫𑄢𑄴𑄝𑄧</era>
 						<era type="0" alt="variant">𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄴𑄛𑄫𑄢𑄴𑄝𑄛𑄴𑄘𑄧</era>
-						<era type="1">𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄛𑄴𑄘𑄧</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄴𑄛𑄫𑄢𑄴𑄝𑄧</era>
@@ -1604,19 +1426,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1674,40 +1493,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMMM 𑄃𑄬𑄢𑄴 𑄠𑄴 𑄥𑄛𑄴𑄖 W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 𑄃𑄬𑄢𑄴 𑄠𑄴 𑄥𑄛𑄴𑄖 W</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -1718,49 +1516,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="one">Y 𑄃𑄬𑄢𑄴 𑄖𑄧𑄟𑄴 𑄥𑄛𑄴𑄖 w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y 𑄃𑄬𑄢𑄴 𑄖𑄧𑄟𑄴 𑄥𑄛𑄴𑄖 w</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1782,9 +1541,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1914,41 +1670,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
 				<relative type="1">𑄎𑄬𑄢𑄧 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
 				<relative type="-1">𑄉𑄬𑄣𑄳𑄠𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
-				<displayName>𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<relative type="-1">𑄉𑄬𑄣𑄳𑄠𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄧𑄏𑄧𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴</displayName>
@@ -1960,29 +1691,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𑄖𑄨𑄚𑄟𑄏𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
-				<displayName>𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0}𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
-				<displayName>𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄬</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄖𑄨𑄚𑄴𑄟𑄏𑄧𑄢𑄴 𑄃𑄬𑄉</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1992,40 +1713,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄏𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄏𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄏𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄏𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>𑄟𑄏𑄴</displayName>
 				<relative type="-1">𑄉𑄬𑄣𑄧𑄉𑄬 𑄟𑄏𑄴</relative>
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄏𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄏𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄏𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄏𑄬</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𑄇𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>𑄟𑄏𑄴</displayName>
 				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄟𑄏𑄴</relative>
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄏𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄏𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄏𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄏𑄬</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𑄟𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄏𑄧 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -2034,44 +1741,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄛𑄴𑄖</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄛𑄴𑄖</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>{0} 𑄥𑄛𑄴𑄖</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>𑄥𑄛𑄴𑄖</displayName>
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
 				<relativePeriod>{0} 𑄃𑄳𑄆𑄬 𑄥𑄛𑄴𑄖𑄠𑄴</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>𑄥𑄛𑄴𑄖</displayName>
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄛𑄴𑄖</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖𑄠𑄴</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𑄥𑄛𑄴𑄖𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄛𑄴𑄖𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0} 𑄃𑄳𑄆𑄬 𑄥𑄛𑄴𑄖𑄠𑄴</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>𑄘𑄨𑄚𑄴</displayName>
@@ -2081,45 +1765,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄇𑄬𑄣𑄳𑄠𑄬</relative>
 				<relative type="2">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄬 𑄛𑄧𑄢𑄴𑄥𑄪</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>𑄘𑄨𑄚𑄴</displayName>
-				<relative type="-2">𑄉𑄬𑄣𑄧𑄘𑄬 𑄛𑄧𑄢𑄴𑄥𑄪</relative>
 				<relative type="-1">𑄉𑄬𑄣𑄴𑄣𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬</relative>
 				<relative type="0">𑄃𑄬𑄌𑄴𑄥𑄳𑄠𑄬</relative>
 				<relative type="1">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬</relative>
 				<relative type="2">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬 𑄛𑄧𑄢𑄴𑄥𑄪</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>𑄘𑄨𑄚𑄴</displayName>
-				<relative type="-2">𑄉𑄬𑄣𑄧𑄘𑄬 𑄛𑄧𑄢𑄴𑄥𑄪</relative>
-				<relative type="-1">𑄉𑄬𑄣𑄴𑄣𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬</relative>
-				<relative type="0">𑄃𑄬𑄌𑄴𑄥𑄳𑄠𑄬</relative>
-				<relative type="1">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬</relative>
-				<relative type="2">𑄃𑄬𑄎𑄬𑄖𑄴𑄖𑄳𑄠𑄇𑄬𑄣𑄴𑄣𑄳𑄠𑄬 𑄛𑄧𑄢𑄴𑄥𑄪</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄮 𑄟𑄧𑄖𑄴𑄙𑄳𑄠</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄘𑄨𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="weekday">
 				<displayName>𑄥𑄛𑄴𑄖𑄢𑄴 𑄘𑄨𑄚𑄴</displayName>
@@ -2129,37 +1785,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄢𑄧𑄝𑄨𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄢𑄧𑄝𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2168,7 +1796,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -2177,29 +1804,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄧𑄟𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄧𑄟𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue">
@@ -2207,37 +1813,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄧𑄁𑄉𑄧𑄣𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2246,37 +1824,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2285,38 +1835,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄬</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄧𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄝𑄨𑄥𑄪𑄖𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
@@ -2324,38 +1851,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄪𑄇𑄴𑄇𑄮𑄢𑄴𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
@@ -2363,38 +1872,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
 				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1">𑄉𑄬𑄣𑄧𑄘𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
-				<relative type="0">𑄃𑄳𑄆𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
-				<relative type="1">𑄛𑄧𑄢𑄬 𑄥𑄮𑄚𑄨𑄝𑄢𑄴</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄧𑄖𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄮𑄚𑄨𑄝𑄢𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod">
@@ -2404,33 +1891,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄊𑄮𑄚𑄴𑄓</displayName>
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName>𑄊𑄮𑄚𑄴𑄓</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>𑄊𑄮𑄚𑄴𑄓</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓𑄠𑄴</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄊𑄮𑄚𑄴𑄓 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2438,33 +1901,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
 				<relative type="0">𑄃𑄳𑄆𑄬 𑄟𑄨𑄚𑄨𑄖𑄴</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-short">
-				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄘𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄟𑄨𑄚𑄨𑄖𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2472,34 +1911,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄥𑄬𑄉𑄬𑄚𑄴</displayName>
 				<relative type="0">𑄃𑄨𑄇𑄴𑄅𑄚𑄪</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴𑄘𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴𑄘𑄬</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-short">
-				<displayName>𑄥𑄬𑄉𑄬𑄚𑄴</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴𑄘𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴𑄘𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>𑄥𑄬𑄉𑄬𑄚𑄴</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴𑄘𑄬</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
-					<relativeTimePattern count="other">{0} 𑄥𑄬𑄉𑄬𑄚𑄴 𑄃𑄉𑄬</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
@@ -2507,16 +1927,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} 𑄃𑄧𑄇𑄴𑄖𑄧</regionFormat>
 			<regionFormat type="daylight">{0} 𑄘𑄨𑄝𑄪𑄌𑄴𑄎𑄳𑄠 𑄃𑄧𑄇𑄴𑄖𑄧𑄖𑄴</regionFormat>
 			<regionFormat type="standard">{0} 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧𑄖𑄴</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>𑄥𑄚𑄴𑄖 𑄃𑄨𑄥𑄝𑄬𑄣𑄴</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>𑄘𑄇𑄴𑄘𑄨𑄠 𑄛𑄨𑄖𑄴𑄗𑄨𑄟𑄨𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
@@ -2638,9 +2052,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>𑄟𑄬𑄣𑄴𑄝𑄢𑄴𑄚𑄴</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>𑄇𑄨𑄃𑄪𑄢𑄨</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>𑄦𑄮𑄝𑄢𑄴𑄑𑄴</exemplarCity>
@@ -2795,9 +2206,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>𑄇𑄳𑄢𑄨𑄌𑄴𑄑𑄚𑄴</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>𑄃𑄨𑄠𑄬𑄣𑄮𑄚𑄭𑄜𑄴</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>𑄃𑄬𑄓𑄴𑄟𑄧𑄚𑄴𑄑𑄮𑄚𑄴</exemplarCity>
 			</zone>
@@ -2816,29 +2224,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>𑄢𑄬𑄥𑄮𑄣𑄪𑄑𑄴</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>𑄣𑄬𑄭𑄚𑄨 𑄢𑄨𑄞𑄢𑄴</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>𑄢𑄳𑄠𑄋𑄴𑄇𑄨𑄚𑄴 𑄃𑄨𑄚𑄴𑄣𑄬𑄑𑄴</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>𑄇𑄮𑄢𑄣𑄴 𑄦𑄢𑄴𑄝𑄢𑄴</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>𑄐𑄚𑄴𑄓𑄢𑄴 𑄝𑄬</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>𑄚𑄨𑄛𑄨𑄉𑄮𑄚𑄴</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>𑄑𑄮𑄢𑄧𑄚𑄴𑄑𑄮</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>𑄃𑄨𑄇𑄱𑄣𑄪𑄃𑄨𑄑𑄴</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>𑄛𑄳𑄠𑄋𑄴𑄉𑄧𑄚𑄨𑄢𑄴𑄑𑄪𑄁</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>𑄟𑄧𑄋𑄴𑄑𑄮𑄚𑄴</exemplarCity>
@@ -3632,17 +3028,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>𑄘𑄢𑄴 𑄃𑄬𑄌𑄴 𑄥𑄣𑄟𑄴</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>𑄅𑄪𑄏𑄴𑄉𑄮𑄢𑄮𑄓𑄴</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>𑄇𑄨𑄠𑄬𑄞𑄴</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>𑄥𑄨𑄟𑄴𑄜𑄬𑄢𑄮𑄛𑄮𑄣𑄴</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>𑄎𑄬𑄛𑄮𑄢𑄮𑄎𑄭𑄠𑄭</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>𑄇𑄟𑄴𑄛𑄣</exemplarCity>
@@ -3661,9 +3051,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>𑄦𑄧𑄚𑄮𑄣𑄪𑄣𑄪</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>𑄎𑄧𑄚𑄴𑄥𑄳𑄑𑄧𑄚𑄴</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>𑄃𑄬𑄚𑄴𑄇𑄮𑄢𑄬𑄌𑄴</exemplarCity>
@@ -4355,11 +3742,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">𑄟𑄇𑄃𑄮 𑄉𑄧𑄢𑄧𑄟𑄴𑄇𑄣𑄧𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>𑄟𑄳𑄠𑄇𑄴𑄇𑄪𑄢𑄨 𑄉𑄭 𑄉𑄭 𑄞𑄬𑄘 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>𑄟𑄳𑄠𑄉𑄓𑄚𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
@@ -4397,13 +3779,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>𑄟𑄧𑄥𑄳𑄦𑄧𑄚𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄴 𑄟𑄬𑄇𑄴𑄥𑄨𑄇𑄮𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
-					<standard>𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄴 𑄟𑄬𑄇𑄴𑄥𑄨𑄇𑄮𑄢𑄴 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
-					<daylight>𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄛𑄧𑄏𑄨𑄟𑄴 𑄟𑄬𑄇𑄴𑄥𑄨𑄇𑄮𑄢𑄴 𑄘𑄨𑄚𑄮𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -4756,61 +4131,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native>cakm</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits>1</minimumGroupingDigits>
-		<symbols numberSystem="cakm">
-			<decimal>.</decimal>
-			<percentSign>%</percentSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-		</symbols>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator>:</timeSeparator>
-		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
 					<pattern>#,##,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
-			<decimalFormatLength type="short">
-				<decimalFormat>
-					<pattern type="1000000000" count="other" draft="contributed">0G</pattern>
-					<pattern type="10000000000" count="other" draft="contributed">00G</pattern>
-					<pattern type="100000000000" count="other" draft="contributed">000G</pattern>
-					<pattern type="1000000000000" count="other" draft="unconfirmed">0T</pattern>
-					<pattern type="10000000000000" count="other" draft="unconfirmed">00T</pattern>
-					<pattern type="100000000000000" count="other" draft="unconfirmed">000T</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="cakm">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="cakm">
 			<percentFormatLength>
 				<percentFormat>
@@ -4825,15 +4152,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
-		<currencyFormats numberSystem="cakm">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>#,##,##0.00¤</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">#,##,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -4856,43 +4174,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="AED">
 				<displayName>𑄎𑄧𑄙 𑄃𑄢𑄧𑄝𑄴 𑄃𑄟𑄨𑄢𑄖𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<displayName count="one">𑄎𑄧𑄙 𑄃𑄢𑄧𑄝𑄴 𑄃𑄟𑄨𑄢𑄖𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<displayName count="other">𑄎𑄧𑄙 𑄃𑄢𑄧𑄝𑄴 𑄃𑄟𑄨𑄢𑄖𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>𑄃𑄛𑄴𑄉𑄚𑄨 (𑄷𑄿𑄸𑄽-𑄸𑄶𑄶𑄸)</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName>𑄃𑄜𑄴𑄉𑄚𑄴 𑄃𑄜𑄴𑄉𑄚𑄨</displayName>
-				<displayName count="one">𑄃𑄜𑄴𑄉𑄚𑄴 𑄃𑄜𑄴𑄉𑄚𑄨</displayName>
-				<displayName count="other">𑄃𑄜𑄴𑄉𑄚𑄴 𑄃𑄜𑄴𑄉𑄚𑄨</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>𑄃𑄣𑄴𑄝𑄬𑄚𑄨𑄠𑄚𑄴 𑄣𑄬𑄇𑄴</displayName>
-				<displayName count="one">𑄃𑄣𑄴𑄝𑄬𑄚𑄨𑄠𑄚𑄴 𑄣𑄬𑄇𑄴</displayName>
-				<displayName count="other">𑄃𑄣𑄴𑄝𑄬𑄚𑄨𑄠𑄚𑄴 𑄣𑄬𑄇𑄴</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>𑄃𑄢𑄴𑄟𑄬𑄚𑄨𑄠𑄚𑄴 𑄘𑄳𑄢𑄟𑄴</displayName>
-				<displayName count="one">𑄃𑄢𑄴𑄟𑄬𑄚𑄨𑄠𑄚𑄴 𑄘𑄳𑄢𑄟𑄴</displayName>
-				<displayName count="other">𑄃𑄢𑄴𑄟𑄬𑄚𑄨𑄠𑄚𑄴 𑄘𑄳𑄢𑄟𑄴</displayName>
-				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>𑄚𑄬𑄘𑄢𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄃𑄳𑄠𑄚𑄴𑄑𑄨𑄣𑄨𑄠𑄚𑄴 𑄉𑄪𑄣𑄴𑄓𑄬𑄢𑄴</displayName>
-				<displayName count="one">𑄚𑄬𑄘𑄢𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄃𑄳𑄠𑄚𑄴𑄑𑄨𑄣𑄨𑄠𑄚𑄴 𑄉𑄪𑄣𑄴𑄓𑄬𑄢𑄴</displayName>
-				<displayName count="other">𑄚𑄬𑄘𑄢𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄃𑄳𑄠𑄚𑄴𑄑𑄨𑄣𑄨𑄠𑄚𑄴 𑄉𑄪𑄣𑄴𑄓𑄬𑄢𑄴</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>𑄃𑄳𑄠𑄋𑄴𑄉𑄮𑄣𑄚𑄴 𑄇𑄧𑄤𑄮𑄚𑄴𑄎</displayName>
-				<displayName count="one">𑄃𑄳𑄠𑄋𑄴𑄉𑄮𑄣𑄚𑄴 𑄇𑄧𑄤𑄮𑄚𑄴𑄎</displayName>
-				<displayName count="other">𑄃𑄳𑄠𑄋𑄴𑄉𑄮𑄣𑄚𑄴 𑄇𑄧𑄤𑄮𑄚𑄴𑄎</displayName>
-				<symbol>AOA</symbol>
-				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>𑄃𑄳𑄠𑄋𑄴𑄉𑄮𑄣𑄚𑄴 𑄇𑄧𑄤𑄮𑄚𑄴𑄎(𑄷𑄿𑄽𑄽-𑄷𑄿𑄿𑄶)</displayName>
@@ -4911,59 +4210,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ARS">
 				<displayName>𑄃𑄢𑄴𑄎𑄬𑄚𑄴𑄑𑄨𑄚 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄃𑄢𑄴𑄎𑄬𑄚𑄴𑄑𑄨𑄚 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄃𑄢𑄴𑄎𑄬𑄚𑄴𑄑𑄨𑄚 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>ARS</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄨𑄠𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄃𑄧𑄌𑄴𑄑𑄳𑄢𑄬𑄣𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>A$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>𑄃𑄢𑄪𑄝 𑄉𑄨𑄣𑄴𑄓𑄢𑄴</displayName>
-				<displayName count="one">𑄃𑄢𑄪𑄝 𑄉𑄨𑄣𑄴𑄓𑄢𑄴</displayName>
-				<displayName count="other">𑄃𑄢𑄪𑄝 𑄉𑄨𑄣𑄴𑄓𑄢𑄴</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>𑄃𑄎𑄢𑄴𑄝𑄭𑄎𑄚𑄴 𑄟𑄚𑄖𑄴 (𑄷𑄿𑄿𑄹-𑄸𑄶𑄶𑄼)</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName>𑄃𑄎𑄢𑄴𑄝𑄭𑄎𑄚𑄴 𑄟𑄚𑄖𑄴</displayName>
-				<displayName count="one">𑄃𑄎𑄢𑄴𑄝𑄭𑄎𑄚𑄴 𑄟𑄚𑄖𑄴</displayName>
-				<displayName count="other">𑄃𑄎𑄢𑄴𑄝𑄭𑄎𑄚𑄴 𑄟𑄚𑄖𑄴</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>𑄝𑄧𑄥𑄴𑄚𑄨𑄠 𑄃𑄳𑄃 𑄦𑄢𑄴𑄎𑄬𑄉𑄮𑄞𑄨𑄚 𑄘𑄨𑄚𑄢𑄴</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>𑄝𑄧𑄥𑄴𑄚𑄨𑄠 𑄃𑄳𑄃 𑄦𑄢𑄴𑄎𑄬𑄉𑄮𑄞𑄨𑄚 𑄟𑄢𑄴𑄇𑄴</displayName>
-				<displayName count="one">𑄝𑄧𑄥𑄴𑄚𑄨𑄠 𑄃𑄳𑄃 𑄦𑄢𑄴𑄎𑄬𑄉𑄮𑄞𑄨𑄚 𑄟𑄢𑄴𑄇𑄴</displayName>
-				<displayName count="other">𑄝𑄧𑄥𑄴𑄚𑄨𑄠 𑄃𑄳𑄃 𑄦𑄢𑄴𑄎𑄬𑄉𑄮𑄞𑄨𑄚 𑄟𑄢𑄴𑄇𑄴</displayName>
-				<symbol>BAM</symbol>
-				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>𑄝𑄢𑄴𑄝𑄬𑄓𑄮𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄢𑄴𑄝𑄬𑄓𑄮𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄢𑄴𑄝𑄬𑄓𑄮𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>BBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>𑄝𑄁𑄣𑄘𑄬𑄥𑄨 𑄑𑄬𑄋</displayName>
-				<displayName count="one">𑄝𑄁𑄣𑄘𑄬𑄥𑄨 𑄑𑄬𑄋</displayName>
-				<displayName count="other">𑄝𑄁𑄣𑄘𑄬𑄥𑄨 𑄑𑄬𑄋</displayName>
 				<symbol>৳</symbol>
-				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>𑄝𑄬𑄣𑄴𑄘𑄎𑄨𑄠𑄚𑄴 𑄜𑄳𑄢𑄋𑄴𑄇𑄴 (𑄝𑄮𑄘𑄮𑄣𑄬𑄭𑄛𑄢𑄬)</displayName>
@@ -4979,42 +4253,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BGN">
 				<displayName>𑄝𑄪𑄣𑄴𑄉𑄬𑄢𑄩𑄠𑄧 𑄚𑄱 𑄣𑄬𑄞𑄴</displayName>
-				<displayName count="one">𑄝𑄪𑄣𑄴𑄉𑄬𑄢𑄩𑄠𑄧 𑄚𑄱 𑄣𑄬𑄞𑄴</displayName>
-				<displayName count="other">𑄝𑄪𑄣𑄴𑄉𑄬𑄢𑄩𑄠𑄧 𑄚𑄱 𑄣𑄬𑄞𑄴</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>𑄝𑄦𑄧𑄢𑄭𑄚𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄦𑄧𑄢𑄭𑄚𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄦𑄧𑄢𑄭𑄚𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>𑄝𑄪𑄢𑄪𑄚𑄴𑄓𑄨 𑄜𑄳𑄢𑄋𑄴𑄇𑄴</displayName>
-				<displayName count="one">𑄝𑄪𑄢𑄪𑄚𑄴𑄓𑄨 𑄜𑄳𑄢𑄋𑄴𑄇𑄴</displayName>
-				<displayName count="other">𑄝𑄪𑄢𑄪𑄚𑄴𑄓𑄨 𑄜𑄳𑄢𑄋𑄴𑄇𑄴</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>𑄝𑄢𑄴𑄟𑄨𑄅𑄪𑄓𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄢𑄴𑄟𑄨𑄅𑄪𑄓𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄢𑄴𑄟𑄨𑄅𑄪𑄓𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>BMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>𑄝𑄳𑄢𑄪𑄚𑄬𑄭 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄳𑄢𑄪𑄚𑄬𑄭 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄳𑄢𑄪𑄚𑄬𑄭 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>BND</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>𑄝𑄧𑄣𑄨𑄞𑄨𑄠𑄚𑄮</displayName>
-				<displayName count="one">𑄝𑄧𑄣𑄨𑄞𑄨𑄠𑄚𑄮</displayName>
-				<displayName count="other">𑄝𑄧𑄣𑄨𑄞𑄨𑄠𑄚𑄮</displayName>
-				<symbol>BOB</symbol>
-				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>𑄝𑄧𑄣𑄨𑄞𑄨𑄠𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
@@ -5033,10 +4286,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BRL">
 				<displayName>𑄝𑄳𑄢𑄎𑄨𑄣𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄝𑄳𑄢𑄎𑄨𑄣𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄝𑄳𑄢𑄎𑄨𑄣𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<symbol>R$</symbol>
-				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>𑄝𑄳𑄢𑄎𑄨𑄣𑄨𑄠𑄚𑄴 𑄝𑄳𑄢𑄪𑄎𑄬𑄭𑄓𑄮 𑄚𑄮𑄞𑄮</displayName>
@@ -5046,102 +4295,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BSD">
 				<displayName>𑄝𑄦𑄟𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄦𑄟𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄦𑄟𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>BSD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>𑄞𑄪𑄑𑄚𑄨 𑄃𑄬𑄚𑄴𑄉𑄪𑄣𑄴𑄑𑄳𑄢𑄟𑄴𑄛𑄴</displayName>
-				<displayName count="one">𑄞𑄪𑄑𑄚𑄨 𑄃𑄬𑄚𑄴𑄉𑄪𑄣𑄴𑄑𑄳𑄢𑄟𑄴𑄛𑄴</displayName>
-				<displayName count="other">𑄞𑄪𑄑𑄚𑄨 𑄃𑄬𑄚𑄴𑄉𑄪𑄣𑄴𑄑𑄳𑄢𑄟𑄴𑄛𑄴</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>𑄝𑄧𑄢𑄴𑄟𑄨 𑄇𑄨𑄠𑄖𑄴</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>𑄝𑄧𑄖𑄴𑄥𑄮𑄠𑄚 𑄛𑄪𑄣</displayName>
-				<displayName count="one">𑄝𑄧𑄖𑄴𑄥𑄮𑄠𑄚 𑄛𑄪𑄣</displayName>
-				<displayName count="other">𑄝𑄧𑄖𑄴𑄥𑄮𑄠𑄚 𑄛𑄪𑄣</displayName>
-				<symbol>BWP</symbol>
-				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄢𑄪𑄝𑄬𑄣𑄴 (𑄷𑄿𑄿𑄺-𑄷𑄿𑄿𑄿)</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<symbol>BYN</symbol>
 				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴(𑄸𑄶𑄶𑄶-𑄸𑄶𑄷𑄼)</displayName>
-				<displayName count="one">𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴(𑄸𑄶𑄶𑄶-𑄸𑄶𑄷𑄼)</displayName>
-				<displayName count="other">𑄝𑄬𑄣𑄢𑄪𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴(𑄸𑄶𑄶𑄶-𑄸𑄶𑄷𑄼)</displayName>
-				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>𑄝𑄬𑄣𑄨𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄝𑄬𑄣𑄨𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄝𑄬𑄣𑄨𑄎𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>BZD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>𑄇𑄚𑄓𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄇𑄚𑄓𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄇𑄚𑄓𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>CA$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>𑄇𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄌𑄴 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
-				<displayName count="one">𑄇𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄌𑄴 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
-				<displayName count="other">𑄇𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄌𑄴 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>𑄥𑄭𑄪𑄥𑄴 𑄜𑄳𑄢𑄀</displayName>
-				<displayName count="one">𑄥𑄭𑄪𑄥𑄴 𑄜𑄳𑄢𑄀</displayName>
-				<displayName count="other">𑄥𑄭𑄪𑄥𑄴 𑄜𑄳𑄢𑄀</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLF">
 				<displayName>𑄌𑄨𑄣𑄨𑄠𑄚𑄴 𑄃𑄪𑄚𑄨𑄘𑄘𑄬𑄥𑄴 𑄘𑄨 𑄜𑄮𑄟𑄬𑄚𑄴𑄖𑄮</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>𑄌𑄨𑄣𑄨 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄌𑄨𑄣𑄨 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄌𑄨𑄣𑄨 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>CLP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>𑄌𑄩𑄚 𑄠𑄪𑄠𑄚𑄴</displayName>
-				<displayName count="one">𑄌𑄩𑄚 𑄠𑄪𑄠𑄚𑄴</displayName>
-				<displayName count="other">𑄌𑄩𑄚 𑄠𑄪𑄠𑄚𑄴</displayName>
-				<symbol>CN¥</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>𑄇𑄧𑄣𑄮𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄇𑄧𑄣𑄮𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄇𑄧𑄣𑄮𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>COP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>𑄃𑄪𑄚𑄨𑄘𑄖𑄴 𑄘𑄨 𑄞𑄳𑄠𑄣𑄮𑄢𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>𑄇𑄮𑄥𑄴𑄑𑄢𑄨𑄇 𑄇𑄮𑄣𑄮𑄚𑄴</displayName>
-				<displayName count="one">𑄇𑄮𑄥𑄴𑄑𑄢𑄨𑄇 𑄇𑄮𑄣𑄮𑄚𑄴</displayName>
-				<displayName count="other">𑄇𑄮𑄥𑄴𑄑𑄢𑄨𑄇 𑄇𑄮𑄣𑄮𑄚𑄴</displayName>
-				<symbol>CRC</symbol>
-				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>𑄛𑄪𑄢𑄮𑄚𑄨 𑄥𑄢𑄴𑄝𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
@@ -5151,33 +4353,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CUC">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄝𑄮𑄘𑄮𑄣𑄨𑄛𑄢𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄝𑄮𑄘𑄮𑄣𑄨𑄛𑄢𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄝𑄮𑄘𑄮𑄣𑄨𑄛𑄢𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>CUC</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄇𑄨𑄅𑄪𑄝𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>CUP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>𑄇𑄬𑄛𑄴 𑄞𑄢𑄴𑄘𑄬 𑄃𑄬𑄥𑄴𑄇𑄪𑄓𑄮</displayName>
-				<displayName count="one">𑄇𑄬𑄛𑄴 𑄞𑄢𑄴𑄘𑄬 𑄃𑄬𑄥𑄴𑄇𑄪𑄓𑄮</displayName>
-				<displayName count="other">𑄇𑄬𑄛𑄴 𑄞𑄢𑄴𑄘𑄬 𑄃𑄬𑄥𑄴𑄇𑄪𑄓𑄮</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>𑄥𑄭𑄛𑄳𑄢𑄥𑄴 𑄛𑄃𑄪𑄚𑄴𑄓𑄴</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName>𑄌𑄬𑄇𑄴 𑄛𑄳𑄢𑄧𑄎𑄖𑄧𑄚𑄴𑄖𑄳𑄢𑄧 𑄇𑄮𑄢𑄪𑄚</displayName>
-				<displayName count="one">𑄌𑄬𑄇𑄴 𑄛𑄳𑄢𑄧𑄎𑄖𑄧𑄚𑄴𑄖𑄳𑄢𑄧 𑄇𑄮𑄢𑄪𑄚</displayName>
-				<displayName count="other">𑄌𑄬𑄇𑄴 𑄛𑄳𑄢𑄧𑄎𑄖𑄧𑄚𑄴𑄖𑄳𑄢𑄧 𑄇𑄮𑄢𑄪𑄚</displayName>
-				<symbol>CZK</symbol>
-				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>𑄛𑄪𑄉𑄬𑄘𑄨 𑄎𑄢𑄴𑄟𑄚𑄴 𑄟𑄢𑄴𑄇𑄴</displayName>
@@ -5189,27 +4376,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄎𑄨𑄝𑄪𑄖𑄨 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
 				<displayName count="one">𑄎𑄨𑄝𑄪𑄖𑄨 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
 				<displayName count="other">𑄎𑄨𑄝𑄪𑄖𑄨 𑄜𑄳𑄢𑄁</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>𑄓𑄳𑄠𑄚𑄨𑄌𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="one">𑄓𑄳𑄠𑄚𑄨𑄌𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="other">𑄓𑄳𑄠𑄚𑄨𑄌𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<symbol>DKK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>𑄓𑄮𑄟𑄨𑄚𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄓𑄮𑄟𑄨𑄚𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄓𑄮𑄟𑄨𑄚𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>DOP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>𑄃𑄢𑄴𑄎𑄬𑄢𑄩𑄠𑄧 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄃𑄢𑄴𑄎𑄬𑄢𑄩𑄠𑄧 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄃𑄢𑄴𑄎𑄬𑄢𑄩𑄠𑄧 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>𑄃𑄨𑄇𑄪𑄠𑄓𑄮𑄢𑄴 𑄥𑄪𑄇𑄳𑄢𑄬</displayName>
@@ -5222,16 +4397,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EGP">
 				<displayName>𑄟𑄨𑄥𑄧𑄢𑄩𑄠𑄴 𑄛𑄅𑄪𑄚𑄴𑄓𑄴</displayName>
-				<displayName count="one">𑄟𑄨𑄥𑄧𑄢𑄩𑄠𑄴 𑄛𑄅𑄪𑄚𑄴𑄓𑄴</displayName>
-				<displayName count="other">𑄟𑄨𑄥𑄧𑄢𑄩𑄠𑄴 𑄛𑄅𑄪𑄚𑄴𑄓𑄴</displayName>
-				<symbol>EGP</symbol>
-				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>𑄃𑄬𑄢𑄨𑄑𑄳𑄢𑄨𑄠𑄬𑄚𑄴 𑄚𑄇𑄴𑄜</displayName>
-				<displayName count="one">𑄃𑄬𑄢𑄨𑄑𑄳𑄢𑄨𑄠𑄬𑄚𑄴 𑄚𑄇𑄴𑄜</displayName>
-				<displayName count="other">𑄃𑄬𑄢𑄨𑄑𑄳𑄢𑄨𑄠𑄬𑄚𑄴 𑄚𑄇𑄴𑄜</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>𑄥𑄳𑄛𑄳𑄠𑄚𑄨𑄥𑄴 𑄛𑄬𑄥𑄬𑄖 (𑄃𑄬𑄇𑄴𑄇𑄭𑄪 𑄦𑄨𑄎𑄬𑄛𑄴)</displayName>
@@ -5244,82 +4412,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ETB">
 				<displayName>𑄃𑄨𑄗𑄨𑄃𑄮𑄛𑄨𑄠𑄚𑄴 𑄝𑄨𑄢𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄗𑄨𑄃𑄮𑄛𑄨𑄠𑄚𑄴 𑄝𑄨𑄢𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄗𑄨𑄃𑄮𑄛𑄨𑄠𑄚𑄴 𑄝𑄨𑄢𑄴</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>𑄃𑄨𑄅𑄪𑄢𑄮</displayName>
-				<displayName count="one">𑄃𑄨𑄅𑄪𑄢𑄮</displayName>
-				<displayName count="other">𑄃𑄨𑄅𑄪𑄢𑄮</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>𑄜𑄨𑄚𑄨𑄥𑄴 𑄟𑄢𑄴𑄇</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>𑄜𑄨𑄎𑄨 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄜𑄨𑄎𑄨 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄜𑄨𑄎𑄨 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>FJD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>𑄜𑄧𑄇𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬 𑄛𑄃𑄪𑄚𑄴𑄓𑄴</displayName>
-				<displayName count="one">𑄜𑄧𑄇𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬 𑄛𑄃𑄪𑄚𑄴𑄓𑄴</displayName>
-				<displayName count="other">𑄜𑄧𑄇𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬 𑄛𑄃𑄪𑄚𑄴𑄓𑄴</displayName>
-				<symbol>FKP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>𑄜𑄧𑄢𑄥𑄨 𑄜𑄳𑄢𑄁𑄇𑄴</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄛𑄃𑄪𑄚𑄴</displayName>
-				<displayName count="one">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄛𑄃𑄪𑄚𑄴</displayName>
-				<displayName count="other">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄛𑄃𑄪𑄚𑄴</displayName>
-				<symbol>£</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄇𑄪𑄛𑄧𑄚𑄴 𑄣𑄢𑄨𑄖𑄴</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
-				<displayName count="one">𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
-				<displayName count="other">𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
-				<symbol>GEL</symbol>
-				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>𑄊𑄚 𑄥𑄬𑄓𑄨 (𑄷𑄿𑄽𑄿-𑄸𑄶𑄶𑄽)</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>𑄊𑄚 𑄥𑄬𑄓𑄨</displayName>
-				<displayName count="one">𑄊𑄚 𑄥𑄬𑄓𑄨</displayName>
-				<displayName count="other">𑄊𑄚 𑄥𑄬𑄓𑄨</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>𑄎𑄨𑄝𑄳𑄢𑄣𑄴𑄑𑄢𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄎𑄨𑄝𑄳𑄢𑄣𑄴𑄑𑄢𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄎𑄨𑄝𑄳𑄢𑄣𑄴𑄑𑄢𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>GIP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>𑄉𑄟𑄴𑄝𑄨𑄠 𑄓𑄣𑄥𑄨</displayName>
-				<displayName count="one">𑄉𑄟𑄴𑄝𑄨𑄠 𑄓𑄣𑄥𑄨</displayName>
-				<displayName count="other">𑄉𑄟𑄴𑄝𑄨𑄠 𑄓𑄣𑄥𑄨</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>𑄉𑄨𑄚𑄨 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄉𑄨𑄚𑄨 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄉𑄨𑄚𑄨 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<symbol>GNF</symbol>
-				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>𑄉𑄨𑄚𑄨 𑄥𑄭𑄣𑄨</displayName>
@@ -5332,10 +4463,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GTQ">
 				<displayName>𑄉𑄪𑄠𑄖𑄬𑄟𑄣𑄧 𑄇𑄪𑄠𑄬𑄖𑄴𑄎𑄣𑄴</displayName>
-				<displayName count="one">𑄉𑄪𑄠𑄖𑄬𑄟𑄣𑄧 𑄇𑄪𑄠𑄬𑄖𑄴𑄎𑄣𑄴</displayName>
-				<displayName count="other">𑄉𑄪𑄠𑄖𑄬𑄟𑄣𑄧 𑄇𑄪𑄠𑄬𑄖𑄴𑄎𑄣𑄴</displayName>
-				<symbol>GTQ</symbol>
-				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>𑄛𑄧𑄢𑄴𑄖𑄪𑄉𑄨𑄎𑄴 𑄉𑄨𑄚𑄨 𑄃𑄬𑄥𑄴𑄇𑄪𑄓𑄮</displayName>
@@ -5345,54 +4472,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GYD">
 				<displayName>𑄉𑄭𑄠𑄬𑄚 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄉𑄭𑄠𑄬𑄚 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄉𑄭𑄠𑄬𑄚 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>GYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>𑄦𑄧𑄁𑄇𑄧𑄁 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄦𑄧𑄁𑄇𑄧𑄁 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄦𑄧𑄁𑄇𑄧𑄁 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>HK$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>𑄦𑄪𑄚𑄴𑄓𑄪𑄢𑄥𑄴 𑄣𑄬𑄟𑄴𑄛𑄨𑄢</displayName>
-				<displayName count="one">𑄦𑄪𑄚𑄴𑄓𑄪𑄢𑄥𑄴 𑄣𑄬𑄟𑄴𑄛𑄨𑄢</displayName>
-				<displayName count="other">𑄦𑄪𑄚𑄴𑄓𑄪𑄢𑄥𑄴 𑄣𑄬𑄟𑄴𑄛𑄨𑄢</displayName>
-				<symbol>HNL</symbol>
-				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>𑄇𑄳𑄢𑄮𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName>𑄇𑄳𑄢𑄮𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄇𑄪𑄚</displayName>
-				<displayName count="one">𑄇𑄳𑄢𑄮𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄇𑄪𑄚</displayName>
-				<displayName count="other">𑄇𑄳𑄢𑄮𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄇𑄪𑄚</displayName>
-				<symbol>HRK</symbol>
-				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>𑄦𑄭𑄖𑄨 𑄉𑄯𑄢𑄴𑄘𑄬</displayName>
-				<displayName count="one">𑄦𑄭𑄖𑄨 𑄉𑄯𑄢𑄴𑄘𑄬</displayName>
-				<displayName count="other">𑄦𑄭𑄖𑄨 𑄉𑄯𑄢𑄴𑄘𑄬</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>𑄦𑄋𑄴𑄉𑄬𑄢𑄨𑄠𑄚𑄴 𑄜𑄮𑄢𑄨𑄚𑄳𑄑𑄴</displayName>
-				<displayName count="one">𑄦𑄋𑄴𑄉𑄬𑄢𑄨𑄠𑄚𑄴 𑄜𑄮𑄢𑄨𑄚𑄳𑄑𑄴</displayName>
-				<displayName count="other">𑄦𑄋𑄴𑄉𑄬𑄢𑄨𑄠𑄚𑄴 𑄜𑄮𑄢𑄨𑄚𑄳𑄑𑄴</displayName>
-				<symbol>HUF</symbol>
-				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>𑄃𑄨𑄚𑄴𑄘𑄮𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨𑄠𑄳𑄦𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄚𑄴𑄘𑄮𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨𑄠𑄳𑄦𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄚𑄴𑄘𑄮𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨𑄠𑄳𑄦𑄴</displayName>
-				<symbol>IDR</symbol>
-				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>𑄃𑄨𑄢𑄨𑄌𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
@@ -5402,156 +4502,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ILS">
 				<displayName>𑄃𑄨𑄥𑄳𑄢𑄭𑄣𑄨 𑄚𑄱 𑄥𑄬𑄇𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄥𑄳𑄢𑄭𑄣𑄨 𑄚𑄱 𑄥𑄬𑄇𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄥𑄳𑄢𑄭𑄣𑄨 𑄚𑄱 𑄥𑄬𑄇𑄬𑄣𑄴</displayName>
-				<symbol>₪</symbol>
-				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>𑄃𑄨𑄚𑄴𑄘𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄃𑄨𑄚𑄴𑄘𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄃𑄨𑄚𑄴𑄘𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>₹</symbol>
-				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>𑄃𑄨𑄢𑄇𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄢𑄇𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄢𑄇𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>𑄃𑄨𑄢𑄚𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄢𑄚𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄢𑄚𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>𑄃𑄭𑄥𑄴𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="one">𑄃𑄭𑄥𑄴𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="other">𑄃𑄭𑄥𑄴𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<symbol>ISK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>𑄃𑄨𑄖𑄣𑄨𑄠𑄧 𑄣𑄨𑄢</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>𑄎𑄟𑄭𑄇𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄎𑄟𑄭𑄇𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄎𑄟𑄭𑄇𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>JMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>𑄎𑄧𑄢𑄴𑄓𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄎𑄧𑄢𑄴𑄓𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄎𑄧𑄢𑄴𑄓𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>𑄎𑄛𑄚𑄨 𑄃𑄨𑄠𑄬𑄚𑄴</displayName>
-				<displayName count="one">𑄎𑄛𑄚𑄨 𑄃𑄨𑄠𑄬𑄚𑄴</displayName>
-				<displayName count="other">𑄎𑄛𑄚𑄨 𑄃𑄨𑄠𑄬𑄚𑄴</displayName>
-				<symbol>JP¥</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>𑄇𑄬𑄚𑄨𑄠𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="one">𑄇𑄬𑄚𑄨𑄠𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="other">𑄇𑄬𑄚𑄨𑄠𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>𑄇𑄨𑄢𑄴𑄉𑄨𑄎𑄴𑄃𑄨𑄥𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄴</displayName>
-				<displayName count="one">𑄇𑄨𑄢𑄴𑄉𑄨𑄎𑄴𑄃𑄨𑄥𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄴</displayName>
-				<displayName count="other">𑄇𑄨𑄢𑄴𑄉𑄨𑄎𑄴𑄃𑄨𑄥𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄴</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>𑄇𑄧𑄟𑄴𑄝𑄮𑄓𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄇𑄧𑄟𑄴𑄝𑄮𑄓𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄇𑄧𑄟𑄴𑄝𑄮𑄓𑄨𑄠𑄚𑄴 𑄢𑄨𑄠𑄬𑄣𑄴</displayName>
-				<symbol>KHR</symbol>
-				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>𑄇𑄧𑄟𑄴𑄝𑄮𑄢𑄮 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄇𑄧𑄟𑄴𑄝𑄮𑄢𑄮 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄇𑄧𑄟𑄴𑄝𑄮𑄢𑄮 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<symbol>KMF</symbol>
-				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<displayName count="one">𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<displayName count="other">𑄃𑄪𑄖𑄴𑄖𑄮𑄢𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<symbol>KPW</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>𑄘𑄧𑄉𑄨𑄚𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<displayName count="one">𑄘𑄧𑄉𑄨𑄚𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<displayName count="other">𑄘𑄧𑄉𑄨𑄚𑄴 𑄇𑄮𑄢𑄨𑄠𑄢𑄴 𑄃𑄮𑄚𑄴</displayName>
-				<symbol>₩</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>𑄇𑄪𑄠𑄬𑄖𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄇𑄪𑄠𑄬𑄖𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄇𑄪𑄠𑄬𑄖𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>𑄇𑄬𑄟𑄳𑄠𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄇𑄬𑄟𑄳𑄠𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄇𑄬𑄟𑄳𑄠𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>KYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>𑄇𑄎𑄈𑄥𑄴𑄖𑄚𑄨 𑄑𑄬𑄋𑄴𑄉𑄬</displayName>
-				<displayName count="one">𑄇𑄎𑄈𑄥𑄴𑄖𑄚𑄨 𑄑𑄬𑄋𑄴𑄉𑄬</displayName>
-				<displayName count="other">𑄇𑄎𑄈𑄥𑄴𑄖𑄚𑄨 𑄑𑄬𑄋𑄴𑄉𑄬</displayName>
-				<symbol>KZT</symbol>
-				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>𑄣𑄬𑄅𑄪𑄥𑄚𑄴 𑄇𑄨𑄛𑄴</displayName>
-				<displayName count="one">𑄣𑄬𑄅𑄪𑄥𑄚𑄴 𑄇𑄨𑄛𑄴</displayName>
-				<displayName count="other">𑄣𑄬𑄅𑄪𑄥𑄚𑄴 𑄇𑄨𑄛𑄴</displayName>
-				<symbol>LAK</symbol>
-				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>𑄣𑄬𑄝𑄚𑄨𑄎𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄣𑄬𑄝𑄚𑄨𑄎𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄣𑄬𑄝𑄚𑄨𑄎𑄴 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>LBP</symbol>
-				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>𑄥𑄳𑄢𑄨𑄣𑄧𑄁𑄇𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄥𑄳𑄢𑄨𑄣𑄧𑄁𑄇𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄥𑄳𑄢𑄨𑄣𑄧𑄁𑄇𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>LKR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>𑄣𑄨𑄝𑄬𑄢𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄣𑄨𑄝𑄬𑄢𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄣𑄨𑄝𑄬𑄢𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>LRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>𑄣𑄬𑄥𑄪𑄑𑄪 𑄣𑄮𑄑𑄨</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>𑄣𑄨𑄗𑄭𑄪𑄚𑄨𑄠𑄚𑄴 𑄣𑄨𑄑</displayName>
-				<displayName count="one">𑄣𑄨𑄗𑄭𑄪𑄚𑄨𑄠𑄚𑄴 𑄣𑄨𑄑</displayName>
-				<displayName count="other">𑄣𑄨𑄗𑄭𑄪𑄚𑄨𑄠𑄚𑄴 𑄣𑄨𑄑</displayName>
-				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>𑄣𑄨𑄗𑄭𑄪𑄚𑄨𑄠𑄚𑄴 𑄑𑄣𑄮𑄚𑄳𑄠𑄥𑄴</displayName>
@@ -5567,78 +4586,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LVL">
 				<displayName>𑄣𑄳𑄠𑄑𑄴𑄞𑄨𑄠𑄚𑄴 𑄣𑄳𑄠𑄑𑄴𑄥𑄴</displayName>
-				<displayName count="one">𑄣𑄳𑄠𑄑𑄴𑄞𑄨𑄠𑄚𑄴 𑄣𑄳𑄠𑄑𑄴𑄥𑄴</displayName>
-				<displayName count="other">𑄣𑄳𑄠𑄑𑄴𑄞𑄨𑄠𑄚𑄴 𑄣𑄳𑄠𑄑𑄴𑄥𑄴</displayName>
-				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>𑄣𑄳𑄠𑄑𑄴𑄞𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄧𑄣𑄴</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>𑄣𑄨𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄣𑄨𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄣𑄨𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>𑄟𑄮𑄢𑄮𑄇𑄳𑄦𑄚𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<displayName count="one">𑄟𑄮𑄢𑄮𑄇𑄳𑄦𑄚𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<displayName count="other">𑄟𑄮𑄢𑄮𑄇𑄳𑄦𑄚𑄴 𑄘𑄨𑄢𑄴𑄦𑄟𑄴</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>𑄟𑄮𑄢𑄮𑄇𑄳𑄦𑄚𑄴 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>𑄟𑄮𑄣𑄴𑄓𑄮𑄞𑄚𑄴 𑄣𑄬𑄠𑄪</displayName>
-				<displayName count="one">𑄟𑄮𑄣𑄴𑄓𑄮𑄞𑄚𑄴 𑄣𑄬𑄠𑄪</displayName>
-				<displayName count="other">𑄟𑄮𑄣𑄴𑄓𑄮𑄞𑄚𑄴 𑄣𑄬𑄠𑄪</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>𑄟𑄘𑄉𑄌𑄴𑄇𑄢𑄴 𑄃𑄢𑄨𑄠𑄢𑄨</displayName>
-				<displayName count="one">𑄟𑄘𑄉𑄌𑄴𑄇𑄢𑄴 𑄃𑄢𑄨𑄠𑄢𑄨</displayName>
-				<displayName count="other">𑄟𑄘𑄉𑄌𑄴𑄇𑄢𑄴 𑄃𑄢𑄨𑄠𑄢𑄨</displayName>
-				<symbol>MGA</symbol>
-				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>𑄟𑄘𑄉𑄌𑄴𑄇𑄢𑄴 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>𑄟𑄳𑄠𑄥𑄬𑄓𑄮𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄟𑄳𑄠𑄥𑄬𑄓𑄮𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄟𑄳𑄠𑄥𑄬𑄓𑄮𑄚𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>𑄟𑄣𑄨 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>𑄟𑄠𑄚𑄴𑄟𑄢𑄴 𑄇𑄨𑄠𑄖𑄴</displayName>
-				<displayName count="one">𑄟𑄠𑄚𑄴𑄟𑄢𑄴 𑄇𑄨𑄠𑄖𑄴</displayName>
-				<displayName count="other">𑄟𑄠𑄚𑄴𑄟𑄢𑄴 𑄇𑄨𑄠𑄖𑄴</displayName>
-				<symbol>MMK</symbol>
-				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>𑄟𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄠𑄚𑄴 𑄖𑄪𑄇𑄴𑄢𑄨𑄇𑄴</displayName>
-				<displayName count="one">𑄟𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄠𑄚𑄴 𑄖𑄪𑄇𑄴𑄢𑄨𑄇𑄴</displayName>
-				<displayName count="other">𑄟𑄧𑄋𑄴𑄉𑄮𑄣𑄨𑄠𑄚𑄴 𑄖𑄪𑄇𑄴𑄢𑄨𑄇𑄴</displayName>
-				<symbol>MNT</symbol>
-				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>𑄟𑄳𑄠𑄇𑄳𑄠𑄃𑄮 𑄛𑄑𑄇</displayName>
-				<displayName count="one">𑄟𑄳𑄠𑄇𑄳𑄠𑄃𑄮 𑄛𑄑𑄇</displayName>
-				<displayName count="other">𑄟𑄳𑄠𑄇𑄳𑄠𑄃𑄮 𑄛𑄑𑄇</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
-				<displayName count="one">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
-				<displayName count="other">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄃𑄮𑄃𑄪𑄉𑄭𑄪𑄠</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>𑄟𑄣𑄴𑄑 𑄣𑄨𑄢</displayName>
@@ -5648,29 +4634,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MUR">
 				<displayName>𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄟𑄯𑄢𑄨𑄖𑄚𑄨𑄠𑄚𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>MUR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>𑄟𑄣𑄴𑄘𑄨𑄞𑄨𑄠𑄚𑄴 𑄢𑄪𑄜𑄨𑄠</displayName>
-				<displayName count="one">𑄟𑄣𑄴𑄘𑄨𑄞𑄨𑄠𑄚𑄴 𑄢𑄪𑄜𑄨𑄠</displayName>
-				<displayName count="other">𑄟𑄣𑄴𑄘𑄨𑄞𑄨𑄠𑄚𑄴 𑄢𑄪𑄜𑄨𑄠</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>𑄟𑄣𑄃𑄪𑄃𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌𑄴</displayName>
-				<displayName count="one">𑄟𑄣𑄃𑄪𑄃𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌𑄴</displayName>
-				<displayName count="other">𑄟𑄣𑄃𑄪𑄃𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌𑄴</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>𑄟𑄳𑄠𑄇𑄴𑄥𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄟𑄳𑄠𑄇𑄴𑄥𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄟𑄳𑄠𑄇𑄴𑄥𑄨𑄇𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>MX$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>𑄟𑄳𑄠𑄇𑄴𑄥𑄨𑄇𑄚𑄴 𑄥𑄨𑄣𑄴𑄞𑄢𑄴 𑄛𑄬𑄥𑄮 (𑄷𑄾𑄼𑄷-𑄷𑄿𑄿𑄸)</displayName>
@@ -5680,10 +4652,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MYR">
 				<displayName>𑄟𑄣𑄴𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄨𑄁𑄉𑄨𑄖𑄴</displayName>
-				<displayName count="one">𑄟𑄣𑄴𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄨𑄁𑄉𑄨𑄖𑄴</displayName>
-				<displayName count="other">𑄟𑄣𑄴𑄠𑄬𑄥𑄨𑄠𑄚𑄴 𑄢𑄨𑄁𑄉𑄨𑄖𑄴</displayName>
-				<symbol>MYR</symbol>
-				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>𑄟𑄮𑄎𑄟𑄴𑄝𑄨𑄇𑄴 𑄃𑄬𑄥𑄴𑄇𑄪𑄓𑄮</displayName>
@@ -5693,110 +4661,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MZN">
 				<displayName>𑄟𑄮𑄎𑄟𑄴𑄝𑄨𑄇𑄴 𑄟𑄬𑄑𑄨𑄇𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄟𑄮𑄎𑄟𑄴𑄝𑄨𑄇𑄴 𑄟𑄬𑄑𑄨𑄇𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄟𑄮𑄎𑄟𑄴𑄝𑄨𑄇𑄴 𑄟𑄬𑄑𑄨𑄇𑄬𑄣𑄴</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>𑄚𑄟𑄨𑄝𑄨𑄠 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄚𑄟𑄨𑄝𑄨𑄠 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄚𑄟𑄨𑄝𑄨𑄠 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>NAD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>𑄚𑄭𑄎𑄬𑄢𑄨𑄠𑄚𑄴 𑄚𑄠𑄴𑄢</displayName>
-				<displayName count="one">𑄚𑄭𑄎𑄬𑄢𑄨𑄠𑄚𑄴 𑄚𑄠𑄴𑄢</displayName>
-				<displayName count="other">𑄚𑄭𑄎𑄬𑄢𑄨𑄠𑄚𑄴 𑄚𑄠𑄴𑄢</displayName>
-				<symbol>NGN</symbol>
-				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>𑄚𑄨𑄇𑄢𑄉𑄪𑄠𑄚 𑄇𑄧𑄢𑄴𑄓𑄮𑄝(𑄷𑄿𑄾𑄾-𑄷𑄿𑄿𑄷)</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>𑄚𑄨𑄇𑄢𑄉𑄪𑄠𑄚 𑄇𑄧𑄢𑄴𑄓𑄮𑄝</displayName>
-				<displayName count="one">𑄚𑄨𑄇𑄢𑄉𑄪𑄠𑄚 𑄇𑄧𑄢𑄴𑄓𑄮𑄝</displayName>
-				<displayName count="other">𑄚𑄨𑄇𑄢𑄉𑄪𑄠𑄚 𑄇𑄧𑄢𑄴𑄓𑄮𑄝</displayName>
-				<symbol>NIO</symbol>
-				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>𑄚𑄬𑄘𑄢𑄴𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄉𑄪𑄣𑄴𑄓𑄬𑄢𑄴</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName>𑄚𑄧𑄢𑄴𑄃𑄮𑄠𑄬 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="one">𑄚𑄧𑄢𑄴𑄃𑄮𑄠𑄬 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<displayName count="other">𑄚𑄧𑄢𑄴𑄃𑄮𑄠𑄬 𑄇𑄳𑄢𑄯𑄚𑄴</displayName>
-				<symbol>NOK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>𑄚𑄬𑄛𑄣𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄚𑄬𑄛𑄣𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄚𑄬𑄛𑄣𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>NPR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>𑄚𑄨𑄃𑄪𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄚𑄨𑄃𑄪𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄚𑄨𑄃𑄪𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>NZ$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>𑄃𑄮𑄟𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="one">𑄃𑄮𑄟𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="other">𑄃𑄮𑄟𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>𑄛𑄚𑄟 𑄝𑄬𑄣𑄴𑄝𑄮𑄠</displayName>
-				<displayName count="one">𑄛𑄚𑄟 𑄝𑄬𑄣𑄴𑄝𑄮𑄠</displayName>
-				<displayName count="other">𑄛𑄚𑄟 𑄝𑄬𑄣𑄴𑄝𑄮𑄠</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄃𑄨𑄚𑄴𑄖𑄨</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName>𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴</displayName>
-				<displayName count="one">𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴</displayName>
-				<displayName count="other">𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴(𑄷𑄾𑄼𑄹-𑄷𑄿𑄼𑄻)</displayName>
-				<displayName count="one">𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴(𑄷𑄾𑄼𑄹-𑄷𑄿𑄼𑄻)</displayName>
-				<displayName count="other">𑄛𑄬𑄢𑄪𑄞𑄨𑄠𑄚𑄴 𑄥𑄮𑄣𑄴(𑄷𑄾𑄼𑄹-𑄷𑄿𑄼𑄻)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>𑄛𑄛𑄱 𑄚𑄨𑄃𑄪 𑄉𑄨𑄚𑄨 𑄉𑄨𑄚𑄨𑄠𑄚𑄴 𑄇𑄨𑄚</displayName>
-				<displayName count="one">𑄛𑄛𑄱 𑄚𑄨𑄃𑄪 𑄉𑄨𑄚𑄨 𑄉𑄨𑄚𑄨𑄠𑄚𑄴 𑄇𑄨𑄚</displayName>
-				<displayName count="other">𑄛𑄛𑄱 𑄚𑄨𑄃𑄪 𑄉𑄨𑄚𑄨 𑄉𑄨𑄚𑄨𑄠𑄚𑄴 𑄇𑄨𑄚</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>𑄜𑄨𑄣𑄨𑄛𑄭𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄜𑄨𑄣𑄨𑄛𑄭𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄜𑄨𑄣𑄨𑄛𑄭𑄚𑄴 𑄛𑄬𑄥𑄮</displayName>
 				<symbol>PHP</symbol>
-				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>𑄛𑄇𑄨𑄥𑄴𑄖𑄚𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄛𑄇𑄨𑄥𑄴𑄖𑄚𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄛𑄇𑄨𑄥𑄴𑄖𑄚𑄨 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>PKR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>𑄛𑄮𑄣𑄨𑄌𑄴 𑄎𑄧𑄣𑄮𑄑𑄨</displayName>
-				<displayName count="one">𑄛𑄮𑄣𑄨𑄌𑄴 𑄎𑄧𑄣𑄮𑄑𑄨</displayName>
-				<displayName count="other">𑄛𑄮𑄣𑄨𑄌𑄴 𑄎𑄧𑄣𑄮𑄑𑄨</displayName>
-				<symbol>PLN</symbol>
-				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>𑄛𑄮𑄣𑄨𑄌𑄴 𑄎𑄧𑄣𑄮𑄑𑄨(𑄷𑄿𑄻𑄶-𑄷𑄿𑄿𑄻)</displayName>
@@ -5806,16 +4722,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="PYG">
 				<displayName>𑄛𑄳𑄠𑄢𑄉𑄪𑄠𑄚𑄴 𑄉𑄪𑄠𑄢𑄚𑄨</displayName>
-				<displayName count="one">𑄛𑄳𑄠𑄢𑄉𑄪𑄠𑄚𑄴 𑄉𑄪𑄠𑄢𑄚𑄨</displayName>
-				<displayName count="other">𑄛𑄳𑄠𑄢𑄉𑄪𑄠𑄚𑄴 𑄉𑄪𑄠𑄢𑄚𑄨</displayName>
-				<symbol>PYG</symbol>
-				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>𑄇𑄖𑄢𑄴 𑄢𑄨𑄠𑄳𑄠𑄣𑄴</displayName>
-				<displayName count="one">𑄇𑄖𑄢𑄴 𑄢𑄨𑄠𑄳𑄠𑄣𑄴</displayName>
-				<displayName count="other">𑄇𑄖𑄢𑄴 𑄢𑄨𑄠𑄳𑄠𑄣𑄴</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>𑄢𑄮𑄓𑄬𑄥𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
@@ -5825,84 +4734,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="RON">
 				<displayName>𑄢𑄪𑄟𑄚𑄨𑄠 𑄣𑄬𑄠𑄪</displayName>
-				<displayName count="one">𑄢𑄪𑄟𑄚𑄨𑄠 𑄣𑄬𑄠𑄪</displayName>
-				<displayName count="other">𑄢𑄪𑄟𑄚𑄨𑄠 𑄣𑄬𑄠𑄪</displayName>
-				<symbol>RON</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>𑄥𑄢𑄴𑄝𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄥𑄢𑄴𑄝𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄥𑄢𑄴𑄝𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>𑄢𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<displayName count="one">𑄢𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<displayName count="other">𑄢𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄬𑄣𑄴</displayName>
-				<symbol>RUB</symbol>
-				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>𑄢𑄥𑄨𑄠𑄚𑄴 𑄢𑄪𑄝𑄧𑄣𑄴(𑄷𑄿𑄿𑄷-𑄷𑄿𑄿𑄾)</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>𑄢𑄪𑄠𑄚𑄴𑄓𑄚𑄴 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄢𑄪𑄠𑄚𑄴𑄓𑄚𑄴 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄢𑄪𑄠𑄚𑄴𑄓𑄚𑄴 𑄜𑄳𑄢𑄋𑄳𑄇𑄴</displayName>
-				<symbol>RWF</symbol>
-				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>𑄥𑄯𑄘𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="one">𑄥𑄯𑄘𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="other">𑄥𑄯𑄘𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>𑄥𑄧𑄣𑄮𑄟𑄧𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄥𑄧𑄣𑄮𑄟𑄧𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄥𑄧𑄣𑄮𑄟𑄧𑄚𑄴 𑄉𑄭 𑄉𑄭 𑄞𑄨𑄘𑄬𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>SBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>𑄥𑄬𑄠𑄧𑄥𑄬𑄣𑄴𑄣𑄮𑄃𑄨𑄌𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="one">𑄥𑄬𑄠𑄧𑄥𑄬𑄣𑄴𑄣𑄮𑄃𑄨𑄌𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<displayName count="other">𑄥𑄬𑄠𑄧𑄥𑄬𑄣𑄴𑄣𑄮𑄃𑄨𑄌𑄴 𑄢𑄪𑄛𑄨</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>𑄛𑄪𑄢𑄮𑄚𑄨 𑄥𑄪𑄘𑄚𑄨 𑄘𑄨𑄚𑄢𑄴</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>𑄛𑄪𑄢𑄮𑄚𑄨 𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>𑄥𑄭𑄪𑄓𑄨𑄥𑄴 𑄇𑄳𑄢𑄮𑄚</displayName>
-				<displayName count="one">𑄥𑄭𑄪𑄓𑄨𑄥𑄴 𑄇𑄳𑄢𑄮𑄚</displayName>
-				<displayName count="other">𑄥𑄭𑄪𑄓𑄨𑄥𑄴 𑄇𑄳𑄢𑄮𑄚</displayName>
-				<symbol>SEK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>𑄥𑄨𑄁𑄉𑄛𑄪𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄥𑄨𑄁𑄉𑄛𑄪𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄥𑄨𑄁𑄉𑄛𑄪𑄢𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>SGD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>𑄥𑄬𑄚𑄳𑄑𑄴 𑄦𑄬𑄣𑄬𑄚 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄥𑄬𑄚𑄴 𑄦𑄬𑄣𑄬𑄚 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
 				<displayName count="other">𑄥𑄬𑄚𑄴 𑄦𑄬𑄣𑄬𑄚 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>SHP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>𑄥𑄳𑄣𑄮𑄞𑄚𑄨𑄠 𑄑𑄮𑄣𑄢𑄴</displayName>
@@ -5910,40 +4781,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SKK">
 				<displayName>𑄥𑄳𑄣𑄮𑄞𑄇𑄴 𑄇𑄮𑄢𑄪𑄚</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>𑄥𑄨𑄠𑄬𑄢𑄣𑄨𑄠𑄧𑄚𑄴 𑄣𑄨𑄠𑄧𑄚𑄴</displayName>
-				<displayName count="one">𑄥𑄨𑄠𑄬𑄢𑄣𑄨𑄠𑄧𑄚𑄴 𑄣𑄨𑄠𑄧𑄚𑄴</displayName>
-				<displayName count="other">𑄥𑄨𑄠𑄬𑄢𑄣𑄨𑄠𑄧𑄚𑄴 𑄣𑄨𑄠𑄧𑄚𑄴</displayName>
-				<symbol>SLL</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>𑄥𑄨𑄠𑄬𑄢𑄣𑄨𑄠𑄧𑄚𑄴 𑄣𑄨𑄠𑄧𑄚𑄴 (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>𑄥𑄮𑄟𑄣𑄨 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="one">𑄥𑄮𑄟𑄣𑄨 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="other">𑄥𑄮𑄟𑄣𑄨 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>𑄥𑄪𑄢𑄨𑄚𑄟𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄥𑄪𑄢𑄨𑄚𑄟𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄥𑄪𑄢𑄨𑄚𑄟𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>SRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>𑄥𑄪𑄢𑄨𑄚𑄟𑄴 𑄉𑄨𑄣𑄴𑄓𑄢𑄴</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>𑄘𑄧𑄉𑄨𑄚𑄴 𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄘𑄧𑄉𑄨𑄚𑄴 𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄘𑄧𑄉𑄨𑄚𑄴 𑄥𑄪𑄘𑄚𑄨 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>SSP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
-				<displayName count="one">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
-				<displayName count="other">𑄥𑄃𑄮 𑄑𑄮𑄟𑄬 𑄃𑄳𑄃 𑄛𑄳𑄢𑄨𑄚𑄴𑄥𑄨𑄛𑄬 𑄓𑄮𑄛𑄴𑄢</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -5954,54 +4811,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SYP">
 				<displayName>𑄥𑄨𑄢𑄨𑄠𑄚𑄴 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄥𑄨𑄢𑄨𑄠𑄚𑄴 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄥𑄨𑄢𑄨𑄠𑄚𑄴 𑄛𑄃𑄪𑄚𑄳𑄓𑄴</displayName>
-				<symbol>SYP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>𑄥𑄮𑄠𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄣𑄨𑄣𑄋𑄴𑄉𑄬𑄚𑄨</displayName>
-				<displayName count="one">𑄥𑄮𑄠𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄣𑄨𑄣𑄋𑄴𑄉𑄬𑄚𑄨</displayName>
-				<displayName count="other">𑄥𑄮𑄠𑄎𑄨𑄣𑄳𑄠𑄚𑄳𑄓𑄴 𑄣𑄨𑄣𑄋𑄴𑄉𑄬𑄚𑄨</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>𑄗𑄭 𑄝𑄖𑄴</displayName>
-				<displayName count="one">𑄗𑄭 𑄝𑄖𑄴</displayName>
-				<displayName count="other">𑄗𑄭 𑄝𑄖𑄴</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>𑄖𑄎𑄨𑄇𑄨𑄌𑄴𑄖𑄚𑄴 𑄢𑄪𑄝𑄧𑄣𑄴</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName>𑄖𑄎𑄨𑄇𑄨𑄌𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄮𑄚𑄨</displayName>
-				<displayName count="one">𑄖𑄎𑄨𑄇𑄨𑄌𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄮𑄚𑄨</displayName>
-				<displayName count="other">𑄖𑄎𑄨𑄇𑄨𑄌𑄴𑄖𑄚𑄴 𑄥𑄮𑄟𑄮𑄚𑄨</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴 (1993–2009)</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴</displayName>
-				<displayName count="one">𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴</displayName>
-				<displayName count="other">𑄖𑄪𑄢𑄴𑄇𑄧𑄟𑄬𑄚𑄨𑄌𑄴𑄖𑄚𑄨 𑄟𑄚𑄖𑄴</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>𑄖𑄨𑄃𑄪𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="one">𑄖𑄨𑄃𑄪𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<displayName count="other">𑄖𑄨𑄃𑄪𑄚𑄬𑄥𑄨𑄠𑄚𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>𑄑𑄮𑄋𑄴𑄉 𑄛𑄳𑄃 𑄃𑄋𑄴𑄉</displayName>
-				<displayName count="one">𑄑𑄮𑄋𑄴𑄉 𑄛𑄳𑄃 𑄃𑄋𑄴𑄉</displayName>
-				<displayName count="other">𑄑𑄮𑄋𑄴𑄉 𑄛𑄳𑄃 𑄃𑄋𑄴𑄉</displayName>
-				<symbol>TOP</symbol>
-				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>𑄖𑄨𑄟𑄪𑄢𑄴 𑄃𑄬𑄌𑄴𑄇𑄪𑄓𑄮</displayName>
@@ -6011,38 +4845,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TRY">
 				<displayName>𑄖𑄪𑄢𑄴𑄇𑄨 𑄣𑄨𑄢</displayName>
-				<displayName count="one">𑄖𑄪𑄢𑄴𑄇𑄨 𑄣𑄨𑄢</displayName>
-				<displayName count="other">𑄖𑄪𑄢𑄴𑄇𑄨 𑄣𑄨𑄢</displayName>
-				<symbol>TRY</symbol>
-				<symbol alt="narrow">₺</symbol>
-				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>𑄖𑄳𑄢𑄨𑄚𑄨𑄘𑄖𑄴 𑄃𑄳𑄃 𑄑𑄮𑄝𑄉𑄮 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄖𑄳𑄢𑄨𑄚𑄨𑄘𑄖𑄴 𑄃𑄳𑄃 𑄑𑄮𑄝𑄉𑄮 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄖𑄳𑄢𑄨𑄚𑄨𑄘𑄖𑄴 𑄃𑄳𑄃 𑄑𑄮𑄝𑄉𑄮 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>TTD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>𑄚𑄱 𑄦𑄭𑄤𑄚𑄴𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄚𑄱 𑄦𑄭𑄤𑄚𑄴𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄚𑄱 𑄦𑄭𑄤𑄚𑄴𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>𑄖𑄚𑄴𑄎𑄚𑄨𑄠 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="one">𑄖𑄚𑄴𑄎𑄚𑄨𑄠 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="other">𑄖𑄚𑄴𑄎𑄚𑄨𑄠 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ই𑄃𑄨𑄃𑄪𑄇𑄳𑄢𑄭𑄚𑄴 𑄢𑄨𑄛𑄴𑄚𑄨𑄠</displayName>
-				<displayName count="one">𑄃𑄨𑄃𑄪𑄇𑄳𑄢𑄭𑄚𑄴 𑄢𑄨𑄛𑄴𑄚𑄨𑄠</displayName>
 				<displayName count="other">𑄃𑄨𑄃𑄪𑄇𑄳𑄢𑄭𑄚𑄴 𑄢𑄨𑄛𑄴𑄚𑄨𑄠</displayName>
-				<symbol>UAH</symbol>
-				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>𑄃𑄨𑄃𑄪𑄇𑄳𑄢𑄭𑄚𑄴 𑄇𑄢𑄴𑄝𑄮𑄞𑄳𑄠𑄚𑄴𑄑𑄧𑄌𑄴</displayName>
@@ -6052,16 +4868,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UGX">
 				<displayName>𑄃𑄪𑄉𑄚𑄴𑄓𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="one">𑄃𑄪𑄉𑄚𑄴𑄓𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<displayName count="other">𑄃𑄪𑄉𑄚𑄴𑄓𑄚𑄴 𑄥𑄨𑄣𑄨𑄁</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>𑄟𑄢𑄴𑄇𑄨𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄟𑄢𑄴𑄇𑄨𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄟𑄢𑄴𑄇𑄨𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>US$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>𑄟𑄢𑄴𑄇𑄨𑄚𑄴 𑄓𑄧𑄣𑄢𑄴 (𑄛𑄧𑄢𑄬 𑄘𑄨𑄚𑄴)</displayName>
@@ -6077,51 +4886,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UYU">
 				<displayName>𑄃𑄪𑄢𑄪𑄉𑄪𑄠𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="one">𑄃𑄪𑄢𑄪𑄉𑄪𑄠𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<displayName count="other">𑄃𑄪𑄢𑄪𑄉𑄪𑄠𑄬 𑄛𑄬𑄥𑄮</displayName>
-				<symbol>UYU</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>𑄃𑄪𑄌𑄴𑄝𑄬𑄇𑄨𑄌𑄴𑄖𑄚𑄨 𑄥𑄮𑄟𑄴</displayName>
-				<displayName count="one">𑄃𑄪𑄌𑄴𑄝𑄬𑄇𑄨𑄌𑄴𑄖𑄚𑄨 𑄥𑄮𑄟𑄴</displayName>
-				<displayName count="other">𑄃𑄪𑄌𑄴𑄝𑄬𑄇𑄨𑄌𑄴𑄖𑄚𑄨 𑄥𑄮𑄟𑄴</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>𑄞𑄬𑄚𑄨𑄎𑄪𑄔𑄮𑄣𑄚𑄴 𑄝𑄧𑄣𑄨𑄞𑄢𑄴(𑄷𑄾𑄽𑄷-𑄸𑄶𑄶𑄾)</displayName>
 			</currency>
 			<currency type="VEF">
 				<displayName>𑄞𑄬𑄚𑄨𑄎𑄪𑄔𑄮𑄣𑄚𑄴 𑄝𑄧𑄣𑄨𑄞𑄢𑄴</displayName>
-				<displayName count="one">𑄞𑄬𑄚𑄨𑄎𑄪𑄔𑄮𑄣𑄚𑄴 𑄝𑄧𑄣𑄨𑄞𑄢𑄴</displayName>
-				<displayName count="other">𑄞𑄬𑄚𑄨𑄎𑄪𑄔𑄮𑄣𑄚𑄴 𑄝𑄧𑄣𑄨𑄞𑄢𑄴</displayName>
-				<symbol>VEF</symbol>
-				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>𑄞𑄨𑄠𑄬𑄖𑄴𑄚𑄟𑄨 𑄓𑄧𑄋𑄴𑄉𑄧</displayName>
-				<displayName count="one">𑄞𑄨𑄠𑄬𑄖𑄴𑄚𑄟𑄨 𑄓𑄧𑄋𑄴𑄉𑄧</displayName>
-				<displayName count="other">𑄞𑄨𑄠𑄬𑄖𑄴𑄚𑄟𑄨 𑄓𑄧𑄋𑄴𑄉𑄧</displayName>
-				<symbol>₫</symbol>
-				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>𑄞𑄚𑄪𑄠𑄖𑄪 𑄞𑄖𑄪</displayName>
-				<displayName count="one">𑄞𑄚𑄪𑄠𑄖𑄪 𑄞𑄖𑄪</displayName>
-				<displayName count="other">𑄞𑄚𑄪𑄠𑄖𑄪 𑄞𑄖𑄪</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>𑄥𑄟𑄮𑄠𑄚𑄴 𑄑𑄣</displayName>
-				<displayName count="one">𑄥𑄟𑄮𑄠𑄚𑄴 𑄑𑄣</displayName>
-				<displayName count="other">𑄥𑄟𑄮𑄠𑄚𑄴 𑄑𑄣</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>𑄟𑄧𑄖𑄴𑄙𑄳𑄠 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴[CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄟𑄧𑄖𑄴𑄙𑄳𑄠 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴[CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄟𑄧𑄖𑄴𑄙𑄳𑄠 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴[CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>𑄥𑄨𑄣𑄴𑄞𑄢𑄴</displayName>
@@ -6131,10 +4916,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCD">
 				<displayName>𑄛𑄪𑄉𑄬𑄘𑄨 𑄇𑄳𑄠𑄢𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="one">𑄛𑄪𑄉𑄬𑄘𑄨 𑄇𑄳𑄠𑄢𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<displayName count="other">𑄛𑄪𑄉𑄬𑄘𑄨 𑄇𑄳𑄠𑄢𑄝𑄨𑄠𑄚𑄴 𑄓𑄧𑄣𑄢𑄴</displayName>
-				<symbol>EC$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName>𑄃𑄨𑄃𑄪𑄢𑄮𑄛𑄨𑄠𑄚𑄴 𑄑𑄬𑄋𑄢𑄴 𑄃𑄬𑄇𑄧𑄇𑄴</displayName>
@@ -6147,18 +4928,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XOF">
 				<displayName>𑄛𑄧𑄎𑄨𑄟𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 [CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄛𑄧𑄎𑄨𑄟𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 [CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄛𑄧𑄎𑄨𑄟𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 [CFA] 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>𑄛𑄳𑄠𑄣𑄬𑄓𑄨𑄠𑄟𑄴</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>𑄥𑄨𑄃𑄬𑄛𑄴𑄛𑄨 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="one">𑄥𑄨𑄃𑄬𑄛𑄴𑄛𑄨 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<displayName count="other">𑄥𑄨𑄃𑄬𑄛𑄴𑄛𑄨 𑄜𑄳𑄢𑄳𑄠𑄋𑄳𑄇𑄴</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>𑄛𑄳𑄣𑄑𑄨𑄚𑄟𑄴</displayName>
@@ -6173,9 +4948,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="YER">
 				<displayName>𑄃𑄨𑄠𑄬𑄟𑄬𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="one">𑄃𑄨𑄠𑄬𑄟𑄬𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<displayName count="other">𑄃𑄨𑄠𑄬𑄟𑄬𑄚𑄨 𑄢𑄨𑄠𑄣𑄴</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>𑄡𑄪𑄉𑄮𑄥𑄳𑄣𑄞𑄨𑄠𑄧 𑄦𑄢𑄴𑄓𑄴 𑄘𑄨𑄚𑄢𑄴</displayName>
@@ -6188,20 +4960,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZAR">
 				<displayName>𑄘𑄧𑄉𑄨𑄚𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 𑄢𑄳𑄠𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="one">𑄘𑄧𑄉𑄨𑄚𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 𑄢𑄳𑄠𑄚𑄳𑄓𑄴</displayName>
-				<displayName count="other">𑄘𑄧𑄉𑄨𑄚𑄴 𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 𑄢𑄳𑄠𑄚𑄳𑄓𑄴</displayName>
-				<symbol>ZAR</symbol>
-				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>𑄎𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌 (𑄷𑄿𑄼𑄾-𑄸𑄶𑄷𑄸)</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName>𑄎𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌</displayName>
-				<displayName count="one">𑄎𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌</displayName>
-				<displayName count="other">𑄎𑄟𑄴𑄝𑄨𑄠𑄚𑄴 𑄇𑄧𑄤𑄌</displayName>
-				<symbol>ZMW</symbol>
-				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>𑄎𑄭𑄢𑄨𑄠𑄚𑄴 𑄚𑄨𑄅𑄪 𑄎𑄭𑄢𑄬 (1993–1998)</displayName>
@@ -6221,7 +4985,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">𑄥𑄧𑄥𑄬{0}𑄑𑄨 𑄃𑄛𑄬𑄣𑄴 𑄈𑄬𑄣𑄧, 𑄥𑄨𑄠𑄚𑄴 𑄉𑄧𑄟𑄴</pluralMinimalPairs>
@@ -6234,7 +4997,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern>{1} 𑄛𑄳𑄢𑄧𑄖𑄨 {0}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName>𑄎𑄨-𑄝𑄧𑄣𑄴</displayName>
 				<unitPattern count="one">{0} 𑄎𑄨-𑄝𑄧𑄣𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄎𑄨-𑄝𑄧𑄣𑄴</unitPattern>
 			</unit>
@@ -6254,7 +5016,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄢𑄬𑄓𑄨𑄠𑄳𑄠𑄚𑄴𑄥𑄴</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>𑄓𑄨𑄉𑄳𑄢𑄩</displayName>
 				<unitPattern count="one">{0} 𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
 				<unitPattern count="other">{0} 𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
 			</unit>
@@ -6264,7 +5025,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄃𑄢𑄴𑄇𑄴-𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0} 𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 			</unit>
@@ -6274,14 +5034,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<perUnitPattern>𑄛𑄳𑄢𑄧𑄖𑄨 𑄝𑄧𑄢𑄴𑄉𑄧 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴𑄢𑄳𑄠 {0}</perUnitPattern>
 			</unit>
-			<unit type="area-hectare">
-				<displayName>𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
-			</unit>
 			<unit type="area-square-meter">
-				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<perUnitPattern>𑄛𑄳𑄢𑄧𑄖𑄨 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄬 {0}</perUnitPattern>
 			</unit>
@@ -6307,11 +5060,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄉𑄧𑄌𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄉𑄧𑄌𑄴</unitPattern>
 			</unit>
-			<unit type="area-square-foot">
-				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
-			</unit>
 			<unit type="area-square-inch">
 				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄃𑄨𑄚𑄴𑄌𑄨</displayName>
 				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
@@ -6319,7 +5067,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>𑄛𑄳𑄢𑄧𑄖𑄨 𑄝𑄧𑄢𑄴𑄉𑄧 𑄃𑄨𑄚𑄴𑄌𑄨𑄖𑄴 {0}</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>𑄇𑄳𑄠𑄢𑄬𑄖𑄴</displayName>
 				<unitPattern count="one">{0} 𑄇𑄳𑄠𑄢𑄬𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄢𑄬𑄖𑄴</unitPattern>
 			</unit>
@@ -6398,43 +5145,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄇𑄨𑄣𑄮𑄝𑄨𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄨𑄣𑄮𑄝𑄨𑄖𑄴</unitPattern>
 			</unit>
-			<unit type="digital-byte">
-				<displayName>𑄝𑄭𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄭𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄭𑄖𑄴</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<displayName>𑄝𑄨𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄨𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄨𑄖𑄴</unitPattern>
-			</unit>
 			<unit type="duration-century">
 				<displayName>𑄃𑄬𑄇𑄴𑄥𑄧 𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
 				<unitPattern count="one">{0} 𑄃𑄬𑄇𑄴𑄥𑄧 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄬𑄇𑄴𑄥𑄧 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 			</unit>
-			<unit type="duration-year">
-				<displayName>𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄝𑄧𑄏𑄧𑄢𑄴</perUnitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName>𑄟𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄌𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄌𑄴</perUnitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName>𑄥𑄛𑄴𑄖</displayName>
-				<unitPattern count="one">{0} 𑄥𑄛𑄴𑄖</unitPattern>
-				<unitPattern count="other">{0} 𑄥𑄛𑄴𑄖</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄛𑄴𑄖</perUnitPattern>
-			</unit>
 			<unit type="duration-day">
-				<displayName>𑄘𑄨𑄚𑄴</displayName>
-				<unitPattern count="one">{0} 𑄘𑄨𑄚𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄘𑄨𑄚𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄘𑄨𑄚𑄴 𑄟𑄉𑄬𑄚𑄬</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -6443,20 +5159,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄊𑄧𑄚𑄴𑄘</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄊𑄧𑄚𑄴𑄘</perUnitPattern>
 			</unit>
-			<unit type="duration-minute">
-				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄨𑄚𑄨𑄖𑄴</perUnitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName>𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</perUnitPattern>
-			</unit>
 			<unit type="duration-millisecond">
-				<displayName>𑄟𑄨𑄣𑄨𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0}𑄟𑄨𑄣𑄨𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄣𑄨𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 			</unit>
@@ -6466,7 +5169,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄟𑄭𑄇𑄳𑄢𑄮𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName>𑄚𑄳𑄠𑄚𑄮𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0} 𑄚𑄳𑄠𑄚𑄮𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄚𑄳𑄠𑄚𑄮𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 			</unit>
@@ -6481,7 +5183,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄟𑄨𑄣𑄨-𑄃𑄳𑄠𑄟𑄴𑄛𑄨𑄠𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>𑄃𑄮𑄦𑄧𑄟𑄴</displayName>
 				<unitPattern count="one">{0} 𑄃𑄮𑄦𑄧𑄟𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄮𑄦𑄧𑄟𑄴</unitPattern>
 			</unit>
@@ -6501,9 +5202,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>𑄇𑄳𑄠𑄣𑄮𑄢𑄨</displayName>
-				<unitPattern count="one">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
+				<displayName draft="provisional">𑄇𑄳𑄠𑄣𑄮𑄢𑄨</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>𑄇𑄨𑄣𑄮𑄎𑄪𑄣𑄴</displayName>
@@ -6511,7 +5212,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄇𑄨𑄣𑄮𑄎𑄪𑄣𑄴</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>𑄎𑄪𑄣𑄴</displayName>
 				<unitPattern count="one">{0} 𑄎𑄪𑄣𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄎𑄪𑄣𑄴</unitPattern>
 			</unit>
@@ -6547,7 +5247,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>𑄟𑄨𑄑𑄢𑄴</displayName>
 				<unitPattern count="one">{0} 𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄨𑄑𑄢𑄴</perUnitPattern>
@@ -6583,37 +5282,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄛𑄨𑄇𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄛𑄨𑄇𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 			</unit>
-			<unit type="length-mile">
-				<displayName>𑄟𑄬𑄣𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄬𑄣𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄬𑄣𑄴</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName>𑄉𑄧𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄉𑄧𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄉𑄧𑄌𑄴</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<displayName>𑄜𑄪𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄜𑄪𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄜𑄪𑄖𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄜𑄪𑄖𑄴</perUnitPattern>
-			</unit>
-			<unit type="length-inch">
-				<displayName>𑄃𑄨𑄚𑄴𑄌𑄨</displayName>
-				<unitPattern count="one">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄃𑄨𑄚𑄴𑄌𑄨</perUnitPattern>
-			</unit>
 			<unit type="length-parsec">
-				<displayName>parsecs</displayName>
 				<unitPattern count="one">{0} parsec</unitPattern>
 				<unitPattern count="other">{0} parsecs</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<displayName>𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>𑄎𑄳𑄠𑄬𑄖𑄨𑄢𑄴𑄝𑄨𑄇𑄴𑄉𑄳𑄠𑄚𑄴 𑄃𑄬𑄇𑄧𑄇𑄴</displayName>
@@ -6647,10 +5318,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄇𑄨𑄣𑄮𑄉𑄳𑄢𑄟𑄴</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>𑄉𑄳𑄢𑄟𑄴</displayName>
 				<unitPattern count="one">{0} 𑄉𑄳𑄢𑄟𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄉𑄳𑄢𑄟𑄴</unitPattern>
-				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄉𑄳𑄢𑄟𑄴</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>𑄟𑄨𑄣𑄨𑄉𑄳𑄢𑄟𑄴</displayName>
@@ -6668,8 +5336,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄑𑄧𑄚𑄴</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</perUnitPattern>
 			</unit>
@@ -6685,7 +5351,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄛𑄳𑄢𑄧𑄠𑄴 𑄃𑄅𑄪𑄚𑄳𑄥𑄴</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>𑄇𑄳𑄠𑄢𑄬𑄖𑄴</displayName>
 				<unitPattern count="one">{0} 𑄇𑄳𑄠𑄢𑄬𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄢𑄬𑄖𑄴</unitPattern>
 			</unit>
@@ -6705,7 +5370,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄇𑄨𑄣𑄮𑄤𑄖𑄴</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>𑄤𑄖𑄴</displayName>
 				<unitPattern count="one">{0} 𑄤𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄤𑄖𑄴</unitPattern>
 			</unit>
@@ -6750,7 +5414,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄊𑄧𑄚𑄳𑄑 𑄛𑄳𑄢𑄧𑄖𑄨 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName>𑄟𑄨𑄑𑄢𑄴 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0} 𑄟𑄨𑄑𑄢𑄴 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄑𑄢𑄴 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 			</unit>
@@ -6763,11 +5426,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄚𑄧𑄖𑄴</displayName>
 				<unitPattern count="one">{0} 𑄚𑄧𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄚𑄧𑄖𑄴</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>𑄓𑄨𑄉𑄳𑄢𑄩 𑄥𑄬𑄣𑄴𑄥𑄨𑄠𑄌𑄴</displayName>
@@ -6783,11 +5441,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𑄇𑄬𑄣𑄴𑄞𑄨𑄚𑄴</displayName>
 				<unitPattern count="one">{0} 𑄇𑄬𑄣𑄴𑄞𑄨𑄚𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄬𑄣𑄴𑄞𑄨𑄚𑄴</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<displayName>𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄟𑄨𑄑𑄢𑄴</displayName>
@@ -6809,7 +5462,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-cubic-yard">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄉𑄧𑄌𑄴</displayName>
 				<unitPattern count="one">{0} 𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄉𑄧𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄜𑄪𑄖𑄴</displayName>
@@ -6832,9 +5484,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄦𑄬𑄇𑄴𑄑𑄮𑄣𑄨𑄑𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>𑄣𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄣𑄨𑄑𑄢𑄴</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -6917,419 +5566,200 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>𑄎𑄨-𑄝𑄧𑄣𑄴</displayName>
-				<unitPattern count="one">{0} G</unitPattern>
-				<unitPattern count="other">{0} G</unitPattern>
-			</unit>
-			<unit type="acceleration-meter-per-square-second">
-				<displayName>m/s²</displayName>
-				<unitPattern count="one">{0} m/s²</unitPattern>
-				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>𑄊𑄪𑄢𑄰𑄱</displayName>
-				<unitPattern count="one">{0} 𑄊𑄪𑄢𑄰𑄱</unitPattern>
 				<unitPattern count="other">{0} 𑄊𑄪𑄢𑄰𑄱</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>𑄢𑄬𑄓𑄨𑄠𑄳𑄠𑄚𑄳𑄌𑄴</displayName>
-				<unitPattern count="one">{0} rad</unitPattern>
-				<unitPattern count="other">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>𑄓𑄨𑄉𑄳𑄢𑄩</displayName>
-				<unitPattern count="one">{0}𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
 				<unitPattern count="other">{0}𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>𑄃𑄢𑄴𑄇𑄴𑄟𑄨𑄚𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄢𑄴𑄇𑄴𑄟𑄨𑄚𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄢𑄴𑄇𑄴𑄟𑄨𑄚𑄴</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄢𑄴𑄇𑄴𑄥𑄬𑄇𑄴</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<displayName>km²</displayName>
-				<unitPattern count="one">{0} km²</unitPattern>
-				<unitPattern count="other">{0} km²</unitPattern>
 				<perUnitPattern>{0}/𑄝𑄧𑄢𑄴𑄉𑄧 𑄇𑄨𑄟𑄨</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄴</displayName>
 				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄨𑄑𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} m²</unitPattern>
-				<perUnitPattern>{0}/m²</perUnitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<displayName>cm²</displayName>
-				<unitPattern count="one">{0} cm²</unitPattern>
-				<unitPattern count="other">{0} cm²</unitPattern>
-				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄬𑄣𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄬𑄣𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄬𑄣𑄴</unitPattern>
-				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>𑄃𑄬𑄉𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄬𑄉𑄧𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄬𑄉𑄧𑄢𑄴</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄉𑄧𑄌𑄴</displayName>
-				<unitPattern count="one">{0} yd²</unitPattern>
-				<unitPattern count="other">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
-			</unit>
-			<unit type="area-square-inch">
-				<displayName>in²</displayName>
-				<unitPattern count="one">{0} in²</unitPattern>
-				<unitPattern count="other">{0} in²</unitPattern>
-				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>𑄇𑄳𑄠𑄢𑄬𑄖𑄴</displayName>
-				<unitPattern count="one">{0} kt</unitPattern>
-				<unitPattern count="other">{0} kt</unitPattern>
-			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>mg/dL</displayName>
-				<unitPattern count="one">{0} mg/dL</unitPattern>
-				<unitPattern count="other">{0} mg/dL</unitPattern>
-			</unit>
-			<unit type="concentr-millimole-per-liter">
-				<displayName>mmol/L</displayName>
-				<unitPattern count="one">{0} mmol/L</unitPattern>
-				<unitPattern count="other">{0} mmol/L</unitPattern>
-			</unit>
-			<unit type="concentr-permillion">
-				<displayName>ppm</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>𑄣𑄨𑄑𑄢𑄴/𑄇𑄨𑄟𑄨</displayName>
-				<unitPattern count="one">{0} L/km</unitPattern>
-				<unitPattern count="other">{0} L/km</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>𑄟𑄬𑄣𑄴/𑄉𑄳𑄠𑄣𑄧𑄚𑄴</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>miles/gal Imp</displayName>
-				<unitPattern count="one">{0} mpg Imp.</unitPattern>
-				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TByte</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tbit</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
-			</unit>
-			<unit type="digital-gigabyte">
-				<displayName>GB</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
-			</unit>
-			<unit type="digital-gigabit">
-				<displayName>Gb</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
-			</unit>
-			<unit type="digital-megabyte">
-				<displayName>MB</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
-			</unit>
-			<unit type="digital-megabit">
-				<displayName>Mb</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
-			</unit>
-			<unit type="digital-kilobyte">
-				<displayName>kB</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
-			</unit>
-			<unit type="digital-kilobit">
-				<displayName>kb</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>𑄝𑄭𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄭𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄭𑄖𑄴</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>𑄝𑄨𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄨𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄨𑄖𑄴</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>𑄥𑄧𑄖𑄧𑄇𑄴</displayName>
-				<unitPattern count="one">{0} 𑄥𑄧𑄖𑄧𑄇𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄥𑄧𑄖𑄧𑄇𑄴</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄝𑄧𑄏𑄧𑄢𑄴</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>𑄟𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄌𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄌𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄌𑄴</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>𑄥𑄛𑄴𑄖</displayName>
-				<unitPattern count="one">{0} 𑄥𑄛𑄴𑄖</unitPattern>
 				<unitPattern count="other">{0} 𑄥𑄛𑄴𑄖</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄛𑄴𑄖</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>𑄘𑄨𑄚𑄴</displayName>
-				<unitPattern count="one">{0} 𑄘𑄨𑄚𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄘𑄨𑄚𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄘𑄨𑄚𑄴</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>𑄊𑄧𑄚𑄴𑄑</displayName>
-				<unitPattern count="one">{0} 𑄊𑄧𑄚𑄴𑄑</unitPattern>
 				<unitPattern count="other">{0} 𑄊𑄧𑄚𑄴𑄑</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄊𑄧𑄚𑄴𑄑</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄨𑄚𑄨𑄖𑄴</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>𑄟𑄨𑄣𑄨𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsecs</displayName>
-				<unitPattern count="one">{0} μs</unitPattern>
-				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>𑄚𑄳𑄠𑄚𑄮𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} ns</unitPattern>
-				<unitPattern count="other">{0} ns</unitPattern>
-			</unit>
-			<unit type="electric-ampere">
-				<displayName>amp</displayName>
-				<unitPattern count="one">{0} A</unitPattern>
-				<unitPattern count="other">{0} A</unitPattern>
-			</unit>
-			<unit type="electric-milliampere">
-				<displayName>mA</displayName>
-				<unitPattern count="one">{0} mA</unitPattern>
-				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>𑄃𑄮𑄦𑄧𑄟𑄴</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
-				<unitPattern count="other">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>𑄞𑄮𑄣𑄴𑄑𑄴</displayName>
-				<unitPattern count="one">{0} V</unitPattern>
-				<unitPattern count="other">{0} V</unitPattern>
-			</unit>
-			<unit type="energy-kilocalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
-			</unit>
-			<unit type="energy-calorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
-			</unit>
-			<unit type="energy-kilojoule">
-				<displayName>kJ</displayName>
-				<unitPattern count="one">{0} kJ</unitPattern>
-				<unitPattern count="other">{0} kJ</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>𑄎𑄪𑄣𑄴</displayName>
-				<unitPattern count="one">{0} J</unitPattern>
-				<unitPattern count="other">{0} J</unitPattern>
-			</unit>
-			<unit type="energy-kilowatt-hour">
-				<displayName>kWh</displayName>
-				<unitPattern count="one">{0} kWh</unitPattern>
-				<unitPattern count="other">{0} kWh</unitPattern>
-			</unit>
-			<unit type="frequency-gigahertz">
-				<displayName>GHz</displayName>
-				<unitPattern count="one">{0} GHz</unitPattern>
-				<unitPattern count="other">{0} GHz</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<displayName>MHz</displayName>
-				<unitPattern count="one">{0} MHz</unitPattern>
-				<unitPattern count="other">{0} MHz</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<displayName>kHz</displayName>
-				<unitPattern count="one">{0} kHz</unitPattern>
-				<unitPattern count="other">{0} kHz</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<displayName>Hz</displayName>
-				<unitPattern count="one">{0} Hz</unitPattern>
-				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄇𑄨𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄨𑄟𑄨</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄇𑄨𑄟𑄨</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄨</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>𑄓𑄬𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄓𑄬𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄓𑄬𑄟𑄨</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>𑄥𑄬𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄥𑄬𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄥𑄬𑄟𑄨</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄟𑄨</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>𑄟𑄨𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄟𑄨</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>μmeters</displayName>
-				<unitPattern count="one">{0} μm</unitPattern>
-				<unitPattern count="other">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<displayName>nm</displayName>
-				<unitPattern count="one">{0} nm</unitPattern>
-				<unitPattern count="other">{0} nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>𑄛𑄨𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄛𑄨𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄛𑄨𑄟𑄨</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>𑄟𑄬𑄣𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄬𑄣𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄬𑄣𑄴</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>𑄉𑄧𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄉𑄧𑄌𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄉𑄧𑄌𑄴</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>𑄜𑄪𑄖𑄴</displayName>
-				<unitPattern count="one">{0} 𑄜𑄪𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄜𑄪𑄖𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄜𑄪𑄖𑄴</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>𑄃𑄨𑄚𑄴𑄌𑄨</displayName>
-				<unitPattern count="one">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄃𑄨𑄚𑄴𑄌𑄨</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsecs</displayName>
-				<unitPattern count="one">{0} pc</unitPattern>
-				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName>au</displayName>
-				<unitPattern count="one">{0} au</unitPattern>
-				<unitPattern count="other">{0} au</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<displayName>nmi</displayName>
-				<unitPattern count="one">{0} nmi</unitPattern>
-				<unitPattern count="other">{0} nmi</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName>smi</displayName>
-				<unitPattern count="one">{0} smi</unitPattern>
-				<unitPattern count="other">{0} smi</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<displayName>lx</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
-				<unitPattern count="other">{0} lx</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>𑄇𑄬𑄎𑄨</displayName>
-				<unitPattern count="one">{0} 𑄇𑄬𑄎𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄬𑄎𑄨</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄇𑄬𑄎𑄨</perUnitPattern>
 			</unit>
@@ -7339,262 +5769,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄉𑄳𑄢𑄟𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄉𑄳𑄢𑄟𑄴</perUnitPattern>
 			</unit>
-			<unit type="mass-milligram">
-				<displayName>mg</displayName>
-				<unitPattern count="one">{0} mg</unitPattern>
-				<unitPattern count="other">{0} mg</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<displayName>μg</displayName>
-				<unitPattern count="one">{0} μg</unitPattern>
-				<unitPattern count="other">{0} μg</unitPattern>
-			</unit>
-			<unit type="mass-ton">
-				<displayName>tn</displayName>
-				<unitPattern count="one">{0} tn</unitPattern>
-				<unitPattern count="other">{0} tn</unitPattern>
-			</unit>
 			<unit type="mass-pound">
 				<displayName>𑄛𑄅𑄪𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0} 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</unitPattern>
-				<unitPattern count="other">{0} lb</unitPattern>
-				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>𑄃𑄅𑄪𑄚𑄳𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄃𑄅𑄪𑄚𑄳𑄌𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄅𑄪𑄚𑄳𑄌𑄴</unitPattern>
 				<perUnitPattern>{0} 𑄛𑄳𑄢𑄧𑄖𑄨 𑄃𑄅𑄪𑄚𑄳𑄌𑄴</perUnitPattern>
 			</unit>
-			<unit type="mass-ounce-troy">
-				<displayName>oz t</displayName>
-				<unitPattern count="one">{0} oz t</unitPattern>
-				<unitPattern count="other">{0} oz t</unitPattern>
-			</unit>
 			<unit type="mass-carat">
 				<displayName>𑄇𑄳𑄠𑄢𑄬𑄖𑄴</displayName>
-				<unitPattern count="one">{0} CD</unitPattern>
-				<unitPattern count="other">{0} CD</unitPattern>
-			</unit>
-			<unit type="power-gigawatt">
-				<displayName>GW</displayName>
-				<unitPattern count="one">{0} GW</unitPattern>
-				<unitPattern count="other">{0} GW</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<displayName>MW</displayName>
-				<unitPattern count="one">{0} MW</unitPattern>
-				<unitPattern count="other">{0} MW</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<displayName>kW</displayName>
-				<unitPattern count="one">{0} kW</unitPattern>
-				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>𑄤𑄖𑄴</displayName>
-				<unitPattern count="one">{0} W</unitPattern>
-				<unitPattern count="other">{0} W</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<displayName>mW</displayName>
-				<unitPattern count="one">{0} mW</unitPattern>
-				<unitPattern count="other">{0} mW</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<displayName>hp</displayName>
-				<unitPattern count="one">{0} hp</unitPattern>
-				<unitPattern count="other">{0} hp</unitPattern>
-			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>psi</displayName>
-				<unitPattern count="one">{0} psi</unitPattern>
-				<unitPattern count="other">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<displayName>inHg</displayName>
-				<unitPattern count="one">{0} inHg</unitPattern>
-				<unitPattern count="other">{0} inHg</unitPattern>
-			</unit>
-			<unit type="pressure-millibar">
-				<displayName>mbar</displayName>
-				<unitPattern count="one">{0} mbar</unitPattern>
-				<unitPattern count="other">{0} mbar</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName>km/h</displayName>
 				<unitPattern count="one">{0} kph</unitPattern>
-				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>𑄟𑄨𑄑𑄢𑄴 𑄛𑄳𑄢𑄧𑄖𑄨 𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} m/s</unitPattern>
-				<unitPattern count="other">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>𑄊𑄧𑄚𑄴𑄑 𑄛𑄳𑄢𑄧𑄖𑄨 𑄟𑄬𑄣𑄴</displayName>
-				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
-			</unit>
-			<unit type="speed-knot">
-				<displayName>kn</displayName>
-				<unitPattern count="one">{0} kn</unitPattern>
-				<unitPattern count="other">{0} kn</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>deg. C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<displayName>°F</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName>K</displayName>
-				<unitPattern count="one">{0} K</unitPattern>
-				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄇𑄨𑄅𑄪𑄝𑄨𑄇𑄴 𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<displayName>m³</displayName>
-				<unitPattern count="one">{0} m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
-				<perUnitPattern>{0}/m³</perUnitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<displayName>cm³</displayName>
-				<unitPattern count="one">{0} cm³</unitPattern>
-				<unitPattern count="other">{0} cm³</unitPattern>
-				<perUnitPattern>{0}/cm³</perUnitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<displayName>mi³</displayName>
-				<unitPattern count="one">{0} mi³</unitPattern>
-				<unitPattern count="other">{0} mi³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-yard">
-				<displayName>yd³</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-foot">
-				<displayName>ft³</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
-				<unitPattern count="other">{0} ft³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-inch">
-				<displayName>in³</displayName>
-				<unitPattern count="one">{0} in³</unitPattern>
-				<unitPattern count="other">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<displayName>ML</displayName>
-				<unitPattern count="one">{0} ML</unitPattern>
-				<unitPattern count="other">{0} ML</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<displayName>hL</displayName>
-				<unitPattern count="one">{0} hL</unitPattern>
-				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>𑄣𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
-				<perUnitPattern>{0}/l</perUnitPattern>
-			</unit>
-			<unit type="volume-deciliter">
-				<displayName>dL</displayName>
-				<unitPattern count="one">{0} dL</unitPattern>
-				<unitPattern count="other">{0} dL</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<displayName>cL</displayName>
-				<unitPattern count="one">{0} cL</unitPattern>
-				<unitPattern count="other">{0} cL</unitPattern>
-			</unit>
-			<unit type="volume-milliliter">
-				<displayName>mL</displayName>
-				<unitPattern count="one">{0} mL</unitPattern>
-				<unitPattern count="other">{0} mL</unitPattern>
-			</unit>
-			<unit type="volume-pint-metric">
-				<displayName>mpt</displayName>
-				<unitPattern count="one">{0} mpt</unitPattern>
-				<unitPattern count="other">{0} mpt</unitPattern>
-			</unit>
-			<unit type="volume-cup-metric">
-				<displayName>mcup</displayName>
-				<unitPattern count="one">{0} mc</unitPattern>
-				<unitPattern count="other">{0} mc</unitPattern>
-			</unit>
-			<unit type="volume-acre-foot">
-				<displayName>ac ft</displayName>
-				<unitPattern count="one">{0} ac ft</unitPattern>
-				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
-				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal</unitPattern>
-				<perUnitPattern>{0}/gal US</perUnitPattern>
-			</unit>
-			<unit type="volume-gallon-imperial">
-				<displayName>Imp. gal</displayName>
-				<unitPattern count="one">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0} gal Imp.</unitPattern>
-				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
-			</unit>
-			<unit type="volume-quart">
-				<displayName>qt</displayName>
-				<unitPattern count="one">{0} qt</unitPattern>
-				<unitPattern count="other">{0} qt</unitPattern>
-			</unit>
-			<unit type="volume-pint">
-				<displayName>pt</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
-			</unit>
-			<unit type="volume-cup">
-				<displayName>cup</displayName>
-				<unitPattern count="one">{0} c</unitPattern>
-				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
-				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
-			</unit>
-			<unit type="volume-tablespoon">
-				<displayName>tbsp</displayName>
-				<unitPattern count="one">{0} tbsp</unitPattern>
-				<unitPattern count="other">{0} tbsp</unitPattern>
-			</unit>
-			<unit type="volume-teaspoon">
-				<displayName>tsp</displayName>
-				<unitPattern count="one">{0} tsp</unitPattern>
-				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}𑄛𑄪</coordinateUnitPattern>
@@ -7604,16 +5821,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} 𑄎𑄨-𑄝𑄧𑄣𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄎𑄨-𑄝𑄧𑄣𑄴</unitPattern>
-			</unit>
-			<unit type="angle-degree">
-				<unitPattern count="one">{0}𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
-				<unitPattern count="other">{0}𑄓𑄨𑄉𑄳𑄢𑄩</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}𑄟𑄨𑄚𑄨𑄖𑄴</unitPattern>
@@ -7627,132 +5837,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄇𑄨𑄟𑄨</unitPattern>
 				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄇𑄨𑄟𑄨</unitPattern>
 			</unit>
-			<unit type="area-hectare">
-				<unitPattern count="one">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄦𑄬𑄇𑄴𑄑𑄧𑄢𑄴</unitPattern>
-			</unit>
 			<unit type="area-square-meter">
 				<unitPattern count="one">{0} m²</unitPattern>
-				<unitPattern count="other">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄬𑄣𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄟𑄬𑄣𑄴</unitPattern>
-			</unit>
-			<unit type="area-acre">
-				<unitPattern count="one">{0} 𑄃𑄬𑄉𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄃𑄬𑄉𑄧𑄢𑄴</unitPattern>
-			</unit>
-			<unit type="area-square-foot">
-				<unitPattern count="one">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄧𑄢𑄴𑄉𑄧 𑄜𑄪𑄖𑄴</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
-			</unit>
-			<unit type="duration-year">
-				<displayName>𑄝𑄧𑄏𑄧𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄝𑄧𑄏𑄧𑄢𑄴</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName>𑄟𑄌𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄌𑄴</unitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName>𑄥𑄛𑄴𑄖</displayName>
-				<unitPattern count="one">{0} 𑄥𑄛𑄴𑄖</unitPattern>
-				<unitPattern count="other">{0} 𑄥𑄛𑄴𑄖</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName>𑄘𑄨𑄚𑄴</displayName>
-				<unitPattern count="one">{0} 𑄘𑄨𑄚𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄘𑄨𑄚𑄴</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>𑄊𑄧𑄚𑄴𑄑</displayName>
 				<unitPattern count="one">{0} 𑄊𑄂</unitPattern>
 				<unitPattern count="other">{0} 𑄊𑄂</unitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>𑄟𑄨𑄚𑄨𑄖𑄴</displayName>
 				<unitPattern count="one">{0} 𑄟𑄨𑄂</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄂</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
 				<unitPattern count="one">{0} 𑄥𑄬𑄂</unitPattern>
 				<unitPattern count="other">{0} 𑄥𑄬𑄂</unitPattern>
 			</unit>
-			<unit type="duration-millisecond">
-				<displayName>𑄟𑄨𑄣𑄨𑄥𑄬𑄇𑄬𑄚𑄳𑄓𑄴</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName>𑄇𑄨𑄣𑄮𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄇𑄨𑄟𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄇𑄨𑄟𑄨</unitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName>𑄟𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄨</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName>𑄥𑄬𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄥𑄬𑄟𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄥𑄬𑄟𑄨</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName>𑄟𑄨𑄟𑄨</displayName>
-				<unitPattern count="one">{0} 𑄟𑄨𑄟𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄨𑄟𑄨</unitPattern>
-			</unit>
 			<unit type="length-picometer">
 				<unitPattern count="one">{0}𑄛𑄨𑄟𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄛𑄨𑄟𑄨</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one">{0} 𑄟𑄬𑄣𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄟𑄬𑄣𑄴</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="one">{0} 𑄉𑄧𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄉𑄧𑄌𑄴</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="one">{0} 𑄜𑄪𑄖𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄜𑄪𑄖𑄴</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<unitPattern count="one">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄃𑄨𑄚𑄴𑄌𑄨</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄢𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄃𑄣𑄮𑄇𑄴𑄝𑄧𑄏𑄢𑄴</unitPattern>
 			</unit>
-			<unit type="mass-kilogram">
-				<displayName>𑄇𑄬𑄎𑄨</displayName>
-				<unitPattern count="one">{0} 𑄇𑄬𑄎𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄇𑄬𑄎𑄨</unitPattern>
-			</unit>
 			<unit type="mass-gram">
-				<displayName>𑄉𑄳𑄢𑄟𑄴</displayName>
 				<unitPattern count="one">{0} 𑄉𑄳𑄢𑄟𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄉𑄳𑄢𑄟𑄴</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<unitPattern count="one">{0} 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄛𑄅𑄪𑄚𑄳𑄓𑄴</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} 𑄃𑄅𑄪𑄚𑄳𑄌𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄃𑄅𑄪𑄚𑄳𑄌𑄴</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0} 𑄇𑄨𑄣𑄮𑄤𑄖𑄴</unitPattern>
@@ -7762,21 +5873,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄤𑄖𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄤𑄖𑄴</unitPattern>
 			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} hp</unitPattern>
-				<unitPattern count="other">{0} hp</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0} inHg</unitPattern>
-				<unitPattern count="other">{0} inHg</unitPattern>
-			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
@@ -7793,12 +5892,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0}km³</unitPattern>
@@ -7808,56 +5901,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}mi³</unitPattern>
 				<unitPattern count="other">{0}mi³</unitPattern>
 			</unit>
-			<unit type="volume-liter">
-				<displayName>𑄣𑄨𑄑𑄢𑄴</displayName>
-				<unitPattern count="one">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
-				<unitPattern count="other">{0} 𑄣𑄨𑄑𑄢𑄴</unitPattern>
-			</unit>
-			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}𑄛𑄪</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}𑄅𑄪</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}𑄘𑄧</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}𑄛𑄧</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} 𑄃𑄳𑄃 {1}</listPatternPart>
 			<listPatternPart type="2">{0} 𑄃𑄳𑄃 {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} 𑄃𑄳𑄃 {1}</listPatternPart>
-			<listPatternPart type="2">{0} 𑄃𑄳𑄃 {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -7870,7 +5921,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — 𑄗𑄪𑄟𑄴</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} — 𑄟𑄨𑄣𑄴𑄟𑄨𑄌𑄴</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — 𑄝𑄚𑄳𑄦𑄬</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — 𑄓𑄋𑄧𑄢𑄴𑄘𑄨𑄊𑄮𑄣𑄴</characterLabelPattern>
@@ -7878,7 +5928,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="miscellaneous">{0} — 𑄚𑄚 𑄝𑄝𑄧𑄖𑄳𑄠</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — 𑄃𑄧𑄚𑄳𑄠𑄧</characterLabelPattern>
 		<characterLabelPattern type="scripts">𑄦𑄧𑄢𑄧𑄇𑄴 — {0}</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="one">{0} 𑄥𑄳𑄑𑄳𑄢𑄳𑄢𑄳𑄢𑄧𑄇𑄴</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} 𑄥𑄳𑄑𑄳𑄢𑄳𑄢𑄳𑄢𑄧𑄇𑄴</characterLabelPattern>
 		<characterLabel type="activities">𑄇𑄌𑄴𑄇𑄟𑄴</characterLabel>
 		<characterLabel type="african_scripts">𑄃𑄜𑄳𑄢𑄨𑄇𑄚𑄴 𑄦𑄧𑄢𑄧𑄇𑄴</characterLabel>

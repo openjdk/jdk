@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,60 +21,53 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8022701
  * @summary Illegal access exceptions via methodhandle invocations threw wrong error.
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @compile -XDignore.symbol.file BogoLoader.java InvokeSeveralWays.java MHIllegalAccess.java MethodSupplier.java
  * @run main/othervm MHIllegalAccess
  */
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.MethodModel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 
-public class MHIllegalAccess implements Opcodes {
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_PROTECTED;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
-   public static void main(String args[]) throws Throwable  {
+public class MHIllegalAccess {
+
+   public static void main(String[] args) throws Throwable {
       System.out.println("Classpath is " + System.getProperty("java.class.path"));
       System.out.println();
 
       /**
        * Make method m be private to provoke an IllegalAccessError.
        */
-      BogoLoader.VisitorMaker privatize = new BogoLoader.VisitorMaker() {
-           public ClassVisitor make(ClassVisitor cv) {
-               return new ClassVisitor(Opcodes.ASM5, cv) {
-                   public MethodVisitor visitMethod(int access, String name, String desc,
-                           String signature, String[] exceptions) {
-                       if (name.equals("m"))
-                           access = (access | ACC_PRIVATE) & ~ (ACC_PUBLIC | ACC_PROTECTED);
-                           return super.visitMethod(access, name, desc, signature, exceptions);
-                   }
-               };
-           }
-       };
+      var privatize = ClassTransform.transformingMethods(m -> m.methodName().equalsString("m"), (mb, me) -> {
+          if (me instanceof AccessFlags af) {
+              mb.withFlags((af.flagsMask() | ACC_PRIVATE) & ~ (ACC_PUBLIC | ACC_PROTECTED));
+          } else {
+              mb.accept(me);
+          }
+      });
 
      /**
        * Rename method m as nemo to provoke a NoSuchMethodError.
        */
-     BogoLoader.VisitorMaker changeName = new BogoLoader.VisitorMaker() {
-           public ClassVisitor make(ClassVisitor cv) {
-               return new ClassVisitor(Opcodes.ASM5, cv) {
-                   public MethodVisitor visitMethod(int access, String name, String desc,
-                           String signature, String[] exceptions) {
-                       if (name.equals("m"))
-                           name = "nemo";
-                           return super.visitMethod(access, name, desc, signature, exceptions);
-                   }
-               };
-           }
-       };
+     ClassTransform changeName = (cb, ce) -> {
+         if (ce instanceof MethodModel mm && mm.methodName().equalsString("m")) {
+             cb.withMethod("nemo", mm.methodTypeSymbol(), mm.flags().flagsMask(), mm::forEachElement);
+         } else {
+             cb.accept(ce);
+         }
+     };
 
       int failures = 0;
       failures += testOneError(privatize, args, IllegalAccessError.class);
@@ -94,8 +87,8 @@ public class MHIllegalAccess implements Opcodes {
     * @throws ClassNotFoundException
     * @throws Throwable
     */
-    private static int testOneError(BogoLoader.VisitorMaker vm, String[] args, Class expected) throws ClassNotFoundException, Throwable {
-      HashMap<String, BogoLoader.VisitorMaker> replace = new HashMap<String, BogoLoader.VisitorMaker>();
+    private static int testOneError(ClassTransform vm, String[] args, Class<?> expected) throws ClassNotFoundException, Throwable {
+      var replace = new HashMap<String, ClassTransform>();
       replace.put("MethodSupplier", vm);
 
       HashSet<String> in_bogus = new HashSet<String>();

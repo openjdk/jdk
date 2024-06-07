@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200 8186332 8182765 8196202 8187288 8173730 8215307
+ *           8175200 8186332 8182765 8196202 8187288 8173730 8215307 8312445
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -675,11 +675,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <a href="A.html#s()">s</a>="sigh",""",
                 // Class
                 """
-                    <a href="A.html#c()">c</a>=<a href="../pkg2/Foo.html" title="class in pkg2">Foo.class</a>,""",
+                    <a href="A.html#c()">c</a>=<a href="../pkg2/Foo.html" title="class in pkg2">Foo</a>.class,""",
                 // Bounded Class
                 """
                     <a href="A.html#w()">w</a>=<a href="../pkg/TypeParameterSubClass.html" title="cl\
-                    ass in pkg">TypeParameterSubClass.class</a>,""",
+                    ass in pkg">TypeParameterSubClass</a>.class,""",
                 // Enum
                 """
                     <a href="A.html#e()">e</a>=<a href="../pkg/Coin.html#Penny">Penny</a>,""",
@@ -694,10 +694,17 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <a href="A.html#sa()">sa</a>={"up","down"},""",
                 // Primitive
                 """
-                    <a href="A.html#primitiveClassTest()">primitiveClassTest</a>=boolean.class,""");
+                    <a href="A.html#primitiveClassTest()">primitiveClassTest</a>=boolean.class,""",
+                // Arrays
+                """
+                    <a href="A.html#arrayClassTest()">arrayClassTest</a>=java.lang.String[][].class,""",
+                """
+                    <a href="A.html#arrayPrimitiveTest()">arrayPrimitiveTest</a>=boolean[].class,""",
+                """
+                    <a href="A.html#classArrayTest()">classArrayTest</a>={<a href="../pkg/TypeParame\
+                    terSubClass.html" title="class in pkg">TypeParameterSubClass</a>[][].class,java.\
+                    lang.String.class,long[][][].class})""");
 
-        // XXX:  Add array test case after this if fixed:
-        //5020899: Incorrect internal representation of class-valued annotation elements
         checkOutput("pkg1/B.html", true,
                 """
                     <div class="type-signature"><span class="annotations"><a href="A.html" title="an\

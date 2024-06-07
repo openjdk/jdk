@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,17 +12,372 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ar" draft="unconfirmed">taɛrabt</language>
+			<language type="ar_001" draft="unconfirmed">taɛrabt tamaynut</language>
+			<language type="bn" draft="unconfirmed">tabanɣaliyt</language>
+			<language type="de" draft="unconfirmed">talimant</language>
+			<language type="de_AT" draft="unconfirmed">talimant (AT)</language>
+			<language type="de_CH" draft="unconfirmed">talimant (CH)</language>
 			<language type="en" draft="unconfirmed">taglinzit</language>
+			<language type="en_AU" draft="unconfirmed">taglinzit (AU)</language>
+			<language type="en_CA" draft="unconfirmed">taglinzit (CA)</language>
+			<language type="en_GB" draft="unconfirmed">taglinzit (GB)</language>
+			<language type="en_US" draft="unconfirmed">taglinzit (US)</language>
+			<language type="es" draft="unconfirmed">taseppanyut</language>
+			<language type="es_419" draft="unconfirmed">taseppanyut talatinit</language>
+			<language type="es_ES" draft="unconfirmed">taseppanyut (ES)</language>
+			<language type="es_MX" draft="unconfirmed">taseppanyut (MX)</language>
+			<language type="fr" draft="unconfirmed">tafransist</language>
+			<language type="fr_CA" draft="unconfirmed">tafransist (CA)</language>
+			<language type="fr_CH" draft="unconfirmed">tafransist (CH)</language>
+			<language type="hi_Latn" draft="unconfirmed">tahindawiyt</language>
+			<language type="id" draft="unconfirmed">tayindusiyt</language>
+			<language type="it" draft="unconfirmed">tatayalt</language>
+			<language type="ja" draft="unconfirmed">tajappuniyt</language>
+			<language type="ko" draft="unconfirmed">takuriyt</language>
+			<language type="nl" draft="unconfirmed">tahulandiyt</language>
+			<language type="nl_BE" draft="unconfirmed">taflamant</language>
+			<language type="pl" draft="unconfirmed">tapulandiyt</language>
+			<language type="pt" draft="unconfirmed">tapuruɣaliyt</language>
+			<language type="pt_BR" draft="unconfirmed">tapuruɣaliyt (BR)</language>
+			<language type="pt_PT" draft="unconfirmed">tapuruɣaliyt (PT)</language>
 			<language type="rif">Tarifit</language>
+			<language type="ru" draft="unconfirmed">tarusiyt</language>
+			<language type="th" draft="unconfirmed">taṭayiyt</language>
+			<language type="tr" draft="unconfirmed">taṭurkiyt</language>
+			<language type="und" draft="unconfirmed">tutlayt nneɣni</language>
+			<language type="zh" draft="unconfirmed">tatcinwiyt</language>
+			<language type="zh" alt="menu" draft="unconfirmed">tamandariyt</language>
+			<language type="zh_Hans" draft="unconfirmed">tatcinwiyt tsampla</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">tatcinwiyt tamandariyt tsampla</language>
+			<language type="zh_Hant" draft="unconfirmed">tatcinwiyt taqdint</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">tatcinwiyt tamandariyt taqdint</language>
 		</languages>
 		<scripts>
+			<script type="Arab" draft="unconfirmed">aɛrab</script>
+			<script type="Cyrl" draft="unconfirmed">asirilik</script>
+			<script type="Hans" draft="unconfirmed">yehwen</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">yehwen Han</script>
+			<script type="Hant" draft="unconfirmed">amensay</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">amensay Han</script>
+			<script type="Jpan" draft="unconfirmed">ajappuni</script>
+			<script type="Kore" draft="unconfirmed">akuri</script>
 			<script type="Latn" draft="unconfirmed">talatinit</script>
 			<script type="Tfng" draft="unconfirmed">tifinaɣ</script>
+			<script type="Zxxx" draft="unconfirmed">wer ttemwari</script>
+			<script type="Zzzz" draft="unconfirmed">asekkil nneɣni</script>
 		</scripts>
 		<territories>
+			<territory type="001" draft="unconfirmed">amaḍal</territory>
+			<territory type="002" draft="unconfirmed">tafriqt</territory>
+			<territory type="003" draft="unconfirmed">amarikan n sennej</territory>
+			<territory type="005" draft="unconfirmed">amarikan n wadday</territory>
+			<territory type="009" draft="unconfirmed">usyanya</territory>
+			<territory type="011" draft="unconfirmed">lɣerb n tefriqt</territory>
+			<territory type="013" draft="unconfirmed">amarikan n lwest</territory>
+			<territory type="014" draft="unconfirmed">ccerq n tefriqt</territory>
+			<territory type="015" draft="unconfirmed">tqiccet n tfriqt</territory>
+			<territory type="017" draft="unconfirmed">lwest n tefriqt</territory>
+			<territory type="018" draft="unconfirmed">wadday n tefriqt</territory>
+			<territory type="019" draft="unconfirmed">timirikatin</territory>
+			<territory type="021" draft="unconfirmed">sennej n umarikan</territory>
+			<territory type="029" draft="unconfirmed">karibyan</territory>
+			<territory type="030" draft="unconfirmed">ccerq n asya</territory>
+			<territory type="034" draft="unconfirmed">wadday n asya</territory>
+			<territory type="035" draft="unconfirmed">wadday ccerq n asya</territory>
+			<territory type="039" draft="unconfirmed">wadday n wuruppa</territory>
+			<territory type="053" draft="unconfirmed">ustralazya</territory>
+			<territory type="054" draft="unconfirmed">milanizya</territory>
+			<territory type="057" draft="unconfirmed">jjiḥt n mikrunizya</territory>
+			<territory type="061" draft="unconfirmed">pulinizya</territory>
+			<territory type="142" draft="unconfirmed">asya</territory>
+			<territory type="143" draft="unconfirmed">lwest n asya</territory>
+			<territory type="145" draft="unconfirmed">lɣerb n asya</territory>
+			<territory type="150" draft="unconfirmed">uruppa</territory>
+			<territory type="151" draft="unconfirmed">ccerq n wuruppa</territory>
+			<territory type="154" draft="unconfirmed">sennej n wuruppa</territory>
+			<territory type="155" draft="unconfirmed">lɣerb n wuruppa</territory>
+			<territory type="202" draft="unconfirmed">tafriqt n wadday i sseḥra</territory>
+			<territory type="419" draft="unconfirmed">amarikan talatinit</territory>
+			<territory type="AC" draft="unconfirmed">tigzirin n asincyun</territory>
+			<territory type="AD" draft="unconfirmed">andura</territory>
+			<territory type="AE" draft="unconfirmed">limarat</territory>
+			<territory type="AF" draft="unconfirmed">afɣanistan</territory>
+			<territory type="AG" draft="unconfirmed">antigwa d barbuda</territory>
+			<territory type="AI" draft="unconfirmed">angwilla</territory>
+			<territory type="AL" draft="unconfirmed">albanya</territory>
+			<territory type="AM" draft="unconfirmed">arminya</territory>
+			<territory type="AO" draft="unconfirmed">angula</territory>
+			<territory type="AQ" draft="unconfirmed">antarktika</territory>
+			<territory type="AR" draft="unconfirmed">arxantina</territory>
+			<territory type="AS" draft="unconfirmed">sawma tamirikanit</territory>
+			<territory type="AT" draft="unconfirmed">nnemsa</territory>
+			<territory type="AU" draft="unconfirmed">ustralya</territory>
+			<territory type="AW" draft="unconfirmed">aruba</territory>
+			<territory type="AX" draft="unconfirmed">tagzirt n aland</territory>
+			<territory type="AZ" draft="unconfirmed">azrabijan</territory>
+			<territory type="BA" draft="unconfirmed">busna d hirsek</territory>
+			<territory type="BB" draft="unconfirmed">barbaḍus</territory>
+			<territory type="BD" draft="unconfirmed">bangladic</territory>
+			<territory type="BE" draft="unconfirmed">biljik</territory>
+			<territory type="BF" draft="unconfirmed">burkinafasu</territory>
+			<territory type="BG" draft="unconfirmed">belɣarya</territory>
+			<territory type="BH" draft="unconfirmed">lbeḥrin</territory>
+			<territory type="BI" draft="unconfirmed">burundi</territory>
+			<territory type="BJ" draft="unconfirmed">benin</territory>
+			<territory type="BL" draft="unconfirmed">sanbartilimi</territory>
+			<territory type="BM" draft="unconfirmed">birmuda</territory>
+			<territory type="BN" draft="unconfirmed">brunay</territory>
+			<territory type="BO" draft="unconfirmed">bulivya</territory>
+			<territory type="BQ" draft="unconfirmed">hulanda takaribiyt</territory>
+			<territory type="BR" draft="unconfirmed">brazil</territory>
+			<territory type="BS" draft="unconfirmed">bahamas</territory>
+			<territory type="BT" draft="unconfirmed">buṭan</territory>
+			<territory type="BV" draft="unconfirmed">tigzirin n buvi</territory>
+			<territory type="BW" draft="unconfirmed">buteswana</territory>
+			<territory type="BY" draft="unconfirmed">bilarus</territory>
+			<territory type="BZ" draft="unconfirmed">biliz</territory>
+			<territory type="CA" draft="unconfirmed">kanada</territory>
+			<territory type="CC" draft="unconfirmed">tigzirin n kukus</territory>
+			<territory type="CD" draft="unconfirmed">rripublik tadimuqratit n kungu</territory>
+			<territory type="CF" draft="unconfirmed">rripublik n terfriqt n lwesṭ</territory>
+			<territory type="CG" draft="unconfirmed">kungu</territory>
+			<territory type="CH" draft="unconfirmed">sswis</territory>
+			<territory type="CI" draft="unconfirmed">kudivwar</territory>
+			<territory type="CK" draft="unconfirmed">tigzirin n kuk</territory>
+			<territory type="CL" draft="unconfirmed">tcili</territory>
+			<territory type="CM" draft="unconfirmed">kamirun</territory>
+			<territory type="CN" draft="unconfirmed">tcina</territory>
+			<territory type="CO" draft="unconfirmed">kulumbya</territory>
+			<territory type="CP" draft="unconfirmed">tigzirin n klipirṭun</territory>
+			<territory type="CR" draft="unconfirmed">kustarika</territory>
+			<territory type="CU" draft="unconfirmed">kuba</territory>
+			<territory type="CV" draft="unconfirmed">qabu yazegza</territory>
+			<territory type="CW" draft="unconfirmed">kurasaw</territory>
+			<territory type="CX" draft="unconfirmed">tagzirt n kristmas</territory>
+			<territory type="CY" draft="unconfirmed">qubrus</territory>
+			<territory type="CZ" draft="unconfirmed">ttcik</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">rripublik n ttcik</territory>
+			<territory type="DE" draft="unconfirmed">aliman</territory>
+			<territory type="DG" draft="unconfirmed">dyigugarsya</territory>
+			<territory type="DJ" draft="unconfirmed">djibuti</territory>
+			<territory type="DK" draft="unconfirmed">ddanmark</territory>
+			<territory type="DM" draft="unconfirmed">duminika</territory>
+			<territory type="DO" draft="unconfirmed">arripublik n dduminikan</territory>
+			<territory type="DZ" draft="unconfirmed">ddzayer</territory>
+			<territory type="EA" draft="unconfirmed">sebta d mlillt</territory>
+			<territory type="EC" draft="unconfirmed">ikwadur</territory>
+			<territory type="EE" draft="unconfirmed">istunya</territory>
+			<territory type="EG" draft="unconfirmed">maser</territory>
+			<territory type="EH" draft="unconfirmed">sseḥra n lɣerb</territory>
+			<territory type="ER" draft="unconfirmed">iritirya</territory>
+			<territory type="ES" draft="unconfirmed">seppanya</territory>
+			<territory type="ET" draft="unconfirmed">ityupya</territory>
+			<territory type="EU" draft="unconfirmed">tamunt tawruppawit</territory>
+			<territory type="EZ" draft="unconfirmed">jjiht n wuru</territory>
+			<territory type="FI" draft="unconfirmed">fillanda</territory>
+			<territory type="FJ" draft="unconfirmed">fiji</territory>
+			<territory type="FK" draft="unconfirmed">tigzirin n falkland</territory>
+			<territory type="FM" draft="unconfirmed">mikrunizya</territory>
+			<territory type="FO" draft="unconfirmed">tigzirin n faru</territory>
+			<territory type="FR" draft="unconfirmed">fransa</territory>
+			<territory type="GA" draft="unconfirmed">gabun</territory>
+			<territory type="GB" draft="unconfirmed">aglinzi</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">UK</territory>
+			<territory type="GD" draft="unconfirmed">grinada</territory>
+			<territory type="GE" draft="unconfirmed">jurejya</territory>
+			<territory type="GF" draft="unconfirmed">ɣuyana tafransist</territory>
+			<territory type="GG" draft="unconfirmed">girnizi</territory>
+			<territory type="GH" draft="unconfirmed">ɣana</territory>
+			<territory type="GI" draft="unconfirmed">jibralṭar</territory>
+			<territory type="GL" draft="unconfirmed">grinlanda</territory>
+			<territory type="GM" draft="unconfirmed">gambya</territory>
+			<territory type="GN" draft="unconfirmed">ɣinya</territory>
+			<territory type="GP" draft="unconfirmed">gwadlup</territory>
+			<territory type="GQ" draft="unconfirmed">ɣinya tayikwaṭurit</territory>
+			<territory type="GR" draft="unconfirmed">legrig</territory>
+			<territory type="GS" draft="unconfirmed">tigzirin n jyurejya n wadday d sandwitc n wadday</territory>
+			<territory type="GT" draft="unconfirmed">gwatimala</territory>
+			<territory type="GU" draft="unconfirmed">gwam</territory>
+			<territory type="GW" draft="unconfirmed">ɣinyabisaw</territory>
+			<territory type="GY" draft="unconfirmed">ɣuyana</territory>
+			<territory type="HK" draft="unconfirmed">hungkung</territory>
+			<territory type="HM" draft="unconfirmed">tigzirin n hird d makdunald</territory>
+			<territory type="HN" draft="unconfirmed">hunduras</territory>
+			<territory type="HR" draft="unconfirmed">kerwatya</territory>
+			<territory type="HT" draft="unconfirmed">hayti</territory>
+			<territory type="HU" draft="unconfirmed">hungarya</territory>
+			<territory type="IC" draft="unconfirmed">kanarya</territory>
+			<territory type="ID" draft="unconfirmed">andunisya</territory>
+			<territory type="IE" draft="unconfirmed">irlanda</territory>
+			<territory type="IL" draft="unconfirmed">israyil</territory>
+			<territory type="IM" draft="unconfirmed">tagzirt n man</territory>
+			<territory type="IN" draft="unconfirmed">lhend</territory>
+			<territory type="IO" draft="unconfirmed">timmura n uglanzi di lebḥer ahindawi</territory>
+			<territory type="IQ" draft="unconfirmed">lɛiraq</territory>
+			<territory type="IR" draft="unconfirmed">iran</territory>
+			<territory type="IS" draft="unconfirmed">ayeslanda</territory>
+			<territory type="IT" draft="unconfirmed">atayal</territory>
+			<territory type="JE" draft="unconfirmed">jirsi</territory>
+			<territory type="JM" draft="unconfirmed">jamayka</territory>
+			<territory type="JO" draft="unconfirmed">lurdun</territory>
+			<territory type="JP" draft="unconfirmed">jjapun</territory>
+			<territory type="KE" draft="unconfirmed">kinya</territory>
+			<territory type="KG" draft="unconfirmed">kirgistan</territory>
+			<territory type="KH" draft="unconfirmed">kambudya</territory>
+			<territory type="KI" draft="unconfirmed">kribati</territory>
+			<territory type="KM" draft="unconfirmed">qumrus</territory>
+			<territory type="KN" draft="unconfirmed">sankits d nivis</territory>
+			<territory type="KP" draft="unconfirmed">kurya n sennej</territory>
+			<territory type="KR" draft="unconfirmed">kurya n wadday</territory>
+			<territory type="KW" draft="unconfirmed">lkuwayt</territory>
+			<territory type="KY" draft="unconfirmed">tigzirin n kayman</territory>
+			<territory type="KZ" draft="unconfirmed">kazaxistan</territory>
+			<territory type="LA" draft="unconfirmed">lawes</territory>
+			<territory type="LB" draft="unconfirmed">lubnan</territory>
+			<territory type="LC" draft="unconfirmed">sanlusya</territory>
+			<territory type="LI" draft="unconfirmed">lictenctayn</territory>
+			<territory type="LK" draft="unconfirmed">srilanka</territory>
+			<territory type="LR" draft="unconfirmed">libirya</territory>
+			<territory type="LS" draft="unconfirmed">lisutu</territory>
+			<territory type="LT" draft="unconfirmed">litwanya</territory>
+			<territory type="LU" draft="unconfirmed">lluksemburg</territory>
+			<territory type="LV" draft="unconfirmed">latevya</territory>
+			<territory type="LY" draft="unconfirmed">libya</territory>
 			<territory type="MA" draft="unconfirmed">Lmuɣrib</territory>
-			<territory type="TR" draft="unconfirmed">Ṭurkya</territory>
+			<territory type="MC" draft="unconfirmed">munaku</territory>
+			<territory type="MD" draft="unconfirmed">mulduva</territory>
+			<territory type="ME" draft="unconfirmed">muntinigru</territory>
+			<territory type="MF" draft="unconfirmed">sanmartin</territory>
+			<territory type="MG" draft="unconfirmed">madaɣacqar</territory>
+			<territory type="MH" draft="unconfirmed">tigzirin n marcal</territory>
+			<territory type="MK" draft="unconfirmed">maqdunya n sennej</territory>
+			<territory type="ML" draft="unconfirmed">mali</territory>
+			<territory type="MM" draft="unconfirmed">myanmar</territory>
+			<territory type="MN" draft="unconfirmed">mangulya</territory>
+			<territory type="MO" draft="unconfirmed">makkaw</territory>
+			<territory type="MP" draft="unconfirmed">tigzirin n maryana n sennej</territory>
+			<territory type="MQ" draft="unconfirmed">martinik</territory>
+			<territory type="MR" draft="unconfirmed">muritanya</territory>
+			<territory type="MS" draft="unconfirmed">munsirat</territory>
+			<territory type="MT" draft="unconfirmed">malṭa</territory>
+			<territory type="MU" draft="unconfirmed">muricyus</territory>
+			<territory type="MV" draft="unconfirmed">lmaldiv</territory>
+			<territory type="MW" draft="unconfirmed">malawi</territory>
+			<territory type="MX" draft="unconfirmed">miksiku</territory>
+			<territory type="MY" draft="unconfirmed">malizya</territory>
+			<territory type="MZ" draft="unconfirmed">muzembiq</territory>
+			<territory type="NA" draft="unconfirmed">nambya</territory>
+			<territory type="NC" draft="unconfirmed">kalidunya tamaynut</territory>
+			<territory type="NE" draft="unconfirmed">nnijir</territory>
+			<territory type="NF" draft="unconfirmed">tagzirt n nurfulk</territory>
+			<territory type="NG" draft="unconfirmed">nijirya</territory>
+			<territory type="NI" draft="unconfirmed">nikaragwa</territory>
+			<territory type="NL" draft="unconfirmed">hulanda</territory>
+			<territory type="NO" draft="unconfirmed">nnarwij</territory>
+			<territory type="NP" draft="unconfirmed">nippal</territory>
+			<territory type="NR" draft="unconfirmed">nawru</territory>
+			<territory type="NU" draft="unconfirmed">nyiwi</territory>
+			<territory type="NZ" draft="unconfirmed">nyuziland</territory>
+			<territory type="OM" draft="unconfirmed">ɛumman</territory>
+			<territory type="PA" draft="unconfirmed">panama</territory>
+			<territory type="PE" draft="unconfirmed">piru</territory>
+			<territory type="PF" draft="unconfirmed">pulinizya tafransist</territory>
+			<territory type="PG" draft="unconfirmed">papwa ɣinya tamaynut</territory>
+			<territory type="PH" draft="unconfirmed">filippin</territory>
+			<territory type="PK" draft="unconfirmed">pakistan</territory>
+			<territory type="PL" draft="unconfirmed">pulanda</territory>
+			<territory type="PM" draft="unconfirmed">sanpyir d miklun</territory>
+			<territory type="PN" draft="unconfirmed">tigzirin n pitkirn</territory>
+			<territory type="PR" draft="unconfirmed">purturiku</territory>
+			<territory type="PS" draft="unconfirmed">falasṭin</territory>
+			<territory type="PS" alt="short" draft="unconfirmed">filasṭin</territory>
+			<territory type="PT" draft="unconfirmed">ppurtugal</territory>
+			<territory type="PW" draft="unconfirmed">palaw</territory>
+			<territory type="PY" draft="unconfirmed">paragway</territory>
+			<territory type="QA" draft="unconfirmed">qaṭar</territory>
+			<territory type="QO" draft="unconfirmed">usyanya i yegʷjen</territory>
+			<territory type="RE" draft="unconfirmed">rinyun</territory>
+			<territory type="RO" draft="unconfirmed">rumanya</territory>
+			<territory type="RS" draft="unconfirmed">sirebya</territory>
+			<territory type="RU" draft="unconfirmed">rrusya</territory>
+			<territory type="RW" draft="unconfirmed">rwanda</territory>
+			<territory type="SA" draft="unconfirmed">ssaɛud</territory>
+			<territory type="SB" draft="unconfirmed">tigzirin n suliman</territory>
+			<territory type="SC" draft="unconfirmed">sicel</territory>
+			<territory type="SD" draft="unconfirmed">ssudan</territory>
+			<territory type="SE" draft="unconfirmed">sswid</territory>
+			<territory type="SG" draft="unconfirmed">sanɣafura</territory>
+			<territory type="SH" draft="unconfirmed">santḥilina</territory>
+			<territory type="SI" draft="unconfirmed">sluvinya</territory>
+			<territory type="SJ" draft="unconfirmed">svalbard d janmayen</territory>
+			<territory type="SK" draft="unconfirmed">sluvakya</territory>
+			<territory type="SL" draft="unconfirmed">siraliyyun</territory>
+			<territory type="SM" draft="unconfirmed">sanmarinu</territory>
+			<territory type="SN" draft="unconfirmed">ssinigal</territory>
+			<territory type="SO" draft="unconfirmed">sumalya</territory>
+			<territory type="SR" draft="unconfirmed">surinam</territory>
+			<territory type="SS" draft="unconfirmed">ssudan n wadday</territory>
+			<territory type="ST" draft="unconfirmed">sawṭumi d prinsip</territory>
+			<territory type="SV" draft="unconfirmed">ssalvadur</territory>
+			<territory type="SX" draft="unconfirmed">santmartin</territory>
+			<territory type="SY" draft="unconfirmed">surya</territory>
+			<territory type="SZ" draft="unconfirmed">iswatini</territory>
+			<territory type="TA" draft="unconfirmed">tristan dakuna</territory>
+			<territory type="TC" draft="unconfirmed">ṭṭurks d tegzirin n kaykus</territory>
+			<territory type="TD" draft="unconfirmed">tcad</territory>
+			<territory type="TF" draft="unconfirmed">timmura tifransisin nwadday</territory>
+			<territory type="TG" draft="unconfirmed">ṭṭugu</territory>
+			<territory type="TH" draft="unconfirmed">ṭṭayland</territory>
+			<territory type="TJ" draft="unconfirmed">tajikistan</territory>
+			<territory type="TK" draft="unconfirmed">ṭukilu</territory>
+			<territory type="TL" draft="unconfirmed">ṭimur licti</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">ṭimur n ccerq</territory>
+			<territory type="TM" draft="unconfirmed">ṭurkmanistan</territory>
+			<territory type="TN" draft="unconfirmed">tunes</territory>
+			<territory type="TO" draft="unconfirmed">ṭunga</territory>
+			<territory type="TR" draft="unconfirmed">ṭurekya</territory>
+			<territory type="TR" alt="variant" draft="unconfirmed">ṭṭurk</territory>
+			<territory type="TT" draft="unconfirmed">trinidad d ṭubagu</territory>
+			<territory type="TV" draft="unconfirmed">ṭuvalu</territory>
+			<territory type="TW" draft="unconfirmed">ṭṭaywan</territory>
+			<territory type="TZ" draft="unconfirmed">ṭanzanya</territory>
+			<territory type="UA" draft="unconfirmed">ukrayina</territory>
+			<territory type="UG" draft="unconfirmed">uɣanda</territory>
+			<territory type="UM" draft="unconfirmed">tigzirin timirikanin i yegʷjen</territory>
+			<territory type="UN" draft="unconfirmed">tamunt n tmura</territory>
+			<territory type="US" draft="unconfirmed">amarikan</territory>
+			<territory type="US" alt="short" draft="unconfirmed">US</territory>
+			<territory type="UY" draft="unconfirmed">urugway</territory>
+			<territory type="UZ" draft="unconfirmed">uzbakistan</territory>
+			<territory type="VA" draft="unconfirmed">lvatikan</territory>
+			<territory type="VC" draft="unconfirmed">sanvinsit d grinadin</territory>
+			<territory type="VE" draft="unconfirmed">vanzwilla</territory>
+			<territory type="VG" draft="unconfirmed">tigzirin tiɛezriyyin tiglanziyyin</territory>
+			<territory type="VI" draft="unconfirmed">tigzirin tiɛezriyyin timarikanin</territory>
+			<territory type="VN" draft="unconfirmed">vitnam</territory>
+			<territory type="VU" draft="unconfirmed">vanwatu</territory>
+			<territory type="WF" draft="unconfirmed">walis d futuna</territory>
+			<territory type="WS" draft="unconfirmed">samwa</territory>
+			<territory type="XA" draft="unconfirmed">awal amsaqar</territory>
+			<territory type="XB" draft="unconfirmed">bidi tamsaqart</territory>
+			<territory type="XK" draft="unconfirmed">kusuvu</territory>
+			<territory type="YE" draft="unconfirmed">lyaman</territory>
+			<territory type="YT" draft="unconfirmed">mayuṭ</territory>
+			<territory type="ZA" draft="unconfirmed">tafriqt n wadday</territory>
+			<territory type="ZM" draft="unconfirmed">zambya</territory>
+			<territory type="ZW" draft="unconfirmed">zimbabwi</territory>
+			<territory type="ZZ" draft="unconfirmed">jjiht wer yettemwassnen</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="unconfirmed">taklindart tagrikant</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">taklindart tameslemt</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">taklindart tameslemt (leḥsab)</type>
+			<type key="calendar" type="islamic-tbla" draft="unconfirmed">taklindart tameslemt (ayur)</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">kalandar n ISO-8601</type>
+			<type key="collation" type="standard" draft="unconfirmed">asettef sṭandar</type>
+			<type key="numbers" type="latn" draft="unconfirmed">nnurwat irumiyyen</type>
+		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="unconfirmed">amitrik</measurementSystemName>
 			<measurementSystemName type="UK" draft="unconfirmed">aglinziy</measurementSystemName>
@@ -35,17 +390,206 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b c d ḍ e ɛ f g ɣ h ḥ i j k l m n p q r s ṣ t ṭ u w x y z ẓ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à â ä ç é è ê ë î ï ñ o ó ô ö œ ß ú ù û ü v ʷ ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D Ḍ E Ɛ F G Ɣ H Ḥ I J K L M N P Q R S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] \{ \} § @ * / \&amp; # `]</exemplarCharacters>
+		<exemplarCharacters>[a b c dḍ e ɛ f g ɣ hḥ i j k l m n p q r sṣ tṭ u w x y zẓ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàâä ç éèêë îï ñ oóôö œ ß úùûü v ʷ ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C DḌ E Ɛ F G Ɣ HḤ I J K L M N P Q R SṢ TṬ U W X Y ZẒ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” « » ( ) \[ \] \{ \} § @ * / \&amp; # `]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d" draft="unconfirmed">dd</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E dd</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E dd MMM y G</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E dd MMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="unconfirmed">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="unconfirmed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">E dd MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MM/y GGGGG – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd/MM/y GGGGG – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E dd/MM/y GGGGG – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd MMM y G – dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd MMM y – dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E dd MMM y G – E dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd MMM y – E dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">MM – MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd MMM y – dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd MMM y – E dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">yen</month>
+							<month type="2" draft="unconfirmed">feb</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">yeb</month>
+							<month type="5" draft="unconfirmed">may</month>
+							<month type="6" draft="unconfirmed">yun</month>
+							<month type="7" draft="unconfirmed">yul</month>
+							<month type="8" draft="unconfirmed">ɣuc</month>
+							<month type="9" draft="unconfirmed">cut</month>
+							<month type="10" draft="unconfirmed">kṭu</month>
+							<month type="11" draft="unconfirmed">nuw</month>
+							<month type="12" draft="unconfirmed">duj</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">yennayer</month>
 							<month type="2" draft="unconfirmed">febrayer</month>
@@ -61,9 +605,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">dujember</month>
 						</monthWidth>
 					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">y</month>
+							<month type="2" draft="unconfirmed">f</month>
+							<month type="3" draft="unconfirmed">m</month>
+							<month type="4" draft="unconfirmed">y</month>
+							<month type="5" draft="unconfirmed">m</month>
+							<month type="6" draft="unconfirmed">y</month>
+							<month type="7" draft="unconfirmed">y</month>
+							<month type="8" draft="unconfirmed">ɣ</month>
+							<month type="9" draft="unconfirmed">c</month>
+							<month type="10" draft="unconfirmed">k</month>
+							<month type="11" draft="unconfirmed">n</month>
+							<month type="12" draft="unconfirmed">d</month>
+						</monthWidth>
+					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">lḥe</day>
+							<day type="mon" draft="unconfirmed">let</day>
+							<day type="tue" draft="unconfirmed">ttl</day>
+							<day type="wed" draft="unconfirmed">lar</day>
+							<day type="thu" draft="unconfirmed">lex</day>
+							<day type="fri" draft="unconfirmed">jje</day>
+							<day type="sat" draft="unconfirmed">sse</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">lḥ</day>
+							<day type="mon" draft="unconfirmed">le</day>
+							<day type="tue" draft="unconfirmed">tt</day>
+							<day type="wed" draft="unconfirmed">la</day>
+							<day type="thu" draft="unconfirmed">lx</day>
+							<day type="fri" draft="unconfirmed">jj</day>
+							<day type="sat" draft="unconfirmed">ss</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">lḥed</day>
 							<day type="mon" draft="unconfirmed">letnayen</day>
@@ -74,31 +652,652 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat" draft="unconfirmed">ssebt</day>
 						</dayWidth>
 					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">l</day>
+							<day type="mon" draft="unconfirmed">l</day>
+							<day type="tue" draft="unconfirmed">t</day>
+							<day type="wed" draft="unconfirmed">l</day>
+							<day type="thu" draft="unconfirmed">l</day>
+							<day type="fri" draft="unconfirmed">j</day>
+							<day type="sat" draft="unconfirmed">s</day>
+						</dayWidth>
+					</dayContext>
 				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">r1</quarter>
+							<quarter type="2" draft="unconfirmed">r2</quarter>
+							<quarter type="3" draft="unconfirmed">r3</quarter>
+							<quarter type="4" draft="unconfirmed">r4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">rrbeɛ wis 1</quarter>
+							<quarter type="2" draft="unconfirmed">rrbeɛ wis 2</quarter>
+							<quarter type="3" draft="unconfirmed">rrbeɛ wis 3</quarter>
+							<quarter type="4" draft="unconfirmed">rrbeɛ wis 4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">zzat i yeccu</era>
+						<era type="0" alt="variant" draft="unconfirmed">akud zzat i yeccu</era>
+						<era type="1" draft="unconfirmed">awarni yeccu</era>
+						<era type="1" alt="variant" draft="unconfirmed">akud n yiḍa</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">BC</era>
+						<era type="0" alt="variant" draft="unconfirmed">BCE</era>
+						<era type="1" draft="unconfirmed">AD</era>
+						<era type="1" alt="variant" draft="unconfirmed">CE</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="d" draft="unconfirmed">dd</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E dd</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E dd MMM y G</dateFormatItem>
 						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E dd MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">dd MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'simana' 'wis' W 'zeg' MMMM</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">MM/y</dateFormatItem>
 						<dateFormatItem id="yMd" draft="unconfirmed">dd/MM/y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E dd/MM/y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">dd MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E dd MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="unconfirmed">'simana' 'wis' w 'zeg' Y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MM/y G – MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd/MM/y G – dd/MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E dd/MM/y G – E dd/MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd MMM y G – dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd MMM y – dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E dd MMM y G – E dd MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd MMM y – E dd MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h – h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h – h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">MM – MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y – y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd – dd MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM – dd MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd MMM y – dd MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E dd MMM – E dd MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd MMM – E dd MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd MMM y – E dd MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">tɛa.</month>
+							<month type="2" draft="unconfirmed">clɛ.</month>
+							<month type="3" draft="unconfirmed">lmu.</month>
+							<month type="4" draft="unconfirmed">clm.</month>
+							<month type="5" draft="unconfirmed">ja.</month>
+							<month type="6" draft="unconfirmed">jum.</month>
+							<month type="7" draft="unconfirmed">raj.</month>
+							<month type="8" draft="unconfirmed">ceɛ.</month>
+							<month type="9" draft="unconfirmed">are.</month>
+							<month type="10" draft="unconfirmed">cuw.</month>
+							<month type="11" draft="unconfirmed">jer.</month>
+							<month type="12" draft="unconfirmed">lɛi.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">tɛacurt</month>
+							<month type="2" draft="unconfirmed">cciɛ lɛacur</month>
+							<month type="3" draft="unconfirmed">lmulud</month>
+							<month type="4" draft="unconfirmed">cciɛ lmulud</month>
+							<month type="5" draft="unconfirmed">jad</month>
+							<month type="6" draft="unconfirmed">jummad</month>
+							<month type="7" draft="unconfirmed">rajeb</month>
+							<month type="8" draft="unconfirmed">ceɛban</month>
+							<month type="9" draft="unconfirmed">aremḍan</month>
+							<month type="10" draft="unconfirmed">cuwwal</month>
+							<month type="11" draft="unconfirmed">jer leɛyud</month>
+							<month type="12" draft="unconfirmed">lɛid ameqran</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
 		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">akud</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">aseggʷas</displayName>
+				<relative type="-1" draft="unconfirmed">aẓẓɣat</relative>
+				<relative type="0" draft="unconfirmed">aseggʷas-a</relative>
+				<relative type="1" draft="unconfirmed">imal</relative>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">sg.</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">sg</displayName>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">rbeɛ</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">rbɛ.</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">rbɛ</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ayur</displayName>
+				<relative type="-1" draft="unconfirmed">ayur yeɛdan</relative>
+				<relative type="0" draft="unconfirmed">ayur-a</relative>
+				<relative type="1" draft="unconfirmed">ayur dd-yusin</relative>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">yr.</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">yr</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">simana</displayName>
+				<relative type="-1" draft="unconfirmed">simana yeɛdan</relative>
+				<relative type="0" draft="unconfirmed">simana-ya</relative>
+				<relative type="1" draft="unconfirmed">simana dd-yusin</relative>
+				<relativePeriod draft="unconfirmed">simana n {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">sm.</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">sm</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ass</displayName>
+				<relative type="-1" draft="unconfirmed">iḍennaḍ</relative>
+				<relative type="0" draft="unconfirmed">ass-a</relative>
+				<relative type="1" draft="unconfirmed">tiwecca</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">us.</displayName>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">us</displayName>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">ass n simana</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1" draft="unconfirmed">lḥed i yeɛdan</relative>
+				<relative type="0" draft="unconfirmed">lḥed-a</relative>
+				<relative type="1" draft="unconfirmed">lḥed i dd-yusin</relative>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">AM/PM</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">tiseɛɛet</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">ts.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">ts</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">tminut</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">min.</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">min</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">tsigunt</displayName>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">sec.</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">sec</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">akud adigan</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<regionFormat draft="unconfirmed">akud n {0}</regionFormat>
 			<regionFormat type="daylight" draft="unconfirmed">akud unebdu n {0}</regionFormat>
 			<regionFormat type="standard" draft="unconfirmed">akud anaway n {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">akud agraɣlan amezday</standard>
+				</long>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">aruba</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">barbadus</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">birmuda</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">rigina</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">atikukan</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">kustarika</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">havana</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">duminika</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity draft="unconfirmed">nuk</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">gwatimala</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">sayman</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">panama</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">adak</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">yakutat</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity draft="unconfirmed">sitka</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">dinver</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">cikagu</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">indyanapulis</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">ditruyd</exemplarCity>
+			</zone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">akud n alaska</generic>
+					<standard draft="unconfirmed">akud anaway n alaska</standard>
+					<daylight draft="unconfirmed">akud n uzil n alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">akud n amazun</generic>
+					<standard draft="unconfirmed">akud anaway n amazun</standard>
+					<daylight draft="unconfirmed">akud n uzil n amazun</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">akud n lwesṭ</generic>
+					<standard draft="unconfirmed">akud anaway n lwesṭ</standard>
+					<daylight draft="unconfirmed">akud n uzil n lwesṭ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">akud n lɣerb</generic>
+					<standard draft="unconfirmed">akud anaway n lɣerb</standard>
+					<daylight draft="unconfirmed">akud n uzil n lɣerb</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">akud n idurar</generic>
+					<standard draft="unconfirmed">akud anaway n idurar</standard>
+					<daylight draft="unconfirmed">akud n uzil n idurar</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">akud n pasifik</generic>
+					<standard draft="unconfirmed">akud anaway n pasifik</standard>
+					<daylight draft="unconfirmed">akud n uzil n pasifik</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">akud n arjentina</generic>
+					<standard draft="unconfirmed">akud anaway n arjentina</standard>
+					<daylight draft="unconfirmed">akud n uzil n arjentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">akud n atlantik</generic>
+					<standard draft="unconfirmed">akud anaway n atlantik</standard>
+					<daylight draft="unconfirmed">akud n uzil n atlantik</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">akud n bulivya</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">akud n brazilya</generic>
+					<standard draft="unconfirmed">akud anaway n brazilya</standard>
+					<daylight draft="unconfirmed">akud n uzil n brazilya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">akud n cili</generic>
+					<standard draft="unconfirmed">akud anaway n cili</standard>
+					<daylight draft="unconfirmed">akud n uzil n cili</daylight>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">akud n kulumbya</generic>
+					<standard draft="unconfirmed">akud anaway n kulumbya</standard>
+					<daylight draft="unconfirmed">akud n uzil n kulumbya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">akud n kuba</generic>
+					<standard draft="unconfirmed">akud anaway n kuba</standard>
+					<daylight draft="unconfirmed">akud n uzil n kuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">akud n ikwadur</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">akud n ɣana tafransist</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard draft="unconfirmed">GMT</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">akud n ccerq n grinland</generic>
+					<standard draft="unconfirmed">akud anaway n ccerq n grinland</standard>
+					<daylight draft="unconfirmed">akud n uzil n ccerq n grinland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">akud n lwesṭ n grinland</generic>
+					<standard draft="unconfirmed">akud anaway n lwesṭ n grinland</standard>
+					<daylight draft="unconfirmed">akud n uzil n lwesṭ n grinland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">akud n guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">akud n haway-alucyan</generic>
+					<standard draft="unconfirmed">akud anaway n haway-alucyan</standard>
+					<daylight draft="unconfirmed">akud n uzil n haway-alucyan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">akud n pasifik amiksikan</generic>
+					<standard draft="unconfirmed">akud anaway n pasifik amiksikan</standard>
+					<daylight draft="unconfirmed">akud n uzil n pasifik amiksikan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">akud n yukun</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -108,14 +1307,156 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed"> </group>
 		</symbols>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
+		<currencies>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">Bermudan Dollar</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n birmudan</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">Belize Dollar</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n biliz</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">Canadian Dollar</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n kanada</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">Costa Rican Colón</displayName>
+				<displayName count="other" draft="unconfirmed">kulun n kustarika</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">Danish Krone</displayName>
+				<displayName count="other" draft="unconfirmed">kruna n ddanmark</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">Algerian Dinar</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n ddzayer</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">Euro</displayName>
+				<displayName count="other" draft="unconfirmed">uru</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">British Pound</displayName>
+				<displayName count="other" draft="unconfirmed">ppaʷndd</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">Guatemalan Quetzal</displayName>
+				<displayName count="other" draft="unconfirmed">kwitzal n gwatimala</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">Honduran Lempira</displayName>
+				<displayName count="other" draft="unconfirmed">lempiras n hondura</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">Libyan Dinar</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n libya</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">Moroccan Dirham</displayName>
+				<displayName count="other" draft="unconfirmed">derhem</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">Mexican Peso</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n miksiku</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">Norwegian Krone</displayName>
+				<displayName count="other" draft="unconfirmed">kruna n nnarwij</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">Swedish Krona</displayName>
+				<displayName count="other" draft="unconfirmed">kruna n sswid</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">Tunisian Dinar</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n tunes</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">US Dollar</displayName>
+				<displayName count="other" draft="unconfirmed">ddular</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">ttmenyat</displayName>
+				<displayName count="other" draft="unconfirmed">ttmneyat</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} n wussan</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">ṭṭef wis {0} xef yeffus</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0} xef {1}</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">amnad akardinal</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ccerq</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} ẓelmeḍ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} wadday</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} lɣerb</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">amnad</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} C</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} Ẓ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} W</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} L</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}C</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}Ẓ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}L</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} d {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} d {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start" draft="unconfirmed">{0} niɣ {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} niɣ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<personNames>
 		<sampleName item="nativeG">
 			<nameField type="given" draft="unconfirmed">Yamina</nameField>

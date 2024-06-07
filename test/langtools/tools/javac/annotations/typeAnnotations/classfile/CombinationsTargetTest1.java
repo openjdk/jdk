@@ -25,10 +25,11 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 
 public class CombinationsTargetTest1 extends ClassfileTestHelper {
@@ -142,16 +143,16 @@ public class CombinationsTargetTest1 extends ClassfileTestHelper {
             classFile=new File(sb.insert(sb.lastIndexOf(".class"),
                                          innerClassname).toString());
         }
-        ClassFile cf = ClassFile.read(classFile);
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
 
         //Test class,fields and method counts.
-        test(cf);
+        test(cm);
 
-        for (Field f : cf.fields) {
-            test(cf, f);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m);
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
         countAnnotations();
         if (errors > 0) {

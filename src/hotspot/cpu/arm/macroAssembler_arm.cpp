@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -297,11 +298,13 @@ Address MacroAssembler::receiver_argument_address(Register params_base, Register
   return Address(tmp, -Interpreter::stackElementSize);
 }
 
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
+}
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) {
-    nop();
-  }
+  align(modulus, offset());
 }
 
 int MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -1748,14 +1751,14 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   POISON_REG(mask, 1, R2, poison)               \
   POISON_REG(mask, 2, R3, poison)
 
-// Attempt to fast-lock an object
+// Attempt to lightweight-lock an object
 // Registers:
 //  - obj: the object to be locked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
@@ -1806,14 +1809,14 @@ void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Registe
   // Success: fall through
 }
 
-// Attempt to fast-unlock an object
+// Attempt to lightweight-unlock an object
 // Registers:
 //  - obj: the object to be unlocked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::fast_unlock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
@@ -1859,4 +1862,32 @@ void MacroAssembler::fast_unlock_2(Register obj, Register t1, Register t2, Regis
 #endif
 
   // Fallthrough: success
+}
+
+int MacroAssembler::ic_check_size() {
+  return NativeInstruction::instruction_size * 7;
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register tmp1 = R4;
+  Register tmp2 = R5;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  ldr(tmp2, Address(Ricklass, CompiledICData::speculated_klass_offset()));
+  cmp(tmp1, tmp2);
+
+  Label dont;
+  b(dont, eq);
+  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
+  bind(dont);
+  return uep_offset;
 }

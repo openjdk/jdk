@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,6 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
-import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReturnTree;
@@ -106,8 +105,6 @@ import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SpecTree;
-import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -378,6 +375,11 @@ public class Utils {
         return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
+    }
+
+    public boolean isFunctionalInterface(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream()
+                .anyMatch(this::isFunctionalInterface);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -660,7 +662,7 @@ public class Utils {
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         typeElements.forEach(set::add);
         return set;
     }
@@ -801,20 +803,6 @@ public class Utils {
     }
 
     /**
-     * Lookup for a class within this package.
-     *
-     * @return TypeElement of found class, or null if not found.
-     */
-    public TypeElement findClassInPackageElement(PackageElement pkg, String className) {
-        for (TypeElement c : getAllClasses(pkg)) {
-            if (getSimpleName(c).equals(className)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
      * @param type the type
      * @return {@code true} if type arguments were found
@@ -827,30 +815,6 @@ public class Utils {
             type = dt.getEnclosingType();
         }
         return false;
-    }
-
-    /**
-     * TODO: FIXME: port to javax.lang.model
-     * Find a class within the context of this class. Search order: qualified name, in this class
-     * (inner), in this package, in the class imports, in the package imports. Return the
-     * TypeElement if found, null if not found.
-     */
-    //### The specified search order is not the normal rule the
-    //### compiler would use.  Leave as specified or change it?
-    public TypeElement findClass(Element element, String className) {
-        TypeElement encl = getEnclosingTypeElement(element);
-        TypeElement searchResult = configuration.workArounds.searchClass(encl, className);
-        if (searchResult == null) {
-            encl = getEnclosingTypeElement(encl);
-            //Expand search space to include enclosing class.
-            while (encl != null && getEnclosingTypeElement(encl) != null) {
-                encl = getEnclosingTypeElement(encl);
-            }
-            searchResult = encl == null
-                    ? null
-                    : configuration.workArounds.searchClass(encl, className);
-        }
-        return searchResult;
     }
 
     /**
@@ -1317,7 +1281,7 @@ public class Utils {
     public SortedSet<TypeElement> filterOutPrivateClasses(Iterable<TypeElement> classlist,
             boolean javafx) {
         SortedSet<TypeElement> filteredOutClasses =
-                new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
                 if (!hasHiddenTag(te)) {
@@ -1362,38 +1326,6 @@ public class Utils {
             secondaryCollator = new DocCollator(configuration.locale, Collator.SECONDARY);
         }
         return secondaryCollator.compare(s1, s2);
-    }
-
-    public String getHTMLTitle(Element element) {
-        List<? extends DocTree> preamble = getPreamble(element);
-        StringBuilder sb = new StringBuilder();
-        boolean titleFound = false;
-        loop:
-        for (DocTree dt : preamble) {
-            switch (dt.getKind()) {
-                case START_ELEMENT -> {
-                    StartElementTree nodeStart = (StartElementTree) dt;
-                    if (Utils.toLowerCase(nodeStart.getName().toString()).equals("title")) {
-                        titleFound = true;
-                    }
-                }
-                case END_ELEMENT -> {
-                    EndElementTree nodeEnd = (EndElementTree) dt;
-                    if (Utils.toLowerCase(nodeEnd.getName().toString()).equals("title")) {
-                        break loop;
-                    }
-                }
-                case TEXT -> {
-                    TextTree nodeText = (TextTree) dt;
-                    if (titleFound)
-                        sb.append(nodeText.getBody());
-                }
-                default -> {
-                }
-                // do nothing
-            }
-        }
-        return sb.toString().trim();
     }
 
     private static class DocCollator {
@@ -1559,17 +1491,6 @@ public class Utils {
     }
 
     /**
-     * Returns the documented classes in an element,
-     * such as a package element or type element.
-     *
-     * @param e the element
-     * @return the classes
-     */
-    public List<TypeElement> getClasses(Element e) {
-        return getDocumentedItems(e, CLASS, TypeElement.class);
-    }
-
-    /**
      * Returns the documented constructors in a type element.
      *
      * @param te the type element
@@ -1604,7 +1525,7 @@ public class Utils {
     }
 
     public Map<ModuleElement, String> getDependentModules(ModuleElement mdle) {
-        Map<ModuleElement, String> result = new TreeMap<>(comparators.makeModuleComparator());
+        Map<ModuleElement, String> result = new TreeMap<>(comparators.moduleComparator());
         Deque<ModuleElement> queue = new ArrayDeque<>();
         // get all the requires for the element in question
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
@@ -1678,7 +1599,7 @@ public class Utils {
      * @return the interfaces
      */
     public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
         return set;
     }
@@ -1694,7 +1615,7 @@ public class Utils {
     public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
         return cachedClasses.computeIfAbsent(pkg, p_ -> {
             List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
-            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.generalPurposeComparator());
             oset.addAll(clist);
             return oset;
         });
@@ -2736,6 +2657,16 @@ public class Utils {
     }
 
     /**
+     * Checks whether the given ExecutableElement should be marked as a restricted API.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a restricted API
+     */
+    public boolean isRestrictedAPI(Element el) {
+        return configuration.workArounds.isRestrictedAPI(el);
+    }
+
+    /**
      * Return all flags for the given Element.
      *
      * @param el the element to test
@@ -2746,6 +2677,10 @@ public class Utils {
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (el.getKind() == ElementKind.METHOD && configuration.workArounds.isRestrictedAPI((ExecutableElement)el)) {
+            flags.add(ElementFlag.RESTRICTED);
         }
 
         if (previewFlagProvider.isPreview(el)) {
@@ -2761,7 +2696,8 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW
+        PREVIEW,
+        RESTRICTED
     }
 
     private boolean isClassOrInterface(Element el) {

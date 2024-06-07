@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
+import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
@@ -94,8 +95,61 @@ public class AppImagePackageTest {
             if (TKit.isOSX()) {
                 cmd.addArguments("--mac-package-identifier", name);
             }
-        }).run(Action.CREATE, Action.UNPACK);
+        })
+        // On macOS we always signing app image and signing will fail, since
+        // test produces invalid app bundle.
+        .setExpectedExitCode(TKit.isOSX() ? 1 : 0)
+        .run(Action.CREATE, Action.UNPACK);
         // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+    }
+
+    @Test
+    public static void testBadAppImage() throws IOException {
+        Path appImageDir = TKit.createTempDirectory("appimage");
+        Files.createFile(appImageDir.resolve("foo"));
+        configureAppImageWithoutJPackageXMLFile(appImageDir).addInitializer(
+                cmd -> {
+                    cmd.removeArgumentWithValue("--name");
+                }).run(Action.CREATE);
+    }
+
+    @Test
+    public static void testBadAppImage2() throws IOException {
+        Path appImageDir = TKit.createTempDirectory("appimage");
+        Files.createFile(appImageDir.resolve("foo"));
+        configureAppImageWithoutJPackageXMLFile(appImageDir).run(Action.CREATE);
+    }
+
+    @Test
+    public static void testBadAppImage3() throws IOException {
+        Path appImageDir = TKit.createTempDirectory("appimage");
+
+        JPackageCommand appImageCmd = JPackageCommand.helloAppImage().
+                setFakeRuntime().setArgumentValue("--dest", appImageDir);
+
+        configureAppImageWithoutJPackageXMLFile(appImageCmd.outputBundle()).
+                addRunOnceInitializer(() -> {
+                    appImageCmd.execute();
+                    Files.delete(AppImageFile.getPathInAppImage(appImageCmd.
+                            outputBundle()));
+                }).run(Action.CREATE);
+    }
+
+    private static PackageTest configureAppImageWithoutJPackageXMLFile(
+            Path appImageDir) {
+        return new PackageTest()
+                .addInitializer(cmd -> {
+                    cmd.saveConsoleOutput(true);
+                    cmd.addArguments("--app-image", appImageDir);
+                    cmd.removeArgumentWithValue("--input");
+                    cmd.ignoreDefaultVerbose(true); // no "--verbose" option
+                })
+                .addBundleVerifier((cmd, result) -> {
+                    TKit.assertTextStream(
+                    "Error: Missing .jpackage.xml file in app-image dir").apply(
+                            result.getOutput().stream());
+                })
+                .setExpectedExitCode(1);
     }
 
     private static Path iconPath(String name) {

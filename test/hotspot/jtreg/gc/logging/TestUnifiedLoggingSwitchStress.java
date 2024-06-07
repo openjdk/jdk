@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,9 +222,9 @@ public class TestUnifiedLoggingSwitchStress {
         if (args.length != 1) {
             throw new Error("Test Bug: Expected duration (in seconds) wasn't provided as command line argument");
         }
-        long duration = Integer.parseInt(args[0]) * 1000;
+        long durationNanos = Integer.parseInt(args[0]) * 1_000_000_000L;
 
-        long startTime = System.currentTimeMillis();
+        long startTimeNanos = System.nanoTime();
 
         List<Thread> threads = new LinkedList<>();
 
@@ -238,7 +238,7 @@ public class TestUnifiedLoggingSwitchStress {
 
         threads.stream().forEach(Thread::start);
 
-        while (System.currentTimeMillis() - startTime < duration) {
+        while (System.nanoTime() - startTimeNanos < durationNanos) {
             Thread.yield();
         }
 

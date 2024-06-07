@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -642,7 +642,7 @@ public abstract class DataTransferer {
 
         // In other words: we are doing char alignment here basing on suggestion
         // that count of zero-'terminators' is a number of bytes in one symbol
-        // for selected charset (clipboard format). It is not complitly true for
+        // for selected charset (clipboard format). It is not completely true for
         // multibyte coding like UTF-8, but helps understand the procedure.
         // "abcde\0" -> "abcde"
 

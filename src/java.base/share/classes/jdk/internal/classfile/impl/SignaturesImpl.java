@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,91 +26,97 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Signature.*;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.*;
 
 public final class SignaturesImpl {
 
-    public SignaturesImpl() {
+    public SignaturesImpl(String signature) {
+        this.sig = Objects.requireNonNull(signature);
+        this.sigp = 0;
     }
 
-    private String sig;
+    private final String sig;
     private int sigp;
 
-    public ClassSignature parseClassSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
-        List<TypeParam> typeParamTypes = parseParamTypes();
-        RefTypeSig superclass = referenceTypeSig();
-        ArrayList<RefTypeSig> superinterfaces = null;
-        while (sigp < sig.length()) {
-            if (superinterfaces == null)
-                superinterfaces = new ArrayList<>();
-            superinterfaces.add(referenceTypeSig());
+    public ClassSignature parseClassSignature() {
+        try {
+            List<TypeParam> typeParamTypes = parseParamTypes();
+            ClassTypeSig superclass = classTypeSig();
+            ArrayList<ClassTypeSig> superinterfaces = null;
+            while (sigp < sig.length()) {
+                if (superinterfaces == null)
+                    superinterfaces = new ArrayList<>();
+                superinterfaces.add(classTypeSig());
+            }
+            return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
+        } catch (IndexOutOfBoundsException e) {
+            throw error("Not a valid class signature");
         }
-        return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
     }
 
-    public MethodSignature parseMethodSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
-        List<TypeParam> typeParamTypes = parseParamTypes();
-        assert sig.charAt(sigp) == '(';
-        sigp++;
-        ArrayList<Signature> paramTypes = null;
-        while (sig.charAt(sigp) != ')') {
-            if (paramTypes == null)
-                 paramTypes = new ArrayList<>();
-            paramTypes.add(typeSig());
+    public MethodSignature parseMethodSignature() {
+        try {
+            List<TypeParam> typeParamTypes = parseParamTypes();
+            require('(');
+            ArrayList<Signature> paramTypes = null;
+            while (!match(')')) {
+                if (paramTypes == null)
+                    paramTypes = new ArrayList<>();
+                paramTypes.add(typeSig());
+            }
+            Signature returnType = typeSig();
+            ArrayList<ThrowableSig> throwsTypes = null;
+            while (sigp < sig.length()) {
+                require('^');
+                if (throwsTypes == null)
+                    throwsTypes = new ArrayList<>();
+                var t = referenceTypeSig();
+                if (t instanceof ThrowableSig ts)
+                    throwsTypes.add(ts);
+                else
+                    throw error("Not a valid throwable signature %s in".formatted(t.signatureString()));
+            }
+            return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
+        } catch (IndexOutOfBoundsException e) {
+            throw error("Not a valid method signature");
         }
-        sigp++;
-        Signature returnType = typeSig();
-        ArrayList<ThrowableSig> throwsTypes = null;
-        while (sigp < sig.length() && sig.charAt(sigp) == '^') {
-            sigp++;
-            if (throwsTypes == null)
-                throwsTypes = new ArrayList<>();
-            var t = typeSig();
-            if (t instanceof ThrowableSig ts)
-                throwsTypes.add(ts);
-            else
-                throw new IllegalArgumentException("not a valid type signature: " + sig);
-        }
-        return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
     }
 
-    public Signature parseSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
-        return typeSig();
+    public Signature parseSignature() {
+        try {
+            var s = typeSig();
+            if (sigp == sig.length())
+                return s;
+        } catch (IndexOutOfBoundsException e) {
+        }
+        throw error("Not a valid type signature");
     }
 
     private List<TypeParam> parseParamTypes() {
         ArrayList<TypeParam> typeParamTypes = null;
-        if (sig.charAt(sigp) == '<') {
-            sigp++;
+        if (match('<')) {
             typeParamTypes = new ArrayList<>();
-            while (sig.charAt(sigp) != '>') {
-                int sep = sig.indexOf(":", sigp);
-                String name = sig.substring(sigp, sep);
+            // cannot have empty <>
+            do {
+                String name = sig.substring(sigp, requireIdentifier());
                 RefTypeSig classBound = null;
                 ArrayList<RefTypeSig> interfaceBounds = null;
-                sigp = sep + 1;
+                require(':');
                 if (sig.charAt(sigp) != ':')
                     classBound = referenceTypeSig();
-                while (sig.charAt(sigp) == ':') {
-                    sigp++;
+                while (match(':')) {
                     if (interfaceBounds == null)
                         interfaceBounds = new ArrayList<>();
                     interfaceBounds.add(referenceTypeSig());
                 }
                 typeParamTypes.add(new TypeParamImpl(name, Optional.ofNullable(classBound), null2Empty(interfaceBounds)));
-            }
-            sigp++;
+            } while (!match('>'));
         }
         return null2Empty(typeParamTypes);
     }
@@ -126,38 +132,20 @@ public final class SignaturesImpl {
     }
 
     private RefTypeSig referenceTypeSig() {
-        char c = sig.charAt(sigp++);
-        switch (c) {
-            case 'L':
-                StringBuilder sb = new StringBuilder();
-                ArrayList<TypeArg> argTypes = null;
-                Signature.ClassTypeSig t = null;
-                char sigch ;
-                do {
-                    switch  (sigch = sig.charAt(sigp++)) {
-                        case '<' -> {
-                            argTypes = new ArrayList<>();
-                            while (sig.charAt(sigp) != '>')
-                                argTypes.add(typeArg());
-                            sigp++;
-                        }
-                        case '.',';' -> {
-                            t = new ClassTypeSigImpl(Optional.ofNullable(t), sb.toString(), null2Empty(argTypes));
-                            sb.setLength(0);
-                            argTypes = null;
-                        }
-                        default -> sb.append(sigch);
-                    }
-                } while (sigch != ';');
-                return t;
-            case 'T':
-                int sep = sig.indexOf(';', sigp);
-                var ty = Signature.TypeVarSig.of(sig.substring(sigp, sep));
-                sigp = sep + 1;
-                return ty;
-            case '[': return ArrayTypeSig.of(typeSig());
-        }
-        throw new IllegalArgumentException("not a valid type signature: " + sig);
+        return switch (sig.charAt(sigp)) {
+            case 'L' -> classTypeSig();
+            case 'T' -> {
+                sigp++;
+                var ty = Signature.TypeVarSig.of(sig.substring(sigp, requireIdentifier()));
+                require(';');
+                yield ty;
+            }
+            case '[' -> {
+                sigp++;
+                yield ArrayTypeSig.of(typeSig());
+            }
+            default -> throw unexpectedError("a type signature");
+        };
     }
 
     private TypeArg typeArg() {
@@ -170,6 +158,82 @@ public final class SignaturesImpl {
                 sigp--;
                 return TypeArg.of(referenceTypeSig());
         }
+    }
+
+    private ClassTypeSig classTypeSig() {
+        require('L');
+        Signature.ClassTypeSig t = null;
+
+        do {
+            int start = sigp;
+            requireIdentifier();
+            if (t == null) {
+                while (match('/')) {
+                    requireIdentifier();
+                }
+            }
+            String className = sig.substring(start, sigp);
+
+            ArrayList<TypeArg> argTypes;
+            if (match('<')) {
+                // cannot have empty <>
+                argTypes = new ArrayList<>();
+                do {
+                    argTypes.add(typeArg());
+                } while (!match('>'));
+            } else {
+                argTypes = null;
+            }
+
+            boolean end = match(';');
+            if (end || match('.')) {
+                t = new ClassTypeSigImpl(Optional.ofNullable(t), className, null2Empty(argTypes));
+                if (end)
+                    return t;
+            } else {
+                throw unexpectedError(". or ;");
+            }
+        } while (true);
+    }
+
+    /**
+     * Tries to match a character, and moves pointer if it matches.
+     */
+    private boolean match(char c) {
+        if (sigp < sig.length() && sig.charAt(sigp) == c) {
+            sigp++;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Requires a character and moves past it, failing otherwise.
+     */
+    private void require(char c) {
+        if (!match(c))
+            throw unexpectedError(String.valueOf(c));
+    }
+
+    /**
+     * Requires an identifier, moving pointer to next illegal character and returning
+     * its position. Fails if the identifier is empty.
+     */
+    private int requireIdentifier() {
+        int start = sigp;
+        l:
+        while (sigp < sig.length()) {
+            switch (sig.charAt(sigp)) {
+                case '.', ';', '[', '/', '<', '>', ':' -> {
+                    break l;
+                }
+            }
+            sigp++;
+        }
+        if (start == sigp) {
+            throw unexpectedError("an identifier");
+        }
+        return sigp;
     }
 
     public static record BaseTypeSigImpl(char baseType) implements Signature.BaseTypeSig {
@@ -216,24 +280,29 @@ public final class SignaturesImpl {
             if (!typeArgs.isEmpty()) {
                 var sb = new StringBuilder();
                 sb.append('<');
-                for (var ta : typeArgs)
-                    sb.append(((TypeArgImpl)ta).signatureString());
+                for (var ta : typeArgs) {
+                    switch (ta) {
+                        case TypeArg.Bounded b -> {
+                            switch (b.wildcardIndicator()) {
+                                case SUPER -> sb.append('-');
+                                case EXTENDS -> sb.append('+');
+                            }
+                            sb.append(b.boundType().signatureString());
+                        }
+                        case TypeArg.Unbounded _ -> sb.append('*');
+                    }
+                }
                 suffix = sb.append(">;").toString();
             }
             return prefix + className + suffix;
         }
     }
 
-    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, Optional<RefTypeSig> boundType) implements Signature.TypeArg {
+    public static enum UnboundedTypeArgImpl implements TypeArg.Unbounded {
+        INSTANCE;
+    }
 
-        public String signatureString() {
-            return switch (wildcardIndicator) {
-                case DEFAULT -> boundType.get().signatureString();
-                case EXTENDS -> "+" + boundType.get().signatureString();
-                case SUPER -> "-" + boundType.get().signatureString();
-                case UNBOUNDED -> "*";
-            };
-        }
+    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, RefTypeSig boundType) implements Signature.TypeArg.Bounded {
     }
 
     public static record TypeParamImpl(String identifier, Optional<RefTypeSig> classBound, List<RefTypeSig> interfaceBounds)
@@ -256,8 +325,8 @@ public final class SignaturesImpl {
         return sb;
     }
 
-    public static record ClassSignatureImpl(List<TypeParam> typeParameters, RefTypeSig superclassSignature,
-            List<RefTypeSig> superinterfaceSignatures) implements ClassSignature {
+    public static record ClassSignatureImpl(List<TypeParam> typeParameters, ClassTypeSig superclassSignature,
+            List<ClassTypeSig> superinterfaceSignatures) implements ClassSignature {
 
         @Override
         public String signatureString() {
@@ -291,5 +360,15 @@ public final class SignaturesImpl {
 
     private static <T> List<T> null2Empty(ArrayList<T> l) {
         return l == null ? List.of() : Collections.unmodifiableList(l);
+    }
+
+    private IllegalArgumentException unexpectedError(String expected) {
+        return error(sigp < sig.length() ? "Unexpected character %c at position %d, expected %s"
+                .formatted(sig.charAt(sigp), sigp, expected)
+                : "Unexpected end of signature at position %d, expected %s".formatted(sigp, expected));
+    }
+
+    private IllegalArgumentException error(String message) {
+        return new IllegalArgumentException("%s: %s".formatted(message, sig));
     }
 }

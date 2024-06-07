@@ -310,7 +310,9 @@ bool ZPhysicalMemoryManager::commit(ZPhysicalMemory& pmem) {
     const size_t committed = _backing.commit(segment.start(), segment.size());
 
     // Register with NMT
-    ZNMT::commit(segment.start(), committed);
+    if (committed > 0) {
+      ZNMT::commit(segment.start(), committed);
+    }
 
     // Register committed segment
     if (!pmem.commit_segment(i, committed)) {
@@ -336,7 +338,9 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
     const size_t uncommitted = _backing.uncommit(segment.start(), segment.size());
 
     // Unregister with NMT
-    ZNMT::uncommit(segment.start(), uncommitted);
+    if (uncommitted > 0) {
+      ZNMT::uncommit(segment.start(), uncommitted);
+    }
 
     // Deregister uncommitted segment
     if (!pmem.uncommit_segment(i, uncommitted)) {

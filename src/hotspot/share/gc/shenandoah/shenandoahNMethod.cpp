@@ -32,7 +32,7 @@
 #include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
-  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false) {
+  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {
 
   if (!oops.is_empty()) {
     _oops_count = oops.length();
@@ -50,39 +50,6 @@ ShenandoahNMethod::~ShenandoahNMethod() {
   if (_oops != nullptr) {
     FREE_C_HEAP_ARRAY(oop*, _oops);
   }
-}
-
-class ShenandoahHasCSetOopClosure : public OopClosure {
-private:
-  ShenandoahHeap* const _heap;
-  bool                  _has_cset_oops;
-
-public:
-  ShenandoahHasCSetOopClosure(ShenandoahHeap *heap) :
-    _heap(heap),
-    _has_cset_oops(false) {
-  }
-
-  bool has_cset_oops() const {
-    return _has_cset_oops;
-  }
-
-  void do_oop(oop* p) {
-    oop value = RawAccess<>::oop_load(p);
-    if (!_has_cset_oops && _heap->in_collection_set(value)) {
-      _has_cset_oops = true;
-    }
-  }
-
-  void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-bool ShenandoahNMethod::has_cset_oops(ShenandoahHeap *heap) {
-  ShenandoahHasCSetOopClosure cl(heap);
-  oops_do(&cl);
-  return cl.has_cset_oops();
 }
 
 void ShenandoahNMethod::update() {
@@ -208,10 +175,6 @@ public:
 
   GrowableArray<oop*>* oops() {
     return &_oops;
-  }
-
-  bool has_oops() {
-    return !_oops.is_empty();
   }
 };
 
@@ -464,7 +427,7 @@ ShenandoahNMethodTableSnapshot::~ShenandoahNMethodTableSnapshot() {
   _list->release();
 }
 
-void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
+void ShenandoahNMethodTableSnapshot::parallel_nmethods_do(NMethodClosure *f) {
   size_t stride = 256; // educated guess
 
   ShenandoahNMethod** const list = _list->list();
@@ -484,7 +447,7 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
       }
 
       nmr->assert_correct();
-      f->do_code_blob(nmr->nm());
+      f->do_nmethod(nmr->nm());
     }
   }
 }

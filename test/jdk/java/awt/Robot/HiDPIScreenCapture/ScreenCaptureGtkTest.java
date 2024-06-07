@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-import javax.swing.UIManager;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +53,12 @@ public class ScreenCaptureGtkTest {
             Color.GREEN, Color.BLUE, Color.ORANGE, Color.RED};
 
     public static void main(String[] args) throws Exception {
+        if ("2".equals(System.getProperty("jdk.gtk.version"))
+                && System.getenv("WAYLAND_DISPLAY") != null) {
+            // screen capture is not supported with gtk2 on Wayland
+            return;
+        }
+
         final int topOffset = 50;
         final int leftOffset = 50;
 

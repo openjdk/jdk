@@ -406,6 +406,10 @@ sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += src->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     src->remaining_skip = 0;
     ret = (int)src->pub.bytes_in_buffer; /* this conversion is safe, because capacity of the buffer is limited by jnit */
     if (ret >= num_bytes) {

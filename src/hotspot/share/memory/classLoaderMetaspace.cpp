@@ -36,6 +36,7 @@
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 
 using metaspace::ChunkManager;
@@ -60,7 +61,6 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
   _non_class_space_arena = new MetaspaceArena(
       non_class_cm,
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
-      lock,
       RunningCounters::used_nonclass_counter(),
       "non-class sm");
 
@@ -71,7 +71,6 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
     _class_space_arena = new MetaspaceArena(
         class_cm,
         ArenaGrowthPolicy::policy_for_space_type(space_type, true),
-        lock,
         RunningCounters::used_class_counter(),
         "class sm");
   }
@@ -82,7 +81,7 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 
 ClassLoaderMetaspace::~ClassLoaderMetaspace() {
   UL(debug, "dies.");
-
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   delete _non_class_space_arena;
   delete _class_space_arena;
 
@@ -90,6 +89,7 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 
 // Allocate word_size words from Metaspace.
 MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataType mdType) {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   if (Metaspace::is_class_space_allocation(mdType)) {
     return class_space_arena()->allocate(word_size);
   } else {
@@ -131,6 +131,7 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   if (Metaspace::using_class_space() && is_class) {
     class_space_arena()->deallocate(ptr, word_size);
   } else {
@@ -141,6 +142,7 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_c
 
 // Update statistics. This walks all in-use chunks.
 void ClassLoaderMetaspace::add_to_statistics(metaspace::ClmsStats* out) const {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   if (non_class_space_arena() != nullptr) {
     non_class_space_arena()->add_to_statistics(&out->_arena_stats_nonclass);
   }
@@ -151,6 +153,7 @@ void ClassLoaderMetaspace::add_to_statistics(metaspace::ClmsStats* out) const {
 
 #ifdef ASSERT
 void ClassLoaderMetaspace::verify() const {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   if (non_class_space_arena() != nullptr) {
     non_class_space_arena()->verify();
   }
@@ -172,10 +175,13 @@ void ClassLoaderMetaspace::usage_numbers(Metaspace::MetadataType mdType, size_t*
 void ClassLoaderMetaspace::usage_numbers(size_t* p_used_words, size_t* p_committed_words,
                                          size_t* p_capacity_words) const {
   size_t used_nc, comm_nc, cap_nc;
-  usage_numbers(Metaspace::MetadataType::NonClassType, &used_nc, &comm_nc, &cap_nc);
   size_t used_c = 0, comm_c = 0, cap_c = 0;
-  if (Metaspace::using_class_space()) {
-    usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
+  {
+    MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
+    usage_numbers(Metaspace::MetadataType::NonClassType, &used_nc, &comm_nc, &cap_nc);
+    if (Metaspace::using_class_space()) {
+      usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
+    }
   }
   if (p_used_words != nullptr) {
     (*p_used_words) = used_nc + used_c;

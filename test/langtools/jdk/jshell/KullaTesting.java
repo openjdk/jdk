@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,9 @@ public class KullaTesting {
     private Set<Snippet> allSnippets = new LinkedHashSet<>();
 
     static {
-        JShell js = JShell.create();
+        JShell js = JShell.builder()
+                          .executionEngine(Presets.TEST_DEFAULT_EXECUTION)
+                          .build();
         MAIN_SNIPPET = js.eval("MAIN_SNIPPET").get(0).snippet();
         js.close();
         assertTrue(MAIN_SNIPPET != null, "Bad MAIN_SNIPPET set-up -- must not be null");
@@ -192,7 +194,8 @@ public class KullaTesting {
         JShell.Builder builder = JShell.builder()
                 .in(in)
                 .out(new PrintStream(outStream))
-                .err(new PrintStream(errStream));
+                .err(new PrintStream(errStream))
+                .executionEngine(Presets.TEST_DEFAULT_EXECUTION);
         bc.accept(builder);
         state = builder.build();
         allSnippets = new LinkedHashSet<>();
@@ -265,6 +268,7 @@ public class KullaTesting {
         SubKind expectedSubKind = key.subKind();
         Kind expectedKind;
         switch (expectedSubKind) {
+            case MODULE_IMPORT_SUBKIND:
             case SINGLE_TYPE_IMPORT_SUBKIND:
             case SINGLE_STATIC_IMPORT_SUBKIND:
             case TYPE_IMPORT_ON_DEMAND_SUBKIND:

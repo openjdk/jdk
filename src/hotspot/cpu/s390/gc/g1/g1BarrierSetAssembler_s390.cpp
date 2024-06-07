@@ -31,9 +31,9 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -282,7 +282,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
     __ z_lgr(Rtmp1, Rstore_addr);
     __ z_xgr(Rtmp1, Rnew_val);
   }
-  __ z_srag(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
+  __ z_srag(Rtmp1, Rtmp1, G1HeapRegion::LogOfHRGrainBytes);
   __ z_bre(filtered);
 
   // Crosses regions, storing null?

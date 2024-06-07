@@ -42,7 +42,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
         String[] iu = {
@@ -50,7 +49,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahIUBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
 
@@ -65,7 +63,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -74,7 +72,6 @@ public class TestWrongBarrierDisable {
                     "-XX:-" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotHaveExitValue(0);
             output.shouldContain("GC mode needs ");
             output.shouldContain("to work correctly");
@@ -83,7 +80,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldPassAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -92,7 +89,6 @@ public class TestWrongBarrierDisable {
                     "-XX:-" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
     }

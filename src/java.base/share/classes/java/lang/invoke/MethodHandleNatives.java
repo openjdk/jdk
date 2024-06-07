@@ -46,20 +46,20 @@ class MethodHandleNatives {
 
     private MethodHandleNatives() { } // static only
 
-    /// MemberName support
+    //--- MemberName support
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
     static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
 
-    /// Field layout queries parallel to jdk.internal.misc.Unsafe:
+    //--- Field layout queries parallel to jdk.internal.misc.Unsafe:
     static native long objectFieldOffset(MemberName self);  // e.g., returns vmindex
     static native long staticFieldOffset(MemberName self);  // e.g., returns vmindex
     static native Object staticFieldBase(MemberName self);  // e.g., returns clazz
     static native Object getMemberVMInfo(MemberName self);  // returns {vmindex,vmtarget}
 
-    /// CallSite support
+    //--- CallSite support
 
     /** Tell the JVM that we need to change the target of a CallSite. */
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
@@ -116,6 +116,7 @@ class MethodHandleNatives {
             MN_IS_TYPE             = 0x00080000, // nested type
             MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
             MN_TRUSTED_FINAL       = 0x00200000, // trusted final field
+            MN_HIDDEN_MEMBER       = 0x00400000, // members defined in a hidden class or with @Hidden
             MN_REFERENCE_KIND_SHIFT = 24, // refKind
             MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT;
 

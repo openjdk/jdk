@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class StringSubstring {
 
     public String s = new String("An arbitrary string that happened to be of length 52");

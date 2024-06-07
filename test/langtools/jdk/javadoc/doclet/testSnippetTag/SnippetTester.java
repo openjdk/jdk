@@ -115,7 +115,7 @@ public class SnippetTester extends JavadocTester {
                                                   Optional<String> id) {
         // the further away from the root, the further to reach to common resources
         int nComponents = (int) pathToHtmlFile.chars().filter(c -> c == '/').count();
-        var svgString = "../".repeat(nComponents) + "copy.svg";
+        var svgString = "../".repeat(nComponents) + "resource-files/copy.svg";
         var idString = id.isEmpty() ? "" : " id=\"%s\"".formatted(id.get());
         var langString = lang.isEmpty() ? "" : " class=\"language-%s\"".formatted(lang.get());
         return """

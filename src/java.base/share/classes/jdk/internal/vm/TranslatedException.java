@@ -24,6 +24,8 @@
  */
 package jdk.internal.vm;
 
+import jdk.internal.misc.VM;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -56,6 +58,7 @@ final class TranslatedException extends Exception {
      */
     private static final byte[] FALLBACK_ENCODED_THROWABLE_BYTES;
     static {
+        maybeFailClinit();
         try {
             FALLBACK_ENCODED_THROWABLE_BYTES =
                 encodeThrowable(new TranslatedException("error during encoding",
@@ -64,6 +67,22 @@ final class TranslatedException extends Exception {
                 encodeThrowable(new OutOfMemoryError(), false);
         } catch (IOException e) {
             throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Helper to test exception translation.
+     */
+    private static void maybeFailClinit() {
+        String className = VM.getSavedProperty("test.jvmci.TranslatedException.clinit.throw");
+        if (className != null) {
+            try {
+                throw (Throwable) Class.forName(className).getDeclaredConstructor().newInstance();
+            } catch (RuntimeException | Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new InternalError(e);
+            }
         }
     }
 
@@ -103,26 +122,26 @@ final class TranslatedException extends Exception {
      * Prints a stack trace for {@code throwable} if the system property
      * {@code "jdk.internal.vm.TranslatedException.debug"} is true.
      */
-    private static void debugPrintStackTrace(Throwable throwable) {
-        if (Boolean.getBoolean("jdk.internal.vm.TranslatedException.debug")) {
+    private static void debugPrintStackTrace(Throwable throwable, boolean debug) {
+        if (debug) {
             System.err.print("DEBUG: ");
             throwable.printStackTrace();
         }
     }
 
-    private static Throwable initCause(Throwable throwable, Throwable cause) {
+    private static Throwable initCause(Throwable throwable, Throwable cause, boolean debug) {
         if (cause != null) {
             try {
                 throwable.initCause(cause);
             } catch (IllegalStateException e) {
                 // Cause could not be set or overwritten.
-                debugPrintStackTrace(e);
+                debugPrintStackTrace(e, debug);
             }
         }
         return throwable;
     }
 
-    private static Throwable create(String className, String message, Throwable cause) {
+    private static Throwable create(String className, String message, Throwable cause, boolean debug) {
         // Try create with reflection first.
         try {
             Class<?> cls = Class.forName(className);
@@ -138,13 +157,13 @@ final class TranslatedException extends Exception {
             }
             if (message == null) {
                 Constructor<?> cons = cls.getConstructor();
-                return initCause((Throwable) cons.newInstance(), cause);
+                return initCause((Throwable) cons.newInstance(), cause, debug);
             }
             Constructor<?> cons = cls.getDeclaredConstructor(String.class);
-            return initCause((Throwable) cons.newInstance(message), cause);
+            return initCause((Throwable) cons.newInstance(message), cause, debug);
         } catch (Throwable translationFailure) {
-            debugPrintStackTrace(translationFailure);
-            return initCause(new TranslatedException(message, className), cause);
+            debugPrintStackTrace(translationFailure, debug);
+            return initCause(new TranslatedException(message, className), cause, debug);
         }
     }
 
@@ -234,7 +253,7 @@ final class TranslatedException extends Exception {
      * @param encodedThrowable an encoded exception in the format specified by
      *            {@link #encodeThrowable}
      */
-    static Throwable decodeThrowable(byte[] encodedThrowable) {
+    static Throwable decodeThrowable(byte[] encodedThrowable, boolean debug) {
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedThrowable);
         try (DataInputStream dis = new DataInputStream(new GZIPInputStream(bais))) {
             Throwable cause = null;
@@ -243,7 +262,7 @@ final class TranslatedException extends Exception {
             while (dis.available() != 0) {
                 String exceptionClassName = dis.readUTF();
                 String exceptionMessage = emptyAsNull(dis.readUTF());
-                throwable = create(exceptionClassName, exceptionMessage, cause);
+                throwable = create(exceptionClassName, exceptionMessage, cause, debug);
                 int stackTraceDepth = dis.readInt();
                 StackTraceElement[] stackTrace = new StackTraceElement[stackTraceDepth + myStack.length];
                 int stackTraceIndex = 0;
@@ -291,7 +310,7 @@ final class TranslatedException extends Exception {
             }
             return throwable;
         } catch (Throwable translationFailure) {
-            debugPrintStackTrace(translationFailure);
+            debugPrintStackTrace(translationFailure, debug);
             return new TranslatedException("Error decoding exception: " + encodedThrowable,
                                            translationFailure.getClass().getName());
         }

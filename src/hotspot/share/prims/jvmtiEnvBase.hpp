@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,8 +216,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
-  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                                 JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
@@ -388,8 +386,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jint get_thread_state_base(oop thread_oop, JavaThread* jt);
   static jint get_thread_state(oop thread_oop, JavaThread* jt);
 
-  // get virtual thread thread state
+  // get virtual thread state
   static jint get_vthread_state(oop thread_oop, JavaThread* jt);
+
+  // get platform or virtual thread state
+  static jint get_thread_or_vthread_state(oop thread_oop, JavaThread* jt);
 
   // enumerates the live threads in the given thread group
   static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);
@@ -453,50 +454,87 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
 
-class JvmtiHandshakeClosure : public HandshakeClosure {
+// Used in combination with the JvmtiHandshake class.
+// It is intended to support both platform and virtual threads.
+class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
  protected:
   jvmtiError _result;
+  // the fields below are set by the JvmtiHandshake::execute
+  JavaThread* _target_jt;
+  bool _is_virtual;
+  bool _self;
  public:
-  JvmtiHandshakeClosure(const char* name)
+  JvmtiUnitedHandshakeClosure(const char* name)
     : HandshakeClosure(name),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE),
+      _target_jt(nullptr),
+      _is_virtual(false),
+      _self(false) {}
+
+  void set_result(jvmtiError err) { _result = err; }
+  void set_target_jt(JavaThread* target_jt) { _target_jt = target_jt; }
+  void set_is_virtual(bool val) { _is_virtual = val; }
+  void set_self(bool val) { _self = val; }
   jvmtiError result() { return _result; }
+  virtual void do_vthread(Handle target_h) = 0;
 };
 
-class SetForceEarlyReturn : public JvmtiHandshakeClosure {
+// The JvmtiHandshake supports virtual threads.
+class JvmtiHandshake : public Handshake {
+ public:
+  static void execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
+                      JavaThread* target_jt, Handle target_h);
+  static void execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target);
+};
+
+class SetForceEarlyReturn : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
   jvalue _value;
   TosState _tos;
 public:
   SetForceEarlyReturn(JvmtiThreadState* state, jvalue value, TosState tos)
-    : JvmtiHandshakeClosure("SetForceEarlyReturn"),
+    : JvmtiUnitedHandshakeClosure("SetForceEarlyReturn"),
      _state(state),
      _value(value),
      _tos(tos) {}
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, false /* self */);
+    doit(target);
   }
-  void doit(Thread *target, bool self);
+  void do_vthread(Handle target_h) {
+    assert(_target_jt != nullptr, "sanity check");
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
+  }
 };
 
 // HandshakeClosure to update for pop top frame.
-class UpdateForPopTopFrameClosure : public JvmtiHandshakeClosure {
+class UpdateForPopTopFrameClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
 
 public:
   UpdateForPopTopFrameClosure(JvmtiThreadState* state)
-    : JvmtiHandshakeClosure("UpdateForPopTopFrame"),
+    : JvmtiUnitedHandshakeClosure("UpdateForPopTopFrame"),
      _state(state) {}
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, false /* self */);
+    doit(target);
   }
-  void doit(Thread *target, bool self);
+  void do_vthread(Handle target_h) {
+    assert(_target_jt != nullptr, "sanity check");
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
+  }
 };
 
 // HandshakeClosure to set frame pop.
-class SetFramePopClosure : public JvmtiHandshakeClosure {
+class SetFramePopClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState* _state;
@@ -504,31 +542,32 @@ private:
 
 public:
   SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiHandshakeClosure("SetFramePopClosure"),
+    : JvmtiUnitedHandshakeClosure("SetFramePopClosure"),
       _env(env),
       _state(state),
       _depth(depth) {}
-  void do_thread(Thread *target) {
-    doit(target, false /* self */);
-  }
-  void doit(Thread *target, bool self);
+  void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to get monitor information with stack depth.
-class GetOwnedMonitorInfoClosure : public JvmtiHandshakeClosure {
+class GetOwnedMonitorInfoClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JavaThread* _calling_thread;
   JvmtiEnv *_env;
+  JavaThread* _calling_thread;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
-  GetOwnedMonitorInfoClosure(JavaThread* calling_thread, JvmtiEnv* env,
-                             GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitor_list)
-    : JvmtiHandshakeClosure("GetOwnedMonitorInfo"),
-      _calling_thread(calling_thread),
+  GetOwnedMonitorInfoClosure(JvmtiEnv* env,
+                             JavaThread* calling_thread,
+                             GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
+    : JvmtiUnitedHandshakeClosure("GetOwnedMonitorInfo"),
       _env(env),
-      _owned_monitors_list(owned_monitor_list) {}
+      _calling_thread(calling_thread),
+      _owned_monitors_list(owned_monitors_list) {}
+
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // VM operation to get object monitor usage.
@@ -556,25 +595,26 @@ public:
 };
 
 // HandshakeClosure to get current contended monitor. It is used for both platform and virtual threads.
-class GetCurrentContendedMonitorClosure : public JvmtiHandshakeClosure {
+class GetCurrentContendedMonitorClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JavaThread *_calling_thread;
   JvmtiEnv *_env;
+  JavaThread *_calling_thread;
   jobject *_owned_monitor_ptr;
-  bool _is_virtual;
 
 public:
-  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr, bool is_virtual)
-    : JvmtiHandshakeClosure("GetCurrentContendedMonitor"),
-      _calling_thread(calling_thread),
+  GetCurrentContendedMonitorClosure(JvmtiEnv *env,
+                                    JavaThread* calling_thread,
+                                    jobject *owned_monitor_ptr)
+    : JvmtiUnitedHandshakeClosure("GetCurrentContendedMonitor"),
       _env(env),
-      _owned_monitor_ptr(mon_ptr),
-      _is_virtual(is_virtual) {}
+      _calling_thread(calling_thread),
+      _owned_monitor_ptr(owned_monitor_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to get stack trace.
-class GetStackTraceClosure : public JvmtiHandshakeClosure {
+class GetStackTraceClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _start_depth;
@@ -585,13 +625,14 @@ private:
 public:
   GetStackTraceClosure(JvmtiEnv *env, jint start_depth, jint max_count,
                        jvmtiFrameInfo* frame_buffer, jint* count_ptr)
-    : JvmtiHandshakeClosure("GetStackTrace"),
+    : JvmtiUnitedHandshakeClosure("GetStackTrace"),
       _env(env),
       _start_depth(start_depth),
       _max_count(max_count),
       _frame_buffer(frame_buffer),
       _count_ptr(count_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 #ifdef ASSERT
@@ -684,56 +725,8 @@ public:
   jvmtiError result()             { return _collector.result(); }
 };
 
-class VM_VirtualThreadGetStackTrace : public VM_Operation {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  jint _start_depth;
-  jint _max_count;
-  jvmtiFrameInfo* _frame_buffer;
-  jint* _count_ptr;
-  jvmtiError _result;
-
-public:
-  VM_VirtualThreadGetStackTrace(JvmtiEnv *env, Handle vthread_h,
-                                jint start_depth, jint max_count,
-                                jvmtiFrameInfo* frame_buffer, jint* count_ptr)
-    : _env(env),
-      _vthread_h(vthread_h),
-      _start_depth(start_depth),
-      _max_count(max_count),
-      _frame_buffer(frame_buffer),
-      _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_NONE)
-  {}
-
-  VMOp_Type type() const { return VMOp_VirtualThreadGetStackTrace; }
-  void doit();
-  jvmtiError result() { return _result; }
-};
-
-class VM_VirtualThreadGetFrameCount : public VM_Operation {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  jint* _count_ptr;
-  jvmtiError _result;
-
-public:
-  VM_VirtualThreadGetFrameCount(JvmtiEnv *env, Handle vthread_h, jint* count_ptr)
-    : _env(env),
-      _vthread_h(vthread_h),
-      _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_NONE)
-  {}
-
-  VMOp_Type type() const { return VMOp_VirtualThreadGetFrameCount; }
-  void doit();
-  jvmtiError result() { return _result; }
-};
-
 // HandshakeClosure to get single stack trace.
-class GetSingleStackTraceClosure : public HandshakeClosure {
+class GetSingleStackTraceClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   jthread _jthread;
@@ -742,32 +735,35 @@ private:
 public:
   GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
                              jthread thread, jint max_frame_count)
-    : HandshakeClosure("GetSingleStackTrace"),
+    : JvmtiUnitedHandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
       _jthread(thread),
       _collector(env, max_frame_count) {
   }
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
+  void doit();
   jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
-  jvmtiError result()             { return _collector.result(); }
+  jvmtiError result()             { return _result; }
 };
 
 // HandshakeClosure to count stack frames.
-class GetFrameCountClosure : public JvmtiHandshakeClosure {
+class GetFrameCountClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint *_count_ptr;
 
 public:
   GetFrameCountClosure(JvmtiEnv *env, jint *count_ptr)
-    : JvmtiHandshakeClosure("GetFrameCount"),
+    : JvmtiUnitedHandshakeClosure("GetFrameCount"),
       _env(env),
       _count_ptr(count_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to get frame location.
-class GetFrameLocationClosure : public JvmtiHandshakeClosure {
+class GetFrameLocationClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _depth;
@@ -777,165 +773,14 @@ private:
 public:
   GetFrameLocationClosure(JvmtiEnv *env, jint depth,
                           jmethodID* method_ptr, jlocation* location_ptr)
-    : JvmtiHandshakeClosure("GetFrameLocation"),
+    : JvmtiUnitedHandshakeClosure("GetFrameLocation"),
       _env(env),
       _depth(depth),
       _method_ptr(method_ptr),
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
-
-// HandshakeClosure to get virtual thread monitor information with stack depth.
-class VirtualThreadGetOwnedMonitorInfoClosure : public HandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetOwnedMonitorInfoClosure(JvmtiEnv* env,
-                                          Handle vthread_h,
-                                          GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
-    : HandshakeClosure("VirtualThreadGetOwnedMonitorInfo"),
-      _env(env),
-      _vthread_h(vthread_h),
-      _owned_monitors_list(owned_monitors_list),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure to get virtual thread thread at safepoint.
-class VirtualThreadGetThreadClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jthread* _carrier_thread_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
-    : HandshakeClosure("VirtualThreadGetThread"),
-      _vthread_h(vthread_h),
-      _carrier_thread_ptr(carrier_thread_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure to get virtual thread stack trace at safepoint.
-class VirtualThreadGetStackTraceClosure : public HandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  jint _start_depth;
-  jint _max_count;
-  jvmtiFrameInfo *_frame_buffer;
-  jint *_count_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetStackTraceClosure(JvmtiEnv *env, Handle vthread_h,
-                                    jint start_depth, jint max_count,
-                                    jvmtiFrameInfo* frame_buffer, jint* count_ptr)
-    : HandshakeClosure("VirtualThreadGetStackTrace"),
-      _env(env),
-      _vthread_h(vthread_h),
-       _start_depth(start_depth),
-      _max_count(max_count),
-      _frame_buffer(frame_buffer),
-      _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure to count virtual thread stack frames at safepoint.
-class VirtualThreadGetFrameCountClosure : public HandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  jint *_count_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetFrameCountClosure(JvmtiEnv *env, Handle vthread_h, jint *count_ptr)
-    : HandshakeClosure("VirtualThreadGetFrameCount"),
-      _env(env), _vthread_h(vthread_h), _count_ptr(count_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure get to virtual thread frame location at safepoint.
-class VirtualThreadGetFrameLocationClosure : public HandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  jint _depth;
-  jmethodID* _method_ptr;
-  jlocation* _location_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetFrameLocationClosure(JvmtiEnv *env, Handle vthread_h, jint depth,
-                                       jmethodID* method_ptr, jlocation* location_ptr)
-    : HandshakeClosure("VirtualThreadGetFrameLocation"),
-      _env(env),
-      _vthread_h(vthread_h),
-      _depth(depth),
-      _method_ptr(method_ptr),
-      _location_ptr(location_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure to get virtual thread state at safepoint.
-class VirtualThreadGetThreadStateClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jint *_state_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadStateClosure(Handle vthread_h, jint *state_ptr)
-    : HandshakeClosure("VirtualThreadGetThreadState"),
-      _vthread_h(vthread_h),
-      _state_ptr(state_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-// HandshakeClosure to set frame pop for a virtual thread.
-class VirtualThreadSetFramePopClosure : public JvmtiHandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  JvmtiThreadState* _state;
-  jint _depth;
-
-public:
-  VirtualThreadSetFramePopClosure(JvmtiEnv *env, Handle vthread_h, JvmtiThreadState* state, jint depth)
-    : JvmtiHandshakeClosure("VirtualThreadSetFramePopClosure"),
-      _env(env),
-      _vthread_h(vthread_h),
-      _state(state),
-      _depth(depth) {}
-
-  void do_thread(Thread *target) {
-    doit(target, false /* self */);
-  }
-  void doit(Thread *target, bool self);
-};
-
 
 // ResourceTracker
 //

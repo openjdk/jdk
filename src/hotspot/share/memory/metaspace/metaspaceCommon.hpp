@@ -38,24 +38,27 @@ namespace metaspace {
 
 // Metaspace allocation alignment:
 
-// 1) Metaspace allocations have to be aligned such that 64bit values are aligned
-//  correctly.
+// Metaspace allocations have to be aligned such that 64-bit values are aligned
+//  correctly. We currently don't hold members with a larger alignment requirement
+//  than 64-bit inside MetaData, so 8-byte alignment is enough.
 //
-// 2) Klass* structures allocated from Metaspace have to be aligned to KlassAlignmentInBytes.
+// Klass* structures need to be aligned to KlassAlignmentInBytes, but since that is
+// 64-bit, we don't need special handling for allocating Klass*.
 //
-// At the moment LogKlassAlignmentInBytes is 3, so KlassAlignmentInBytes == 8,
-//  so (1) and (2) can both be fulfilled with an alignment of 8. Should we increase
-//  KlassAlignmentInBytes at any time this will increase the necessary alignment as well. In
-//  that case we may think about introducing a separate alignment just for the class space
-//  since that alignment would only be needed for Klass structures.
+// On 64-bit platforms, we align to word size; on 32-bit, we align to two words.
 
 static const size_t AllocationAlignmentByteSize = 8;
 STATIC_ASSERT(AllocationAlignmentByteSize == (size_t)KlassAlignmentInBytes);
 
 static const size_t AllocationAlignmentWordSize = AllocationAlignmentByteSize / BytesPerWord;
 
-// Returns the raw word size allocated for a given net allocation
-size_t get_raw_word_size_for_requested_word_size(size_t word_size);
+// Returns the raw word size allocated for a given net allocation. This only matters on 32-bit, where
+// allocations have to be 64-bit aligned too and therefore must be 2-word-aligned.
+inline size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
+  LP64_ONLY(STATIC_ASSERT(AllocationAlignmentWordSize == 1)); // rewrite if this does not hold true anymore
+  return LP64_ONLY(word_size) // no-op on 64-bit
+         NOT_LP64(align_up(word_size, AllocationAlignmentWordSize));
+}
 
 // Utility functions
 
@@ -81,8 +84,11 @@ void print_percentage(outputStream* st, size_t total, size_t part);
   assert(is_aligned((value), (alignment)),                   \
          SIZE_FORMAT_X " is not aligned to "                 \
          SIZE_FORMAT_X, (size_t)(uintptr_t)value, (size_t)(alignment))
+#define assert_is_aligned_metaspace_pointer(p) \
+  assert_is_aligned((p), metaspace::AllocationAlignmentByteSize);
 #else
 #define assert_is_aligned(value, alignment)
+#define assert_is_aligned_metaspace_pointer(pointer)
 #endif
 
 // Pretty printing helpers

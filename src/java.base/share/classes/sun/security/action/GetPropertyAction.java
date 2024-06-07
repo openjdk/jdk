@@ -27,6 +27,7 @@ package sun.security.action;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.Properties;
 import sun.security.util.Debug;
 
@@ -194,10 +195,10 @@ public class GetPropertyAction implements PrivilegedAction<String> {
         // the original value in rawPropVal for debug messages.
         boolean isMillis = false;
         String propVal = rawPropVal;
-        if (rawPropVal.toLowerCase().endsWith("ms")) {
+        if (rawPropVal.toLowerCase(Locale.ROOT).endsWith("ms")) {
             propVal = rawPropVal.substring(0, rawPropVal.length() - 2);
             isMillis = true;
-        } else if (rawPropVal.toLowerCase().endsWith("s")) {
+        } else if (rawPropVal.toLowerCase(Locale.ROOT).endsWith("s")) {
             propVal = rawPropVal.substring(0, rawPropVal.length() - 1);
         }
 
@@ -223,4 +224,37 @@ public class GetPropertyAction implements PrivilegedAction<String> {
             return def;
         }
     }
+
+    /**
+     * Convenience method for fetching System property values that are booleans.
+     *
+     * @param prop the name of the System property
+     * @param def a default value
+     * @param dbg a Debug object, if null no debug messages will be sent
+     *
+     * @return a boolean value corresponding to the value in the System property.
+     *      If the property value is neither "true" or "false", the default value
+     *      will be returned.
+     */
+    public static boolean privilegedGetBooleanProp(String prop, boolean def, Debug dbg) {
+        String rawPropVal = privilegedGetProperty(prop, "");
+        if ("".equals(rawPropVal)) {
+            return def;
+        }
+
+        String lower = rawPropVal.toLowerCase(Locale.ROOT);
+        if ("true".equals(lower)) {
+            return true;
+        } else if ("false".equals(lower)) {
+            return false;
+        } else {
+            if (dbg != null) {
+                dbg.println("Warning: Unexpected value for " + prop +
+                            ": " + rawPropVal +
+                            ". Using default value: " + def);
+            }
+            return def;
+        }
+    }
+
 }

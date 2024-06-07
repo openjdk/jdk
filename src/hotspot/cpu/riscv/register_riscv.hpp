@@ -27,6 +27,7 @@
 #define CPU_RISCV_REGISTER_RISCV_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #define CSR_FFLAGS   0x001        // Floating-Point Accrued Exceptions.

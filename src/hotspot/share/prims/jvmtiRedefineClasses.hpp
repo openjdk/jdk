@@ -438,8 +438,6 @@ class VM_RedefineClasses: public VM_Operation {
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   u2 find_new_index(int old_index);
   int find_new_operand_index(int old_bootstrap_spec_index);
-  bool is_unresolved_class_mismatch(const constantPoolHandle& cp1, int index1,
-    const constantPoolHandle& cp2, int index2);
   void map_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
   void map_operand_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
   bool merge_constant_pools(const constantPoolHandle& old_cp,

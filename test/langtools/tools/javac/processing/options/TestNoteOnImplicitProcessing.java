@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8310061
- * @summary Verify a note is issued for implicit annotation processing
+ * @bug 8310061 8315534 8306819
+ * @summary Verify behavior around implicit annotation processing
  *
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -34,15 +34,22 @@
  * @run main TestNoteOnImplicitProcessing
  */
 
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 import javax.annotation.processing.Processor;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -52,19 +59,27 @@ import toolbox.ToolBox;
 import toolbox.JarTask;
 
 /*
- * Generates note and the processor runs:
+ * Does not generates a note and the processor does not run:
  * $ javac -cp ImplicitProcTestProc.jar                                     HelloWorldTest.java
  *
- * Does _not_ generate a note and the processor runs:
+ * Does _not_ generate a note and the processor does run:
  * $ javac -processorpath ImplicitProcTestProc.jar                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -processor ImplicitProcTestProc.jar HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:full                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:only                          HelloWorldTest.java
+ *
+ * Does _not_ generate a note and the processor does _not_run:
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:-options                     HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:none                         HelloWorldTest.java
  *
  * Does _not_ generate a note and the processor _doesn't_ run.
  * $ javac -cp ImplicitProcTestProc.jar -proc:none                          HelloWorldTest.java
+ *
+ * (Previously, annotation processing was implicitly enabled and the
+ * the class path was searched for processors. This test was
+ * originally written to probe around a note warning of a potential
+ * future policy change to disable such implicit processing, a policy
+ * change now implemented and this test has been updated accordingly.)
  */
 
 public class TestNoteOnImplicitProcessing extends TestRunner {
@@ -158,8 +173,8 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
-        checkForCompilerNote(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
+        checkForCompilerNote(javacResult, false);
     }
 
     @Test
@@ -232,7 +247,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
         checkForCompilerNote(javacResult, false);
     }
 
@@ -247,7 +262,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
         checkForCompilerNote(javacResult, false);
     }
 
@@ -290,4 +305,94 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             throw new RuntimeException("Expected note not printed");
         }
     }
+
+    @Test
+    public void processorsViaAPI(Path base, Path jarFile) throws Exception {
+        ClassLoader cl = new URLClassLoader(new URL[] {jarFile.toUri().toURL()});
+        Class<?> processorClass = Class.forName(processorName, true, cl);
+        StringWriter compilerOut = new StringWriter();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JavaCompiler provider = ToolProvider.getSystemJavaCompiler();
+        PrintStream oldOut = System.out;
+
+        try (StandardJavaFileManager jfm = provider.getStandardFileManager(null, null, null)) {
+            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+            Iterable<? extends JavaFileObject> inputFile = jfm.getJavaFileObjects("HelloWorldTest.java");
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                CompilationTask task = provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                task.call();
+
+                verifyMessages(out, compilerOut, false, false);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                CompilationTask task = provider.getTask(compilerOut, null, null, options, null, inputFile);
+                Processor processor =
+                        (Processor) processorClass.getDeclaredConstructor().newInstance();
+
+                task.setProcessors(List.of(processor));
+                task.call();
+
+                verifyMessages(out, compilerOut, false, true);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                com.sun.source.util.JavacTask task =
+                        (com.sun.source.util.JavacTask) provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                task.analyze();
+
+                verifyMessages(out, compilerOut, false, false);
+            }
+
+            {
+                List<String> options = List.of("-classpath", jarFile.toString(), "-XDrawDiagnostics");
+                com.sun.source.util.JavacTask task =
+                        (com.sun.source.util.JavacTask) provider.getTask(compilerOut, null, null, options, null, inputFile);
+
+                Processor processor =
+                        (Processor) processorClass.getDeclaredConstructor().newInstance();
+
+                task.setProcessors(List.of(processor));
+                task.analyze();
+
+                verifyMessages(out, compilerOut, false, true);
+            }
+        } finally {
+            System.setOut(oldOut);
+        }
+    }
+
+    private void verifyMessages(ByteArrayOutputStream out, StringWriter compilerOut, boolean expectedNotePresent,
+                                boolean processorRunExpected) {
+        boolean processorRun = out.toString(StandardCharsets.UTF_8).contains("ImplicitProcTestProc run");
+
+        if (processorRun != processorRunExpected) {
+            throw new RuntimeException(processorRunExpected ?
+                                       "Expected processor message not printed" :
+                                       "Unexpected processor message printed");
+        }
+
+        out.reset();
+
+        boolean printed = compilerOut.toString().contains("- compiler.note.implicit.annotation.processing");
+
+        if (!expectedNotePresent && printed) {
+            throw new RuntimeException("Unexpected note printed");
+        }
+
+        if (expectedNotePresent && !printed) {
+            throw new RuntimeException("Expected note not printed");
+        }
+
+        StringBuffer compilerOutData = compilerOut.getBuffer();
+
+        compilerOutData.delete(0, compilerOutData.length());
+    }
+
 }

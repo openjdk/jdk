@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.g1.*;
@@ -1076,25 +1077,18 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                         CollectedHeap collHeap = VM.getVM().getUniverse().heap();
                         boolean bad = true;
                         anno = "BAD OOP";
-                        if (collHeap instanceof GenCollectedHeap) {
-                          GenCollectedHeap heap = (GenCollectedHeap) collHeap;
-                          for (int i = 0; i < heap.nGens(); i++) {
-                            if (heap.getGen(i).isIn(handle)) {
-                              if (i == 0) {
-                                anno = "NewGen ";
-                              } else if (i == 1) {
-                                anno = "OldGen ";
-                              } else {
-                                anno = "Gen " + i + " ";
-                              }
-                              bad = false;
-                              break;
-                            }
+                        if (collHeap instanceof SerialHeap) {
+                          SerialHeap heap = (SerialHeap) collHeap;
+                          if (heap.youngGen().isIn(handle)) {
+                            anno = "NewGen ";
+                            bad = false;
+                          } else if (heap.oldGen().isIn(handle)) {
+                            anno = "OldGen ";
+                            bad = false;
                           }
-
                         } else if (collHeap instanceof G1CollectedHeap) {
                           G1CollectedHeap heap = (G1CollectedHeap)collHeap;
-                          HeapRegion region = heap.hrm().getByAddress(handle);
+                          G1HeapRegion region = heap.hrm().getByAddress(handle);
 
                           if (region == null) {
                             // intentionally skip
@@ -1110,6 +1104,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           } else if (region.isOld()) {
                             anno = "Old ";
                             bad = false;
+                          }
+                          if (!bad && region.isPinned()) {
+                            anno += "Pinned ";
                           }
                         } else if (collHeap instanceof ParallelScavengeHeap) {
                           ParallelScavengeHeap heap = (ParallelScavengeHeap) collHeap;

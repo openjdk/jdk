@@ -28,7 +28,7 @@
 
 #define ShortenBranches true
 
-const int StackAlignmentInBytes = 16;
+const int StackAlignmentInBytes = 8;
 
 // All faults on s390x give the address only on page granularity.
 // Set Pdsegfault_address to minimum one page address.
@@ -47,6 +47,9 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // This setting should be kept compatible with vm_version_s390.cpp.
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 256
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #define SUPPORT_RESERVED_STACK_AREA
 

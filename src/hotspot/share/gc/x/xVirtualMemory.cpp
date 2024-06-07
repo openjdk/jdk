@@ -27,7 +27,7 @@
 #include "gc/x/xAddressSpaceLimit.hpp"
 #include "gc/x/xGlobals.hpp"
 #include "gc/x/xVirtualMemory.inline.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

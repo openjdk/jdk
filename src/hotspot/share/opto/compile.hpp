@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,6 +45,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/vmEnums.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -53,6 +54,7 @@ class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
 class CloneMap;
+class CompilationFailureInfo;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
@@ -69,6 +71,7 @@ class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
 class OptoReg;
+class ParsePredicateNode;
 class PhaseCFG;
 class PhaseGVN;
 class PhaseIterGVN;
@@ -179,12 +182,16 @@ class Options {
   const bool _do_reduce_allocation_merges;  // Do try to reduce allocation merges.
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
+  const bool _do_superword;          // Do SuperWord
   const bool _install_code;          // Install the code that was compiled
  public:
-  Options(bool subsume_loads, bool do_escape_analysis,
+  Options(bool subsume_loads,
+          bool do_escape_analysis,
           bool do_iterative_escape_analysis,
           bool do_reduce_allocation_merges,
-          bool eliminate_boxing, bool do_locks_coarsening,
+          bool eliminate_boxing,
+          bool do_locks_coarsening,
+          bool do_superword,
           bool install_code) :
           _subsume_loads(subsume_loads),
           _do_escape_analysis(do_escape_analysis),
@@ -192,6 +199,7 @@ class Options {
           _do_reduce_allocation_merges(do_reduce_allocation_merges),
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
+          _do_superword(do_superword),
           _install_code(install_code) {
   }
 
@@ -203,6 +211,7 @@ class Options {
        /* do_reduce_allocation_merges = */ false,
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
+       /* do_superword = */ true,
        /* install_code = */ true
     );
   }
@@ -228,7 +237,7 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    C;
+    Compile*    _compile;
     CompileLog* _log;
     const char* _phase_name;
     bool _dolog;
@@ -309,6 +318,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
@@ -336,6 +346,7 @@ class Compile : public Phase {
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
+  uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
@@ -354,10 +365,11 @@ class Compile : public Phase {
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
-  const char*           _failure_reason;        // for record_failure/failing pattern
+  CHeapStringHolder     _failure_reason;        // for record_failure/failing pattern
+  CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
-  GrowableArray<Node*>  _parse_predicate_opaqs; // List of Opaque1 nodes for the Parse Predicates.
+  GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
   GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
@@ -453,6 +465,9 @@ private:
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  // "MemLimit" directive was specified and the memory limit was hit during compilation
+  bool                          _oom;
+
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
@@ -496,6 +511,8 @@ private:
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
 
+  void record_method_not_compilable_oom();
+
  public:
 
   void* barrier_set_state() const { return _barrier_set_state; }
@@ -511,14 +528,15 @@ private:
   void print_inlining_assert_ready();
   void print_inlining_reset();
 
-  void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
+  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
+    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
     print_inlining_stream()->print("%s", ss.freeze());
   }
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
+  void reset_igv_phase_iter(CompilerPhaseType cpt) { _igv_phase_iter[cpt] = 0; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -577,6 +595,7 @@ private:
   bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
+  bool              do_superword() const        { return _options._do_superword; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }
@@ -660,7 +679,7 @@ private:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(enum CompileCommand option) {
+  bool          method_has_option(CompileCommandEnum option) {
     return method() != nullptr && method()->has_option(option);
   }
 
@@ -703,13 +722,13 @@ private:
 #endif
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           parse_predicate_count()   const { return _parse_predicate_opaqs.length(); }
+  int           parse_predicate_count()   const { return _parse_predicates.length(); }
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         parse_predicate_opaque1_node(int idx) const { return _parse_predicate_opaqs.at(idx); }
+  ParsePredicateNode* parse_predicate(int idx) const { return _parse_predicates.at(idx); }
 
   Node* template_assertion_predicate_opaq_node(int idx) const {
     return _template_assertion_predicate_opaqs.at(idx);
@@ -728,10 +747,6 @@ private:
     // this function may be called twice for a node so we can only remove it
     // if it's still existing.
     _macro_nodes.remove_if_existing(n);
-    // remove from _parse_predicate_opaqs list also if it is there
-    if (parse_predicate_count() > 0) {
-      _parse_predicate_opaqs.remove_if_existing(n);
-    }
     // Remove from coarsened locks list if present
     if (coarsened_count() > 0) {
       remove_coarsened_lock(n);
@@ -741,16 +756,24 @@ private:
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
   }
-  void add_parse_predicate_opaq(Node* n) {
-    assert(!_parse_predicate_opaqs.contains(n), "duplicate entry in Parse Predicate opaque1 list");
-    assert(_macro_nodes.contains(n), "should have already been in macro list");
-    _parse_predicate_opaqs.append(n);
+
+  void add_parse_predicate(ParsePredicateNode* n) {
+    assert(!_parse_predicates.contains(n), "duplicate entry in Parse Predicate list");
+    _parse_predicates.append(n);
   }
+
+  void remove_parse_predicate(ParsePredicateNode* n) {
+    if (parse_predicate_count() > 0) {
+      _parse_predicates.remove_if_existing(n);
+    }
+  }
+
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
            "duplicate entry in template assertion predicate opaque4 list");
     _template_assertion_predicate_opaqs.append(n);
   }
+
   void remove_template_assertion_predicate_opaq(Node* n) {
     if (template_assertion_predicate_count() > 0) {
       _template_assertion_predicate_opaqs.remove_if_existing(n);
@@ -759,10 +782,14 @@ private:
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
+  void mark_unbalanced_boxes() const;
 
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+  bool       allow_macro_nodes() { return _allow_macro_nodes;  }
+  void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -773,14 +800,10 @@ private:
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
+  void shuffle_macro_nodes();
   void sort_macro_nodes();
 
-  // Remove the opaque nodes that protect the Parse Predicates so that the unused checks and
-  // uncommon traps will be eliminated from the graph.
-  void cleanup_parse_predicates(PhaseIterGVN &igvn) const;
-  bool is_predicate_opaq(Node* n) const {
-    return _parse_predicate_opaqs.contains(n);
-  }
+  void mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn);
 
   // Are there candidate expensive nodes for optimization?
   bool should_optimize_expensive_nodes(PhaseIterGVN &igvn);
@@ -793,11 +816,24 @@ private:
   Arena*      comp_arena()           { return &_comp_arena; }
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
-  bool        failing() const        { return _env->failing() || _failure_reason != nullptr; }
-  const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
+
+  bool        failing() const        {
+    return _env->failing() ||
+           _failure_reason.get() != nullptr;
+  }
+
+  const char* failure_reason() const {
+    return _env->failing() ? _env->failure_reason()
+                           : _failure_reason.get();
+  }
+
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   bool failure_reason_is(const char* r) const {
-    return (r == _failure_reason) || (r != nullptr && _failure_reason != nullptr && strcmp(r, _failure_reason) == 0);
+    return (r == _failure_reason.get()) ||
+           (r != nullptr &&
+            _failure_reason.get() != nullptr &&
+            strcmp(r, _failure_reason.get()) == 0);
   }
 
   void record_failure(const char* reason);
@@ -807,6 +843,10 @@ private:
     record_failure(reason);
   }
   bool check_node_count(uint margin, const char* reason) {
+    if (oom()) {
+      record_method_not_compilable_oom();
+      return true;
+    }
     if (live_nodes() + margin > max_node_limit()) {
       record_method_not_compilable(reason);
       return true;
@@ -814,6 +854,8 @@ private:
       return false;
     }
   }
+  bool oom() const { return _oom; }
+  void set_oom()   { _oom = true; }
 
   // Node management
   uint         unique() const              { return _unique; }
@@ -1021,7 +1063,8 @@ private:
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+  template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
+  void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
@@ -1050,6 +1093,7 @@ private:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
+  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1103,9 +1147,7 @@ private:
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
-  ~Compile() {
-    delete _print_inlining_stream;
-  };
+  ~Compile();
 
   // Are we compiling a method?
   bool has_method() { return method() != nullptr; }
@@ -1235,6 +1277,9 @@ private:
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
   bool randomized_select(int count);
+
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(const DirectiveSet* directive);
 
   // supporting clone_map
   CloneMap&     clone_map();

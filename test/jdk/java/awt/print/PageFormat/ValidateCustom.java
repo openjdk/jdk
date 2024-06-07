@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4414987
- * @author Jennifer Godinez
+ * @key printer
  * @summary Displays width & height of validated custom paper size
  * @run main/manual ValidateCustom
  */

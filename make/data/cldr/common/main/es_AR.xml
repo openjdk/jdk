@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -31,7 +31,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territories>
 			<territory type="BA" draft="contributed">Bosnia y Herzegovina</territory>
 			<territory type="GB" alt="short" draft="contributed">RU</territory>
-			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="TL" draft="contributed">Timor-Leste</territory>
 			<territory type="UM" draft="contributed">Islas menores alejadas de EE. UU.</territory>
 		</territories>
 	</localeDisplayNames>
@@ -126,23 +126,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon" draft="contributed">mediodía</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 							<dayPeriod type="morning1" draft="contributed">madrugada</dayPeriod>
 							<dayPeriod type="morning2" draft="contributed">mañana</dayPeriod>
 							<dayPeriod type="evening1" draft="contributed">tarde</dayPeriod>
 							<dayPeriod type="night1" draft="contributed">noche</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="noon" draft="contributed">mediodía</dayPeriod>
-							<dayPeriod type="morning1" draft="contributed">madrugada</dayPeriod>
-							<dayPeriod type="morning2" draft="contributed">mañana</dayPeriod>
-							<dayPeriod type="evening1" draft="contributed">tarde</dayPeriod>
-							<dayPeriod type="night1" draft="contributed">noche</dayPeriod>
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -271,17 +280,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">hace {0} seg.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="second-narrow">
-				<displayName draft="contributed">seg.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="contributed">dentro de {0} seg.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">dentro de {0} seg.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} seg.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} seg.</relativeTimePattern>
-				</relativeTime>
-			</field>
 		</fields>
 		<timeZoneNames>
 			<metazone type="Argentina">
@@ -388,15 +386,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0}a.</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="contributed">seg.</displayName>
 				<unitPattern count="one" draft="contributed">{0}seg.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}seg.</unitPattern>
-			</unit>
-			<unit type="electric-volt">
-				<displayName>voltios</displayName>
-			</unit>
-			<unit type="power-watt">
-				<displayName>vatios</displayName>
 			</unit>
 		</unitLength>
 	</units>

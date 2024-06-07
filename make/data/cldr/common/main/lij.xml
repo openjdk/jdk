@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Proper interpretation of these files requires synthesis of missing items, as per
@@ -15,11 +15,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="lij"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ab" draft="unconfirmed">abcaso</language>
 			<language type="ace" draft="unconfirmed">aceh</language>
@@ -116,7 +111,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="efi" draft="unconfirmed">efik</language>
 			<language type="eka" draft="unconfirmed">ekajuk</language>
 			<language type="el" draft="unconfirmed">grego</language>
-			<language type="en" draft="unconfirmed">ingleise</language>
+			<language type="en" draft="contributed">ingleise</language>
 			<language type="en_AU" draft="unconfirmed">ingleise d’Australia</language>
 			<language type="en_CA" draft="unconfirmed">ingleise do Canadà</language>
 			<language type="en_GB" draft="unconfirmed">ingleise britannico</language>
@@ -847,9 +842,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">lunäio etiope Amete Alem</type>
 			<type key="calendar" type="gregorian" draft="unconfirmed">lunäio gregorian</type>
 			<type key="calendar" type="hebrew" draft="unconfirmed">lunäio ebraico</type>
-			<type key="calendar" type="islamic" draft="unconfirmed">lunäio islamico</type>
-			<type key="calendar" type="islamic-civil" draft="unconfirmed">lunäio çivile islamico</type>
-			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">lunäio islamico (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">lunäio egirian</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">lunäio çivile egirian</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">lunäio egirian (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">lunäio ISO-8601</type>
 			<type key="calendar" type="japanese" draft="unconfirmed">lunäio giapponeise</type>
 			<type key="calendar" type="persian" draft="unconfirmed">lunäio perscian</type>
@@ -911,22 +906,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="vaii" draft="unconfirmed">giffre vaii</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="unconfirmed">metrico</measurementSystemName>
-			<measurementSystemName type="UK" draft="unconfirmed">imperiale</measurementSystemName>
-			<measurementSystemName type="US" draft="unconfirmed">american</measurementSystemName>
+			<measurementSystemName type="metric" draft="contributed">metrico</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">imperiale</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">american</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Lengua: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Scrittua: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Region: {0}</codePattern>
+			<codePattern type="language" draft="contributed">Lengua: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Scrittua: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Region: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â ä æ b c ç d e é è ê ë f g h i ì î ï j k l m n ñ o ó ò ô ö p q r s t u ù û ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[õ ō œ ř]</exemplarCharacters>
+		<exemplarCharacters>[aàâä æ b cç d eéèêë f g h iìîï j k l m nñ oóòôö p q r s t uùûü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[õō œ ř]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . ' % ‰ + − 0 1 2 3 4 5 6 7 8 9 ª º]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -980,15 +975,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -999,7 +988,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM" draft="unconfirmed">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="H" draft="unconfirmed">H</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E d/M</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
@@ -1133,33 +1121,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="unconfirmed">de nov.</month>
 							<month type="12" draft="unconfirmed">de dex.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">ZN</month>
-							<month type="2" draft="unconfirmed">FR</month>
-							<month type="3" draft="unconfirmed">MR</month>
-							<month type="4" draft="unconfirmed">AR</month>
-							<month type="5" draft="unconfirmed">MZ</month>
-							<month type="6" draft="unconfirmed">ZG</month>
-							<month type="7" draft="unconfirmed">LG</month>
-							<month type="8" draft="unconfirmed">AG</month>
-							<month type="9" draft="unconfirmed">ST</month>
-							<month type="10" draft="unconfirmed">OT</month>
-							<month type="11" draft="unconfirmed">NV</month>
-							<month type="12" draft="unconfirmed">DX</month>
-						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">de zenâ</month>
-							<month type="2" draft="unconfirmed">de frevâ</month>
-							<month type="3" draft="unconfirmed">de marso</month>
-							<month type="4" draft="unconfirmed">d’arvî</month>
-							<month type="5" draft="unconfirmed">de mazzo</month>
-							<month type="6" draft="unconfirmed">de zugno</month>
-							<month type="7" draft="unconfirmed">de luggio</month>
-							<month type="8" draft="unconfirmed">d’agosto</month>
-							<month type="9" draft="unconfirmed">de settembre</month>
-							<month type="10" draft="unconfirmed">d’ottobre</month>
-							<month type="11" draft="unconfirmed">de novembre</month>
-							<month type="12" draft="unconfirmed">de dexembre</month>
+							<month type="1" draft="contributed">de zenâ</month>
+							<month type="2" draft="contributed">de frevâ</month>
+							<month type="3" draft="contributed">de marso</month>
+							<month type="4" draft="contributed">d’arvî</month>
+							<month type="5" draft="contributed">de mazzo</month>
+							<month type="6" draft="contributed">de zugno</month>
+							<month type="7" draft="contributed">de luggio</month>
+							<month type="8" draft="contributed">d’agosto</month>
+							<month type="9" draft="contributed">de settembre</month>
+							<month type="10" draft="contributed">d’ottobre</month>
+							<month type="11" draft="contributed">de novembre</month>
+							<month type="12" draft="contributed">de dexembre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -1218,44 +1192,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri" draft="unconfirmed">ven.</day>
 							<day type="sat" draft="unconfirmed">sab.</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">D</day>
-							<day type="mon" draft="unconfirmed">L</day>
-							<day type="tue" draft="unconfirmed">M</day>
-							<day type="wed" draft="unconfirmed">M</day>
-							<day type="thu" draft="unconfirmed">Z</day>
-							<day type="fri" draft="unconfirmed">V</day>
-							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">dom.</day>
-							<day type="mon" draft="unconfirmed">lun.</day>
-							<day type="tue" draft="unconfirmed">mät.</day>
-							<day type="wed" draft="unconfirmed">mäc.</day>
-							<day type="thu" draft="unconfirmed">zeu.</day>
-							<day type="fri" draft="unconfirmed">ven.</day>
-							<day type="sat" draft="unconfirmed">sab.</day>
-						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">domenega</day>
-							<day type="mon" draft="unconfirmed">lunesdì</day>
-							<day type="tue" draft="unconfirmed">mätesdì</day>
-							<day type="wed" draft="unconfirmed">mäcordì</day>
-							<day type="thu" draft="unconfirmed">zeuggia</day>
-							<day type="fri" draft="unconfirmed">venardì</day>
-							<day type="sat" draft="unconfirmed">sabbo</day>
+							<day type="sun" draft="contributed">domenega</day>
+							<day type="mon" draft="contributed">lunesdì</day>
+							<day type="tue" draft="contributed">mätesdì</day>
+							<day type="wed" draft="contributed">mäcordì</day>
+							<day type="thu" draft="contributed">zeuggia</day>
+							<day type="fri" draft="contributed">venardì</day>
+							<day type="sat" draft="contributed">sabbo</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">dom.</day>
-							<day type="mon" draft="unconfirmed">lun.</day>
-							<day type="tue" draft="unconfirmed">mät.</day>
-							<day type="wed" draft="unconfirmed">mäc.</day>
-							<day type="thu" draft="unconfirmed">zeu.</day>
-							<day type="fri" draft="unconfirmed">ven.</day>
-							<day type="sat" draft="unconfirmed">sab.</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">D</day>
 							<day type="mon" draft="unconfirmed">L</day>
@@ -1264,49 +1211,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu" draft="unconfirmed">Z</day>
 							<day type="fri" draft="unconfirmed">V</day>
 							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">dom.</day>
-							<day type="mon" draft="unconfirmed">lun.</day>
-							<day type="tue" draft="unconfirmed">mät.</day>
-							<day type="wed" draft="unconfirmed">mäc.</day>
-							<day type="thu" draft="unconfirmed">zeu.</day>
-							<day type="fri" draft="unconfirmed">ven.</day>
-							<day type="sat" draft="unconfirmed">sab.</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">domenega</day>
-							<day type="mon" draft="unconfirmed">lunesdì</day>
-							<day type="tue" draft="unconfirmed">mätesdì</day>
-							<day type="wed" draft="unconfirmed">mäcordì</day>
-							<day type="thu" draft="unconfirmed">zeuggia</day>
-							<day type="fri" draft="unconfirmed">venardì</day>
-							<day type="sat" draft="unconfirmed">sabbo</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">T1</quarter>
-							<quarter type="2" draft="unconfirmed">T2</quarter>
-							<quarter type="3" draft="unconfirmed">T3</quarter>
-							<quarter type="4" draft="unconfirmed">T4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1º trimestre</quarter>
-							<quarter type="2" draft="unconfirmed">2º trimestre</quarter>
-							<quarter type="3" draft="unconfirmed">3º trimestre</quarter>
-							<quarter type="4" draft="unconfirmed">4º trimestre</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1" draft="unconfirmed">T1</quarter>
 							<quarter type="2" draft="unconfirmed">T2</quarter>
@@ -1332,56 +1241,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="night1" draft="unconfirmed">da neutte</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
 							<dayPeriod type="am" draft="unconfirmed">m.</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p.</dayPeriod>
-							<dayPeriod type="morning1" draft="unconfirmed">da mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">do poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">da seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">da neutte</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-							<dayPeriod type="morning1" draft="unconfirmed">da mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">do poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">da seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">da neutte</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
 							<dayPeriod type="morning1" draft="unconfirmed">mattin</dayPeriod>
 							<dayPeriod type="afternoon1" draft="unconfirmed">poidisnâ</dayPeriod>
 							<dayPeriod type="evening1" draft="unconfirmed">seia</dayPeriod>
 							<dayPeriod type="night1" draft="unconfirmed">neutte</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
 							<dayPeriod type="am" draft="unconfirmed">m.</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p.</dayPeriod>
-							<dayPeriod type="morning1" draft="unconfirmed">mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">neutte</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight" draft="unconfirmed">mëzaneutte</dayPeriod>
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="noon" draft="unconfirmed">mëzogiorno</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-							<dayPeriod type="morning1" draft="unconfirmed">mattin</dayPeriod>
-							<dayPeriod type="afternoon1" draft="unconfirmed">poidisnâ</dayPeriod>
-							<dayPeriod type="evening1" draft="unconfirmed">seia</dayPeriod>
-							<dayPeriod type="night1" draft="unconfirmed">neutte</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1398,12 +1271,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1" draft="unconfirmed">dC</era>
 						<era type="1" alt="variant" draft="unconfirmed">EC</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="unconfirmed">aC</era>
-						<era type="0" alt="variant" draft="unconfirmed">AEC</era>
-						<era type="1" draft="unconfirmed">dC</era>
-						<era type="1" alt="variant" draft="unconfirmed">EC</era>
-					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1470,9 +1337,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
@@ -1489,10 +1353,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM 'do' y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM 'do' y G</dateFormatItem>
-						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv" draft="unconfirmed">HH:mm v</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E d/M</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
@@ -1501,10 +1363,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMW" count="one" draft="unconfirmed">W'ª' 'settemaña' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">W'ª' 'settemaña' MMMM</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="unconfirmed">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">LLL 'do' y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM 'do' y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM 'do' y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM 'do' y</dateFormatItem>
 						<dateFormatItem id="yMMMM" draft="unconfirmed">LLLL 'do' y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
@@ -1515,15 +1377,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
@@ -1568,16 +1424,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
@@ -1638,12 +1487,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="era">
 				<displayName draft="unconfirmed">era</displayName>
 			</field>
-			<field type="era-short">
-				<displayName draft="unconfirmed">era</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName draft="unconfirmed">era</displayName>
-			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">anno</displayName>
 				<relative type="-1" draft="unconfirmed">l’anno passou</relative>
@@ -1659,18 +1502,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName draft="unconfirmed">anno</displayName>
 				<relative type="-1" draft="unconfirmed">l’anno passou</relative>
 				<relative type="0" draft="unconfirmed">st’anno</relative>
 				<relative type="1" draft="unconfirmed">l’anno ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} anno</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} anni</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} anno</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} anni</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName draft="unconfirmed">a</displayName>
@@ -1743,21 +1577,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName draft="unconfirmed">meise</displayName>
 				<relative type="-1" draft="unconfirmed">o meise passou</relative>
 				<relative type="0" draft="unconfirmed">sto meise</relative>
 				<relative type="1" draft="unconfirmed">o meise ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} meise</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} meixi</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} meise</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} meixi</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName draft="unconfirmed">meise</displayName>
 				<relative type="-1" draft="unconfirmed">meise passou</relative>
 				<relative type="0" draft="unconfirmed">sto meise</relative>
 				<relative type="1" draft="unconfirmed">meise ch’o ven</relative>
@@ -1838,25 +1662,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} giorni</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">giorno</displayName>
-				<relative type="-1" draft="unconfirmed">vëi</relative>
-				<relative type="0" draft="unconfirmed">ancheu</relative>
-				<relative type="1" draft="unconfirmed">doman</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} giorno</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} giorni</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} giorno</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} giorni</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">g</displayName>
-				<relative type="-1" draft="unconfirmed">vëi</relative>
-				<relative type="0" draft="unconfirmed">ancheu</relative>
-				<relative type="1" draft="unconfirmed">doman</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">+{0}g</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">+{0}g</relativeTimePattern>
@@ -1867,9 +1674,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName draft="unconfirmed">giorno de l’anno</displayName>
-			</field>
-			<field type="dayOfYear-short">
 				<displayName draft="unconfirmed">giorno de l’anno</displayName>
 			</field>
 			<field type="dayOfYear-narrow">
@@ -1885,9 +1689,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">g da sett</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName draft="unconfirmed">giorno do meise</displayName>
-			</field>
-			<field type="weekdayOfMonth-short">
 				<displayName draft="unconfirmed">giorno do meise</displayName>
 			</field>
 			<field type="weekdayOfMonth-narrow">
@@ -1907,19 +1708,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1" draft="unconfirmed">dom. passâ</relative>
-				<relative type="0" draft="unconfirmed">sta dom.</relative>
-				<relative type="1" draft="unconfirmed">dom. ch’a ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} dom.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} dom.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} dom.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} dom.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1" draft="unconfirmed">dom. passâ</relative>
 				<relative type="0" draft="unconfirmed">sta dom.</relative>
 				<relative type="1" draft="unconfirmed">dom. ch’a ven</relative>
@@ -1958,19 +1746,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} lun.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-narrow">
-				<relative type="-1" draft="unconfirmed">lun. passou</relative>
-				<relative type="0" draft="unconfirmed">sto lun.</relative>
-				<relative type="1" draft="unconfirmed">lun. ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} lun.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} lun.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} lun.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} lun.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
 				<relative type="-1" draft="unconfirmed">mätesdì passou</relative>
 				<relative type="0" draft="unconfirmed">sto mätesdì</relative>
@@ -1985,19 +1760,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1" draft="unconfirmed">mät. passou</relative>
-				<relative type="0" draft="unconfirmed">sto mät.</relative>
-				<relative type="1" draft="unconfirmed">mät. ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} mät.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} mät.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} mät.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} mät.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1" draft="unconfirmed">mät. passou</relative>
 				<relative type="0" draft="unconfirmed">sto mät.</relative>
 				<relative type="1" draft="unconfirmed">mät. ch’o ven</relative>
@@ -2036,19 +1798,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} mäc.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-narrow">
-				<relative type="-1" draft="unconfirmed">mäc. passou</relative>
-				<relative type="0" draft="unconfirmed">sto mäc.</relative>
-				<relative type="1" draft="unconfirmed">mäc. ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} mäc.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} mäc.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} mäc.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} mäc.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu">
 				<relative type="-1" draft="unconfirmed">zeuggia passâ</relative>
 				<relative type="0" draft="unconfirmed">sta zeuggia</relative>
@@ -2063,19 +1812,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1" draft="unconfirmed">zeu. passâ</relative>
-				<relative type="0" draft="unconfirmed">sta zeu.</relative>
-				<relative type="1" draft="unconfirmed">zeu. ch’a ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} zeu.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} zeu.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} zeu.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} zeu.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1" draft="unconfirmed">zeu. passâ</relative>
 				<relative type="0" draft="unconfirmed">sta zeu.</relative>
 				<relative type="1" draft="unconfirmed">zeu. ch’a ven</relative>
@@ -2114,19 +1850,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} ven.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-narrow">
-				<relative type="-1" draft="unconfirmed">ven. passou</relative>
-				<relative type="0" draft="unconfirmed">sto ven.</relative>
-				<relative type="1" draft="unconfirmed">ven. ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} ven.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} ven.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} ven.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} ven.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1" draft="unconfirmed">sabbo passou</relative>
 				<relative type="0" draft="unconfirmed">sto sabbo</relative>
@@ -2153,26 +1876,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} sab.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-narrow">
-				<relative type="-1" draft="unconfirmed">sab. passou</relative>
-				<relative type="0" draft="unconfirmed">sto sab.</relative>
-				<relative type="1" draft="unconfirmed">sab. ch’o ven</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} sab.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} sab.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} sab.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} sab.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName draft="unconfirmed">AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName draft="unconfirmed">AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName draft="unconfirmed">AM/PM</displayName>
 			</field>
 			<field type="hour">
@@ -2187,21 +1891,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} oe</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="hour-short">
-				<displayName draft="unconfirmed">oa</displayName>
-				<relative type="0" draft="unconfirmed">st’oa chì</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} oa</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} oe</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">l’é {0} oa</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">l’é {0} oe</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="hour-narrow">
 				<displayName draft="unconfirmed">h</displayName>
-				<relative type="0" draft="unconfirmed">st’oa chì</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">+{0}h</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">+{0}h</relativeTimePattern>
@@ -2236,8 +1927,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName draft="unconfirmed">men</displayName>
-				<relative type="0" draft="unconfirmed">sto men. chì</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">+{0}men</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">+{0}men</relativeTimePattern>
@@ -2261,7 +1950,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName draft="unconfirmed">s</displayName>
-				<relative type="0" draft="unconfirmed">oua</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">de chì à {0} s</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">de chì à {0} s</relativeTimePattern>
@@ -2272,8 +1960,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName draft="unconfirmed">s</displayName>
-				<relative type="0" draft="unconfirmed">oua</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">+{0}s</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">+{0}s</relativeTimePattern>
@@ -2289,18 +1975,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="zone-short">
 				<displayName draft="unconfirmed">fuso</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName draft="unconfirmed">fuso</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;−HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">UTC{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">UTC</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">oa: {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">oa de stæ: {0}</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">oa standard: {0}</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<hourFormat draft="contributed">+HH:mm;−HH:mm</hourFormat>
+			<gmtFormat draft="contributed">UTC{0}</gmtFormat>
+			<gmtZeroFormat draft="contributed">UTC</gmtZeroFormat>
+			<regionFormat draft="contributed">oa: {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">oa de stæ: {0}</regionFormat>
+			<regionFormat type="standard" draft="contributed">oa standard: {0}</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">tempo universale coordinou</standard>
@@ -2315,14 +1997,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Tirane">
 				<exemplarCity draft="unconfirmed">Tiraña</exemplarCity>
 			</zone>
-			<zone type="Antarctica/Vostok">
-				<exemplarCity draft="unconfirmed">Vostok</exemplarCity>
-			</zone>
 			<zone type="America/Cordoba">
 				<exemplarCity draft="unconfirmed">Còrdova</exemplarCity>
-			</zone>
-			<zone type="Europe/Vienna">
-				<exemplarCity draft="unconfirmed">Vienna</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity draft="unconfirmed">Bruxelles</exemplarCity>
@@ -2524,9 +2200,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Samarkand">
 				<exemplarCity draft="unconfirmed">Samarcanda</exemplarCity>
-			</zone>
-			<zone type="Europe/Vatican">
-				<exemplarCity draft="unconfirmed">Vatican</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
 				<exemplarCity draft="unconfirmed">San Viçenso</exemplarCity>
@@ -2888,7 +2561,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">oa do meridian de Greenwich</standard>
+					<standard draft="contributed">oa do meridian de Greenwich</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3040,11 +2713,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">oa de stæ de Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">oa de l’isoa Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">oa de Magadan</generic>
@@ -3082,13 +2750,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard draft="unconfirmed">oa de Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">oa do Mescico do nòrd-ponente</generic>
-					<standard draft="unconfirmed">oa standard do Mescico do nòrd-ponente</standard>
-					<daylight draft="unconfirmed">oa de stæ do Mescico do nòrd-ponente</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -3423,23 +3084,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -3499,17 +3146,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="unconfirmed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern draft="contributed">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
@@ -3555,8 +3195,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="AFN">
 				<displayName draft="unconfirmed">afghani</displayName>
-				<displayName count="one" draft="unconfirmed">afghani</displayName>
-				<displayName count="other" draft="unconfirmed">afghani</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName draft="unconfirmed">lek arbaneise</displayName>
@@ -3570,8 +3208,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ANG">
 				<displayName draft="unconfirmed">fiorin de Antille olandeixi</displayName>
-				<displayName count="one" draft="unconfirmed">fiorin de Antille olandeixi</displayName>
-				<displayName count="other" draft="unconfirmed">fiorin de Antille olandeixi</displayName>
 			</currency>
 			<currency type="AOA">
 				<displayName draft="unconfirmed">kwanza angolan</displayName>
@@ -3591,8 +3227,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="AWG">
 				<displayName draft="unconfirmed">fiorin d’Aruba</displayName>
-				<displayName count="one" draft="unconfirmed">fiorin d’Aruba</displayName>
-				<displayName count="other" draft="unconfirmed">fiorin d’Aruba</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName draft="unconfirmed">manat azero</displayName>
@@ -3621,8 +3255,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BHD">
 				<displayName draft="unconfirmed">dinar do Bahrein</displayName>
-				<displayName count="one" draft="unconfirmed">dinar do Bahrein</displayName>
-				<displayName count="other" draft="unconfirmed">dinar do Bahrein</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName draft="unconfirmed">franco do Burundi</displayName>
@@ -3662,8 +3294,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BWP">
 				<displayName draft="unconfirmed">pula do Botswana</displayName>
-				<displayName count="one" draft="unconfirmed">pula do Botswana</displayName>
-				<displayName count="other" draft="unconfirmed">pula do Botswana</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName draft="unconfirmed">rubo belaruscio</displayName>
@@ -3774,8 +3404,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">euro</displayName>
-				<displayName count="one" draft="unconfirmed">euro</displayName>
-				<displayName count="other" draft="unconfirmed">euro</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName draft="unconfirmed">dòllao de Figi</displayName>
@@ -3872,8 +3500,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="IQD">
 				<displayName draft="unconfirmed">dinar irachen</displayName>
-				<displayName count="one" draft="unconfirmed">dinar irachen</displayName>
-				<displayName count="other" draft="unconfirmed">dinar irachen</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName draft="unconfirmed">rial iranian</displayName>
@@ -3934,8 +3560,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="KWD">
 				<displayName draft="unconfirmed">dinar do Kuwait</displayName>
-				<displayName count="one" draft="unconfirmed">dinar do Kuwait</displayName>
-				<displayName count="other" draft="unconfirmed">dinar do Kuwait</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName draft="unconfirmed">dòllao de isoe Cayman</displayName>
@@ -3979,8 +3603,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MAD">
 				<displayName draft="unconfirmed">dirham marocchin</displayName>
-				<displayName count="one" draft="unconfirmed">dirham marocchin</displayName>
-				<displayName count="other" draft="unconfirmed">dirham marocchin</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName draft="unconfirmed">leu moldavo</displayName>
@@ -3999,8 +3621,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MMK">
 				<displayName draft="unconfirmed">kyat do Myanmar</displayName>
-				<displayName count="one" draft="unconfirmed">kyat do Myanmar</displayName>
-				<displayName count="other" draft="unconfirmed">kyat do Myanmar</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName draft="unconfirmed">tugrik mongolo</displayName>
@@ -4014,8 +3634,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MRU">
 				<displayName draft="unconfirmed">ouguiya da Mauritania</displayName>
-				<displayName count="one" draft="unconfirmed">ouguiya da Mauritania</displayName>
-				<displayName count="other" draft="unconfirmed">ouguiya da Mauritania</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName draft="unconfirmed">rupia mauriçiaña</displayName>
@@ -4024,8 +3642,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MVR">
 				<displayName draft="unconfirmed">rufiyaa de Maldive</displayName>
-				<displayName count="one" draft="unconfirmed">rufiyaa de Maldive</displayName>
-				<displayName count="other" draft="unconfirmed">rufiyaa de Maldive</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName draft="unconfirmed">kwacha malawian</displayName>
@@ -4081,8 +3697,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="OMR">
 				<displayName draft="unconfirmed">rial de l’Oman</displayName>
-				<displayName count="one" draft="unconfirmed">rial de l’Oman</displayName>
-				<displayName count="other" draft="unconfirmed">rial de l’Oman</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName draft="unconfirmed">balboa de Panama</displayName>
@@ -4122,8 +3736,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="QAR">
 				<displayName draft="unconfirmed">rial do Qatar</displayName>
-				<displayName count="one" draft="unconfirmed">rial do Qatar</displayName>
-				<displayName count="other" draft="unconfirmed">rial do Qatar</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName draft="unconfirmed">leu romen</displayName>
@@ -4180,15 +3792,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one" draft="unconfirmed">sterliña de Sant’Elena</displayName>
 				<displayName count="other" draft="unconfirmed">sterliñe de Sant’Elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">lion da Sierra Leone</displayName>
-				<displayName count="one" draft="unconfirmed">lion da Sierra Leone</displayName>
-				<displayName count="other" draft="unconfirmed">lion da Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">lion da Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">scellin da Somalia</displayName>
-				<displayName count="one" draft="unconfirmed">scellin da Somalia</displayName>
-				<displayName count="other" draft="unconfirmed">scellin da Somalia</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName draft="unconfirmed">dòllao do Suriname</displayName>
@@ -4258,8 +3869,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="TZS">
 				<displayName draft="unconfirmed">scellin da Tanzania</displayName>
-				<displayName count="one" draft="unconfirmed">scellin da Tanzania</displayName>
-				<displayName count="other" draft="unconfirmed">scellin da Tanzania</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName draft="unconfirmed">grivnia ucraiña</displayName>
@@ -4268,8 +3877,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="UGX">
 				<displayName draft="unconfirmed">scellin de l’Uganda</displayName>
-				<displayName count="one" draft="unconfirmed">scellin de l’Uganda</displayName>
-				<displayName count="other" draft="unconfirmed">scellin de l’Uganda</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName draft="unconfirmed">dòllao di Stati Unii</displayName>
@@ -4300,8 +3907,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="VUV">
 				<displayName draft="unconfirmed">vatu de Vanuatu</displayName>
-				<displayName count="one" draft="unconfirmed">vatu de Vanuatu</displayName>
-				<displayName count="other" draft="unconfirmed">vatu de Vanuatu</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName draft="unconfirmed">tala samoan</displayName>
@@ -4336,8 +3941,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="YER">
 				<displayName draft="unconfirmed">rial do Yemen</displayName>
-				<displayName count="one" draft="unconfirmed">rial do Yemen</displayName>
-				<displayName count="other" draft="unconfirmed">rial do Yemen</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName draft="unconfirmed">rand sudafrican</displayName>
@@ -4351,9 +3954,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
-			<pattern type="atLeast">≥{0}</pattern>
-			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -4464,7 +4064,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern draft="unconfirmed">{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName draft="unconfirmed">fòrsa g</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} fòrsa g</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} fòrse g</unitPattern>
 			</unit>
@@ -4547,11 +4146,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} pòlliçe quaddro</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} pòlliçi quaddri</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} pe pòlliçe quaddro</perUnitPattern>
-			</unit>
-			<unit type="area-dunam">
-				<displayName draft="unconfirmed">dunam</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} dunam</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} dunam</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName draft="unconfirmed">caratti</displayName>
@@ -4668,11 +4262,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} byte</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} byte</unitPattern>
 			</unit>
-			<unit type="digital-bit">
-				<displayName draft="unconfirmed">bit</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} bit</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bit</unitPattern>
-			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">secoli</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} secolo</unitPattern>
@@ -4684,9 +4273,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0} dëxenni</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">anni</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} anno</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} anni</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} à l’anno</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -4696,9 +4282,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="unconfirmed">{0} pe trimestre</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="unconfirmed">meixi</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} meise</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} meixi</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} a-o meise</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -4714,9 +4297,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="unconfirmed">{0} a-o giorno</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="unconfirmed">oe</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} oa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} oe</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} à l’oa</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -4782,7 +4362,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0} chillojoule</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName draft="unconfirmed">J</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} joule</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} joule</unitPattern>
 			</unit>
@@ -4843,16 +4422,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName draft="unconfirmed">emme tipografica</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} em</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} em</unitPattern>
-			</unit>
-			<unit type="graphics-pixel">
-				<displayName draft="unconfirmed">pixel</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} px</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName draft="unconfirmed">megapixel</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} megapixel</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} megapixel</unitPattern>
 			</unit>
@@ -5075,11 +4646,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} massa do Sô</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} masse do Sô</unitPattern>
 			</unit>
-			<unit type="mass-grain">
-				<displayName draft="unconfirmed">grañe</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} graña</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} grañe</unitPattern>
-			</unit>
 			<unit type="power-gigawatt">
 				<displayName draft="unconfirmed">gigawatt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} gigawatt</unitPattern>
@@ -5124,11 +4690,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">pòlliçi de mercuio</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} pòlliçe de mercuio</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} pòlliçi de mercuio</unitPattern>
-			</unit>
-			<unit type="pressure-bar">
-				<displayName draft="unconfirmed">bar</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} bar</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName draft="unconfirmed">millibar</displayName>
@@ -5360,25 +4921,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} cuggiæn da cafè imperiale</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} cuggiæn da cafè imperiali</unitPattern>
 			</unit>
-			<unit type="volume-drop">
-				<displayName draft="unconfirmed">stisse</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} stissa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} stisse</unitPattern>
-			</unit>
 			<unit type="volume-dram">
 				<displayName draft="unconfirmed">dramme liquide</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} dramma liquida</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} dramme liquide</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName draft="unconfirmed">jigger</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} jigger</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} jigger</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<displayName draft="unconfirmed">spellinsegæ</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} spellinsegâ</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} spellinsegæ</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName draft="unconfirmed">quarto imperiale</displayName>
@@ -5394,98 +4940,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one" draft="unconfirmed">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="one" draft="unconfirmed">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">fòrsa g</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} G</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} G</unitPattern>
-			</unit>
-			<unit type="acceleration-meter-per-square-second">
-				<unitPattern count="one" draft="unconfirmed">{0} m/s²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m/s²</unitPattern>
-			</unit>
-			<unit type="angle-revolution">
-				<unitPattern count="one" draft="unconfirmed">{0} rev</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} rev</unitPattern>
-			</unit>
-			<unit type="angle-radian">
-				<unitPattern count="one" draft="unconfirmed">{0} rad</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName draft="unconfirmed">°</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName draft="unconfirmed">′</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}′</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName draft="unconfirmed">″</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}″</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
-			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one" draft="unconfirmed">{0} km²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName draft="unconfirmed">ha</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ha</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ha</unitPattern>
-			</unit>
-			<unit type="area-square-meter">
-				<unitPattern count="one" draft="unconfirmed">{0} m²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<unitPattern count="one" draft="unconfirmed">{0} cm²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<unitPattern count="one" draft="unconfirmed">{0} mi²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName draft="unconfirmed">ac</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ac</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ac</unitPattern>
-			</unit>
-			<unit type="area-square-yard">
-				<unitPattern count="one" draft="unconfirmed">{0} yd²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} yd²</unitPattern>
-			</unit>
-			<unit type="area-square-foot">
-				<unitPattern count="one" draft="unconfirmed">{0} ft²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ft²</unitPattern>
-			</unit>
-			<unit type="area-square-inch">
-				<unitPattern count="one" draft="unconfirmed">{0} in²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} in²</unitPattern>
-			</unit>
-			<unit type="area-dunam">
-				<unitPattern count="one" draft="unconfirmed">{0} dunam</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} dunam</unitPattern>
-			</unit>
-			<unit type="concentr-karat">
-				<unitPattern count="one" draft="unconfirmed">{0} kt</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kt</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName draft="unconfirmed">mg/dl</displayName>
@@ -5501,26 +4972,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">elem.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} elem.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} elem.</unitPattern>
-			</unit>
-			<unit type="concentr-permillion">
-				<unitPattern count="one" draft="unconfirmed">{0} ppm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ppm</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
-			</unit>
-			<unit type="concentr-permille">
-				<unitPattern count="one" draft="unconfirmed">{0}‰</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
-			</unit>
-			<unit type="concentr-permyriad">
-				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<unitPattern count="one" draft="unconfirmed">{0} mol</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="unconfirmed">l/km</displayName>
@@ -5542,50 +4993,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} mpg imp.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mpg imp.</unitPattern>
 			</unit>
-			<unit type="digital-petabyte">
-				<unitPattern count="one" draft="unconfirmed">{0} PB</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} PB</unitPattern>
-			</unit>
-			<unit type="digital-terabyte">
-				<unitPattern count="one" draft="unconfirmed">{0} TB</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} TB</unitPattern>
-			</unit>
-			<unit type="digital-terabit">
-				<unitPattern count="one" draft="unconfirmed">{0} Tb</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Tb</unitPattern>
-			</unit>
-			<unit type="digital-gigabyte">
-				<unitPattern count="one" draft="unconfirmed">{0} GB</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} GB</unitPattern>
-			</unit>
-			<unit type="digital-gigabit">
-				<unitPattern count="one" draft="unconfirmed">{0} Gb</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Gb</unitPattern>
-			</unit>
-			<unit type="digital-megabyte">
-				<unitPattern count="one" draft="unconfirmed">{0} MB</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} MB</unitPattern>
-			</unit>
-			<unit type="digital-megabit">
-				<unitPattern count="one" draft="unconfirmed">{0} Mb</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Mb</unitPattern>
-			</unit>
-			<unit type="digital-kilobyte">
-				<unitPattern count="one" draft="unconfirmed">{0} kB</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kB</unitPattern>
-			</unit>
-			<unit type="digital-kilobit">
-				<unitPattern count="one" draft="unconfirmed">{0} kb</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kb</unitPattern>
-			</unit>
 			<unit type="digital-byte">
 				<displayName draft="unconfirmed">B</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} B</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} B</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<unitPattern count="one" draft="unconfirmed">{0} bit</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">sec.</displayName>
@@ -5631,7 +5042,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">oe</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} oa</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} oe</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">men</displayName>
@@ -5641,68 +5051,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="unconfirmed">s</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} s</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} s</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">ms</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ms</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName draft="unconfirmed">μs</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} μs</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} μs</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName draft="unconfirmed">ns</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ns</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName draft="unconfirmed">A</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} A</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} A</unitPattern>
-			</unit>
-			<unit type="electric-milliampere">
-				<unitPattern count="one" draft="unconfirmed">{0} mA</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName draft="unconfirmed">Ω</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} Ω</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">V</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} V</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} V</unitPattern>
-			</unit>
-			<unit type="energy-kilocalorie">
-				<unitPattern count="one" draft="unconfirmed">{0} kcal</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kcal</unitPattern>
-			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one" draft="unconfirmed">{0} cal</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cal</unitPattern>
-			</unit>
-			<unit type="energy-kilojoule">
-				<unitPattern count="one" draft="unconfirmed">{0} kJ</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName draft="unconfirmed">J</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} J</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} J</unitPattern>
-			</unit>
-			<unit type="energy-kilowatt-hour">
-				<unitPattern count="one" draft="unconfirmed">{0} kWh</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kWh</unitPattern>
-			</unit>
-			<unit type="energy-electronvolt">
-				<unitPattern count="one" draft="unconfirmed">{0} eV</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName draft="unconfirmed">BTU</displayName>
@@ -5714,42 +5074,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} thm US</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} thm US</unitPattern>
 			</unit>
-			<unit type="force-pound-force">
-				<unitPattern count="one" draft="unconfirmed">{0} lbf</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} lbf</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<unitPattern count="one" draft="unconfirmed">{0} N</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} N</unitPattern>
-			</unit>
-			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<unitPattern count="one" draft="unconfirmed">{0} kWh/100km</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kWh/100km</unitPattern>
-			</unit>
-			<unit type="frequency-gigahertz">
-				<unitPattern count="one" draft="unconfirmed">{0} GHz</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} GHz</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<unitPattern count="one" draft="unconfirmed">{0} MHz</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} MHz</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<unitPattern count="one" draft="unconfirmed">{0} kHz</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kHz</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<unitPattern count="one" draft="unconfirmed">{0} Hz</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Hz</unitPattern>
-			</unit>
-			<unit type="graphics-em">
-				<unitPattern count="one" draft="unconfirmed">{0} em</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} em</unitPattern>
-			</unit>
 			<unit type="graphics-pixel">
 				<displayName draft="unconfirmed">pixel</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} px</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName draft="unconfirmed">megapixel</displayName>
@@ -5766,307 +5092,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} px/in</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} px/in</unitPattern>
 			</unit>
-			<unit type="length-earth-radius">
-				<unitPattern count="one" draft="unconfirmed">{0} R⊕</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} R⊕</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<unitPattern count="one" draft="unconfirmed">{0} km</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km</unitPattern>
-			</unit>
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">m</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} m</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<unitPattern count="one" draft="unconfirmed">{0} dm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<unitPattern count="one" draft="unconfirmed">{0} cm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<unitPattern count="one" draft="unconfirmed">{0} mm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one" draft="unconfirmed">{0} μm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one" draft="unconfirmed">{0} nm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one" draft="unconfirmed">{0} pm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pm</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one" draft="unconfirmed">{0} mi</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mi</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="one" draft="unconfirmed">{0} yd</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} yd</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="one" draft="unconfirmed">{0} ft</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ft</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<unitPattern count="one" draft="unconfirmed">{0} in</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} in</unitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<unitPattern count="one" draft="unconfirmed">{0} pc</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pc</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<unitPattern count="one" draft="unconfirmed">{0} ly</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ly</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<unitPattern count="one" draft="unconfirmed">{0} au</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} au</unitPattern>
-			</unit>
-			<unit type="length-furlong">
-				<unitPattern count="one" draft="unconfirmed">{0} fur</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} fur</unitPattern>
-			</unit>
-			<unit type="length-fathom">
-				<unitPattern count="one" draft="unconfirmed">{0} fth</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} fth</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<unitPattern count="one" draft="unconfirmed">{0} nmi</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} nmi</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="one" draft="unconfirmed">{0} smi</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
-			</unit>
-			<unit type="length-point">
-				<unitPattern count="one" draft="unconfirmed">{0} pt</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
-			</unit>
-			<unit type="length-solar-radius">
-				<unitPattern count="one" draft="unconfirmed">{0} R☉</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} R☉</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<unitPattern count="one" draft="unconfirmed">{0} lx</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} lx</unitPattern>
-			</unit>
-			<unit type="light-candela">
-				<unitPattern count="one" draft="unconfirmed">{0} cd</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cd</unitPattern>
-			</unit>
-			<unit type="light-lumen">
-				<unitPattern count="one" draft="unconfirmed">{0} lm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} lm</unitPattern>
-			</unit>
-			<unit type="light-solar-luminosity">
-				<unitPattern count="one" draft="unconfirmed">{0} L☉</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} L☉</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<unitPattern count="one" draft="unconfirmed">{0} t</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} t</unitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<unitPattern count="one" draft="unconfirmed">{0} kg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">g</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} g</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
-			</unit>
-			<unit type="mass-milligram">
-				<unitPattern count="one" draft="unconfirmed">{0} mg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mg</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="one" draft="unconfirmed">{0} μg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} μg</unitPattern>
-			</unit>
-			<unit type="mass-ton">
-				<unitPattern count="one" draft="unconfirmed">{0} tn</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} tn</unitPattern>
-			</unit>
-			<unit type="mass-stone">
-				<unitPattern count="one" draft="unconfirmed">{0} st</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} st</unitPattern>
-			</unit>
-			<unit type="mass-pound">
-				<unitPattern count="one" draft="unconfirmed">{0} lb</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} lb</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one" draft="unconfirmed">{0} oz</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} oz</unitPattern>
-			</unit>
-			<unit type="mass-ounce-troy">
-				<unitPattern count="one" draft="unconfirmed">{0} oz t</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName draft="unconfirmed">ct</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} ct</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ct</unitPattern>
 			</unit>
-			<unit type="mass-dalton">
-				<unitPattern count="one" draft="unconfirmed">{0} Da</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Da</unitPattern>
-			</unit>
-			<unit type="mass-earth-mass">
-				<unitPattern count="one" draft="unconfirmed">{0} M⊕</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} M⊕</unitPattern>
-			</unit>
-			<unit type="mass-solar-mass">
-				<unitPattern count="one" draft="unconfirmed">{0} M☉</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} M☉</unitPattern>
-			</unit>
 			<unit type="mass-grain">
 				<displayName draft="unconfirmed">grañe</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} graña</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} grañe</unitPattern>
 			</unit>
-			<unit type="power-gigawatt">
-				<unitPattern count="one" draft="unconfirmed">{0} GW</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} GW</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<unitPattern count="one" draft="unconfirmed">{0} MW</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} MW</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one" draft="unconfirmed">{0} kW</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kW</unitPattern>
-			</unit>
 			<unit type="power-watt">
 				<displayName draft="unconfirmed">W</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} W</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} W</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<unitPattern count="one" draft="unconfirmed">{0} mW</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mW</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one" draft="unconfirmed">{0} hp</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName draft="unconfirmed">mmHg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mmHg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mmHg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<unitPattern count="one" draft="unconfirmed">{0} psi</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one" draft="unconfirmed">{0} inHg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} inHg</unitPattern>
-			</unit>
-			<unit type="pressure-bar">
-				<unitPattern count="one" draft="unconfirmed">{0} bar</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bar</unitPattern>
-			</unit>
-			<unit type="pressure-millibar">
-				<unitPattern count="one" draft="unconfirmed">{0} mbar</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mbar</unitPattern>
-			</unit>
-			<unit type="pressure-atmosphere">
-				<unitPattern count="one" draft="unconfirmed">{0} atm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} atm</unitPattern>
-			</unit>
-			<unit type="pressure-pascal">
-				<unitPattern count="one" draft="unconfirmed">{0} Pa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} Pa</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one" draft="unconfirmed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} hPa</unitPattern>
-			</unit>
-			<unit type="pressure-kilopascal">
-				<unitPattern count="one" draft="unconfirmed">{0} kPa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<unitPattern count="one" draft="unconfirmed">{0} MPa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} MPa</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one" draft="unconfirmed">{0} km/h</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km/h</unitPattern>
-			</unit>
-			<unit type="speed-meter-per-second">
-				<unitPattern count="one" draft="unconfirmed">{0} m/s</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m/s</unitPattern>
-			</unit>
-			<unit type="speed-mile-per-hour">
-				<unitPattern count="one" draft="unconfirmed">{0} mi/h</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mi/h</unitPattern>
-			</unit>
-			<unit type="speed-knot">
-				<unitPattern count="one" draft="unconfirmed">{0} kn</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kn</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<unitPattern count="one" draft="unconfirmed">{0}°C</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one" draft="unconfirmed">{0}°F</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<unitPattern count="one" draft="unconfirmed">{0} K</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<unitPattern count="one" draft="unconfirmed">{0} lbf⋅ft</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<unitPattern count="one" draft="unconfirmed">{0} N⋅m</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} N⋅m</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one" draft="unconfirmed">{0} km³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one" draft="unconfirmed">{0} m³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one" draft="unconfirmed">{0} cm³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one" draft="unconfirmed">{0} mi³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mi³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-yard">
-				<unitPattern count="one" draft="unconfirmed">{0} yd³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} yd³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-foot">
-				<unitPattern count="one" draft="unconfirmed">{0} ft³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ft³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-inch">
-				<unitPattern count="one" draft="unconfirmed">{0} in³</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} in³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName draft="unconfirmed">Ml</displayName>
@@ -6075,14 +5123,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName draft="unconfirmed">hl</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} hL</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">l</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} l</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} l</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName draft="unconfirmed">dl</displayName>
@@ -6099,22 +5142,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} ml</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ml</unitPattern>
 			</unit>
-			<unit type="volume-pint-metric">
-				<unitPattern count="one" draft="unconfirmed">{0} mpt</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mpt</unitPattern>
-			</unit>
 			<unit type="volume-cup-metric">
 				<displayName draft="unconfirmed">mc</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mc</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mc</unitPattern>
-			</unit>
-			<unit type="volume-acre-foot">
-				<unitPattern count="one" draft="unconfirmed">{0} ac ft</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ac ft</unitPattern>
-			</unit>
-			<unit type="volume-bushel">
-				<unitPattern count="one" draft="unconfirmed">{0} bu</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName draft="unconfirmed">gal</displayName>
@@ -6128,20 +5157,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0} gal imp.</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/gal imp.</perUnitPattern>
 			</unit>
-			<unit type="volume-quart">
-				<displayName draft="unconfirmed">qt</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} qt</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} qt</unitPattern>
-			</unit>
-			<unit type="volume-pint">
-				<displayName draft="unconfirmed">pt</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} pt</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
-			</unit>
 			<unit type="volume-cup">
 				<displayName draft="unconfirmed">c</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} c</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} c</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName draft="unconfirmed">fl oz</displayName>
@@ -6152,22 +5169,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">fl oz imp.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} fl oz imp.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} fl oz imp.</unitPattern>
-			</unit>
-			<unit type="volume-tablespoon">
-				<unitPattern count="one" draft="unconfirmed">{0} tbsp</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} tbsp</unitPattern>
-			</unit>
-			<unit type="volume-teaspoon">
-				<unitPattern count="one" draft="unconfirmed">{0} tsp</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} tsp</unitPattern>
-			</unit>
-			<unit type="volume-barrel">
-				<unitPattern count="one" draft="unconfirmed">{0} bbl</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} bbl</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon">
-				<unitPattern count="one" draft="unconfirmed">{0} dstspn</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} dstspn</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName draft="unconfirmed">dstspn imp.</displayName>
@@ -6183,10 +5184,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">dramme liq.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} dramma liq.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} dramme liq.</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<unitPattern count="one" draft="unconfirmed">{0} jigger</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} jigger</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
 				<displayName draft="unconfirmed">spellinsegæ</displayName>
@@ -6207,208 +5204,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-1">
-				<unitPrefixPattern draft="unconfirmed">d{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-2">
-				<unitPrefixPattern draft="unconfirmed">c{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern draft="unconfirmed">m{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-6">
-				<unitPrefixPattern draft="unconfirmed">μ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-9">
-				<unitPrefixPattern draft="unconfirmed">n{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-12">
-				<unitPrefixPattern draft="unconfirmed">p{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-15">
-				<unitPrefixPattern draft="unconfirmed">f{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-18">
-				<unitPrefixPattern draft="unconfirmed">a{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-21">
-				<unitPrefixPattern draft="unconfirmed">z{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern draft="unconfirmed">y{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern draft="unconfirmed">da{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern draft="unconfirmed">h{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern draft="unconfirmed">k{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern draft="unconfirmed">M{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern draft="unconfirmed">G{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern draft="unconfirmed">T{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern draft="unconfirmed">P{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern draft="unconfirmed">E{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern draft="unconfirmed">Z{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p24">
-				<unitPrefixPattern draft="unconfirmed">Y{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p1">
-				<unitPrefixPattern draft="unconfirmed">Ki{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern draft="unconfirmed">Mi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern draft="unconfirmed">Gi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern draft="unconfirmed">Ti{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern draft="unconfirmed">Pi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern draft="unconfirmed">Ei{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern draft="unconfirmed">Zi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern draft="unconfirmed">Yi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one" draft="unconfirmed">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="one" draft="unconfirmed">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName draft="unconfirmed">fòrsa g</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} G</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName draft="unconfirmed">m/s²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m/s²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName draft="unconfirmed">rev</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}rev</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName draft="unconfirmed">rad</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}rad</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}rad</unitPattern>
 			</unit>
-			<unit type="angle-degree">
-				<displayName draft="unconfirmed">°</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<displayName draft="unconfirmed">′</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}′</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}′</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<displayName draft="unconfirmed">″</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}″</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
-			</unit>
 			<unit type="area-square-kilometer">
-				<displayName draft="unconfirmed">km²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName draft="unconfirmed">ha</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ha</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName draft="unconfirmed">m²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName draft="unconfirmed">cm²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cm²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cm²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName draft="unconfirmed">mi²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mi²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mi²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName draft="unconfirmed">ac</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ac</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName draft="unconfirmed">yd²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}yd²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName draft="unconfirmed">ft²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ft²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
-				<displayName draft="unconfirmed">in²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}in²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}in²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="unconfirmed">dunam</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}dunam</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}dunam</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName draft="unconfirmed">kt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kt</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kt</unitPattern>
-			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName draft="unconfirmed">mg/dl</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mg/dl</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mg/dl</unitPattern>
-			</unit>
-			<unit type="concentr-millimole-per-liter">
-				<displayName draft="unconfirmed">mmol/l</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mmol/l</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mmol/l</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName draft="unconfirmed">elem</displayName>
@@ -6416,42 +5270,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}elem</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName draft="unconfirmed">ppm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ppm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ppm</unitPattern>
 			</unit>
-			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">%</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}%</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
-			</unit>
-			<unit type="concentr-permille">
-				<displayName draft="unconfirmed">‰</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}‰</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
-			</unit>
-			<unit type="concentr-permyriad">
-				<displayName draft="unconfirmed">‱</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}‱</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
-			</unit>
 			<unit type="concentr-mole">
-				<displayName draft="unconfirmed">mol</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mol</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName draft="unconfirmed">l/km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}l/km</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName draft="unconfirmed">l/100km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}l/100km</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}l/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName draft="unconfirmed">mpg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mpg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mpg</unitPattern>
 			</unit>
@@ -6461,57 +5295,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}mpg im</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName draft="unconfirmed">PB</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}PB</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
-				<displayName draft="unconfirmed">TB</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}TB</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<displayName draft="unconfirmed">Tb</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Tb</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
-				<displayName draft="unconfirmed">GB</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}GB</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
-				<displayName draft="unconfirmed">Gb</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Gb</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
-				<displayName draft="unconfirmed">MB</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}MB</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
-				<displayName draft="unconfirmed">Mb</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Mb</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName draft="unconfirmed">kB</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kB</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
-				<displayName draft="unconfirmed">kb</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kb</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="unconfirmed">B</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}B</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}B</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName draft="unconfirmed">bit</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}bit</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}bit</unitPattern>
 			</unit>
@@ -6538,10 +5361,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="unconfirmed">{0}/tr</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName draft="unconfirmed">meixi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}meise</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}meixi</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/meise</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="unconfirmed">sett</displayName>
@@ -6550,141 +5371,111 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="unconfirmed">{0}/sett</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName draft="unconfirmed">g</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}g</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}g</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="unconfirmed">h</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}h</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}h</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName draft="unconfirmed">men</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}men</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}men</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/men</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="unconfirmed">s</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}s</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}s</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">ms</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ms</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName draft="unconfirmed">μs</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}μs</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="unconfirmed">ns</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ns</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName draft="unconfirmed">A</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}A</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
-				<displayName draft="unconfirmed">mA</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mA</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName draft="unconfirmed">Ω</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Ω</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName draft="unconfirmed">V</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}V</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}V</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<displayName draft="unconfirmed">kcal</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kcal</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kcal</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName draft="unconfirmed">cal</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cal</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
-				<displayName draft="unconfirmed">kJ</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kJ</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName draft="unconfirmed">J</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}J</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
-				<displayName draft="unconfirmed">kWh</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kWh</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="unconfirmed">eV</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}eV</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName draft="unconfirmed">BTU</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}BTU</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}BTU</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
-				<displayName draft="unconfirmed">thm US</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}thm US</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}thm US</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="unconfirmed">lbf</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lbf</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<displayName draft="unconfirmed">N</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}N</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName draft="unconfirmed">kWh/100km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kWh/100km</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
-				<displayName draft="unconfirmed">GHz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}GHz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}GHz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
-				<displayName draft="unconfirmed">MHz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}MHz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}MHz</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
-				<displayName draft="unconfirmed">kHz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kHz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kHz</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<displayName draft="unconfirmed">Hz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Hz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Hz</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<displayName draft="unconfirmed">em</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}em</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}em</unitPattern>
 			</unit>
@@ -6699,434 +5490,322 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}Mpx</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
-				<displayName draft="unconfirmed">px/cm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}px/cm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}px/cm</unitPattern>
 			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<displayName draft="unconfirmed">px/in</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} px/in</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} px/in</unitPattern>
-			</unit>
 			<unit type="length-earth-radius">
-				<displayName draft="unconfirmed">R⊕</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}R⊕</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName draft="unconfirmed">m</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="unconfirmed">dm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}dm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">cm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cm</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">mm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">μm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}μm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName draft="unconfirmed">nm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}nm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="unconfirmed">pm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="unconfirmed">mi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mi</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="unconfirmed">yd</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}yd</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="unconfirmed">ft</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ft</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ft</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="unconfirmed">in</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}in</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}in</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="unconfirmed">pc</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pc</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="unconfirmed">ly</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ly</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName draft="unconfirmed">au</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}au</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="unconfirmed">fur</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}fur</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="unconfirmed">fm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}fth</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName draft="unconfirmed">nmi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}nmi</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="unconfirmed">smi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}smi</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}smi</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="unconfirmed">pt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pt</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="unconfirmed">R☉</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}R☉</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName draft="unconfirmed">lx</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lx</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lx</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<displayName draft="unconfirmed">cd</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cd</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cd</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<displayName draft="unconfirmed">lm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName draft="unconfirmed">L☉</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}L☉</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
-				<displayName draft="unconfirmed">t</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}t</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName draft="unconfirmed">kg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kg</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName draft="unconfirmed">g</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}g</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}g</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName draft="unconfirmed">mg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="unconfirmed">μg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}μg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="unconfirmed">tn</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}tn</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="unconfirmed">st</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}st</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="unconfirmed">lb</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lb</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lb</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName draft="unconfirmed">oz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}oz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}oz</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName draft="unconfirmed">oz t</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}oz t</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="unconfirmed">ct</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ct</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ct</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="unconfirmed">Da</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Da</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="unconfirmed">M⊕</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}M⊕</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="unconfirmed">M☉</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}M☉</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName draft="unconfirmed">grañe</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}graña</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}grañe</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
-				<displayName draft="unconfirmed">GW</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}GW</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}GW</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
-				<displayName draft="unconfirmed">MW</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}MW</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
-				<displayName draft="unconfirmed">kW</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kW</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName draft="unconfirmed">W</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}W</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}W</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
-				<displayName draft="unconfirmed">mW</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mW</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<displayName draft="unconfirmed">hp</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}hp</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="unconfirmed">mmHg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mmHg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName draft="unconfirmed">psi</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}psi</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName draft="unconfirmed">inHg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}inHg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}inHg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<displayName draft="unconfirmed">bar</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}bar</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
-				<displayName draft="unconfirmed">mbar</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mbar</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mbar</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<displayName draft="unconfirmed">atm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}atm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<displayName draft="unconfirmed">Pa</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Pa</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName draft="unconfirmed">hPa</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}hPa</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
-				<displayName draft="unconfirmed">kPa</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kPa</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kPa</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<displayName draft="unconfirmed">MPa</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}MPa</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName draft="unconfirmed">km/h</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km/h</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="unconfirmed">m/s</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m/s</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName draft="unconfirmed">mi/h</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mi/h</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mi/h</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="unconfirmed">kn</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kn</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kn</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName draft="unconfirmed">°</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">°C</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}°C</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<displayName draft="unconfirmed">°F</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}°F</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°F</unitPattern>
-			</unit>
 			<unit type="temperature-kelvin">
-				<displayName draft="unconfirmed">K</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}K</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}K</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName draft="unconfirmed">lbf⋅ft</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lbf⋅ft</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<displayName draft="unconfirmed">N⋅m</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}N⋅m</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<displayName draft="unconfirmed">km³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
-				<displayName draft="unconfirmed">m³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<displayName draft="unconfirmed">cm³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cm³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cm³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<displayName draft="unconfirmed">mi³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mi³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName draft="unconfirmed">yd³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}yd³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<displayName draft="unconfirmed">ft³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ft³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<displayName draft="unconfirmed">in³</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}in³</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}in³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<displayName draft="unconfirmed">Ml</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}Ml</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}Ml</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<displayName draft="unconfirmed">hl</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}hl</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}hl</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName draft="unconfirmed">l</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}l</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}l</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
-				<displayName draft="unconfirmed">dl</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}dl</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}dl</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
-				<displayName draft="unconfirmed">cl</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cl</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cl</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
-				<displayName draft="unconfirmed">ml</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ml</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ml</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName draft="unconfirmed">mpt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mpt</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mpt</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<displayName draft="unconfirmed">mc</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mc</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mc</unitPattern>
 			</unit>
@@ -7136,15 +5815,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}ac ft</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="unconfirmed">bu</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}bu</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName draft="unconfirmed">gal</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}gal</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}gal</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName draft="unconfirmed">galim</displayName>
@@ -7153,22 +5829,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern draft="unconfirmed">{0}/galim</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<displayName draft="unconfirmed">qt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}qt</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName draft="unconfirmed">pt</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pt</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName draft="unconfirmed">c</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}c</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}c</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName draft="unconfirmed">fl oz</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}fl oz</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}fl oz</unitPattern>
 			</unit>
@@ -7178,17 +5850,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}fl oz im</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
-				<displayName draft="unconfirmed">tbsp</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}tbsp</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}tbsp</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName draft="unconfirmed">tsp</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}tsp</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}tsp</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="unconfirmed">bbl</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}bbl</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}bbl</unitPattern>
 			</unit>
@@ -7213,7 +5882,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}dr liq</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<displayName draft="unconfirmed">jigger</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}jigger</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}jigger</unitPattern>
 			</unit>
@@ -7228,22 +5896,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="unconfirmed">{0}qt im</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">ponto</displayName>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west" draft="unconfirmed">{0}Ò</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -7254,47 +5912,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end" draft="unconfirmed">{0} ò {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ò {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ò {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ò {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ò {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ò {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<characterLabels>
@@ -7330,7 +5952,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="downwards_arrows" draft="unconfirmed">frecce in zu</characterLabel>
 		<characterLabel type="downwards_upwards_arrows" draft="unconfirmed">frecce in sciù e in zu</characterLabel>
 		<characterLabel type="east_asian_scripts" draft="unconfirmed">scrittue de l’Asia de levante</characterLabel>
-		<characterLabel type="emoji" draft="unconfirmed">emoji</characterLabel>
 		<characterLabel type="european_scripts" draft="unconfirmed">scrittue europee</characterLabel>
 		<characterLabel type="female" draft="unconfirmed">femenin</characterLabel>
 		<characterLabel type="flag" draft="unconfirmed">bandea</characterLabel>
@@ -7343,15 +5964,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="half_width_form_variant" draft="unconfirmed">variante à meza larghessa</characterLabel>
 		<characterLabel type="han_characters" draft="unconfirmed">caratteri han</characterLabel>
 		<characterLabel type="han_radicals" draft="unconfirmed">radicali han</characterLabel>
-		<characterLabel type="hanja" draft="unconfirmed">hanja</characterLabel>
 		<characterLabel type="hanzi_simplified" draft="unconfirmed">caratteri cineixi semplificæ</characterLabel>
 		<characterLabel type="hanzi_traditional" draft="unconfirmed">caratteri cineixi tradiçionali</characterLabel>
 		<characterLabel type="heart" draft="unconfirmed">cheu</characterLabel>
 		<characterLabel type="historic_scripts" draft="unconfirmed">scrittue stòriche</characterLabel>
 		<characterLabel type="ideographic_desc_characters" draft="unconfirmed">caratteri ideografichi de descriçion</characterLabel>
 		<characterLabel type="japanese_kana" draft="unconfirmed">kana giapponeixi</characterLabel>
-		<characterLabel type="kanbun" draft="unconfirmed">kanbun</characterLabel>
-		<characterLabel type="kanji" draft="unconfirmed">kanji</characterLabel>
 		<characterLabel type="keycap" draft="unconfirmed">tasto</characterLabel>
 		<characterLabel type="leftwards_arrows" draft="unconfirmed">frecce a-a manciña</characterLabel>
 		<characterLabel type="leftwards_rightwards_arrows" draft="unconfirmed">frecce a-a manciña e a-a drita</characterLabel>
@@ -7414,47 +6032,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="12" draft="unconfirmed">cegou</styleName>
 		<styleName type="slnt" subtype="24" draft="unconfirmed">extracegou</styleName>
 		<styleName type="wdth" subtype="50" draft="unconfirmed">ultrastreito</styleName>
-		<styleName type="wdth" subtype="50" alt="compressed" draft="unconfirmed">ultrastreito</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow" draft="unconfirmed">ultrastreito</styleName>
 		<styleName type="wdth" subtype="62.5" draft="unconfirmed">extrastreito</styleName>
-		<styleName type="wdth" subtype="62.5" alt="compressed" draft="unconfirmed">extrastreito</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow" draft="unconfirmed">extrastreito</styleName>
 		<styleName type="wdth" subtype="75" draft="unconfirmed">streito</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed" draft="unconfirmed">streito</styleName>
-		<styleName type="wdth" subtype="75" alt="narrow" draft="unconfirmed">streito</styleName>
 		<styleName type="wdth" subtype="87.5" draft="unconfirmed">semistreito</styleName>
-		<styleName type="wdth" subtype="87.5" alt="compressed" draft="unconfirmed">semistreito</styleName>
-		<styleName type="wdth" subtype="87.5" alt="narrow" draft="unconfirmed">semistreito</styleName>
 		<styleName type="wdth" subtype="100" draft="unconfirmed">normale</styleName>
 		<styleName type="wdth" subtype="112.5" draft="unconfirmed">semilargo</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended" draft="unconfirmed">semilargo</styleName>
-		<styleName type="wdth" subtype="112.5" alt="wide" draft="unconfirmed">semilargo</styleName>
 		<styleName type="wdth" subtype="125" draft="unconfirmed">largo</styleName>
-		<styleName type="wdth" subtype="125" alt="extended" draft="unconfirmed">largo</styleName>
-		<styleName type="wdth" subtype="125" alt="wide" draft="unconfirmed">largo</styleName>
 		<styleName type="wdth" subtype="150" draft="unconfirmed">extralargo</styleName>
-		<styleName type="wdth" subtype="150" alt="extended" draft="unconfirmed">extralargo</styleName>
-		<styleName type="wdth" subtype="150" alt="wide" draft="unconfirmed">extralargo</styleName>
 		<styleName type="wdth" subtype="200" draft="unconfirmed">ultralargo</styleName>
-		<styleName type="wdth" subtype="200" alt="extended" draft="unconfirmed">ultralargo</styleName>
-		<styleName type="wdth" subtype="200" alt="wide" draft="unconfirmed">ultralargo</styleName>
 		<styleName type="wght" subtype="100" draft="unconfirmed">ultrafin</styleName>
 		<styleName type="wght" subtype="200" draft="unconfirmed">extrafin</styleName>
-		<styleName type="wght" subtype="200" alt="ultra" draft="unconfirmed">extrafin</styleName>
 		<styleName type="wght" subtype="300" draft="unconfirmed">fin</styleName>
 		<styleName type="wght" subtype="350" draft="unconfirmed">semifin</styleName>
 		<styleName type="wght" subtype="380" draft="unconfirmed">libbro</styleName>
 		<styleName type="wght" subtype="400" draft="unconfirmed">regolâ</styleName>
 		<styleName type="wght" subtype="500" draft="unconfirmed">medio</styleName>
 		<styleName type="wght" subtype="600" draft="unconfirmed">semidruo</styleName>
-		<styleName type="wght" subtype="600" alt="demi" draft="unconfirmed">semidruo</styleName>
 		<styleName type="wght" subtype="700" draft="unconfirmed">druo</styleName>
 		<styleName type="wght" subtype="800" draft="unconfirmed">extradruo</styleName>
 		<styleName type="wght" subtype="900" draft="unconfirmed">scuo</styleName>
-		<styleName type="wght" subtype="900" alt="heavy" draft="unconfirmed">scuo</styleName>
 		<styleName type="wght" subtype="950" draft="unconfirmed">extrascuo</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack" draft="unconfirmed">extrascuo</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy" draft="unconfirmed">extrascuo</styleName>
 		<featureName type="afrc" draft="unconfirmed">fraçioin verticale</featureName>
 		<featureName type="cpsp" draft="unconfirmed">spaçiatua de lettie gròsse</featureName>
 		<featureName type="dlig" draft="unconfirmed">ligatue facoltative</featureName>
@@ -7481,9 +6078,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern draft="unconfirmed">{given-informal}</namePattern>
 		</personName>
-		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
-		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
@@ -7498,9 +6092,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern draft="unconfirmed">{given-informal}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
 			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
@@ -7534,9 +6125,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern draft="unconfirmed">{given-informal}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
 			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>

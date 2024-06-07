@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,25 +70,10 @@ public class TestNativeLibrariesEvent {
     }
 
     private static List<String> getExpectedLibs() throws Throwable {
-        String libTemplate = null;
-        if (Platform.isWindows()) {
-            libTemplate = "%s.dll";
-        } else if (Platform.isOSX()) {
-            libTemplate = "lib%s.dylib";
-        } else if (Platform.isLinux()) {
-            libTemplate = "lib%s.so";
-        } else if (Platform.isAix()) {
-            libTemplate = "lib%s.so";
-        }
-
-        if (libTemplate == null) {
-            throw new Exception("Unsupported OS");
-        }
-
         List<String> libs = new ArrayList<String>();
         String[] names = { "jvm", "java", "zip" };
         for (String name : names) {
-            libs.add(String.format(libTemplate, name));
+            libs.add(Platform.buildSharedLibraryName(name));
         }
         return libs;
     }

@@ -45,8 +45,6 @@
 
 // Forward declarations.
 class OopClosure;
-class FilteringClosure;
-
 class PSPromotionManager;
 class ParCompactionManager;
 
@@ -87,8 +85,8 @@ class oopDesc {
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
-  // Get the raw value without any checks.
-  inline Klass* klass_raw() const;
+  // Get the klass without running any asserts.
+  inline Klass* klass_without_asserts() const;
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
@@ -208,6 +206,8 @@ class oopDesc {
   jboolean bool_field_acquire(int offset) const;
   void release_bool_field_put(int offset, jboolean contents);
 
+  jint int_field_relaxed(int offset) const;
+  void int_field_put_relaxed(int offset, jint contents);
   jint int_field_acquire(int offset) const;
   void release_int_field_put(int offset, jint contents);
 
@@ -318,7 +318,6 @@ class oopDesc {
   }
 
   // for error reporting
-  static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
 
   DEBUG_ONLY(bool size_might_change();)

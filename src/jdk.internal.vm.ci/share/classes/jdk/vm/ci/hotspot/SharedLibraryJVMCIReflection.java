@@ -188,16 +188,8 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
     HotSpotResolvedObjectTypeImpl getType(HotSpotObjectConstantImpl object) {
         if (object instanceof DirectHotSpotObjectConstantImpl) {
             Class<?> theClass = ((DirectHotSpotObjectConstantImpl) object).object.getClass();
-            try {
-                String name = theClass.getName().replace('.', '/');
-                HotSpotResolvedObjectTypeImpl type = (HotSpotResolvedObjectTypeImpl) runtime().compilerToVm.lookupType(name, null, true);
-                if (type == null) {
-                    throw new InternalError(name);
-                }
-                return type;
-            } catch (ClassNotFoundException e) {
-                throw new InternalError(e);
-            }
+            String name = theClass.getName().replace('.', '/');
+            return (HotSpotResolvedObjectTypeImpl) runtime().compilerToVm.lookupType(theClass.getClassLoader(), name);
         }
         return runtime().compilerToVm.getResolvedJavaType(object, runtime().getConfig().hubOffset, false);
     }

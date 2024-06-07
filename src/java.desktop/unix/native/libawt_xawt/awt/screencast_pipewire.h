@@ -48,7 +48,7 @@ struct ScreenProps {
     GdkRectangle captureArea;
     struct PwStreamData *data;
 
-    gchar *captureData;
+    GdkPixbuf *captureDataPixbuf;
     volatile gboolean shouldCapture;
     volatile gboolean captureDataReady;
 };

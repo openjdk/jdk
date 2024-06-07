@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,10 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native int getLockStackCapacity();
+
+  public native boolean supportsRecursiveLightweightLocking();
+
   public native void forceSafepoint();
 
   public native void forceClassLoaderStatsSafepoint();
@@ -129,15 +133,10 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
-  private native int getConstantPoolCacheIndexTag0();
-  public         int getConstantPoolCacheIndexTag() {
-    return getConstantPoolCacheIndexTag0();
-  }
-
-  private native int getConstantPoolCacheLength0(Class<?> aClass);
-  public         int getConstantPoolCacheLength(Class<?> aClass) {
+  private native Object[] getResolvedReferences0(Class<?> aClass);
+  public         Object[] getResolvedReferences(Class<?> aClass) {
     Objects.requireNonNull(aClass);
-    return getConstantPoolCacheLength0(aClass);
+    return getResolvedReferences0(aClass);
   }
 
   private native int remapInstructionOperandFromCPCache0(Class<?> aClass, int index);
@@ -149,6 +148,30 @@ public class WhiteBox {
   private native int encodeConstantPoolIndyIndex0(int index);
   public         int encodeConstantPoolIndyIndex(int index) {
     return encodeConstantPoolIndyIndex0(index);
+  }
+
+  private native int getFieldEntriesLength0(Class<?> aClass);
+  public         int getFieldEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getFieldEntriesLength0(aClass);
+  }
+
+  private native int getFieldCPIndex0(Class<?> aClass, int index);
+  public         int getFieldCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getFieldCPIndex0(aClass, index);
+  }
+
+  private native int getMethodEntriesLength0(Class<?> aClass);
+  public         int getMethodEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getMethodEntriesLength0(aClass);
+  }
+
+  private native int getMethodCPIndex0(Class<?> aClass, int index);
+  public         int getMethodCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getMethodCPIndex0(aClass, index);
   }
 
   private native int getIndyInfoLength0(Class<?> aClass);
@@ -503,6 +526,8 @@ public class WhiteBox {
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceSharedRegionAlignment();
 
+  public native void cleanMetaspaces();
+
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
   public native void destroyMetaspaceTestContext(long context);
@@ -766,5 +791,11 @@ public class WhiteBox {
 
   public native void unlockCritical();
 
+  public native void pinObject(Object o);
+
+  public native void unpinObject(Object o);
+
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
 }

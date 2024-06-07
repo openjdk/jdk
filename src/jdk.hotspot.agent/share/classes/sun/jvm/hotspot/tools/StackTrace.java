@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class StackTrace extends Tool {
         try {
             ConcurrentLocksPrinter concLocksPrinter = null;
             if (concurrentLocks) {
-                concLocksPrinter = new ConcurrentLocksPrinter();
+                concLocksPrinter = new ConcurrentLocksPrinter(tty);
             }
             Threads threads = VM.getVM().getThreads();
             for (int i = 0; i < threads.getNumberOfThreads(); i++) {
@@ -123,9 +123,9 @@ public class StackTrace extends Tool {
                     }
                     tty.println();
                     if (concurrentLocks) {
-                        concLocksPrinter.print(cur, tty);
+                        concLocksPrinter.print(cur);
+                        tty.println();
                     }
-                    tty.println();
               }
           }
       }

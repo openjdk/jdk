@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author or authors.
+ * Copyright (c) 2002-2017, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,6 +8,7 @@
  */
 package jdk.internal.org.jline.reader.impl;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.org.jline.reader.Buffer;
@@ -19,8 +20,7 @@ import jdk.internal.org.jline.reader.Buffer;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.0
  */
-public class BufferImpl implements Buffer
-{
+public class BufferImpl implements Buffer {
     private int cursor = 0;
     private int cursorCol = -1;
     private int[] buffer;
@@ -45,7 +45,7 @@ public class BufferImpl implements Buffer
         this.g1 = buffer.g1;
     }
 
-    public BufferImpl copy () {
+    public BufferImpl copy() {
         return new BufferImpl(this);
     }
 
@@ -106,7 +106,7 @@ public class BufferImpl implements Buffer
      * @param c the character to insert
      */
     public void write(int c) {
-        write(new int[] { c });
+        write(new int[] {c});
     }
 
     /**
@@ -120,7 +120,7 @@ public class BufferImpl implements Buffer
         if (overTyping) {
             delete(1);
         }
-        write(new int[] { c });
+        write(new int[] {c});
     }
 
     /**
@@ -223,8 +223,7 @@ public class BufferImpl implements Buffer
 
         if ((cursor + where) < 0) {
             where = -cursor;
-        }
-        else if ((cursor + where) > length()) {
+        } else if ((cursor + where) > length()) {
             where = length() - cursor;
         }
 
@@ -368,5 +367,10 @@ public class BufferImpl implements Buffer
             g0 += l;
             g1 += l;
         }
+    }
+
+    @Override
+    public void zeroOut() {
+        Arrays.fill(buffer, 0);
     }
 }

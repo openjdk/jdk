@@ -289,9 +289,6 @@ public final class ChunkParser {
             if (parserState.isClosed()) {
                 return true;
             }
-            if (chunkHeader.getLastNanos() > filterEnd)  {
-              return true;
-            }
             chunkHeader.refresh();
             if (absoluteChunkEnd != chunkHeader.getEnd()) {
                 return false;

@@ -234,7 +234,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public native int getNumConfigs(int screen);
 
     /*
-     * Returns the visualid for the given index of graphics configurations.
+     * Returns the visualId for the given index of graphics configurations.
      */
     public native int getConfigVisualId (int index, int screen);
     /*

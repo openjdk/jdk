@@ -76,9 +76,12 @@ class CgroupV1Subsystem: public CgroupSubsystem {
   public:
     jlong read_memory_limit_in_bytes();
     jlong memory_and_swap_limit_in_bytes();
+    jlong memory_and_swap_usage_in_bytes();
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();
+    jlong rss_usage_in_bytes();
+    jlong cache_usage_in_bytes();
 
     jlong kernel_memory_usage_in_bytes();
     jlong kernel_memory_limit_in_bytes();
@@ -110,8 +113,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CachingCgroupController* _cpu = nullptr;
     CgroupV1Controller* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
-
-    char * pids_max_val();
 
     jlong read_mem_swappiness();
     jlong read_mem_swap();

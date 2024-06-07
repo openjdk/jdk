@@ -1,31 +1,28 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
@@ -48,12 +45,15 @@ import jdk.internal.foreign.CABI;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.foreign.ValueLayout.*;
+
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class TestIllegalLink extends NativeTestHelper {
 
     private static final boolean IS_SYSV = CABI.current() == CABI.SYS_V;
+    private static final boolean IS_LE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 
     private static final MemorySegment DUMMY_TARGET = MemorySegment.ofAddress(1);
     private static final MethodHandle DUMMY_TARGET_MH = MethodHandles.empty(MethodType.methodType(void.class));
@@ -102,7 +102,7 @@ public class TestIllegalLink extends NativeTestHelper {
         return new Object[][]{
             { Linker.Option.firstVariadicArg(0) },
             { Linker.Option.captureCallState("errno") },
-            { Linker.Option.isTrivial() },
+            { Linker.Option.critical(false) },
         };
     }
 
@@ -113,27 +113,27 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
                     NO_OPTIONS,
-                    "Unsupported layout: [2:i4]"
+                    IS_LE ? "Unsupported layout: [2:i4]" : "Unsupported layout: [2:I4]"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
                     NO_OPTIONS,
-                    "Unsupported layout: [2:i4]"
+                    IS_LE ? "Unsupported layout: [2:i4]" : "Unsupported layout: [2:I4]"
             },
             {
                     FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Unsupported layout: 2%i4"
+                    IS_LE ? "Unsupported layout: 2%i4" : "Unsupported layout: 2%I4"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Unsupported layout: 2%a8"
+                    (IS_LE ? "Unsupported layout: 2%a" : "Unsupported layout: 2%A")  + ADDRESS.byteSize()
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
                     NO_OPTIONS,
-                    "Unsupported layout: 4%c2"
+                    IS_LE ? "Unsupported layout: 4%c2" : "Unsupported layout: 4%C2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -142,7 +142,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_INT.withName("z").withByteAlignment(1)
                             ).withByteAlignment(1)),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%s2"
+                    IS_LE ? "Unsupported layout: 1%s2" : "Unsupported layout: 1%S2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -152,15 +152,15 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withName("z").withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%s2"
+                    IS_LE ? "Unsupported layout: 1%s2" : "Unsupported layout: 1%S2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(1,
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%i4"
+                    IS_LE ? "Unsupported layout: 1%i4" : "Unsupported layout: 1%I4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -173,24 +173,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
+                    IS_LE ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
+                    IS_LE ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
-                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(1, C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_LONG,
-                            ValueLayout.JAVA_INT)), // missing trailing padding
-                    NO_OPTIONS,
-                    "has unexpected size"
+                    IS_LE ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -198,6 +191,11 @@ public class TestIllegalLink extends NativeTestHelper {
                             MemoryLayout.paddingLayout(4))), // too much trailing padding
                     NO_OPTIONS,
                     "has unexpected size"
+            },
+            {
+                    FunctionDescriptor.ofVoid(),
+                    new Linker.Option[]{Linker.Option.critical(false), Linker.Option.captureCallState("errno")},
+                    "Incompatible linker options: captureCallState, critical"
             },
         }));
 
@@ -212,11 +210,20 @@ public class TestIllegalLink extends NativeTestHelper {
         if (IS_SYSV) {
             cases.add(new Object[] {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(Long.MAX_VALUE / C_INT.byteSize(),
                                 C_INT
                             ))),
                     NO_OPTIONS,
                     "GroupLayout is too large"
+            });
+        }
+        if (ValueLayout.JAVA_LONG.byteAlignment() == 8) {
+            cases.add(new Object[]{
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    NO_OPTIONS,
+                    "has unexpected size"
             });
         }
         return cases.toArray(Object[][]::new);
@@ -227,5 +234,4 @@ public class TestIllegalLink extends NativeTestHelper {
                 ? ByteOrder.BIG_ENDIAN
                 : ByteOrder.LITTLE_ENDIAN;
     }
-
 }

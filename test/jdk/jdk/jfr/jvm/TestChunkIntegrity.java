@@ -59,7 +59,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jvm.TestChunkIntegrity
+ * @run main/othervm/timeout=300 jdk.jfr.jvm.TestChunkIntegrity
  */
 public class TestChunkIntegrity {
 

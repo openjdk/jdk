@@ -23,11 +23,11 @@
 
 /*
  * @test id=default
- * @bug 8284161 8286788
+ * @bug 8284161 8286788 8321270
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run junit ThreadAPI
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 /*
@@ -35,7 +35,8 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 import java.time.Duration;
@@ -61,6 +62,7 @@ import java.util.stream.Stream;
 import java.nio.channels.Selector;
 
 import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
@@ -106,7 +108,7 @@ class ThreadAPI {
             LockSupport.park();
             after.set(Thread.currentThread());
         });
-        awaitParked(thread);
+        await(thread, Thread.State.WAITING);
         LockSupport.unpark(thread);
         thread.join();
         assertTrue(before.get() == thread);
@@ -130,7 +132,7 @@ class ThreadAPI {
         });
         synchronized (lock) {
             thread.start();
-            awaitBlocked(thread);
+            await(thread, Thread.State.BLOCKED);
         }
         thread.join();
         assertTrue(ref1.get() == thread);
@@ -160,7 +162,7 @@ class ThreadAPI {
         lock.lock();
         try {
             thread.start();
-            awaitParked(thread);
+            await(thread, Thread.State.WAITING);
         } finally {
             lock.unlock();
         }
@@ -267,64 +269,6 @@ class ThreadAPI {
         });
         try {
             assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
-     * Test Thread::suspend from current thread.
-     */
-    @Test
-    void testSuspend1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::suspend);
-        });
-    }
-
-    /**
-     * Test Thread::suspend from another thread.
-     */
-    @Test
-    void testSuspend2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.suspend());
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
-     * Test Thread::resume from current thread.
-     */
-    @Test
-    void testResume1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::resume);
-        });
-    }
-
-    /**
-     * Test Thread::resume from another thread.
-     */
-    @Test
-    void testResume2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.resume());
         } finally {
             thread.interrupt();
             thread.join();
@@ -755,16 +699,17 @@ class ThreadAPI {
     void testJoin33() throws Exception {
         AtomicBoolean done = new AtomicBoolean();
         Thread thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
+            VThreadPinner.runPinned(() -> {
                 while (!done.get()) {
                     LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
-            }
+            });
         });
         try {
             assertFalse(thread.join(Duration.ofMillis(100)));
         } finally {
             done.set(true);
+            thread.join();
         }
     }
 
@@ -897,7 +842,7 @@ class ThreadAPI {
                 exception.set(e);
             }
         });
-        awaitParked(thread);
+        await(thread, Thread.State.TIMED_WAITING);
         thread.interrupt();
         thread.join();
         assertNull(exception.get());
@@ -917,7 +862,7 @@ class ThreadAPI {
                 exception.set(e);
             }
         });
-        awaitParked(thread);
+        await(thread, Thread.State.WAITING);
         thread.interrupt();
         thread.join();
         assertNull(exception.get());
@@ -1032,16 +977,16 @@ class ThreadAPI {
     void testSetPriority1() throws Exception {
         VThreadRunner.run(() -> {
             Thread me = Thread.currentThread();
-            assertTrue(me.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, me.getPriority());
 
             me.setPriority(Thread.MAX_PRIORITY);
-            assertTrue(me.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, me.getPriority());
 
             me.setPriority(Thread.NORM_PRIORITY);
-            assertTrue(me.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, me.getPriority());
 
             me.setPriority(Thread.MIN_PRIORITY);
-            assertTrue(me.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, me.getPriority());
 
             assertThrows(IllegalArgumentException.class, () -> me.setPriority(-1));
         });
@@ -1055,33 +1000,33 @@ class ThreadAPI {
         var thread = Thread.ofVirtual().unstarted(LockSupport::park);
 
         // not started
-        assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+        assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
         thread.setPriority(Thread.MAX_PRIORITY);
-        assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+        assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
         thread.setPriority(Thread.NORM_PRIORITY);
-        assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+        assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
         thread.setPriority(Thread.MIN_PRIORITY);
-        assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+        assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
         assertThrows(IllegalArgumentException.class, () -> thread.setPriority(-1));
 
         // running
         thread.start();
         try {
-            assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
             thread.setPriority(Thread.NORM_PRIORITY);
 
             thread.setPriority(Thread.MAX_PRIORITY);
-            assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
             thread.setPriority(Thread.NORM_PRIORITY);
-            assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
             thread.setPriority(Thread.MIN_PRIORITY);
-            assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+            assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
 
             assertThrows(IllegalArgumentException.class, () -> thread.setPriority(-1));
 
@@ -1091,7 +1036,7 @@ class ThreadAPI {
         thread.join();
 
         // terminated
-        assertTrue(thread.getPriority() == Thread.NORM_PRIORITY);
+        assertEquals(Thread.NORM_PRIORITY, thread.getPriority());
     }
 
     /**
@@ -1135,7 +1080,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield releases thread when not pinned.
+     * Test Thread.yield releases carrier thread.
      */
     @Test
     void testYield1() throws Exception {
@@ -1163,7 +1108,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield when thread is pinned.
+     * Test Thread.yield when thread is pinned by native frame.
      */
     @Test
     void testYield2() throws Exception {
@@ -1178,16 +1123,46 @@ class ThreadAPI {
                     list.add("B");
                 });
                 child.start();
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.yield();   // pinned so will be a no-op
                     list.add("A");
-                }
+                });
                 try { child.join(); } catch (InterruptedException e) { }
             });
             thread.start();
             thread.join();
         }
         assertEquals(List.of("A", "A", "B"), list);
+    }
+
+    /**
+     * Test Thread.yield does not consume the thread's parking permit.
+     */
+    @Test
+    void testYield3() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            LockSupport.unpark(Thread.currentThread());
+            Thread.yield();
+            LockSupport.park();  // should not park
+        });
+        thread.join();
+    }
+
+    /**
+     * Test Thread.yield does not make available the thread's parking permit.
+     */
+    @Test
+    void testYield4() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            Thread.yield();
+            LockSupport.park();  // should park
+        });
+        try {
+            await(thread, Thread.State.WAITING);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
     }
 
     /**
@@ -1375,11 +1350,9 @@ class ThreadAPI {
      */
     @Test
     void testSleep8() throws Exception {
-        VThreadRunner.run(() -> {
+        VThreadPinner.runPinned(() -> {
             long start = millisTime();
-            synchronized (lock) {
-                Thread.sleep(1000);
-            }
+            Thread.sleep(1000);
             expectDuration(start, /*min*/900, /*max*/20_000);
         });
     }
@@ -1393,9 +1366,9 @@ class ThreadAPI {
             Thread me = Thread.currentThread();
             me.interrupt();
             try {
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.sleep(2000);
-                }
+                });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // expected
@@ -1413,9 +1386,9 @@ class ThreadAPI {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 100);
             try {
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.sleep(20 * 1000);
-                }
+                });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
@@ -1548,8 +1521,7 @@ class ThreadAPI {
     @Test
     void testUncaughtExceptionHandler1() throws Exception {
         class FooException extends RuntimeException { }
-        var exception = new AtomicReference<Throwable>();
-        Thread.UncaughtExceptionHandler handler = (thread, exc) -> exception.set(exc);
+        var handler = new CapturingUHE();
         Thread thread = Thread.ofVirtual().start(() -> {
             Thread me = Thread.currentThread();
             assertTrue(me.getUncaughtExceptionHandler() == me.getThreadGroup());
@@ -1558,7 +1530,8 @@ class ThreadAPI {
             throw new FooException();
         });
         thread.join();
-        assertTrue(exception.get() instanceof FooException);
+        assertInstanceOf(FooException.class, handler.exception());
+        assertEquals(thread, handler.thread());
         assertNull(thread.getUncaughtExceptionHandler());
     }
 
@@ -1568,8 +1541,7 @@ class ThreadAPI {
     @Test
     void testUncaughtExceptionHandler2() throws Exception {
         class FooException extends RuntimeException { }
-        var exception = new AtomicReference<Throwable>();
-        Thread.UncaughtExceptionHandler handler = (thread, exc) -> exception.set(exc);
+        var handler = new CapturingUHE();
         Thread.UncaughtExceptionHandler savedHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(handler);
         Thread thread;
@@ -1580,23 +1552,59 @@ class ThreadAPI {
             });
             thread.join();
         } finally {
-            Thread.setDefaultUncaughtExceptionHandler(savedHandler);
+            Thread.setDefaultUncaughtExceptionHandler(savedHandler);  // restore
         }
-        assertTrue(exception.get() instanceof FooException);
+        assertInstanceOf(FooException.class, handler.exception());
+        assertEquals(thread, handler.thread());
         assertNull(thread.getUncaughtExceptionHandler());
     }
 
     /**
-     * Test no UncaughtExceptionHandler set.
+     * Test Thread and default UncaughtExceptionHandler set.
      */
     @Test
     void testUncaughtExceptionHandler3() throws Exception {
         class FooException extends RuntimeException { }
-        Thread thread = Thread.ofVirtual().start(() -> {
-            throw new FooException();
-        });
-        thread.join();
+        var defaultHandler = new CapturingUHE();
+        var threadHandler = new CapturingUHE();
+        Thread.UncaughtExceptionHandler savedHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(defaultHandler);
+        Thread thread;
+        try {
+            thread = Thread.ofVirtual().start(() -> {
+                Thread me = Thread.currentThread();
+                assertTrue(me.getUncaughtExceptionHandler() == me.getThreadGroup());
+                me.setUncaughtExceptionHandler(threadHandler);
+                assertTrue(me.getUncaughtExceptionHandler() == threadHandler);
+                throw new FooException();
+            });
+            thread.join();
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(savedHandler);  // restore
+        }
+        assertInstanceOf(FooException.class, threadHandler.exception());
+        assertNull(defaultHandler.exception());
+        assertEquals(thread, threadHandler.thread());
         assertNull(thread.getUncaughtExceptionHandler());
+    }
+
+    /**
+     * Test no Thread or default UncaughtExceptionHandler set.
+     */
+    @Test
+    void testUncaughtExceptionHandler4() throws Exception {
+        Thread.UncaughtExceptionHandler savedHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(null);
+        try {
+            class FooException extends RuntimeException { }
+            Thread thread = Thread.ofVirtual().start(() -> {
+                throw new FooException();
+            });
+            thread.join();
+            assertNull(thread.getUncaughtExceptionHandler());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(savedHandler);
+        }
     }
 
     /**
@@ -1650,53 +1658,79 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::getState when thread is not started.
+     * Test Thread::getState when thread is new/unstarted.
      */
     @Test
     void testGetState1() {
         var thread = Thread.ofVirtual().unstarted(() -> { });
-        assertTrue(thread.getState() == Thread.State.NEW);
+        assertEquals(Thread.State.NEW, thread.getState());
+    }
+
+    /**
+     * Test Thread::getState when thread is terminated.
+     */
+    @Test
+    void testGetState2() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> { });
+        thread.join();
+        assertEquals(Thread.State.TERMINATED, thread.getState());
     }
 
     /**
      * Test Thread::getState when thread is runnable (mounted).
      */
     @Test
-    void testGetState2() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread.State state = Thread.currentThread().getState();
-            assertTrue(state == Thread.State.RUNNABLE);
+    void testGetState3() throws Exception {
+        var started = new CountDownLatch(1);
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            started.countDown();
+
+            // spin until done
+            while (!done.get()) {
+                Thread.onSpinWait();
+            }
         });
+        try {
+            // wait for thread to start
+            started.await();
+
+            // thread should be runnable
+            assertEquals(Thread.State.RUNNABLE, thread.getState());
+        } finally {
+            done.set(true);
+            thread.join();
+        }
     }
 
     /**
      * Test Thread::getState when thread is runnable (not mounted).
      */
     @Test
-    void testGetState3() throws Exception {
+    void testGetState4() throws Exception {
         assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
         AtomicBoolean completed = new AtomicBoolean();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
             Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             Thread t1 = builder.start(() -> {
                 Thread t2 = builder.unstarted(LockSupport::park);
-                assertTrue(t2.getState() == Thread.State.NEW);
+                assertEquals(Thread.State.NEW, t2.getState());
 
                 // start t2 to make it runnable
                 t2.start();
                 try {
-                    assertTrue(t2.getState() == Thread.State.RUNNABLE);
+                    assertEquals(Thread.State.RUNNABLE, t2.getState());
 
                     // yield to allow t2 to run and park
                     Thread.yield();
-                    assertTrue(t2.getState() == Thread.State.WAITING);
+                    assertEquals(Thread.State.WAITING, t2.getState());
                 } finally {
                     // unpark t2 to make it runnable again
                     LockSupport.unpark(t2);
                 }
 
                 // t2 should be runnable (not mounted)
-                assertTrue(t2.getState() == Thread.State.RUNNABLE);
+                assertEquals(Thread.State.RUNNABLE, t2.getState());
 
                 completed.set(true);
             });
@@ -1706,48 +1740,21 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::getState when thread is parked.
-     */
-    @Test
-    void testGetState4() throws Exception {
-        var thread = Thread.ofVirtual().start(LockSupport::park);
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
-        }
-        LockSupport.unpark(thread);
-        thread.join();
-    }
-
-    /**
-     * Test Thread::getState when thread is parked while holding a monitor.
+     * Test Thread::getState when thread is waiting to enter a monitor.
      */
     @Test
     void testGetState5() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
-                LockSupport.park();
-            }
-        });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
-        }
-        LockSupport.unpark(thread);
-        thread.join();
-    }
-
-    /**
-     * Test Thread::getState when thread is waiting for a monitor.
-     */
-    @Test
-    void testGetState6() throws Exception {
+        var started = new CountDownLatch(1);
         var thread = Thread.ofVirtual().unstarted(() -> {
+            started.countDown();
             synchronized (lock) { }
         });
         synchronized (lock) {
             thread.start();
-            while (thread.getState() != Thread.State.BLOCKED) {
-                Thread.sleep(20);
-            }
+            started.await();
+
+            // wait for thread to block
+            await(thread, Thread.State.BLOCKED);
         }
         thread.join();
     }
@@ -1756,27 +1763,124 @@ class ThreadAPI {
      * Test Thread::getState when thread is waiting in Object.wait.
      */
     @Test
-    void testGetState7() throws Exception {
+    void testGetState6() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 try { lock.wait(); } catch (InterruptedException e) { }
             }
         });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
+        try {
+            // wait for thread to wait
+            await(thread, Thread.State.WAITING);
+        } finally {
+            thread.interrupt();
+            thread.join();
         }
-        thread.interrupt();
-        thread.join();
     }
 
     /**
-     * Test Thread::getState when thread is terminated.
+     * Test Thread::getState when thread is waiting in Object.wait(millis).
+     */
+    @Test
+    void testGetState7() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            synchronized (lock) {
+                try {
+                    lock.wait(Long.MAX_VALUE);
+                } catch (InterruptedException e) { }
+            }
+        });
+        try {
+            // wait for thread to wait
+            await(thread, Thread.State.TIMED_WAITING);
+        } finally {
+            thread.interrupt();
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getState when thread is parked.
      */
     @Test
     void testGetState8() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> { });
-        thread.join();
-        assertTrue(thread.getState() == Thread.State.TERMINATED);
+        var thread = Thread.ofVirtual().start(LockSupport::park);
+        try {
+            await(thread, Thread.State.WAITING);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getState when thread is timed parked.
+     */
+    @Test
+    void testGetState9() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> LockSupport.parkNanos(Long.MAX_VALUE));
+        try {
+            await(thread, Thread.State.TIMED_WAITING);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getState when thread is parked while holding a monitor.
+     */
+    @Test
+    void testGetState10() throws Exception {
+        var started = new CountDownLatch(1);
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            started.countDown();
+            synchronized (lock) {
+                while (!done.get()) {
+                    LockSupport.park();
+                }
+            }
+        });
+        try {
+            // wait for thread to start
+            started.await();
+
+            // wait for thread to park
+            await(thread, Thread.State.WAITING);
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getState when thread is timed parked while holding a monitor.
+     */
+    @Test
+    void testGetState11() throws Exception {
+        var started = new CountDownLatch(1);
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            started.countDown();
+            synchronized (lock) {
+                while (!done.get()) {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                }
+            }
+        });
+        try {
+            // wait for thread to start
+            started.await();
+
+            // wait for thread to park
+            await(thread, Thread.State.TIMED_WAITING);
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
     }
 
     /**
@@ -1899,9 +2003,7 @@ class ThreadAPI {
             }
 
             // wait for virtual thread to block in wait
-            while (vthread.getState() != Thread.State.WAITING) {
-                Thread.sleep(20);
-            }
+            await(vthread, Thread.State.WAITING);
 
             // get stack trace of both carrier and virtual thread
             StackTraceElement[] carrierStackTrace = carrier.getStackTrace();
@@ -1928,12 +2030,7 @@ class ThreadAPI {
     @Test
     void testGetStackTrace5() throws Exception {
         var thread = Thread.ofVirtual().start(LockSupport::park);
-
-        // wait for thread to park
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
-        }
-
+        await(thread, Thread.State.WAITING);
         try {
             StackTraceElement[] stack = thread.getStackTrace();
             assertTrue(contains(stack, "LockSupport.park"));
@@ -1944,10 +2041,76 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::getStackTrace on terminated thread.
+     * Test Thread::getStackTrace on timed-parked thread.
      */
     @Test
     void testGetStackTrace6() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            LockSupport.parkNanos(Long.MAX_VALUE);
+        });
+        await(thread, Thread.State.TIMED_WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.parkNanos"));
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on parked thread that is pinned.
+     */
+    @Test
+    void testGetStackTrace7() throws Exception {
+        AtomicBoolean done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> {
+                while (!done.get()) {
+                    LockSupport.park();
+                }
+            });
+        });
+        await(thread, Thread.State.WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.park"));
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on timed-parked thread that is pinned.
+     */
+    @Test
+    void testGetStackTrace8() throws Exception {
+        AtomicBoolean done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> {
+                while (!done.get()) {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                }
+            });
+        });
+        await(thread, Thread.State.TIMED_WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.parkNanos"));
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on terminated thread.
+     */
+    @Test
+    void testGetStackTrace9() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         StackTraceElement[] stack = thread.getStackTrace();
@@ -1996,9 +2159,7 @@ class ThreadAPI {
             }
 
             // wait for virtual thread to block in wait
-            while (vthread.getState() != Thread.State.WAITING) {
-                Thread.sleep(20);
-            }
+            await(vthread, Thread.State.WAITING);
 
             // get all stack traces
             Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
@@ -2034,7 +2195,7 @@ class ThreadAPI {
         var vgroup = thread.getThreadGroup();
         thread.start();
         try {
-            assertTrue(thread.getThreadGroup() == vgroup);
+            assertEquals(vgroup, thread.getThreadGroup());
         } finally {
             LockSupport.unpark(thread);
             thread.join();
@@ -2051,7 +2212,7 @@ class ThreadAPI {
             ThreadGroup vgroup = Thread.currentThread().getThreadGroup();
             Thread child = new Thread(() -> { });
             ThreadGroup group = child.getThreadGroup();
-            assertTrue(group == vgroup);
+            assertEquals(vgroup, group);
         });
     }
 
@@ -2068,19 +2229,19 @@ class ThreadAPI {
         thread.join();
 
         ThreadGroup vgroup = ref.get();
-        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+        assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
 
         ThreadGroup group = new ThreadGroup(vgroup, "group");
         assertTrue(group.getParent() == vgroup);
-        assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY);
+        assertEquals(Thread.MAX_PRIORITY, group.getMaxPriority());
 
         vgroup.setMaxPriority(Thread.MAX_PRIORITY - 1);
-        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
-        assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY - 1);
+        assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
+        assertEquals(Thread.MAX_PRIORITY - 1, group.getMaxPriority());
 
         vgroup.setMaxPriority(Thread.MIN_PRIORITY);
-        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
-        assertTrue(group.getMaxPriority() == Thread.MIN_PRIORITY);
+        assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
+        assertEquals(Thread.MIN_PRIORITY, group.getMaxPriority());
     }
 
     /**
@@ -2091,20 +2252,19 @@ class ThreadAPI {
     void testThreadGroup4() throws Exception {
         VThreadRunner.run(() -> {
             ThreadGroup vgroup = Thread.currentThread().getThreadGroup();
-
-            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+            assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
 
             ThreadGroup group = new ThreadGroup("group");
-            assertTrue(group.getParent() == vgroup);
-            assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY);
+            assertEquals(vgroup, group.getParent());
+            assertEquals(Thread.MAX_PRIORITY, group.getMaxPriority());
 
             vgroup.setMaxPriority(Thread.MAX_PRIORITY - 1);
-            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
-            assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY - 1);
+            assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
+            assertEquals(Thread.MAX_PRIORITY - 1, group.getMaxPriority());
 
             vgroup.setMaxPriority(Thread.MIN_PRIORITY);
-            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
-            assertTrue(group.getMaxPriority() == Thread.MIN_PRIORITY);
+            assertEquals(Thread.MAX_PRIORITY, vgroup.getMaxPriority());
+            assertEquals(Thread.MIN_PRIORITY, group.getMaxPriority());
         });
     }
 
@@ -2117,7 +2277,7 @@ class ThreadAPI {
             ThreadGroup vgroup = Thread.currentThread().getThreadGroup();
             Thread[] threads = new Thread[100];
             int n = vgroup.enumerate(threads, /*recurse*/false);
-            assertTrue(n == 0);
+            assertFalse(Arrays.stream(threads, 0, n).anyMatch(Thread::isVirtual));
         });
     }
 
@@ -2208,9 +2368,7 @@ class ThreadAPI {
             me.setName("fred");
             LockSupport.park();
         });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(10);
-        }
+        await(thread, Thread.State.WAITING);
         try {
             assertTrue(thread.toString().contains("fred"));
         } finally {
@@ -2233,23 +2391,38 @@ class ThreadAPI {
     }
 
     /**
-     * Waits for the given thread to park.
+     * Thread.UncaughtExceptionHandler that captures the first exception thrown.
      */
-    static void awaitParked(Thread thread) throws InterruptedException {
-        Thread.State state = thread.getState();
-        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
-            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
-            Thread.sleep(10);
-            state = thread.getState();
+    private static class CapturingUHE implements Thread.UncaughtExceptionHandler {
+        Thread thread;
+        Throwable exception;
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            synchronized (this) {
+                if (thread == null) {
+                    this.thread = t;
+                    this.exception = e;
+                }
+            }
+        }
+        Thread thread() {
+            synchronized (this) {
+                return thread;
+            }
+        }
+        Throwable exception() {
+            synchronized (this) {
+                return exception;
+            }
         }
     }
 
     /**
-     * Waits for the given thread to block waiting on a monitor.
+     * Waits for the given thread to reach a given state.
      */
-    static void awaitBlocked(Thread thread) throws InterruptedException {
+    private void await(Thread thread, Thread.State expectedState) throws InterruptedException {
         Thread.State state = thread.getState();
-        while (state != Thread.State.BLOCKED) {
+        while (state != expectedState) {
             assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
             Thread.sleep(10);
             state = thread.getState();

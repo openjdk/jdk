@@ -25,12 +25,13 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for resource variable
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ResourceVariable.java
  * @run main Driver ResourceVariable
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.RESOURCE_VARIABLE;
+import static java.lang.classfile.TypeAnnotation.TargetType.RESOURCE_VARIABLE;
 import static java.lang.System.lineSeparator;
 
 public class ResourceVariable {

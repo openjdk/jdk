@@ -61,6 +61,12 @@ public class Constraint implements Matchable {
         return new Constraint(new CountsConstraintCheck(nodeRegex, constraintId, comparison), nodeRegex, compilationOutput);
     }
 
+    public static Constraint createSuccess() {
+        String nodeRegex = "impossible_regex";
+        String compilationOutput = ""; // empty
+        return new Constraint(new SuccessConstraintCheck(), nodeRegex, compilationOutput);
+    }
+
     public String nodeRegex() {
         return nodeRegex;
     }

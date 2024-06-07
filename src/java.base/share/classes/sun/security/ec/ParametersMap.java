@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.security.x509.AlgorithmId;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public class ParametersMap<T> {
     }
 
     public void put(String name, ObjectIdentifier oid, int size, T params) {
-        nameMap.put(name.toLowerCase(), params);
+        nameMap.put(name.toLowerCase(Locale.ROOT), params);
         oidMap.put(oid, params);
         sizeMap.put(size, params);
     }
@@ -65,7 +66,7 @@ public class ParametersMap<T> {
         return Optional.ofNullable(sizeMap.get(size));
     }
     public Optional<T> getByName(String name) {
-        return Optional.ofNullable(nameMap.get(name.toLowerCase()));
+        return Optional.ofNullable(nameMap.get(name.toLowerCase(Locale.ROOT)));
     }
 
     // Utility method that is used by the methods below to handle exception

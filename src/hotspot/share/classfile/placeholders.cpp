@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,7 @@ public:
    void set_next(SeenThread* seen) { _stnext = seen; }
    void set_prev(SeenThread* seen) { _stprev = seen; }
 
-  void print_action_queue(outputStream* st) {
-    SeenThread* seen = this;
+  static void print_action_queue(SeenThread* seen, outputStream* st) {
     while (seen != nullptr) {
       seen->thread()->print_value_on(st);
       st->print(", ");
@@ -199,8 +198,8 @@ void PlaceholderEntry::set_supername(Symbol* supername) {
 // All threads examining the placeholder table must hold the
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
-PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
-                            Symbol* supername){
+static PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
+                                   Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != nullptr, "adding nullptr obj");
 
@@ -214,7 +213,7 @@ PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
 }
 
 // Remove a placeholder object.
-void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
+static void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   PlaceholderKey key(class_name, loader_data);
@@ -327,13 +326,13 @@ void PlaceholderEntry::print_on(outputStream* st) const {
   }
   st->cr();
   st->print("loadInstanceThreadQ threads:");
-  loadInstanceThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(loadInstanceThreadQ(), st);
   st->cr();
   st->print("superThreadQ threads:");
-  superThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(superThreadQ(), st);
   st->cr();
   st->print("defineThreadQ threads:");
-  defineThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(defineThreadQ(), st);
   st->cr();
 }
 

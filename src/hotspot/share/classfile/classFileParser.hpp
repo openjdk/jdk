@@ -197,7 +197,6 @@ class ClassFileParser {
   // precomputed flags
   bool _has_finalizer;
   bool _has_empty_finalizer;
-  bool _has_vanilla_constructor;
   int _max_bootstrap_specifier_index;  // detects BSS values
 
   void parse_stream(const ClassFileStream* const stream, TRAPS);
@@ -330,7 +329,7 @@ class ClassFileParser {
                                                     const u1* const permitted_subclasses_attribute_start,
                                                     TRAPS);
 
-  u2 parse_classfile_record_attribute(const ClassFileStream* const cfs,
+  u4 parse_classfile_record_attribute(const ClassFileStream* const cfs,
                                       const ConstantPool* cp,
                                       const u1* const record_attribute_start,
                                       TRAPS);

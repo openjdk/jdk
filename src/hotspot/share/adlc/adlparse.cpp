@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,7 @@ void ADLParser::instr_parse(void) {
     else if (!strcmp(ident, "opcode"))           instr->_opcode    = opcode_parse(instr);
     else if (!strcmp(ident, "size"))             instr->_size      = size_parse(instr);
     else if (!strcmp(ident, "effect"))           effect_parse(instr);
+    else if (!strcmp(ident, "flag"))             instr->_flag      = flag_parse(instr);
     else if (!strcmp(ident, "expand"))           instr->_exprule   = expand_parse(instr);
     else if (!strcmp(ident, "rewrite"))          instr->_rewrule   = rewrite_parse();
     else if (!strcmp(ident, "constraint")) {
@@ -2895,14 +2896,6 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     encoding->add_parameter(opForm->_ident, param);
   }
 
-  if (!inst._is_postalloc_expand) {
-    // Define a MacroAssembler instance for use by the encoding.  The
-    // name is chosen to match the __ idiom used for assembly in other
-    // parts of hotspot and assumes the existence of the standard
-    // #define __ _masm.
-    encoding->add_code("    C2_MacroAssembler _masm(&cbuf);\n");
-  }
-
   // Parse the following %{ }% block
   ins_encode_parse_block_impl(inst, encoding, ec_name);
 
@@ -4126,6 +4119,46 @@ void ADLParser::effect_parse(InstructForm *instr) {
 
 }
 
+//-------------------------------flag_parse------------------------------------
+Flag* ADLParser::flag_parse(InstructForm *instr) {
+  char* ident = nullptr;
+  Flag* result = nullptr;
+
+  skipws();                      // Skip whitespace
+  if (_curchar != '(') {
+    parse_err(SYNERR, "missing '(' in flag definition\n");
+    return nullptr;
+  }
+  do {
+    next_char();
+    skipws();
+    if (_curchar == ')') break;
+
+    ident = get_ident();
+    if (ident == nullptr) {
+      parse_err(SYNERR, "flag name expected at %c\n", _curchar);
+      return nullptr;
+    }
+    Flag* newflag = new Flag(ident);
+    if (result == nullptr) result = newflag;
+    else result->append_flag(newflag);
+    if (_AD._adl_debug > 1) fprintf(stderr, "\tFlag Name: %s\n", ident);
+    skipws();
+  } while (_curchar == ',');
+  if (_curchar != ')') parse_err(SYNERR, "missing ')'\n");
+  else {
+    next_char();  // set current character position past the close paren
+  }
+
+  // Debug Stuff
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in Flag definition\n");
+  }
+  // Skip ';'
+  next_char();
+  return result;
+}
+
 //------------------------------expand_parse-----------------------------------
 ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
   char         *ident, *ident2;
@@ -5192,7 +5225,7 @@ void ADLParser::skipws_common(bool do_preproc) {
     if (*_ptr == '\n') {                   // keep proper track of new lines
       if (!do_preproc)  break;             // let caller handle the newline
       next_line();
-      _ptr = _curline; next = _ptr + 1;
+      _ptr = _curline; if (_ptr != nullptr) next = _ptr + 1;
     }
     else if ((*_ptr == '/') && (*next == '/'))      // C++ comment
       do { _ptr++; next++; } while(*_ptr != '\n');  // So go to end of line
