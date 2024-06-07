@@ -22,6 +22,7 @@
 
  */
 
+#include "precompiled.hpp"
 #include "unittest.hpp"
 #include "nmt/indexedFreeListAllocator.hpp"
 
