@@ -118,7 +118,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
         events[1] = JVM_GetThreadInterruptEvent();
         // Interrupt and process termination are treated equally.
         // In case of an interrupt, if the process is still active,
-        // returned exit code is incorrect.
+        // the method returns STILL_ACTIVE (259).
         if (WaitForMultipleObjects(sizeof(events)/sizeof(events[0]), events,
                                    FALSE,    /* Wait for ANY event */
                                    INFINITE) /* Wait forever */
