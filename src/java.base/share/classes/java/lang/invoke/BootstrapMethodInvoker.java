@@ -88,7 +88,7 @@ final class BootstrapMethodInvoker {
             if (info == null) {
                 // VM is allowed to pass up a null meaning no BSM args
                 if (type instanceof Class<?> c) {
-                    if (bootstrapMethod.type() == CONDY_GET_STATIC_FINAL_MT) {
+                    if (bootstrapMethod.type() == CONDY_NO_ARG) {
                         result = bootstrapMethod.invokeExact(caller, name, c);
                     } else {
                         result = bootstrapMethod.invoke(caller, name, c);
@@ -106,10 +106,14 @@ final class BootstrapMethodInvoker {
                     result = (CallSite)bootstrapMethod
                             .invokeExact(caller, name, (MethodType)type,
                                          (String)info, new Object[0]);
+                } else if (bootstrapMethod.type() == CONDY_INVOKE) {
+                    result = (CallSite)bootstrapMethod
+                            .invokeExact(caller, name, (Class<?>)type,
+                                    (MethodHandle)info, new Object[0]);
                 } else {
                     info = maybeReBox(info);
                     if (type instanceof Class<?> c) {
-                        if (bootstrapMethod.type() == CONDY_GET_STATIC_FINAL_CLASS_MT) {
+                        if (bootstrapMethod.type() == CONDY_EXTRA_CLASS) {
                             result = bootstrapMethod.invokeExact(caller, name, c, (Class<?>)info);
                         } else {
                             result = bootstrapMethod.invoke(caller, name, c, info);
@@ -142,11 +146,14 @@ final class BootstrapMethodInvoker {
                     result = (CallSite)bootstrapMethod
                             .invokeExact(caller, name, (MethodType)type, (MethodType)argv[0],
                                     (MethodHandle)argv[1], (MethodType)argv[2]);
-                } else if (argv.length >= 1 && bsmType == SCF_MT) {
-                    String recipe = (String)argv[0];
+                } else if (bsmType == SCF_MT) {
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
                     maybeReBoxElements(shiftedArgs);
-                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, recipe, shiftedArgs);
+                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, (String)argv[0], shiftedArgs);
+                } else if (bsmType == CONDY_INVOKE) {
+                    Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
+                    maybeReBoxElements(shiftedArgs);
+                    result = (Object)bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (MethodHandle)argv[0], shiftedArgs);
                 } else if (bsmType == LMF_ALT_MT) {
                     maybeReBoxElements(argv);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
@@ -155,9 +162,9 @@ final class BootstrapMethodInvoker {
                     result = bootstrapMethod.invokeExact(caller, name, (TypeDescriptor)type, (Class<?>)argv[0], (String)argv[1], mhs);
                 } else if (bsmType == PROXY_GET_METHOD_MT) {
                     result = (Method)bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (Class<?>)argv[0], (String)argv[1], (MethodType)argv[2]);
-                } else if (bsmType == CONDY_GET_STATIC_FINAL_MT) {
+                } else if (bsmType == CONDY_NO_ARG) {
                     result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type);
-                } else if (bsmType == CONDY_GET_STATIC_FINAL_CLASS_MT) {
+                } else if (bsmType == CONDY_EXTRA_CLASS) {
                     result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (Class<?>)argv[0]);
                 } else {
                     maybeReBoxElements(argv);
@@ -175,7 +182,7 @@ final class BootstrapMethodInvoker {
                     } else {
                         MethodType mt = (MethodType) type;
                         result = switch (argv.length) {
-                            case 0 -> bootstrapMethod.invoke(caller, name, mt);
+                            case 0 -> bootstrapMethod.invokeBasic(caller, name, mt);
                             case 1 -> bootstrapMethod.invoke(caller, name, mt, argv[0]);
                             case 2 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1]);
                             case 3 -> bootstrapMethod.invoke(caller, name, mt, argv[0], argv[1], argv[2]);
@@ -283,18 +290,28 @@ final class BootstrapMethodInvoker {
             Lookup.class, String.class, Class.class, Class.class, String.class, MethodType.class);
 
     /**
-     * Exact type used of the {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class)}
+     * Exact type of for example
+     * {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class)}
      * bootstrap method.
      */
-    private static final MethodType CONDY_GET_STATIC_FINAL_MT = MethodType.methodType(Object.class,
+    private static final MethodType CONDY_NO_ARG = MethodType.methodType(Object.class,
             Lookup.class, String.class, Class.class);
 
     /**
-     * Exact type of the {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class, Class)}
+     * Exact type of for example the
+     * {@link java.lang.invoke.ConstantBootstraps#getStaticFinal(Lookup, String, Class, Class)}
      * bootstrap method.
      */
-    private static final MethodType CONDY_GET_STATIC_FINAL_CLASS_MT = MethodType.methodType(Object.class,
+    private static final MethodType CONDY_EXTRA_CLASS = MethodType.methodType(Object.class,
             Lookup.class, String.class, Class.class, Class.class);
+
+    /**
+     * Exact type of the
+     * {@link java.lang.invoke.ConstantBootstraps#invoke(Lookup, String, Class, MethodHandle, Object...)}
+     * bootstrap method.
+     */
+    private static final MethodType CONDY_INVOKE = MethodType.methodType(Object.class,
+            Lookup.class, String.class, Class.class, MethodHandle.class, Object[].class);
 
     /**
      * Exact type of the {@link java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
