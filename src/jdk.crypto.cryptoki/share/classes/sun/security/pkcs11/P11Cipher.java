@@ -914,11 +914,7 @@ final class P11Cipher extends CipherSpi {
             ensureInitialized();
             int k = 0;
             if (encrypt) {
-                if (blockMode == Mode.CTS) {
-                    k = token.p11.C_EncryptUpdate(session.id(),
-                            0, padBuffer, 0, padBufferLen,
-                            0, out, outOfs, outLen);
-                } else if (paddingObj != null) {
+                if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
                         // call C_EncryptUpdate first if the padBuffer is full
@@ -936,6 +932,10 @@ final class P11Cipher extends CipherSpi {
                     k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
                             0, out, outOfs + k, outLen - k);
+                } else if (blockMode == Mode.CTS) {
+                    k = token.p11.C_EncryptUpdate(session.id(),
+                            0, padBuffer, 0, padBufferLen,
+                            0, out, outOfs, outLen);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as
@@ -1027,11 +1027,7 @@ final class P11Cipher extends CipherSpi {
                 int k = 0;
 
                 if (encrypt) {
-                    if (blockMode == Mode.CTS) {
-                        k = token.p11.C_EncryptUpdate(session.id(),
-                                0, padBuffer, 0, padBufferLen,
-                                outAddr, outArray, outOfs, outLen);
-                    } else if (paddingObj != null) {
+                    if (paddingObj != null) {
                         int startOff = 0;
                         if (reqBlockUpdates) {
                             // call C_EncryptUpdate first if the padBuffer is full
@@ -1049,6 +1045,10 @@ final class P11Cipher extends CipherSpi {
                         k += token.p11.C_EncryptUpdate(session.id(),
                                 0, padBuffer, 0, startOff + actualPadLen,
                                 outAddr, outArray, outOfs + k, outLen - k);
+                    } else if (blockMode == Mode.CTS) {
+                       k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                outAddr, outArray, outOfs, outLen);
                     }
                     // Some implementations such as the NSS Software Token do not
                     // cancel the operation upon a C_EncryptUpdate failure (as
@@ -1170,8 +1170,10 @@ final class P11Cipher extends CipherSpi {
         }
         if (ciphertextBuf != null) {
             // No assumptions should be made about the current ciphertextBuf
-            // position. Use offsets to read and write bytes from the last two
-            // blocks. Other blocks should not be modified.
+            // position. Additionally, if ciphertextBuf was not created here,
+            // the position should not be altered. To ensure this, use offsets
+            // to read and write bytes from the last two blocks (i.e. absolute
+            // ByteBuffer operations). Other blocks should not be modified.
             pad = pad == 0 ? blockSize : pad;
             if (encrypt) {
                 // .... pp[pp] ffff -> .... ffff pp[pp]
