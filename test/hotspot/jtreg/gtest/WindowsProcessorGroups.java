@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-package nsk.share;
-
-
-/**
- * This class is a simple example of finalizable object, that
- * implements interface <code>Finalizable</code>.
  *
- * @see Finalizable
- * @see Finalizer
  */
-public class FinalizableObject implements Finalizable {
-    /**
-     * Subclasses should override this method to provide the specific
-     * cleanup actions that they need.
-     */
-    public void cleanup() {}
-}
+
+/*
+ * This runs the os related gtests on Windows with all processor groups enabled.
+ */
+
+/* @test id=use-all-windows-processor-groups
+ * @summary Run gtests with all Windows processor groups enabled
+ * @library /test/lib
+ * @requires os.family == "windows"
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseAllWindowsProcessorGroups
+ */

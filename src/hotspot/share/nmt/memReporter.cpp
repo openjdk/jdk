@@ -28,6 +28,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memflags.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
@@ -465,6 +466,15 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       }
     )
   }
+}
+
+void MemDetailReporter::report_memory_file_allocations() {
+  stringStream st;
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
+  }
+  output()->print_raw(st.freeze());
 }
 
 void MemSummaryDiffReporter::report_diff() {
@@ -910,4 +920,5 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
     out->print_cr(")");
   )
   out->cr();
- }
+}
+
