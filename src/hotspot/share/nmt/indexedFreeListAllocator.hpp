@@ -12,16 +12,19 @@ template<typename E, MEMFLAGS flag>
 class IndexedFreeListAllocator {
 public:
   // Make the index opaque.
-  struct I {
-    int32_t idx;
+  class I {
+    friend IndexedFreeListAllocator<E, flag>;
+    int32_t _idx;
 #ifdef ASSERT
     IndexedFreeListAllocator<E, flag>* _owner;
 #endif
+
+  public:
     bool operator !=(I other) {
-      return idx != other.idx;
+      return _idx != other._idx;
     }
     bool operator==(I other) {
-      return idx == other.idx;
+      return _idx == other._idx;
     }
   };
   static constexpr const I nil = I{-1};
@@ -48,12 +51,12 @@ public:
 
   template<typename... Args>
   I allocate(Args... args) {
-    int32_t i = free_start.idx;
+    int32_t i = free_start._idx;
     backing_storage.at_grow(i);
     BackingElement& be = backing_storage.at(i);
     if (be.link == nil) {
       // Must be at end, simply increment
-      free_start.idx += 1;
+      free_start._idx += 1;
     } else {
       // Follow the link to the next free element
       free_start = be.link;
@@ -65,19 +68,19 @@ public:
   void free(I i) {
     assert(i == nil || i._owner == this, "attempt to free to wrong allocator");
 
-    BackingElement& be_freed = backing_storage.at(i.idx);
+    BackingElement& be_freed = backing_storage.at(i._idx);
     be_freed.link = free_start;
     free_start = i;
   }
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<E&>(backing_storage.at(i.idx).e);
+    return reinterpret_cast<E&>(backing_storage.at(i._idx).e);
   }
 
   const E& at(I i) const {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<const E&>(backing_storage.at(i.idx).e);
+    return reinterpret_cast<const E&>(backing_storage.at(i._idx).e);
   }
 };
 
