@@ -50,10 +50,12 @@ public class ProxyGenBench {
     static final IHandler HANDLER = new IHandler();
 
     @Benchmark
-    public void generate100Proxies() {
+    public int generate100Proxies() {
+        int hash = 0;
         for (int i = 0; i < 100; i++) {
-            Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER);
+            hash += Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER).hashCode();
         }
+        return hash;
     }
 
     public interface Interfaze {
