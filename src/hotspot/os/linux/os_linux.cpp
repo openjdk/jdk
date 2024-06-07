@@ -2141,6 +2141,13 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
 void os::Linux::print_system_memory_info(outputStream* st) {
   _print_ascii_file_h("/proc/meminfo", "/proc/meminfo", st, false);
   st->cr();
+
+  // some information regarding THPs; for details see
+  // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
+                      "/sys/kernel/mm/transparent_hugepage/enabled", st);
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter)",
+                      "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
 bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
