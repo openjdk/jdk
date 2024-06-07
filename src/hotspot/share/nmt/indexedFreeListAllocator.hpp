@@ -49,7 +49,7 @@ private:
 public:
   IndexedFreeListAllocator(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
-      _free_start(I(nil._idx, this)) {}
+      _free_start(I(nil._idx DEBUG_ONLY(COMMA this))) {}
 
   template<typename... Args>
   I allocate(Args... args) {
@@ -67,7 +67,7 @@ public:
     }
 
     ::new (be) E(args...);
-    return I{i DEBUG_ONLY(COMMA this)};
+    return I(i DEBUG_ONLY(COMMA this));
   }
 
   void free(I i) {
