@@ -25,8 +25,11 @@ public:
     bool operator==(I other) {
       return _idx == other._idx;
     }
+
+    I(int32_t idx DEBUG_ONLY(COMMA IndexedFreeListAllocator<E COMMA flag>* owner))
+    : _idx(idx), _owner(owner) {}
   };
-  static constexpr const I nil = I{-1};
+  static const I nil;
 
 private:
   // A free list allocator element is either a link to the next free space
@@ -38,56 +41,59 @@ private:
     BackingElement() {
       this->link = nil;
     }
-
-    BackingElement(I link) {
-      this->link = link;
-    }
   };
 
-  GrowableArrayCHeap<BackingElement, flag> backing_storage;
-  I free_start;
+  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
+  I _free_start;
 
 public:
-  IndexedFreeListAllocator()
-  : backing_storage(8),
-  free_start(I{0}) {}
+  IndexedFreeListAllocator(int initial_capacity = 8)
+    : _backing_storage(initial_capacity),
+      _free_start(I{nil._idx, this}) {}
 
   template<typename... Args>
   I allocate(Args... args) {
-    int32_t i = free_start._idx;
-    backing_storage.at_grow(i);
-    BackingElement& be = backing_storage.at(i);
-    if (be.link == nil) {
-      // Must be at end, simply increment
-      free_start._idx += 1;
+    BackingElement* be;
+    int i = -1;
+    if (_free_start != nil) {
+      // Must point to already existing index
+      be = &_backing_storage.at(_free_start._idx);
+      i = _free_start._idx;
+      _free_start = be->link;
     } else {
-      // Follow the link to the next free element
-      free_start = be.link;
+      // There are no free elements, allocate a new one.
+      i = _backing_storage.append(BackingElement());
+      be = _backing_storage.adr_at(i);
     }
-    ::new (&be) E(args...);
+
+    ::new (be) E(args...);
     return I{i DEBUG_ONLY(COMMA this)};
   }
 
   void free(I i) {
     assert(i == nil || i._owner == this, "attempt to free via wrong allocator");
 
-    BackingElement& be_freed = backing_storage.at(i._idx);
-    be_freed.link = free_start;
-    free_start = i;
+    BackingElement& be_freed = _backing_storage.at(i._idx);
+    be_freed.link = _free_start;
+    _free_start = i;
   }
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
     assert(i._owner == this, "attempt to access via wrong allocator");
-    return reinterpret_cast<E&>(backing_storage.at(i._idx).e);
+    return reinterpret_cast<E&>(_backing_storage.at(i._idx).e);
   }
 
   const E& at(I i) const {
     assert(i != nil, "null pointer dereference");
     assert(i._owner == this, "attempt to access via wrong allocator");
-    return reinterpret_cast<const E&>(backing_storage.at(i._idx).e);
+    return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
   }
 };
+
+template<typename E, MEMFLAGS flag>
+const typename IndexedFreeListAllocator<E, flag>::I
+    IndexedFreeListAllocator<E, flag>::nil(-1 DEBUG_ONLY(COMMA nullptr));
 
 // A CHeap allocator
 template<typename E, MEMFLAGS flag>
