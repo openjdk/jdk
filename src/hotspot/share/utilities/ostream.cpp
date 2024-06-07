@@ -44,18 +44,11 @@
 extern "C" void jio_print(const char* s, size_t len);
 extern "C" int jio_printf(const char *fmt, ...);
 
-outputStream::outputStream() {
-  _position    = 0;
-  _precount    = 0;
-  _indentation = 0;
-  _scratch     = nullptr;
-  _scratch_len = 0;
-}
-
 outputStream::outputStream(bool has_time_stamps) {
   _position    = 0;
   _precount    = 0;
   _indentation = 0;
+  _autoindent  = false;
   _scratch     = nullptr;
   _scratch_len = 0;
   if (has_time_stamps)  _stamp.update();
@@ -159,6 +152,9 @@ void outputStream::do_vsnprintf_and_write_with_scratch_buffer(const char* format
 }
 
 void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) {
+  if (_autoindent && _position == 0) {
+    indent();
+  }
   if (_scratch) {
     do_vsnprintf_and_write_with_scratch_buffer(format, ap, add_cr);
   } else {
@@ -186,6 +182,13 @@ void outputStream::vprint(const char *format, va_list argptr) {
 
 void outputStream::vprint_cr(const char* format, va_list argptr) {
   do_vsnprintf_and_write(format, argptr, true);
+}
+
+void outputStream::print_raw(const char* str, size_t len) {
+  if (_autoindent && _position == 0) {
+    indent();
+  }
+  write(str, len);
 }
 
 void outputStream::fill_to(int col) {
