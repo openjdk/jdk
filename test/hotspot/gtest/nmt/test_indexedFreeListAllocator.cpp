@@ -26,123 +26,120 @@
 #include "unittest.hpp"
 #include "nmt/indexedFreeListAllocator.hpp"
 
-class TIFLA {
-public:
-  // A linked list which sets the allocator itself
-  template<typename E>
-  struct LL {
-    struct Node;
-    using NodeAllocator = IndexedFreeListAllocator<Node, mtTest>;
-    using NodePtr = typename NodeAllocator::I;
-    NodeAllocator alloc;
-    struct Node {
-      E e;
-      NodePtr next;
-      Node(E e, NodePtr next)
-        : e(e),
-          next(next) {
-      }
-    };
-
-    NodePtr start;
-    LL() : start(NodeAllocator::nil) {
-
-    }
-
-    void append(E&& e) {
-      NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
-      NodePtr& current = start;
-      if (current == NodeAllocator::nil) {
-        current = new_element;
-        return;
-      }
-      while (alloc.at(current).next != NodeAllocator::nil) {
-        current = alloc.at(current).next;
-      }
-      alloc.at(current).next = new_element;
-    };
-
-    E pop() {
-      assert(start != NodeAllocator::nil, "must be");
-      Node& n = alloc.at(start);
-      E e = n.e;
-      NodePtr next_start = n.next;
-      alloc.free(start);
-      start = next_start;
-      return e;
-    }
-
-  };
-  // A linked list which is capable of having multiple different allocators. This is done through higher-kinded types.
-  // That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
-  // and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
-  // where Foo is a function that can be called on some type with the return type being Foo<E>.
-  template<typename E, template<typename, MEMFLAGS> class Allocator>
-  struct LL2 {
-    struct Node;
-    using NodeAllocator = Allocator<Node, mtTest>;
-    using NodePtr = typename NodeAllocator::I;
-    NodeAllocator alloc;
-    struct Node {
-      E e;
-      NodePtr next;
-      Node(E e, NodePtr next)
-        : e(e),
-          next(next) {
-      }
-    };
-
-    NodePtr start;
-    LL2() : start(NodeAllocator::nil) {}
-
-    void append(E&& e) {
-      NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
-      NodePtr& current = start;
-      if (current == NodeAllocator::nil) {
-        current = new_element;
-        return;
-      }
-      while (alloc.at(current).next != NodeAllocator::nil) {
-        current = alloc.at(current).next;
-      }
-      alloc.at(current).next = new_element;
-    };
-
-    E pop() {
-      assert(start != NodeAllocator::nil, "must be");
-      Node& n = alloc.at(start);
-      E e = n.e;
-      NodePtr next_start = n.next;
-      alloc.free(start);
-      start = next_start;
-      return e;
-    }
-
-  };
+class IndexedFreeListAllocatorTest  : public testing::Test {
 };
 
-TEST_VM(IFLATest, TestIt) {
+// A linked list which sets the allocator itself
+template<typename E>
+struct LL {
+  struct Node;
+  using NodeAllocator = IndexedFreeListAllocator<Node, mtTest>;
+  using NodePtr = typename NodeAllocator::I;
+  NodeAllocator alloc;
+  struct Node {
+    E e;
+    NodePtr next;
+    Node(E e, NodePtr next)
+      : e(e),
+        next(next) {
+    }
+  };
+
+  NodePtr start;
+  LL()
+    : start(NodeAllocator::nil) {
+  }
+
+  void append(E&& e) {
+    NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
+    NodePtr& current = start;
+    if (current == NodeAllocator::nil) {
+      current = new_element;
+      return;
+    }
+    while (alloc.at(current).next != NodeAllocator::nil) {
+      current = alloc.at(current).next;
+    }
+    alloc.at(current).next = new_element;
+  };
+
+  E pop() {
+    assert(start != NodeAllocator::nil, "must be");
+    Node& n = alloc.at(start);
+    E e = n.e;
+    NodePtr next_start = n.next;
+    alloc.free(start);
+    start = next_start;
+    return e;
+  }
+};
+// A linked list which is capable of having multiple different allocators. This is done through higher-kinded types.
+// That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
+// and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
+// where Foo is a function that can be called on some type with the return type being Foo<E>.
+template<typename E, template<typename, MEMFLAGS> class Allocator>
+struct LL2 {
+  struct Node;
+  using NodeAllocator = Allocator<Node, mtTest>;
+  using NodePtr = typename NodeAllocator::I;
+  NodeAllocator alloc;
+  struct Node {
+    E e;
+    NodePtr next;
+    Node(E e, NodePtr next)
+      : e(e),
+        next(next) {
+    }
+  };
+
+  NodePtr start;
+  LL2()
+    : start(NodeAllocator::nil) {
+  }
+
+  void append(E&& e) {
+    NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
+    NodePtr& current = start;
+    if (current == NodeAllocator::nil) {
+      current = new_element;
+      return;
+    }
+    while (alloc.at(current).next != NodeAllocator::nil) {
+      current = alloc.at(current).next;
+    }
+    alloc.at(current).next = new_element;
+  };
+
+  E pop() {
+    assert(start != NodeAllocator::nil, "must be");
+    Node& n = alloc.at(start);
+    E e = n.e;
+    NodePtr next_start = n.next;
+    alloc.free(start);
+    start = next_start;
+    return e;
+  }
+};
+
+template<typename List>
+void test_with_list(List& list) {
+  list.append(1);
+  list.append(2);
+  EXPECT_EQ(2, list.pop());
+  EXPECT_EQ(1, list.pop());
+}
+
+TEST_VM_F(IndexedFreeListAllocatorTest, TestLinkedLists) {
   {
-    TIFLA::LL<int> list;
-    list.append(1);
-    list.append(2);
-    tty->print_cr("%d", list.pop());
-    tty->print_cr("%d", list.pop());
+    LL<int> list;
+    test_with_list(list);
   }
   {
-    TIFLA::LL2<int, IndexedFreeListAllocator> list;
-    tty->print_cr("size: %zu", sizeof(TIFLA::LL2<int, IndexedFreeListAllocator>::Node));
-    list.append(1);
-    list.append(2);
-    tty->print_cr("%d", list.pop());
-    tty->print_cr("%d", list.pop());
+    LL2<int, IndexedFreeListAllocator> list;
+    test_with_list(list);
   }
   {
-    TIFLA::LL2<int, CHeapAllocator> list;
-    tty->print_cr("size: %zu", sizeof(TIFLA::LL2<int, CHeapAllocator>::Node));
-    list.append(1);
-    list.append(2);
-    tty->print_cr("%d", list.pop());
-    tty->print_cr("%d", list.pop());
+    LL2<int, CHeapAllocator> list;
+    test_with_list(list);
   }
 }
