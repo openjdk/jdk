@@ -78,7 +78,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_23)
+@SupportedSourceVersion(RELEASE_24)
 public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

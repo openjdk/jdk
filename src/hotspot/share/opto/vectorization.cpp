@@ -202,7 +202,7 @@ void VLoopVPointers::allocate_vpointers_array() {
 
 void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
-  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+  _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
@@ -410,7 +410,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
+VPointer::VPointer(MemNode* const mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
   _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
@@ -807,10 +807,50 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
+// To be in the same group, two VPointers must be the same,
+// except for the offset.
+int VPointer::cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2) {
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  int cmp_base = a->base()->_idx - b->base()->_idx;
+  if (cmp_base != 0) { return cmp_base; }
+
+  int cmp_opcode = a->mem()->Opcode() - b->mem()->Opcode();
+  if (cmp_opcode != 0) { return cmp_opcode; }
+
+  int cmp_scale = a->scale_in_bytes() - b->scale_in_bytes();
+  if (cmp_scale != 0) { return cmp_scale; }
+
+  int cmp_invar = (a->invar() == nullptr ? 0 : a->invar()->_idx) -
+                  (b->invar() == nullptr ? 0 : b->invar()->_idx);
+  return cmp_invar;
+}
+
+// We compare by group, then by offset, and finally by node idx.
+int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
+  int cmp_group = cmp_for_sort_by_group(p1, p2);
+  if (cmp_group != 0) { return cmp_group; }
+
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  int cmp_offset = a->offset_in_bytes() - b->offset_in_bytes();
+  if (cmp_offset != 0) { return cmp_offset; }
+
+  return a->mem()->_idx - b->mem()->_idx;
+}
+
 #ifndef PRODUCT
 // Function for printing the fields of a VPointer
 void VPointer::print() const {
   tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
+
+  if (!valid()) {
+    tty->print_cr("invalid]");
+    return;
+  }
+
   tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
   tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
 

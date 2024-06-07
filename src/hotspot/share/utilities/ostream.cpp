@@ -81,45 +81,67 @@ bool outputStream::update_position(const char* s, size_t len) {
 }
 
 // Execute a vsprintf, using the given buffer if necessary.
-// Return a pointer to the formatted string.
+// Return a pointer to the formatted string. Optimise for
+// strings without format specifiers, or only "%s". See
+// comments in the header file for more details.
 const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
                                        const char* format, va_list ap,
                                        bool add_cr,
                                        size_t& result_len) {
   assert(buflen >= 2, "buffer too small");
 
-  const char* result;
-  if (add_cr)  buflen--;
+  const char* result;  // The string to return. May not be the buffer.
+  size_t required_len = 0; // The length of buffer needed to avoid truncation
+                           // (excluding space for the nul terminator).
+
+  if (add_cr) { // Ensure space for CR even if truncation occurs.
+    buflen--;
+  }
+
   if (!strchr(format, '%')) {
     // constant format string
     result = format;
     result_len = strlen(result);
-    if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
-  } else if (format[0] == '%' && format[1] == 's' && format[2] == '\0') {
+    if (add_cr && result_len >= buflen) { // truncate
+      required_len = result_len + 1;
+      result_len = buflen - 1;
+    }
+  } else if (strncmp(format, "%s", 3) == 0) { //(format[0] == '%' && format[1] == 's' && format[2] == '\0') {
     // trivial copy-through format string
     result = va_arg(ap, const char*);
     result_len = strlen(result);
-    if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
+    if (add_cr && result_len >= buflen) { // truncate
+      required_len = result_len + 1;
+      result_len = buflen - 1;
+    }
   } else {
-    int required_len = os::vsnprintf(buffer, buflen, format, ap);
-    assert(required_len >= 0, "vsnprintf encoding error");
+    int required_buffer_len = os::vsnprintf(buffer, buflen, format, ap);
+    assert(required_buffer_len >= 0, "vsnprintf encoding error");
     result = buffer;
-    if ((size_t)required_len < buflen) {
+    required_len = required_buffer_len;
+    if (required_len < buflen) {
       result_len = required_len;
-    } else {
-      DEBUG_ONLY(warning("outputStream::do_vsnprintf output truncated -- buffer length is %d bytes but %d bytes are needed.",
-                         add_cr ? (int)buflen + 1 : (int)buflen, add_cr ? required_len + 2 : required_len + 1);)
+    } else { // truncation
       result_len = buflen - 1;
     }
   }
   if (add_cr) {
-    if (result != buffer) {
+    if (result != buffer) { // Need to copy to add CR
       memcpy(buffer, result, result_len);
       result = buffer;
+    } else {
+      required_len++;
     }
     buffer[result_len++] = '\n';
     buffer[result_len] = 0;
   }
+#ifdef ASSERT
+  if (required_len > result_len) {
+    warning("outputStream::do_vsnprintf output truncated -- buffer length is " SIZE_FORMAT
+            " bytes but " SIZE_FORMAT " bytes are needed.",
+            add_cr ? buflen + 1 : buflen, required_len + 1);
+  }
+#endif
   return result;
 }
 

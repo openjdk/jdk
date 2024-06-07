@@ -96,12 +96,10 @@ class VectorNode : public TypeNode {
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   // Limits on vector size (number of elements) for auto-vectorization.
-  static bool vector_size_supported_superword(const BasicType bt, int size);
+  static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
-  static bool is_type_transition_short_to_int(Node* n);
-  static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
