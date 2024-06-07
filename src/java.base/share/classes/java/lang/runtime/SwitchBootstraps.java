@@ -601,10 +601,11 @@ public class SwitchBootstraps {
                     } else {
                         cb.loadConstant((ConstantDesc) element.caseLabel());
                     }
-                    cb.invokestatic(referenceClassDesc(element.caseLabel().getClass()),
+                    var caseLabelWrapper = Wrapper.forWrapperType(element.caseLabel().getClass());
+                    cb.invokestatic(caseLabelWrapper.wrapperClassDescriptor(),
                             "valueOf",
-                            MethodTypeDesc.of(referenceClassDesc(element.caseLabel().getClass()),
-                                    Wrapper.forWrapperType(element.caseLabel().getClass()).basicClassDescriptor()));
+                            MethodTypeDesc.of(caseLabelWrapper.wrapperClassDescriptor(),
+                                    caseLabelWrapper.basicClassDescriptor()));
                     cb.aload(SELECTOR_OBJ);
                     cb.invokevirtual(ConstantDescs.CD_Object,
                             "equals",
