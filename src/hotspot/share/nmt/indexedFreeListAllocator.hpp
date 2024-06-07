@@ -74,6 +74,8 @@ private:
   I _free_start;
 
 public:
+  NONCOPYABLE(IndexedFreeListAllocator<E COMMA flag>);
+
   IndexedFreeListAllocator(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
       _free_start(I(nil._idx DEBUG_ONLY(COMMA this))) {}
