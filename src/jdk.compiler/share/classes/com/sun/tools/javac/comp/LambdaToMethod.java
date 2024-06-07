@@ -1796,7 +1796,6 @@ public class LambdaToMethod extends TreeTranslator {
             if (context != null
                     && tree.encl == null
                     && tree.def == null
-                    && tree.clazz.type.tsym.hasOuterInstance()
                     && !tree.type.getEnclosingType().hasTag(NONE)) {
                 Type encl = tree.type.getEnclosingType();
                 Type current = context.owner.enclClass().type;
