@@ -66,8 +66,7 @@ private:
     I link;
     char e[sizeof(E)];
 
-    BackingElement() {
-      this->link = nil;
+    BackingElement() : link(nil) {
     }
   };
 
