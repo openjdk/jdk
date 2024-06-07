@@ -735,7 +735,7 @@ public class Main {
         Map<String,PKCS7> sigMap = new HashMap<>();
         Map<String,String> sigNameMap = new HashMap<>();
         Map<String,String> unparsableSignatures = new HashMap<>();
-        Map<String,Set<String>> signedEntries = new HashMap<>();
+        Map<String,Set<String>> entriesInSF = new HashMap<>();
 
         try {
             jf = new JarFile(jarName, true);
@@ -783,7 +783,7 @@ public class Main {
                                         break;
                                     }
                                 }
-                                signedEntries.put(alias, sf.getEntries().keySet());
+                                entriesInSF.put(alias, sf.getEntries().keySet());
                                 if (!found) {
                                     unparsableSignatures.putIfAbsent(alias,
                                         String.format(
@@ -883,7 +883,7 @@ public class Main {
                                 sb.append('\n');
                             }
                         }
-                        for (var signed : signedEntries.values()) {
+                        for (var signed : entriesInSF.values()) {
                             signed.remove(name);
                         }
                     } else if (showcerts && !verbose.equals("all")) {
@@ -1080,7 +1080,7 @@ public class Main {
                         }
                         if (verbose != null) {
                             System.out.println(history);
-                            var signed = signedEntries.get(s);
+                            var signed = entriesInSF.get(s);
                             if (!signed.isEmpty()) {
                                 System.out.println(rb.getString("history.removed.entries") + signed);
                             }

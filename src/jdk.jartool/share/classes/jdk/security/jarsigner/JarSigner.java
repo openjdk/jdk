@@ -1108,7 +1108,7 @@ public final class JarSigner {
                                 "Manifest-Main-Attribute entry");
             }
 
-            // go through the manifest entries and create the digests
+            // go through signed entries and create the digests
             Map<String, Attributes> entries = sf.getEntries();
             for (String name: signedEntries) {
                 mde = md.get(name, false);
