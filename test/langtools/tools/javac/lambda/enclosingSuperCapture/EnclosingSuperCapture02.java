@@ -62,4 +62,4 @@ public class EnclosingSuperCapture02 {
             throw new AssertionError("Unexpected value: " + inner.i);
         }
     }
-} 
+}
