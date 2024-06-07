@@ -3092,7 +3092,7 @@ class Assembler : public AbstractAssembler {
 
   // Ppopulation count intrinsics.
   inline void z_flogr(Register r1, Register r2);    // find leftmost one
-  inline void z_popcnt(Register r1, Register r2, int64_t m3 = 0);   // population count
+  inline void z_popcnt(Register r1, Register r2, int64_t m3);   // population count
   inline void z_ahhhr(Register r1, Register r2, Register r3);   // ADD halfword high high
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 

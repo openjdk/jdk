@@ -5808,16 +5808,14 @@ void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tm
   BLOCK_COMMENT("pop_count_int {");
 
   if (VM_Version::has_MiscInstrExt3()) {
-    z_llgfr(r_src, r_src);
-    z_popcnt(r_dst, r_src, 8);
+    z_llgfr(r_dst, r_src);
+    z_popcnt(r_dst, r_dst, 8);
   } else {
 
-#ifdef ASSERT
     assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
     assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
-#endif // ASSERT
 
-    z_popcnt(r_dst, r_src);
+    z_popcnt(r_dst, r_src, 0);
     z_srlg(r_tmp, r_dst, 16);
     z_alr(r_dst, r_tmp);
     z_srlg(r_tmp, r_dst, 8);
@@ -5836,12 +5834,10 @@ void MacroAssembler::pop_count_long(Register r_dst, Register r_src, Register r_t
     z_popcnt(r_dst, r_src, 8);
   } else {
 
-#ifdef ASSERT
     assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
     assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
-#endif // ASSERT
 
-    z_popcnt(r_dst, r_src);
+    z_popcnt(r_dst, r_src, 0);
     z_ahhlr(r_dst, r_dst, r_dst);
     z_sllg(r_tmp, r_dst, 16);
     z_algr(r_dst, r_tmp);
