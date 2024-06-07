@@ -411,14 +411,14 @@ public final class Double extends Number
     public static final double MIN_VALUE = 0x0.0000000000001P-1022; // 4.9e-324
 
     /**
-     * The number of bits used to represent a {@code double} value, {@value #SIZE}.
+     * The number of bits used to represent a {@code double} value, {@value}.
      *
      * @since 1.5
      */
     public static final int SIZE = 64;
 
     /**
-     * The number of bits in the significand of a {@code double} value, {@value #PRECISION}.
+     * The number of bits in the significand of a {@code double} value, {@value}.
      * This is the parameter N in section {@jls 4.2.3} of
      * <cite>The Java Language Specification</cite>.
      *
@@ -427,7 +427,7 @@ public final class Double extends Number
     public static final int PRECISION = 53;
 
     /**
-     * Maximum exponent a finite {@code double} variable may have, {@value #MAX_EXPONENT}.
+     * Maximum exponent a finite {@code double} variable may have, {@value}.
      * It is equal to the value returned by
      * {@code Math.getExponent(Double.MAX_VALUE)}.
      *
@@ -437,7 +437,7 @@ public final class Double extends Number
 
     /**
      * Minimum exponent a normalized {@code double} variable may
-     * have, {@value #MIN_EXPONENT}.  It is equal to the value returned by
+     * have, {@value}.  It is equal to the value returned by
      * {@code Math.getExponent(Double.MIN_NORMAL)}.
      *
      * @since 1.6
@@ -445,7 +445,7 @@ public final class Double extends Number
     public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -1022
 
     /**
-     * The number of bytes used to represent a {@code double} value, {@value #BYTES}.
+     * The number of bytes used to represent a {@code double} value, {@value}.
      *
      * @since 1.8
      */
