@@ -113,10 +113,18 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
         JNU_ThrowByNameWithLastError(env,
             "java/lang/RuntimeException", "GetExitCodeProcess");
     } else if (exitValue == STILL_ACTIVE) {
-        if (WaitForSingleObject(handle, INFINITE) /* Wait forever */
-            == WAIT_FAILED) {
+        HANDLE events[2];
+        events[0] = handle;
+        events[1] = JVM_GetThreadInterruptEvent();
+        // Interrupt and process termination are treated equally.
+        // In case of an interrupt, if the process is still active,
+        // returned exit code is incorrect.
+        if (WaitForMultipleObjects(sizeof(events)/sizeof(events[0]), events,
+                                   FALSE,    /* Wait for ANY event */
+                                   INFINITE) /* Wait forever */
+                == WAIT_FAILED) {
             JNU_ThrowByNameWithLastError(env,
-                "java/lang/RuntimeException", "WaitForSingleObjects");
+                "java/lang/RuntimeException", "WaitForMultipleObjects");
         } else if (!GetExitCodeProcess(handle, &exitValue)) {
             JNU_ThrowByNameWithLastError(env,
                 "java/lang/RuntimeException", "GetExitCodeProcess");
