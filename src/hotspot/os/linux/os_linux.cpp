@@ -315,6 +315,7 @@ static jlong host_free_swap() {
 
 jlong os::free_swap_space() {
   jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
+  assert(host_free_swap_val >= 0, "sysinfo failed?")
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
