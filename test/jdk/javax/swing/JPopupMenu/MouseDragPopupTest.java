@@ -36,51 +36,63 @@ import javax.swing.event.PopupMenuListener;
 /*
  * @test
  * @bug 8315655
- * @requires (os.family == "mac")
  * @key headful
  * @run main MouseDragPopupTest
  */
 public class MouseDragPopupTest {
-    static boolean failed;
-    static JFrame frame;
-    static JPanel panel;
-    static JPanel innerPanel;
-    static JPopupMenu menu;
+    static volatile boolean failed;
+    static volatile JFrame frame;
+    static volatile JPanel panel;
     static volatile Point srcPoint;
     static volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            createAndShowGUI();
-            srcPoint = frame.getLocationOnScreen();
-            d = frame.getSize();
-        });
-        srcPoint.translate(2*d.width/3, 3*d.height/4);
+        try {
+            failed = false;
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
-        final Point dstPoint = new Point(srcPoint);
-        dstPoint.translate(4*d.width/15, 0);
+            SwingUtilities.invokeAndWait(() -> {
+                createAndShowGUI();
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        failed = false;
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
+            SwingUtilities.invokeAndWait(() -> {
+                srcPoint = frame.getLocationOnScreen();
+                d = frame.getSize();
+            });
+            robot.waitForIdle();
+            srcPoint.translate(2 * d.width / 3, 3 * d.height / 4);
 
-        robot.mouseMove(srcPoint.x, srcPoint.y);
-        robot.waitForIdle();
+            final Point dstPoint = new Point(srcPoint);
+            dstPoint.translate(4 * d.width / 15, 0);
 
-        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-        robot.waitForIdle();
 
-        while (!srcPoint.equals(dstPoint)) {
-            srcPoint.translate(sign(dstPoint.x - srcPoint.x), 0);
             robot.mouseMove(srcPoint.x, srcPoint.y);
-        }
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        robot.waitForIdle();
+            robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+            robot.waitForIdle();
 
-        if (failed) {
-            throw new RuntimeException("Popup was shown, Test Failed.");
+            while (!srcPoint.equals(dstPoint)) {
+                srcPoint.translate(sign(dstPoint.x - srcPoint.x), 0);
+                robot.mouseMove(srcPoint.x, srcPoint.y);
+            }
+            robot.waitForIdle();
+
+            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+            robot.waitForIdle();
+
+            if (failed) {
+                throw new RuntimeException("Popup was shown, Test Failed.");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -91,8 +103,8 @@ public class MouseDragPopupTest {
     static void createAndShowGUI() {
         frame = new JFrame("MouseDragPopupTest");
         panel = new JPanel();
-        innerPanel = new JPanel();
-        menu = new JPopupMenu();
+        JPanel innerPanel = new JPanel();
+        JPopupMenu menu = new JPopupMenu();
 
         menu.addPopupMenuListener(new PopupMenuListener() {
             @Override
