@@ -42,6 +42,8 @@ public final class OutputAnalyzer {
 
     private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
 
+    private static final String obsoletedmsg  = ".* VM warning:.* scheduled for removal.*";
+
     private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 
     private final OutputBuffer buffer;
@@ -176,13 +178,15 @@ public final class OutputAnalyzer {
 
     /**
      * Verify that the stderr contents of output buffer is empty,
-     * after filtering out the Hotspot deprecation warning messages
+     * after filtering out the Hotspot deprecation warning messages,
+     * and warning messages about removal.
      *
      * @throws RuntimeException
      *             If stderr was not empty
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreDeprecatedWarnings() {
-        if (!getStderr().replaceAll(deprecatedmsg + "\\R", "").isEmpty()) {
+        if (!getStderr().replaceAll(deprecatedmsg + "\\R", "")
+                        .replaceAll(obsoletedmsg + "\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
