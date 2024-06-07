@@ -126,10 +126,10 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ClassDesc constant = (ClassDesc) o;
-        return descriptor.equals(constant.descriptorString());
+        if (o instanceof ReferenceClassDescImpl constant) {
+            return descriptor.equals(constant.descriptor);
+        }
+        return false;
     }
 
     @Override

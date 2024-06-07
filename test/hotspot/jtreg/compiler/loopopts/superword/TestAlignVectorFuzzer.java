@@ -29,7 +29,6 @@
  * @library /test/lib
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:CompileCommand=MemLimit,*.*,0
  *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
@@ -43,7 +42,6 @@
  * @library /test/lib
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:CompileCommand=MemLimit,*.*,0
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
@@ -58,7 +56,6 @@
  * @library /test/lib
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:CompileCommand=MemLimit,*.*,0
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
@@ -74,7 +71,6 @@
  * @library /test/lib
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:CompileCommand=MemLimit,*.*,0
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
