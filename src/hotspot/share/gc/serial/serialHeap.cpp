@@ -468,7 +468,10 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
-  update_gc_stats(_young_gen, false);
+  // Only update stats for successful young-gc
+  if (result) {
+    _old_gen->update_promote_stats();
+  }
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
@@ -760,6 +763,8 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
 
   // Need to clear claim bits for the next mark.
   ClassLoaderDataGraph::clear_claimed_marks();
+
+  _old_gen->update_promote_stats();
 
   // Resize the metaspace capacity after full collections
   MetaspaceGC::compute_new_size();
