@@ -118,8 +118,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CgroupV1Controller* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 
-    char * pids_max_val();
-
     jlong read_mem_swappiness();
     jlong read_mem_swap();
 

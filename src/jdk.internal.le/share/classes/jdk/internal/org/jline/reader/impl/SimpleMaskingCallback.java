@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author or authors.
+ * Copyright (c) 2002-2017, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,9 +8,9 @@
  */
 package jdk.internal.org.jline.reader.impl;
 
-import jdk.internal.org.jline.reader.MaskingCallback;
-
 import java.util.Objects;
+
+import jdk.internal.org.jline.reader.MaskingCallback;
 
 /**
  * Simple {@link MaskingCallback} that will replace all the characters in the line with the given mask.
@@ -29,7 +29,7 @@ public final class SimpleMaskingCallback implements MaskingCallback {
             return "";
         } else {
             StringBuilder sb = new StringBuilder(line.length());
-            for (int i = line.length(); i-- > 0;) {
+            for (int i = line.length(); i-- > 0; ) {
                 sb.append((char) mask);
             }
             return sb.toString();
@@ -40,5 +40,4 @@ public final class SimpleMaskingCallback implements MaskingCallback {
     public String history(String line) {
         return null;
     }
-
 }

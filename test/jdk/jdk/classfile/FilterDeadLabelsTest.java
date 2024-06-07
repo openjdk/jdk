@@ -66,9 +66,9 @@ class FilterDeadLabelsTest {
                 }))).methods().get(0).code().get();
 
         assertTrue(code.exceptionHandlers().isEmpty());
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
-        code.findAttribute(Attributes.CHARACTER_RANGE_TABLE).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
+        code.findAttribute(Attributes.localVariableTable()).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
+        code.findAttribute(Attributes.localVariableTypeTable()).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
+        code.findAttribute(Attributes.characterRangeTable()).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
     }
 
     @ParameterizedTest
