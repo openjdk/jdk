@@ -1212,7 +1212,13 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // Limit is not exact.
     // Calculate exact limit here.
     // Note, counted loop's test is '<' or '>'.
+#ifdef ASSERT
+    const bool exact_trip_count = cl->has_exact_trip_count();
+    const uint trip_count = cl->trip_count();
     loop->compute_trip_count(this);
+    assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
+           "should have computed trip count on Loop Predication entry");
+#endif
     Node* limit   = exact_limit(loop);
     int  stride   = cl->stride()->get_int();
 
@@ -1321,7 +1327,9 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   max_value = new AddINode(opaque_init, max_value);
   register_new_node(max_value, new_proj);
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-  max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+  const Type* type_iv = loop->_head->as_CountedLoop()->phi()->bottom_type();
+  assert(!type_iv->is_int()->is_con(), "constant indicates one loop iteration for which we bailed out earlier");
+  max_value = new CastIINode(max_value, type_iv);
   register_new_node(max_value, parse_predicate_proj);
 
   bol = rc_predicate(new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
@@ -1350,12 +1358,21 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
   CountedLoopNode *cl = nullptr;
   if (head->is_valid_counted_loop(T_INT)) {
     cl = head->as_CountedLoop();
-    // do nothing for iteration-splitted loops
-    if (!cl->is_normal_loop()) return false;
+    if (!cl->is_normal_loop()) {
+      // Do nothing for iteration-splitted loops
+      return false;
+    }
+    loop->compute_trip_count(this);
+    if (cl->trip_count() == 1) {
+      // Not worth to hoist checks out of a loop that is only run for one iteration since the checks are only going to
+      // be executed once anyway.
+      return false;
+    }
     // Avoid RCE if Counted loop's test is '!='.
     BoolTest::mask bt = cl->loopexit()->test_trip();
-    if (bt != BoolTest::lt && bt != BoolTest::gt)
+    if (bt != BoolTest::lt && bt != BoolTest::gt) {
       cl = nullptr;
+    }
   }
 
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);

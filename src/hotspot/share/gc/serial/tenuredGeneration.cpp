@@ -357,25 +357,15 @@ void TenuredGeneration::compute_new_size() {
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
 }
 
-void TenuredGeneration::update_gc_stats(Generation* current_generation,
-                                        bool full) {
-  // If the young generation has been collected, gather any statistics
-  // that are of interest at this point.
-  bool current_is_young = SerialHeap::heap()->is_young_gen(current_generation);
-  if (!full && current_is_young) {
-    // Calculate size of data promoted from the young generation
-    // before doing the collection.
-    size_t used_before_gc = used();
-
-    // If the young gen collection was skipped, then the
-    // number of promoted bytes will be 0 and adding it to the
-    // average will incorrectly lessen the average.  It is, however,
-    // also possible that no promotion was needed.
-    if (used_before_gc >= _used_at_prologue) {
-      size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      _avg_promoted->sample(promoted_in_bytes);
-    }
+void TenuredGeneration::update_promote_stats() {
+  size_t used_after_gc = used();
+  size_t promoted_in_bytes;
+  if (used_after_gc > _used_at_prologue) {
+    promoted_in_bytes = used_after_gc - _used_at_prologue;
+  } else {
+    promoted_in_bytes = 0;
   }
+  _avg_promoted->sample(promoted_in_bytes);
 }
 
 void TenuredGeneration::update_counters() {

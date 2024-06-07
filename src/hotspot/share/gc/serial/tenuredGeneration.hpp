@@ -154,7 +154,7 @@ public:
 
   // Statistics
 
-  void update_gc_stats(Generation* current_generation, bool full);
+  void update_promote_stats();
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.
