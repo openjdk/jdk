@@ -65,8 +65,9 @@ public:
       assert(start != NodeAllocator::nil, "must be");
       Node& n = alloc.at(start);
       E e = n.e;
+      NodePtr next_start = n.next;
       alloc.free(start);
-      start = n.next;
+      start = next_start;
       return e;
     }
 
@@ -110,8 +111,9 @@ public:
       assert(start != NodeAllocator::nil, "must be");
       Node& n = alloc.at(start);
       E e = n.e;
+      NodePtr next_start = n.next;
       alloc.free(start);
-      start = n.next;
+      start = next_start;
       return e;
     }
 
