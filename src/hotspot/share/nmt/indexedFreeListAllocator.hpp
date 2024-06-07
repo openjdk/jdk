@@ -71,12 +71,12 @@ public:
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<E>(backing_storage.at(i.idx).e);
+    return reinterpret_cast<E&>(backing_storage.at(i.idx).e);
   }
 
   const E& at(I i) const {
     assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<E>(backing_storage.at(i.idx).e);
+    return reinterpret_cast<const E&>(backing_storage.at(i.idx).e);
   }
 };
 
