@@ -70,7 +70,11 @@ public:
     return backing_storage.at(i.idx).e;
   }
 
-  E& translate(I i) {
+  E& at(I i) {
+    return backing_storage.at(i.idx).e;
+  }
+
+  const E& at(I i) const {
     return backing_storage.at(i.idx).e;
   }
 };
@@ -105,7 +109,11 @@ public:
     return *i.e;
   }
 
-  E& translate(I i) {
+  E& at(I i) {
+    return *i.e;
+  };
+
+  const E& at(I i) const {
     return *i.e;
   };
 };
@@ -143,7 +151,11 @@ public:
     return *i.e;
   }
 
-  E& translate(I i) {
+  E& at(I i) {
+    return *i.e;
+  };
+
+  const E& at(I i) const {
     return *i.e;
   };
 };
