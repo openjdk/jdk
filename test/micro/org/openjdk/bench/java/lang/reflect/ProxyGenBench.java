@@ -67,7 +67,16 @@ public class ProxyGenBench {
     static class IHandler implements InvocationHandler {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            throw new UnsupportedOperationException();
+            if (method.getName().equals("hashCode")) {
+                return proxy.hashCode();
+            }
+            if (method.getName().equals("equals")) {
+                return proxy.equals(args[0]);
+            }
+            if (method.getName().equals("toString")) {
+                return proxy.toString();
+            }
+            return null;
         }
     }
 
