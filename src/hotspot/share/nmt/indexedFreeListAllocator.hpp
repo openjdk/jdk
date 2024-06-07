@@ -65,10 +65,6 @@ public:
     free_start = i;
   }
 
-  E& operator[](I i) {
-    return backing_storage.at(i.idx).e;
-  }
-
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
     return reinterpret_cast<E&>(backing_storage.at(i.idx).e);
@@ -104,10 +100,6 @@ public:
 
   void free(I i) {
     return os::free(i.e);
-  }
-
-  E& operator[](I i) {
-    return *i.e;
   }
 
   E& at(I i) {
@@ -146,10 +138,6 @@ public:
 
   void free(I i) {
     _arena.Afree(i.e, sizeof(E));
-  }
-
-  E& operator[](I i) {
-    return *i.e;
   }
 
   E& at(I i) {

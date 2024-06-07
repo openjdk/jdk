@@ -55,15 +55,15 @@ public:
         current = new_element;
         return;
       }
-      while (alloc[current].next != NodeAllocator::nil) {
-        current = alloc[current].next;
+      while (alloc.at(current).next != NodeAllocator::nil) {
+        current = alloc.at(current).next;
       }
-      alloc[current].next = new_element;
+      alloc.at(current).next = new_element;
     };
 
     E pop() {
       assert(start != NodeAllocator::nil, "must be");
-      Node& n = alloc[start];
+      Node& n = alloc.at(start);
       E e = n.e;
       alloc.free(start);
       start = n.next;
@@ -100,15 +100,15 @@ public:
         current = new_element;
         return;
       }
-      while (alloc[current].next != NodeAllocator::nil) {
-        current = alloc[current].next;
+      while (alloc.at(current).next != NodeAllocator::nil) {
+        current = alloc.at(current).next;
       }
-      alloc[current].next = new_element;
+      alloc.at(current).next = new_element;
     };
 
     E pop() {
       assert(start != NodeAllocator::nil, "must be");
-      Node& n = alloc[start];
+      Node& n = alloc.at(start);
       E e = n.e;
       alloc.free(start);
       start = n.next;
