@@ -363,7 +363,6 @@ public:
   }
 
   Node* isa_unique_input_or_null(const Node_List* pack, int j) const;
-  // TODO same for pack input, maybe use after alignment things are updated!
 
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
