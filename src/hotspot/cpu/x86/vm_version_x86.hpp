@@ -555,6 +555,9 @@ protected:
     // Space to save zmm registers after signal handle
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
+    // Space to save apx registers after signal handle
+    jlong        apx_save[2]; // Save r16 and r31
+
     uint64_t feature_flags() const;
 
     // Asserts
@@ -594,6 +597,7 @@ private:
   static bool compute_has_intel_jcc_erratum();
 
   static bool os_supports_avx_vectors();
+  static bool os_supports_apx_egprs();
   static void get_processor_features();
 
 public:
@@ -614,11 +618,12 @@ public:
   static ByteSize xem_xcr0_offset() { return byte_offset_of(CpuidInfo, xem_xcr0_eax); }
   static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
   static ByteSize zmm_save_offset() { return byte_offset_of(CpuidInfo, zmm_save); }
+  static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
-  static long long egpr_test_value()   { return 0xCAFEBABECAFEBABEULL; }
-  static void report_apx_state_restore_warning();
+  static jlong egpr_test_value()   { return 0xCAFEBABECAFEBABELL; }
+
   static void get_cpu_info_wrapper();
   static void set_cpuinfo_segv_addr(address pc) { _cpuinfo_segv_addr = pc; }
   static bool  is_cpuinfo_segv_addr(address pc) { return _cpuinfo_segv_addr == pc; }
@@ -629,8 +634,6 @@ public:
   static bool  is_cpuinfo_segv_addr_apx(address pc) { return _cpuinfo_segv_addr_apx == pc; }
   static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
   static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
-  // address of apx state restore error handler.
-  static address _apx_state_restore_warning_handler;
 
   static void clear_apx_test_state();
 

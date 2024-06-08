@@ -60,8 +60,6 @@ address VM_Version::_cpuinfo_cont_addr = 0;
 address VM_Version::_cpuinfo_segv_addr_apx = 0;
 // Address of instruction after the one which causes APX specific SEGV
 address VM_Version::_cpuinfo_cont_addr_apx = 0;
-// Address of apx state restore error handler.
-address VM_Version::_apx_state_restore_warning_handler = (address)VM_Version::report_apx_state_restore_warning;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
@@ -452,19 +450,12 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, Address(rsi, 0));
 
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
-    // Validate the contents of r16 and r31
     /* FIXME: Uncomment after integration of JDK-8329032
-    __ mov64(rax, VM_Version::egpr_test_value());
-    __ cmpq(rax, r16);
-    __ jccb(Assembler::notEqual, apx_save_restore_warning);
-    __ cmpq(rax, r31);
-    __ jccb(Assembler::equal, vector_save_restore);
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
+    __ movq(Address(rsi, 0), r16);
+    __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-
-    __ bind(apx_save_restore_warning);
-    __ lea(rax, ExternalAddress(VM_Version::_apx_state_restore_warning_handler));
-    __ call(rax);
     */
 #endif
     __ bind(vector_save_restore);
@@ -878,11 +869,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   };
 };
 
-void VM_Version::report_apx_state_restore_warning() {
-  tty->print("warning: Unsuccessful EGPRs state restoration across signal handling, setting UseAPX to false.\n");
-  _cpuid_info.sefsl1_cpuid7_edx.bits.apx_f = 0;
-}
-
 void VM_Version::get_processor_features() {
 
   _cpu = 4; // 486 by default
@@ -1055,11 +1041,12 @@ void VM_Version::get_processor_features() {
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  if (UseAPX && (!supports_apx_f() || !supports_avx512vl())) {
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
   } else if (FLAG_IS_DEFAULT(UseAPX)) {
-    FLAG_SET_DEFAULT(UseAPX, (supports_apx_f() && supports_avx512vl()) ? true : false);
+    FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
   if (UseAVX < 2) {
@@ -3239,6 +3226,17 @@ bool VM_Version::os_supports_avx_vectors() {
     }
   }
   return retVal;
+}
+
+bool VM_Version::os_supports_apx_egprs() {
+  if (!supports_apx_f()) {
+    return false;
+  }
+  if (_cpuid_info.apx_save[0] != egpr_test_value() ||
+      _cpuid_info.apx_save[1] != egpr_test_value()) {
+    return false;
+  }
+  return true;
 }
 
 uint VM_Version::cores_per_cpu() {
