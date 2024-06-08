@@ -74,15 +74,15 @@ public class Log {
 
     /**
      * Is log-mode verbose?
-     * Default value is <code>false</code>.
+     * Always enabled.
      */
-    private boolean verbose = false;
+    private final boolean verbose = true;
 
     /**
      * Should log messages prefixed with timestamps?
-     * Default value is <code>false</code>.
+     * Always enabled.
      */
-    private boolean timestamp = false;
+    private final boolean timestamp = true;
 
     /**
      * Names for trace levels
@@ -127,7 +127,7 @@ public class Log {
      * Threshold value for printing trace messages for debugging purpose.
      * Default value is <code>0</code> a.k.a. <code>TraceLevel.INFO</code>;
      */
-    private int traceLevel = TraceLevel.DEFAULT;
+    private final int traceLevel = TraceLevel.TRACE_DEBUG + 1;
 
     /**
      * This <code>errosBuffer</code> will keep all messages printed via
@@ -193,7 +193,6 @@ public class Log {
      */
     public Log(PrintStream stream, boolean verbose) {
         this(stream);
-        this.verbose = verbose;
     }
 
     /**
@@ -203,8 +202,6 @@ public class Log {
      */
     public Log(PrintStream stream, ArgumentParser argsParser) {
         this(stream, argsParser.verbose());
-        traceLevel = argsParser.getTraceLevel();
-        timestamp = argsParser.isTimestamp();
     }
 
     /////////////////////////////////////////////////////////////////
@@ -223,19 +220,10 @@ public class Log {
         if (!verbose) {
             flushLogBuffer();
         }
-        verbose = enable;
     }
 
     public int getTraceLevel() {
         return traceLevel;
-    }
-
-    /**
-     * Set threshold for printing trace messages.
-     * Warning: trace level changes may NOT be observed by other threads immediately.
-     */
-    public void setTraceLevel(int level) {
-        traceLevel = level;
     }
 
     /**
@@ -422,7 +410,6 @@ public class Log {
             out.flush();
         }
         out = stream;
-        verbose = true;
     }
 
     /////////////////////////////////////////////////////////////////
