@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/memflags.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
 #include "runtime/globals.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/parseInteger.hpp"
 #include "utilities/ostream.hpp"
