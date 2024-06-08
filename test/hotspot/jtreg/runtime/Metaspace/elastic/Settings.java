@@ -27,8 +27,6 @@ import jdk.test.whitebox.WhiteBox;
 
 public final class Settings {
 
-    public boolean usesAllocationGuards = WhiteBox.getWhiteBox().getBooleanVMFlag("MetaspaceGuardAllocations");
-
     final static long rootChunkWordSize = 2048 * 1024;
 
     static Settings theSettings;
