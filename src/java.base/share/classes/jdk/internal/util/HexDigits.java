@@ -114,12 +114,13 @@ public final class HexDigits {
     }
 
     /**
-     * Insert the int into the buffer as 4 hexadecimal digits
+     * Insert the unsigned 2-byte integer into the buffer as 4 hexadecimal digit ASCII bytes,
+     * {@code i} only least significant 16 bits are used.
      * @param buffer byte buffer to copy into
      * @param off insert point
-     * @param value to convert
+     * @param i to convert
      */
-    public static void putHex(byte[] buffer, int off, int i) {
+    public static void putHex4(byte[] buffer, int off, int i) {
         // Prepare an int value so C2 generates a 4-byte write instead of two 2-byte writes
         int v = (DIGITS[i & 0xff] << 16) | DIGITS[(i >> 8) & 0xff];
         buffer[off]     = (byte)  v;

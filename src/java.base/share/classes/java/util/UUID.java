@@ -472,18 +472,18 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         int i3 = (int) leastSigBits;
 
         byte[] buf = new byte[36];
-        HexDigits.putHex(buf, 0, i0 >> 16);
-        HexDigits.putHex(buf, 4, i0);
+        HexDigits.putHex4(buf, 0, i0 >> 16);
+        HexDigits.putHex4(buf, 4, i0);
         buf[8] = '-';
-        HexDigits.putHex(buf, 9, i1 >> 16);
+        HexDigits.putHex4(buf, 9, i1 >> 16);
         buf[13] = '-';
-        HexDigits.putHex(buf, 14, i1);
+        HexDigits.putHex4(buf, 14, i1);
         buf[18] = '-';
-        HexDigits.putHex(buf, 19, i2 >> 16);
+        HexDigits.putHex4(buf, 19, i2 >> 16);
         buf[23] = '-';
-        HexDigits.putHex(buf, 24, i2);
-        HexDigits.putHex(buf, 28, i3 >> 16);
-        HexDigits.putHex(buf, 32, i3);
+        HexDigits.putHex4(buf, 24, i2);
+        HexDigits.putHex4(buf, 28, i3 >> 16);
+        HexDigits.putHex4(buf, 32, i3);
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
