@@ -120,6 +120,7 @@ public final class HexDigits {
      * @param value to convert
      */
     public static void putHex(byte[] buffer, int off, int i) {
+        // Prepare an int value so C2 generates a 4-byte write instead of two 2-byte writes
         int v = (DIGITS[i & 0xff] << 16) | DIGITS[(i >> 8) & 0xff];
         buffer[off]     = (byte)  v;
         buffer[off + 1] = (byte) (v >> 8);
