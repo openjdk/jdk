@@ -100,8 +100,6 @@ final class ProxyGenerator {
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable),
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
-            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array),
-            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, ConstantDescs.CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
@@ -183,7 +181,7 @@ final class ProxyGenerator {
     private ProxyGenerator(String className, List<Class<?>> interfaces,
                            int accessFlags) {
         this.cp = ConstantPoolBuilder.of();
-        this.classEntry = cp.classEntry(ConstantUtils.binaryNameToDesc(className));
+        this.classEntry = cp.classEntry(binaryNameToDesc(className));
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
@@ -250,7 +248,7 @@ final class ProxyGenerator {
     private static List<ClassEntry> toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ArrayList<ClassEntry>(types.size());
         for (var t : types)
-            ces.add(cp.classEntry(ConstantUtils.binaryNameToDesc(t.getName())));
+            ces.add(cp.classEntry(binaryNameToDesc( t.getName())));
         return ces;
     }
 
@@ -638,7 +636,7 @@ final class ProxyGenerator {
         /**
          * Generate this method, including the code and exception table entry.
          */
-        private void generateMethod(ProxyGenerator pg, ClassBuilder clb) {
+        private void generateMethod(ProxyGenerator pg, ClassBuilder clb, int index) {
             var cp = pg.cp;
             var desc = methodTypeDesc(returnType, parameterTypes);
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
