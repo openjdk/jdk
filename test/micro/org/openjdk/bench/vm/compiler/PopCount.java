@@ -28,26 +28,13 @@ import org.openjdk.jmh.annotations.*;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 4, time = 1)
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(value = 5)
 public class PopCount {
     int numTests = 100_000;
-
-    @Setup
-    public void warmup() {
-        long l1 = 1, l2 = 2, l3 = 3, l4 = 4, l5 = 5;
-        for (long i = 0; i < numTests / 2; i++) {
-            l1 ^= Long.bitCount(l1) + i;
-            l2 ^= Long.bitCount(l2) + i;
-            l3 ^= Long.bitCount(l3) + i;
-            l4 ^= Long.bitCount(l4) + i;
-            l5 ^= Long.bitCount(l5) + i;
-        }
-        long x =  l1 + l2 + l3 + l4 + l5;
-    }
 
     @Benchmark
     public long test() {
