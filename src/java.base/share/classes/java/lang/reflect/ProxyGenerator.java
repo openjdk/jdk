@@ -66,6 +66,8 @@ import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.constant.ConstantUtils.*;
+
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
 
@@ -178,10 +180,10 @@ final class ProxyGenerator {
      * A ProxyGenerator object contains the state for the ongoing
      * generation of a particular proxy class.
      */
-    private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
+    private ProxyGenerator(String className, List<Class<?>> interfaces,
                            int accessFlags) {
         this.cp = ConstantPoolBuilder.of();
-        this.classEntry = cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(className));
+        this.classEntry = cp.classEntry(ConstantUtils.binaryNameToDesc(className));
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
@@ -211,7 +213,7 @@ final class ProxyGenerator {
                                      List<Class<?>> interfaces,
                                      int accessFlags) {
         Objects.requireNonNull(interfaces);
-        ProxyGenerator gen = new ProxyGenerator(loader, name, interfaces, accessFlags);
+        ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
         var classFile = gen.generateClassFile();
 
         if (SAVE_GENERATED_FILES) {
@@ -248,16 +250,8 @@ final class ProxyGenerator {
     private static List<ClassEntry> toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ArrayList<ClassEntry>(types.size());
         for (var t : types)
-            ces.add(cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(t.getName())));
+            ces.add(cp.classEntry(ConstantUtils.binaryNameToDesc(t.getName())));
         return ces;
-    }
-
-    /**
-     * {@return the {@code ClassDesc} of the given type}
-     * @param type the {@code Class} object
-     */
-    private static ClassDesc toClassDesc(Class<?> type) {
-        return ClassDesc.ofDescriptor(type.descriptorString());
     }
 
     /**
@@ -526,7 +520,7 @@ final class ProxyGenerator {
 
         String sig = m.toShortSignature();
         List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                (f) -> new ArrayList<>(3));
+                _ -> new ArrayList<>(3));
         for (ProxyMethod pm : sigmethods) {
             if (returnType == pm.returnType) {
                 /*
@@ -556,7 +550,7 @@ final class ProxyGenerator {
     private void addProxyMethod(ProxyMethod pm) {
         String sig = pm.shortSignature;
         List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                (f) -> new ArrayList<>(3));
+                _ -> new ArrayList<>(3));
         sigmethods.add(pm);
     }
 
@@ -644,10 +638,9 @@ final class ProxyGenerator {
         /**
          * Generate this method, including the code and exception table entry.
          */
-        private void generateMethod(ProxyGenerator pg, ClassBuilder clb, int index) {
-            var cp = clb.constantPool();
-            MethodTypeDesc desc = MethodTypeDesc.of(toClassDesc(returnType),
-                    Arrays.stream(parameterTypes).map(ProxyGenerator::toClassDesc).toArray(ClassDesc[]::new));
+        private void generateMethod(ProxyGenerator pg, ClassBuilder clb) {
+            var cp = pg.cp;
+            var desc = methodTypeDesc(returnType, parameterTypes);
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
@@ -687,7 +680,7 @@ final class ProxyGenerator {
                         if (!catchList.isEmpty()) {
                             var c1 = cob.newBoundLabel();
                             for (var exc : catchList) {
-                                cob.exceptionCatch(cob.startLabel(), c1, c1, toClassDesc(exc));
+                                cob.exceptionCatch(cob.startLabel(), c1, c1, referenceClassDesc(exc));
                             }
                             cob.athrow();   // just rethrow the exception
                             var c2 = cob.newBoundLabel();
@@ -733,7 +726,7 @@ final class ProxyGenerator {
                    .invokevirtual(prim.unwrapMethodRef(cob.constantPool()))
                    .return_(TypeKind.from(type).asLoadable());
             } else {
-                cob.checkcast(toClassDesc(type))
+                cob.checkcast(referenceClassDesc(type))
                    .areturn();
             }
         }
