@@ -544,26 +544,11 @@ public class Proxy implements java.io.Serializable {
 
             Class<?> pc;
 
-            if (ReflectionFactory.useLegacyProxyImpl()) {
-                byte[] proxyClassFile = ProxyGeneratorLegacy.generateProxyClass(loader, proxyName, interfaces, access);
-
-                try {
-                    pc = JLA.defineClass(loader, proxyName, proxyClassFile,
-                            null, "__dynamic_proxy__");
-                } catch (ClassFormatError e) {
-                    /*
-                     * A ClassFormatError here means that (barring bugs in the
-                     * proxy class generation code) there was some other
-                     * invalid aspect of the arguments supplied to the proxy
-                     * class creation (such as virtual machine limitations
-                     * exceeded).
-                     */
-                    throw new IllegalArgumentException(e.toString());
-                }
-            } else {
-                var cd = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, access);
-
-                try {
+            var cd = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, access);
+            try {
+                if (ReflectionFactory.useLegacyProxyImpl()) {
+                    pc = JLA.defineClass(loader, proxyName, cd.bytecode(), null, "__dynamic_proxy__");
+                } else {
                     pc = JLA.defineClass(loader,
                             Proxy.class, // NestHost, unused
                             proxyName, // binary name
@@ -572,16 +557,16 @@ public class Proxy implements java.io.Serializable {
                             false, // initialize
                             0x00000002, // flags, HIDDEN
                             cd.classData()); // classData
-                } catch (ClassFormatError e) {
-                    /*
-                     * A ClassFormatError here means that (barring bugs in the
-                     * proxy class generation code) there was some other
-                     * invalid aspect of the arguments supplied to the proxy
-                     * class creation (such as virtual machine limitations
-                     * exceeded).
-                     */
-                    throw new IllegalArgumentException(e.toString());
                 }
+            } catch (ClassFormatError e) {
+                /*
+                 * A ClassFormatError here means that (barring bugs in the
+                 * proxy class generation code) there was some other
+                 * invalid aspect of the arguments supplied to the proxy
+                 * class creation (such as virtual machine limitations
+                 * exceeded).
+                 */
+                throw new IllegalArgumentException(e.toString());
             }
 
             reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);

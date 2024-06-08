@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import jdk.internal.reflect.ReflectionFactory;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
@@ -100,6 +101,8 @@ final class ProxyGenerator {
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable),
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
+            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array),
+            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, ConstantDescs.CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
@@ -139,6 +142,7 @@ final class ProxyGenerator {
         }
     }
 
+    private static final boolean LEGACY = ReflectionFactory.useLegacyProxyImpl();
     private final ConstantPoolBuilder cp;
     private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
     private final NameAndTypeEntry exInit;
@@ -148,6 +152,7 @@ final class ProxyGenerator {
     private final InterfaceMethodRefEntry listGet;
     private final ConstantDynamicEntry methodListCondy;
     private final MethodRefEntry uteInit;
+    private final DirectMethodHandleDesc bsm;
 
     /**
      * Name of proxy class
@@ -188,14 +193,22 @@ final class ProxyGenerator {
         this.exInit = cp.nameAndTypeEntry(INIT_NAME, MTD_void_String);
         this.object = cp.classEntry(CD_Object);
         this.proxy = cp.classEntry(CD_Proxy);
-        this.methodCe = cp.classEntry(CD_Method);
         this.handlerField = cp.fieldRefEntry(proxy, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
         this.invoke = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray);
-        this.listGet = cp.interfaceMethodRefEntry(CD_List, "get", MTD_Object_int);
-        this.methodListCondy = cp.constantDynamicEntry(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA,
-                DEFAULT_NAME, CD_List));
         this.ute = cp.classEntry(CD_UndeclaredThrowableException);
         this.uteInit = cp.methodRefEntry(ute, cp.nameAndTypeEntry(INIT_NAME, MTD_void_Throwable));
+        if (LEGACY) {
+            this.bsm = ConstantDescs.ofConstantBootstrap(classEntry.asSymbol(), "$getMethod", CD_Method, CD_Class, CD_String, CD_MethodType);
+            this.methodCe = null;
+            this.listGet = null;
+            this.methodListCondy = null;
+        } else {
+            this.bsm = null;
+            this.methodCe = cp.classEntry(CD_Method);
+            this.listGet = cp.interfaceMethodRefEntry(CD_List, "get", MTD_Object_int);
+            this.methodListCondy = cp.constantDynamicEntry(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA,
+                    DEFAULT_NAME, CD_List));
+        }
     }
 
     /**
@@ -248,7 +261,7 @@ final class ProxyGenerator {
     private static List<ClassEntry> toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ArrayList<ClassEntry>(types.size());
         for (var t : types)
-            ces.add(cp.classEntry(binaryNameToDesc( t.getName())));
+            ces.add(cp.classEntry(binaryNameToDesc(t.getName())));
         return ces;
     }
 
@@ -645,15 +658,22 @@ final class ProxyGenerator {
             clb.withMethod(method.getName(), desc, accessFlags, mb ->
                   mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
                     .withCode(cob -> {
-                        cob.aload(cob.receiverSlot())
-                           .getfield(pg.handlerField)
-                           .aload(cob.receiverSlot())
-                           .ldc(pg.methodListCondy)
-                           .loadConstant(index)
-                           .invokeinterface(pg.listGet)
-                           .checkcast(pg.methodCe);
+                        cob.aload(0)
+                           .getfield(pg.handlerField) // InvocationHandler
+                           .aload(0); // proxy
+                        if (LEGACY) { // method
+                            cob.ldc(DynamicConstantDesc.of(pg.bsm,
+                                    referenceClassDesc(method.getDeclaringClass()),
+                                    method.getName(),
+                                    desc));
+                        } else {
+                            cob.ldc(pg.methodListCondy)
+                                    .loadConstant(index)
+                                    .invokeinterface(pg.listGet)
+                                    .checkcast(pg.methodCe);
+                        }
 
-                        if (parameterTypes.length > 0) {
+                        if (parameterTypes.length > 0) { // args
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
                                .anewarray(pg.object);
