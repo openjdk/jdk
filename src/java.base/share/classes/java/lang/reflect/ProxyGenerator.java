@@ -479,7 +479,7 @@ final class ProxyGenerator {
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
                 if (!Modifier.isStatic(m.getModifiers())) {
-                    addProxyMethod(m, cp);
+                    addProxyMethod(m, intf);
                 }
             }
         }
@@ -507,6 +507,8 @@ final class ProxyGenerator {
                 }
             }
 
+            if (LEGACY)
+                generateBootstrapMethod(clb);
             generateLookupAccessor(clb);
         });
         return new GeneratedClass(bytes, List.copyOf(methods));
@@ -525,7 +527,7 @@ final class ProxyGenerator {
      * passed to the invocation handler's "invoke" method for a given
      * set of duplicate methods.
      */
-    private void addProxyMethod(Method m, ConstantPoolBuilder cp) {
+    private void addProxyMethod(Method m, Class<?> fromClass) {
         Class<?> returnType = m.getReturnType();
         Class<?>[] exceptionTypes = m.getSharedExceptionTypes();
 
@@ -549,8 +551,7 @@ final class ProxyGenerator {
                 return;
             }
         }
-        sigmethods.add(new ProxyMethod(m, sig, m.getSharedParameterTypes(), returnType,
-                exceptionTypes));
+        sigmethods.add(new ProxyMethod(m, sig, exceptionTypes, fromClass));
     }
 
     /**
@@ -574,6 +575,31 @@ final class ProxyGenerator {
                .aload(1)
                .invokespecial(cp.methodRefEntry(proxy, cp.nameAndTypeEntry(INIT_NAME, MTD_void_InvocationHandler)))
                .return_());
+    }
+
+    /**
+     * Generate CONDY bootstrap method for the proxy class to retrieve {@link Method} instances.
+     */
+    private void generateBootstrapMethod(ClassBuilder clb) {
+        clb.withMethodBody(bsm.methodName(), bsm.invocationType(), ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC, cob -> {
+            cob.aload(3) //interface Class
+                    .aload(4) //interface method name String
+                    .aload(5) //interface MethodType
+                    .invokevirtual(CD_MethodType, "parameterArray", MTD_Class_array)
+                    .invokevirtual(ConstantDescs.CD_Class, "getMethod", MTD_Method_String_Class_array)
+                    .areturn();
+            Label failLabel = cob.newBoundLabel();
+            ClassEntry nsme = cp.classEntry(CD_NoSuchMethodError);
+            cob.exceptionCatch(cob.startLabel(), failLabel, failLabel, CD_NoSuchMethodException)
+                    .new_(nsme)
+                    .dup_x1()
+                    .swap()
+                    .invokevirtual(cp.methodRefEntry(CD_Throwable, "getMessage", MTD_String))
+                    .invokespecial(cp.methodRefEntry(nsme, exInit))
+                    .athrow()
+                    .with(StackMapTableAttribute.of(List.of(
+                            StackMapFrameInfo.of(failLabel, List.of(), throwableStack))));
+        });
     }
 
     /**
@@ -622,17 +648,16 @@ final class ProxyGenerator {
 
         private final Method method;
         private final String shortSignature;
-        private final Class<?>[] parameterTypes;
         private final Class<?> returnType;
         private Class<?>[] exceptionTypes;
+        private final Class<?> fromClass;
 
-        private ProxyMethod(Method method, String sig, Class<?>[] parameterTypes,
-                            Class<?> returnType, Class<?>[] exceptionTypes) {
+        private ProxyMethod(Method method, String sig, Class<?>[] exceptionTypes, Class<?> fromClass) {
             this.method = method;
             this.shortSignature = sig;
-            this.parameterTypes = parameterTypes;
-            this.returnType = returnType;
+            this.returnType = method.getReturnType();
             this.exceptionTypes = exceptionTypes;
+            this.fromClass = fromClass;
         }
 
         /**
@@ -642,8 +667,7 @@ final class ProxyGenerator {
          */
         private ProxyMethod(Method method) {
             this(method, method.toShortSignature(),
-                 method.getSharedParameterTypes(), method.getReturnType(),
-                 method.getSharedExceptionTypes());
+                 method.getSharedExceptionTypes(), method.getDeclaringClass());
         }
 
         /**
@@ -651,6 +675,7 @@ final class ProxyGenerator {
          */
         private void generateMethod(ProxyGenerator pg, ClassBuilder clb, int index) {
             var cp = pg.cp;
+            var parameterTypes = method.getSharedParameterTypes();
             var desc = methodTypeDesc(returnType, parameterTypes);
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
