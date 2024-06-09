@@ -3821,42 +3821,6 @@ static int hugetlbfs_page_size_flag(size_t page_size) {
   return 0;
 }
 
-static bool hugetlbfs_sanity_check(size_t page_size) {
-  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
-  assert(page_sizes.contains(page_size), "Invalid page sizes passed");
-
-  // Include the page size flag to ensure we sanity check the correct page size.
-  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
-  void *p = mmap(nullptr, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
-
-  if (p != MAP_FAILED) {
-    // Mapping succeeded, sanity check passed.
-    munmap(p, page_size);
-    return true;
-  } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
-                         "checking if smaller large page sizes are usable",
-                         byte_size_in_exact_unit(page_size),
-                         exact_unit_for_byte_size(page_size));
-      for (size_t page_size_ = page_sizes.next_smaller(page_size);
-          page_size_ > os::vm_page_size();
-          page_size_ = page_sizes.next_smaller(page_size_)) {
-        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
-        p = mmap(nullptr, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
-        if (p != MAP_FAILED) {
-          // Mapping succeeded, sanity check passed.
-          munmap(p, page_size_);
-          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
-                             byte_size_in_exact_unit(page_size_),
-                             exact_unit_for_byte_size(page_size_));
-          return true;
-        }
-      }
-  }
-
-  return false;
-}
-
 // From the coredump_filter documentation:
 //
 // - (bit 0) anonymous private memory
@@ -4066,13 +4030,6 @@ void os::Linux::large_page_init() {
                            byte_size_in_exact_unit(large_page_size),
                            exact_unit_for_byte_size(large_page_size));
       }
-    }
-
-    // Do an additional sanity check to see if we can use the desired large page size
-    if (!hugetlbfs_sanity_check(large_page_size)) {
-      warn_no_large_pages_configured();
-      UseLargePages = false;
-      return;
     }
 
     _large_page_size = large_page_size;
