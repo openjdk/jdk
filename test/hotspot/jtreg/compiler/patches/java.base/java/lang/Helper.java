@@ -132,14 +132,6 @@ public class Helper {
         return StringUTF16.contentEquals(value, cs, len);
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
-        return StringUTF16.putCharsAt(value, i, c1, c2, c3, c4);
-    }
-
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
-        return StringUTF16.putCharsAt(value, i, c1, c2, c3, c4, c5);
-    }
-
     public static char charAt(byte[] value, int index) {
         return StringUTF16.charAt(value, index);
     }

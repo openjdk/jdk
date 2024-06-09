@@ -635,18 +635,18 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private AbstractStringBuilder appendNull() {
-        ensureCapacityInternal(count + 4);
         int count = this.count;
+        ensureCapacityInternal(count + 4);
         byte[] val = this.value;
         if (isLatin1()) {
-            val[count++] = 'n';
-            val[count++] = 'u';
-            val[count++] = 'l';
-            val[count++] = 'l';
+            val[count    ] = 'n';
+            val[count + 1] = 'u';
+            val[count + 2] = 'l';
+            val[count + 3] = 'l';
         } else {
-            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
-        this.count = count;
+        this.count = count + 4;
         return this;
     }
 
@@ -766,30 +766,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
-        ensureCapacityInternal(count + (b ? 4 : 5));
         int count = this.count;
+        int spaceNeeded = count + (b ? 4 : 5);
+        ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
-                val[count++] = 't';
-                val[count++] = 'r';
-                val[count++] = 'u';
-                val[count++] = 'e';
+                val[count    ] = 't';
+                val[count + 1] = 'r';
+                val[count + 2] = 'u';
+                val[count + 3] = 'e';
             } else {
-                val[count++] = 'f';
-                val[count++] = 'a';
-                val[count++] = 'l';
-                val[count++] = 's';
-                val[count++] = 'e';
+                val[count    ] = 'f';
+                val[count + 1] = 'a';
+                val[count + 2] = 'l';
+                val[count + 3] = 's';
+                val[count + 4] = 'e';
             }
         } else {
             if (b) {
-                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
-        this.count = count;
+        this.count = spaceNeeded;
         return this;
     }
 

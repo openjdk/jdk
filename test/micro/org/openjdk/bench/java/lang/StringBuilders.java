@@ -226,17 +226,68 @@ public class StringBuilders {
 
 
     @Benchmark
-    public String toStringCharWithBool8() {
-        StringBuilder result = new StringBuilder();
-        result.append(true);
-        result.append(false);
-        result.append(true);
-        result.append(true);
-        result.append(false);
-        result.append(true);
-        result.append(false);
-        result.append(false);
-        return result.toString();
+    public int toStringCharWithBool8Latin1() {
+        StringBuilder buf = sbLatin1;
+        buf.delete(0, buf.length());
+        buf.append(true);
+        buf.append(false);
+        buf.append(true);
+        buf.append(true);
+        buf.append(false);
+        buf.append(true);
+        buf.append(false);
+        buf.append(false);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int toStringCharWithBool8Utf16() {
+        StringBuilder buf = sbUtf16;
+        buf.delete(0, buf.length());
+        buf.append('\uFF16');
+        buf.append(true);
+        buf.append(false);
+        buf.append(true);
+        buf.append(true);
+        buf.append(false);
+        buf.append(true);
+        buf.append(false);
+        buf.append(false);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int toStringCharWithNull8Latin1() {
+        StringBuilder buf = sbLatin1;
+        buf.delete(0, buf.length());
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int toStringCharWithNull8Utf16() {
+        StringBuilder buf = sbUtf16;
+        buf.delete(0, buf.length());
+        buf.append('\uFF16');
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        buf.append((String) null);
+        return buf.length();
     }
 
 

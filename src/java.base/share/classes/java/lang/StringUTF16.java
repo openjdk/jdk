@@ -1548,27 +1548,19 @@ final class StringUTF16 {
         return true;
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
-        int end = i + 4;
-        checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        assert(i == end);
-        return end;
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        putChar(value, i    , c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
-        int end = i + 5;
-        checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        putChar(value, i++, c5);
-        assert(i == end);
-        return end;
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        putChar(value, i    , c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
+        putChar(value, i + 4, c5);
     }
 
     public static char charAt(byte[] value, int index) {
