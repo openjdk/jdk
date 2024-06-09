@@ -115,7 +115,7 @@ public final class HexDigits {
 
     /**
      * Insert the unsigned 2-byte integer into the buffer as 4 hexadecimal digit ASCII bytes,
-     * {@code i} only least significant 16 bits are used.
+     * only least significant 16 bits of {@code i} are used.
      * @param buffer byte buffer to copy into
      * @param off insert point
      * @param i to convert
