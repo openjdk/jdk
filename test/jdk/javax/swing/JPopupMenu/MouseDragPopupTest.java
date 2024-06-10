@@ -36,58 +36,52 @@ import javax.swing.event.PopupMenuListener;
 /*
  * @test
  * @bug 8315655
+ * @summary Right click and dragging over a component with a popup menu will open the popup
  * @key headful
  * @run main MouseDragPopupTest
  */
 public class MouseDragPopupTest {
     static volatile boolean failed;
-    static volatile JFrame frame;
-    static volatile JPanel panel;
+    static JFrame frame;
+    static JPanel panel;
+    static Robot robot;
     static volatile Point srcPoint;
     static volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
         try {
-            failed = false;
-            Robot robot = new Robot();
+            robot = new Robot();
+            robot.setAutoWaitForIdle(true);
             robot.setAutoDelay(100);
 
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowGUI();
             });
-            robot.waitForIdle();
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 srcPoint = frame.getLocationOnScreen();
                 d = frame.getSize();
             });
-            robot.waitForIdle();
             srcPoint.translate(2 * d.width / 3, 3 * d.height / 4);
 
             final Point dstPoint = new Point(srcPoint);
             dstPoint.translate(4 * d.width / 15, 0);
 
-
             robot.mouseMove(srcPoint.x, srcPoint.y);
-            robot.waitForIdle();
 
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-            robot.waitForIdle();
 
             while (!srcPoint.equals(dstPoint)) {
                 srcPoint.translate(sign(dstPoint.x - srcPoint.x), 0);
                 robot.mouseMove(srcPoint.x, srcPoint.y);
             }
-            robot.waitForIdle();
-
-            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-            robot.waitForIdle();
 
             if (failed) {
                 throw new RuntimeException("Popup was shown, Test Failed.");
             }
         } finally {
+            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
