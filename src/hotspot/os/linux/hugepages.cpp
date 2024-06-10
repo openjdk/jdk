@@ -133,18 +133,27 @@ static os::PageSizes scan_hugepages() {
 }
 
 void ExplicitHugePageSupport::print_on(outputStream* os) {
+  os->print("Explicit hugepage support:");
+  os->fill_to(27);
   if (_initialized) {
-    os->print_cr("Explicit hugepage support:");
+    int num_printed = 0;
     for (size_t s = _pagesizes.smallest(); s != 0; s = _pagesizes.next_larger(s)) {
-      os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
+      const bool is_default = (s == _default_hugepage_size);
+      os->print("%s%s" EXACTFMT "%s",
+                (num_printed == 0 ? "" : ","), (is_default ? "[" : ""),
+                EXACTFMTARGS(s), (is_default ? "]" : ""));
+      num_printed++;
     }
-    os->print_cr("  default hugepage size: " EXACTFMT, EXACTFMTARGS(_default_hugepage_size));
+    if (num_printed == 0) {
+      os->print("none");
+    }
   } else {
-    os->print_cr("  unknown.");
+    os->print("unknown");
   }
   if (_inconsistent) {
-    os->print_cr("  Support inconsistent. JVM will not use explicit hugepages.");
+    os->print(" (inconsistent. JVM will not use explicit hugepages.)");
   }
+  os->cr();
 }
 
 void ExplicitHugePageSupport::scan_os() {
@@ -218,13 +227,14 @@ void THPSupport::scan_os() {
 }
 
 void THPSupport::print_on(outputStream* os) {
+  os->print("THP support:");
+  os->fill_to(27);
   if (_initialized) {
-    os->print_cr("Transparent hugepage (THP) support:");
-    os->print_cr("  THP mode: %s",
-        (_mode == THPMode::always ? "always" : (_mode == THPMode::never ? "never" : "madvise")));
-    os->print_cr("  THP pagesize: " EXACTFMT, EXACTFMTARGS(_pagesize));
+    os->print_cr("%s-enabled, " EXACTFMT,
+                 (_mode == THPMode::always ? "always" : (_mode == THPMode::never ? "never" : "madvise")),
+                 EXACTFMTARGS(_pagesize));
   } else {
-    os->print_cr("  unknown.");
+    os->print_cr("unknown");
   }
 }
 
@@ -299,12 +309,9 @@ const char* ShmemTHPSupport::mode_to_string(ShmemTHPMode mode) {
 }
 
 void ShmemTHPSupport::print_on(outputStream* os) {
-  if (_initialized) {
-    os->print_cr("Shared memory transparent hugepage (THP) support:");
-    os->print_cr("  Shared memory THP mode: %s", mode_to_string(_mode));
-  } else {
-    os->print_cr("  unknown.");
-  }
+  os->print("Shared memory THP support:");
+  os->fill_to(27);
+  os->print_cr("%s", _initialized ? mode_to_string(_mode) : "unknown");
 }
 
 ExplicitHugePageSupport HugePages::_explicit_hugepage_support;
