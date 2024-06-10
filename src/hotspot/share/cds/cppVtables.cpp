@@ -66,19 +66,20 @@
 
 class CppVtableInfo {
   intptr_t _vtable_size;
-  intptr_t _cloned_vtable[];
+  // intptr_t _cloned_vtable[]; exists here, but flexible array members are C99, not C++.
+  // Therefore, it's used implicitly as the space following _vtable_size.
 public:
   static int num_slots(int vtable_size) {
     return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
   }
   int vtable_size()           { return int(uintx(_vtable_size)); }
   void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
-  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
-  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
+  intptr_t* cloned_vtable()   { return &_vtable_size + 1; }
+  void zero()                 { memset(cloned_vtable(), 0, sizeof(intptr_t) * vtable_size()); }
   // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
   static size_t byte_size(int vtable_size) {
     CppVtableInfo i;
-    return pointer_delta(&i._cloned_vtable[vtable_size], &i, sizeof(u1));
+    return pointer_delta(&i.cloned_vtable()[vtable_size], &i, sizeof(u1));
   }
 };
 
