@@ -45,8 +45,11 @@ public:
     I(int32_t idx) : _idx(idx) {}
 
   public:
-    I(const I&) = default;
-    I& operator=(const I&) = default;
+    I(const I& other) : _idx(other._idx) {}
+
+    I& operator=(const I& other) {;
+      *this = other;
+    }
 
     bool operator !=(I other) {
       return _idx != other._idx;
