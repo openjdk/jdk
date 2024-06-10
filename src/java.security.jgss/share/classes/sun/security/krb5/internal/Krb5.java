@@ -134,6 +134,7 @@ public class Krb5 {
     // number of retries before giving up
 
     public static final int KDC_RETRY_LIMIT = 3;
+    public static final int KDC_TIMEOUT = 30000;
     public static final int KDC_DEFAULT_UDP_PREF_LIMIT = 1465;
     public static final int KDC_HARD_UDP_LIMIT = 32700;
 
