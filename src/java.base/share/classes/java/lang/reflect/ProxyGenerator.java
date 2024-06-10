@@ -552,7 +552,8 @@ final class ProxyGenerator {
                .aload(4) //interface method type String
                .ldc(classEntry)
                .invokevirtual(CD_Class, "getClassLoader", MTD_ClassLoader)
-               .invokestatic(CD_MethodType, "fromMethodDescriptorString", MTD_MethodType_String_ClassLoader) //interface method type
+               .invokestatic(CD_MethodType, "fromMethodDescriptorString",
+                       MTD_MethodType_String_ClassLoader) //interface method type
                .invokevirtual(CD_MethodType, "parameterArray", MTD_Class_array)
                .invokevirtual(CD_Class, "getMethod", MTD_Method_String_Class_array)
                .areturn();
