@@ -1625,7 +1625,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 if (acc == null) {
                     // No ACC therefore no SM:
                     if (subject != null) {
-                        return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get())); 
+                        return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
                     } else {
                         return wrappedClass.cast(mo.get());
                     }
