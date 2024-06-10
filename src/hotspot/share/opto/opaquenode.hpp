@@ -91,24 +91,6 @@ public:
   IfNode* if_node() const;
 };
 
-//------------------------------Opaque3Node------------------------------------
-// A node to prevent unwanted optimizations. Will be optimized only during
-// macro nodes expansion.
-class Opaque3Node : public Node {
-  int _opt; // what optimization it was used for
-  virtual uint hash() const;
-  virtual bool cmp(const Node &n) const;
-  public:
-  Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
-    // Put it on the Macro nodes list to removed during macro nodes expansion.
-    init_flags(Flag_is_macro);
-    C->add_macro_node(this);
-  }
-  virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual Node* Identity(PhaseGVN* phase);
-};
-
 // Input 1 is a check that we know implicitly is always true or false
 // but the compiler has no way to prove. If during optimizations, that
 // check becomes true or false, the Opaque4 node is replaced by that

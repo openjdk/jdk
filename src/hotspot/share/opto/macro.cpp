@@ -2428,7 +2428,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque3   ||
                n->is_Opaque4()             ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||

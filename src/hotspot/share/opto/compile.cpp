@@ -3204,7 +3204,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:
