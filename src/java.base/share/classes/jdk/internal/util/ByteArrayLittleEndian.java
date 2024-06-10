@@ -25,13 +25,15 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
+
+import static jdk.internal.util.ByteArray.arrayOffset;
+import static jdk.internal.util.ByteArray.UNSAFE;
 
 /**
  * Utility methods for packing/unpacking primitive values in/out of byte arrays
- * using {@linkplain ByteOrder#LITTLE_ENDIAN little endian order}.
+ * using {@linkplain java.nio.ByteOrder#LITTLE_ENDIAN little endian order}.
  * <p>
  * All methods in this class will throw an {@linkplain NullPointerException} if {@code null} is
  * passed in as a method parameter for a byte array.
@@ -40,13 +42,6 @@ public final class ByteArrayLittleEndian {
 
     private ByteArrayLittleEndian() {
     }
-
-    private static final VarHandle SHORT = createLittleEndian(short[].class);
-    private static final VarHandle CHAR = createLittleEndian(char[].class);
-    private static final VarHandle INT = createLittleEndian(int[].class);
-    private static final VarHandle FLOAT = createLittleEndian(float[].class);
-    private static final VarHandle LONG = createLittleEndian(long[].class);
-    private static final VarHandle DOUBLE = createLittleEndian(double[].class);
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
@@ -62,6 +57,7 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 1]
      * @see #setBoolean(byte[], int, boolean)
      */
+    @ForceInline
     public static boolean getBoolean(byte[] array, int offset) {
         return array[offset] != 0;
     }
@@ -78,8 +74,12 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #setChar(byte[], int, char)
      */
+    @ForceInline
     public static char getChar(byte[] array, int offset) {
-        return (char) CHAR.get(array, offset);
+        return UNSAFE.getCharUnaligned(
+            array,
+            arrayOffset(array, Character.BYTES, offset),
+            false);
     }
 
     /**
@@ -95,8 +95,12 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #setShort(byte[], int, short)
      */
+    @ForceInline
     public static short getShort(byte[] array, int offset) {
-        return (short) SHORT.get(array, offset);
+        return UNSAFE.getShortUnaligned(
+            array,
+            arrayOffset(array, Short.BYTES, offset),
+            false);
     }
 
     /**
@@ -112,8 +116,9 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #setUnsignedShort(byte[], int, int)
      */
+    @ForceInline
     public static int getUnsignedShort(byte[] array, int offset) {
-        return Short.toUnsignedInt((short) SHORT.get(array, offset));
+        return Short.toUnsignedInt(getShort(array, offset));
     }
 
     /**
@@ -128,15 +133,35 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 4]
      * @see #setInt(byte[], int, int)
      */
+    @ForceInline
     public static int getInt(byte[] array, int offset) {
-        return (int) INT.get(array, offset);
+        return UNSAFE.getIntUnaligned(
+            array,
+            arrayOffset(array, Integer.BYTES, offset),
+            false);
+    }
+
+   /**
+     * {@return an {@code unsigned int} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to get a value from.
+     * @param offset where extraction in the array should begin
+     * @return an {@code long} representing an unsigned int from the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
+     * @see #setUnsignedInt(byte[], int, long)
+     */
+    @ForceInline
+    public static long getUnsignedInt(byte[] array, int offset) {
+        return Integer.toUnsignedLong(getInt(array, offset));
     }
 
     /**
      * {@return a {@code float} from the provided {@code array} at the given {@code offset}
      * using little endian order}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
      * <p>
      * There are no access alignment requirements.
      *
@@ -146,30 +171,9 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 4]
      * @see #setFloat(byte[], int, float)
      */
+    @ForceInline
     public static float getFloat(byte[] array, int offset) {
-        // Using Float.intBitsToFloat collapses NaN values to a single
-        // "canonical" NaN value
-        return Float.intBitsToFloat((int) INT.get(array, offset));
-    }
-
-    /**
-     * {@return a {@code float} from the provided {@code array} at the given {@code offset}
-     * using little endian order}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are silently read according
-     * to their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #setFloatRaw(byte[], int, float)
-     */
-    public static float getFloatRaw(byte[] array, int offset) {
-        // Just gets the bits as they are
-        return (float) FLOAT.get(array, offset);
+        return Float.intBitsToFloat(getInt(array, offset));
     }
 
     /**
@@ -184,15 +188,17 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 8]
      * @see #setLong(byte[], int, long)
      */
+    @ForceInline
     public static long getLong(byte[] array, int offset) {
-        return (long) LONG.get(array, offset);
+        return UNSAFE.getLongUnaligned(
+            array,
+            arrayOffset(array, Long.BYTES, offset),
+            false);
     }
 
     /**
      * {@return a {@code double} from the provided {@code array} at the given {@code offset}
      * using little endian order}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
      * <p>
      * There are no access alignment requirements.
      *
@@ -202,30 +208,9 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 8]
      * @see #setDouble(byte[], int, double)
      */
+    @ForceInline
     public static double getDouble(byte[] array, int offset) {
-        // Using Double.longBitsToDouble collapses NaN values to a single
-        // "canonical" NaN value
-        return Double.longBitsToDouble((long) LONG.get(array, offset));
-    }
-
-    /**
-     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
-     * using little endian order}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are silently read according to
-     * their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 8]
-     * @see #setDoubleRaw(byte[], int, double)
-     */
-    public static double getDoubleRaw(byte[] array, int offset) {
-        // Just gets the bits as they are
-        return (double) DOUBLE.get(array, offset);
+        return Double.longBitsToDouble(getLong(array, offset));
     }
 
     /*
@@ -244,6 +229,7 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length]
      * @see #getBoolean(byte[], int)
      */
+    @ForceInline
     public static void setBoolean(byte[] array, int offset, boolean value) {
         array[offset] = (byte) (value ? 1 : 0);
     }
@@ -261,8 +247,13 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #getChar(byte[], int)
      */
+    @ForceInline
     public static void setChar(byte[] array, int offset, char value) {
-        CHAR.set(array, offset, value);
+        UNSAFE.putCharUnaligned(
+                array,
+                arrayOffset(array, Character.BYTES, offset),
+                value,
+                false);
     }
 
     /**
@@ -278,8 +269,13 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #getShort(byte[], int)
      */
+    @ForceInline
     public static void setShort(byte[] array, int offset, short value) {
-        SHORT.set(array, offset, value);
+        UNSAFE.putShortUnaligned(
+                array,
+                arrayOffset(array, Short.BYTES, offset),
+                value,
+                false);
     }
 
     /**
@@ -295,8 +291,9 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #getUnsignedShort(byte[], int)
      */
+    @ForceInline
     public static void setUnsignedShort(byte[] array, int offset, int value) {
-        SHORT.set(array, offset, (short) (char) value);
+        setShort(array, offset, (short) (char) value);
     }
 
     /**
@@ -312,8 +309,31 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 4]
      * @see #getInt(byte[], int)
      */
+    @ForceInline
     public static void setInt(byte[] array, int offset, int value) {
-        INT.set(array, offset, value);
+        UNSAFE.putIntUnaligned(
+                array,
+                arrayOffset(array, Integer.BYTES, offset),
+                value,
+                false);
+    }
+
+   /**
+     * Sets (writes) the provided {@code value} using big endian order into
+     * the provided {@code array} beginning at the given {@code offset}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to set (write) a value into
+     * @param offset where setting (writing) in the array should begin
+     * @param value  value to set in the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
+     * @see #getUnsignedInt(byte[], int)
+     */
+    @ForceInline
+    public static void setUnsignedInt(byte[] array, int offset, long value) {
+        setInt(array, offset, (int) value);
     }
 
     /**
@@ -331,10 +351,11 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #getFloat(byte[], int)
      */
+    @ForceInline
     public static void setFloat(byte[] array, int offset, float value) {
         // Using Float.floatToIntBits collapses NaN values to a single
         // "canonical" NaN value
-        INT.set(array, offset, Float.floatToIntBits(value));
+        setInt(array, offset, Float.floatToIntBits(value));
     }
 
     /**
@@ -351,11 +372,12 @@ public final class ByteArrayLittleEndian {
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getFloatRaw(byte[], int)
+     * @see #getFloat(byte[], int)
      */
+    @ForceInline
     public static void setFloatRaw(byte[] array, int offset, float value) {
         // Just sets the bits as they are
-        FLOAT.set(array, offset, value);
+        setInt(array, offset, Float.floatToRawIntBits(value));
     }
 
     /**
@@ -371,8 +393,13 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 4]
      * @see #getLong(byte[], int)
      */
+    @ForceInline
     public static void setLong(byte[] array, int offset, long value) {
-        LONG.set(array, offset, value);
+        UNSAFE.putLongUnaligned(
+                array,
+                arrayOffset(array, Long.BYTES, offset),
+                value,
+                false);
     }
 
     /**
@@ -390,10 +417,11 @@ public final class ByteArrayLittleEndian {
      *                                   the range [0, array.length - 2]
      * @see #getDouble(byte[], int)
      */
+    @ForceInline
     public static void setDouble(byte[] array, int offset, double value) {
         // Using Double.doubleToLongBits collapses NaN values to a single
         // "canonical" NaN value
-        LONG.set(array, offset, Double.doubleToLongBits(value));
+        setLong(array, offset, Double.doubleToLongBits(value));
     }
 
     /**
@@ -410,15 +438,12 @@ public final class ByteArrayLittleEndian {
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getDoubleRaw(byte[], int)
+     * @see #getDouble(byte[], int)
      */
+    @ForceInline
     public static void setDoubleRaw(byte[] array, int offset, double value) {
         // Just sets the bits as they are
-        DOUBLE.set(array, offset, value);
-    }
-
-    private static VarHandle createLittleEndian(Class<?> viewArrayClass) {
-        return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.LITTLE_ENDIAN);
+        setLong(array, offset, Double.doubleToRawLongBits(value));
     }
 
 }
