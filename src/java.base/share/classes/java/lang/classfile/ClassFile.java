@@ -45,6 +45,7 @@ import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.CD_module_info;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -392,7 +393,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
+        return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);

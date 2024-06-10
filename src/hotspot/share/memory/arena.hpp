@@ -87,7 +87,7 @@ public:
 class Arena : public CHeapObjBase {
 public:
 
-  enum class Tag {
+  enum class Tag : uint8_t {
     tag_other = 0,
     tag_ra,   // resource area
     tag_ha,   // handle area
@@ -101,6 +101,7 @@ protected:
 
   MEMFLAGS    _flags;           // Memory tracking flags
   const Tag _tag;
+  uint32_t _init_size;
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
   char* _hwm;                   // High water mark
