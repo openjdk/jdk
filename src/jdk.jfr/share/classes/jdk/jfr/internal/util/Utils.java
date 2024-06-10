@@ -435,4 +435,12 @@ public final class Utils {
         }
         return sb.toString();
     }
+
+    public static boolean isJDKClass(Class<?> type) {
+        return type.getClassLoader() == null;
+        // In the future we might want to also do:
+        // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
+        // but only if it is safe and there is a mechanism to register event
+        // classes in other modules besides jdk.jfr and java.base.
+    }
 }

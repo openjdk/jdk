@@ -94,7 +94,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(JMH_COMPILE_JARS), \
-    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
         serial preview dangling-doc-comments, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \

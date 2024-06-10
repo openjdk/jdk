@@ -687,10 +687,10 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public LoadableConstantEntry constantEntry() {
-            return (LoadableConstantEntry)
-                    code.classReader.entryByIndex(op == Opcode.LDC
+            return code.classReader.entryByIndex(op == Opcode.LDC
                                                   ? code.classReader.readU1(pos + 1)
-                                                  : code.classReader.readU2(pos + 1));
+                                                  : code.classReader.readU2(pos + 1),
+                            LoadableConstantEntry.class);
         }
 
         @Override
