@@ -46,6 +46,7 @@ import javax.management.*;
 import javax.management.remote.JMXServerErrorException;
 import javax.management.remote.NotificationResult;
 import javax.security.auth.Subject;
+import jdk.internal.access.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 import static javax.management.remote.rmi.RMIConnector.Util.cast;
@@ -108,14 +109,19 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.rmiServer = rmiServer;
         this.connectionId = connectionId;
         this.defaultClassLoader = defaultClassLoader;
-
         this.subject = subject;
+
         if (subject == null) {
             this.acc = null;
         } else {
             // An authenticated Subject was provided.
             // Subject Delegation has been removed.
-            this.acc = JMXSubjectDomainCombiner.getContext(subject);
+            if (SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                // SM is allowed.  Will use ACC with Subject:
+                this.acc = JMXSubjectDomainCombiner.getContext(subject);
+            } else {
+                this.acc = null;
+            }
         }
         this.mbeanServer = rmiServer.getMBeanServer();
 
@@ -1292,10 +1298,17 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         return getServerNotifFwd().fetchNotifs(csn, t, mn);
                     }
             };
-            if (acc == null)
-                return action.run();
-            else
+            if (acc == null) {
+                // No ACC, therefore no SM. May have a Subject.
+                if (subject != null) {
+                    return Subject.doAs(subject, action);
+                } else {
+                    return action.run();
+                }
+            } else {
+                // ACC is present, we have a Subject and SM is permitted:
                 return AccessController.doPrivileged(action, acc);
+            }
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
         }
@@ -1412,15 +1425,38 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             PrivilegedOperation op = new PrivilegedOperation(operation, params);
             if (acc == null) {
-                try {
+                // No ACC, therefore no SM:
+                if (subject != null) {
+                    return Subject.doAs(subject, op);
+                } else {
                     return op.run();
-                } catch (Exception e) {
-                    if (e instanceof RuntimeException)
-                        throw (RuntimeException) e;
-                    throw new PrivilegedActionException(e);
                 }
             } else {
-                return AccessController.doPrivileged(op, acc);
+                // ACC not null, so SM must be allowed, and we were given a Subject:
+                return AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> Subject.doAs(subject, op), acc);
+            }
+        } catch (PrivilegedActionException pe) {
+            // Dealing with cause of PrivilegedActionException is the same as handling other Exceptions.
+            Throwable cause = pe.getCause();
+
+            if (cause instanceof Error) {
+                throw new JMXServerErrorException(cause.toString(), (Error) cause);
+            } else if (cause instanceof SecurityException) {
+                throw (SecurityException) cause;
+            } else if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            } else if (cause instanceof Exception) {
+                throw new PrivilegedActionException((Exception) cause);
+            } else {
+                throw new RuntimeException(cause);
+            }
+        } catch (Exception e) {
+            if (e instanceof SecurityException) {
+                throw (SecurityException) e; // do not wrap SecurityException
+            } else if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new PrivilegedActionException(e);
             }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
@@ -1585,15 +1621,19 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
-            try{
-                if (acc != null) {
-                    return AccessController.doPrivileged(
-                            (PrivilegedExceptionAction<T>) () ->
-                                    wrappedClass.cast(mo.get()), acc);
-                }else{
-                    return wrappedClass.cast(mo.get());
+            try {
+                if (acc == null) {
+                    // No ACC therefore no SM:
+                    if (subject != null) {
+                        return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get())); 
+                    } else {
+                        return wrappedClass.cast(mo.get());
+                    }
+                } else {
+                    // We have ACC therefore SM is permitted, and Subject must be non-null:
+                    return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> AccessController.doPrivileged((PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()), acc));
                 }
-            }finally{
+            } finally {
                 AccessController.doPrivileged(new SetCcl(old));
             }
         } catch (PrivilegedActionException pe) {

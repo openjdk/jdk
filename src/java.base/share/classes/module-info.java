@@ -165,6 +165,7 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
+        java.management.rmi,
         java.naming,
         java.rmi,
         jdk.charsets,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import javax.management.remote.NotificationResult;
 import javax.management.remote.TargetedNotification;
 import javax.management.MalformedObjectNameException;
 import javax.security.auth.Subject;
+import jdk.internal.access.SharedSecrets;
 
 public class ServerNotifForwarder {
 
@@ -346,7 +347,13 @@ public class ServerNotifForwarder {
 
     @SuppressWarnings("removal")
     private Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        Subject subject = null;
+        if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+            subject = Subject.current();
+        } else {
+            subject = Subject.getSubject(AccessController.getContext());
+        }
+        return subject;
     }
 
     private void checkState() throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ import javax.management.MBeanServerConnection;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.security.auth.Subject;
+import jdk.internal.access.SharedSecrets;
 import static javax.management.monitor.MonitorNotification.*;
 
 /**
@@ -169,14 +171,11 @@ public abstract class Monitor
         new CopyOnWriteArrayList<>();
 
     /**
-     * AccessControlContext of the Monitor.start() caller.
+     * Subject and possibly AccessControlContext of the Monitor.start() caller.
      */
+    private volatile Subject subject;
     @SuppressWarnings("removal")
-    private static final AccessControlContext noPermissionsACC =
-            new AccessControlContext(
-            new ProtectionDomain[] {new ProtectionDomain(null, null)});
-    @SuppressWarnings("removal")
-    private volatile AccessControlContext acc = noPermissionsACC;
+    private volatile AccessControlContext acc;
 
     /**
      * Scheduler Service.
@@ -713,10 +712,13 @@ public abstract class Monitor
             //
             cleanupIsComplexTypeAttribute();
 
-            // Cache the AccessControlContext of the Monitor.start() caller.
+            // Cache the Subject and possibly AccessControlContext of the Monitor.start() caller.
             // The monitor tasks will be executed within this context.
             //
-            acc = AccessController.getContext();
+            subject = Subject.current();
+            if (SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                acc = AccessController.getContext();
+            }
 
             // Start the scheduler.
             //
@@ -747,9 +749,10 @@ public abstract class Monitor
             //
             cleanupFutures();
 
-            // Reset the AccessControlContext.
+            // Reset the Subject and AccessControlContext.
             //
-            acc = noPermissionsACC;
+            subject = null;
+            acc = null;
 
             // Reset the complex type attribute information
             // such that it is recalculated again.
@@ -1512,9 +1515,11 @@ public abstract class Monitor
         @SuppressWarnings("removal")
         public void run() {
             final ScheduledFuture<?> sf;
+            final Subject s;
             final AccessControlContext ac;
             synchronized (Monitor.this) {
                 sf = Monitor.this.schedulerFuture;
+                s  = Monitor.this.subject;
                 ac = Monitor.this.acc;
             }
             PrivilegedAction<Void> action = new PrivilegedAction<>() {
@@ -1531,10 +1536,19 @@ public abstract class Monitor
                     return null;
                 }
             };
+            try {
             if (ac == null) {
-                throw new SecurityException("AccessControlContext cannot be null");
+                // No SM:
+                Subject.doAs(s, action); // can hit AssertionError in MethodHandleImpl
+                // Subject.callAs(subject, action::run);
+            } else {
+                // ACC means SM is permitted.
+                AccessController.doPrivileged(action, ac);
             }
-            AccessController.doPrivileged(action, ac);
+            } catch (Throwable thr) {
+                System.err.println("XXXXXXXXXXXXXXXX exception in doAs s = " + s);
+                thr.printStackTrace(System.err);
+            }
             synchronized (Monitor.this) {
                 if (Monitor.this.isActive() &&
                     Monitor.this.schedulerFuture == sf) {

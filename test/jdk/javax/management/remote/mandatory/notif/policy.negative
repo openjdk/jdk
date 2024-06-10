@@ -4,4 +4,5 @@ grant {
     permission javax.management.MBeanPermission "*", "invoke";
     permission javax.management.MBeanPermission "[domain:type=NB,name=2]", "addNotificationListener";
     permission javax.management.MBeanPermission "*", "removeNotificationListener";
+    permission javax.security.auth.AuthPermission "doAs";
 };
