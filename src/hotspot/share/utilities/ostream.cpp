@@ -277,6 +277,12 @@ outputStream& outputStream::indent() {
   return *this;
 }
 
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
+}
+
 void outputStream::print_jlong(jlong value) {
   print(JLONG_FORMAT, value);
 }
