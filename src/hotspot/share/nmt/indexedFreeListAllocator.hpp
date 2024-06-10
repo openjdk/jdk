@@ -42,9 +42,9 @@ public:
     friend IndexedFreeListAllocator<E, flag>;
     const int32_t _idx;
 
+  public:
     I(int32_t idx) : _idx(idx) {}
 
-  public:
     I(const I& other) : _idx(other._idx) {}
 
     I& operator=(const I& other) {;
