@@ -743,8 +743,8 @@ public class SourceLauncherTest extends TestRunner {
         private static void markModuleAsIncubator(Path moduleInfoFile) throws Exception {
             ClassModel cf = ClassFile.of().parse(moduleInfoFile);
             ModuleResolutionAttribute newAttr = ModuleResolutionAttribute.of(WARN_INCUBATING);
-            byte[] newBytes = ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof Attributes)
-                    .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr))));
+            byte[] newBytes = ClassFile.of().transform(cf,
+                    ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr)));
             try (OutputStream out = Files.newOutputStream(moduleInfoFile)) {
                 out.write(newBytes);
             }

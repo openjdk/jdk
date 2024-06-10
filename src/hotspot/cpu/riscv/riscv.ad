@@ -1244,7 +1244,7 @@ int MachCallStaticJavaNode::ret_addr_offset()
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  return 7 * NativeInstruction::instruction_size; // movptr, jal
+  return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
@@ -1285,12 +1285,11 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
-  // skip the movptr in MacroAssembler::ic_call():
-  // lui + addi + slli + addi + slli + addi
-  // Though movptr() has already 4-byte aligned with or without RVC,
+  // skip the movptr2 in MacroAssembler::ic_call():
+  // lui, lui, slli, add, addi
+  // Though movptr2() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
-  const int movptr_size = 6 * NativeInstruction::instruction_size;
-  current_offset += movptr_size;
+  current_offset += NativeMovConstReg::movptr2_instruction_size;
   // to make sure the address of jal 4-byte aligned.
   return align_up(current_offset, alignment_required()) - current_offset;
 }
@@ -2150,11 +2149,56 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+// Binary src (Replicate scalar/immediate)
+static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (m->Opcode() != Op_Replicate) {
+    return false;
+  }
+
+  switch (n->Opcode()) {
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL: {
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+// (XorV src (Replicate m1))
+// (XorVMask src (MaskAll m1))
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+  if (n != nullptr && m != nullptr) {
+    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+           VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
-  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
-    mstack.push(m, Visit);           // m = ShiftCntV
+  if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
+      is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_scalar_bitwise_pattern(n, m)) {
+    mstack.push(m, Visit);
     return true;
   }
   return false;
@@ -9981,7 +10025,7 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
   effect(USE meth, KILL cr);
 
-  ins_cost(BRANCH_COST + ALU_COST * 6);
+  ins_cost(BRANCH_COST + ALU_COST * 5);
 
   format %{ "CALL,dynamic $meth\t#@CallDynamicJavaDirect" %}
 

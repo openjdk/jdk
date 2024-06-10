@@ -58,9 +58,9 @@ public class TypeAnnotationPropagationTest extends ClassfileTestHelper {
         }
 
         assert f != null;
-        CodeAttribute cattr = f.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cattr = f.findAttribute(Attributes.code()).orElse(null);
         assert cattr != null;
-        RuntimeVisibleTypeAnnotationsAttribute attr = cattr.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+        RuntimeVisibleTypeAnnotationsAttribute attr = cattr.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
 
         assert attr != null;
         List<TypeAnnotation.LocalVarTargetInfo> annosPosition = ((TypeAnnotation.LocalVarTarget) attr.annotations().get(0).targetInfo()).table();
