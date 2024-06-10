@@ -38,8 +38,6 @@ import java.util.function.Supplier;
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
-//@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview", "--XX:-UseLSE"})
-// -XX:PerMethodTrapLimit=0 means no uncommon traps will be generated
 @Fork(value = 2, jvmArgsAppend = {
         "--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED",
         "--enable-preview",
