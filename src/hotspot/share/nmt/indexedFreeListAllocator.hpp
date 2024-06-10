@@ -43,6 +43,7 @@ public:
     const int32_t _idx;
 
   public:
+    I() {}
     I(int32_t idx) : _idx(idx) {}
 
     I(const I& other) : _idx(other._idx) {}
