@@ -50,11 +50,12 @@ public class TestMulAddS2I {
     static final int[] GOLDEN_F;
     static final int[] GOLDEN_G;
     static final int[] GOLDEN_H;
+    static final int[] GOLDEN_I;
 
     static {
         for (int i = 0; i < RANGE; i++) {
-            sArr1[i] = (short)(AbstractInfo.getRandom().nextInt());
-            sArr2[i] = (short)(AbstractInfo.getRandom().nextInt());
+            sArr1[i] = (short)i;//(AbstractInfo.getRandom().nextInt());
+            sArr2[i] = (short)i;//(AbstractInfo.getRandom().nextInt());
         }
         GOLDEN_A = testa();
         GOLDEN_B = testb();
@@ -64,6 +65,7 @@ public class TestMulAddS2I {
         GOLDEN_F = testf();
         GOLDEN_G = testg();
         GOLDEN_H = testh();
+        GOLDEN_I = testi();
     }
 
 
@@ -72,7 +74,7 @@ public class TestMulAddS2I {
         TestFramework.runWithFlags("-XX:-AlignVector");
     }
 
-    @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh"})
+    @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh", "testi"})
     @Warmup(0)
     public static void run() {
         compare(testa(), GOLDEN_A, "testa");
@@ -83,6 +85,7 @@ public class TestMulAddS2I {
         compare(testf(), GOLDEN_F, "testf");
         compare(testg(), GOLDEN_G, "testg");
         compare(testh(), GOLDEN_H, "testh");
+        compare(testi(), GOLDEN_I, "testi");
     }
 
     public static void compare(int[] out, int[] golden, String name) {
@@ -237,6 +240,19 @@ public class TestMulAddS2I {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+3] * sArr1[2*i+3]) + (sArr2[2*i+2] * sArr1[2*i+2])); // swap(1 4), swap(2 3)
+        }
+        return out;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(counts = {IRNode.MUL_ADD_S2I, "= 0", IRNode.MUL_ADD_VS2VI, "= 0"})
+    public static int[] testi() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps.
+            out[i+0] = ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1])); // ok
+            out[i+1] = ((sArr1[2*i+2] * sArr2[2*i+3]) + (sArr1[2*i+3] * sArr2[2*i+2])); // bad
         }
         return out;
     }
