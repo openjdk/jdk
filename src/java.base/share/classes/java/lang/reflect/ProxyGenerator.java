@@ -47,7 +47,6 @@ import sun.security.action.GetBooleanAction;
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.constant.ConstantUtils.*;
 
@@ -67,6 +66,7 @@ final class ProxyGenerator {
             ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
 
     private static final ClassDesc
+            CD_ClassLoader = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
             CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
             CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
             CD_InvocationHandler = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
@@ -83,8 +83,10 @@ final class ProxyGenerator {
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable),
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
+            MTD_ClassLoader = MethodTypeDescImpl.ofValidated(CD_ClassLoader),
             MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array),
-            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, ConstantDescs.CD_String, CD_Class_array),
+            MTD_MethodType_String_ClassLoader = MethodTypeDescImpl.ofValidated(CD_MethodType, CD_String, CD_ClassLoader),
+            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
@@ -176,7 +178,7 @@ final class ProxyGenerator {
         this.invoke = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray);
         this.ute = cp.classEntry(CD_UndeclaredThrowableException);
         this.uteInit = cp.methodRefEntry(ute, cp.nameAndTypeEntry(INIT_NAME, MTD_void_Throwable));
-        this.bsm = ConstantDescs.ofConstantBootstrap(classEntry.asSymbol(), "$getMethod", CD_Method, CD_Class, CD_String, CD_MethodType);
+        this.bsm = ofConstantBootstrap(classEntry.asSymbol(), "$getMethod", CD_Method, CD_Class, CD_String);
     }
 
     /**
@@ -546,10 +548,13 @@ final class ProxyGenerator {
     private void generateBootstrapMethod(ClassBuilder clb) {
         clb.withMethodBody(bsm.methodName(), bsm.invocationType(), ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC, cob -> {
             cob.aload(3) //interface Class
-               .aload(4) //interface method name String
-               .aload(5) //interface MethodType
+               .aload(1) //interface method name String
+               .aload(4) //interface method type String
+               .ldc(classEntry)
+               .invokevirtual(CD_Class, "getClassLoader", MTD_ClassLoader)
+               .invokestatic(CD_MethodType, "fromMethodDescriptorString", MTD_MethodType_String_ClassLoader) //interface method type
                .invokevirtual(CD_MethodType, "parameterArray", MTD_Class_array)
-               .invokevirtual(ConstantDescs.CD_Class, "getMethod", MTD_Method_String_Class_array)
+               .invokevirtual(CD_Class, "getMethod", MTD_Method_String_Class_array)
                .areturn();
             Label failLabel = cob.newBoundLabel();
             ClassEntry nsme = cp.classEntry(CD_NoSuchMethodError);
@@ -653,10 +658,13 @@ final class ProxyGenerator {
                         cob.aload(0)
                            .getfield(pg.handlerField)
                            .aload(0)
-                           .ldc(DynamicConstantDesc.of(pg.bsm,
-                                referenceClassDesc(fromClass),
+                           .ldc(DynamicConstantDesc.ofNamed(pg.bsm,
                                 method.getName(),
-                                desc));
+                                CD_Method,
+                                referenceClassDesc(fromClass),
+                                // some types in the method may be package private
+                                // so Class or MethodType constants will fail
+                                desc.descriptorString()));
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
