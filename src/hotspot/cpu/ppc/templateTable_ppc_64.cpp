@@ -3484,7 +3484,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ testbitdi(CCR0, R0, Rflags, ResolvedMethodEntry::is_vfinal_shift);
   __ bfalse(CCR0, LnotFinal);
 
-  if (RewriteBytecodes && !UseSharedSpaces && !CDSConfig::is_dumping_static_archive()) {
+  if (RewriteBytecodes && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_static_archive()) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
   }
   invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, Rflags /* tmp */, Rrecv /* tmp */);
