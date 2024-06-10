@@ -154,6 +154,8 @@ descriptions of using these options:
 .IP \[bu] 2
 \f[V]--class-path\f[R], \f[V]-classpath\f[R], or \f[V]-cp\f[R]
 .IP \[bu] 2
+\f[V]--disable-line-doc-comments\f[R]
+.IP \[bu] 2
 \f[V]--enable-preview\f[R]
 .IP \[bu] 2
 \f[V]-encoding\f[R]
@@ -182,26 +184,41 @@ The following options are the core \f[V]javadoc\f[R] options that are
 not equivalent to a corresponding \f[V]javac\f[R] option:
 .TP
 \f[V]-breakiterator\f[R]
-Computes the first sentence with \f[V]BreakIterator\f[R].
-The first sentence is copied to the package, class, or member summary
-and to the alphabetic index.
-The \f[V]BreakIterator\f[R] class is used to determine the end of a
-sentence for all languages except for English.
-.RS
-.IP \[bu] 2
-English default sentence-break algorithm --- Stops at a period followed
-by a space or an HTML block tag, such as \f[V]<P>\f[R].
-.IP \[bu] 2
-Breakiterator sentence-break algorithm --- Stops at a period, question
+Computes the first sentence of the description in a documentation
+comment using an instance of \f[V]java.text.BreakIterator\f[R] to detect
+\f[I]sentence breaks\f[R].
+The rules that are used depend on the \f[B]current locale\f[R]: for
+example, for English, a sentence break occurs after a period, question
 mark, or exclamation point followed by a space when the next word starts
 with a capital letter.
-This is meant to handle most abbreviations (such as \[dq]The serial no.
+(This is meant to handle most abbreviations, such as \[dq]The serial no.
 is valid\[dq], but will not handle \[dq]Mr.
-Smith\[dq]).
-The \f[V]-breakiterator\f[R] option doesn\[aq]t stop at HTML tags or
-sentences that begin with numbers or symbols.
-The algorithm stops at the last period in \f[V]../filename\f[R], even
-when embedded in an HTML tag.
+Smith\[dq].)
+.RS
+.PP
+The option is enabled by default if the language of the current locale
+is not English.
+If the language of the current locale is English, and the
+\f[V]-breakiterator\f[R] option is not given, a simple default algorithm
+is used, which just looks for a period followed by a space.
+.PP
+In a traditional \f[V]/**...*/\f[R] comment, the search for the end of
+the first sentence is terminated by an HTML block tag, such as
+\f[V]<p>\f[R], \f[V]<pre>\f[R], or the tag for a heading.
+.PP
+In a Markdown \f[V]///\f[R] comment, the search for the end of the first
+sentence skips over any characters enclosed in code spans and links, and
+is terminated by the end of the initial block, as indicated by a blank
+line or the beginning of the next block, such as a list, thematic break,
+or an HTML block.
+.PP
+The first sentence of the description in a documentation comment is used
+in summary tables, index pages, and other situations where a short
+summary is required.
+For more explicit control in any individual documentation comment,
+enclose the contents of the first sentence in a
+\f[V]{\[at]summary ...}\f[R] tag, or when applicable, in a
+\[ga]{\[at]return ...} tag.
 .RE
 .TP
 \f[V]-doclet\f[R] \f[I]class\f[R]
@@ -505,8 +522,7 @@ Allow JavaScript in documentation comments, and options whose value is
 \f[I]html-code\f[R].
 .TP
 \f[V]-author\f[R]
-Includes the text of any \f[V]author\f[R] tags in the generated
-documentation.
+Includes the \f[V]\[at]author\f[R] text in the generated docs.
 .TP
 \f[V]-bottom\f[R] \f[I]html-code\f[R]
 Specifies the text to be placed at the bottom of each generated page.
@@ -970,8 +986,8 @@ is used.
 .RE
 .TP
 \f[V]-nosince\f[R]
-Omits from the generated documentation the \f[V]Since\f[R] sections
-derived from any \f[V]since\f[R] tags.
+Omits from the generated documents the \f[V]Since\f[R] sections
+associated with the \f[V]\[at]since\f[R] tags.
 .TP
 \f[V]-notimestamp\f[R]
 Suppresses the time stamp, which is hidden in an HTML comment in the
@@ -994,34 +1010,30 @@ Documents overridden methods in the detail or summary sections.
 The default is \f[V]detail\f[R].
 .TP
 \f[V]-overview\f[R] \f[I]filename\f[R]
-Specifies that the \f[V]javadoc\f[R] tool should retrieve the text for
-the overview documentation from the source file specified by
-\f[V]filename\f[R] and place it on the Overview page
+Specifies that the \f[V]javadoc\f[R] tool should retrieve the content
+for the overview documentation from the file specified by
+\f[I]filename\f[R] and place it on the Overview page
 (\f[V]overview-summary.html\f[R]).
-A relative path specified with the file name is relative to the current
-working directory.
+If the \f[I]filename\f[R] is a relative path, it is evaluated relative
+to the current working directory.
 .RS
 .PP
-While you can use any name you want for the \f[I]filename\f[R] value and
-place it anywhere you want, it is typical to name it
-\f[V]overview.html\f[R] and place it in the source tree at the directory
-that contains the topmost package directories.
-In this location, no path is needed when documenting packages, because
-the \f[V]-sourcepath\f[R] option points to this file.
-.IP \[bu] 2
-\f[B]Linux and macOS:\f[R] For example, if the source tree for the
-\f[V]java.lang\f[R] package is \f[V]src/classes/java/lang/\f[R], then
-you could place the overview file at
-\f[V]src/classes/overview.html\f[R].
-.IP \[bu] 2
-\f[B]Windows:\f[R] For example, if the source tree for the
-\f[V]java.lang\f[R] package is
-\f[V]src\[rs]classes\[rs]java\[rs]lang\[rs]\f[R], then you could place
-the overview file at \f[V]src\[rs]classes\[rs]overview.html\f[R]
+The file may be an HTML file, with a filename ending in \f[V].html\f[R],
+or a Markdown file, with a filename ending in \f[V].md\f[R].
+.PD 0
+.P
+.PD
+If the file is an HTML file, the content for the overview documentation
+is taken from the \f[V]<main>\f[R] element in the file, if one is
+present, or from the \f[V]<body>\f[R] element is there is no
+\f[V]<main>\f[R] element.
+If the file is a Markdown file, the entire content of the file is used.
 .PP
-The overview page is created only when you pass two or more package
-names to the \f[V]javadoc\f[R] tool.
 The title on the overview page is set by \f[V]-doctitle\f[R].
+.PP
+\f[I]Note:\f[R] older versions of the \f[V]javadoc\f[R] tool assumed
+that any use of this option was for an HTML file, and allowed any
+extension for the \f[I]filename\f[R].
 .RE
 .TP
 \f[V]-serialwarn\f[R]
@@ -1201,11 +1213,10 @@ To access the generated Use page, go to the class or package and click
 the \f[B]USE\f[R] link in the navigation bar.
 .TP
 \f[V]-version\f[R]
-Includes the text of any \f[V]version\f[R] tags in the generated
-documentation.
+Includes the version text in the generated docs.
 This text is omitted by default.
-Note: To find out what version of the \f[V]javadoc\f[R] tool you are
-using, use the \f[V]--version\f[R] option (with two hyphens).
+To find out what version of the \f[V]javadoc\f[R] tool you are using,
+use the \f[V]--version\f[R] option (with two hyphens).
 .TP
 \f[V]-windowtitle\f[R] \f[I]title\f[R]
 Specifies the title to be placed in the HTML \f[V]<title>\f[R] tag.

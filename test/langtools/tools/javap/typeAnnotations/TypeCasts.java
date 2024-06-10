@@ -55,8 +55,8 @@ public class TypeCasts {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
 
@@ -66,7 +66,7 @@ public class TypeCasts {
         Attribute<T> attr;
         CodeAttribute cAttr;
 
-        cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+        cAttr = mm.findAttribute(Attributes.code()).orElse(null);
         if (cAttr != null) {
             attr = cAttr.findAttribute(attr_name).orElse(null);
             if (attr != null) {

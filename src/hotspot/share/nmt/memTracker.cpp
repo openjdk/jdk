@@ -27,6 +27,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memReporter.hpp"
@@ -39,7 +40,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
@@ -67,8 +67,8 @@ void MemTracker::initialize() {
 
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level) ||
-        !ThreadStackTracker::initialize(level)) {
+        !MemoryFileTracker::Instance::initialize(level) ||
+        !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");

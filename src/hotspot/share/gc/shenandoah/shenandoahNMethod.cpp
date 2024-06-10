@@ -32,7 +32,7 @@
 #include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
-  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false) {
+  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {
 
   if (!oops.is_empty()) {
     _oops_count = oops.length();

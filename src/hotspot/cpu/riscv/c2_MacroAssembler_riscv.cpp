@@ -2762,6 +2762,10 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
     case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
     case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
     case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    case BoolTest::ule: vmsleu_vv(vd, src1, src2, vm); break;
+    case BoolTest::uge: vmsgeu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ult: vmsltu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ugt: vmsgtu_vv(vd, src1, src2, vm); break;
     default:
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
@@ -2785,6 +2789,21 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
   }
+}
+
+// In Matcher::scalable_predicate_reg_slots,
+// we assume each predicate register is one-eighth of the size of
+// scalable vector register, one mask bit per vector byte.
+void C2_MacroAssembler::spill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vse8_v(v, t0);
+}
+
+void C2_MacroAssembler::unspill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vle8_v(v, t0);
 }
 
 void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
