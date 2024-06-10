@@ -48,7 +48,7 @@ import static sun.security.provider.ByteArrayAccess.l2bLittle;
 abstract class SHA3 extends DigestBase {
 
     private static final int WIDTH = 200; // in bytes, e.g. 1600 bits
-    private static final int DM = 5; // dimension of lanes
+    private static final int DM = 5; // dimension of state matrix
 
     private static final int NR = 24; // number of rounds
 
@@ -65,8 +65,12 @@ abstract class SHA3 extends DigestBase {
     };
 
     private final byte suffix;
-    private byte[] state = new byte[WIDTH];
-    private long[] lanes = new long[DM*DM];
+    private long[] state = new long[DM*DM];
+
+    // The following two arrays are allocated to size WIDTH bytes, but we only
+    // ever use the first blockSize bytes of them (for bytes <-> long conversions)
+    private byte[] byteState = new byte[WIDTH];
+    private long[] longBuf = new long[DM*DM];
 
     /**
      * Creates a new SHA-3 object.
@@ -91,10 +95,12 @@ abstract class SHA3 extends DigestBase {
 
     @IntrinsicCandidate
     private void implCompress0(byte[] b, int ofs) {
-       for (int i = 0; i < buffer.length; i++) {
-           state[i] ^= b[ofs++];
-       }
-       keccak();
+        b2lLittle(b, ofs, longBuf, 0, blockSize);
+        for (int i = 0; i < blockSize / 8; i++) {
+            state[i] ^= longBuf[i];
+        }
+
+        keccak();
     }
 
     /**
@@ -111,20 +117,21 @@ abstract class SHA3 extends DigestBase {
         int availableBytes = buffer.length;
         int numBytes = engineGetDigestLength();
         while (numBytes > availableBytes) {
-            System.arraycopy(state, 0, out, ofs, availableBytes);
+            l2bLittle(state, 0, out, ofs, availableBytes);
             numBytes -= availableBytes;
             ofs += availableBytes;
             keccak();
         }
-        System.arraycopy(state, 0, out, ofs, numBytes);
+        int numLongs = (numBytes + 7) / 8;
+        l2bLittle(state, 0, byteState, 0, numLongs * 8);
+        System.arraycopy(byteState, 0, out, ofs, numBytes);
     }
 
     /**
      * Resets the internal state to start a new hash.
      */
     void implReset() {
-        Arrays.fill(state, (byte)0);
-        Arrays.fill(lanes, 0L);
+        Arrays.fill(state,0L);
     }
 
     /**
@@ -145,45 +152,18 @@ abstract class SHA3 extends DigestBase {
     }
 
     /**
-     * Utility function for transforming the specified byte array 's'
-     * into array of lanes 'm' as defined in section 3.1.2.
-     */
-    private static void bytes2Lanes(byte[] s, long[] m) {
-        int sOfs = 0;
-        // Conversion traverses along x-axis before y-axis
-        for (int y = 0; y < DM; y++, sOfs += 40) {
-            b2lLittle(s, sOfs, m, DM*y, 40);
-        }
-    }
-
-    /**
-     * Utility function for transforming the specified array of
-     * lanes 'm' into a byte array 's' as defined in section 3.1.3.
-     */
-    private static void lanes2Bytes(long[] m, byte[] s) {
-        int sOfs = 0;
-        // Conversion traverses along x-axis before y-axis
-        for (int y = 0; y < DM; y++, sOfs += 40) {
-            l2bLittle(m, DM*y, s, sOfs, 40);
-        }
-    }
-
-    /**
      * The function Keccak as defined in section 5.2 with
      * rate r = 1600 and capacity c.
      */
     private void keccak() {
-        // convert the 200-byte state into 25 lanes
-        bytes2Lanes(state, lanes);
-
         long a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12;
         long a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24;
         // move data into local variables
-        a0 = lanes[0]; a1 = lanes[1]; a2 = lanes[2]; a3 = lanes[3]; a4 = lanes[4];
-        a5 = lanes[5]; a6 = lanes[6]; a7 = lanes[7]; a8 = lanes[8]; a9 = lanes[9];
-        a10 = lanes[10]; a11 = lanes[11]; a12 = lanes[12]; a13 = lanes[13]; a14 = lanes[14];
-        a15 = lanes[15]; a16 = lanes[16]; a17 = lanes[17]; a18 = lanes[18]; a19 = lanes[19];
-        a20 = lanes[20]; a21 = lanes[21]; a22 = lanes[22]; a23 = lanes[23]; a24 = lanes[24];
+        a0 = state[0]; a1 = state[1]; a2 = state[2]; a3 = state[3]; a4 = state[4];
+        a5 = state[5]; a6 = state[6]; a7 = state[7]; a8 = state[8]; a9 = state[9];
+        a10 = state[10]; a11 = state[11]; a12 = state[12]; a13 = state[13]; a14 = state[14];
+        a15 = state[15]; a16 = state[16]; a17 = state[17]; a18 = state[18]; a19 = state[19];
+        a20 = state[20]; a21 = state[21]; a22 = state[22]; a23 = state[23]; a24 = state[24];
 
         // process the lanes through step mappings
         for (int ir = 0; ir < NR; ir++) {
@@ -287,20 +267,16 @@ abstract class SHA3 extends DigestBase {
             a0 ^= RC_CONSTANTS[ir];
         }
 
-        lanes[0] = a0; lanes[1] = a1; lanes[2] = a2; lanes[3] = a3; lanes[4] = a4;
-        lanes[5] = a5; lanes[6] = a6; lanes[7] = a7; lanes[8] = a8; lanes[9] = a9;
-        lanes[10] = a10; lanes[11] = a11; lanes[12] = a12; lanes[13] = a13; lanes[14] = a14;
-        lanes[15] = a15; lanes[16] = a16; lanes[17] = a17; lanes[18] = a18; lanes[19] = a19;
-        lanes[20] = a20; lanes[21] = a21; lanes[22] = a22; lanes[23] = a23; lanes[24] = a24;
-
-        // convert the resulting 25 lanes back into 200-byte state
-        lanes2Bytes(lanes, state);
+        state[0] = a0; state[1] = a1; state[2] = a2; state[3] = a3; state[4] = a4;
+        state[5] = a5; state[6] = a6; state[7] = a7; state[8] = a8; state[9] = a9;
+        state[10] = a10; state[11] = a11; state[12] = a12; state[13] = a13; state[14] = a14;
+        state[15] = a15; state[16] = a16; state[17] = a17; state[18] = a18; state[19] = a19;
+        state[20] = a20; state[21] = a21; state[22] = a22; state[23] = a23; state[24] = a24;
     }
 
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
-        copy.lanes = new long[DM*DM];
         return copy;
     }
 

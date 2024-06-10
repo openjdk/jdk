@@ -61,7 +61,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
     private final int digestLength;
 
     // size of the input to the compression function in bytes
-    private final int blockSize;
+    protected final int blockSize;
     // buffer to store partial blocks, blockSize bytes large
     // Subclasses should not access this array directly except possibly in their
     // implDigest() method. See MD5.java as an example.
