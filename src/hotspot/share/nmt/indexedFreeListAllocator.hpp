@@ -48,7 +48,7 @@ public:
     I(const I& other) : _idx(other._idx) {}
 
     I& operator=(const I& other) {;
-      *this = other;
+      return *this = other;
     }
 
     bool operator !=(I other) {
