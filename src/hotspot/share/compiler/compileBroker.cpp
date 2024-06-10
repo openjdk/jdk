@@ -1350,6 +1350,18 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   return nm;
 }
 
+static void clear_is_not_compilable_by(const methodHandle& method, AbstractCompiler* comp) {
+  if (comp == nullptr) {
+    return;
+  }
+
+  if (comp->is_c1()) {
+    method->clear_is_not_c1_compilable();
+  } else if (comp->is_c2()) {
+    method->clear_is_not_c2_compilable();
+  }
+}
+
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          const methodHandle& hot_method, int hot_count,
@@ -1367,6 +1379,11 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
+
+  // Compilation of a method not being compilable can be requested.
+  // We clear its not compilable status. The status will be updated
+  // as a result of the compilation.
+  clear_is_not_compilable_by(method, comp);
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
