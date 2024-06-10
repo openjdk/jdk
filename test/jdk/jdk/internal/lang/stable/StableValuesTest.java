@@ -38,13 +38,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class StableValuesTest {
 
     @Test
-    void ofBackground() {
+    void ofMemoized() {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
+        Supplier<Integer> memoizeded = StableValues.memoizedSupplier(cs, null);
+        assertEquals(42, memoizeded.get());
+        assertEquals(1, cs.cnt());
+        assertEquals(42, memoizeded.get());
+        assertEquals(1, cs.cnt());
+        assertEquals("MemoizedSupplier[stable=StableValue[42], original=" + cs + "]", memoizeded.toString());
+    }
+
+    @Test
+    void ofMemoizedBackground() {
 
         final AtomicInteger cnt = new AtomicInteger(0);
         ThreadFactory factory = new ThreadFactory() {
@@ -56,11 +68,11 @@ final class StableValuesTest {
                 });
             }
         };
-        StableValue<Integer> stable = StableValues.ofBackground(factory, () -> 42);
+        Supplier<Integer> memoizeded = StableValues.memoizedSupplier(() -> 42, factory);
         while (cnt.get() < 1) {
             Thread.onSpinWait();
         }
-        assertEquals(42, stable.orElseThrow());
+        assertEquals(42, memoizeded.get());
     }
 
     @Test

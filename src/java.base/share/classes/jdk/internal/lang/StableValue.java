@@ -64,16 +64,18 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     Map<K, StableValue<V>> map = StableValues.ofMap(keys);
  * }
- * A memoized Supplier, where the given {@code original} supplier is guaranteed to be
+ * A memoized Supplier, where a given {@code original} supplier is guaranteed to be
  * successfully invoked at most once even in a multi-threaded environment, can be
  * created like this:
  * {@snippet lang = java :
- *     static <T> Supplier<T> memoizedSupplier(Supplier<T> original) {
- *         Objects.requireNonNull(original);
- *         final StableValue<T> stable = StableValue.newInstance();
- *         return () -> stable.computeIfUnset(original);
- *     }
+ *     Supplier<T> memoized = StableValues.memoizedSupplier(original, null);
  * }
+ * The memoized supplier can also be lazily computed using a fresh background thread if a
+ * thread factory is provided as a second parameter as shown here:
+ * {@snippet lang = java :
+ *     Supplier<T> memoized = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
+ * }
+ * <p>
  * A memoized IntFunction, for the allowed given {@code size} values and where the
  * given {@code original} IntFunction is guaranteed to be successfully invoked at most
  * once per inout index even in a multi-threaded environment, can be created like this:

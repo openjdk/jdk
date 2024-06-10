@@ -36,7 +36,7 @@ import java.util.function.Supplier;
  * This class consists of static methods returning constructs involving StableValue.
  *
  * <p>The methods of this class all throw {@code NullPointerException}
- * if provided with {@code null} arguments.
+ * if provided with {@code null} arguments unless otherwise specified.
  * <p>
  * The constructs returned are eligible for similar JVM optimizations as the
  * {@linkplain StableValue} itself.
@@ -50,37 +50,57 @@ public final class StableValues {
     private StableValues() {}
 
     /**
-     * {@return a fresh unset StableValue who's value is computed in the background by
-     * a new Thread created via the provided {@code factory} where the new Thread will
-     * invoke the provided {@code supplier}}.
+     * {@return a new thread-safe, stable, lazily computed {@linkplain Supplier supplier}
+     * that records the value of the provided {@code original} supplier upon being first
+     * accessed via {@linkplain Supplier#get()}, or via a background thread created from
+     * the provided {@code factory} (if non-null)}
      * <p>
-     * If an Exception is thrown by the provided {@code supplier}, it be caught by the new
-     * Thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught exception handler}
-     * and no value will be set in the returned StableValue.
+     * The provided {@code original} supplier is guaranteed to be successfully invoked
+     * at most once even in a multi-threaded environment. Competing threads invoking the
+     * {@linkplain Supplier#get()} method when a value is already under computation
+     * will block until a value is computed or an exception is thrown by the
+     * computing thread.
      * <p>
-     * The method is equivalent to the following for a given non-null {@code factory} and
-     * non-null {@code supplier}:
-     * {@snippet lang = java :
-     *     StableValue<T> stable = StableValue.newInstance();
-     *     Thread thread = factory.newThread(() -> stable.computeIfUnset(supplier));
-     *     thread.start();
-     * }
+     * If the {@code original} Supplier invokes the returned Supplier recursively,
+     * a StackOverflowError will be thrown when the returned
+     * Supplier's {@linkplain Supplier#get()} method is invoked.
+     * <p>
+     * If the provided {@code original} supplier throws an exception, it is relayed
+     * to the initial caller. If the memoized supplier is computed by a background thread,
+     * exceptions from the provided {@code original} supplier will be relayed to the
+     * background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
+     * exception handler}.
      *
-     * @param factory  used to create new background threads
-     * @param supplier that can provide a value for the returned StableValue
-     * @param <T>      type for the returned StableValue
+     * @param original supplier used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 a background thread that will compute the memoized value. If the
+     *                 factory is {@code null}, no background thread will be started.
+     * @param <T>      the type of results supplied by the returned supplier
      */
-    public static <T> StableValue<T> ofBackground(ThreadFactory factory,
-                                                  Supplier<? extends T> supplier) {
-        Objects.requireNonNull(factory);
-        Objects.requireNonNull(supplier);
-        final StableValue<T> stable = StableValue.newInstance();
-        final Thread thread = factory.newThread(new Runnable() {
-            @Override public void run() { stable.computeIfUnset(supplier); }
-        });
-        thread.start();
-        return stable;
-    }
+
+    public static <T> Supplier<T> memoizedSupplier(Supplier<? extends T> original,
+                                                   ThreadFactory factory) {
+          Objects.requireNonNull(original);
+          // `factory` is nullable
+
+          // The memoized value is backed by a StableValue
+          final StableValue<T> stable = StableValue.newInstance();
+          // A record provides better debug capabilities than a lambda
+          record MemoizedSupplier<T>(StableValue<T> stable,
+                                     Supplier<? extends T> original) implements Supplier<T> {
+              @Override public T get() { return stable.computeIfUnset(original); }
+          }
+          final Supplier<T> memoized = new MemoizedSupplier<>(stable, original);
+
+          if (factory != null) {
+              final Thread thread = factory.newThread(new Runnable() {
+                  @Override public void run() { memoized.get(); }
+              });
+              thread.start();
+          }
+
+          return memoized;
+      }
 
     /**
      * {@return a shallowly immutable, stable List of distinct fresh stable values}
