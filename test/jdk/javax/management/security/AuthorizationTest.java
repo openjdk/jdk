@@ -113,8 +113,6 @@ public class AuthorizationTest {
         }
 
         // Run test
-//        System.out.println("SecurityManager property: java.security.manager = '" + System.getProperty("java.security.manager") + "'");
-//        System.out.println("SecurityManager         : " + System.getSecurityManager());
         AuthorizationTest test = new AuthorizationTest();
         test.run(serverMap, clientParams);
 

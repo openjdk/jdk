@@ -35,6 +35,9 @@
  * @run main/othervm/timeout=300 StartStopTest 1
  * @run main/othervm/timeout=300 StartStopTest 2
  * @run main/othervm/timeout=300 StartStopTest 3
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow StartStopTest 1
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow StartStopTest 2
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow StartStopTest 3
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 1
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 2
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 3

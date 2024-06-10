@@ -32,7 +32,6 @@
  * @run build RMIPasswdAuthTest SimpleStandard SimpleStandardMBean
  *
  * @run main/othervm RMIPasswdAuthTest
- *
  * @run main/othervm -Djava.security.manager=allow RMIPasswdAuthTest
  */
 

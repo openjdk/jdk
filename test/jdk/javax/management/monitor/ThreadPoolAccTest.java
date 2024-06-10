@@ -32,7 +32,6 @@
  * @run build ThreadPoolAccTest
  *
  * @run main/othervm ThreadPoolAccTest
- *
  * @run main/othervm -Djava.security.manager=allow ThreadPoolAccTest
  */
 

@@ -1536,18 +1536,12 @@ public abstract class Monitor
                     return null;
                 }
             };
-            try {
             if (ac == null) {
-                // No SM:
-                Subject.doAs(s, action); // can hit AssertionError in MethodHandleImpl
-                // Subject.callAs(subject, action::run);
+                // No SecurityManager:
+                Subject.doAs(s, action);
             } else {
                 // ACC means SM is permitted.
                 AccessController.doPrivileged(action, ac);
-            }
-            } catch (Throwable thr) {
-                System.err.println("XXXXXXXXXXXXXXXX exception in doAs s = " + s);
-                thr.printStackTrace(System.err);
             }
             synchronized (Monitor.this) {
                 if (Monitor.this.isActive() &&
