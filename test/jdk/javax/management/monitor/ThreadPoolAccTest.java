@@ -33,6 +33,7 @@
  *
  * @run main/othervm ThreadPoolAccTest
  * @run main/othervm -Djava.security.manager=allow ThreadPoolAccTest
+ * @run main/othervm -Djava.security.manager=allow -DThreadPoolAccTest.useGetSubjectACC=true ThreadPoolAccTest
  */
 
 import java.security.AccessController;
@@ -70,8 +71,9 @@ public class ThreadPoolAccTest {
             return "";
         }
         private void setPrincipal() {
-            //Subject subject = Subject.getSubject(AccessController.getContext());
-            Subject subject = Subject.current();
+            // Use Subject.current() unless test Property is set.
+            Subject subject = Boolean.getBoolean("ThreadPoolAccTest.useGetSubjectACC") ?
+                              Subject.getSubject(AccessController.getContext()) : Subject.current();
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             principal = principals.iterator().next().getName();
         }

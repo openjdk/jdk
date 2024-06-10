@@ -152,10 +152,8 @@ public class SimpleStandard
      * type JMXPrincipal and refers to the "monitorRole" identity.
      */
     private void checkSubject() {
-        //AccessControlContext acc = AccessController.getContext();
-        //Subject subject = Subject.getSubject(acc);
-
-        Subject subject = Subject.current();
+         Subject subject = Boolean.getBoolean("SimpleStandard.useGetSubjectACC") ?
+                           Subject.getSubject(AccessController.getContext()) : Subject.current();
         Set principals = subject.getPrincipals();
         Principal principal = (Principal) principals.iterator().next();
         if (!(principal instanceof JMXPrincipal))

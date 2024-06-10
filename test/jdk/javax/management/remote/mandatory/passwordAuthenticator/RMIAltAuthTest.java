@@ -33,6 +33,7 @@
  *
  * @run main/othervm RMIAltAuthTest
  * @run main/othervm -Djava.security.manager=allow RMIAltAuthTest
+ * @run main/othervm -Djava.security.manager=allow -DSimpleStandard.useGetSubjectACC=true RMIAltAuthTest
  */
 
 import java.io.File;
