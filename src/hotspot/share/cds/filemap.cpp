@@ -371,7 +371,7 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
 }
 
 const char* SharedClassPathEntry::name() const {
-  if (UseSharedSpaces && is_modules_image()) {
+  if (CDSConfig::is_using_archive() && is_modules_image()) {
     // In order to validate the runtime modules image file size against the archived
     // size information, we need to obtain the runtime modules image path. The recorded
     // dump time modules image path in the archive may be different from the runtime path
@@ -383,7 +383,7 @@ const char* SharedClassPathEntry::name() const {
 }
 
 bool SharedClassPathEntry::validate(bool is_class_path) const {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   struct stat st;
   const char* name = this->name();
@@ -935,7 +935,7 @@ bool FileMapInfo::check_module_paths() {
 }
 
 bool FileMapInfo::validate_shared_path_table() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   _validating_shared_path_table = true;
 
@@ -981,7 +981,7 @@ bool FileMapInfo::validate_shared_path_table() {
         log_info(class, path)("ok");
       } else {
         if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
         }
         return false;
       }
@@ -990,7 +990,7 @@ bool FileMapInfo::validate_shared_path_table() {
         log_info(class, path)("ok");
       } else {
         if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
         }
         return false;
       }
@@ -1038,7 +1038,7 @@ void FileMapInfo::validate_non_existent_class_paths() {
   // loading of archived platform/app classes (currently there's no way to disable just the
   // app classes).
 
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   for (int i = header()->app_module_paths_start_index() + header()->num_module_paths();
        i < get_number_of_shared_paths();
        i++) {
@@ -2087,7 +2087,7 @@ bool FileMapInfo::can_use_heap_region() {
 // The actual address of this region during dump time.
 address FileMapInfo::heap_region_dumptime_address() {
   FileMapRegion* r = region_at(MetaspaceShared::hp);
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
     return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
@@ -2099,7 +2099,7 @@ address FileMapInfo::heap_region_dumptime_address() {
 // The address where this region can be mapped into the runtime heap without
 // patching any of the pointers that are embedded in this region.
 address FileMapInfo::heap_region_requested_address() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
@@ -2227,7 +2227,7 @@ bool FileMapInfo::map_heap_region_impl() {
 }
 
 narrowOop FileMapInfo::encoded_heap_region_dumptime_address() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   assert(UseCompressedOops, "sanity");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   return CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
@@ -2316,7 +2316,7 @@ GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 // [2] validate_shared_path_table - this is done later, because the table is in the RW
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize() {
-  assert(UseSharedSpaces, "UseSharedSpaces expected.");
+  assert(CDSConfig::is_using_archive(), "UseSharedSpaces expected.");
   assert(Arguments::has_jimage(), "The shared archive file cannot be used with an exploded module build.");
 
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {

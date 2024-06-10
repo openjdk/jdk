@@ -280,21 +280,6 @@ PSParallelCompact::print_generic_summary_data(ParallelCompactData& summary_data,
   ::print_generic_summary_data(summary_data,beg_addr, end_addr);
 }
 
-void
-print_generic_summary_data(ParallelCompactData& summary_data,
-                           SpaceInfo* space_info)
-{
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
-    return;
-  }
-
-  for (unsigned int id = 0; id < PSParallelCompact::last_space_id; ++id) {
-    const MutableSpace* space = space_info[id].space();
-    print_generic_summary_data(summary_data, space->bottom(),
-                               MAX2(space->top(), space_info[id].new_top()));
-  }
-}
-
 static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            const MutableSpace* space) {
@@ -2130,14 +2115,14 @@ void PSParallelCompact::verify_filler_in_dense_prefix() {
 }
 
 void PSParallelCompact::verify_complete(SpaceId space_id) {
-  // All Regions between space bottom() to new_top() should be marked as filled
-  // and all Regions between new_top() and top() should be available (i.e.,
-  // should have been emptied).
+  // All Regions served as compaction targets, from dense_prefix() to
+  // new_top(), should be marked as filled and all Regions between new_top()
+  // and top() should be available (i.e., should have been emptied).
   ParallelCompactData& sd = summary_data();
   SpaceInfo si = _space_info[space_id];
   HeapWord* new_top_addr = sd.region_align_up(si.new_top());
   HeapWord* old_top_addr = sd.region_align_up(si.space()->top());
-  const size_t beg_region = sd.addr_to_region_idx(si.space()->bottom());
+  const size_t beg_region = sd.addr_to_region_idx(si.dense_prefix());
   const size_t new_top_region = sd.addr_to_region_idx(new_top_addr);
   const size_t old_top_region = sd.addr_to_region_idx(old_top_addr);
 
