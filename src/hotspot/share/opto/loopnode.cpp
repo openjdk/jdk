@@ -169,10 +169,10 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     return earliest;
   }
 
-  while (1) {
-    Node *next = ctl;
-    // Moving the node out of a loop on the projection of a If
-    // confuses loop predication. So once we hit a Loop in a If branch
+  while (true) {
+    Node* next = ctl;
+    // Moving the node out of a loop on the projection of an If
+    // confuses Loop Predication. So, once we hit a loop in an If branch
     // that doesn't branch to an UNC, we stop. The code that process
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
@@ -6377,31 +6377,16 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (least != early) {
     // Move the node above predicates as far up as possible so a
-    // following pass of loop predication doesn't hoist a predicate
+    // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    Node* new_ctrl = least;
-    for (;;) {
-      if (!new_ctrl->is_Proj()) {
+    PredicateEntryIterator predicate_iterator(least);
+    while (predicate_iterator.has_next()) {
+      Node* next_predicate_entry = predicate_iterator.next_entry();
+      if (is_dominator(next_predicate_entry, early) && next_predicate_entry != early) {
         break;
       }
-      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern();
-      if (call == nullptr) {
-        break;
-      }
-      int req = call->uncommon_trap_request();
-      Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-      if (trap_reason != Deoptimization::Reason_loop_limit_check &&
-          trap_reason != Deoptimization::Reason_predicate &&
-          trap_reason != Deoptimization::Reason_profile_predicate) {
-        break;
-      }
-      Node* c = new_ctrl->in(0)->in(0);
-      if (is_dominator(c, early) && c != early) {
-        break;
-      }
-      new_ctrl = c;
+      least = next_predicate_entry;
     }
-    least = new_ctrl;
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.

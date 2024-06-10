@@ -32,29 +32,29 @@
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
 Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
   Node* entry = start_proj;
-  while (is_assertion_predicate_success_proj(entry)) {
+  while (AssertionPredicateWithHalt::is_predicate(entry)) {
     entry = entry->in(0)->in(0);
   }
   return entry;
 }
 
-bool AssertionPredicatesWithHalt::is_assertion_predicate_success_proj(const Node* predicate_proj) {
-  if (predicate_proj == nullptr || !predicate_proj->is_IfProj() || !predicate_proj->in(0)->is_If()) {
+bool AssertionPredicateWithHalt::is_predicate(const Node* maybe_success_proj) {
+  if (maybe_success_proj == nullptr || !maybe_success_proj->is_IfProj() || !maybe_success_proj->in(0)->is_If()) {
     return false;
   }
-  return has_assertion_predicate_opaque(predicate_proj) && has_halt(predicate_proj);
+  return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj);
 }
 
 // Check if the If node of `predicate_proj` has an Opaque4 (Template Assertion Predicate) or an
 // OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
-bool AssertionPredicatesWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
+bool AssertionPredicateWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
   Node* bol = iff->in(1);
   return bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
-bool AssertionPredicatesWithHalt::has_halt(const Node* success_proj) {
+bool AssertionPredicateWithHalt::has_halt(const Node* success_proj) {
   ProjNode* other_proj = success_proj->as_IfProj()->other_if_proj();
   return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
@@ -72,7 +72,15 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
   return nullptr;
 }
 
-Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
+bool ParsePredicate::is_predicate(Node* maybe_success_proj) {
+  if (!maybe_success_proj->is_IfProj()) {
+    return false;
+  }
+  IfNode* if_node = maybe_success_proj->in(0)->as_If();
+  return if_node->is_ParsePredicate();
+}
+
+Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProjNode* if_proj) {
     CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
       return Deoptimization::Reason_none;
@@ -80,8 +88,20 @@ Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* i
     return Deoptimization::trap_request_reason(uct_call->uncommon_trap_request());
 }
 
-bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  if (may_be_runtime_predicate_if(node)) {
+bool RegularPredicateWithUCT::is_predicate(Node* maybe_success_proj) {
+  if (may_be_predicate_if(maybe_success_proj)) {
+    IfProjNode* success_proj = maybe_success_proj->as_IfProj();
+    const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj);
+    return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+            deopt_reason == Deoptimization::Reason_predicate ||
+            deopt_reason == Deoptimization::Reason_profile_predicate);
+  } else {
+    return false;
+  }
+}
+
+bool RegularPredicateWithUCT::is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason) {
+  if (may_be_predicate_if(node)) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
     return false;
@@ -89,7 +109,7 @@ bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason d
 }
 
 // A Runtime Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
-bool RuntimePredicate::may_be_runtime_predicate_if(Node* node) {
+bool RegularPredicateWithUCT::may_be_predicate_if(Node* node) {
   if (node->is_IfProj()) {
     const IfNode* if_node = node->in(0)->as_If();
     const int opcode_if = if_node->Opcode();
@@ -99,6 +119,10 @@ bool RuntimePredicate::may_be_runtime_predicate_if(Node* node) {
     }
   }
   return false;
+}
+
+bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
+  return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
 ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
@@ -355,4 +379,19 @@ bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
 
 bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(Node* node) {
   return node->is_If() && node->in(1)->is_Opaque4();
+}
+
+// Is current node pointed to by iterator a predicate?
+bool PredicateEntryIterator::has_next() const {
+    return ParsePredicate::is_predicate(_current) ||
+           RegularPredicateWithUCT::is_predicate(_current) ||
+           AssertionPredicateWithHalt::is_predicate(_current);
+}
+
+// Skip the current predicate pointed to by iterator by returning the input into the predicate. This could possibly be
+// a non-predicate node.
+Node* PredicateEntryIterator::next_entry() {
+  assert(has_next(), "current must be predicate");
+  _current = _current->in(0)->in(0);
+  return _current;
 }
