@@ -178,6 +178,7 @@ extern outputStream* tty;           // tty output
 class streamIndentor : public StackObj {
   outputStream* const _str;
   const int _amount;
+  NONCOPYABLE(streamIndentor);
 public:
   streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
     _str->inc(_amount);
@@ -188,6 +189,7 @@ public:
 class StreamAutoIndentor : public StackObj {
   outputStream* const _os;
   const bool _old;
+  NONCOPYABLE(StreamAutoIndentor);
  public:
   StreamAutoIndentor(outputStream* os) :
     _os(os), _old(os->set_autoindent(true)) {}
