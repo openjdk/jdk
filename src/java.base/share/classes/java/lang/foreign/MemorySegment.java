@@ -704,8 +704,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment asSlice(long offset);
 
     /**
-     * Returns a new memory segment that has the same address and scope as this segment,
-     * but with the provided size.
+     * Returns a new memory segment that has the same address, scope, and
+     * read-only state as this segment, but with the provided size.
      *
      * @param newSize the size of the returned segment
      * @return a new memory segment that has the same address and scope as
@@ -721,15 +721,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment reinterpret(long newSize);
 
     /**
-     * Returns a new memory segment with the same address and size as this segment, but
-     * with the provided scope. As such, the returned segment cannot be accessed after
-     * the provided arena has been closed. Moreover, the returned segment can be
-     * accessed compatibly with the confinement restrictions associated with the provided
-     * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
-     * the returned segment can only be accessed by the arena's owner thread, regardless
-     * of the confinement restrictions associated with this segment. In other words, this
-     * method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * Returns a new memory segment with the same address, size, and read-only state as
+     * this segment, but with the provided scope. As such, the returned segment cannot be
+     * accessed after the provided arena has been closed. Moreover, the returned segment
+     * can be accessed compatibly with the confinement restrictions associated with the
+     * provided arena: that is, if the provided arena is a
+     * {@linkplain Arena#ofConfined() confined arena}, the returned segment can only be
+     * accessed by the arena's owner thread, regardless of the confinement restrictions
+     * associated with this segment. In other words, this method returns a segment that
+     * behaves as if it had been allocated using the provided arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -766,15 +766,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup);
 
     /**
-     * Returns a new segment with the same address as this segment, but with the provided
-     * size and scope. As such, the returned segment cannot be accessed after the
-     * provided arena has been closed. Moreover, if the returned segment can be accessed
-     * compatibly with the confinement restrictions associated with the provided arena:
-     * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
-     * the returned segment can only be accessed by the arena's owner thread, regardless
-     * of the confinement restrictions associated with this segment. In other words,
-     * this method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * Returns a new segment with the same address and read-only state as this segment,
+     * but with the provided size and scope. As such, the returned segment cannot be
+     * accessed after the provided arena has been closed. Moreover, if the returned
+     * segment can be accessed compatibly with the confinement restrictions associated
+     * with the provided arena: that is, if the provided arena is a
+     * {@linkplain Arena#ofConfined() confined arena}, the returned segment can only be
+     * accessed by the arena's owner thread, regardless of the confinement restrictions
+     * associated with this segment. In other words, this method returns a segment that
+     * behaves as if it had been allocated using the provided arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
