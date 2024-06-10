@@ -740,11 +740,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressBailout) {
-    initialize_stress_seed(directive);
-  }
-
   print_inlining_init();
   { // Scope for timing the parser
     TracePhase tp("parse", &timers[_t_parser]);
@@ -848,6 +843,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
+
+  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
+      StressIncrementalInlining || StressMacroExpansion || StressBailout) {
+    initialize_stress_seed(directive);
+  }
 
   // Now optimize
   Optimize();
@@ -4399,9 +4399,7 @@ void Compile::record_failure(const char* reason, bool skip) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
   } else {
-    if (StressBailout && !skip)  {
-        guarantee(false, "should have handled previous failure.");
-    }
+    guarantee(!StressBailout || skip, "should have handled previous failure.");
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

@@ -844,7 +844,7 @@ private:
 #ifdef ASSERT
     return false; // debug builds assert on bailouts.
 #endif
-    if (random() % invprob) {
+    if (!_stress_seed || (random() % invprob)) {
       return false;
     }
     record_failure("StressBailout");
