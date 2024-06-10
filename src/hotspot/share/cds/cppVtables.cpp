@@ -66,7 +66,7 @@
 
 class CppVtableInfo {
   intptr_t _vtable_size;
-  intptr_t _cloned_vtable[1];
+  intptr_t _cloned_vtable[];
 public:
   static int num_slots(int vtable_size) {
     return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
