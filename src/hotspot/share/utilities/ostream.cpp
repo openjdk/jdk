@@ -979,7 +979,7 @@ void ostream_exit() {
   ClassListWriter::delete_classlist();
   // Make sure tty works after VM exit by assigning an always-on functioning fdStream.
   outputStream* tmp = tty;
-  tty = DisplayVMOutputToStderr ? fdStream::stdout_stream() : fdStream::stderr_stream();
+  tty = DisplayVMOutputToStderr ? fdStream::stderr_stream() : fdStream::stdout_stream();
   if (tmp != &tty_preinit_stream && tmp != defaultStream::instance) {
     delete tmp;
   }
