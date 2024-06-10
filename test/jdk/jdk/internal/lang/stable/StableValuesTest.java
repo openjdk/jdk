@@ -32,15 +32,12 @@ import jdk.internal.lang.StableValue;
 import jdk.internal.lang.StableValues;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
