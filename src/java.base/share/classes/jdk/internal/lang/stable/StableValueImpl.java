@@ -82,6 +82,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return other;
     }
 
+    @ForceInline
     @Override
     public boolean isSet() {
         return value != null;
@@ -132,6 +133,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     // Unwraps null sentinel values into null
+    @ForceInline
     private static <T> T unwrap(T t) {
         return t == nullSentinel() ? null : t;
     }
