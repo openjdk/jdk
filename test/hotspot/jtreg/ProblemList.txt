@@ -118,11 +118,6 @@ runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/Thread/TestAlwaysPreTouchStacks.java 8324781 linux-all
 
-applications/jcstress/accessAtomic.java 8325984 generic-all
-applications/jcstress/acqrel.java 8325984 generic-all
-applications/jcstress/atomicity.java 8325984 generic-all
-applications/jcstress/coherence.java 8325984 generic-all
-
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all

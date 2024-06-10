@@ -3618,7 +3618,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && xshare_auto_cmd_line) ||
+  if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
