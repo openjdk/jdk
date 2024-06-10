@@ -55,15 +55,14 @@ _JNI_IMPORT_OR_EXPORT_ jboolean JNICALL JAWT_GetAWT
 
     awt->GetDrawingSurface = awt_GetDrawingSurface;
     awt->FreeDrawingSurface = awt_FreeDrawingSurface;
-    if (awt->version >= JAWT_VERSION_1_4) {
-        awt->Lock = awt_Lock;
-        awt->Unlock = awt_Unlock;
-        awt->GetComponent = awt_GetComponent;
-        if (awt->version >= JAWT_VERSION_9) {
-            awt->CreateEmbeddedFrame = awt_CreateEmbeddedFrame;
-            awt->SetBounds = awt_SetBounds;
-            awt->SynthesizeWindowActivation = awt_SynthesizeWindowActivation;
-        }
+
+    awt->Lock = awt_Lock;
+    awt->Unlock = awt_Unlock;
+    awt->GetComponent = awt_GetComponent;
+    if (awt->version >= JAWT_VERSION_9) {
+        awt->CreateEmbeddedFrame = awt_CreateEmbeddedFrame;
+        awt->SetBounds = awt_SetBounds;
+        awt->SynthesizeWindowActivation = awt_SynthesizeWindowActivation;
     }
 
     return JNI_TRUE;
