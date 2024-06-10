@@ -47,6 +47,8 @@ import sun.security.action.GetBooleanAction;
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+
+import static java.lang.classfile.TypeKind.ReferenceType;
 import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.constant.ConstantUtils.*;
 
@@ -92,7 +94,10 @@ final class ProxyGenerator {
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
             MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
 
-    private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
+    private static final String
+            NAME_LOOKUP_ACCESSOR = "proxyClassLookup",
+            NAME_CLASS_LOADER = "LOADER";
+
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -129,7 +134,7 @@ final class ProxyGenerator {
     private final List<StackMapFrameInfo.VerificationTypeInfo> throwableStack;
     private final NameAndTypeEntry exInit;
     private final ClassEntry object, proxy, ute;
-    private final FieldRefEntry handlerField;
+    private final FieldRefEntry handlerField, classLoaderField;
     private final InterfaceMethodRefEntry invoke;
     private final MethodRefEntry uteInit;
     private final DirectMethodHandleDesc bsm;
@@ -175,6 +180,7 @@ final class ProxyGenerator {
         this.object = cp.classEntry(CD_Object);
         this.proxy = cp.classEntry(CD_Proxy);
         this.handlerField = cp.fieldRefEntry(proxy, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
+        this.classLoaderField = cp.fieldRefEntry(classEntry.asSymbol(), NAME_CLASS_LOADER, CD_ClassLoader);
         this.invoke = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray);
         this.ute = cp.classEntry(CD_UndeclaredThrowableException);
         this.uteInit = cp.methodRefEntry(ute, cp.nameAndTypeEntry(INIT_NAME, MTD_void_Throwable));
@@ -473,6 +479,7 @@ final class ProxyGenerator {
                 }
             }
 
+            generateClassInitializer(clb);
             generateBootstrapMethod(clb);
             generateLookupAccessor(clb);
         });
@@ -543,6 +550,33 @@ final class ProxyGenerator {
     }
 
     /**
+     * Generate the class initializer, called in AccessController.doPrivileged
+     * to obtain the class loader.
+     */
+    private void generateClassInitializer(ClassBuilder clb) {
+        clb.withField(classLoaderField.name(), classLoaderField.type(), ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
+            cob.ldc(classEntry)
+               .invokevirtual(CD_Class, "getClassLoader", MTD_ClassLoader)
+               .astore(0);
+            var endIf = cob.newLabel();
+            cob.aload(0)
+               .if_nonnull(endIf)
+               .invokestatic(CD_ClassLoader, "getPlatformClassLoader", MTD_ClassLoader)
+               .astore(0)
+               .labelBinding(endIf)
+               .aload(0)
+               .putstatic(classLoaderField)
+               .return_()
+               .with(StackMapTableAttribute.of(List.of(
+                    StackMapFrameInfo.of(endIf,
+                            List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_ClassLoader)),
+                            List.of()))));
+        });
+
+    }
+
+    /**
      * Generate CONDY bootstrap method for the proxy class to retrieve {@link Method} instances.
      */
     private void generateBootstrapMethod(ClassBuilder clb) {
@@ -550,8 +584,7 @@ final class ProxyGenerator {
             cob.aload(3) //interface Class
                .aload(1) //interface method name String
                .aload(4) //interface method type String
-               .ldc(classEntry)
-               .invokevirtual(CD_Class, "getClassLoader", MTD_ClassLoader)
+               .getstatic(classLoaderField)
                .invokestatic(CD_MethodType, "fromMethodDescriptorString",
                        MTD_MethodType_String_ClassLoader) //interface method type
                .invokevirtual(CD_MethodType, "parameterArray", MTD_Class_array)
