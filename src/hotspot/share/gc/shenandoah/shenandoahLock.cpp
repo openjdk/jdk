@@ -34,23 +34,35 @@
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
-  if (allow_block_for_safepoint && thread->is_Java_thread()) {
-    contended_lock_internal<true>(JavaThread::cast(thread));
+  if (thread->is_Java_thread()) {
+    if (allow_block_for_safepoint) {
+      contended_lock_internal<true>(JavaThread::cast(thread));
+    } else {
+      contended_lock_internal<false>(JavaThread::cast(thread));
+    }
   } else {
-    contended_lock_internal<false>(nullptr);
+
+    contended_lock_internal_non_java_thread();
+  }
+}
+
+void ShenandoahLock::contended_lock_internal_non_java_thread() {
+  assert(!Thread::current()->is_Java_thread(), "Can't be Java Thread.");
+  while (_state == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+    if (os::is_MP()) {
+      SpinPause();
+    } else {
+      os::naked_yield();
+    }
   }
 }
 
 template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = 0;
-  while (Atomic::load(&_state) == locked ||
-         Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
-      // Synchronizing for safepoint. This condition preempts everything else.
-      // Do not do anything else, suspend until safepoint is over.
-      ThreadBlockInVM block(java_thread, true);
-    } else if (ctr < 0x1F && os::is_MP()) {
+  while (_state == locked ||
+      Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+    if (ctr < 0x1F && !SafepointSynchronize::is_synchronizing()  && os::is_MP()) {
       // Lightly contended, Spin a little if there are multiple processors,
       // there is no point in spinning and not giving up on CPU if there is single CPU processor.
       ctr++;
