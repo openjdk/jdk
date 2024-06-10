@@ -40,12 +40,14 @@ class IndexedFreeListAllocator {
 public:
   class I {
     friend IndexedFreeListAllocator<E, flag>;
-    int32_t _idx;
-#ifdef ASSERT
-    IndexedFreeListAllocator<E, flag>* _owner;
-#endif
+    const int32_t _idx;
+
+    I(int32_t idx) : _idx(idx) {}
 
   public:
+    I(const I&) = default;
+    I& operator=(const I&) = default;
+
     bool operator !=(I other) {
       return _idx != other._idx;
     }
@@ -53,8 +55,9 @@ public:
       return _idx == other._idx;
     }
 
-    I(int32_t idx DEBUG_ONLY(COMMA IndexedFreeListAllocator<E COMMA flag>* owner))
-    : _idx(idx) DEBUG_ONLY(COMMA _owner(owner)) {}
+    bool is_nil() {
+      return *this == IndexedFreeListAllocator<E, flag>::nil;
+    }
   };
 
   static const I nil;
@@ -78,7 +81,7 @@ public:
 
   IndexedFreeListAllocator(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
-      _free_start(I(nil._idx DEBUG_ONLY(COMMA this))) {}
+      _free_start(I(nil._idx)) {}
 
   template<typename... Args>
   I allocate(Args... args) {
@@ -96,11 +99,11 @@ public:
     }
 
     ::new (be) E(args...);
-    return I(i DEBUG_ONLY(COMMA this));
+    return I(i);
   }
 
   void free(I i) {
-    assert(i == nil || i._owner == this, "attempt to free via wrong allocator");
+    assert(!i.is_nil() || (i._idx > 0 && i._idx < _backing_storage.length()), "out of bounds free");
 
     BackingElement& be_freed = _backing_storage.at(i._idx);
     be_freed.link = _free_start;
@@ -108,21 +111,20 @@ public:
   }
 
   E& at(I i) {
-    assert(i != nil, "null pointer dereference");
-    assert(i._owner == this, "attempt to access via wrong allocator");
+    assert(!i.is_nil(), "null pointer dereference");
+    assert(i._idx > 0 && i._idx < _backing_storage.length(), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i._idx).e);
   }
 
   const E& at(I i) const {
-    assert(i != nil, "null pointer dereference");
-    assert(i._owner == this, "attempt to access via wrong allocator");
+    assert(!i.is_nil(), "null pointer dereference");
     return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
   }
 };
 
 template<typename E, MEMFLAGS flag>
 const typename IndexedFreeListAllocator<E, flag>::I
-    IndexedFreeListAllocator<E, flag>::nil(-1 DEBUG_ONLY(COMMA nullptr));
+    IndexedFreeListAllocator<E, flag>::nil(-1);
 
 // A CHeap allocator
 template<typename E, MEMFLAGS flag>
