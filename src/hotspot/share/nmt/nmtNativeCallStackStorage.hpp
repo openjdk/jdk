@@ -72,7 +72,6 @@ private:
   struct Link;
   using Allocator = ALLOCATOR<Link, mtNMT>;
   using LinkPtr = typename Allocator::I;
-  static LinkPtr null() { return Allocator::nil; }
   Allocator _allocator;
 
   struct Link {
@@ -83,13 +82,13 @@ private:
         stack(v) {
     }
     Link()
-    : next(null()), stack() {}
+    : next(Allocator::nil), stack() {}
   };
 
   StackIndex put(const NativeCallStack& value) {
     int bucket = value.calculate_hash() % _table_size;
     LinkPtr link = _table[bucket];
-    while (link != null()) {
+    while (!link.is_nil()) {
       Link& l = _allocator.at(link);
       if (value.equals(get(l.stack))) {
         return l.stack;
@@ -135,7 +134,7 @@ public:
     if (_is_detailed_mode) {
       _table = NEW_C_HEAP_ARRAY(LinkPtr, _table_size, mtNMT);
       for (int i = 0; i < _table_size; i++) {
-        _table[i] = null();
+        _table[i] = Allocator::nil;
       }
     }
   }
