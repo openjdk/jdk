@@ -37,9 +37,12 @@ import java.util.function.Supplier;
  * A stable value is said to be monotonic because the state of a stable value can only go
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
- <p>
+ * <p>
  * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
+ * <p>
+ * The utility class {@linkplain StableValues} contains a number of convenience methods
+ * for creating constructs involving StableValues:
  * <p>
  * A StableValue can be created and computed by a background thread like this:
  * {@snippet lang = java:
@@ -47,7 +50,7 @@ import java.util.function.Supplier;
  *         Thread.ofVirtual().factory(), Value::new);
  *}
  * A new background thread will be created from a factory (e.g. `Thread.ofVirtual.factory`)
- * and said thread will compute the returned StableValue's value using a supplier
+ * and said thread will compute the returned StableValue's holder value using a supplier
  * (e.g. `Value::new`).
  * <p>
  * A List of stable values with a given {@code size} can be created the following way:
@@ -55,7 +58,7 @@ import java.util.function.Supplier;
  *     List<StableValue<E>> list = StableValues.ofList(size);
  * }
  * The list can be used to model stable arrays of one dimensions. If two or more
- * dimensional arrays are to be modeled, List of List of ... of StableValue can be used.
+ * dimensional arrays are to be modeled, a List of List of ... of StableValue can be used.
  * <p>
  * A Map of stable values with a given set of {@code keys} can be created like this:
  * {@snippet lang = java :
@@ -100,16 +103,16 @@ import java.util.function.Supplier;
  * }
  * <p>
  * The constructs above are eligible for similar JVM optimizations as the StableValue
- * itself.
+ * class itself.
  * <p>
- * All methods that can set the stable value's value are guarded such that competing
+ * All methods that can set the stable value's holder value are guarded such that competing
  * set operations (by other threads) will block if another set operation is
  * already in progress.
  * <p>
- * Except for a StableValue's value itself, all method parameters must be <em>non-null</em>
- * or a {@link NullPointerException} will be thrown.
+ * Except for a StableValue's holder value itself, all method parameters must be
+ * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
- * @param <T> type of the wrapped value
+ * @param <T> type of the holder value
  *
  * @since 24
  */
@@ -119,7 +122,7 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the stable value was set to the provided {@code value},
+     * {@return {@code true} if the holder value was set to the provided {@code value},
      * otherwise returns {@code false}}
      *
      * @param value to set (nullable)
@@ -127,39 +130,39 @@ public sealed interface StableValue<T>
     boolean trySet(T value);
 
     /**
-     * {@return the set value (nullable) if set, otherwise return the {@code other} value}
-     * @param other to return if the stable value is not set
+     * {@return the set holder value (nullable) if set, otherwise return the
+     * {@code other} value}
+     * @param other to return if the stable holder value is not set
      */
     T orElse(T other);
 
     /**
-     * {@return the set value if set, otherwise throws
-     * {@code NoSuchElementException}}
+     * {@return the set holder value if set, otherwise throws {@code NoSuchElementException}}
      *
      * @throws NoSuchElementException if no value is set
      */
     T orElseThrow();
 
     /**
-     * {@return {@code true} if a value is set, {@code false} otherwise}
+     * {@return {@code true} if a holder value is set, {@code false} otherwise}
      */
     boolean isSet();
 
     /**
-     * If the stable value is unset, attempts to compute its value using the given
-     * supplier function and enters it into this stable value.
+     * If the holder value is unset, attempts to compute the holder value using the given
+     * {@code supplier} and enters it into the holder value.
      *
-     * <p>If the supplier function itself throws an (unchecked) exception, the exception
-     * is rethrown, and no value is set. The most common usage is to construct a new
-     * object serving as an initial value or memoized result, as in:
+     * <p>If the {@code supplier} itself throws an (unchecked) exception, the exception
+     * is rethrown, and no holder value is set. The most common usage is to construct a
+     * new object serving as an initial value or memoized result, as in:
      *
      * <pre> {@code
      * T t = stable.computeIfUnset(T::new);
      * }</pre>
      *
      * @implSpec
-     * The default implementation is equivalent to the following steps for this
-     * {@code stable}:
+     * The implementation of this method is equivalent to the following steps for this
+     * {@code stable} and a given non-null {@code supplier}:
      *
      * <pre> {@code
      * if (stable.isSet()) {
@@ -169,27 +172,28 @@ public sealed interface StableValue<T>
      * stable.trySet(newValue);
      * return newValue;
      * }</pre>
-     * Except, the method is atomic and thread-safe.
+     * Except, the method is atomic and thread-safe with respect to this and all other
+     * methods that can set the StableValue's holder value.
      *
-     * @param supplier the mapping supplier to compute a value
-     * @return the current (existing or computed) value associated with
-     *         the stable value
+     * @param supplier the supplier to be used to compute a holder value
+     * @return the current (existing or computed) holder value associated with
+     *         this stable value
      */
     T computeIfUnset(Supplier<? extends T> supplier);
 
     // Convenience methods
 
     /**
-     * Sets the stable value to the provided {@code value}, or, if already set to a
-     * non-null value, throws {@linkplain IllegalStateException}}
+     * Sets the holder value to the provided {@code value}, or, if already set,
+     * throws {@linkplain IllegalStateException}}
      *
      * @param value to set (nullable)
-     * @throws IllegalArgumentException if a non-null value is already set
+     * @throws IllegalArgumentException if a holder value is already set
      */
     default void setOrThrow(T value) {
         if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set value to " + value +
-                    " because a value is alredy set: " + this);
+            throw new IllegalStateException("Cannot set the holder value to " + value +
+                    " because a holder value is alredy set: " + this);
         }
     }
 
@@ -197,9 +201,9 @@ public sealed interface StableValue<T>
     // Factory
 
     /**
-     * {@return a fresh stable value with an unset value}
+     * {@return a fresh stable value with an unset holder value}
      *
-     * @param <T> the value type to set
+     * @param <T> type of the holder value
      */
     static <T> StableValue<T> newInstance() {
         return StableValueImpl.newInstance();
