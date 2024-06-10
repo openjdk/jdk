@@ -1299,7 +1299,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     }
             };
             if (acc == null) {
-                // No ACC, therefore no SM. May have a Subject.
+                // No ACC, therefore no SM. May have a Subject:
                 if (subject != null) {
                     return Subject.doAs(subject, action);
                 } else {
@@ -1425,14 +1425,14 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             PrivilegedOperation op = new PrivilegedOperation(operation, params);
             if (acc == null) {
-                // No ACC, therefore no SM:
+                // No ACC, therefore no SM. May have a Subject:
                 if (subject != null) {
                     return Subject.doAs(subject, op);
                 } else {
                     return op.run();
                 }
             } else {
-                // ACC not null, so SM must be allowed, and we were given a Subject:
+                // ACC is present, we have a Subject and SM is permitted:
                 return AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> Subject.doAs(subject, op), acc);
             }
         } catch (PrivilegedActionException pe) {
@@ -1452,7 +1452,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             }
         } catch (Exception e) {
             if (e instanceof SecurityException) {
-                throw (SecurityException) e; // do not wrap SecurityException
+                throw (SecurityException) e;
             } else if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {
@@ -1623,15 +1623,20 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try {
                 if (acc == null) {
-                    // No ACC therefore no SM:
+                    // No ACC, therefore no SM. May have a Subject:
                     if (subject != null) {
                         return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
                     } else {
                         return wrappedClass.cast(mo.get());
                     }
                 } else {
-                    // We have ACC therefore SM is permitted, and Subject must be non-null:
-                    return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> AccessController.doPrivileged((PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()), acc));
+                    // ACC is present, we have a Subject and SM is permitted:
+                    PrivilegedExceptionAction<T> action = new PrivilegedExceptionAction<T>() {
+                        public T run() throws Exception {
+                            return wrappedClass.cast(mo.get());
+                        }
+                    };
+                    return AccessController.doPrivileged(action, acc);
                 }
             } finally {
                 AccessController.doPrivileged(new SetCcl(old));
