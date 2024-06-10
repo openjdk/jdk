@@ -470,8 +470,8 @@ public abstract class NumberFormat extends Format  {
     /**
      * Returns true if this format will parse numbers as integers only.
      * For example in the English locale, with ParseIntegerOnly true, the
-     * string "1234." would be parsed as the integer value 1234 and parsing
-     * would stop at the "." character.  Of course, the exact format accepted
+     * string "1234." would be parsed as the integer value 1234 and a {@code ParsePosition}
+     * index equal to that of the "." character. Of course, the exact format accepted
      * by the parse operation is locale dependent and determined by sub-classes
      * of NumberFormat.
      *

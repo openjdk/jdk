@@ -2150,10 +2150,7 @@ public class DecimalFormat extends NumberFormat {
      *   #getGroupingSize()} is not adhered to
      *   <li> {@link #isGroupingUsed()} returns {@code false}, and the grouping
      *   symbol is found
-     *   <li> {@link #isParseIntegerOnly()} returns {@code true}, and the decimal
-     *   separator is found
-     *   <li> {@link #isGroupingUsed()} returns {@code true} and {@link
-     *   #isParseIntegerOnly()} returns {@code false}, and the grouping
+     *   <li> {@link #isGroupingUsed()} returns {@code true} and the grouping
      *   symbol occurs after the decimal separator
      *   <li> Any other characters are found, that are not the expected symbols,
      *   and are not digits that occur within the numerical portion
@@ -2379,7 +2376,8 @@ public class DecimalFormat extends NumberFormat {
 
         // position will serve as new index when success, otherwise it will
         // serve as errorIndex when failure
-        position = subparseNumber(text, position, digits, true, isExponent, status);
+        Position pos = subparseNumber(text, position, digits, true, isExponent, status);
+        position = pos.fullPos;
 
         // First character after the prefix was un-parseable, should
         // fail regardless if lenient or strict.
@@ -2422,9 +2420,15 @@ public class DecimalFormat extends NumberFormat {
                 return false;
             }
 
-            // No failures, thus increment the index by the suffix
-            parsePosition.index = position +
-                    (gotPositive ? positiveSuffix.length() : negativeSuffix.length());
+            // When parsing integer only, index should be int pos
+            // If intPos is 0, the entire value was integer
+            if (isParseIntegerOnly() && pos.intPos > 0) {
+                parsePosition.index = pos.intPos;
+            } else {
+                // increment the index by the suffix
+                parsePosition.index = position +
+                        (gotPositive ? positiveSuffix.length() : negativeSuffix.length());
+            }
         } else {
             parsePosition.index = position;
         }
@@ -2436,6 +2440,9 @@ public class DecimalFormat extends NumberFormat {
         }
         return true;
     }
+
+    // To track the full parse index as well as the integer portion
+    record Position(int intPos, int fullPos) {}
 
     /**
      * Parses a number from the given {@code text}. The text is parsed
@@ -2452,11 +2459,12 @@ public class DecimalFormat extends NumberFormat {
      * @return returns the position of the first unparseable character or
      *         -1 in case of no valid number parsed
      */
-    int subparseNumber(String text, int position,
+    Position subparseNumber(String text, int position,
                        DigitList digits, boolean checkExponent,
                        boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
+        int intIndex = 0;
         if (!isExponent && text.regionMatches(position, symbols.getInfinity(), 0,
                 symbols.getInfinity().length())) {
             position += symbols.getInfinity().length();
@@ -2516,7 +2524,7 @@ public class DecimalFormat extends NumberFormat {
                 if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
-                    return position;
+                    return new Position(intIndex, position);
                 }
 
                 if (digit == 0) {
@@ -2538,37 +2546,42 @@ public class DecimalFormat extends NumberFormat {
                         --digits.decimalAt;
                     } else {
                         ++digitCount;
-                        digits.append((char)(digit + '0'));
+                        if (!sawDecimal || !isParseIntegerOnly()) {
+                            digits.append((char)(digit + '0'));
+                        }
                     }
                 } else if (digit > 0 && digit <= 9) { // [sic] digit==0 handled above
                     sawDigit = true;
                     ++digitCount;
-                    digits.append((char)(digit + '0'));
+                    if (!sawDecimal || !isParseIntegerOnly()) {
+                        digits.append((char) (digit + '0'));
+                    }
 
                     // Cancel out backup setting (see grouping handler below)
                     backup = -1;
                 } else if (!isExponent && ch == decimal) {
                     // Check grouping size on decimal separator
                     if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
-                        return groupingViolationIndex(position, prevSeparatorIndex);
+                        return new Position(intIndex, groupingViolationIndex(position, prevSeparatorIndex));
                     }
                     // If we're only parsing integers, or if we ALREADY saw the
                     // decimal, then don't parse this one.
-                    if (isParseIntegerOnly() || sawDecimal) {
+                    if (sawDecimal) {
                         break;
                     }
+                    intIndex = position;
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
                 } else if (!isExponent && ch == grouping && isGroupingUsed()) {
                     if (parseStrict) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
-                            return startPos;
+                            return new Position(intIndex, startPos);
                         }
                         // when strict, fail if grouping occurs after decimal OR
                         // current group violates grouping size
                         if (sawDecimal || (isGroupingViolation(position, prevSeparatorIndex))) {
-                            return groupingViolationIndex(position, prevSeparatorIndex);
+                            return new Position(intIndex, groupingViolationIndex(position, prevSeparatorIndex));
                         }
                         prevSeparatorIndex = position; // track previous
                     } else {
@@ -2621,7 +2634,7 @@ public class DecimalFormat extends NumberFormat {
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
                     // the loop before incrementing position. In both cases, check
                     // should be done at pos = 4
-                    return groupingViolationIndex(position - 1, prevSeparatorIndex);
+                    return new Position(intIndex, groupingViolationIndex(position - 1, prevSeparatorIndex));
                 }
             }
 
@@ -2636,8 +2649,9 @@ public class DecimalFormat extends NumberFormat {
                 digits.decimalAt = digitCount; // Not digits.count!
             }
 
-            // Adjust for exponent, if any
-            if (exponent != 0) {
+            // If parsing integer only, adjust exponent if it occurs
+            // in integer portion, otherwise ignore it
+            if (!sawDecimal || !isParseIntegerOnly()) {
                 digits.decimalAt = shiftDecimalAt(digits.decimalAt, exponent);
             }
 
@@ -2646,10 +2660,10 @@ public class DecimalFormat extends NumberFormat {
             // parse "$" with pattern "$#0.00". (return index 0 and error
             // index 1).
             if (!sawDigit && digitCount == 0) {
-                return -1;
+                return new Position(intIndex, -1);
             }
         }
-        return position;
+        return new Position(intIndex, position);
     }
 
     // Calculate the final decimal position based off the exponent value
@@ -2917,7 +2931,8 @@ public class DecimalFormat extends NumberFormat {
      * have '{@code U+2030}'.
      *
      * <P>Example: with multiplier 100, 1.23 is formatted as "123", and
-     * "123" is parsed into 1.23.
+     * "123" is parsed into 1.23. If {@code isParseIntegerOnly()} returns {@code true},
+     * "123" is parsed into 1.
      *
      * @param newValue the new multiplier
      * @see #getMultiplier
