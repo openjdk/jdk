@@ -42,8 +42,8 @@ import java.util.function.Supplier;
 // -XX:PerMethodTrapLimit=0 means no uncommon traps will be generated
 @Fork(value = 2, jvmArgsAppend = {
         "--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED",
-        "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED",
         "--enable-preview",
+        // Prevent the use of uncommon traps
         "-XX:PerMethodTrapLimit=0"})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(2)

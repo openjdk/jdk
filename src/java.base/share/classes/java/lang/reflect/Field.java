@@ -184,6 +184,7 @@ class Field extends AccessibleObject implements Member {
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }
+        setAccessible0(flag);
     }
 
     @Override
