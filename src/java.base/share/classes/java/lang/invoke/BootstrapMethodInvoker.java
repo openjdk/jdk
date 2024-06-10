@@ -103,12 +103,10 @@ final class BootstrapMethodInvoker {
                 // Call to StringConcatFactory::makeConcatWithConstants
                 // with empty constant arguments?
                 if (bootstrapMethod.type() == SCF_MT) {
-                    result = (CallSite)bootstrapMethod
-                            .invokeExact(caller, name, (MethodType)type,
+                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type,
                                          (String)info, new Object[0]);
                 } else if (bootstrapMethod.type() == CONDY_INVOKE) {
-                    result = (CallSite)bootstrapMethod
-                            .invokeExact(caller, name, (Class<?>)type,
+                    result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type,
                                     (MethodHandle)info, new Object[0]);
                 } else {
                     info = maybeReBox(info);
@@ -153,7 +151,7 @@ final class BootstrapMethodInvoker {
                 } else if (bsmType == CONDY_INVOKE) {
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
                     maybeReBoxElements(shiftedArgs);
-                    result = (Object)bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (MethodHandle)argv[0], shiftedArgs);
+                    result = bootstrapMethod.invokeExact(caller, name, (Class<?>)type, (MethodHandle)argv[0], shiftedArgs);
                 } else if (bsmType == LMF_ALT_MT) {
                     maybeReBoxElements(argv);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
