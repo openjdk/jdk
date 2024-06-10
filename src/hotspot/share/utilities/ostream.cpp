@@ -191,7 +191,7 @@ void outputStream::print_raw(const char* str, size_t len) {
   write(str, len);
 }
 
-void outputStream::fill_to(int col) {
+int outputStream::fill_to(int col) {
   const int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
   return need_fill;

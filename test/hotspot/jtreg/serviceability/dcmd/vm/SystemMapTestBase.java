@@ -44,9 +44,9 @@ public class SystemMapTestBase {
 
     protected static final String shouldMatchUnconditionally[] = {
         // java launcher
-        regexBase_committed + "/jdk/bin/java",
+        regexBase_committed + "/bin/java",
         // libjvm
-        regexBase_committed + "/jdk/lib/.*/libjvm.so",
+        regexBase_committed + "/lib/.*/libjvm.so",
         // primordial thread stack
         regexBase_committed + "\\[stack\\]",
         // we should see the hs-perf data file, and it should appear as shared as well as committed
