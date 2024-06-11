@@ -36,15 +36,15 @@ import javax.swing.event.PopupMenuListener;
 /*
  * @test
  * @bug 8315655
- * @summary Right click and dragging over a component with a popup menu will open the popup
+ * @summary Verifies Right click and dragging over a component with a popup menu will not open the popup
  * @key headful
  * @run main MouseDragPopupTest
  */
 public class MouseDragPopupTest {
-    static volatile boolean failed;
     static JFrame frame;
     static JPanel panel;
     static Robot robot;
+    static volatile boolean failed;
     static volatile Point srcPoint;
     static volatile Dimension d;
 
