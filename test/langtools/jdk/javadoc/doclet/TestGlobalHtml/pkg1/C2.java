@@ -47,7 +47,7 @@ import java.io.IOException;
  * </p>
  *
  * <table class="plain">
- * <caption>Examples of methods in C2</caption>
+ * <caption>Methods in C2</caption>
  * <thead>
  *    <tr>
  *       <th scope="col">Method Name
@@ -93,17 +93,35 @@ public class C2 extends C1 {
     }
 
     /**
-     * Perform a specified action.
-     *
      * <p contenteditable="true" draggable="true" spellcheck="true" data-method="action">
      * This method performs an action and returns a status.
-     * </p>
+     *
+     * <p>This one's a regular list:</p>
      *
      * <ul>
      *   <li>Item 1
      *   <li>Item 2
      *   <li>Item 3
      * </ul>
+     *
+     * <p>This one's an ordered list:</p>
+     *
+     * <ol id="ordered-list" class="custom-list" style="color: blue;" title="Ordered List Example">
+     *     <li>First Item</li>
+     *     <li>Second Item</li>
+     *     <li>Third Item</li>
+     *     <li>Fourth Item</li>
+     * </ol>
+     *
+     * <p>This one's an unordered list:</p>
+     *
+     * <ul id="unordered-list" class="custom-list" style="color: green;" title="Unordered List Example">
+     *     <li>Item One</li>
+     *     <li>Item Two</li>
+     *     <li>Item Three</li>
+     *     <li>Item Four</li>
+     * </ul>
+     *
      *
      * @param action a string representing the action to be performed
      * @return a boolean indicating success or failure

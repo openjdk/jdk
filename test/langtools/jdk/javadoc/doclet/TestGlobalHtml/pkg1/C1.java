@@ -30,9 +30,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
- * A class comment for testing.
- *
  * <p accesskey="C" autocapitalize="sentences" dir="ltr" lang="en" data-purpose="documentation">
+ * A class comment.
  * </p>
  * <table class="plain" id="format-table" data-description="FormatType to FormatStyle mapping">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
