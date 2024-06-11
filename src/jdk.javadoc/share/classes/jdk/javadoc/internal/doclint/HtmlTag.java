@@ -510,6 +510,7 @@ public enum HtmlTag {
         VLINK,
         VSPACE,
         WIDTH,
+        // Global attributes
         ACCESSKEY,
         AUTOCAPITALIZE,
         AUTOFOCUS,

@@ -691,8 +691,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             // for now, doclint allows all attribute names beginning with "on" as event handler names,
             // without checking the validity or applicability of the name
             // custom "data-*" attributes are also accepted
-            var attrName=name.toString();
-            if (!attrName.startsWith("on") && !attrName.matches("data-[a-z]+(-[a-z]+)*")){
+            var attrName = name.toString();
+            if (!attrName.startsWith("on") && !attrName.matches("data-[a-z]+(-[a-z]+)*")) {
                 AttrKind k = currTag.getAttrKind(name);
                 switch (k) {
                     case OK -> { }
