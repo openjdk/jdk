@@ -1550,24 +1550,26 @@ final class StringUTF16 {
 
     public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        i <<= 1;
         putChar0(value, i    , c1);
-        putChar0(value, i + 1, c2);
-        putChar0(value, i + 2, c3);
-        putChar0(value, i + 3, c4);
+        putChar0(value, i + 2, c2);
+        putChar0(value, i + 4, c3);
+        putChar0(value, i + 6, c4);
     }
 
     public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores
+        i <<= 1;
         putChar0(value, i    , c1);
-        putChar0(value, i + 1, c2);
-        putChar0(value, i + 2, c3);
-        putChar0(value, i + 3, c4);
-        putChar0(value, i + 4, c5);
+        putChar0(value, i + 2, c2);
+        putChar0(value, i + 4, c3);
+        putChar0(value, i + 6, c4);
+        putChar0(value, i + 8, c5);
     }
 
-    private static void putChar0(byte[] val, int index, int c) {
-        val[index    ] = (byte)(c >> HI_BYTE_SHIFT);
-        val[index + 1] = (byte)(c >> LO_BYTE_SHIFT);
+    private static void putChar0(byte[] value, int i, int c) {
+        value[i    ] = (byte)(c >> HI_BYTE_SHIFT);
+        value[i + 1] = (byte)(c >> LO_BYTE_SHIFT);
     }
 
     public static char charAt(byte[] value, int index) {
