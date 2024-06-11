@@ -858,6 +858,19 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
+julong os::rss() {
+  julong rss = 0;
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  BOOL ret = GetProcessMemoryInfo(
+      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  if (ret != 0) {
+    rss = pmex.WorkingSetSize;
+  }
+  return rss;
+}
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
