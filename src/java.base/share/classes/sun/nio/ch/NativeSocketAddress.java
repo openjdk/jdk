@@ -26,7 +26,6 @@
 package sun.nio.ch;
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -45,11 +44,11 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.bindings.net.socket.PlatformAdapter;
 import jdk.internal.bindings.net.socket.generated.sockaddr;
 import jdk.internal.bindings.net.socket.generated.sockaddr_in;
 import jdk.internal.bindings.net.socket.generated.sockaddr_in6;
 import jdk.internal.bindings.net.socket.generated.socket_address_h;
-import jdk.internal.util.OperatingSystem;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -94,22 +93,7 @@ class NativeSocketAddress {
     static {
         var familyVH = sockaddr.layout().varHandle(groupElement("sa_family"));
         SA_FAMILY_VH = MethodHandles.insertCoordinates(familyVH, 1, 0L);
-
-        // IPv4 address field's layout path
-        PathElement[] saddr_layout_path = switch (OperatingSystem.current()) {
-            case WINDOWS -> new PathElement[]{
-                    // Native structure path: sin_addr.S_un.S_addr
-                    groupElement("sin_addr"),
-                    groupElement("S_un"),
-                    groupElement("S_addr")
-            };
-            case LINUX, MACOS -> new PathElement[]{
-                    // Native structure path: sin_addr.s_addr
-                    groupElement("sin_addr"),
-                    groupElement("s_addr")};
-            case AIX -> throw new RuntimeException("AIX not supported yet");
-        };
-        var saddrVH = sockaddr_in.layout().varHandle(saddr_layout_path);
+        var saddrVH = sockaddr_in.layout().varHandle(PlatformAdapter.ipv4AddressBytesPath());
         // pos=0 is MemorySegment; pos=1 is the offset
         INET4_S_ADDR_VH = MethodHandles.insertCoordinates(saddrVH, 1, 0L);
     }
