@@ -41,7 +41,7 @@ import nsk.share.*;
  *    - the subclass must have 'main' and 'run' methods
  *      defined like:
  *           public static void main (String argv[]) {
- *               int result = run(argv, System.out);
+ *               int result = run(argv,System.out);
  *               if (result != 0) {
  *                   throw new RuntimeException("TEST FAILED with result " + result);
  *               }
