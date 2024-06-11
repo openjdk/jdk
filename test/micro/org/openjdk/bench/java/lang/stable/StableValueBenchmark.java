@@ -65,20 +65,25 @@ public class StableValueBenchmark {
     private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
     private static final StableValue<Integer> DCL = init(StableValue.newInstance(), VALUE);
     private static final StableValue<Integer> DCL2 = init(StableValue.newInstance(), VALUE2);
+    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
+    private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
+
 
     @Setup
     public void setup() {
         stableNull.trySet(null);
         stableNull2.trySet(VALUE2);
         // Create pollution
+        int sum = 0;
         for (int i = 0; i < 500_000; i++) {
             final int v = i;
             Dcl<Integer> dclX = new Dcl<>(() -> v);
-            dclX.get();
+            sum += dclX.get();
             StableValue<Integer> stableX = StableValue.newInstance();
             stableX.trySet(i);
-            stableX.orElseThrow();
+            sum += stableX.orElseThrow();
         }
+        System.out.println("sum = " + sum);
     }
 
     @Benchmark
@@ -115,6 +120,11 @@ public class StableValueBenchmark {
     @Benchmark
     public int staticDcl() {
         return DCL.orElseThrow() + DCL2.orElseThrow();
+    }
+
+    @Benchmark
+    public int staticAtomic() {
+        return ATOMIC.get() + ATOMIC2.get();
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
