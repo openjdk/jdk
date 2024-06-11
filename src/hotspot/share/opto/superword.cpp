@@ -2832,11 +2832,18 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
   }
 
-  if (_packset.isa_pack_input_or_null(u_pk, u_idx) != nullptr) {
-    assert(d_pk == _packset.isa_pack_input_or_null(u_pk, u_idx), "consistency");
-    return true;
+  if (u_pk->size() != d_pk->size()) {
+    return false;
   }
-  return false;
+
+  for (uint i = 0; i < u_pk->size(); i++) {
+    Node* ui = u_pk->at(i);
+    Node* di = d_pk->at(i);
+    if (ui->in(u_idx) != di) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // MulAddS2I takes shorts 4 shorts and produces an int. We can reinterpret
