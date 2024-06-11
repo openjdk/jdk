@@ -40,7 +40,6 @@ import java.net.UnknownHostException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
@@ -188,7 +187,11 @@ class NativeSocketAddress {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(memory.toArray(JAVA_BYTE));
+        int h = 0;
+        for (int offset = 0; offset < SIZEOF_SOCKETADDRESS; offset++) {
+            h = 31 * h + memory.get(JAVA_BYTE, offset);
+        }
+        return h;
     }
 
     @Override
