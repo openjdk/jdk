@@ -41,7 +41,6 @@ public class TestMulAddS2I {
 
     static short[] sArr1 = new short[RANGE];
     static short[] sArr2 = new short[RANGE];
-    static int[] ioutArr = new int[RANGE];
     static final int[] GOLDEN_A;
     static final int[] GOLDEN_B;
     static final int[] GOLDEN_C;
@@ -54,18 +53,18 @@ public class TestMulAddS2I {
 
     static {
         for (int i = 0; i < RANGE; i++) {
-            sArr1[i] = (short)i;//(AbstractInfo.getRandom().nextInt());
-            sArr2[i] = (short)i;//(AbstractInfo.getRandom().nextInt());
+            sArr1[i] = (short)(AbstractInfo.getRandom().nextInt());
+            sArr2[i] = (short)(AbstractInfo.getRandom().nextInt());
         }
         GOLDEN_A = testa();
         GOLDEN_B = testb();
-        GOLDEN_C = testc();
-        GOLDEN_D = testd();
-        GOLDEN_E = teste();
-        GOLDEN_F = testf();
-        GOLDEN_G = testg();
-        GOLDEN_H = testh();
-        GOLDEN_I = testi();
+        GOLDEN_C = testc(new int[ITER]);
+        GOLDEN_D = testd(new int[ITER]);
+        GOLDEN_E = teste(new int[ITER]);
+        GOLDEN_F = testf(new int[ITER]);
+        GOLDEN_G = testg(new int[ITER]);
+        GOLDEN_H = testh(new int[ITER]);
+        GOLDEN_I = testi(new int[ITER]);
     }
 
 
@@ -79,13 +78,13 @@ public class TestMulAddS2I {
     public static void run() {
         compare(testa(), GOLDEN_A, "testa");
         compare(testb(), GOLDEN_B, "testb");
-        compare(testc(), GOLDEN_C, "testc");
-        compare(testd(), GOLDEN_D, "testd");
-        compare(teste(), GOLDEN_E, "teste");
-        compare(testf(), GOLDEN_F, "testf");
-        compare(testg(), GOLDEN_G, "testg");
-        compare(testh(), GOLDEN_H, "testh");
-        compare(testi(), GOLDEN_I, "testi");
+        compare(testc(new int[ITER]), GOLDEN_C, "testc");
+        compare(testd(new int[ITER]), GOLDEN_D, "testd");
+        compare(teste(new int[ITER]), GOLDEN_E, "teste");
+        compare(testf(new int[ITER]), GOLDEN_F, "testf");
+        compare(testg(new int[ITER]), GOLDEN_G, "testg");
+        compare(testh(new int[ITER]), GOLDEN_H, "testh");
+        compare(testi(new int[ITER]), GOLDEN_I, "testi");
     }
 
     public static void compare(int[] out, int[] golden, String name) {
@@ -141,8 +140,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] testc() {
-        int[] out = new int[ITER];
+    public static int[] testc(int[] out) {
         for (int i = 0; i < ITER; i++) {
             out[i] += ((sArr1[2*i] * sArr2[2*i]) + (sArr1[2*i+1] * sArr2[2*i+1]));
         }
@@ -158,8 +156,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] testd() {
-        int[] out = ioutArr;
+    public static int[] testd(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with the same structure.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
@@ -177,8 +174,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] teste() {
-        int[] out = ioutArr;
+    public static int[] teste(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
@@ -196,8 +192,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] testf() {
-        int[] out = ioutArr;
+    public static int[] testf(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
@@ -215,8 +210,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] testg() {
-        int[] out = ioutArr;
+    public static int[] testg(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
@@ -234,8 +228,7 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] testh() {
-        int[] out = ioutArr;
+    public static int[] testh(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
@@ -245,14 +238,14 @@ public class TestMulAddS2I {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
-    @IR(counts = {IRNode.MUL_ADD_S2I, "= 0", IRNode.MUL_ADD_VS2VI, "= 0"})
-    public static int[] testi() {
-        int[] out = ioutArr;
+    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.MUL_ADD_VS2VI, "= 0"})
+    public static int[] testi(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
-            out[i+0] = ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1])); // ok
-            out[i+1] = ((sArr1[2*i+2] * sArr2[2*i+3]) + (sArr1[2*i+3] * sArr2[2*i+2])); // bad
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1])); // ok
+            out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+3]) + (sArr1[2*i+3] * sArr2[2*i+2])); // bad
         }
         return out;
     }
