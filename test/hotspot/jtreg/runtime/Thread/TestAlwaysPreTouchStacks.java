@@ -90,17 +90,17 @@ public class TestAlwaysPreTouchStacks {
             // should show up with fully - or almost fully - committed thread stacks.
 
         } else {
-            ArrayList<String> args = new ArrayList<>();
-            Collections.addAll(args,
+            ArrayList<String> vmArgs = new ArrayList<>();
+            Collections.addAll(vmArgs,
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-Xmx100M",
                     "-XX:+AlwaysPreTouchStacks",
                     "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics");
             if (System.getProperty("os.name").contains("Linux")) {
-                args.add("-XX:-UseMadvPopulateWrite");
+                vmArgs.add("-XX:-UseMadvPopulateWrite");
             }
-            Collections.addAll(args, "TestAlwaysPreTouchStacks", "test");
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
+            Collections.addAll(vmArgs, "TestAlwaysPreTouchStacks", "test");
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmArgs);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.reportDiagnosticSummary();
 
