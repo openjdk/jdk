@@ -451,7 +451,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
     // open records file for reading the memory allocations to "play back"
     file_info records_fi = _open_file_and_read(MEMORY_LOG_FILE, path, pid);
     Entry* records_file_entries = (Entry*)records_fi.ptr;
-    off_t count = (records_fi.size / sizeof(Entry));
+    long int count = (records_fi.size / sizeof(Entry));
     size_t size_pointers = count * sizeof(address);
     address *pointers = (address*)::mmap(NULL, size_pointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
     assert(pointers != MAP_FAILED);
@@ -539,7 +539,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
           }
         } else {
           fprintf(stderr, "HUH?\n");
-          os:exit(-1);
+          os::exit(-1);
         }
 
         if (!IS_FREE(e)) {
@@ -567,7 +567,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
       _write_and_check(benchmark_fd, &type, sizeof(type));
       //fprintf(stderr, " %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALOC(e), IS_REALLOC(e), IS_FREE(e));
     }
-    fprintf(stderr, "count:%lld total:%ld max:%ld [%s]\n", count, total, max_time, benchmark_file_path);
+    fprintf(stderr, "count:%ld total:%ld max:%ld [%s]\n", count, total, max_time, benchmark_file_path);
     
     _close_and_check(log_fi.fd);
     _close_and_check(records_fi.fd);
