@@ -25,13 +25,14 @@
 
 package sun.security.provider;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import static sun.security.provider.ByteArrayAccess.b2lLittle;
-import static sun.security.provider.ByteArrayAccess.l2bLittle;
 
 /**
  * This class implements the Secure Hash Algorithm SHA-3 developed by
@@ -67,10 +68,13 @@ abstract class SHA3 extends DigestBase {
     private final byte suffix;
     private long[] state = new long[DM*DM];
 
-    // The following two arrays are allocated to size WIDTH bytes, but we only
-    // ever use the first blockSize bytes of them (for bytes <-> long conversions)
+    // The following array is allocated to size WIDTH bytes, but we only
+    // ever use the first blockSize bytes it (for bytes <-> long conversions)
     private byte[] byteState = new byte[WIDTH];
-    private long[] longBuf = new long[DM*DM];
+
+    static final VarHandle asLittleEndian
+            = MethodHandles.byteArrayViewVarHandle(long[].class,
+            ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
 
     /**
      * Creates a new SHA-3 object.
@@ -95,9 +99,9 @@ abstract class SHA3 extends DigestBase {
 
     @IntrinsicCandidate
     private void implCompress0(byte[] b, int ofs) {
-        b2lLittle(b, ofs, longBuf, 0, blockSize);
         for (int i = 0; i < blockSize / 8; i++) {
-            state[i] ^= longBuf[i];
+            state[i] ^= (long) asLittleEndian.get(b, ofs);
+            ofs += 8;
         }
 
         keccak();
@@ -117,14 +121,28 @@ abstract class SHA3 extends DigestBase {
         int availableBytes = buffer.length;
         int numBytes = engineGetDigestLength();
         while (numBytes > availableBytes) {
-            l2bLittle(state, 0, out, ofs, availableBytes);
+            for (int i = 0; i < availableBytes / 8 ; i++) {
+                asLittleEndian.set(out, ofs, state[i]);
+                ofs += 8;
+            }
             numBytes -= availableBytes;
-            ofs += availableBytes;
             keccak();
         }
         int numLongs = (numBytes + 7) / 8;
-        l2bLittle(state, 0, byteState, 0, numLongs * 8);
-        System.arraycopy(byteState, 0, out, ofs, numBytes);
+
+        if (numLongs == numBytes * 8) {
+            for (int i = 0; i < numLongs; i++) {
+                asLittleEndian.set(out, ofs, state[i]);
+                ofs += 8;
+            }
+        } else {
+            int o = 0;
+            for (int i = 0; i < numLongs; i++) {
+                asLittleEndian.set(byteState, o, state[i]);
+                o += 8;
+            }
+            System.arraycopy(byteState, 0, out, ofs, numBytes);
+        }
     }
 
     /**
@@ -277,6 +295,7 @@ abstract class SHA3 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
+        copy.byteState = copy.byteState.clone();
         return copy;
     }
 
