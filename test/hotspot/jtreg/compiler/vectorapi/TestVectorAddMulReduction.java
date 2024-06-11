@@ -81,6 +81,12 @@ public class TestVectorAddMulReduction {
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=8"},
         phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=8"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_64() {
         testFloatAddKernel(FloatVector.SPECIES_64, fa);
     }
@@ -90,6 +96,12 @@ public class TestVectorAddMulReduction {
         failOn = {"requires_strict_order"},
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
+        phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_128() {
         testFloatAddKernel(FloatVector.SPECIES_128, fa);
@@ -101,6 +113,12 @@ public class TestVectorAddMulReduction {
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_256() {
         testFloatAddKernel(FloatVector.SPECIES_256, fa);
     }
@@ -110,6 +128,12 @@ public class TestVectorAddMulReduction {
         failOn = {"requires_strict_order"},
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=64"},
+        phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=64"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_512() {
         testFloatAddKernel(FloatVector.SPECIES_512, fa);
@@ -130,6 +154,12 @@ public class TestVectorAddMulReduction {
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=16"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_128() {
         testDoubleAddKernel(DoubleVector.SPECIES_128, da);
     }
@@ -140,6 +170,12 @@ public class TestVectorAddMulReduction {
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
+        phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_256() {
         testDoubleAddKernel(DoubleVector.SPECIES_256, da);
     }
@@ -149,6 +185,12 @@ public class TestVectorAddMulReduction {
         failOn = {"requires_strict_order"},
         applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"MaxVectorSize", ">=64"},
+        phase = CompilePhase.PRINT_IDEAL)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        applyIf = {"MaxVectorSize", ">=64"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
+        failOn = {"requires_strict_order"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_512() {
         testDoubleAddKernel(DoubleVector.SPECIES_512, da);
