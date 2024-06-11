@@ -45,10 +45,10 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.natives.net.socket.generated.sockaddr;
-import jdk.internal.natives.net.socket.generated.sockaddr_in;
-import jdk.internal.natives.net.socket.generated.sockaddr_in6;
-import jdk.internal.natives.net.socket.generated.socket_address_h;
+import jdk.internal.bindings.net.socket.generated.sockaddr;
+import jdk.internal.bindings.net.socket.generated.sockaddr_in;
+import jdk.internal.bindings.net.socket.generated.sockaddr_in6;
+import jdk.internal.bindings.net.socket.generated.socket_address_h;
 import jdk.internal.util.OperatingSystem;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
@@ -72,7 +72,7 @@ class NativeSocketAddress {
                  public Void run() {
                      try {
                          Class.forName(
-                                 "jdk.internal.natives.net.socket.generated.socket_address_h",
+                                 "jdk.internal.bindings.net.socket.generated.socket_address_h",
                                  true, null);
                      } catch (ClassNotFoundException e) {
                          // ignore
