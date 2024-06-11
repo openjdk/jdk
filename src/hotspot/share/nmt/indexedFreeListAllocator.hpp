@@ -40,7 +40,7 @@ class IndexedFreeListAllocator {
 public:
   class I {
     friend IndexedFreeListAllocator<E, flag>;
-    const int32_t _idx;
+    int32_t _idx;
 
   public:
     bool operator !=(I other) {
