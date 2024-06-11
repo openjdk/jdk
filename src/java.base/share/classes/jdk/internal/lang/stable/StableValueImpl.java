@@ -49,8 +49,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Unset:         null
     // Set(non-null): The set value
     // Set(null):     nullSentinel()
+    // This field is reflectively accessed via Unsafe using acquire/release semantics.
     @Stable
-    private volatile T value;
+    private T value;
 
     private StableValueImpl() {}
 
@@ -58,14 +59,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean trySet(T value) {
         synchronized (mutex) {
-            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
+            return UNSAFE.weakCompareAndSetReferenceRelease(this, VALUE_OFFSET, null, wrap(value));
         }
     }
 
     @ForceInline
     @Override
     public T orElseThrow() {
-        final T t = value;
+        final T t = valueAcquire();
         if (t != null) {
             return unwrap(t);
         }
@@ -75,7 +76,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final T t = value;
+        final T t = valueAcquire();
         if (t != null) {
             return unwrap(t);
         }
@@ -85,13 +86,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return value != null;
+        return valueAcquire() != null;
     }
 
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        final T t = value;
+        final T t = valueAcquire();
         if (t != null) {
             return unwrap(t);
         }
@@ -101,7 +102,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @DontInline
     private T compute(Supplier<? extends T> supplier) {
         synchronized (mutex) {
-            T t = value;
+            T t = valueAcquire();
             if (t != null) {
                 return unwrap(t);
             }
@@ -119,12 +120,18 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof StableValueImpl<?> other &&
-                Objects.equals(value, other.value);
+                Objects.equals(valueAcquire(), other.valueAcquire());
     }
 
     @Override
     public String toString() {
-        return "StableValue" + render(value);
+        return "StableValue" + render(valueAcquire());
+    }
+
+    @SuppressWarnings("unchecked")
+    @ForceInline
+    private T valueAcquire() {
+        return (T) UNSAFE.getReferenceAcquire(this, VALUE_OFFSET);
     }
 
     // Wraps null values into a sentinel value
