@@ -144,7 +144,7 @@ public final class StableValues {
     public static <K, T> Map<K, StableValue<T>> ofMap(Set<K> keys) {
         Objects.requireNonNull(keys);
         @SuppressWarnings("unchecked")
-        Map.Entry<K, StableValue<T>>[] entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
         int i = 0;
         for (K key : keys) {
             entries[i++] = Map.entry(key, StableValue.newInstance());
