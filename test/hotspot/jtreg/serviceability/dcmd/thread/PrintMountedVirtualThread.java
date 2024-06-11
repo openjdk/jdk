@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * @modules java.base
  * @run testng PrintVirtualThreadTest
  */
-public class PrintVirtualThreadTest {
+public class PrintMountedVirtualThread {
 
     public void run(CommandExecutor executor) throws InterruptedException {
         var shouldFinish = new AtomicBoolean(false);
