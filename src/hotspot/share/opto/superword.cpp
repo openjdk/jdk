@@ -1198,23 +1198,6 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
-Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
-  Node* p0 = pack->at(0);
-  Node* def0 = p0->in(j);
-
-  Node_List* pack_in = get_pack(def0);
-  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
-    return nullptr; // size mismatch
-  }
-
-  for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
-      return nullptr; // use-def mismatch
-    }
-  }
-  return pack_in;
-}
-
 SplitStatus PackSet::split_pack(const char* split_name,
                                 Node_List* pack,
                                 SplitTask task)
@@ -2881,6 +2864,23 @@ bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
          pack4 != nullptr &&
          ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
           (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
+}
+
+Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
+  Node* p0 = pack->at(0);
+  Node* def0 = p0->in(j);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
+    return nullptr; // size mismatch
+  }
+
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
+      return nullptr; // use-def mismatch
+    }
+  }
+  return pack_in;
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
