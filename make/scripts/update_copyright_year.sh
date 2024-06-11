@@ -141,9 +141,9 @@ updateFile() # file
     rm -f $1.OLD
     mv $1 $1.OLD
     cat $1.OLD | \
-      sed -e "s@\(${copyright} \(${copyright_symbol} \)\?[12][0-9][0-9][0-9],\) [12][0-9][0-9][0-9], ${company}@\1 ${year}, ${company}@" | \
-      sed -e "s@\(${copyright} \(${copyright_symbol} \)\?[12][0-9][0-9][0-9],\) ${company}@\1 ${year}, ${company}@" | \
-      sed -e "s@\(${copyright} \(${copyright_symbol} \)\?[12][0-9][0-9][0-9]\) ${company}@\1, ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) [12][0-9][0-9][0-9], ${company}@\1 ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) ${company}@\1 ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9]\) ${company}@\1, ${year}, ${company}@" | \
       sed -e "s@${copyright} ${year}, ${year}, ${company}@${copyright} ${year}, ${company}@" | \
       sed -e "s@${copyright} ${copyright_symbol} ${year}, ${year}, ${company}@${copyright} ${copyright_symbol} ${year}, ${company}@"  \
       > $1
