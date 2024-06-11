@@ -1023,8 +1023,20 @@ class MacroAssembler: public Assembler {
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
 
-  void pop_count_int(Register dst, Register src, Register tmp = noreg);
-  void pop_count_long(Register dst, Register src, Register tmp = noreg);
+  // if you're unsure whether your instruction will run on older hardware or newer hardware than Z15
+  // then please use these instruction to avoid the compatibility issues
+  void pop_count_int(Register dst, Register src, Register tmp);
+  void pop_count_long(Register dst, Register src, Register tmp);
+
+  // Up for an adventure ? use these instructions :)
+  // Should be only used when you're sure that instruction will "only" run on hardware older than z15
+  void pop_count_int_pre_z15(Register dst, Register src, Register tmp);
+  void pop_count_long_pre_z15(Register dst, Register src, Register tmp);
+
+  // Should be used in a case, where you're sure that instruction will never touch a hardware older than z15
+  // it will only run on either a z15 machine or successor of it
+  void pop_count_int_post_z15(Register dst, Register src);
+  void pop_count_long_post_z15(Register dst, Register src);
 
 };
 
