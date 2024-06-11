@@ -31,9 +31,8 @@
  *
  * @run clean NotificationEmissionTest
  * @run build NotificationEmissionTest
+ *
  * @run main NotificationEmissionTest 1
-
- * @run main/othervm NotificationEmissionTest 1
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 1
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 2
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 3
