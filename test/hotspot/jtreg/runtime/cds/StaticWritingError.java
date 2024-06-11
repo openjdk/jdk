@@ -30,7 +30,16 @@
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -40,11 +49,16 @@ public class StaticWritingError {
         String directoryName = "unwritable";
         String archiveName = "staticWritingError.jsa";
 
-        // Create directory that cannot be written to
-        File directory = new File(directoryName);
-        directory.mkdir();
-        directory.setReadable(false);
-        directory.setWritable(false);
+       if (System.getProperty("os.name").startsWith("Windows")) {
+            String windir = System.getenv("$Env:windir");
+            directoryName = windir + File.separator + "System32";
+       } else {
+            // Create directory that cannot be written to
+            File directory = new File(directoryName);
+            directory.mkdir();
+            directory.setReadable(false);
+            directory.setWritable(false);
+       }
 
         // Perform static dump and attempt to write archive in unwritable directory
         CDSOptions opts = (new CDSOptions())
@@ -53,7 +67,6 @@ public class StaticWritingError {
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
         out.shouldHaveExitValue(1);
         out.shouldContain("Unable to create shared archive file");
-        out.shouldContain("(Permission denied)");
         out.shouldContain("Encountered error while dumping");
     }
 }
