@@ -126,7 +126,6 @@ public class CheckForProperDetailStackTrace {
             // they are only available if the symbols file is included with the build.
             if (!Platform.isWindows() && !Platform.isARM()) {
                 output.reportDiagnosticSummary();
-                output.reportDiagnosticSummary();
                 throw new RuntimeException("Expected symbol missing from output: " + expectedSymbol);
             }
         }
