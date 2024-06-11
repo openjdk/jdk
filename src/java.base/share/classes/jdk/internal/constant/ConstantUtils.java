@@ -29,6 +29,8 @@ import sun.invoke.util.Wrapper;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -41,11 +43,84 @@ public final class ConstantUtils {
     public static final ConstantDesc[] EMPTY_CONSTANTDESC = new ConstantDesc[0];
     public static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     public static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
+    public static final ClassDesc CD_module_info = binaryNameToDesc("module-info");
 
     private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 
     /** No instantiation */
     private ConstantUtils() {}
+
+    // Note:
+    // Non-JDK users should create their own utilities that wrap
+    // {@code .describeConstable().orElseThrow()} calls;
+    // these xxDesc methods has undefined and unsafe exceptional
+    // behavior, so they are not suitable as public APIs.
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated binary name
+     * for a class or interface type. Validated version of {@link
+     * ClassDesc#of(String)}.
+     *
+     * @param binaryName a binary name
+     */
+    public static ClassDesc binaryNameToDesc(String binaryName) {
+        return ReferenceClassDescImpl.ofValidated("L" + binaryToInternal(binaryName) + ";");
+    }
+
+    /**
+     * Creates a ClassDesc from a Class object, requires that this class
+     * can always be described nominally, i.e. this class is not a
+     * hidden class or interface or an array with a hidden component
+     * type.
+     */
+    public static ClassDesc classDesc(Class<?> type) {
+        if (type.isPrimitive()) {
+            return Wrapper.forPrimitiveType(type).basicClassDescriptor();
+        }
+        return referenceClassDesc(type);
+    }
+
+    /**
+     * Creates a ClassDesc from a Class object representing a non-hidden
+     * class or interface or an array type with a non-hidden component type.
+     */
+    public static ClassDesc referenceClassDesc(Class<?> type) {
+        return ReferenceClassDescImpl.ofValidated(type.descriptorString());
+    }
+
+    /**
+     * Creates a MethodTypeDesc from a MethodType object, requires that
+     * the type can be described nominally, i.e. all of its return
+     * type and parameter types can be described nominally.
+     */
+    public static MethodTypeDesc methodTypeDesc(MethodType type) {
+        var returnDesc = classDesc(type.returnType());
+        if (type.parameterCount() == 0) {
+            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
+        }
+        var paramDescs = new ClassDesc[type.parameterCount()];
+        for (int i = 0; i < type.parameterCount(); i++) {
+            paramDescs[i] = classDesc(type.parameterType(i));
+        }
+        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
+    }
+
+    /**
+     * Creates a MethodTypeDesc from return class and parameter
+     * class objects, requires that all of them can be described nominally.
+     * This version is mainly useful for working with Method objects.
+     */
+    public static MethodTypeDesc methodTypeDesc(Class<?> returnType, Class<?>[] parameterTypes) {
+        var returnDesc = classDesc(returnType);
+        if (parameterTypes.length == 0) {
+            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
+        }
+        var paramDescs = new ClassDesc[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            paramDescs[i] = classDesc(parameterTypes[i]);
+        }
+        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
+    }
 
     /**
      * Validates the correctness of a binary class name. In particular checks for the presence of
@@ -231,7 +306,7 @@ public final class ConstantUtils {
 
     private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
+            return Wrapper.forPrimitiveType(descriptor.charAt(start)).basicClassDescriptor();
         }
         // Pre-verified in parseMethodDescriptor; avoid redundant verification
         return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
