@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.IOException;
  * @author Brian Doherty
  * @since 1.5
  */
+@Deprecated(since="24", forRemoval=true)
 public interface RemoteHost extends Remote {
 
     /**
@@ -53,6 +54,7 @@ public interface RemoteHost extends Remote {
      * @throws RemoteException
      *
      */
+    @SuppressWarnings("removal")
     RemoteVm attachVm(int vmid) throws RemoteException, MonitorException;
 
     /**
@@ -67,6 +69,7 @@ public interface RemoteHost extends Remote {
      *                          machine.
      * @throws RemoteException
      */
+    @SuppressWarnings("removal")
     void detachVm(RemoteVm rvm) throws RemoteException, MonitorException;
 
     /**

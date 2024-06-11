@@ -41,6 +41,8 @@ import sun.jvmstat.monitor.remote.*;
  * @author Brian Doherty
  * @since 1.5
  */
+@Deprecated(since="24", forRemoval=true)
+@SuppressWarnings("removal")
 public class Jstatd {
 
     private static Registry registry;
