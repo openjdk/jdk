@@ -592,11 +592,12 @@ void JfrCheckpointManager::clear_type_set() {
   }
   JfrAddRefCountedBlob add_blob(leakp_writer);
   JfrDeprecationManager::on_type_set(nullptr, thread);
-  // We placed a blob in the TypeSetBlobManager subsystem by moving the information
-  // from the leakp writer. For the real writer, the data will not be
-  // committed, because the JFR system is yet to be started.
-  // Therefore, the writer is cancelled before its destructor is run,
-  // to avoid writing unnecessary information into the checkpoint system.
+  // We installed a blob in the JfrReferenceCountedStorage subsystem
+  // by moving the information from the leakp writer.
+  // For the real writer, the data will not be committed,
+  // because the JFR system is yet to be started.
+  // Therefore, we cancel the writer before its destructor is run
+  // to avoid writing invalid information into the checkpoint system.
   writer.cancel();
 }
 
