@@ -43,15 +43,6 @@ public:
     const int32_t _idx;
 
   public:
-    I() {}
-    I(int32_t idx) : _idx(idx) {}
-
-    I(const I& other) : _idx(other._idx) {}
-
-    I& operator=(const I& other) {;
-      return *this = other;
-    }
-
     bool operator !=(I other) {
       return _idx != other._idx;
     }
@@ -72,9 +63,6 @@ private:
   union alignas(E) BackingElement {
     I link;
     char e[sizeof(E)];
-
-    BackingElement() : link(nil) {
-    }
   };
 
   GrowableArrayCHeap<BackingElement, flag> _backing_storage;
