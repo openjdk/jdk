@@ -78,7 +78,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/tuple.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
@@ -177,8 +176,7 @@ pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
-long os::Linux::kernel_version_major = -1;
-long os::Linux::kernel_version_minor = -1;
+
 bool os::Linux::_thp_requested{false};
 
 #ifdef __GLIBC__
@@ -2968,15 +2966,6 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_HUGEPAGE 14
 #endif
 
-// Define MADV_POPULATE_READ here so we can build HotSpot on old systems.
-#define MADV_POPULATE_READ_value 22
-#ifndef MADV_POPULATE_READ
-  #define MADV_POPULATE_READ MADV_POPULATE_READ_value
-#else
-  // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_POPULATE_READ == MADV_POPULATE_READ_value);
-#endif
-
 // Define MADV_POPULATE_WRITE here so we can build HotSpot on old systems.
 #define MADV_POPULATE_WRITE_value 23
 #ifndef MADV_POPULATE_WRITE
@@ -2984,24 +2973,6 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
   STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
-#endif
-
-// Define MADV_DONTNEED_LOCKED here so we can build HotSpot on old systems.
-#define MADV_DONTNEED_LOCKED_value 24
-#ifndef MADV_DONTNEED_LOCKED
-  #define MADV_DONTNEED_LOCKED MADV_DONTNEED_LOCKED_value
-#else
-  // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_DONTNEED_LOCKED == MADV_DONTNEED_LOCKED_value);
-#endif
-
-// Define MADV_COLLAPSE here so we can build HotSpot on old systems.
-#define MADV_COLLAPSE_value 25
-#ifndef MADV_COLLAPSE
-  #define MADV_COLLAPSE MADV_COLLAPSE_value
-#else
-  // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_COLLAPSE == MADV_COLLAPSE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -3013,27 +2984,6 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   // Sanity-check our assumed default value if we build with a new enough libc.
   STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
-
-// Guard newer madv numbers by checking kernel versions, as downstream kernels
-// might use the numbers as unexpected behaviors.
-bool os::Linux::can_use_madvise_flag(int advice) {
-  static constexpr Tuple<int, long, long> adviceVersions[] = {
-    { MADV_POPULATE_READ,   5, 14 },
-    { MADV_POPULATE_WRITE,  5, 14 },
-    { MADV_DONTNEED_LOCKED, 5, 18 },
-    { MADV_COLLAPSE,        6,  1 }
-  };
-
-  for (auto &t : adviceVersions) {
-    if (advice == t.get<0>()) {
-      return kernel_version_major > t.get<1>() ||
-        (kernel_version_major == t.get<1>() &&
-         kernel_version_minor >= t.get<2>());
-    }
-  }
-
-  return true;
-}
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
                                   size_t alignment_hint, bool exec) {
@@ -3085,34 +3035,28 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
-  if (HugePages::thp_mode() != THPMode::always && !UseTransparentHugePages) {
-    // No THP. Use the platform-independent pretouch memory code.
-    return page_size;
-  }
-
-  if (!UseMadvPopulateWrite) {
-    // Use small pages with the platform-independent pretouch memory code.
-    // When using THP, we need to always pre-touch using small pages as the
-    // OS will initially always use small pages.
-    return os::vm_page_size();
-  }
-
   const size_t len = pointer_delta(last, first, sizeof(char)) + page_size;
-  if (::madvise(first, len, MADV_POPULATE_WRITE) != -1) {
-    // Succeeded
-    // 0 signals not to run the platform-independent pretouch memory code.
+  // Use madvise to pretouch on Linux when THP is used, and fallback to the
+  // common method if unsupported. THP can form right after madvise rather than
+  // being assembled later.
+  if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
+    int err = 0;
+    if (UseMadvPopulateWrite &&
+        ::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
+      err = errno;
+    }
+    if (!UseMadvPopulateWrite || err == EINVAL) { // Not to use or not supported
+      // When using THP we need to always pre-touch using small pages as the
+      // OS will initially always use small pages.
+      return os::vm_page_size();
+    } else if (err != 0) {
+      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
+                       "error='%s' (errno=%d)", p2i(first), len,
+                       MADV_POPULATE_WRITE, os::strerror(err), err);
+    }
     return 0;
   }
-
-  int err = errno;
-  log_debug(gc, os)("Called madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d):"
-                    " error='%s' (errno=%d), when THPMode::always=%d and"
-                    " UseTransparentHugePages=%d",
-                    p2i(first), len, MADV_POPULATE_WRITE, os::strerror(err),
-                    err, (int)(HugePages::thp_mode() == THPMode::always),
-                    (int)UseTransparentHugePages);
-
-  return os::vm_page_size();
+  return page_size;
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -4572,7 +4516,8 @@ void os::init(void) {
 
   check_pax();
 
-  Linux::kernel_version(&Linux::kernel_version_major, &Linux::kernel_version_minor);
+  // Check the availability of MADV_POPULATE_WRITE.
+  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
 
   os::Posix::init();
 }
@@ -4847,23 +4792,6 @@ jint os::init_2(void) {
   if (TimerSlack >= 0) {
     if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
       vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
-    }
-  }
-
-  // Check the availability of MADV_POPULATE_WRITE.
-  if (UseMadvPopulateWrite) {
-    // Some downstream kernels recognize MADV_POPULATE_WRITE (23) as another
-    // advice, so the check of versions is required here.
-    // See https://github.com/oracle/linux-uek/issues/23
-    bool supportMadvPopulateWrite =
-      (Linux::can_use_madvise_flag(MADV_POPULATE_WRITE) &&
-       (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
-    if (!supportMadvPopulateWrite) {
-      if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite)) {
-        warning("Platform does not support MADV_POPULATE_WRITE, "
-                "disabling using it to pretouch (-XX:-UseMadvPopulateWrite)");
-      }
-      FLAG_SET_ERGO(UseMadvPopulateWrite, false);
     }
   }
 

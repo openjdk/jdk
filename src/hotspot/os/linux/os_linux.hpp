@@ -43,9 +43,6 @@ class os::Linux {
   static const char *_libc_version;
   static const char *_libpthread_version;
 
-  static long kernel_version_major;
-  static long kernel_version_minor;
-
   static bool _supports_fast_thread_cpu_time;
 
   static GrowableArray<int>* _cpu_to_node;
@@ -196,8 +193,6 @@ class os::Linux {
   // none present
 
  private:
-  static bool can_use_madvise_flag(int advice);
-
   static void numa_init();
 
   typedef int (*sched_getcpu_func_t)(void);
