@@ -82,7 +82,7 @@ import nsk.share.jdi.sde.*;
 
 public class setDefaultStratum003 extends SDEDebugger {
     public static void main(String argv[]) {
-        int result = run(argv, System.out);
+        int result = run(argv,System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

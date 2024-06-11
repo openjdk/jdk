@@ -77,7 +77,7 @@ import java.io.*;
 public class filter_rt005 extends TestDebuggerType1 {
 
     public static void main (String argv[]) {
-        int result = run(argv, System.out);
+        int result = run(argv,System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

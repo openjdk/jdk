@@ -106,7 +106,7 @@ public class decltype004 {
     private final static String mainInterName = prefix + "decltype004aMainInter";
 
     public static void main(String argv[]) {
-        int result = run(argv, System.out);
+        int result = run(argv,System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }

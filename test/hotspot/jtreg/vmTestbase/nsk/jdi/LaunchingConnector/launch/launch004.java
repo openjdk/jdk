@@ -57,7 +57,7 @@ public class launch004 {
         "nsk.jdi.LaunchingConnector.launch.launch004o";
 
     public static void main(String argv[]) {
-        int result = run(argv, System.out);
+        int result = run(argv,System.out);
         if (result != 0) {
             throw new RuntimeException("TEST FAILED with result " + result);
         }
