@@ -367,6 +367,8 @@ public:
     return isa_strided_pack_input_or_null(pack, j, 1, 0);
   }
 
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
