@@ -3875,16 +3875,6 @@ As a result, the processors repeatedly invalidate the cache lines of
 other processors, which forces them to read from main memory instead of
 their cache.
 .RE
-.TP
-\f[V]-XX:+ScavengeBeforeFullGC\f[R]
-Enables GC of the young generation before each full GC.
-This option is enabled by default.
-It is recommended that you \f[I]don\[aq]t\f[R] disable it, because
-scavenging the young generation before a full GC can reduce the number
-of objects reachable from the old generation space into the young
-generation space.
-To disable GC of the young generation before each full GC, specify the
-option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
 .SH REMOVED JAVA OPTIONS
 .PP
 These \f[V]java\f[R] options have been removed in JDK 24 and using them
