@@ -95,7 +95,6 @@
 
 /* Input/Output types for mincore(2) */
 typedef LINUX_ONLY(unsigned) char mincore_vec_t;
-typedef NOT_AIX(unsigned) char* mincore_addr;
 
 static jlong initial_time_count = 0;
 
@@ -171,7 +170,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
   int committed_pages = 0;
-  mincore_addr loop_base = (mincore_addr) start;
+  address loop_base = start;
   bool found_range = false;
 
   for (int index = 0; index < loops && !found_range; index ++) {
@@ -180,7 +179,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     pages -= pages_to_query;
 
     // Get stable read
-    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
+    while ((mincore_return_value = mincore(AIX_ONLY((char*)) loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
@@ -209,7 +208,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
       } else { // committed
         // Start of region
         if (committed_start == nullptr) {
-          committed_start = (address) loop_base + page_sz * vecIdx;
+          committed_start = loop_base + page_sz * vecIdx;
         }
         committed_pages ++;
       }
