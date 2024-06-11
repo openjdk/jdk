@@ -499,7 +499,6 @@ public enum HtmlTag {
         SPACE,
         SRC,
         START,
-        STYLE,
         SUMMARY,
         TARGET,
         TEXT,
@@ -511,6 +510,7 @@ public enum HtmlTag {
         VSPACE,
         WIDTH,
         // Global attributes
+        STYLE,
         ACCESSKEY,
         AUTOCAPITALIZE,
         AUTOFOCUS,

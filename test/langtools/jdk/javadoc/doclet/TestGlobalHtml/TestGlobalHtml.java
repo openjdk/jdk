@@ -27,7 +27,6 @@
  * @summary  Test to make sure global tags work properly
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestGlobalHtml
  */
 
@@ -38,7 +37,6 @@ public class TestGlobalHtml extends JavadocTester {
     public static void main(String... args) throws Exception {
         var tester = new TestGlobalHtml();
         tester.runTests();
-        tester.printSummary();
     }
 
     @Test
