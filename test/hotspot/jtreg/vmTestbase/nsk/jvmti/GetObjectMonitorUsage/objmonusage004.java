@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,23 @@ public class objmonusage004 {
         Thread currThread = Thread.currentThread();
         ContendThread thr[] = new ContendThread[NUMBER_OF_THREADS];
         synchronized (lockCheck) {
+            // Virtual threads are not supported by GetObjectMonitorUsage.
+            // Correct the expected values if the test is executed with
+            // JTREG_TEST_THREAD_FACTORY=Virtual.
+            Thread expOwner = currThread.isVirtual() ? null : currThread;
+            int expEntryCount = currThread.isVirtual() ? 0 : 2;
+
             synchronized (lockCheck) {
-                check(lockCheck, currThread, 2, 0);
+                check(lockCheck, expOwner, expEntryCount, 0);
             }
+            expEntryCount = currThread.isVirtual() ? 0 : 1;
+            int expWaiterCount = 0;
+
             for (int i = 0; i < NUMBER_OF_THREADS; i++) {
                 thr[i] = new ContendThread();
+                if (!thr[i].isVirtual()) {
+                    expWaiterCount++;
+                }
                 synchronized (lockStart) {
                     thr[i].start();
                     try {
@@ -74,7 +86,7 @@ public class objmonusage004 {
                         throw new Error("Unexpected " + e);
                     }
                 }
-            check(lockCheck, currThread, 1, i + 1);
+                check(lockCheck, expOwner, expEntryCount, expWaiterCount);
             }
         }
 

@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/jdk.internal.shellsupport.doc
+ *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run testng JavadocHelperTest
  * @key randomness
@@ -92,12 +92,6 @@ public class JavadocHelperTest {
                       " @throws IllegalAccessException exc3\n" +
                       " @return value\n");
     }
-
-    private Element getFirstMethod(JavacTask task, String typeName) {
-        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
-    }
-
-    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     public void testInheritNoJavadoc() throws Exception {
         doTestJavadoc("",
@@ -301,6 +295,150 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    public void testMarkdown() throws Exception {
+        doTestJavadoc("""
+                      /// Prefix {@inheritDoc} suffix.
+                      ///
+                      /// *Another* __paragraph__.
+                      ///
+                      /// Paragraph \ufffc with \ufffc replacement \ufffc character.
+                      ///
+                      /// @param p1 prefix {@inheritDoc} suffix
+                      /// @param p2 prefix {@inheritDoc} suffix
+                      /// @param p3 prefix {@inheritDoc} suffix
+                      /// @throws IllegalStateException prefix {@inheritDoc} suffix
+                      /// @throws IllegalArgumentException prefix {@inheritDoc} suffix
+                      /// @throws IllegalAccessException prefix {@inheritDoc} suffix
+                      /// @return prefix {@inheritDoc} suffix
+                      """,
+                      getSubTest,
+                      """
+                      Prefix javadoc1 suffix.
+
+                      <p><em>Another</em> <strong>paragraph</strong>.
+
+                      <p>Paragraph \ufffc with \ufffc replacement \ufffc character.
+
+                      @param p1 prefix param1 suffix
+                      @param p2 prefix param2 suffix
+                      @param p3 prefix param3 suffix
+                      @throws IllegalStateException prefix exc1 suffix
+                      @throws IllegalArgumentException prefix exc2 suffix
+                      @throws IllegalAccessException prefix exc3 suffix
+                      @return prefix value suffix""");
+    }
+
+    public void testMarkdown2() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@link java.lang.Object}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
+    }
+
+    public void testMarkdown3() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__.
+                      """,
+                      getSubTest,
+                      //the formatting could be improved:
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>.@param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      """);
+    }
+
+    public void testMarkdown4() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [test][java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@linkplain java.lang.Object test}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
+    }
+
+    public void testMarkdown5() throws Exception {
+        doTestJavadoc("""
+                      ///[define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
+    }
+
+    public void testMarkdown6() throws Exception {
+        doTestJavadoc("""
+                      ///Text1 [define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///text2
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      Text1 {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+                      text2
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
+    }
+
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
         doTestJavadoc(origJavadoc,
                       "    /**\n" +
@@ -369,6 +507,12 @@ public class JavadocHelperTest {
             }
         }
     }
+
+    private Element getFirstMethod(JavacTask task, String typeName) {
+        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
+    }
+
+    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     private static final class JFOImpl extends SimpleJavaFileObject {
 

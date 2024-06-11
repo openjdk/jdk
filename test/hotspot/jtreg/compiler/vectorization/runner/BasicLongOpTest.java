@@ -36,7 +36,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicLongOpTest
  *
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
  */
 
@@ -192,6 +192,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.LSHIFT_VL, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.LSHIFT_VL, ">0"})
     public long[] vectorShiftLeft() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -203,6 +206,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_VL, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
+        counts = {IRNode.RSHIFT_VL, ">0"})
     public long[] vectorSignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -213,6 +219,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_VL, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"v", "true"},
         counts = {IRNode.URSHIFT_VL, ">0"})
     public long[] vectorUnsignedShiftRight() {
         long[] res = new long[SIZE];

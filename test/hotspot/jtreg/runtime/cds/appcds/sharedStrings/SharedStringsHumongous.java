@@ -84,10 +84,10 @@ public class SharedStringsHumongous {
                     "-Xlog:gc+region+cds",
                     "-Xlog:gc+region=trace"));
         TestCommon.checkDump(dumpOutput, "extra interned string ignored; size too large");
-        // Extra strings that are humongous are not kelp alive, so they should be GC'ed
+        // Extra strings that are humongous are not kept alive, so they should be GC'ed
         // before dumping the string table. That means the heap should contain no
         // humongous regions.
-        dumpOutput.shouldNotMatch("gc,region,cds. HeapRegion 0x[0-9a-f]* HUM");
+        dumpOutput.shouldNotMatch("gc,region,cds. G1HeapRegion 0x[0-9a-f]* HUM");
 
         OutputAnalyzer execOutput = TestCommon.exec(appJar,
             TestCommon.concat(vmOptionsPrefix, "HelloString"));
