@@ -37,19 +37,17 @@ import java.util.function.Supplier;
 
 public final class StableValueImpl<T> implements StableValue<T> {
 
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Object NULL_SENTINEL = new Object();
-
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
     private final Object mutex = new Object();
 
-    // Unset:         null
-    // Set(non-null): The set value
-    // Set(null):     nullSentinel()
     // This field is reflectively accessed via Unsafe using acquire/release semantics.
+    // Unset:         null
+    // Set(non-null): The set value (!= nullSentinel())
+    // Set(null):     nullSentinel()
     @Stable
     private T value;
 
@@ -146,11 +144,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> T nullSentinel() {
+    private static <T> T nullSentinel() {
         return (T) NULL_SENTINEL;
     }
 
-    static <T> String render(T t) {
+    private static <T> String render(T t) {
         if (t != null) {
             return t == nullSentinel() ? "[null]" : "[" + t + "]";
         }

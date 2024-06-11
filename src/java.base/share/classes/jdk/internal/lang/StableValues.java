@@ -119,7 +119,7 @@ public final class StableValues {
             throw new IllegalArgumentException();
         }
         @SuppressWarnings("unchecked")
-        final StableValue<T>[] stableValues = (StableValue<T>[]) new StableValue<?>[size];
+        final var stableValues = (StableValue<T>[]) new StableValue<?>[size];
         for (int i = 0; i < size; i++) {
             stableValues[i] = StableValue.newInstance();
         }
@@ -144,7 +144,7 @@ public final class StableValues {
     public static <K, T> Map<K, StableValue<T>> ofMap(Set<K> keys) {
         Objects.requireNonNull(keys);
         @SuppressWarnings("unchecked")
-        var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        final var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
         int i = 0;
         for (K key : keys) {
             entries[i++] = Map.entry(key, StableValue.newInstance());
