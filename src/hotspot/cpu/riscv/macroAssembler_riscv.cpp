@@ -3611,9 +3611,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-// Both inline code and stub use specific registers and may jump from inline code/stub to stub,
 // Ensure that the inline code and the stub are using the same registers.
-// And which need to be declared registers in the C2-related instruct first.
+// as we need to call the stub from inline code when there is a collision
+// in the hashed lookup in the secondary supers array.
 #define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS(r_super_klass, r_array_base, r_array_length,  \
                                                 r_array_index, r_sub_klass, result, r_bitmap) \
 do {                                                                                          \
