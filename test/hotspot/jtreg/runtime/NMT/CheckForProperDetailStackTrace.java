@@ -59,7 +59,7 @@ public class CheckForProperDetailStackTrace {
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
     private static final boolean expectSourceInformation =
-            ! Platform.isAix();
+            Platform.isLinux() || Platform.isWindows();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
