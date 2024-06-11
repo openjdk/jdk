@@ -1023,8 +1023,7 @@ class MacroAssembler: public Assembler {
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
 
-  // if you're unsure whether your instruction will run on older hardware or newer hardware than Z15
-  // then please use these instruction to avoid the compatibility issues
+  // These generate optimized code for all supported s390 implementations, and are preferred for most uses.
   void pop_count_int(Register dst, Register src, Register tmp);
   void pop_count_long(Register dst, Register src, Register tmp);
 
