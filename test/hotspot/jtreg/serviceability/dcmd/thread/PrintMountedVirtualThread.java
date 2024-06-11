@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  * @summary Test of diagnostic command Thread.print with virtual threads
  * @library /test/lib
  * @modules java.base
- * @run testng PrintVirtualThreadTest
+ * @run testng PrintMountedVirtualThread
  */
 public class PrintMountedVirtualThread {
 
@@ -43,12 +43,13 @@ public class PrintMountedVirtualThread {
         var shouldFinish = new AtomicBoolean(false);
         var started = new CountDownLatch(1);
         final Runnable runnable = new DummyRunnable(shouldFinish, started);
-        Thread.startVirtualThread(runnable);
+        Thread vthread = Thread.ofVirtual().name("Dummy Vthread").start(runnable);
         started.await();
         /* Execute */
         OutputAnalyzer output = executor.execute("Thread.print");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
         output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
+        output.shouldMatch("Mounted virtual thread " + "\"Dummy Vthread\"" + " #" + vthread.threadId());
         shouldFinish.set(true);
     }
 
@@ -73,10 +74,8 @@ public class PrintMountedVirtualThread {
 
         void compute() {
             started.countDown();
-            while (true) {
-                if (shouldFinish.get()) {
-                    break;
-                }
+            while (!shouldFinish.get()) {
+                Thread.onSpinWait();
             }
         }
     }
