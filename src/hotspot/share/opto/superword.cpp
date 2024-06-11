@@ -2846,50 +2846,34 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 // Offsets:                0    0    1    1
 //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
 //
-// But permutations are possible, because add and mul are commutative.
+// But permutations are possible, because add and mul are commutative. For
+// simplicity, we the first input is always either a0 or a1. These are all
+// the possible permutations:
+//
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1     (case 1)
+//   v = MulAddS2I(a, b) = a0 * b0 + b1 + a1     (case 2)
+//   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0     (case 3)
+//   v = MulAddS2I(a, b) = a1 * b1 + b0 + a0     (case 4)
+//
 // To vectorize, we expect (a0, a1) to be consecutive in one input pack,
 // and (b0, b1) in the other input pack. Thus, both a and b are strided,
 // with stride = 2. Further, a0 and b0 have offset 0, whereas a1 and b1
 // have offset 1.
 bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
   assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
-  Node_List* pack1_with_offset_0 = isa_strided_pack_input_or_null(pack, 1, 2, 0);
-  if (pack1_with_offset_0 != nullptr) {
-    // Expected:
-    //   Inputs:                 1      2        3    4
-    //   Offsets:                0      0        1    1
-    //     v = MulAddS2I(a, b) = a0 *   b0 +     a1 + b1
-    //     v = MulAddS2I(a, b) = a0 *   b0 +     b1 + a1
-    //                           fixed  implied  free free
-    Node_List* pack2_with_offset_0 = isa_strided_pack_input_or_null(pack, 2, 2, 0);
-    if (pack2_with_offset_0 == nullptr) { return false; }
 
-    Node_List* pack3_with_offset_1 = isa_strided_pack_input_or_null(pack, 3, 2, 1);
-    Node_List* pack4_with_offset_1 = isa_strided_pack_input_or_null(pack, 4, 2, 1);
-    if ((pack1_with_offset_0 == pack3_with_offset_1 && pack2_with_offset_0 == pack4_with_offset_1) ||
-        (pack1_with_offset_0 == pack4_with_offset_1 && pack2_with_offset_0 == pack3_with_offset_1)) {
-      return true;
-    }
-    return false;
-  } else {
-    // Expected:
-    //   Inputs:                 1      2        3    4
-    //   Offsets:                1      1        0    0
-    //     v = MulAddS2I(a, b) = a1 *   b1 +     a0 + b0
-    //     v = MulAddS2I(a, b) = a1 *   b1 +     b0 + a0
-    //                           fixed  implied  free free
-    Node_List* pack1_with_offset_1 = isa_strided_pack_input_or_null(pack, 1, 2, 1);
-    Node_List* pack2_with_offset_1 = isa_strided_pack_input_or_null(pack, 2, 2, 1);
-    if (pack1_with_offset_1 == nullptr || pack2_with_offset_1 == nullptr) { return false; }
+  bool pack1_has_offset_0 = (isa_strided_pack_input_or_null(pack, 1, 2, 0) != nullptr);
+  Node_List* pack1 = isa_strided_pack_input_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack2 = isa_strided_pack_input_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack3 = isa_strided_pack_input_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List* pack4 = isa_strided_pack_input_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
 
-    Node_List* pack3_with_offset_0 = isa_strided_pack_input_or_null(pack, 3, 2, 0);
-    Node_List* pack4_with_offset_0 = isa_strided_pack_input_or_null(pack, 4, 2, 0);
-    if ((pack1_with_offset_1 == pack3_with_offset_0 && pack2_with_offset_1 == pack4_with_offset_0) ||
-        (pack1_with_offset_1 == pack4_with_offset_0 && pack2_with_offset_1 == pack3_with_offset_0)) {
-      return true;
-    }
-    return false;
-  }
+  return pack1 != nullptr &&
+         pack2 != nullptr &&
+         pack3 != nullptr &&
+         pack4 != nullptr &&
+         ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
+          (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
