@@ -2352,6 +2352,8 @@ public final class CompactNumberFormat extends NumberFormat {
      * parsed as the value {@code 1234000} (1234 (integer part) * 1000
      * (thousand)) and the fractional part would be skipped.
      * The exact format accepted by the parse operation is locale dependent.
+     * @implSpec This implementation does not set the {@code ParsePosition} index
+     * to the position of the decimal symbol, but rather the end of the string.
      *
      * @return {@code true} if compact numbers should be parsed as integers
      *         only; {@code false} otherwise
