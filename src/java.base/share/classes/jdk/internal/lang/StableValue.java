@@ -190,7 +190,7 @@ public sealed interface StableValue<T>
      * throws {@linkplain IllegalStateException}}
      *
      * @param value to set (nullable)
-     * @throws IllegalArgumentException if a holder value is already set
+     * @throws IllegalStateException if a holder value is already set
      */
     default void setOrThrow(T value) {
         if (!trySet(value)) {
