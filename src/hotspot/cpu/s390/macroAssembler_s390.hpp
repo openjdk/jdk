@@ -1028,12 +1028,12 @@ class MacroAssembler: public Assembler {
   void pop_count_long(Register dst, Register src, Register tmp);
 
   // For legacy (pre-z15) use, but will work on all supported s390 implementations.
-  void pop_count_int_pre_z15(Register dst, Register src, Register tmp);
-  void pop_count_long_pre_z15(Register dst, Register src, Register tmp);
+  void pop_count_int_without_ext3(Register dst, Register src, Register tmp);
+  void pop_count_long_without_ext3(Register dst, Register src, Register tmp);
 
   // Only for use on z15 or later s390 implementations.
-  void pop_count_int_post_z15(Register dst, Register src);
-  void pop_count_long_post_z15(Register dst, Register src);
+  void pop_count_int_with_ext3(Register dst, Register src);
+  void pop_count_long_with_ext3(Register dst, Register src);
 
 };
 
