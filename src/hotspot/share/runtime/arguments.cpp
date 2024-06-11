@@ -507,11 +507,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#if defined(X86)
-  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#endif // X86
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -545,6 +540,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ParallelOldDeadWoodLimiterStdDev", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "UseNeon",                      JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "ScavengeBeforeFullGC",         JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+#if defined(X86)
+  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#endif // X86
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1845,14 +1845,6 @@ bool Arguments::check_vm_args_consistency() {
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
-    return false;
-  }
-#endif
-#if defined(X86) && !defined(ZERO)
-  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
-    jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive\n");
-
     return false;
   }
 #endif

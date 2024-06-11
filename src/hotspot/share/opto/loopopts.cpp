@@ -4310,10 +4310,18 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
+// Returns true if the Reduction node is unordered.
+static bool is_unordered_reduction(Node* n) {
+  return n->is_Reduction() && !n->as_Reduction()->requires_strict_order();
+}
+
 // Having ReductionNodes in the loop is expensive. They need to recursively
 // fold together the vector values, for every vectorized loop iteration. If
 // we encounter the following pattern, we can vector accumulate the values
 // inside the loop, and only have a single UnorderedReduction after the loop.
+//
+// Note: UnorderedReduction represents a ReductionNode which does not require
+// calculating in strict order.
 //
 // CountedLoop     init
 //          |        |
@@ -4354,21 +4362,24 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // wise. This is a single operation per vector_accumulator, rather than many
 // for a UnorderedReduction. We can then reduce the last vector_accumulator
 // after the loop, and also reduce the init value into it.
+//
 // We can not do this with all reductions. Some reductions do not allow the
-// reordering of operations (for example float addition).
+// reordering of operations (for example float addition/multiplication require
+// strict order).
 void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
   assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
 
-  // Find all Phi nodes with UnorderedReduction on backedge.
+  // Find all Phi nodes with an unordered Reduction on backedge.
   CountedLoopNode* cl = loop->_head->as_CountedLoop();
   for (DUIterator_Fast jmax, j = cl->fast_outs(jmax); j < jmax; j++) {
     Node* phi = cl->fast_out(j);
-    // We have a phi with a single use, and a UnorderedReduction on the backedge.
-    if (!phi->is_Phi() || phi->outcnt() != 1 || !phi->in(2)->is_UnorderedReduction()) {
+    // We have a phi with a single use, and an unordered Reduction on the backedge.
+    if (!phi->is_Phi() || phi->outcnt() != 1 || !is_unordered_reduction(phi->in(2))) {
       continue;
     }
 
-    UnorderedReductionNode* last_ur = phi->in(2)->as_UnorderedReduction();
+    ReductionNode* last_ur = phi->in(2)->as_Reduction();
+    assert(!last_ur->requires_strict_order(), "must be");
 
     // Determine types
     const TypeVect* vec_t = last_ur->vect_type();
@@ -4385,14 +4396,14 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         continue; // not implemented -> fails
     }
 
-    // Traverse up the chain of UnorderedReductions, checking that it loops back to
-    // the phi. Check that all UnorderedReductions only have a single use, except for
+    // Traverse up the chain of unordered Reductions, checking that it loops back to
+    // the phi. Check that all unordered Reductions only have a single use, except for
     // the last (last_ur), which only has phi as a use in the loop, and all other uses
     // are outside the loop.
-    UnorderedReductionNode* current = last_ur;
-    UnorderedReductionNode* first_ur = nullptr;
+    ReductionNode* current = last_ur;
+    ReductionNode* first_ur = nullptr;
     while (true) {
-      assert(current->is_UnorderedReduction(), "sanity");
+      assert(!current->requires_strict_order(), "sanity");
 
       // Expect no ctrl and a vector_input from within the loop.
       Node* ctrl = current->in(0);
@@ -4409,7 +4420,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         break; // Chain traversal fails.
       }
 
-      // Expect single use of UnorderedReduction, except for last_ur.
+      // Expect single use of an unordered Reduction, except for last_ur.
       if (current == last_ur) {
         // Expect all uses to be outside the loop, except phi.
         for (DUIterator_Fast kmax, k = current->fast_outs(kmax); k < kmax; k++) {
@@ -4427,12 +4438,13 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         }
       }
 
-      // Expect another UnorderedReduction or phi as the scalar input.
+      // Expect another unordered Reduction or phi as the scalar input.
       Node* scalar_input = current->in(1);
-      if (scalar_input->is_UnorderedReduction() &&
+      if (is_unordered_reduction(scalar_input) &&
           scalar_input->Opcode() == current->Opcode()) {
-        // Move up the UnorderedReduction chain.
-        current = scalar_input->as_UnorderedReduction();
+        // Move up the unordered Reduction chain.
+        current = scalar_input->as_Reduction();
+        assert(!current->requires_strict_order(), "must be");
       } else if (scalar_input == phi) {
         // Chain terminates at phi.
         first_ur = current;
@@ -4456,7 +4468,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
-    VectorNode::trace_new_vector(identity_vector, "UnorderedReduction");
+    VectorNode::trace_new_vector(identity_vector, "Unordered Reduction");
 
     // Turn the scalar phi into a vector phi.
     _igvn.rehash_node_delayed(phi);
@@ -4465,7 +4477,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     phi->as_Type()->set_type(vec_t);
     _igvn.set_type(phi, vec_t);
 
-    // Traverse down the chain of UnorderedReductions, and replace them with vector_accumulators.
+    // Traverse down the chain of unordered Reductions, and replace them with vector_accumulators.
     current = first_ur;
     while (true) {
       // Create vector_accumulator to replace current.
@@ -4474,11 +4486,12 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       VectorNode* vector_accumulator = VectorNode::make(vopc, last_vector_accumulator, vector_input, vec_t);
       register_new_node(vector_accumulator, cl);
       _igvn.replace_node(current, vector_accumulator);
-      VectorNode::trace_new_vector(vector_accumulator, "UnorderedReduction");
+      VectorNode::trace_new_vector(vector_accumulator, "Unordered Reduction");
       if (current == last_ur) {
         break;
       }
-      current = vector_accumulator->unique_out()->as_UnorderedReduction();
+      current = vector_accumulator->unique_out()->as_Reduction();
+      assert(!current->requires_strict_order(), "must be");
     }
 
     // Create post-loop reduction.
@@ -4495,7 +4508,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       }
     }
     register_new_node(post_loop_reduction, get_late_ctrl(post_loop_reduction, cl));
-    VectorNode::trace_new_vector(post_loop_reduction, "UnorderedReduction");
+    VectorNode::trace_new_vector(post_loop_reduction, "Unordered Reduction");
 
     assert(last_accumulator->outcnt() == 2, "last_accumulator has 2 uses: phi and post_loop_reduction");
     assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
