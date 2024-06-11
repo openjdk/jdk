@@ -187,7 +187,7 @@ public class IO {
     }
 
 
-    // adapted from https://raw.githubusercontent.com/junit-team/junit5/main/documentation/src/test/java/example/timing/TimingExtension.java
+    // adapted from https://junit.org/junit5/docs/current/user-guide/#extensions-lifecycle-callbacks-timing-extension
 
     public static class TimingExtension implements BeforeTestExecutionCallback,
             AfterTestExecutionCallback {
