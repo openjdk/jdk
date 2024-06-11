@@ -77,12 +77,16 @@ void NativeCallStack::print_on(outputStream* out) const {
   address pc;
   char    buf[1024];
   int     offset;
+  int     line;
   if (is_empty()) {
     out->print("[BOOTSTRAP]");
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
-      if (pc == nullptr) break;
+      if (pc == nullptr) {
+        break;
+      }
+      const bool pc_in_VM = os::address_is_in_vm(pc);
       out->print("[" PTR_FORMAT "]", p2i(pc));
       // Print function and library; shorten library name to just its last component
       // for brevity, and omit it completely for libjvm.so
@@ -90,8 +94,17 @@ void NativeCallStack::print_on(outputStream* out) const {
       if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
         out->print("%s+0x%x", buf, offset);
         function_printed = true;
+        if (Decoder::get_source_info(pc, buf, sizeof(buf), &line, false)) {
+          // For intra-vm functions, we omit the full path
+          const char* s = buf;
+          if (pc_in_VM) {
+            s = strrchr(s, os::file_separator()[0]);
+            s = (s != nullptr) ? s + 1 : buf;
+          }
+          out->print("   (%s:%d)", s, line);
+        }
       }
-      if ((!function_printed || !os::address_is_in_vm(pc)) &&
+      if ((!function_printed || !pc_in_VM) &&
           os::dll_address_to_library_name(pc, buf, sizeof(buf), &offset)) {
         const char* libname = strrchr(buf, os::file_separator()[0]);
         if (libname != nullptr) {

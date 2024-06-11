@@ -58,6 +58,9 @@ public class CheckForProperDetailStackTrace {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
+    private static final boolean expectSourceInformation =
+            ! Platform.isAix();
+
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
     */
@@ -121,29 +124,28 @@ public class CheckForProperDetailStackTrace {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
             // they are only available if the symbols file is included with the build.
-            if (Platform.isWindows() || Platform.isARM()) {
-                return; // we are done
+            if (!Platform.isWindows() && !Platform.isARM()) {
+                output.reportDiagnosticSummary();
+                output.reportDiagnosticSummary();
+                throw new RuntimeException("Expected symbol missing from output: " + expectedSymbol);
             }
-            output.reportDiagnosticSummary();
-            throw new RuntimeException("Expected symbol missing from output: " + expectedSymbol);
         }
 
         // Make sure the expected NMT detail stack trace is found
         System.out.println("Looking for a stack matching:");
-        if (okToHaveAllocateHeap) {
-            System.out.print(stackTraceAllocateHeap);
-            if (stackTraceMatches(stackTraceAllocateHeap, output)) {
-                return;
-            }
-        } else {
-            System.out.print(stackTraceDefault);
-            if (stackTraceMatches(stackTraceDefault, output)) {
-                return;
+        String toMatch = okToHaveAllocateHeap ? stackTraceAllocateHeap : stackTraceDefault;
+        if (!stackTraceMatches(toMatch, output)) {
+            output.reportDiagnosticSummary();
+            throw new RuntimeException("Expected stack trace missing from output");
+        }
+
+        System.out.println("Looking for source information:");
+        if (expectSourceInformation) {
+            if (!stackTraceMatches(".*moduleEntry.cpp.*", output)) {
+                output.reportDiagnosticSummary();
+                throw new RuntimeException("Expected source information missing from output");
             }
         }
-        // Failed to match so dump all the output
-        output.reportDiagnosticSummary();
-        throw new RuntimeException("Expected stack trace missing from output");
     }
 
     public static boolean stackTraceMatches(String stackTrace, OutputAnalyzer output) {
