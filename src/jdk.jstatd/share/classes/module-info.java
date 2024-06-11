@@ -33,7 +33,6 @@
  * @since 9
  */
 @Deprecated(since="24", forRemoval=true)
-@SuppressWarnings("removal")
 module jdk.jstatd {
     requires java.rmi;
     requires jdk.internal.jvmstat;
