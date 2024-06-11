@@ -168,7 +168,7 @@ public:
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
-  oop promote(oop obj, size_t obj_size);
+  oop allocate_for_promotion(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;
