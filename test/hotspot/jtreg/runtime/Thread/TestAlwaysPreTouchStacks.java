@@ -40,7 +40,6 @@ import static jdk.test.lib.Platform.isWindows;
 /*
  * @test id=preTouch
  * @summary Test AlwaysPreTouchThreadStacks
- * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -50,7 +49,6 @@ import static jdk.test.lib.Platform.isWindows;
 /*
  * @test id=noPreTouch
  * @summary Test that only touched committed memory is reported as thread stack usage.
- * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -204,6 +204,7 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   //  since that interferes with other tests!
   // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
   //  gtests.
+
   if (MemTracker::tracking_level() >= NMT_detail) {
     CommittedVirtualMemoryTest::test();
     CommittedVirtualMemoryTest::test_committed_region();

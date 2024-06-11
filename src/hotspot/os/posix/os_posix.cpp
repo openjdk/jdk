@@ -154,7 +154,6 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  log_info(os)("test _____ %s", "in os_posix");
   int mincore_return_value;
   const size_t stripe = 1024;  // query this many pages each time
   mincore_vec_t* vec = (mincore_vec_t*) malloc(stripe + 1, mtInternal);
