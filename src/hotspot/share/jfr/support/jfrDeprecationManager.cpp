@@ -29,10 +29,10 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSetBlobManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
@@ -386,7 +386,7 @@ void JfrDeprecationManager::on_type_set(JfrChunkWriter* cw, Thread* thread) {
   if (has_pending_head()) {
     assert(_pending_tail != nullptr, "invariant");
     // Install type set blobs for the pending, i.e. unresolved nodes.
-    JfrTypeSetBlobManager::install(pending_head(), _pending_tail->next());
+    JfrReferenceCountedStorage::install(pending_head(), _pending_tail->next());
   }
   if (cw != nullptr) {
     write_edges(*cw, thread);

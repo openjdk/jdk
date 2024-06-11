@@ -33,10 +33,10 @@
 #include "jfr/leakprofiler/sampling/objectSample.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSetBlobManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
@@ -427,6 +427,6 @@ void ObjectSampleCheckpoint::on_type_set(JavaThread* jt) {
   ObjectSample* const last = ObjectSampler::sampler()->last();
   assert(last != nullptr, "invariant");
   assert(last != ObjectSampler::sampler()->last_resolved(), "invariant");
-  JfrTypeSetBlobManager::install(last, ObjectSampler::sampler()->last_resolved());
+  JfrReferenceCountedStorage::install(last, ObjectSampler::sampler()->last_resolved());
   ObjectSampler::sampler()->set_last_resolved(last);
 }

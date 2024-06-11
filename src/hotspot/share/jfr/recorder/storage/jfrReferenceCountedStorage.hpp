@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETBLOBMANAGER_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETBLOBMANAGER_HPP
+#ifndef SHARE_JFR_RECORDER_STORAGE_JFRREFERENCECOUNTEDSTORAGE_HPP
+#define SHARE_JFR_RECORDER_STORAGE_JFRREFERENCECOUNTEDSTORAGE_HPP
 
 #include "jfr/utilities/jfrBlob.hpp"
 #include "memory/allocation.hpp"
@@ -31,21 +31,21 @@
 
 class JfrCheckpointWriter;
 
-// RAII helper class for saving type set blobs.
-class JfrSaveTypeSetBlob : public StackObj {
+// RAII helper class for adding blobs to the storage.
+class JfrAddRefCountedBlob : public StackObj {
  private:
   bool _reset;
  public:
-  JfrSaveTypeSetBlob(JfrCheckpointWriter& writer, bool move = true, bool reset = true);
-  ~JfrSaveTypeSetBlob();
+  JfrAddRefCountedBlob(JfrCheckpointWriter& writer, bool move = true, bool reset = true);
+  ~JfrAddRefCountedBlob();
 };
 
-// The debug aid 'scope' implies the proper RAII save construct on stack.
-// This is a necessary condition for installing type sets to nodes.
-class JfrTypeSetBlobManager : AllStatic {
-  friend class JfrSaveTypeSetBlob;
+// The debug aid 'scope' implies the proper RAII save construct is placed on stack.
+// This is a necessary condition for installing reference counted storage to nodes.
+class JfrReferenceCountedStorage : AllStatic {
+  friend class JfrAddRefCountedBlob;
  private:
-  static JfrBlobHandle _type_sets; // linked-list of type set blob handles saved during epoch.
+  static JfrBlobHandle _type_sets; // linked-list of blob handles saved during epoch.
   DEBUG_ONLY(static bool _scope;)
 
   static void save_blob(JfrCheckpointWriter& writer, bool move = false);
@@ -65,4 +65,4 @@ class JfrTypeSetBlobManager : AllStatic {
   }
 };
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETBLOBMANAGER_HPP
+#endif // SHARE_JFR_RECORDER_STORAGE_JFRREFERENCECOUNTEDSTORAGE_HPP

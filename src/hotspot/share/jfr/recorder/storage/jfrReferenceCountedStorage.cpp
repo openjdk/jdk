@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSetBlobManager.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 
 // Currently only two subsystems use type set blobs. Save a blob only if either has an unresolved entry.
@@ -33,27 +33,27 @@ static inline bool save_blob_predicate() {
   return JfrDeprecationManager::has_unresolved_entry() || ObjectSampler::has_unresolved_entry();
 }
 
-JfrSaveTypeSetBlob::JfrSaveTypeSetBlob(JfrCheckpointWriter& writer, bool move /* true */, bool reset /* true */) : _reset(reset) {
+JfrAddRefCountedBlob::JfrAddRefCountedBlob(JfrCheckpointWriter& writer, bool move /* true */, bool reset /* true */) : _reset(reset) {
   if (writer.has_data()) {
     if (save_blob_predicate()) {
-      JfrTypeSetBlobManager::save_blob(writer, move);
+      JfrReferenceCountedStorage::save_blob(writer, move);
     } else if (move) {
       writer.cancel();
     }
   }
-  DEBUG_ONLY(if (reset) JfrTypeSetBlobManager::set_scope();)
+  DEBUG_ONLY(if (reset) JfrReferenceCountedStorage::set_scope();)
 }
 
-JfrSaveTypeSetBlob::~JfrSaveTypeSetBlob() {
+JfrAddRefCountedBlob::~JfrAddRefCountedBlob() {
   if (_reset) {
-    JfrTypeSetBlobManager::reset();
+    JfrReferenceCountedStorage::reset();
   }
 }
 
-JfrBlobHandle JfrTypeSetBlobManager::_type_sets = JfrBlobHandle();
-DEBUG_ONLY(bool JfrTypeSetBlobManager::_scope = false;)
+JfrBlobHandle JfrReferenceCountedStorage::_type_sets = JfrBlobHandle();
+DEBUG_ONLY(bool JfrReferenceCountedStorage::_scope = false;)
 
-void JfrTypeSetBlobManager::save_blob(JfrCheckpointWriter& writer, bool move /* false */) {
+void JfrReferenceCountedStorage::save_blob(JfrCheckpointWriter& writer, bool move /* false */) {
   assert(writer.has_data(), "invariant");
   const JfrBlobHandle blob = move ? writer.move() : writer.copy();
   if (_type_sets.valid()) {
@@ -63,7 +63,7 @@ void JfrTypeSetBlobManager::save_blob(JfrCheckpointWriter& writer, bool move /* 
   _type_sets = blob;
 }
 
-void JfrTypeSetBlobManager::reset() {
+void JfrReferenceCountedStorage::reset() {
   assert(_scope, "invariant");
   if (_type_sets.valid()) {
     _type_sets = JfrBlobHandle();
@@ -72,7 +72,7 @@ void JfrTypeSetBlobManager::reset() {
 }
 
 #ifdef ASSERT
-void JfrTypeSetBlobManager::set_scope() {
+void JfrReferenceCountedStorage::set_scope() {
   assert(!_scope, "invariant");
   _scope = true;
 }

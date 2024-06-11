@@ -54,9 +54,9 @@ struct JfrCheckpointContext {
 };
 
 class JfrCheckpointWriter : public JfrCheckpointWriterBase {
+  friend class JfrAddRefCountedBlob;
   friend class JfrCheckpointManager;
   friend class JfrDeprecationManager;
-  friend class JfrSaveTypeSetBlob;
   friend class JfrSerializerRegistration;
   friend class JfrTypeManager;
  private:

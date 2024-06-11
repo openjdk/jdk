@@ -31,13 +31,13 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeManager.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSet.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSetBlobManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
@@ -590,7 +590,7 @@ void JfrCheckpointManager::clear_type_set() {
     MutexLocker module_lock(Module_lock);
     JfrTypeSet::clear(&writer, &leakp_writer);
   }
-  JfrSaveTypeSetBlob save_blob(leakp_writer);
+  JfrAddRefCountedBlob add_blob(leakp_writer);
   JfrDeprecationManager::on_type_set(nullptr, thread);
   // We placed a blob in the TypeSetBlobManager subsystem by moving the information
   // from the leakp writer. For the real writer, the data will not be
@@ -615,7 +615,7 @@ void JfrCheckpointManager::write_type_set() {
       MutexLocker module_lock(thread, Module_lock);
       JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
     }
-    JfrSaveTypeSetBlob save_blob(leakp_writer);
+    JfrAddRefCountedBlob add_blob(leakp_writer);
     if (LeakProfiler::is_running()) {
       ObjectSampleCheckpoint::on_type_set(thread);
     }
@@ -628,7 +628,7 @@ void JfrCheckpointManager::on_unloading_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrCheckpointWriter writer(Thread::current());
   JfrTypeSet::on_unloading_classes(&writer);
-  JfrSaveTypeSetBlob save_blob(writer, false /* move */, false /* reset */);
+  JfrAddRefCountedBlob add_blob(writer, false /* move */, false /* reset */);
 }
 
 static size_t flush_type_set(Thread* thread) {
