@@ -226,7 +226,7 @@ Fresh (unset) `StableValue` instances are created via the factory method `Stable
 ```
 class Bar {
     // 1. Declare a Stable field
-    private static final StableValue<Logger> LOGGER = StableValue.newInstance()();
+    private static final StableValue<Logger> LOGGER = StableValue.newInstance();
 
     static Logger logger() {
 
