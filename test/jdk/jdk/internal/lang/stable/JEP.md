@@ -209,10 +209,10 @@ To use the Stable Value APIs, the JVM flag `--enable-preview` must be passed in,
 The Stable Values API defines functions and an interface so that client code in libraries and applications can
 
 - Define and use stable (scalar) values:
-- [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html)
+    - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html)
 - Define collections:
-- [`StableValues.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofList(int)),
-- [`StableValues.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofMap(java.util.Set))
+    - [`StableValues.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofList(int))
+    - [`StableValues.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofMap(java.util.Set))
 
 The Stable Values API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/module-summary.html) module.
 
@@ -221,7 +221,7 @@ The Stable Values API resides in the [java.lang](https://cr.openjdk.org/~pminbor
 A _stable value_ is a holder object that is set at most once whereby it
 goes from "unset" to "set". It is expressed as an object of type `java.lang.StableValue`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
-Fresh (unset) `StableValue` instances are created via the factory method `StableValue::of`:
+Fresh (unset) `StableValue` instances are created via the factory method `StableValue::newInstance`:
 
 ```
 class Bar {
@@ -240,8 +240,8 @@ class Bar {
     }
 }
 ```
-Setting a stable value is an atomic, thread-safe operation, i.e. `StableValue::setIfUnset`,
-either results in successfully initializing the `StableValue` to a value, or returns
+Setting a stable value is an atomic, thread-safe operation, i.e. `StableValue::trySet`,
+either results in successfully initializing the `StableValue` to a value, or retaining
 an already set value. This is true regardless of whether the stable value is accessed by a single
 thread, or concurrently, by multiple threads.
 
@@ -273,15 +273,15 @@ class Bar {
 }
 ```
 
-When retrieving values, `StableValue` instances holding reference values are faster
+When retrieving values, `StableValue` instances holding reference values can be faster
 than reference values managed via double-checked-idiom constructs as stable values rely
 on explicit memory barriers rather than performing volatile access on each retrieval
-operation. In addition, stable values are eligible for constant folding optimizations.
+operation. In addition, stable values are eligible for constant folding optimizations by the JVM.
 
 ### Stable collections
 
 The Stable Values API provides constructs that allow the creation and handling of a
-*`List` of stable elements*. Lists of lazily computed values are objects of type
+*`List` of stable value elements*. Lists of lazily computed values are objects of type
 `List<StableValue<V>>`. Consequently, each element in the list enjoys the same properties as a
 `StableValue`.
 
@@ -343,11 +343,10 @@ Stable Values API allows modeling this cleanly, while  still preserving good con
 guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list of stable elements might mutate its
-internal state  upon external access, it is _still shallowly immutable_ because _no first-level
+internal state upon external access, it is _still shallowly immutable_ because _no first-level
 change can ever be observed by an external observer_. This is similar to other immutable classes,
 such as `String` (which internally caches its `hash` value), where they might rely on mutable
-internal states that are carefully kept internally and that never
-shine through to the outside world.
+internal states that are carefully kept internally and that never shine through to the outside world.
 
 Just as a `List` can be lazily computed, a `Map` of lazily computed stable values can also be defined
 and used similarly. In the example below, we lazily compute a map's stable values for an enumerated
@@ -380,7 +379,7 @@ though used from several threads.
 
 ### Memoized functions
 
-So far, we have talked about the fundamental features of Stable Values & Collections as securely
+So far, we have talked about the fundamental features of Stable Values as securely
 wrapped `@Stable` value holders. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
@@ -388,7 +387,7 @@ to composition with other constructs in order to create more high-level and powe
 particular  input value is computed only once and is remembered such that remembered outputs can be
 reused for subsequent  calls with recurring input values. Here is how we could make sure
 `Logger.getLogger("com.foo.Bar")` in one of the first examples above is invoked at most once
-(provided it executes successfully)  in a multi-threaded environment:
+(provided it executes successfully) in a multi-threaded environment:
 
 ```
 class Memoized {
@@ -411,7 +410,7 @@ class Memoized {
 }
 ```
 
-In the example above, for each key, the function is invoked at most once per  loading of the containing class
+In the example above, for each key, the function is invoked at most once per loading of the containing class
 `MapDemo` (`MapDemo`, in turn, can be loaded at most once into any given `ClassLoader`) as it is backed by a
 `Map` with lazily computed values which upholds the invoke-at-most-once-per-key invariant.
 
