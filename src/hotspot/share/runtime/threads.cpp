@@ -109,9 +109,6 @@
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #endif
-#if INCLUDE_RTM_OPT
-#include "runtime/rtmLocking.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -801,10 +798,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
-
-#if INCLUDE_RTM_OPT
-  RTMLockingCounters::init();
-#endif
 
   call_postVMInitHook(THREAD);
   // The Java side of PostVMInitHook.run must deal with all
