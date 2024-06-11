@@ -1027,8 +1027,7 @@ class MacroAssembler: public Assembler {
   void pop_count_int(Register dst, Register src, Register tmp);
   void pop_count_long(Register dst, Register src, Register tmp);
 
-  // Up for an adventure ? use these instructions :)
-  // Should be only used when you're sure that instruction will "only" run on hardware older than z15
+  // For legacy (pre-z15) use, but will work on all supported s390 implementations.
   void pop_count_int_pre_z15(Register dst, Register src, Register tmp);
   void pop_count_long_pre_z15(Register dst, Register src, Register tmp);
 
