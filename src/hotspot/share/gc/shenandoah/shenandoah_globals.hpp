@@ -149,7 +149,7 @@
           "Larger values give more weight to recent values.")               \
           range(0,1.0)                                                      \
                                                                             \
-  product(bool, ShenandoahAdaptiveIgnoreShortCycles, true, EXPERIMENTAL,    \
+  product(bool, ShenandoahAdaptiveIgnoreAbbreviated, true, EXPERIMENTAL,    \
           "The adaptive heuristic tracks a moving average of cycle "        \
           "times in order to start a gc before memory is exhausted. "       \
           "In some cases, Shenandoah may skip the evacuation and update "   \

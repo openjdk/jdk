@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +223,7 @@ void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
 
   adjust_penalty(Concurrent_Adjust);
 
-  if (_gc_times_learned <= ShenandoahLearningSteps || !(abbreviated && ShenandoahAdaptiveIgnoreShortCycles)) {
+  if (_gc_times_learned <= ShenandoahLearningSteps || !(abbreviated && ShenandoahAdaptiveIgnoreAbbreviated)) {
     _gc_cycle_time_history->add(elapsed_cycle_time());
   }
 }
