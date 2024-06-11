@@ -21,7 +21,7 @@ This might be the subject of a future JEP.
 ## Motivation
 
 Most Java developers have heard the advice "prefer immutability" (Effective
-Java, Item 17). Immutability confers many advantages including:
+Java, Third Edition, Item 17, by Joshua Bloch). Immutability confers many advantages including:
 
 * an immutable object can only be in one state
 * the invariants of an immutable object can be enforced by its constructor
