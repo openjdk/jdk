@@ -38,6 +38,7 @@ import java.io.IOException;
  * @since 1.5
  */
 @Deprecated(since="24", forRemoval=true)
+@SuppressWarnings("removal")
 public interface RemoteHost extends Remote {
 
     /**
@@ -54,7 +55,6 @@ public interface RemoteHost extends Remote {
      * @throws RemoteException
      *
      */
-    @SuppressWarnings("removal")
     RemoteVm attachVm(int vmid) throws RemoteException, MonitorException;
 
     /**
@@ -69,7 +69,6 @@ public interface RemoteHost extends Remote {
      *                          machine.
      * @throws RemoteException
      */
-    @SuppressWarnings("removal")
     void detachVm(RemoteVm rvm) throws RemoteException, MonitorException;
 
     /**
