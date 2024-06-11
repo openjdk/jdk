@@ -93,12 +93,9 @@
   #define MAP_ANONYMOUS MAP_ANON
 #endif
 
-/* Output type for mincore(2) */
-#ifdef __linux__
-typedef unsigned char mincore_vec_t;
-#else
-typedef char mincore_vec_t;
-#endif
+/* Input/Output types for mincore(2) */
+typedef LINUX_ONLY(unsigned) char mincore_vec_t;
+typedef NOT_AIX(unsigned) char* mincore_addr;
 
 static jlong initial_time_count = 0;
 
@@ -174,7 +171,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
   int committed_pages = 0;
-  address loop_base = start;
+  mincore_addr loop_base = (mincore_addr) start;
   bool found_range = false;
 
   for (int index = 0; index < loops && !found_range; index ++) {
@@ -212,7 +209,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
       } else { // committed
         // Start of region
         if (committed_start == nullptr) {
-          committed_start = loop_base + page_sz * vecIdx;
+          committed_start = (address) loop_base + page_sz * vecIdx;
         }
         committed_pages ++;
       }
