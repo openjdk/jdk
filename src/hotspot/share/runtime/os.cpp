@@ -93,13 +93,6 @@ os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
-int os::is_space(int c) {
-  if (c != EOF && (c < 0 || UCHAR_MAX < c)) {
-      return 0; // not a space.
-  }
-  return isspace(c);
-}
-
 int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);

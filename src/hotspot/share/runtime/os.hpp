@@ -771,8 +771,6 @@ class os: AllStatic {
   static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
-  static int is_space(int c);
-
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);

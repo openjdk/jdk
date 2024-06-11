@@ -1353,7 +1353,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do { s++; } while (s && os::is_space(*s));
+        do { s++; } while (s && isspace((unsigned char) *s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -5219,7 +5219,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == nullptr) return -1;
 
   // Skip blank chars
-  do { s++; } while (s && os::is_space(*s));
+  do { s++; } while (s && isspace((unsigned char) *s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
