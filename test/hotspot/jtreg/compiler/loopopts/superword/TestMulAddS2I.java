@@ -50,6 +50,8 @@ public class TestMulAddS2I {
     static final int[] GOLDEN_G;
     static final int[] GOLDEN_H;
     static final int[] GOLDEN_I;
+    static final int[] GOLDEN_J;
+    static final int[] GOLDEN_K;
 
     static {
         for (int i = 0; i < RANGE; i++) {
@@ -65,6 +67,8 @@ public class TestMulAddS2I {
         GOLDEN_G = testg(new int[ITER]);
         GOLDEN_H = testh(new int[ITER]);
         GOLDEN_I = testi(new int[ITER]);
+        GOLDEN_J = testj(new int[ITER]);
+        GOLDEN_K = testk(new int[ITER]);
     }
 
 
@@ -73,7 +77,8 @@ public class TestMulAddS2I {
         TestFramework.runWithFlags("-XX:-AlignVector");
     }
 
-    @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh", "testi"})
+    @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh",
+                 "testi", "testj", "testk"})
     @Warmup(0)
     public static void run() {
         compare(testa(), GOLDEN_A, "testa");
@@ -85,6 +90,8 @@ public class TestMulAddS2I {
         compare(testg(new int[ITER]), GOLDEN_G, "testg");
         compare(testh(new int[ITER]), GOLDEN_H, "testh");
         compare(testi(new int[ITER]), GOLDEN_I, "testi");
+        compare(testj(new int[ITER]), GOLDEN_J, "testj");
+        compare(testk(new int[ITER]), GOLDEN_K, "testk");
     }
 
     public static void compare(int[] out, int[] golden, String name) {
@@ -243,9 +250,35 @@ public class TestMulAddS2I {
     @IR(counts = {IRNode.MUL_ADD_VS2VI, "= 0"})
     public static int[] testi(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
-            // Unrolled, with some swaps.
+            // Unrolled, with some swaps that prevent vectorization.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1])); // ok
             out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+3]) + (sArr1[2*i+3] * sArr2[2*i+2])); // bad
+        }
+        return out;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.MUL_ADD_VS2VI, "= 0"})
+    public static int[] testj(int[] out) {
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps that prevent vectorization.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+1]) + (sArr1[2*i+1] * sArr2[2*i+0])); // bad
+            out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+3]) + (sArr1[2*i+3] * sArr2[2*i+2])); // bad
+        }
+        return out;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.MUL_ADD_VS2VI, "= 0"})
+    public static int[] testk(int[] out) {
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps that prevent vectorization.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+1]) + (sArr1[2*i+1] * sArr2[2*i+0])); // bad
+            out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3])); // ok
         }
         return out;
     }

@@ -362,6 +362,11 @@ public:
     }
   }
 
+  Node_List* isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const;
+  Node_List* isa_pack_input_or_null(const Node_List* pack, int j) const {
+    return isa_strided_pack_input_or_null(pack, j, 1, 0);
+  }
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:

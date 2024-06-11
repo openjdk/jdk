@@ -1198,6 +1198,23 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
+Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
+  Node* p0 = pack->at(0);
+  Node* def0 = p0->in(j);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
+    return nullptr; // size mismatch
+  }
+
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
+      return nullptr; // use-def mismatch
+    }
+  }
+  return pack_in;
+}
+
 SplitStatus PackSet::split_pack(const char* split_name,
                                 Node_List* pack,
                                 SplitTask task)
@@ -2812,24 +2829,20 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 
   if (VectorNode::is_muladds2i(use)) {
     // MulAddS2I takes shorts and produces ints.
-    if (u_pk->size() * 2 != d_pk->size()) {
-      return false;
+    assert(1 <= u_idx && u_idx <= 4, "expected range for the 4 inputs");
+    Node_List* pack1_with_offset_0 = _packset.isa_strided_pack_input_or_null(u_pk, u_idx, 2, /* offset */ 0);
+    if (pack1_with_offset_0 != nullptr) {
+    } else {
     }
-    return true;
-  }
-
-  if (u_pk->size() != d_pk->size()) {
+    // TODO
     return false;
   }
 
-  for (uint i = 0; i < u_pk->size(); i++) {
-    Node* ui = u_pk->at(i);
-    Node* di = d_pk->at(i);
-    if (ui->in(u_idx) != di) {
-      return false;
-    }
+  if (_packset.isa_pack_input_or_null(u_pk, u_idx) != nullptr) {
+    assert(d_pk == _packset.isa_pack_input_or_null(u_pk, u_idx), "consistency");
+    return true;
   }
-  return true;
+  return false;
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
