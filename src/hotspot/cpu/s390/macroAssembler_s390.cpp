@@ -5871,11 +5871,9 @@ void MacroAssembler::pop_count_long_pre_z15(Register r_dst, Register r_src, Regi
 void MacroAssembler::pop_count_long_post_z15(Register r_dst, Register r_src) {
   BLOCK_COMMENT("pop_count_long_post_z15 {");
 
-  if (VM_Version::has_MiscInstrExt3()) {
-    z_popcnt(r_dst, r_src, 8);
-  } else {
-    stop("this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_long_post_z15 is used");
-  }
+  guarantee(VM_Version::has_MiscInstrExt3(),
+      "this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_long_post_z15 is used");
+  z_popcnt(r_dst, r_src, 8);
 
   BLOCK_COMMENT("} pop_count_long_post_z15");
 }
@@ -5883,12 +5881,10 @@ void MacroAssembler::pop_count_long_post_z15(Register r_dst, Register r_src) {
 void MacroAssembler::pop_count_int_post_z15(Register r_dst, Register r_src) {
   BLOCK_COMMENT("pop_count_int_post_z15 {");
 
-  if (VM_Version::has_MiscInstrExt3()) {
-    z_llgfr(r_dst, r_src);
-    z_popcnt(r_dst, r_dst, 8);
-  } else {
-    stop("this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_int_post_z15 is used");
-  }
+  guarantee(VM_Version::has_MiscInstrExt3(),
+      "this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_long_post_z15 is used");
+  z_llgfr(r_dst, r_src);
+  z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_post_z15");
 }
