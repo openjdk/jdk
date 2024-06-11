@@ -125,7 +125,7 @@ public class LambdaAsm {
         for (var m : cf.methods()) {
             String mname = m.methodName().stringValue();
             if (mname.equals(mthd)) {
-                for (var a : m.findAttributes(Attributes.CODE)) {
+                for (var a : m.findAttributes(Attributes.code())) {
                     count++;
                     checkMethod(cf.thisClass().asInternalName(), mname,
                             cf.constantPool(), a);

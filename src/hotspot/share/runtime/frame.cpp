@@ -950,7 +950,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   ResourceMark rm(thread);
   InterpreterOopMap mask;
   if (query_oop_map_cache) {
-    m->mask_for(bci, &mask);
+    m->mask_for(m, bci, &mask);
   } else {
     OopMapCache::compute_one_oop_map(m, bci, &mask);
   }
@@ -975,8 +975,9 @@ void frame::oops_nmethod_do(OopClosure* f, NMethodClosure* cf, DerivedOopClosure
 
     // Preserve potential arguments for a callee. We handle this by dispatching
     // on the codeblob. For c2i, we do
-    if (reg_map->include_argument_oops()) {
-      _cb->preserve_callee_argument_oops(*this, reg_map, f);
+    if (reg_map->include_argument_oops() && _cb->is_nmethod()) {
+      // Only nmethod preserves outgoing arguments at call.
+      _cb->as_nmethod()->preserve_callee_argument_oops(*this, reg_map, f);
     }
   }
   // In cases where perm gen is collected, GC will want to mark

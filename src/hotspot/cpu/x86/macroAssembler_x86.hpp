@@ -213,8 +213,8 @@ class MacroAssembler: public Assembler {
   // Alignment
   void align32();
   void align64();
-  void align(int modulus);
-  void align(int modulus, int target);
+  void align(uint modulus);
+  void align(uint modulus, uint target);
 
   void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
@@ -955,6 +955,74 @@ public:
   // contained in the location described by entry (not the address of entry)
   void jump(ArrayAddress entry, Register rscratch);
 
+  // Adding more natural conditional jump instructions
+  void ALWAYSINLINE jo(Label& L, bool maybe_short = true) { jcc(Assembler::overflow, L, maybe_short); }
+  void ALWAYSINLINE jno(Label& L, bool maybe_short = true) { jcc(Assembler::noOverflow, L, maybe_short); }
+  void ALWAYSINLINE js(Label& L, bool maybe_short = true) { jcc(Assembler::negative, L, maybe_short); }
+  void ALWAYSINLINE jns(Label& L, bool maybe_short = true) { jcc(Assembler::positive, L, maybe_short); }
+  void ALWAYSINLINE je(Label& L, bool maybe_short = true) { jcc(Assembler::equal, L, maybe_short); }
+  void ALWAYSINLINE jz(Label& L, bool maybe_short = true) { jcc(Assembler::zero, L, maybe_short); }
+  void ALWAYSINLINE jne(Label& L, bool maybe_short = true) { jcc(Assembler::notEqual, L, maybe_short); }
+  void ALWAYSINLINE jnz(Label& L, bool maybe_short = true) { jcc(Assembler::notZero, L, maybe_short); }
+  void ALWAYSINLINE jb(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jnae(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jc(Label& L, bool maybe_short = true) { jcc(Assembler::carrySet, L, maybe_short); }
+  void ALWAYSINLINE jnb(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jae(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jnc(Label& L, bool maybe_short = true) { jcc(Assembler::carryClear, L, maybe_short); }
+  void ALWAYSINLINE jbe(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE jna(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE ja(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jnbe(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jl(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jnge(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jge(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jnl(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jle(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jng(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jg(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jnle(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jp(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jpe(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jnp(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+  void ALWAYSINLINE jpo(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+
+  // Short versions of the above
+  void ALWAYSINLINE jo_b(Label& L) { jccb(Assembler::overflow, L); }
+  void ALWAYSINLINE jno_b(Label& L) { jccb(Assembler::noOverflow, L); }
+  void ALWAYSINLINE js_b(Label& L) { jccb(Assembler::negative, L); }
+  void ALWAYSINLINE jns_b(Label& L) { jccb(Assembler::positive, L); }
+  void ALWAYSINLINE je_b(Label& L) { jccb(Assembler::equal, L); }
+  void ALWAYSINLINE jz_b(Label& L) { jccb(Assembler::zero, L); }
+  void ALWAYSINLINE jne_b(Label& L) { jccb(Assembler::notEqual, L); }
+  void ALWAYSINLINE jnz_b(Label& L) { jccb(Assembler::notZero, L); }
+  void ALWAYSINLINE jb_b(Label& L) { jccb(Assembler::below, L); }
+  void ALWAYSINLINE jnae_b(Label& L) { jccb(Assembler::below, L); }
+  void ALWAYSINLINE jc_b(Label& L) { jccb(Assembler::carrySet, L); }
+  void ALWAYSINLINE jnb_b(Label& L) { jccb(Assembler::aboveEqual, L); }
+  void ALWAYSINLINE jae_b(Label& L) { jccb(Assembler::aboveEqual, L); }
+  void ALWAYSINLINE jnc_b(Label& L) { jccb(Assembler::carryClear, L); }
+  void ALWAYSINLINE jbe_b(Label& L) { jccb(Assembler::belowEqual, L); }
+  void ALWAYSINLINE jna_b(Label& L) { jccb(Assembler::belowEqual, L); }
+  void ALWAYSINLINE ja_b(Label& L) { jccb(Assembler::above, L); }
+  void ALWAYSINLINE jnbe_b(Label& L) { jccb(Assembler::above, L); }
+  void ALWAYSINLINE jl_b(Label& L) { jccb(Assembler::less, L); }
+  void ALWAYSINLINE jnge_b(Label& L) { jccb(Assembler::less, L); }
+  void ALWAYSINLINE jge_b(Label& L) { jccb(Assembler::greaterEqual, L); }
+  void ALWAYSINLINE jnl_b(Label& L) { jccb(Assembler::greaterEqual, L); }
+  void ALWAYSINLINE jle_b(Label& L) { jccb(Assembler::lessEqual, L); }
+  void ALWAYSINLINE jng_b(Label& L) { jccb(Assembler::lessEqual, L); }
+  void ALWAYSINLINE jg_b(Label& L) { jccb(Assembler::greater, L); }
+  void ALWAYSINLINE jnle_b(Label& L) { jccb(Assembler::greater, L); }
+  void ALWAYSINLINE jp_b(Label& L) { jccb(Assembler::parity, L); }
+  void ALWAYSINLINE jpe_b(Label& L) { jccb(Assembler::parity, L); }
+  void ALWAYSINLINE jnp_b(Label& L) { jccb(Assembler::noParity, L); }
+  void ALWAYSINLINE jpo_b(Label& L) { jccb(Assembler::noParity, L); }
+  // * No condition for this *  void ALWAYSINLINE jcxz_b(Label& L) { jccb(Assembler::cxz, L); }
+  // * No condition for this *  void ALWAYSINLINE jecxz_b(Label& L) { jccb(Assembler::cxz, L); }
+
   // Floating
 
   void push_f(XMMRegister r);
@@ -1389,7 +1457,9 @@ public:
   void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
 
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
@@ -1479,6 +1549,8 @@ public:
       Assembler::evpsrlvd(dst, mask, nds, src, merge, vector_len);
     }
   }
+
+  using Assembler::evpsrlq;
   void evpsrlq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrlq(dst, mask, nds, src, merge, vector_len);
@@ -1500,6 +1572,7 @@ public:
       Assembler::evpsravd(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsraq;
   void evpsraq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraq(dst, mask, nds, src, merge, vector_len);
@@ -1945,7 +2018,7 @@ public:
                                Register yz_idx, Register idx, Register jdx,
                                Register carry, Register product,
                                Register carry2);
-  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);

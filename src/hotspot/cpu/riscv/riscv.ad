@@ -649,10 +649,12 @@ reg_class non_allocatable_reg(
     R23, R23_H                // java thread
 );
 
+// Class for all non-special integer registers
 reg_class no_special_reg32 %{
   return _NO_SPECIAL_REG32_mask;
 %}
 
+// Class for all non-special long integer registers
 reg_class no_special_reg %{
   return _NO_SPECIAL_REG_mask;
 %}
@@ -661,8 +663,14 @@ reg_class ptr_reg %{
   return _PTR_REG_mask;
 %}
 
+// Class for all non_special pointer registers
 reg_class no_special_ptr_reg %{
   return _NO_SPECIAL_PTR_REG_mask;
+%}
+
+// Class for all non_special pointer registers (excluding fp)
+reg_class no_special_no_fp_ptr_reg %{
+  return _NO_SPECIAL_NO_FP_PTR_REG_mask;
 %}
 
 // Class for 64 bit register r10
@@ -1037,6 +1045,7 @@ extern RegMask _PTR_REG_mask;
 extern RegMask _NO_SPECIAL_REG32_mask;
 extern RegMask _NO_SPECIAL_REG_mask;
 extern RegMask _NO_SPECIAL_PTR_REG_mask;
+extern RegMask _NO_SPECIAL_NO_FP_PTR_REG_mask;
 
 class CallStubImpl {
 
@@ -1099,6 +1108,7 @@ RegMask _PTR_REG_mask;
 RegMask _NO_SPECIAL_REG32_mask;
 RegMask _NO_SPECIAL_REG_mask;
 RegMask _NO_SPECIAL_PTR_REG_mask;
+RegMask _NO_SPECIAL_NO_FP_PTR_REG_mask;
 
 void reg_mask_init() {
 
@@ -1133,6 +1143,9 @@ void reg_mask_init() {
     _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
     _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
+
+  _NO_SPECIAL_NO_FP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
+  _NO_SPECIAL_NO_FP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
 }
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1231,7 +1244,7 @@ int MachCallStaticJavaNode::ret_addr_offset()
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  return 7 * NativeInstruction::instruction_size; // movptr, jal
+  return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
@@ -1272,12 +1285,11 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
-  // skip the movptr in MacroAssembler::ic_call():
-  // lui + addi + slli + addi + slli + addi
-  // Though movptr() has already 4-byte aligned with or without RVC,
+  // skip the movptr2 in MacroAssembler::ic_call():
+  // lui, lui, slli, add, addi
+  // Though movptr2() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
-  const int movptr_size = 6 * NativeInstruction::instruction_size;
-  current_offset += movptr_size;
+  current_offset += NativeMovConstReg::movptr2_instruction_size;
   // to make sure the address of jal 4-byte aligned.
   return align_up(current_offset, alignment_required()) - current_offset;
 }
@@ -2137,11 +2149,56 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+// Binary src (Replicate scalar/immediate)
+static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (m->Opcode() != Op_Replicate) {
+    return false;
+  }
+
+  switch (n->Opcode()) {
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL: {
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+// (XorV src (Replicate m1))
+// (XorVMask src (MaskAll m1))
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+  if (n != nullptr && m != nullptr) {
+    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+           VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
-  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
-    mstack.push(m, Visit);           // m = ShiftCntV
+  if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
+      is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_scalar_bitwise_pattern(n, m)) {
+    mstack.push(m, Visit);
     return true;
   }
   return false;
@@ -3170,6 +3227,18 @@ operand iRegPNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_ptr_reg));
   match(RegP);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// This operand is not allowed to use fp even if
+// fp is not used to hold the frame pointer.
+operand iRegPNoSpNoFp()
+%{
+  constraint(ALLOC_IN_RC(no_special_no_fp_ptr_reg));
+  match(RegP);
+  match(iRegPNoSp);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -9956,7 +10025,7 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
   effect(USE meth, KILL cr);
 
-  ins_cost(BRANCH_COST + ALU_COST * 6);
+  ins_cost(BRANCH_COST + ALU_COST * 5);
 
   format %{ "CALL,dynamic $meth\t#@CallDynamicJavaDirect" %}
 
@@ -10506,7 +10575,9 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRe
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_oop)
+// Don't use fp for 'jump_target' because a MachEpilogNode has already been
+// emitted just above the TailCall which has reset fp to the caller state.
+instruct TailCalljmpInd(iRegPNoSpNoFp jump_target, inline_cache_RegP method_oop)
 %{
   match(TailCall jump_target method_oop);
 
@@ -10519,7 +10590,7 @@ instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_oop)
   ins_pipe(pipe_class_call);
 %}
 
-instruct TailjmpInd(iRegPNoSp jump_target, iRegP_R10 ex_oop)
+instruct TailjmpInd(iRegPNoSpNoFp jump_target, iRegP_R10 ex_oop)
 %{
   match(TailJump jump_target ex_oop);
 

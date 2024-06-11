@@ -3207,10 +3207,8 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    z_l(temp, Address(temp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
-    z_brne(done);
+    testbit(Address(temp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_btrue(done);
   }
 
   // Handle existing monitor.
@@ -5283,9 +5281,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
 
   z_stmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 
-  // In openJdk, we store the argument as 32-bit value to slot.
-  Address zlen(Z_SP, _z_abi(remaining_cargs));  // Int in long on big endian.
-
   const Register idx = tmp1;
   const Register kdx = tmp2;
   const Register xstart = tmp3;
@@ -5310,7 +5305,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   //
 
   lgr_if_needed(idx, ylen);  // idx = ylen
-  z_llgf(kdx, zlen);         // C2 does not respect int to long conversion for stub calls, thus load zero-extended.
+  z_agrk(kdx, xlen, ylen);   // kdx = xlen + ylen
   clear_reg(carry);          // carry = 0
 
   Label L_done;

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1733,9 +1733,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>क्रेस्टन</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>येलोनाइफ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>एडमोंटोन</exemplarCity>
 			</zone>
@@ -1754,29 +1751,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>रेसालूत</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>रेनी रिवर</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>रेंकिन इनलेट</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>अटिकोकन</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>थंडर बे</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>निपिगान</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>टोरंटो</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>इकालविट</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>पैंगनिरटंग</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>मान्कटान</exemplarCity>
@@ -2501,17 +2486,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>डारे सलाम</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>उझोरोद</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>कीव</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>सिम्फेरोपोल</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>जपोरोजाए</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>कमपाला</exemplarCity>
@@ -3092,11 +3071,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>लार्ड होबे डेलाइट टाइम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मेक्वैरी द्वीप टाइम</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मगादान टाइम</generic>
@@ -3119,13 +3093,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>मारीशस टाइम</generic>
 					<standard>मारीशस मानक टाइम</standard>
 					<daylight>मारीशस समर टाइम</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>उत्तर-पश्चिमी मैक्सिको टाइम</generic>
-					<standard>उत्तर-पश्चिमी मैक्सिको मानक टाइम</standard>
-					<daylight>उत्तर-पश्चिमी मैक्सिको डेलाइट टाइम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

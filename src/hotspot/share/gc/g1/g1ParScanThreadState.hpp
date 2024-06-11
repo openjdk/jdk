@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -46,7 +46,7 @@ class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
-class HeapRegion;
+class G1HeapRegion;
 class PreservedMarks;
 class PreservedMarksSet;
 class outputStream;
@@ -238,7 +238,7 @@ public:
   template <typename T>
   inline void remember_reference_into_optional_region(T* p);
 
-  inline G1OopStarChunkedList* oops_into_optional_region(const HeapRegion* hr);
+  inline G1OopStarChunkedList* oops_into_optional_region(const G1HeapRegion* hr);
 };
 
 class G1ParScanThreadStateSet : public StackObj {
@@ -265,7 +265,7 @@ class G1ParScanThreadStateSet : public StackObj {
   PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
 
   void flush_stats();
-  void record_unused_optional_region(HeapRegion* hr);
+  void record_unused_optional_region(G1HeapRegion* hr);
 
   G1ParScanThreadState* state_for_worker(uint worker_id);
   uint num_workers() const { return _num_workers; }

@@ -389,18 +389,21 @@ typedef AbstractRegSet<PRegister> PRegSet;
 
 template <>
 inline Register AbstractRegSet<Register>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_Register(exact_log2(first)) : noreg;
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
 }
 
 template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
+  if (_bitset == 0) { return fnoreg; }
+  return as_FloatRegister(count_trailing_zeros(_bitset));
 }
 
 inline Register as_Register(FloatRegister reg) {
   return as_Register(reg->encoding());
 }
+
+// High-level register class of an OptoReg or a VMReg register.
+enum RC { rc_bad, rc_int, rc_float, rc_predicate, rc_stack };
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

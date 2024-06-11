@@ -139,9 +139,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
-  // Saved mark word, for to-space
-  HeapWord* _saved_mark_word;
-
   STWGCTimer* _gc_timer;
 
   DefNewTracer* _gc_tracer;
@@ -170,10 +167,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
-
-  HeapWord* saved_mark_word()   const    { return _saved_mark_word; }
-  void set_saved_mark_word()             { _saved_mark_word = to()->top(); }
-  bool saved_mark_at_top()               { return _saved_mark_word == _to_space->top(); }
 
   // Space enquiries
   size_t capacity() const;
@@ -215,19 +208,18 @@ class DefNewGeneration: public Generation {
   HeapWord* block_start(const void* p) const;
 
   // Allocation support
-  virtual bool should_allocate(size_t word_size, bool is_tlab) {
+  bool should_allocate(size_t word_size, bool is_tlab) {
     assert(UseTLAB || !is_tlab, "Should not allocate tlab");
+    assert(word_size != 0, "precondition");
 
     size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
 
-    const bool non_zero      = word_size > 0;
     const bool overflows     = word_size >= overflow_limit;
     const bool check_too_big = _pretenure_size_threshold_words > 0;
     const bool not_too_big   = word_size < _pretenure_size_threshold_words;
     const bool size_ok       = is_tlab || !check_too_big || not_too_big;
 
     bool result = !overflows &&
-                  non_zero   &&
                   size_ok;
 
     return result;
@@ -239,20 +231,6 @@ class DefNewGeneration: public Generation {
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
   void gc_epilogue(bool full);
-
-  // Save the tops for eden, from, and to
-  void record_spaces_top();
-
-  // Accessing marks
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
@@ -271,10 +249,7 @@ class DefNewGeneration: public Generation {
   // at some additional cost.
   bool collection_attempt_is_safe();
 
-  virtual void collect(bool   full,
-                       bool   clear_all_soft_refs,
-                       size_t size,
-                       bool   is_tlab);
+  bool collect(bool clear_all_soft_refs);
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 

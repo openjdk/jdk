@@ -971,13 +971,17 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         if (names == null || filters == null) {
             throw new IllegalArgumentException("Got null arguments.");
         }
+        // Accept an array of delegationSubjects from e.g. earlier JDKs,
+        // but throw if it contains any non-null values.
         if (delegationSubjects != null) {
-            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+            for (Subject s: delegationSubjects) {
+                if (s != null) {
+                    throw new UnsupportedOperationException("Subject Delegation has been removed.");
+                }
+            }
         }
-        Subject[] sbjs = new Subject[names.length];
-        if (names.length != filters.length || filters.length != sbjs.length) {
-            final String msg =
-                "The value lengths of 3 parameters are not same.";
+        if (names.length != filters.length) {
+            final String msg = "The lengths of names and filters parameters are not same.";
             throw new IllegalArgumentException(msg);
         }
 
@@ -1005,7 +1009,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
                 filterValues[i] =
                     unwrap(filters[i], targetCl, defaultClassLoader,
-                           NotificationFilter.class, sbjs[i]);
+                           NotificationFilter.class, null);
 
                 if (debug) logger.debug("addNotificationListener"+
                                         "(ObjectName,NotificationFilter)",
@@ -1017,7 +1021,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     doPrivilegedOperation(ADD_NOTIFICATION_LISTENERS,
                                           new Object[] { names[i],
                                                          filterValues[i] },
-                                          sbjs[i]);
+                                          null);
             }
 
             return ids;

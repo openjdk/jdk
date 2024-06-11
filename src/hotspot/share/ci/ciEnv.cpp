@@ -869,10 +869,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Jump through a patchable call site, which is initially a deopt routine.
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
-    int indy_index = cpool->decode_invokedynamic_index(index);
-    assert (indy_index >= 0, "should be");
-    assert(indy_index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    Method* adapter = cpool->resolved_indy_entry_at(indy_index)->method();
+    assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
+    Method* adapter = cpool->resolved_indy_entry_at(index)->method();
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);
@@ -1141,15 +1139,17 @@ void ciEnv::register_method(ciMethod* target,
 #endif
 
       if (entry_bci == InvocationEntryBci) {
-        // If there is an old version we're done with it
-        nmethod* old = method->code();
-        if (TraceMethodReplacement && old != nullptr) {
-          ResourceMark rm;
-          char *method_name = method->name_and_sig_as_C_string();
-          tty->print_cr("Replacing method %s", method_name);
-        }
-        if (old != nullptr) {
-          old->make_not_used();
+        if (TieredCompilation) {
+          // If there is an old version we're done with it
+          nmethod* old = method->code();
+          if (TraceMethodReplacement && old != nullptr) {
+            ResourceMark rm;
+            char *method_name = method->name_and_sig_as_C_string();
+            tty->print_cr("Replacing method %s", method_name);
+          }
+          if (old != nullptr) {
+            old->make_not_used();
+          }
         }
 
         LogTarget(Info, nmethod, install) lt;
@@ -1499,21 +1499,20 @@ void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
 
 // Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
-  int index = cp->decode_invokedynamic_index(indy_index);
-  ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
+  ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(indy_index);
   if (indy_info->method() != nullptr) {
     // process the adapter
     Method* adapter = indy_info->method();
     record_call_site_method(thread, adapter);
     // process the appendix
-    oop appendix = cp->resolved_reference_from_indy(index);
+    oop appendix = cp->resolved_reference_from_indy(indy_index);
     {
       RecordLocation fp(this, "<appendix>");
       record_call_site_obj(thread, appendix);
     }
     // process the BSM
     int pool_index = indy_info->constant_pool_index();
-    BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+    BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
     oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
     {
       RecordLocation fp(this, "<bsm>");

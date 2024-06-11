@@ -526,7 +526,18 @@ class methodHandle;
   do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, countPositives_signature, F_R)   \
    do_name(     implCompressMB_name,                               "implCompressMultiBlock0")                           \
                                                                                                                         \
-   /* support for java.util.Base64.Encoder*/                                                                            \
+  /* support for sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256 */                                      \
+  do_class(sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, "sun/security/util/math/intpoly/MontgomeryIntegerPolynomialP256")  \
+  do_intrinsic(_intpoly_montgomeryMult_P256, sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, intPolyMult_name, intPolyMult_signature, F_R) \
+  do_name(intPolyMult_name, "mult")                                                                                     \
+  do_signature(intPolyMult_signature, "([J[J[J)I")                                                                      \
+                                                                                                                        \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomial, "sun/security/util/math/intpoly/IntegerPolynomial")        \
+  do_intrinsic(_intpoly_assign, sun_security_util_math_intpoly_IntegerPolynomial, intPolyAssign_name, intPolyAssign_signature, F_S) \
+   do_name(intPolyAssign_name, "conditionalAssign")                                                                     \
+   do_signature(intPolyAssign_signature, "(I[J[J)V")                                                                    \
+                                                                                                                        \
+  /* support for java.util.Base64.Encoder*/                                                                             \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
@@ -620,6 +631,9 @@ class methodHandle;
   do_intrinsic(_copyMemory,               jdk_internal_misc_Unsafe,     copyMemory_name, copyMemory_signature,         F_RN)     \
    do_name(     copyMemory_name,                                        "copyMemory0")                                           \
    do_signature(copyMemory_signature,                                   "(Ljava/lang/Object;JLjava/lang/Object;JJ)V")            \
+  do_intrinsic(_setMemory,                jdk_internal_misc_Unsafe,     setMemory_name,  setMemory_signature,          F_RN)     \
+   do_name(     setMemory_name,                                         "setMemory0")                                            \
+   do_signature(setMemory_signature,                                    "(Ljava/lang/Object;JJB)V")                              \
   do_intrinsic(_loadFence,                jdk_internal_misc_Unsafe,     loadFence_name, loadFence_signature,           F_R)      \
    do_name(     loadFence_name,                                         "loadFence")                                             \
    do_alias(    loadFence_signature,                                    void_method_signature)                                   \

@@ -215,14 +215,4 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 .addMainContent(div);
         return body;
     }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        List<Content> subnavLinks = new ArrayList<>();
-        if (configuration.showModules) {
-            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(packageElement), false));
-        }
-        subnavLinks.add(getBreadcrumbLink(packageElement, true));
-        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
-    }
 }
