@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ static size_t bound_minus_alignment(size_t desired_size,
                                     size_t maximum_size,
                                     size_t alignment) {
   size_t max_minus = maximum_size - alignment;
-  return desired_size < max_minus ? desired_size : max_minus;
+  return MIN2(desired_size, max_minus);
 }
 
 void GenArguments::initialize_alignments() {
@@ -101,8 +101,11 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= InitialHeapSize) {
-    log_warning(gc, ergo)("NewSize was set larger than initial heap size, will use initial heap size.");
-    FLAG_SET_ERGO(NewSize, bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment));
+    size_t revised_new_size = bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment);
+    log_warning(gc, ergo)("NewSize (%zuk) is equal to or greater than initial heap size (%zuk).  A new "
+                          "NewSize of %zuk will be used to accomodate an old generation.",
+                          NewSize/K, InitialHeapSize/K, revised_new_size/K);
+    FLAG_SET_ERGO(NewSize, revised_new_size);
   }
 
   // Now take the actual NewSize into account. We will silently increase NewSize
@@ -264,6 +267,9 @@ void GenArguments::initialize_size_info() {
       // size can be too small.
       initial_young_size =
         clamp(scale_by_NewRatio_aligned(InitialHeapSize, GenAlignment), NewSize, max_young_size);
+
+      // Derive MinNewSize from MinHeapSize
+      MinNewSize = MIN2(scale_by_NewRatio_aligned(MinHeapSize, GenAlignment), initial_young_size);
     }
   }
 
@@ -276,6 +282,9 @@ void GenArguments::initialize_size_info() {
   // and maximum heap size since no explicit flags exist
   // for setting the old generation maximum.
   MaxOldSize = MAX2(MaxHeapSize - max_young_size, GenAlignment);
+  MinOldSize = MIN3(MaxOldSize,
+                    InitialHeapSize - initial_young_size,
+                    MinHeapSize - MinNewSize);
 
   size_t initial_old_size = OldSize;
 
@@ -287,9 +296,8 @@ void GenArguments::initialize_size_info() {
     // with the overall heap size).  In either case make
     // the minimum, maximum and initial sizes consistent
     // with the young sizes and the overall heap sizes.
-    MinOldSize = GenAlignment;
     initial_old_size = clamp(InitialHeapSize - initial_young_size, MinOldSize, MaxOldSize);
-    // MaxOldSize has already been made consistent above.
+    // MaxOldSize and MinOldSize have already been made consistent above.
   } else {
     // OldSize has been explicitly set on the command line. Use it
     // for the initial size but make sure the minimum allow a young
@@ -304,9 +312,10 @@ void GenArguments::initialize_size_info() {
                             ", -XX:OldSize flag is being ignored",
                             MaxHeapSize);
       initial_old_size = MaxOldSize;
+    } else if (initial_old_size < MinOldSize) {
+      log_warning(gc, ergo)("Inconsistency between initial old size and minimum old size");
+      MinOldSize = initial_old_size;
     }
-
-    MinOldSize = MIN2(initial_old_size, MinHeapSize - MinNewSize);
   }
 
   // The initial generation sizes should match the initial heap size,

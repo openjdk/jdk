@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -39,14 +38,13 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 /**
  * Build list of all the summary packages, classes, constructors, fields and methods.
  */
-public class SummaryAPIListBuilder {
+public abstract class SummaryAPIListBuilder {
     /**
      * List of summary type Lists.
      */
     private final Map<SummaryElementKind, SortedSet<Element>> summaryMap;
     protected final BaseConfiguration configuration;
     protected final Utils utils;
-    private final Predicate<Element> belongsToSummary;
 
     public enum SummaryElementKind {
         MODULE,
@@ -69,11 +67,9 @@ public class SummaryAPIListBuilder {
      *
      * @param configuration the current configuration of the doclet
      */
-    public SummaryAPIListBuilder(BaseConfiguration configuration,
-                                 Predicate<Element> belongsToSummary) {
+    protected SummaryAPIListBuilder(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
-        this.belongsToSummary = belongsToSummary;
         summaryMap = new EnumMap<>(SummaryElementKind.class);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             summaryMap.put(kind, createSummarySet());
@@ -93,7 +89,7 @@ public class SummaryAPIListBuilder {
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = summaryMap.get(SummaryElementKind.MODULE);
         for (Element me : modules) {
-            if (belongsToSummary.test(me)) {
+            if (belongsToSummary(me)) {
                 mset.add(me);
                 handleElement(me);
             }
@@ -101,14 +97,14 @@ public class SummaryAPIListBuilder {
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = summaryMap.get(SummaryElementKind.PACKAGE);
         for (Element pe : packages) {
-            if (belongsToSummary.test(pe)) {
+            if (belongsToSummary(pe)) {
                 pset.add(pe);
                 handleElement(pe);
             }
         }
         for (TypeElement te : configuration.getIncludedTypeElements()) {
             SortedSet<Element> eset;
-            if (belongsToSummary.test(te)) {
+            if (belongsToSummary(te)) {
                 switch (te.getKind()) {
                     case ANNOTATION_TYPE -> {
                         eset = summaryMap.get(SummaryElementKind.ANNOTATION_TYPE);
@@ -149,7 +145,7 @@ public class SummaryAPIListBuilder {
             }
             if (utils.isRecord(te)) {
                 for (RecordComponentElement component : te.getRecordComponents()) {
-                    if (belongsToSummary.test(component)) {
+                    if (belongsToSummary(component)) {
                         throw new AssertionError("record components not supported in summary builders: " +
                                                  "component: " + component.getSimpleName() +
                                                  " of record: " + te.getQualifiedName());
@@ -165,6 +161,14 @@ public class SummaryAPIListBuilder {
     }
 
     /**
+     * This method decides whether Element {@code element} should be included in this summary list.
+     *
+     * @param element an element
+     * @return true if the element should be included
+     */
+    protected abstract boolean belongsToSummary(Element element);
+
+    /**
      * Add the members into a single list of summary members.
      *
      * @param sset set of summary elements
@@ -172,7 +176,7 @@ public class SummaryAPIListBuilder {
      */
     private void composeSummaryList(SortedSet<Element> sset, List<? extends Element> members) {
         for (Element member : members) {
-            if (belongsToSummary.test(member)) {
+            if (belongsToSummary(member)) {
                 sset.add(member);
                 handleElement(member);
             }

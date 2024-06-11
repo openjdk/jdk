@@ -47,6 +47,12 @@ JVM_LDFLAGS += \
 
 JVM_ASFLAGS += $(EXTRA_ASFLAGS)
 
+JVM_ASFLAGS += \
+        -I$(TOPDIR)/src/hotspot/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH) \
+        -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS) \
+        -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE) \
+        #
+
 JVM_LIBS += \
     $(JVM_LIBS_FEATURES) \
     #
@@ -137,13 +143,6 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # This source set is reused so save in cache.
 $(call FillFindCache, $(JVM_SRC_DIRS))
 
-# The global operator new functions defined in operator_new.cpp are intended
-# to detect and prevent the VM code from calling them. See more details in
-# operator_new.cpp. Exclude operator_new.o when statically linking the VM
-# code with JDK natives, as the JDK natives might need to call the global
-# operator new.
-LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
-
 ifeq ($(call isTargetOs, windows), true)
   ifeq ($(STATIC_LIBS), true)
     WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
@@ -155,7 +154,7 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ifeq ($(call isTargetOs, linux), true)
-  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
+  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script-$(TOOLCHAIN_TYPE).txt
 
   JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif
@@ -217,7 +216,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     RC_FILEDESC := $(HOTSPOT_VM_DISTRO) $(OPENJDK_TARGET_CPU_BITS)-Bit $(JVM_VARIANT) VM, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
-    STATIC_LIB_EXCLUDE_OBJS := $(LIBJVM_STATIC_EXCLUDE_OBJS), \
 ))
 
 ifeq ($(call isTargetOs, windows), true)

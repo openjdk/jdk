@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.BeforeEach;
 import jdk.jpackage.test.Annotations.Test;
@@ -65,27 +64,19 @@ public class ArgumentsTest {
     @Parameter("Goodbye")
     @Parameter("com.hello/com.hello.Hello")
     public static void testApp(String javaAppDesc) {
-        testIt(javaAppDesc, null);
-    }
-
-    private static void testIt(String javaAppDesc,
-            ThrowingConsumer<JPackageCommand> initializer) {
-
         JPackageCommand cmd = JPackageCommand.helloAppImage(javaAppDesc).addArguments(
                 "--arguments", JPackageCommand.escapeAndJoin(TRICKY_ARGUMENTS));
-        if (initializer != null) {
-            ThrowingConsumer.toConsumer(initializer).accept(cmd);
-        }
 
         cmd.executeAndAssertImageCreated();
 
-        Path launcherPath = cmd.appLauncherPath();
-        if (!cmd.isFakeRuntime(String.format(
-                "Not running [%s] launcher", launcherPath))) {
-            HelloApp.assertApp(launcherPath)
-                    .addDefaultArguments(TRICKY_ARGUMENTS)
-                    .executeAndVerifyOutput();
+        if (!cmd.canRunLauncher("Not running the test")) {
+            return;
         }
+
+        Path launcherPath = cmd.appLauncherPath();
+        HelloApp.assertApp(launcherPath)
+                .addDefaultArguments(TRICKY_ARGUMENTS)
+                .executeAndVerifyOutput();
     }
 
     private final static List<String> TRICKY_ARGUMENTS = List.of(

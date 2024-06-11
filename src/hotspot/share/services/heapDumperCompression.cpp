@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,11 +49,11 @@ FileWriter::~FileWriter() {
   }
 }
 
-char const* FileWriter::write_buf(char* buf, ssize_t size) {
+char const* FileWriter::write_buf(char* buf, size_t size) {
   assert(_fd >= 0, "Must be open");
   assert(size > 0, "Must write at least one byte");
 
-  if (!os::write(_fd, buf, (size_t)size)) {
+  if (!os::write(_fd, buf, size)) {
     return os::strerror(errno);
   }
 

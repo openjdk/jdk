@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.CD_module_info;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -392,7 +393,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
+        return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);
@@ -1475,8 +1476,17 @@ public sealed interface ClassFile
     /** The class major version of JAVA_22. */
     int JAVA_22_VERSION = 66;
 
-    /** 67 */
+    /**
+     * The class major version of JAVA_23.
+     * @since 23
+     */
     int JAVA_23_VERSION = 67;
+
+    /**
+     * The class major version of JAVA_24.
+     * @since 24
+     */
+    int JAVA_24_VERSION = 68;
 
     /**
      * A minor version number indicating a class uses preview features
@@ -1489,7 +1499,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_23_VERSION;
+        return JAVA_24_VERSION;
     }
 
     /**

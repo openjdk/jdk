@@ -66,7 +66,7 @@ import java.util.*;
  * @see nsk.share.jdi.Binder
  * @see nsk.share.jdwp.Binder
  */
-public class DebugeeBinder extends Log.Logger implements Finalizable {
+public class DebugeeBinder extends Log.Logger {
 
     private static final boolean IS_WINDOWS = System.getProperty("os.name")
                                                     .toLowerCase()
@@ -118,8 +118,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     public DebugeeBinder (DebugeeArgumentHandler argumentHandler, Log log) {
         super(log, LOG_PREFIX);
         this.argumentHandler = argumentHandler;
-
-        registerCleanup();
     }
 
     /**
@@ -544,14 +542,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
             bindServerListener.close();
         }
         closePipeServerSocket();
-    }
-
-    /**
-     * Finalize binder by invoking <code>close()</code>.
-     *
-     */
-    public void cleanup() {
-        close();
     }
 
     /**

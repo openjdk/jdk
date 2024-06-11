@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1230,9 +1230,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Simferòpol</exemplarCity>
 			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Zaporiyia</exemplarCity>
-			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity draft="unconfirmed">Beulah, Dakota deth Nòrd</exemplarCity>
 			</zone>
@@ -1671,11 +1668,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">ora des Espòrades Equatorials</standard>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">ora dera Isla Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">ora de Magadan</generic>
@@ -1698,13 +1690,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">ora de Maurici</generic>
 					<standard draft="unconfirmed">ora estandard de Maurici</standard>
 					<daylight draft="unconfirmed">ora d’estiu de Maurici</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">ora deth nòrd-èst de Mexic</generic>
-					<standard draft="unconfirmed">ora estandard deth nòrd-èst de Mexic</standard>
-					<daylight draft="unconfirmed">ora d’estiu deth nòrd-èst de Mexic</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
