@@ -134,8 +134,7 @@ public final class StableValues {
      * {@snippet lang = java :
      *     Map<K, StableValue<T>> map = keys.stream()
      *                 .collect(Collectors.toMap(
-     *                     Function.identity(),
-     *                     _ -> StableValue.newInstance()));
+     *                     Function.identity(), _ -> StableValue.newInstance()));
      * }
      * @param keys the keys in the {@code Map}
      * @param <K>  the {@code Map}'s key type

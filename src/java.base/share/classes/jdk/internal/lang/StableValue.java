@@ -42,43 +42,36 @@ import java.util.function.Supplier;
  * factory.
  * <p>
  * The utility class {@linkplain StableValues} contains a number of convenience methods
- * for creating constructs involving StableValues:
+ * for creating constructs involving StableValue:
  * <p>
- * A StableValue can be created and computed by a background thread like this:
- * {@snippet lang = java:
- *     StableValue<Value> stableValue = StableValues.ofBackground(
- *         Thread.ofVirtual().factory(), Value::new);
- *}
- * A new background thread will be created from a factory (e.g. `Thread.ofVirtual.factory`)
- * and said thread will compute the returned StableValue's holder value using a supplier
- * (e.g. `Value::new`).
- * <p>
- * A List of stable values with a given {@code size} can be created the following way:
+ * A List of StableValue elements with a given {@code size} can be created the following way:
  * {@snippet lang = java :
  *     List<StableValue<E>> list = StableValues.ofList(size);
  * }
- * The list can be used to model stable arrays of one dimensions. If two or more
+ * The list can be used to model stable one-dimensional arrays. If two- or more
  * dimensional arrays are to be modeled, a List of List of ... of StableValue can be used.
  * <p>
- * A Map of stable values with a given set of {@code keys} can be created like this:
+ * A Map with a given set of {@code keys} associated with StableValue objects can be
+ * created like this:
  * {@snippet lang = java :
  *     Map<K, StableValue<V>> map = StableValues.ofMap(keys);
  * }
- * A memoized Supplier, where a given {@code original} supplier is guaranteed to be
- * successfully invoked at most once even in a multi-threaded environment, can be
+ * A <em>memoized</em> Supplier, where a given {@code original} Supplier is guaranteed to
+ * be successfully invoked at most once even in a multithreaded environment, can be
  * created like this:
  * {@snippet lang = java :
  *     Supplier<T> memoized = StableValues.memoizedSupplier(original, null);
  * }
- * The memoized supplier can also be lazily computed using a fresh background thread if a
+ * The memoized supplier can also be lazily computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
  * {@snippet lang = java :
  *     Supplier<T> memoized = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
  * }
  * <p>
- * A memoized IntFunction, for the allowed given {@code size} values and where the
- * given {@code original} IntFunction is guaranteed to be successfully invoked at most
- * once per inout index even in a multi-threaded environment, can be created like this:
+ * A memoized IntFunction, for the allowed given {@code size} values {@code [0, size)}
+ * and where the given {@code original} IntFunction is guaranteed to be successfully
+ * invoked at most once per inout index even in a multithreaded environment, can be
+ * created like this:
  * {@snippet lang = java :
  *     static <R> IntFunction<R> memoizedIntFunction(int size,
  *                                                   IntFunction<? extends R> original) {
@@ -89,7 +82,7 @@ import java.util.function.Supplier;
  * }
  * A memoized Function, for the allowed given {@code input} values and where the
  * given {@code original} function is guaranteed to be successfully invoked at most
- * once per input value even in a multi-threaded environment, can be created like this:
+ * once per input value even in a multithreaded environment, can be created like this:
  * {@snippet lang = java :
  *     static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
  *                                                   Function<? super T, ? extends R> original) {
@@ -107,8 +100,8 @@ import java.util.function.Supplier;
  * The constructs above are eligible for similar JVM optimizations as the StableValue
  * class itself.
  * <p>
- * All methods that can set the stable value's holder value are guarded such that competing
- * set operations (by other threads) will block if another set operation is
+ * All methods that can set the stable value's holder value are guarded such that
+ * competing set operations (by other threads) will block if another set operation is
  * already in progress.
  * <p>
  * Except for a StableValue's holder value itself, all method parameters must be
@@ -175,7 +168,7 @@ public sealed interface StableValue<T>
      * return newValue;
      * }</pre>
      * Except, the method is atomic and thread-safe with respect to this and all other
-     * methods that can set the StableValue's holder value.
+     * methods that can set this StableValue's holder value.
      *
      * @param supplier the supplier to be used to compute a holder value
      * @return the current (existing or computed) holder value associated with
