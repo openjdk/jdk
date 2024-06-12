@@ -293,7 +293,7 @@ public interface Gatherer<T, A, R> {
      *
      * @implSpec This method always returns the same instance.
      *
-     * @see Gatherer#finisher()
+     * @see Gatherer#combiner()
      * @return the instance of the default combiner
      * @param <A> the type of the state of the returned combiner
      */
