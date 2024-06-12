@@ -693,7 +693,7 @@ public class Inflater implements AutoCloseable {
      * This method should be called when the decompressor is no longer
      * being used. Once this method is called, further operations using
      * this Inflater may throw an exception.
-     * 
+     *
      * @see #close()
      */
     public void end() {
