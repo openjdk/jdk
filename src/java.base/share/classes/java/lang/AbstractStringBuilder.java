@@ -639,10 +639,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         ensureCapacityInternal(count + 4);
         byte[] val = this.value;
         if (isLatin1()) {
-            val[count    ] = 'n';
-            val[count + 1] = 'u';
-            val[count + 2] = 'l';
-            val[count + 3] = 'l';
+            StringLatin1.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         } else {
             StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
@@ -772,16 +769,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
-                val[count    ] = 't';
-                val[count + 1] = 'r';
-                val[count + 2] = 'u';
-                val[count + 3] = 'e';
+                StringLatin1.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                val[count    ] = 'f';
-                val[count + 1] = 'a';
-                val[count + 2] = 'l';
-                val[count + 3] = 's';
-                val[count + 4] = 'e';
+                StringLatin1.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         } else {
             if (b) {
