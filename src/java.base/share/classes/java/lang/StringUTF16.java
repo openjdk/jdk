@@ -1548,35 +1548,37 @@ final class StringUTF16 {
     }
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
         assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
-        index <<= 1;
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (index << 1);
         Unsafe UNSAFE = Unsafe.getUnsafe();
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index    , (byte)(c1 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 1, (byte)(c1 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 2, (byte)(c2 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 3, (byte)(c2 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 4, (byte)(c3 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 5, (byte)(c3 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 6, (byte)(c4 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 7, (byte)(c4 >> LO_BYTE_SHIFT));
+
+        UNSAFE.putByte(val, address    , (byte)(c1 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 1, (byte)(c1 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 2, (byte)(c2 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 3, (byte)(c2 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 4, (byte)(c3 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 5, (byte)(c3 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 6, (byte)(c4 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 7, (byte)(c4 >> LO_BYTE_SHIFT));
     }
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
         assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
-        index <<= 1;
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        long address  = Unsafe.ARRAY_BYTE_BASE_OFFSET + (index << 1);
         Unsafe UNSAFE = Unsafe.getUnsafe();
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index    , (byte)(c1 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 1, (byte)(c1 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 2, (byte)(c2 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 3, (byte)(c2 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 4, (byte)(c3 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 5, (byte)(c3 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 6, (byte)(c4 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 7, (byte)(c4 >> LO_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 8, (byte)(c5 >> HI_BYTE_SHIFT));
-        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 9, (byte)(c5 >> LO_BYTE_SHIFT));
+
+        UNSAFE.putByte(val, address    , (byte)(c1 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 1, (byte)(c1 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 2, (byte)(c2 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 3, (byte)(c2 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 4, (byte)(c3 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 5, (byte)(c3 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 6, (byte)(c4 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 7, (byte)(c4 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 8, (byte)(c5 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 9, (byte)(c5 >> LO_BYTE_SHIFT));
     }
 
     public static char charAt(byte[] value, int index) {
