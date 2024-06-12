@@ -2376,7 +2376,7 @@ public class DecimalFormat extends NumberFormat {
 
         // position will serve as new index when success, otherwise it will
         // serve as errorIndex when failure
-        Position pos = subparseNumber(text, position, digits, true, isExponent, status);
+        NumericPosition pos = subparseNumber(text, position, digits, true, isExponent, status);
         position = pos.fullPos;
 
         // First character after the prefix was un-parseable, should
@@ -2441,8 +2441,18 @@ public class DecimalFormat extends NumberFormat {
         return true;
     }
 
-    // To track the full parse index as well as the integer portion
-    record Position(int intPos, int fullPos) {}
+    /**
+     * NumericPosition is a helper record class that stores two indices of interest.
+     * {@code fullPos} is either the first unparseable character or -1 in case
+     * of no valid number parsed. {@code intPos} reflects the position of
+     * a parsed decimal symbol, if one exists. When parsing with {@code isParseIntegerOnly()},
+     * {@code fullPos} is used to match the suffix, and reset the {@code ParsePosition}
+     * index to {@code intPos}.
+     *
+     * @param fullPos an index that reflects the full traversal of the numerical String
+     * @param intPos an index that reflects the position of a parsed decimal symbol.
+     */
+    record NumericPosition(int fullPos, int intPos) {}
 
     /**
      * Parses a number from the given {@code text}. The text is parsed
@@ -2456,12 +2466,12 @@ public class DecimalFormat extends NumberFormat {
      * @param status upon return contains boolean status flags indicating
      *               whether the value is infinite and whether it is
      *               positive
-     * @return returns the position of the first unparseable character or
-     *         -1 in case of no valid number parsed
+     * @return returns a {@code NumericPosition} that stores both a full
+     *         traversal index, and an int only index.
      */
-    Position subparseNumber(String text, int position,
-                       DigitList digits, boolean checkExponent,
-                       boolean isExponent, boolean[] status) {
+    NumericPosition subparseNumber(String text, int position,
+                                   DigitList digits, boolean checkExponent,
+                                   boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
         int intIndex = 0;
@@ -2524,7 +2534,7 @@ public class DecimalFormat extends NumberFormat {
                 if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
-                    return new Position(intIndex, position);
+                    return new NumericPosition(position, intIndex);
                 }
 
                 if (digit == 0) {
@@ -2562,7 +2572,8 @@ public class DecimalFormat extends NumberFormat {
                 } else if (!isExponent && ch == decimal) {
                     // Check grouping size on decimal separator
                     if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
-                        return new Position(intIndex, groupingViolationIndex(position, prevSeparatorIndex));
+                        return new NumericPosition(
+                                groupingViolationIndex(position, prevSeparatorIndex), intIndex);
                     }
                     // If we're only parsing integers, or if we ALREADY saw the
                     // decimal, then don't parse this one.
@@ -2576,12 +2587,13 @@ public class DecimalFormat extends NumberFormat {
                     if (parseStrict) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
-                            return new Position(intIndex, startPos);
+                            return new NumericPosition(startPos, intIndex);
                         }
                         // when strict, fail if grouping occurs after decimal OR
                         // current group violates grouping size
                         if (sawDecimal || (isGroupingViolation(position, prevSeparatorIndex))) {
-                            return new Position(intIndex, groupingViolationIndex(position, prevSeparatorIndex));
+                            return new NumericPosition(
+                                    groupingViolationIndex(position, prevSeparatorIndex), intIndex);
                         }
                         prevSeparatorIndex = position; // track previous
                     } else {
@@ -2634,7 +2646,8 @@ public class DecimalFormat extends NumberFormat {
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
                     // the loop before incrementing position. In both cases, check
                     // should be done at pos = 4
-                    return new Position(intIndex, groupingViolationIndex(position - 1, prevSeparatorIndex));
+                    return new NumericPosition(
+                            groupingViolationIndex(position - 1, prevSeparatorIndex), intIndex);
                 }
             }
 
@@ -2660,10 +2673,10 @@ public class DecimalFormat extends NumberFormat {
             // parse "$" with pattern "$#0.00". (return index 0 and error
             // index 1).
             if (!sawDigit && digitCount == 0) {
-                return new Position(intIndex, -1);
+                return new NumericPosition(-1, intIndex);
             }
         }
-        return new Position(intIndex, position);
+        return new NumericPosition(position, intIndex);
     }
 
     // Calculate the final decimal position based off the exponent value

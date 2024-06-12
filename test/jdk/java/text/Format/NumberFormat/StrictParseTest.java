@@ -317,8 +317,8 @@ public class StrictParseTest {
         return successParse(fmt, toParse, toParse.length());
     }
 
-    // Overloaded method used for integer only parsing, where the expected
-    // index should occur at the decimal point, if one exists
+    // Overloaded method that allows for an expected ParsePosition index value
+    // that is not the string length.
     private Number successParse(NumberFormat fmt, String toParse, int expectedIndex) {
         // For Strings that don't have grouping separators, we test them with
         // grouping off so that they do not fail under the expectation that
