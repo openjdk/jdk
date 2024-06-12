@@ -85,7 +85,7 @@ final class ProxyGenerator {
             MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
             MTD_Class_String_boolean_ClassLoader = MethodTypeDescImpl.ofValidated(CD_Class, CD_String, CD_boolean, CD_ClassLoader),
             MTD_ClassLoader = MethodTypeDescImpl.ofValidated(CD_ClassLoader),
-            MTD_Class_array = MethodTypeDescImpl.ofValidated(CD_Class_array),
+            MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
@@ -129,12 +129,9 @@ final class ProxyGenerator {
     private final ConstantPoolBuilder cp;
     private final List<StackMapFrameInfo.VerificationTypeInfo> classLoaderLocal, throwableStack;
     private final NameAndTypeEntry exInit;
-    private final ClassEntry object;
-    private final ClassEntry proxy;
-    private final ClassEntry ute;
-    private final ClassEntry clazz;
+    private final ClassEntry objectCe, proxyCe, uteCe, classCe;
     private final FieldRefEntry handlerField;
-    private final InterfaceMethodRefEntry invoke;
+    private final InterfaceMethodRefEntry invocationHandlerInvoke;
     private final MethodRefEntry uteInit, classGetMethod, classForName, throwableGetMessage;
 
 
@@ -180,18 +177,18 @@ final class ProxyGenerator {
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
         var throwable = cp.classEntry(CD_Throwable);
-        this.classLoaderLocal = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(throwable));
+        this.classLoaderLocal = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_ClassLoader)));
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(throwable));
         this.exInit = cp.nameAndTypeEntry(INIT_NAME, MTD_void_String);
-        this.object = cp.classEntry(CD_Object);
-        this.proxy = cp.classEntry(CD_Proxy);
-        this.clazz = cp.classEntry(CD_Class);
-        this.handlerField = cp.fieldRefEntry(proxy, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
-        this.invoke = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray);
-        this.ute = cp.classEntry(CD_UndeclaredThrowableException);
-        this.uteInit = cp.methodRefEntry(ute, cp.nameAndTypeEntry(INIT_NAME, MTD_void_Throwable));
-        this.classGetMethod = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("getMethod", MTD_Class_array));
-        this.classForName = cp.methodRefEntry(clazz, cp.nameAndTypeEntry("forName", MTD_Class_String_boolean_ClassLoader));
+        this.objectCe = cp.classEntry(CD_Object);
+        this.proxyCe = cp.classEntry(CD_Proxy);
+        this.classCe = cp.classEntry(CD_Class);
+        this.handlerField = cp.fieldRefEntry(proxyCe, cp.nameAndTypeEntry(NAME_HANDLER_FIELD, CD_InvocationHandler));
+        this.invocationHandlerInvoke = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray);
+        this.uteCe = cp.classEntry(CD_UndeclaredThrowableException);
+        this.uteInit = cp.methodRefEntry(uteCe, cp.nameAndTypeEntry(INIT_NAME, MTD_void_Throwable));
+        this.classGetMethod = cp.methodRefEntry(classCe, cp.nameAndTypeEntry("getMethod", MTD_Method_String_Class_array));
+        this.classForName = cp.methodRefEntry(classCe, cp.nameAndTypeEntry("forName", MTD_Class_String_boolean_ClassLoader));
         this.throwableGetMessage = cp.methodRefEntry(throwable, cp.nameAndTypeEntry("getMessage", MTD_String));
     }
 
@@ -475,7 +472,7 @@ final class ProxyGenerator {
         }
 
         return CF_CONTEXT.build(thisClass, cp, clb -> {
-            clb.withSuperclass(proxy);
+            clb.withSuperclass(proxyCe);
             clb.withFlags(accessFlags);
             clb.withInterfaces(toClassEntries(cp, interfaces));
             generateConstructor(clb);
@@ -568,7 +565,7 @@ final class ProxyGenerator {
             // Put ClassLoader at local variable index 0, used by
             // Class.forName(String, boolean, ClassLoader) calls
             cob.ldc(thisClass)
-               .invokevirtual(cp.methodRefEntry(clazz,
+               .invokevirtual(cp.methodRefEntry(classCe,
                        cp.nameAndTypeEntry("getClassLoader", MTD_ClassLoader)))
                .astore(0);
             var ts = cob.newBoundLabel();
@@ -619,7 +616,7 @@ final class ProxyGenerator {
                             ClassEntry iae = cp.classEntry(CD_IllegalAccessException);
                             cob.aload(cob.parameterSlot(0))
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("lookupClass", MTD_Class)))
-                               .ldc(proxy)
+                               .ldc(proxyCe)
                                .if_acmpne(failLabel)
                                .aload(cob.parameterSlot(0))
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("hasFullPrivilegeAccess", MTD_boolean)))
@@ -706,7 +703,7 @@ final class ProxyGenerator {
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
-                               .anewarray(object);
+                               .anewarray(objectCe);
                             for (int i = 0; i < parameterTypes.length; i++) {
                                 cob.dup()
                                    .loadConstant(i);
@@ -717,7 +714,7 @@ final class ProxyGenerator {
                             cob.aconst_null();
                         }
 
-                        cob.invokeinterface(invoke);
+                        cob.invokeinterface(invocationHandlerInvoke);
 
                         if (returnType == void.class) {
                             cob.pop()
@@ -733,7 +730,7 @@ final class ProxyGenerator {
                             cob.athrow();   // just rethrow the exception
                             var c2 = cob.newBoundLabel();
                             cob.exceptionCatchAll(cob.startLabel(), c1, c2)
-                               .new_(ute)
+                               .new_(uteCe)
                                .dup_x1()
                                .swap()
                                .invokespecial(uteInit)
@@ -793,7 +790,7 @@ final class ProxyGenerator {
 
             cob.ldc(method.getName())
                .loadConstant(parameterTypes.length)
-               .anewarray(clazz);
+               .anewarray(classCe);
 
             // Construct an array with the parameter types mapping primitives to Wrapper types
             for (int i = 0; i < parameterTypes.length; i++) {
