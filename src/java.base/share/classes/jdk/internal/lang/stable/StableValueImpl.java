@@ -44,7 +44,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     private final Object mutex = new Object();
 
-    // This field is reflectively accessed via Unsafe using acquire/release semantics.
+    // Generally, fields annotated with `@Stable` are accessed by the JVM using special
+    // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
+    // Here, this field is reflectively accessed via Unsafe using explicit memory semantics.
+    //
+    // Meaning        Value
+    // -------        -----
     // Unset:         null
     // Set(non-null): The set value (!= nullSentinel())
     // Set(null):     nullSentinel()
@@ -57,14 +62,28 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean trySet(T value) {
         synchronized (mutex) {
-            return UNSAFE.weakCompareAndSetReferenceRelease(this, VALUE_OFFSET, null, wrap(value));
+            // Prevents reordering of store operations with other store operations.
+            // This means any stores made to fields in the `value` object prior to this
+            // point cannot be reordered with the CAS operation of the reference to the
+            // `value` field.
+            // In other words, if a reader (using plain memory semantics) can observe a
+            // `value` reference, any field updates made prior to this fence are
+            // guaranteed to be seen.
+            UNSAFE.storeStoreFence();
+            // This upholds the invariant, the `@Stable value` field is written to
+            // at most once.
+            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
         }
     }
 
     @ForceInline
     @Override
     public T orElseThrow() {
-        final T t = valueAcquire();
+        T t = valuePlain();
+        if (t != null) {
+            return unwrap(t);
+        }
+        t = valueVolatile();
         if (t != null) {
             return unwrap(t);
         }
@@ -74,7 +93,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final T t = valueAcquire();
+        T t = valuePlain();
+        if (t != null) {
+            return unwrap(t);
+        }
+        t = valueVolatile();
         if (t != null) {
             return unwrap(t);
         }
@@ -84,13 +107,17 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return valueAcquire() != null;
+        return valuePlain() != null || valueVolatile() != null;
     }
 
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        final T t = valueAcquire();
+        T t = valuePlain();
+        if (t != null) {
+            return unwrap(t);
+        }
+        t = valueVolatile();
         if (t != null) {
             return unwrap(t);
         }
@@ -100,7 +127,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @DontInline
     private T compute(Supplier<? extends T> supplier) {
         synchronized (mutex) {
-            T t = valueAcquire();
+            // Updates to the `value` is always made under `mutex` synchronization
+            // meaning plain memory semantics is enough here.
+            T t = valuePlain();
             if (t != null) {
                 return unwrap(t);
             }
@@ -118,18 +147,24 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof StableValueImpl<?> other &&
-                Objects.equals(valueAcquire(), other.valueAcquire());
+                Objects.equals(orElse(null), other.orElse(null));
     }
 
     @Override
     public String toString() {
-        return "StableValue" + render(valueAcquire());
+        return "StableValue" + render(valueVolatile());
+    }
+
+    @ForceInline
+    private T valuePlain() {
+        // Appears to be faster than `(T) UNSAFE.getReference(this, VALUE_OFFSET)`
+        return value;
     }
 
     @SuppressWarnings("unchecked")
     @ForceInline
-    private T valueAcquire() {
-        return (T) UNSAFE.getReferenceAcquire(this, VALUE_OFFSET);
+    private T valueVolatile() {
+        return (T) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
 
     // Wraps null values into a sentinel value
