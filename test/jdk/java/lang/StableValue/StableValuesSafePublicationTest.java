@@ -24,21 +24,22 @@
 /* @test
  * @summary Basic tests for making sure StableValue publishes values safely
  * @modules java.base/jdk.internal.lang
+ * @modules java.base/jdk.internal.misc
  * @compile --enable-preview -source ${jdk.version} StableValuesSafePublicationTest.java
  * @run junit/othervm --enable-preview StableValuesSafePublicationTest
  */
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Time;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -47,12 +48,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 final class StableValuesSafePublicationTest {
-
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors() / 2;
-    @SuppressWarnings("unchecked")
-    private static final StableValue<Holder>[] STABLES = (StableValue<Holder>[]) new StableValue[SIZE];
-    private static final CountDownLatch LATCH = new CountDownLatch(1);
+    private static final StableValue<Holder>[] STABLES = stables();
+
+    static StableValue<Holder>[] stables() {
+        @SuppressWarnings("unchecked")
+        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            stables[i] = StableValue.newInstance();
+        }
+        return stables;
+    }
 
     static final class Holder {
         final int a;
@@ -67,21 +74,14 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
+        final StableValue<Holder>[] stables = STABLES;
         int i = 0;
 
         @Override
         public void run() {
-            try {
-                LATCH.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            StableValue<Holder> s;
-            Holder h;
             for (; i < SIZE; i++) {
-                // Wait until we see a new StableValue
-                while ((s = STABLES[i]) == null) {}
+                StableValue<Holder> s = stables[i];
+                Holder h;
                 // Wait until the StableValue has a holder value
                 while ((h = s.orElse(null)) == null) {}
                 int a = h.a;
@@ -93,23 +93,16 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        static final int LOOP_DELAY = 100;
+        final StableValue<Holder>[] stables = STABLES;
 
         @Override
         public void run() {
-            LATCH.countDown();
-            int sum = 0;
             StableValue<Holder> s;
             for (int i = 0; i < SIZE; i++) {
-                s = StableValue.newInstance();
+                s = stables[i];
                 s.trySet(new Holder());
-                STABLES[i] = s;
-                // Wait for a while
-                for (int j = 0; j < LOOP_DELAY; j++) {
-                    sum++;
-                }
+                LockSupport.parkNanos(1000);
             }
-            System.out.println("The producer completed with " + (sum / LOOP_DELAY) + " values.");
         }
     }
 
@@ -175,6 +168,10 @@ final class StableValuesSafePublicationTest {
         } catch (InterruptedException ie) {
             fail(ie);
         }
+    }
+
+    private static long objOffset(int i) {
+        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) i;
     }
 
 }
