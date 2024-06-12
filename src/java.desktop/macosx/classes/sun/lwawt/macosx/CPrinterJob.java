@@ -201,7 +201,7 @@ public final class CPrinterJob extends RasterPrinterJob {
             SunPageSelection rangeSelect = (SunPageSelection)attributes.get(SunPageSelection.class);
             // If rangeSelect is not null, we are using AWT's print dialog that has
             // All, Selection, and Range radio buttons
-            if (rangeSelect == null || rangeSelect == SunPageSelection.RANGE) {
+            if (rangeSelect == SunPageSelection.RANGE) {
                 int[][] range = pageRangesAttr.getMembers();
                 // setPageRange will set firstPage and lastPage as called in getFirstPage
                 // and getLastPage
@@ -222,7 +222,6 @@ public final class CPrinterJob extends RasterPrinterJob {
             // 1 less than pageRanges attribute
             if (isRangeSet) {
                 attributes.add(new PageRanges(from+1, to+1));
-                attributes.add(SunPageSelection.RANGE);
                 setPageRange(from, to);
             } else {
                 attributes.add(SunPageSelection.ALL);
