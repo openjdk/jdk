@@ -96,7 +96,7 @@ public:
 
   void free(I i) {
     assert(!i.is_nil() || (i._idx > 0 && i._idx < _backing_storage.length()), "out of bounds free");
-
+    if (i.is_nil()) return;
     BackingElement& be_freed = _backing_storage.at(i._idx);
     be_freed.link = _free_start;
     _free_start = i;
