@@ -79,6 +79,10 @@
 
 // Stub Code definitions
 
+void poolz(int n, int len) {
+    asm("nop");
+  }
+
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -1947,6 +1951,12 @@ class StubGenerator: public StubCodeGenerator {
     // save the original count
     __ mov(count_save, count);
 
+    __ push(RegSet::of(r0, r1), sp);
+    __ mov(r0, 0);
+    __ mov(r1, count);
+    __ rt_call(CAST_FROM_FN_PTR(address, poolz));
+    __ pop(RegSet::of(r0, r1), sp);
+
     // Copy from low to high addresses
     __ mov(start_to, to);              // Save destination array start address
     __ b(L_load_element);
@@ -1975,16 +1985,48 @@ class StubGenerator: public StubCodeGenerator {
                      gct1);
     __ cbz(copied_oop, L_store_element);
 
-    __ load_klass(r19_klass, copied_oop);// query the object klass
-    generate_type_check(/*sub_klass*/r19_klass,
-                        /*super_check_offset*/ckoff,
-                        /*super_klass*/ckval, L_store_element);
+    {
+      __ load_klass(r19_klass, copied_oop);// query the object klass
+
+      BLOCK_COMMENT("type_check:");
+      if (!UseSecondarySupersTable) {
+        generate_type_check(/*sub_klass*/r19_klass,
+                            /*super_check_offset*/ckoff,
+                            /*super_klass*/ckval, L_store_element);
+      } else {
+        Label L_miss;
+        __ check_klass_subtype_fast_path(/*sub_klass*/r19_klass, /*super_klass*/ckval, noreg,
+                                         &L_store_element, &L_miss, nullptr,
+                                         /*super_check_offset*/ckoff);
+        __ BIND(L_miss);
+
+        // We will consult the secondary-super array.
+        // __ ldr(gct1, Address(/*r_sub_klass*/r19_klass, in_bytes(Klass::secondary_supers_offset())));
+
+        __ lookup_secondary_supers_table(/*r_sub_klass*/r19_klass,
+                                         /*r_super_klass*/ckval,
+                                         /*r_array_base*/gct1,
+                                         /*temp2*/gct2,
+                                         /*temp3*/gct3,
+                                         /*vtemp*/v0,
+                                         /*result*/r10, &L_store_element);
+
+        // Fall through on failure!
+      }
+    }
+
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
     // Register count = remaining oops, count_orig = total oops.
     // Emit GC store barriers for the oops we have copied and report
     // their number to the caller.
+
+    __ push(RegSet::of(r0, r1), sp);
+    __ mov(r0, 1);
+    __ mov(r1, count);
+    __ rt_call(CAST_FROM_FN_PTR(address, poolz));
+    __ pop(RegSet::of(r0, r1), sp);
 
     __ subs(count, count_save, count);     // K = partially copied oop count
     __ eon(count, count, zr);                   // report (-1^K) to caller

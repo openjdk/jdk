@@ -35,7 +35,8 @@ import java.util.Random;
 @Fork(value = 5)
 public class SecondarySupersLookup {
     interface J  {}
-    interface I01 {}
+    interface K  {}
+    interface I01 extends K {}
     interface I02 extends I01 {}
     interface I03 extends I02 {}
     interface I04 extends I03 {}
@@ -128,6 +129,53 @@ public class SecondarySupersLookup {
     final Object obj63 = new I63() {};
     final Object obj64 = new I64() {};
 
+    final Object[] objArray = new Object[]
+    {
+        new I02() {},
+        new I03() {},
+        new I04() {},
+        new I05() {},
+        new I06() {},
+        new I07() {},
+        new I08() {},
+        new I09() {},
+        new I10() {},
+        new I16() {},
+        new I20() {},
+        new I30() {},
+        new I32() {},
+        new I40() {},
+        new I50() {},
+        new I55() {},
+        new I56() {},
+        new I57() {},
+        new I58() {},
+        new I59() {},
+        new I60() {},
+        new I61() {},
+        new I62() {},
+        new I63() {},
+        new I64() {}
+    };
+
+    final Object[] smallObjArray = new Object[]
+    {
+        new I02() {},
+        new I03() {},
+        new I04() {},
+        new I05() {},
+        new I06() {},
+        new I07() {},
+        new I08() {},
+        new I09() {},
+        new I10() {},
+        new I16() {},
+    };
+
+    final K[] interfaceArrayK = new K[objArray.length];
+    final I01[] interfaceArray0 = new I01[objArray.length];
+    final I01[] interfaceArray1 = new I02[objArray.length];
+
     static Class<?> getSuper(int idx) {
         int i = Math.abs(idx) % 10;
         switch (i) {
@@ -158,9 +206,23 @@ public class SecondarySupersLookup {
             test(obj07, s, s.isInstance(obj07));
             test(obj08, s, s.isInstance(obj08));
             test(obj09, s, s.isInstance(obj09));
+            System.arraycopy(objArray, 0, interfaceArrayK, 0, objArray.length);
         }
     }
 
+    @Benchmark
+    public I01[] smallArrayCopy() {
+        System.arraycopy(smallObjArray, 0, interfaceArray0, 0, smallObjArray.length);
+        System.arraycopy(smallObjArray, 0, interfaceArray1, 0, smallObjArray.length);
+        return interfaceArray1;
+    }
+
+    @Benchmark
+    public I01[] largeArrayCopy() {
+        System.arraycopy(objArray, 0, interfaceArray0, 0, objArray.length);
+        System.arraycopy(objArray, 0, interfaceArray1, 0, objArray.length);
+        return interfaceArray1;
+    }
     private static void test(Object obj, Class<?> cls, boolean expected) {
         if (cls.isInstance(obj) != expected) {
             throw new InternalError(obj.getClass() + " " + cls + " " + expected);

@@ -1428,6 +1428,14 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
     ldrw(temp_reg, super_check_offset_addr);
     super_check_offset = RegisterOrConstant(temp_reg);
   }
+
+  // Don't check secondary_super_cache
+  if (super_check_offset.is_register()
+      && !UseSecondarySupersCache) {
+    subs(zr, super_check_offset.as_register(), sc_offset);
+    br(Assembler::EQ, *L_slow_path);
+  }
+
   Address super_check_addr(sub_klass, super_check_offset);
   ldr(rscratch1, super_check_addr);
   cmp(super_klass, rscratch1); // load displayed supertype
@@ -1581,7 +1589,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   br(Assembler::NE, *L_failure);
 
   // Success.  Cache the super we found and proceed in triumph.
-  str(super_klass, super_cache_addr);
+
+  if (!UseSecondarySupersCache) {
+    str(super_klass, super_cache_addr);
+  }
 
   if (L_success != &L_fallthrough) {
     b(*L_success);
@@ -1704,15 +1715,15 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 void poo () {
 }
 
-// Return true: we succeeded in generating this code
-bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
+
+void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
                                                    Register temp2,
                                                    Register temp3,
                                                    FloatRegister vtemp,
                                                    Register result,
-                                                   bool stub_is_near) {
+                                                   Label *L_success) {
   assert_different_registers(r_sub_klass, temp1, temp2, temp3, result, rscratch1, rscratch2);
 
   Label L_fallthrough;
@@ -1720,15 +1731,13 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   BLOCK_COMMENT("lookup_secondary_supers_table {");
 
   const Register
-    r_array_base   = temp1, // r1
-    r_array_length = temp2, // r2
-    r_array_index  = temp3, // r3
+    r_array_base   = temp1,
+    r_array_length = temp2,
+    r_array_index  = temp3,
     r_bitmap       = rscratch2;
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
-
-  lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &poo)));
-  blr(rscratch1);
+  // lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &poo)));
+  // blr(rscratch1);
 
   const Register slot = rscratch1;
   ldrb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
@@ -1742,8 +1751,9 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
 
-  mov(r_array_index, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
-  sub(slot, r_array_index, slot);
+  // mov(r_array_index, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
+  // sub(slot, r_array_index, slot);
+  eor(slot, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   lslv(temp2, r_bitmap, slot);
   tbz(temp2, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1, L_fallthrough);
 
@@ -1754,37 +1764,31 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   fmovd(r_array_index, vtemp);
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
 
-  // We will consult the secondary-super array.
-  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
-
   // The value i in r_array_index is >= 1, so even though r_array_base
   // points to the length, we don't need to adjust it to point to the
   // data.
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
+  // We will consult the secondary-super array.
+  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
   ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
   eor(result, result, r_super_klass);
-  cbz(result, L_fallthrough); // Found a match
+  cbz(result, L_success ? *L_success : L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
+  eor(slot, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   rorv(r_bitmap, r_bitmap, slot);
   // rol(r_bitmap, r_bitmap, 1);
   tbz(r_bitmap, 1, L_fallthrough);
 
   // The slot we just inspected is at secondary_supers[r_array_index - 1].
-  // The next slot to be inspected, by the stub we're about to call,
+  // The next slot to be inspected, by the logic we're about to call,
   // is secondary_supers[r_array_index]. Bits 0 and 1 in the bitmap
   // have been checked.
-  Address stub = RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
-  if (stub_is_near) {
-    bl(stub);
-  } else {
-    address call = trampoline_call(stub);
-    if (call == nullptr) {
-      return false; // trampoline allocation failed
-    }
-  }
+  lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index,
+                                          r_bitmap, r_array_length, result, /*is_stub*/false);
 
   BLOCK_COMMENT("} lookup_secondary_supers_table");
 
@@ -1794,7 +1798,10 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
     verify_secondary_supers_table(r_sub_klass, r_super_klass, // r4, r0
                                   temp1, temp2, result);      // r1, r2, r5
   }
-  return true;
+
+  if (L_success) {
+    cbz(result, *L_success);
+  }
 }
 
 // Called by code generated by check_klass_subtype_slow_path
@@ -1805,14 +1812,17 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
                                                              Register r_array_index,
                                                              Register r_bitmap,
                                                              Register temp1,
-                                                             Register result) {
+                                                             Register result,
+                                                             bool is_stub) {
   assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, result, rscratch1);
 
   const Register
     r_array_length = temp1,
     r_sub_klass    = noreg; // unused
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  if (is_stub) {
+    LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  }
 
   Label L_fallthrough, L_huge;
 
@@ -1884,7 +1894,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_index  = noreg, // unused
     r_bitmap       = noreg; // unused
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  // LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
