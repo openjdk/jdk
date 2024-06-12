@@ -565,7 +565,7 @@ void ShenandoahOldGeneration::transition_to(State new_state) {
 //
 //
 void ShenandoahOldGeneration::validate_transition(State new_state) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   switch (new_state) {
     case FILLING:
       assert(_state != BOOTSTRAPPING, "Cannot begin making old regions parsable after bootstrapping");

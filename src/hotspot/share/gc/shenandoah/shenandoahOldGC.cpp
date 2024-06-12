@@ -46,7 +46,7 @@ ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, Shenandoah
 // override the implementation.
 void ShenandoahOldGC::op_final_mark() {
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 

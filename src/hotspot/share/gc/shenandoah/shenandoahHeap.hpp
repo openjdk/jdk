@@ -38,7 +38,9 @@
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -120,6 +122,17 @@ typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
+class ShenandoahSynchronizePinnedRegionStates : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahHeapLock* const _lock;
+
+public:
+  ShenandoahSynchronizePinnedRegionStates();
+
+  void heap_region_do(ShenandoahHeapRegion* r) override;
+  bool is_thread_safe() override { return true; }
+};
+
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
 // See ShenandoahControlThread for GC cycle structure.
@@ -173,7 +186,7 @@ public:
   jint initialize() override;
   void post_initialize() override;
   void initialize_mode();
-  void initialize_heuristics();
+  virtual void initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
@@ -444,6 +457,7 @@ private:
   virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
+  virtual void final_update_refs_update_region_states();
 
   void rendezvous_threads();
   void recycle_trash();
@@ -456,12 +470,13 @@ public:
 //
 // Mark support
 private:
-  ShenandoahYoungGeneration* _young_generation;
-  ShenandoahGeneration*      _global_generation;
-  ShenandoahOldGeneration*   _old_generation;
+  ShenandoahGeneration*  _global_generation;
 
 protected:
   ShenandoahController*  _control_thread;
+
+  ShenandoahYoungGeneration* _young_generation;
+  ShenandoahOldGeneration*   _old_generation;
 
 private:
   ShenandoahCollectorPolicy* _shenandoah_policy;
@@ -473,16 +488,22 @@ private:
   ShenandoahPhaseTimings*       _phase_timings;
   ShenandoahEvacuationTracker*  _evac_tracker;
   ShenandoahMmuTracker          _mmu_tracker;
-  ShenandoahGenerationSizer     _generation_sizer;
 
 public:
   ShenandoahController*   control_thread() { return _control_thread; }
 
-  ShenandoahYoungGeneration* young_generation()  const { return _young_generation;  }
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
-  ShenandoahOldGeneration*   old_generation()    const { return _old_generation;    }
+  ShenandoahYoungGeneration* young_generation()  const {
+    assert(mode()->is_generational(), "Young generation requires generational mode");
+    return _young_generation;
+  }
+
+  ShenandoahOldGeneration*   old_generation()    const {
+    assert(mode()->is_generational(), "Old generation requires generational mode");
+    return _old_generation;
+  }
+
   ShenandoahGeneration*      generation_for(ShenandoahAffiliation affiliation) const;
-  const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
 
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }

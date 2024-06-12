@@ -510,7 +510,6 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
   // unless we special cases for stealing and mixed allocations.
 
   // Overwrite with non-zero (non-NULL) values only if necessary for allocation bookkeeping.
-
   bool allow_new_region = true;
   if (_heap->mode()->is_generational()) {
     switch (req.affiliation()) {
@@ -729,10 +728,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
       _heap->old_generation()->clear_cards_for(r);
-      _heap->old_generation()->increment_affiliated_region_count();
-    } else {
-      _heap->young_generation()->increment_affiliated_region_count();
     }
+    _heap->generation_for(r->affiliation())->increment_affiliated_region_count();
 
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
     assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
@@ -928,7 +925,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     // While individual regions report their true use, all humongous regions are marked used in the free set.
     _free_sets.remove_from_free_sets(r->index());
   }
-  _heap->young_generation()->increase_affiliated_region_count(num);
+  generation->increase_affiliated_region_count(num);
 
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
   _free_sets.increase_used(Mutator, total_humongous_size);
@@ -997,14 +994,15 @@ void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
   // Note: can_allocate_from(r) means r is entirely empty
   assert(can_allocate_from(r), "Should not be allocated");
 
+  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(_heap);
   size_t region_capacity = alloc_capacity(r);
   _free_sets.move_to_set(idx, OldCollector, region_capacity);
   _free_sets.assert_bounds();
   _heap->old_generation()->augment_evacuation_reserve(region_capacity);
-  bool transferred = _heap->generation_sizer()->transfer_to_old(1);
+  bool transferred = gen_heap->generation_sizer()->transfer_to_old(1);
   if (!transferred) {
     log_warning(gc, free)("Forcing transfer of " SIZE_FORMAT " to old reserve.", idx);
-    _heap->generation_sizer()->force_transfer_to_old(1);
+    gen_heap->generation_sizer()->force_transfer_to_old(1);
   }
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
@@ -1122,7 +1120,7 @@ void ShenandoahFreeSet::move_collector_sets_to_mutator(size_t max_xfer_regions) 
       }
     }
     if (old_collector_regions > 0) {
-      _heap->generation_sizer()->transfer_to_young(old_collector_regions);
+      ShenandoahGenerationalHeap::cast(_heap)->generation_sizer()->transfer_to_young(old_collector_regions);
     }
   }
 
@@ -1183,6 +1181,7 @@ void ShenandoahFreeSet::rebuild(size_t young_cset_regions, size_t old_cset_regio
 
 void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions, size_t old_cset_regions, bool have_evacuation_reserves,
                                                        size_t& young_reserve_result, size_t& old_reserve_result) const {
+  shenandoah_assert_generational();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   ShenandoahOldGeneration* const old_generation = _heap->old_generation();

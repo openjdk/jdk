@@ -64,13 +64,14 @@ void ShenandoahGenerationalFullGC::prepare() {
 
 void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   // Full GC should reset time since last gc for young and old heuristics
-  ShenandoahYoungGeneration* young = heap->young_generation();
-  ShenandoahOldGeneration* old = heap->old_generation();
+  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(heap);
+  ShenandoahYoungGeneration* young = gen_heap->young_generation();
+  ShenandoahOldGeneration* old = gen_heap->old_generation();
   young->heuristics()->record_cycle_end();
   old->heuristics()->record_cycle_end();
 
-  heap->mmu_tracker()->record_full(GCId::current());
-  heap->log_heap_status("At end of Full GC");
+  gen_heap->mmu_tracker()->record_full(GCId::current());
+  gen_heap->log_heap_status("At end of Full GC");
 
   assert(old->is_idle(), "After full GC, old generation should be idle.");
 
@@ -99,23 +100,26 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
 }
 
 void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {
-  size_t old_usage = heap->old_generation()->used_regions_size();
-  size_t old_capacity = heap->old_generation()->max_capacity();
+  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(heap);
+  ShenandoahOldGeneration* const old_gen = gen_heap->old_generation();
+
+  size_t old_usage = old_gen->used_regions_size();
+  size_t old_capacity = old_gen->max_capacity();
 
   assert(old_usage % ShenandoahHeapRegion::region_size_bytes() == 0, "Old usage must align with region size");
   assert(old_capacity % ShenandoahHeapRegion::region_size_bytes() == 0, "Old capacity must align with region size");
 
   if (old_capacity > old_usage) {
     size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    heap->generation_sizer()->transfer_to_young(excess_old_regions);
+    gen_heap->generation_sizer()->transfer_to_young(excess_old_regions);
   } else if (old_capacity < old_usage) {
     size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-    heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
+    gen_heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
   }
 
   log_info(gc)("FullGC done: young usage: " PROPERFMT ", old usage: " PROPERFMT,
-               PROPERFMTARGS(heap->young_generation()->used()),
-               PROPERFMTARGS(heap->old_generation()->used()));
+               PROPERFMTARGS(gen_heap->young_generation()->used()),
+               PROPERFMTARGS(old_gen->used()));
 }
 
 void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {

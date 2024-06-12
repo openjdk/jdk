@@ -453,8 +453,8 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() { return _age; }
-  CENSUS_NOISE(uint youth() { return _youth; })
+  uint age() const { return _age; }
+  CENSUS_NOISE(uint youth() const { return _youth; })
 
   void increment_age() {
     const uint max_age = markWord::max_age;

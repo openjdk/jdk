@@ -352,7 +352,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     heap->tlabs_retire(false);
   }
 
-  if (!heap->collection_set()->is_empty() || heap->old_generation()->has_in_place_promotions()) {
+  if (!heap->collection_set()->is_empty() || has_in_place_promotions(heap)) {
     // Even if the collection set is empty, we need to do evacuation if there are regions to be promoted in place.
     // Degenerated evacuation takes responsibility for registering objects and setting the remembered set cards to dirty.
 
@@ -376,6 +376,10 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
       Universe::verify();
     }
   }
+}
+
+bool ShenandoahDegenGC::has_in_place_promotions(const ShenandoahHeap* heap) const {
+  return heap->mode()->is_generational() && heap->old_generation()->has_in_place_promotions();
 }
 
 void ShenandoahDegenGC::op_cleanup_early() {

@@ -26,44 +26,46 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
 
-#ifndef SERIALGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif
 
 class ShenandoahMemoryPool : public CollectedMemoryPool {
 protected:
    ShenandoahHeap* _heap;
 
 public:
-  ShenandoahMemoryPool(ShenandoahHeap* pool,
+  explicit ShenandoahMemoryPool(ShenandoahHeap* heap,
                        const char* name = "Shenandoah");
-  virtual MemoryUsage get_memory_usage();
-  virtual size_t used_in_bytes();
-  virtual size_t max_size() const;
+  MemoryUsage get_memory_usage() override;
+  size_t used_in_bytes() override;
+  size_t max_size() const override;
 
 protected:
-  ShenandoahMemoryPool(ShenandoahHeap* pool,
+  ShenandoahMemoryPool(ShenandoahHeap* heap,
                        const char* name,
                        size_t initial_capacity,
                        size_t max_capacity);
 };
 
-class ShenandoahYoungGenMemoryPool : public ShenandoahMemoryPool {
+class ShenandoahGenerationalMemoryPool: public ShenandoahMemoryPool {
+private:
+  ShenandoahGeneration* _generation;
 public:
-  ShenandoahYoungGenMemoryPool(ShenandoahHeap* pool);
+  explicit ShenandoahGenerationalMemoryPool(ShenandoahHeap* heap, const char* name, ShenandoahGeneration* generation);
   MemoryUsage get_memory_usage() override;
   size_t used_in_bytes() override;
   size_t max_size() const override;
 };
 
-class ShenandoahOldGenMemoryPool : public ShenandoahMemoryPool {
+class ShenandoahYoungGenMemoryPool : public ShenandoahGenerationalMemoryPool {
 public:
-  ShenandoahOldGenMemoryPool(ShenandoahHeap* pool);
-  MemoryUsage get_memory_usage() override;
-  size_t used_in_bytes() override;
-  size_t max_size() const override;
+  explicit ShenandoahYoungGenMemoryPool(ShenandoahHeap* heap);
+};
+
+class ShenandoahOldGenMemoryPool : public ShenandoahGenerationalMemoryPool {
+public:
+  explicit ShenandoahOldGenMemoryPool(ShenandoahHeap* heap);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP

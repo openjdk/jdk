@@ -36,8 +36,10 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap();
+  static ShenandoahGenerationalHeap* cast(CollectedHeap* heap);
 
   void print_init_logger() const override;
   size_t unsafe_max_tlab_alloc(Thread *thread) const override;
@@ -66,7 +68,7 @@ public:
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
-  void update_region_ages();
+  void update_region_ages(ShenandoahMarkingContext* ctx);
 
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
@@ -80,6 +82,7 @@ public:
   // ---------- Update References
   //
   void update_heap_references(bool concurrent) override;
+  void final_update_refs_update_region_states() override;
 
 private:
   HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
@@ -113,6 +116,8 @@ public:
     void print_on(const char* when, outputStream* ss) const;
   };
 
+  const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
+
   // Zeros out the evacuation and promotion reserves
   void reset_generation_reserves();
 
@@ -136,6 +141,8 @@ private:
 
   MemoryPool* _young_gen_memory_pool;
   MemoryPool* _old_gen_memory_pool;
+
+  ShenandoahGenerationSizer     _generation_sizer;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP

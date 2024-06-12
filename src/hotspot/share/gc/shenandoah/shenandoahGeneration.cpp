@@ -241,6 +241,7 @@ void ShenandoahGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClos
 }
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap) {
+  shenandoah_assert_generational();
 
   ShenandoahOldGeneration* const old_generation = heap->old_generation();
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
@@ -354,6 +355,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 // that young_generation->available() now knows about recently discovered immediate garbage.
 //
 void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap, ShenandoahCollectionSet* const collection_set) {
+  shenandoah_assert_generational();
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
   //  be able to increase regions_available_to_loan
 
@@ -453,7 +455,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   if (regions_to_xfer > 0) {
-    bool result = heap->generation_sizer()->transfer_to_young(regions_to_xfer);
+    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     assert(excess_old > regions_to_xfer * region_size_bytes, "Cannot xfer more than excess old");
     excess_old -= regions_to_xfer * region_size_bytes;
     log_info(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",

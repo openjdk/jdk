@@ -58,7 +58,6 @@
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
-#include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
@@ -520,24 +519,8 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
-  // for old would be total heap - minimum capacity of young. This means the sum of the maximum
-  // allowed for old and young could exceed the total heap size. It remains the case that the
-  // _actual_ capacity of young + old = total.
-  _generation_sizer.heap_size_changed(max_capacity());
-  size_t initial_capacity_young = _generation_sizer.max_young_size();
-  size_t max_capacity_young = _generation_sizer.max_young_size();
-  size_t initial_capacity_old = max_capacity() - max_capacity_young;
-  size_t max_capacity_old = max_capacity() - initial_capacity_young;
-
-  _young_generation = new ShenandoahYoungGeneration(_max_workers, max_capacity_young, initial_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(_max_workers, max_capacity_old, initial_capacity_old);
-  _global_generation = new ShenandoahGlobalGeneration(_gc_mode->is_generational(), _max_workers, max_capacity(), max_capacity());
-  _global_generation->initialize_heuristics(_gc_mode);
-  if (mode()->is_generational()) {
-    _young_generation->initialize_heuristics(_gc_mode);
-    _old_generation->initialize_heuristics(_gc_mode);
-  }
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
+  _global_generation->initialize_heuristics(mode());
   _evac_tracker = new ShenandoahEvacuationTracker(mode()->is_generational());
 }
 
@@ -562,10 +545,10 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
   _update_refs_iterator(this),
-  _young_generation(nullptr),
   _global_generation(nullptr),
-  _old_generation(nullptr),
   _control_thread(nullptr),
+  _young_generation(nullptr),
+  _old_generation(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
@@ -574,7 +557,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _phase_timings(nullptr),
   _evac_tracker(nullptr),
   _mmu_tracker(),
-  _generation_sizer(),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
   _stw_memory_manager("Shenandoah Pauses"),
@@ -2048,9 +2030,12 @@ bool ShenandoahHeap::try_cancel_gc() {
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {
-  _young_generation->cancel_marking();
-  _old_generation->cancel_marking();
-  _global_generation->cancel_marking();
+  if (mode()->is_generational()) {
+    young_generation()->cancel_marking();
+    old_generation()->cancel_marking();
+  }
+
+  global_generation()->cancel_marking();
 
   ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
 }
@@ -2372,58 +2357,25 @@ void ShenandoahHeap::update_heap_references(bool concurrent) {
   }
 }
 
-class ShenandoahFinalUpdateRefsUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahMarkingContext* _ctx;
-  ShenandoahHeapLock* const _lock;
-  bool _is_generational;
+ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() : _lock(ShenandoahHeap::heap()->lock()) { }
 
-public:
-  ShenandoahFinalUpdateRefsUpdateRegionStateClosure(ShenandoahMarkingContext* ctx) :
-    _ctx(ctx), _lock(ShenandoahHeap::heap()->lock()),
-    _is_generational(ShenandoahHeap::heap()->mode()->is_generational()) { }
-
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-
-    // Maintenance of region age must follow evacuation in order to account for evacuation allocations within survivor
-    // regions.  We consult region age during the subsequent evacuation to determine whether certain objects need to
-    // be promoted.
-    if (_is_generational && r->is_young() && r->is_active()) {
-      HeapWord *tams = _ctx->top_at_mark_start(r);
-      HeapWord *top = r->top();
-
-      // Allocations move the watermark when top moves.  However, compacting
-      // objects will sometimes lower top beneath the watermark, after which,
-      // attempts to read the watermark will assert out (watermark should not be
-      // higher than top).
-      if (top > tams) {
-        // There have been allocations in this region since the start of the cycle.
-        // Any objects new to this region must not assimilate elevated age.
-        r->reset_age();
-      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
-        r->increment_age();
+void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
+  // Drop "pinned" state from regions that no longer have a pinned count. Put
+  // regions with a pinned count into the "pinned" state.
+  if (r->is_active()) {
+    if (r->is_pinned()) {
+      if (r->pin_count() == 0) {
+        ShenandoahHeapLocker locker(_lock);
+        r->make_unpinned();
       }
-    }
-
-    // Drop unnecessary "pinned" state from regions that does not have CP marks
-    // anymore, as this would allow trashing them.
-    if (r->is_active()) {
-      if (r->is_pinned()) {
-        if (r->pin_count() == 0) {
-          ShenandoahHeapLocker locker(_lock);
-          r->make_unpinned();
-        }
-      } else {
-        if (r->pin_count() > 0) {
-          ShenandoahHeapLocker locker(_lock);
-          r->make_pinned();
-        }
+    } else {
+      if (r->pin_count() > 0) {
+        ShenandoahHeapLocker locker(_lock);
+        r->make_pinned();
       }
     }
   }
-
-  bool is_thread_safe() override { return true; }
-};
+}
 
 void ShenandoahHeap::update_heap_region_states(bool concurrent) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
@@ -2433,8 +2385,8 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ?
                             ShenandoahPhaseTimings::final_update_refs_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_update_region_states);
-    ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl (active_generation()->complete_marking_context());
-    parallel_heap_region_iterate(&cl);
+
+    final_update_refs_update_region_states();
 
     assert_pinned_region_status();
   }
@@ -2445,6 +2397,11 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_trash_cset);
     trash_cset_regions();
   }
+}
+
+void ShenandoahHeap::final_update_refs_update_region_states() {
+  ShenandoahSynchronizePinnedRegionStates cl;
+  parallel_heap_region_iterate(&cl);
 }
 
 void ShenandoahHeap::rebuild_free_set(bool concurrent) {
@@ -2471,8 +2428,9 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
 
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
-    size_t allocation_runway = young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    ShenandoahGenerationalHeap::heap()->compute_old_generation_balance(allocation_runway, old_cset_regions);
+    ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
     // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular

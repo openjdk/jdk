@@ -1210,7 +1210,9 @@ void ShenandoahConcurrentGC::op_final_roots() {
       heap->old_generation()->transfer_pointers_from_satb();
     }
 
-    ShenandoahGenerationalHeap::heap()->update_region_ages();
+    if (!_generation->is_old()) {
+      ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
+    }
   }
 }
 
