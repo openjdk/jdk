@@ -35,53 +35,42 @@
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
+    //Java threads spin a little before yielding and potentially blocking.
+    constexpr uint32_t SPINS = 0x1F;
     if (allow_block_for_safepoint) {
-      contended_lock_internal<true>(JavaThread::cast(thread));
+      contended_lock_internal<true, SPINS>(thread, int32_t );
     } else {
-      contended_lock_internal<false>(JavaThread::cast(thread));
+      contended_lock_internal<false, SPINS>(thread);
     }
   } else {
-    contended_lock_internal(thread);
+    // Non-Java threads are not allowed to block, and they spin hard
+    // to progress quickly. The normal number of GC threads is low enough
+    // for this not to have detrimental effect. This favors GC threads
+    // a little over Java threads, which is good for GC progress under
+    // extreme contention.
+    contended_lock_internal<false, UINT32_MAX>(thread);
   }
 }
 
-void ShenandoahLock::contended_lock_internal(Thread* nonJavaThread) {
-  assert(!nonJavaThread->is_Java_thread(), "Can't be Java Thread.");
-  int ctr = 0;
-  int yields = 0;
-  const bool isGCThread = nonJavaThread->is_ConcurrentGC_thread() || nonJavaThread->is_Worker_thread();
-  while (_state == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if (!os::is_MP()) {
-      //Only one processor, yield to whenever have the lock.
-      os::naked_yield();
-    } else if((ctr++ & 0xFF) != 0 ||
-      (isGCThread && (SafepointSynchronize::is_at_safepoint() || SafepointSynchronize::is_synchronizing()))) {
-      //Spin in these cases:
-      //1. (ctr++ & 0xFF) != 0: spin up to 256 times then yield/sleep, repeat.
-      //2. When at SP or SP is synchronizing, spin hard to avoid context switching
-      SpinPause();
-    } else {
-      yield_or_short_sleep(yields);
-    }
-  }
-}
 
-template<bool ALLOW_BLOCK>
-void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
-  int yields = 0;
-  int ctr = os::is_MP() ? 0x1F : 0;
-  while (_state == locked ||
+template<bool ALLOW_BLOCK, uint32_t MAX_SPINS>
+void ShenandoahLock::contended_lock_internal(Thread* thread) {
+  assert(!ALLOW_BLOCK || thread->is_Java_thread(), "Must be a Java thread when allow block.");
+  //Do not spin oin single processor.
+  int ctr = os::is_MP() ? MAX_SPINS : 0;
+  while (_state == locked || 
       Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing() ) {
       // Lightly contended, spin a little if SP it NOT synchronizing.
       ctr--;
       SpinPause();
-    } else if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
+    } else if (ALLOW_BLOCK) {
       //We know SP is synchronizing and block is allosed,
       //yield to safepoint call to so VM will reach safepoint faster.
-      ThreadBlockInVM block(java_thread, true);
+      ThreadBlockInVM block(JavaThread::cast(thread), true);
+      os::naked_yield();
     } else {
-      yield_or_short_sleep(yields);
+      os::naked_yield();
     }
   }
 }
