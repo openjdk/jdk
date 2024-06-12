@@ -562,6 +562,19 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   return false;
 }
 
+static bool already_enqueued(const Node_List& worklist_mem, const Node_List& worklist_store, Node* mem, Node* store) {
+  uint j = worklist_mem.size();
+  for (; j > 0; j--) {
+    if (worklist_mem.at(j-1) != mem) {
+      return false;
+    }
+    if (worklist_store.at(j-1) == store) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
 // For each nearby store, either insert an "anti-dependence" edge
@@ -579,6 +592,7 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
 // preserve anti-dependences.  The caller may also hoist the load
 // above the LCA, if it is not the early block.
 Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
+  ResourceMark rm;
   assert(load->needs_anti_dependence_check(), "must be a load of some sort");
   assert(LCA != nullptr, "");
   DEBUG_ONLY(Block* LCA_orig = LCA);
@@ -656,6 +670,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     Node* mem   = worklist_mem.pop();
     Node* store = worklist_store.pop();
     uint op = store->Opcode();
+    assert(!store->needs_anti_dependence_check(), "only stores");
 
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
@@ -669,6 +684,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         store = mem->fast_out(i);
+        if (store->needs_anti_dependence_check()) {
+          continue;
+        }
         if (store->is_MergeMem()) {
           // Be sure we don't get into combinatorial problems.
           // (Allow phis to be repeated; they can merge two relevant states.)
@@ -678,6 +696,12 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
           }
           if (j > 0)  continue; // already on work list; do not repeat
           worklist_visited.push(store);
+        } else if (store->is_Phi()) {
+          // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
+          // more than once.
+          if (already_enqueued(worklist_mem, worklist_store, mem, store)) {
+            continue;
+          }
         }
         worklist_mem.push(mem);
         worklist_store.push(store);
@@ -686,7 +710,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     }
 
     if (op == Op_MachProj || op == Op_Catch)   continue;
-    if (store->needs_anti_dependence_check())  continue;  // not really a store
 
     // Compute the alias index.  Loads and stores with different alias
     // indices do not need anti-dependence edges.  Wide MemBar's are
