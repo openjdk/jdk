@@ -42,7 +42,6 @@ public:
     friend IndexedFreeListAllocator<E, flag>;
     int32_t _idx;
 
-  public:
     bool operator !=(I other) {
       return _idx != other._idx;
     }
