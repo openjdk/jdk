@@ -1549,8 +1549,8 @@ final class StringUTF16 {
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        index <<= 1;
         assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
+        index <<= 1;
         Unsafe UNSAFE = Unsafe.getUnsafe();
         UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index    , (byte)(c1 >> HI_BYTE_SHIFT));
         UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index + 1, (byte)(c1 >> LO_BYTE_SHIFT));
