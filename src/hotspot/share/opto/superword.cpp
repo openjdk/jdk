@@ -1621,15 +1621,15 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
-// If the j-th input for all nodes in the pack is the same unique input: return it, else nullptr.
-Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, int j) const {
-  Node* unique = pack->at(0)->in(j);
+// If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
+Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int index) const {
+  Node* p0_in = pack->at(0)->in(index);
   for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != unique) {
-      return nullptr; // not unique
+    if (pack->at(i)->in(index) != p0_in) {
+      return nullptr; // not same
     }
   }
-  return unique;
+  return p0_in;
 }
 
 VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
@@ -2520,13 +2520,13 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  Node* unique_input = _packset.same_inputs_at_index_or_null(p, opd_idx);
+  Node* same_input = _packset.same_inputs_at_index_or_null(p, opd_idx);
 
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
   // all inputs are the same iv, so we do a same inputs check here.
-  if (opd == iv() && unique_input == nullptr) {
+  if (opd == iv() && same_input == nullptr) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -2537,7 +2537,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     return vn;
   }
 
-  if (unique_input != nullptr) {
+  if (same_input != nullptr) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
         assert(false, "shift's count can't be vector");
