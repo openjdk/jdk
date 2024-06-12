@@ -157,13 +157,6 @@ static void print_method_profiling_data() {
   }
 }
 
-void log_vm_stats(outputStream *st) {
-  LogStreamHandle(Info, perf, class, link) log;
-  if (log.is_enabled()) {
-    ClassLoader::print_counters(st);
-  }
-}
-
 #ifndef PRODUCT
 
 // Statistics printing (method invocation histogram)
@@ -364,7 +357,9 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 
-  log_vm_stats(tty);
+  if (log_is_enabled(Info, perf, class, link)) {
+      ClassLoader::print_counters(tty);
+  }
 }
 
 // Note: before_exit() can be executed only once, if more than one threads

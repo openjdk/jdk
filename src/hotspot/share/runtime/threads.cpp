@@ -831,7 +831,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (log_is_enabled(Info, perf, class, link)) {
     LogStreamHandle(Info, perf, class, link) log;
     log.print_cr("At VM initialization completion:");
-    log_vm_stats(&log);
+    ClassLoader::print_counters(&log);
   }
 
   return JNI_OK;
