@@ -31,12 +31,17 @@
 import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Time;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,6 +50,9 @@ final class StableValuesSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors() / 2;
+    @SuppressWarnings("unchecked")
+    private static final StableValue<Holder>[] STABLES = (StableValue<Holder>[]) new StableValue[SIZE];
+    private static final CountDownLatch LATCH = new CountDownLatch(1);
 
     static final class Holder {
         final int a;
@@ -59,19 +67,21 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final StableValue<Holder>[] stables;
-
-        Consumer(StableValue<Holder>[] stables) {
-            this.stables = stables;
-        }
+        int i = 0;
 
         @Override
         public void run() {
+            try {
+                LATCH.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
             StableValue<Holder> s;
             Holder h;
-            for (int i = 0; i < SIZE; i++) {
+            for (; i < SIZE; i++) {
                 // Wait until we see a new StableValue
-                while ((s = stables[i]) == null) {}
+                while ((s = STABLES[i]) == null) {}
                 // Wait until the StableValue has a holder value
                 while ((h = s.orElse(null)) == null) {}
                 int a = h.a;
@@ -83,36 +93,30 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final StableValue<Holder>[] stables;
-
-        Producer(StableValue<Holder>[] stables) {
-            this.stables = stables;
-        }
+        static final int LOOP_DELAY = 100;
 
         @Override
         public void run() {
-            int dummy = 0;
+            LATCH.countDown();
+            int sum = 0;
             StableValue<Holder> s;
             for (int i = 0; i < SIZE; i++) {
                 s = StableValue.newInstance();
                 s.trySet(new Holder());
-                stables[i] = s;
+                STABLES[i] = s;
                 // Wait for a while
-                for (int j = 0; j < 100; j++) {
-                    dummy++;
+                for (int j = 0; j < LOOP_DELAY; j++) {
+                    sum++;
                 }
             }
-            System.out.println(dummy);
+            System.out.println("The producer completed with " + (sum / LOOP_DELAY) + " values.");
         }
     }
 
     @Test
     void main() {
-        @SuppressWarnings("unchecked")
-        final StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
-
         List<Consumer> consumers = IntStream.range(0, THREADS)
-                .mapToObj(_ -> new Consumer(stables))
+                .mapToObj(_ -> new Consumer())
                 .toList();
 
         List<Thread> consumersThreads = IntStream.range(0, THREADS)
@@ -121,12 +125,14 @@ final class StableValuesSafePublicationTest {
                         .start(consumers.get(i)))
                 .toList();
 
+        Producer producer = new Producer();
+
         Thread producerThread = Thread.ofPlatform()
                 .name("Producer Thread")
-                .start(new Producer(stables));
+                .start(producer);
 
-        join(producerThread);
-        join(consumersThreads.toArray(Thread[]::new));
+        join(consumers, producerThread);
+        join(consumers, consumersThreads.toArray(Thread[]::new));
 
         int[] histogram = new int[4];
         for (Consumer consumer : consumers) {
@@ -142,16 +148,28 @@ final class StableValuesSafePublicationTest {
         assertEquals(THREADS * SIZE, histogram[3]);
     }
 
-
-    static void join(Thread... threads) {
+    static void join(List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
-                t.join(TimeUnit.MINUTES.toMillis(1));
-                if (t.isAlive()) {
-                    String stack = Arrays.stream(t.getStackTrace())
-                            .map(Objects::toString)
-                            .collect(Collectors.joining(System.lineSeparator()));
-                    fail("Thread did not complete: " + t + System.lineSeparator() + stack);
+                long deadline = System.currentTimeMillis()+TimeUnit.MINUTES.toMillis(1);
+                while (t.isAlive()) {
+                    t.join(TimeUnit.SECONDS.toMillis(10));
+                    if (t.isAlive()) {
+                        String stack = Arrays.stream(t.getStackTrace())
+                                .map(Objects::toString)
+                                .collect(Collectors.joining(System.lineSeparator()));
+                        System.err.println(t + ": " + stack);
+                        for (int i = 0; i < consumers.size(); i++) {
+                            System.err.println("Consumer " + i + ": " + consumers.get(i).i);
+                        }
+                    }
+                    if (System.currentTimeMillis() > deadline) {
+                        long nonNulls = CompletableFuture.supplyAsync(() ->
+                                Stream.of(STABLES)
+                                        .filter(Objects::nonNull)
+                                        .count(), Executors.newSingleThreadExecutor()).join();
+                        fail("Giving up! Non-nulls seen by a new thread: " + nonNulls);
+                    }
                 }
             }
         } catch (InterruptedException ie) {
