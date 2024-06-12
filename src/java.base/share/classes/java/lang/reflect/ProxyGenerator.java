@@ -482,6 +482,9 @@ final class ProxyGenerator {
 
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
                 for (ProxyMethod pm : sigmethods) {
+                    // add static field for the Method object
+                    clb.withField(pm.fieldName, CD_Method, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+
                     // Generate code for proxy method
                     pm.generateMethod(clb);
                 }
