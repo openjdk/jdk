@@ -38,7 +38,7 @@
 template<typename E, MEMFLAGS flag>
 class IndexedFreeListAllocator {
 public:
-  class I {
+  struct I {
     friend IndexedFreeListAllocator<E, flag>;
     int32_t _idx;
 
@@ -55,7 +55,7 @@ public:
     }
   };
 
-  static const I nil;
+  static constexpr const I nil = I{-1};
 
 private:
   // A free list allocator element is either a link to the next free space
@@ -73,7 +73,7 @@ public:
 
   IndexedFreeListAllocator(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
-      _free_start(I(nil._idx)) {}
+    _free_start(I{nil._idx}) {}
 
   template<typename... Args>
   I allocate(Args... args) {
@@ -91,7 +91,7 @@ public:
     }
 
     ::new (be) E(args...);
-    return I(i);
+    return I{i};
   }
 
   void free(I i) {
@@ -113,10 +113,6 @@ public:
     return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
   }
 };
-
-template<typename E, MEMFLAGS flag>
-const typename IndexedFreeListAllocator<E, flag>::I
-    IndexedFreeListAllocator<E, flag>::nil(-1);
 
 // A CHeap allocator
 template<typename E, MEMFLAGS flag>
