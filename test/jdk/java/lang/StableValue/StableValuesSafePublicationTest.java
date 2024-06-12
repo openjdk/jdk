@@ -29,11 +29,13 @@
  */
 
 import jdk.internal.lang.StableValue;
-import jdk.internal.lang.StableValues;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,7 +146,13 @@ final class StableValuesSafePublicationTest {
     static void join(Thread... threads) {
         try {
             for (Thread t:threads) {
-                t.join();
+                t.join(TimeUnit.MINUTES.toMillis(1));
+                if (t.isAlive()) {
+                    String stack = Arrays.stream(t.getStackTrace())
+                            .map(Objects::toString)
+                            .collect(Collectors.joining(System.lineSeparator()));
+                    fail("Thread did not complete: " + t + System.lineSeparator() + stack);
+                }
             }
         } catch (InterruptedException ie) {
             fail(ie);
