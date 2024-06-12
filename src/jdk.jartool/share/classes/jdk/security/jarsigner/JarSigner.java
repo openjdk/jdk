@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -699,7 +699,6 @@ public final class JarSigner {
         Vector<ZipEntry> mfFiles = new Vector<>();
 
         boolean wasSigned = false;
-        Set<String> signedEntries = new HashSet<>();
 
         for (Enumeration<? extends ZipEntry> enum_ = zipFile.entries();
              enum_.hasMoreElements(); ) {
@@ -729,12 +728,10 @@ public final class JarSigner {
                 // jar entry is contained in manifest, check and
                 // possibly update its digest attributes
                 updateDigests(ze, zipFile, digests, manifest);
-                signedEntries.add(ze.getName());;
             } else if (!ze.isDirectory()) {
                 // Add entry to manifest
                 Attributes attrs = getDigestAttributes(ze, zipFile, digests);
                 manifest.getEntries().put(ze.getName(), attrs);
-                signedEntries.add(ze.getName());
             }
         }
 
@@ -820,7 +817,7 @@ public final class JarSigner {
 
         // Calculate SignatureFile (".SF") and SignatureBlockFile
         ManifestDigester manDig = new ManifestDigester(mfRawBytes);
-        SignatureFile sf = new SignatureFile(digests, signedEntries, manDig,
+        SignatureFile sf = new SignatureFile(digests, manifest, manDig,
                 signerName, sectionsonly);
 
         byte[] block;
@@ -1070,7 +1067,7 @@ public final class JarSigner {
         String baseName;
 
         public SignatureFile(MessageDigest digests[],
-                             Set<String> signedEntries,
+                             Manifest mf,
                              ManifestDigester md,
                              String baseName,
                              boolean sectionsonly) {
@@ -1108,9 +1105,9 @@ public final class JarSigner {
                                 "Manifest-Main-Attribute entry");
             }
 
-            // go through signed entries and create the digests
+            // go through the manifest entries and create the digests
             Map<String, Attributes> entries = sf.getEntries();
-            for (String name: signedEntries) {
+            for (String name: mf.getEntries().keySet()) {
                 mde = md.get(name, false);
                 if (mde != null) {
                     Attributes attr = new Attributes();

@@ -44,14 +44,21 @@ public class RemovedFiles {
         SecurityTools.keytool("-genkeypair -storepass changeit -keystore ks -alias x -dname CN=x -keyalg ed25519");
         SecurityTools.jarsigner("-storepass changeit -keystore ks a.jar x");
 
+        // All is fine at the beginning.
+        SecurityTools.jarsigner("-verify a.jar")
+                .shouldNotContain("Nonexistent signed entries detected. See details in -verbose output.");
+
         // Remove an entry after signing. There will be a warning.
         JarUtils.deleteEntries(Path.of("a.jar"), "a");
+        SecurityTools.jarsigner("-verify a.jar")
+                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.");
         SecurityTools.jarsigner("-verify -verbose a.jar")
-                .shouldContain("Warning: nonexistent signed entries detected: [a]");
+                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.")
+                .shouldContain("Warning: nonexistent signed entries: [a]");
 
-        // Re-sign will clean up the SF file.
+        // Re-sign will not clear the warning.
         SecurityTools.jarsigner("-storepass changeit -keystore ks a.jar x");
-        SecurityTools.jarsigner("-verify -verbose a.jar")
-                .shouldNotContain("Warning: nonexistent signed entries detected: [a]");
+        SecurityTools.jarsigner("-verify a.jar")
+                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.");
     }
 }
