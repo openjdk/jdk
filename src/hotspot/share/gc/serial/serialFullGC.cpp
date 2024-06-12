@@ -74,8 +74,6 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-uint                    SerialFullGC::_total_invocations = 0;
-
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
 
@@ -113,7 +111,7 @@ public:
       // we don't start compacting before there is a significant gain to be made.
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
-      if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
+      if ((SerialHeap::heap()->total_full_collections() % MarkSweepAlwaysCompactCount) != 0) {
         _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
       } else {
         _active = false;
@@ -368,9 +366,10 @@ public:
       }
 
       // Reset top and unused memory
-      space->set_top(get_compaction_top(i));
-      if (ZapUnusedHeapArea) {
-        space->mangle_unused_area();
+      HeapWord* new_top = get_compaction_top(i);
+      space->set_top(new_top);
+      if (ZapUnusedHeapArea && new_top < top) {
+        space->mangle_unused_area(MemRegion(new_top, top));
       }
     }
   }
@@ -686,16 +685,8 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   SerialHeap* gch = SerialHeap::heap();
-#ifdef ASSERT
-  if (gch->soft_ref_policy()->should_clear_all_soft_refs()) {
-    assert(clear_all_softrefs, "Policy should have been checked earlier");
-  }
-#endif
 
   gch->trace_heap_before_gc(_gc_tracer);
-
-  // Increment the invocation count
-  _total_invocations++;
 
   // Capture used regions for old-gen to reestablish old-to-young invariant
   // after full-gc.

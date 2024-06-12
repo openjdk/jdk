@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -895,18 +895,26 @@ void MacroAssembler::restore_volatile_gprs(Register src, int offset, bool includ
   }
 }
 
+void MacroAssembler::save_LR(Register tmp) {
+  mflr(tmp);
+  std(tmp, _abi0(lr), R1_SP);
+}
+
+void MacroAssembler::restore_LR(Register tmp) {
+  assert(tmp != R1_SP, "must be distinct");
+  ld(tmp, _abi0(lr), R1_SP);
+  mtlr(tmp);
+}
+
 void MacroAssembler::save_LR_CR(Register tmp) {
   mfcr(tmp);
   std(tmp, _abi0(cr), R1_SP);
-  mflr(tmp);
-  std(tmp, _abi0(lr), R1_SP);
+  save_LR(tmp);
   // Tmp must contain lr on exit! (see return_addr and prolog in ppc64.ad)
 }
 
 void MacroAssembler::restore_LR_CR(Register tmp) {
-  assert(tmp != R1_SP, "must be distinct");
-  ld(tmp, _abi0(lr), R1_SP);
-  mtlr(tmp);
+  restore_LR(tmp);
   ld(tmp, _abi0(cr), R1_SP);
   mtcr(tmp);
 }
@@ -2208,9 +2216,6 @@ void MacroAssembler::tlab_allocate(
   // update the tlab top pointer
   std(new_top, in_bytes(JavaThread::tlab_top_offset()), R16_thread);
   //verify_tlab(); not implemented
-}
-void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2) {
-  unimplemented("incr_allocated_bytes");
 }
 
 address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
@@ -3901,7 +3906,7 @@ void MacroAssembler::muladd(Register out, Register in,
 
 void MacroAssembler::multiply_to_len(Register x, Register xlen,
                                      Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z,
                                      Register tmp1, Register tmp2,
                                      Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6,
@@ -3912,11 +3917,11 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
 
   ShortBranchVerifier sbv(this);
 
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp7);
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp8);
 
   const Register idx = tmp1;
@@ -3944,7 +3949,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   //  z[xstart] = (int)carry;
 
   mr_if_needed(idx, ylen);        // idx = ylen
-  mr_if_needed(kdx, zlen);        // kdx = xlen + ylen
+  add(kdx, xlen, ylen);           // kdx = xlen + ylen
   li(carry, 0);                   // carry = 0
 
   Label L_done;
