@@ -24,7 +24,9 @@
  */
 package sun.security.ssl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -333,8 +335,7 @@ final class NewSessionTicket {
                 // Is this session resumable?
                 if (!hc.handshakeSession.isRejoinable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "session is not resumable");
                     }
 
@@ -352,8 +353,7 @@ final class NewSessionTicket {
                 if (pkemSpec == null ||
                         !pkemSpec.contains(PskKeyExchangeMode.PSK_DHE_KE)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "client does not support psk_dhe_ke");
                     }
 
@@ -364,8 +364,7 @@ final class NewSessionTicket {
                 // using an allowable PSK exchange key mode.
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "No session ticket allowed in this session");
                     }
 
@@ -379,8 +378,7 @@ final class NewSessionTicket {
             int sessionTimeoutSeconds = sessionCache.getSessionTimeout();
             if (sessionTimeoutSeconds > MAX_TICKET_LIFETIME) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                        "No session ticket produced: " +
+                    SSLLogger.fine("No session ticket produced: " +
                             "session timeout");
                 }
 
@@ -391,39 +389,52 @@ final class NewSessionTicket {
                 hc.handshakeSession.getResumptionMasterSecret();
             if (resumptionMasterSecret == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                            "No session ticket produced: " +
-                            "no resumption secret");
+                    SSLLogger.fine("No session ticket produced: " +
+                        "no resumption secret");
                 }
 
                 return null;
             }
 
-            // Output the handshake message.
-            for (int i = 0; i < SSLConfiguration.serverNewSessionTicketCount;
-                 i++) {
-                SessionId newId = new SessionId(true,
-                    hc.sslContext.getSecureRandom());
-
-                NewSessionTicketMessage nstm = generateNST(hc,
-                    sessionTimeoutSeconds, newId, sessionCache);
-                if (nstm != null) {
-                    // should never be null
-                    nstm.write(hc.handshakeOutput);
-                    try {
-                        hc.handshakeOutput.flush();
-                    } catch (SocketException e) {
-                        // Multiple flushes can cause problems with
-                        // connections that immediately close like test
-                        // SSLSocketBruteForceClose.java; however, the flush()
-                        // outside the loop can cause handshakeOutput overflow
-                        // when the message gets too large ( > 16k).  Breaking
-                        // here allows the code to follow the normal exit path.
-                        break;
+            /*
+             * This thread addresses a Windows only networking issue found with
+             * SSLSocketBruteForceClose. A client that quickly closes after
+             * TLS Finished completed would cause the server read-side to
+             * get a SocketException: "An established connection was aborted
+             * by the software in your host machine", which relates to WinSock
+             * error WSAECONNABORTED.  This situation was observed with
+             * multiple NST messages when the client and server threads on the
+             * same machine.  This is very unlikely to be seen where client
+             * and server are on different machines.
+             */
+            Thread nstThread = Thread.ofVirtual().name("NST").start(() -> {
+                // Output the handshake message.
+                try {
+                    int i = 0;
+                    ByteArrayOutputStream ba = new ByteArrayOutputStream(
+                        1024 * SSLConfiguration.serverNewSessionTicketCount);
+                    while (i < SSLConfiguration.serverNewSessionTicketCount) {
+                        SessionId newId = new SessionId(true,
+                            hc.sslContext.getSecureRandom());
+                        NewSessionTicketMessage nstm = generateNST(hc,
+                            sessionTimeoutSeconds, newId, sessionCache);
+                        if (nstm != null) {
+                            // should never be null
+                            nstm.write((HandshakeOutStream)ba);
+                        }
+                        i++;
+                    }
+                    hc.handshakeOutput.writeTo(ba);
+                    hc.handshakeOutput.flush();
+                } catch (IOException e) {
+                    // Low exception likelihood this is data requires not
+                    // reply an IO errors will be handled by other messages.
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine("NST thread exception:");
+                        e.printStackTrace();
                     }
                 }
-            }
-
+            });
 
             // See note on TransportContext.needHandshakeFinishedStatus.
             //
@@ -435,6 +446,15 @@ final class NewSessionTicket {
                 hc.conContext.needHandshakeFinishedStatus = false;
             }
 
+            // Rejoin NST thread
+            try {
+                nstThread.join(1000);
+            } catch (InterruptedException e) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("NST thread interrupted: ");
+                    e.printStackTrace();
+                }
+            }
             // clean the post handshake context
             hc.conContext.finishPostHandshake();
 
@@ -472,8 +492,7 @@ final class NewSessionTicket {
                     hc.statelessResumption = false;
                 } else {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                            "Produced NewSessionTicket stateless " +
+                        SSLLogger.fine("Produced NewSessionTicket stateless " +
                             "post-handshake message", nstm);
                     }
                 }
@@ -487,9 +506,8 @@ final class NewSessionTicket {
                         hc.sslContext.getSecureRandom(), nonceArr,
                         newId.getId());
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                            "Produced NewSessionTicket post-handshake message",
-                            nstm);
+                    SSLLogger.fine("Produced NewSessionTicket " +
+                            "post-handshake message", nstm);
                 }
 
                 // create and cache the new session
@@ -505,7 +523,7 @@ final class NewSessionTicket {
         }
     }
 
-    /**
+        /**
      * The "NewSessionTicket" handshake message producer for RFC 5077
      */
     private static final class T12NewSessionTicketProducer
@@ -706,6 +724,14 @@ final class NewSessionTicket {
                 SSLLogger.fine("Consuming NewSessionTicket\n" +
                         nstm.toString());
             }
+        }
+    }
+    class Handler implements Thread.UncaughtExceptionHandler {
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            System.err.println("Thread caught: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
