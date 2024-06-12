@@ -353,21 +353,23 @@ public class Lower extends TreeTranslator {
         }
 
         @Override
-        void visitSymbol(Symbol _sym) {
-            Symbol sym = _sym;
-            if (sym.kind == VAR || sym.kind == MTH) {
-                if (sym != null && sym.owner != owner)
-                    sym = proxies.get(sym);
-                if (sym != null && sym.owner == owner) {
-                    VarSymbol v = (VarSymbol)sym;
+        void visitSymbol(Symbol sym) {
+            if (sym.kind == VAR) {
+                Symbol _sym = sym;
+                if (sym.owner != owner)
+                    _sym = proxies.get(sym);
+                if (_sym != null && _sym.owner == owner) {
+                    VarSymbol v = (VarSymbol) _sym;
                     if (v.getConstValue() == null) {
                         addFreeVar(v);
+                        return;
                     }
-                } else {
-                    if (outerThisStack.head != null &&
-                        outerThisStack.head != _sym)
-                        visitSymbol(outerThisStack.head);
                 }
+            }
+            if (sym.kind == VAR || sym.kind == MTH) {
+                if (outerThisStack.head != null &&
+                    outerThisStack.head != sym)
+                    visitSymbol(outerThisStack.head);
             }
         }
 
