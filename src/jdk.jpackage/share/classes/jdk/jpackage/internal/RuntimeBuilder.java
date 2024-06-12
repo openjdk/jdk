@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.module.Configuration;
@@ -35,50 +33,119 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
-import java.util.regex.Matcher;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
+import static jdk.jpackage.internal.StandardBundlerParam.ADD_MODULES;
+import static jdk.jpackage.internal.StandardBundlerParam.JLINK_OPTIONS;
+import static jdk.jpackage.internal.StandardBundlerParam.LIMIT_MODULES;
+import static jdk.jpackage.internal.StandardBundlerParam.MODULE_PATH;
 
+final class RuntimeBuilder {
 
-final class JLinkBundlerHelper {
+    private RuntimeBuilder(List<String> jlinkCmdLine) {
+        this.jlinkCmdLine = jlinkCmdLine;
+    }
 
-    static void execute(Map<String, ? super Object> params, Path outputDir)
-            throws IOException, PackagerException {
+    void execute(Path outputDir) throws PackagerException {
+        var args = new ArrayList<String>();
+        args.add("--output");
+        args.add(outputDir.toString());
+        args.addAll(jlinkCmdLine);
 
-        List<Path> modulePath =
-                StandardBundlerParam.MODULE_PATH.fetchFrom(params);
-        Set<String> addModules =
-                StandardBundlerParam.ADD_MODULES.fetchFrom(params);
-        Set<String> limitModules =
-                StandardBundlerParam.LIMIT_MODULES.fetchFrom(params);
-        List<String> options =
-                StandardBundlerParam.JLINK_OPTIONS.fetchFrom(params);
+        StringWriter writer = new StringWriter();
+        PrintWriter pw = new PrintWriter(writer);
 
-        LauncherData launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(
-                params);
+        int retVal = LazyLoad.JLINK_TOOL.run(pw, pw, args.toArray(String[]::new));
+        String jlinkOut = writer.toString();
 
-        // Modules
-        if (!launcherData.isModular() && addModules.isEmpty()) {
-            addModules.add(ALL_DEFAULT);
+        args.add(0, "jlink");
+        Log.verbose(args, List.of(jlinkOut), retVal, -1);
+        if (retVal != 0) {
+            throw new PackagerException("error.jlink.failed", jlinkOut);
+        }
+    }
+
+    static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
+        return ModuleFinder.compose(
+                ModulePath.of(JarFile.runtimeVersion(), true,
+                        modulePath.toArray(Path[]::new)),
+                ModuleFinder.ofSystem());
+    }
+
+    static RuntimeBuilder createFromParams(Map<String, ? super Object> params,
+            List<LauncherStartupInfo> startupInfos) throws ConfigException {
+        List<Path> modulePath = Optional.ofNullable(MODULE_PATH.fetchFrom(params)).orElseGet(
+                Collections::emptyList);
+        Set<String> addModules = Optional.ofNullable(ADD_MODULES.fetchFrom(params)).orElseGet(
+                Collections::emptySet);
+        Set<String> limitModules = Optional.ofNullable(LIMIT_MODULES.fetchFrom(params)).orElseGet(
+                Collections::emptySet);
+        List<String> options = Optional.ofNullable(JLINK_OPTIONS.fetchFrom(params)).orElseGet(
+                Collections::emptyList);
+
+        return new RuntimeBuilder(createJLinkCmdline(modulePath, addModules, limitModules, options,
+                startupInfos));
+    }
+
+    private static List<String> createJLinkCmdline(List<Path> modulePath, Set<String> addModules,
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
+        List<String> launcherModules = startupInfos.stream().map(si -> {
+            if (si instanceof LauncherModularStartupInfo siModular) {
+                return siModular.moduleName();
+            } else {
+                return (String) null;
+            }
+        }).filter(Objects::nonNull).toList();
+
+        if (launcherModules.isEmpty() && addModules.isEmpty()) {
+            addModules = Set.of(ALL_DEFAULT);
         }
 
-        Set<String> modules = createModuleList(modulePath, addModules, limitModules);
+        var modules = createModuleList(modulePath, addModules, limitModules);
 
-        if (launcherData.isModular()) {
-            modules.add(launcherData.moduleName());
+        modules.addAll(launcherModules);
+
+        var args = new ArrayList<String>();
+        if (!modulePath.isEmpty()) {
+            args.add("--module-path");
+            args.add(getPathList(modulePath));
+        }
+        if (!modules.isEmpty()) {
+            args.add("--add-modules");
+            args.add(getStringList(modules));
+        }
+        if (!limitModules.isEmpty()) {
+            args.add("--limit-modules");
+            args.add(getStringList(limitModules));
         }
 
-        runJLink(outputDir, modulePath, modules, limitModules, options);
+        for (String option : options) {
+            switch (option) {
+                case "--output", "--add-modules", "--module-path" -> {
+                    throw new ConfigException(MessageFormat.format(I18N.getString(
+                            "error.blocked.option"), option), null);
+                }
+                default -> {
+                    args.add(option);
+                }
+            }
+        }
+
+        return args;
     }
 
     /*
@@ -91,11 +158,11 @@ final class JLinkBundlerHelper {
         // the modules in the run-time image that export an API
         Stream<String> systemRoots = ModuleFinder.ofSystem().findAll().stream()
                 .map(ModuleReference::descriptor)
-                .filter(JLinkBundlerHelper::exportsAPI)
+                .filter(RuntimeBuilder::exportsAPI)
                 .map(ModuleDescriptor::name);
 
         Set<String> roots = Stream.concat(systemRoots,
-                 addModules.stream()).collect(Collectors.toSet());
+                addModules.stream()).collect(Collectors.toSet());
 
         ModuleFinder finder = createModuleFinder(paths);
 
@@ -116,13 +183,6 @@ final class JLinkBundlerHelper {
                 .anyMatch(e -> !e.isQualified());
     }
 
-    static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
-        return ModuleFinder.compose(
-                ModulePath.of(JarFile.runtimeVersion(), true,
-                        modulePath.toArray(Path[]::new)),
-                ModuleFinder.ofSystem());
-    }
-
     private static Set<String> createModuleList(List<Path> paths,
             Set<String> addModules, Set<String> limitModules) {
 
@@ -131,11 +191,11 @@ final class JLinkBundlerHelper {
         final Map<String, Supplier<Collection<String>>> phonyModules = Map.of(
                 ALL_MODULE_PATH,
                 () -> createModuleFinder(paths)
-                            .findAll()
-                            .stream()
-                            .map(ModuleReference::descriptor)
-                            .map(ModuleDescriptor::name)
-                            .collect(Collectors.toSet()),
+                        .findAll()
+                        .stream()
+                        .map(ModuleReference::descriptor)
+                        .map(ModuleDescriptor::name)
+                        .collect(Collectors.toSet()),
                 ALL_DEFAULT,
                 () -> getDefaultModules(paths, modules));
 
@@ -154,63 +214,17 @@ final class JLinkBundlerHelper {
         return modules;
     }
 
-    private static void runJLink(Path output, List<Path> modulePath,
-            Set<String> modules, Set<String> limitModules,
-            List<String> options)
-            throws PackagerException, IOException {
-
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("--output");
-        args.add(output.toString());
-        if (modulePath != null && !modulePath.isEmpty()) {
-            args.add("--module-path");
-            args.add(getPathList(modulePath));
-        }
-        if (modules != null && !modules.isEmpty()) {
-            args.add("--add-modules");
-            args.add(getStringList(modules));
-        }
-        if (limitModules != null && !limitModules.isEmpty()) {
-            args.add("--limit-modules");
-            args.add(getStringList(limitModules));
-        }
-        if (options != null) {
-            for (String option : options) {
-                if (option.startsWith("--output") ||
-                        option.startsWith("--add-modules") ||
-                        option.startsWith("--module-path")) {
-                    throw new PackagerException("error.blocked.option", option);
-                }
-                args.add(option);
-            }
-        }
-
-        StringWriter writer = new StringWriter();
-        PrintWriter pw = new PrintWriter(writer);
-
-        int retVal = LazyLoad.JLINK_TOOL.run(pw, pw, args.toArray(new String[0]));
-        String jlinkOut = writer.toString();
-
-        args.add(0, "jlink");
-        Log.verbose(args, List.of(jlinkOut), retVal, -1);
-
-
-        if (retVal != 0) {
-            throw new PackagerException("error.jlink.failed" , jlinkOut);
-        }
-    }
-
     private static String getPathList(List<Path> pathList) {
         return pathList.stream()
                 .map(Path::toString)
-                .map(Matcher::quoteReplacement)
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
     private static String getStringList(Set<String> strings) {
-        return Matcher.quoteReplacement(strings.stream().collect(
-                Collectors.joining(",")));
+        return strings.stream().collect(Collectors.joining(","));
     }
+
+    private final List<String> jlinkCmdLine;
 
     // The token for "all modules on the module path".
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
@@ -219,6 +233,7 @@ final class JLinkBundlerHelper {
     private static final String ALL_DEFAULT = "ALL-DEFAULT";
 
     private static class LazyLoad {
+
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(
                 "jlink").orElseThrow();
     };

@@ -47,6 +47,13 @@ class LauncherAsService {
         resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
     }
 
+    LauncherAsService(Launcher launcher, OverridableResource resource) {
+        this.name = launcher.name();
+        this.description = launcher.description();
+        this.resource = resource;
+        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+    }
+
     protected OverridableResource getResource() {
         return resource;
     }

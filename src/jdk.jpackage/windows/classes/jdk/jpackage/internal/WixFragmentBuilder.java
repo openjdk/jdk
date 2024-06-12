@@ -33,15 +33,12 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
 
 /**
@@ -57,12 +54,11 @@ abstract class WixFragmentBuilder {
         outputFileName = v;
     }
 
-    void initFromParams(Map<String, ? super Object> params) {
+    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
         wixVariables = null;
         additionalResources = null;
-        configRoot = CONFIG_ROOT.fetchFrom(params);
-        fragmentResource = createResource(outputFileName, params).setSourceOrder(
-                Source.ResourceDir);
+        configRoot = workshop.configDir();
+        fragmentResource = workshop.createResource(outputFileName).setSourceOrder(Source.ResourceDir);
     }
 
     void logWixFeatures() {
