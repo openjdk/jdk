@@ -2852,11 +2852,11 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
   assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
 
-  bool pack1_has_offset_0 = (isa_strided_pack_input_or_null(pack, 1, 2, 0) != nullptr);
-  Node_List* pack1 = isa_strided_pack_input_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack2 = isa_strided_pack_input_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack3 = isa_strided_pack_input_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
-  Node_List* pack4 = isa_strided_pack_input_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
+  bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
+  Node_List* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
 
   return pack1 != nullptr &&
          pack2 != nullptr &&
@@ -2866,7 +2866,7 @@ bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
           (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
 }
 
-Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
+Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, int j, int stride, int offset) const {
   Node* p0 = pack->at(0);
   Node* def0 = p0->in(j);
 
