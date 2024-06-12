@@ -5845,7 +5845,6 @@ void MacroAssembler::pop_count_int_without_ext3(Register r_dst, Register r_src, 
   z_alr(r_dst, r_tmp);
   z_srlg(r_tmp, r_dst, 8);
   z_alr(r_dst, r_tmp);
-  // TODO: use risbgn instruction instead of srl below
   z_llgcr(r_dst, r_dst);
 
   BLOCK_COMMENT("} pop_count_int_without_ext3");
