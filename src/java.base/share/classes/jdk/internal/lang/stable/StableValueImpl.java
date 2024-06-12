@@ -33,6 +33,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public final class StableValueImpl<T> implements StableValue<T> {
@@ -46,7 +47,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
-    // Here, this field is reflectively accessed via Unsafe using explicit memory semantics.
+    //
+    // This field is reflectively accessed via Unsafe using explicit memory semantics.
     //
     // Meaning        Value
     // -------        -----
@@ -61,7 +63,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T value) {
+        if (valuePlain() != null) {
+            return false;
+        }
         synchronized (mutex) {
+            if (valuePlain() != null) {
+                return false;
+            }
             // Prevents reordering of store operations with other store operations.
             // This means any stores made to fields in the `value` object prior to this
             // point cannot be reordered with the CAS operation of the reference to the
@@ -69,10 +77,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
             // In other words, if a reader (using plain memory semantics) can observe a
             // `value` reference, any field updates made prior to this fence are
             // guaranteed to be seen.
-            UNSAFE.storeStoreFence();
+            UNSAFE.storeStoreFence(); // Redundant as a volatile put provides a store barrier?
+
+            // We are alone here under the `mutex`
             // This upholds the invariant, the `@Stable value` field is written to
             // at most once.
-            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
+            UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, wrap(value));
+            return true;
         }
     }
 
@@ -121,11 +132,26 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (t != null) {
             return unwrap(t);
         }
-        return compute(supplier);
+        return tryCompute(null, supplier);
     }
 
+    @ForceInline
+    @Override
+    public <I> T computeIfUnset(I input, Function<? super I, ? extends T> function) {
+        T t = valuePlain();
+        if (t != null) {
+            return unwrap(t);
+        }
+        t = valueVolatile();
+        if (t != null) {
+            return unwrap(t);
+        }
+        return tryCompute(input, function);
+    }
+
+    @SuppressWarnings("unchecked")
     @DontInline
-    private T compute(Supplier<? extends T> supplier) {
+    private <I> T tryCompute(I input, Object provider) {
         synchronized (mutex) {
             // Updates to the `value` is always made under `mutex` synchronization
             // meaning plain memory semantics is enough here.
@@ -133,7 +159,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
             if (t != null) {
                 return unwrap(t);
             }
-            t = supplier.get();
+            if (provider instanceof Supplier<?> supplier) {
+                t = (T) supplier.get();
+            } else {
+                t = ((Function<I, T>) provider).apply(input);;
+            }
+            // Todo: Do not go into sync again...
             trySet(t);
             return orElseThrow();
         }

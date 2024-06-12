@@ -103,7 +103,7 @@ final class JepTest {
             // 3. Access the stable list element with as-declared-final performance
             //    (evaluation made before the first access)
             return MESSAGES.get(messageNumber)
-                    .computeIfUnset(() -> readFromFile(messageNumber));
+                    .computeIfUnset(messageNumber, ErrorMessages::readFromFile);
         }
 
     }
@@ -119,7 +119,7 @@ final class JepTest {
         //    (evaluation made before the first access)
         static Logger logger(String name) {
             return LOGGERS.get(name)
-                    .computeIfUnset(() -> Logger.getLogger(name));
+                    .computeIfUnset(name, Logger::getLogger);
         }
     }
 
@@ -131,7 +131,7 @@ final class JepTest {
 
         // 2. Declare a memoized (cached) function backed by the stable map
         private static final Function<String, Logger> LOGGERS =
-                n -> MAP.get(n).computeIfUnset(() -> Logger.getLogger(n));
+                n -> MAP.get(n).computeIfUnset(n , Logger::getLogger);
 
 
         private static final String NAME = "com.foo.Baz";
@@ -142,30 +142,33 @@ final class JepTest {
     }
 
     class A {
-        private static final int SIZE = 8;
+
+        static
+        class ErrorMessages {
+            private static final int SIZE = 8;
 
 
-        // 1. Declare a stable list of default error pages to serve up
-        private static final List<StableValue<String>> ERROR_PAGES =
-                StableValues.ofList(SIZE);
+            // 1. Declare a stable list of default error pages to serve up
+            private static final List<StableValue<String>> ERROR_PAGES =
+                    StableValues.ofList(SIZE);
 
-        // 2. Declare a memoized IntFunction backed by the stable list
-        private static final IntFunction<String> ERROR_FUNCTION =
-                i -> ERROR_PAGES.get(i).computeIfUnset(() -> readFromFile(i));
+            // 2. Declare a memoized IntFunction backed by the stable list
+            private static final IntFunction<String> ERROR_FUNCTION =
+                    i -> ERROR_PAGES.get(i).computeIfUnset(i, ErrorMessages::readFromFile);
 
-        // 3. Define a function that is to be called the first
+            // 3. Define a function that is to be called the first
 //    time a particular message number is referenced
-        private static String readFromFile(int messageNumber) {
-            try {
-                return Files.readString(Path.of("message-" + messageNumber + ".html"));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            private static String readFromFile(int messageNumber) {
+                try {
+                    return Files.readString(Path.of("message-" + messageNumber + ".html"));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
-        }
 
-        // 4. Access the memoized list element with as-declared-final performance
+            // 4. Access the memoized list element with as-declared-final performance
 //    (evaluation made before the first access)
-        String msg =  ERROR_FUNCTION.apply(2);
+            String msg = ERROR_FUNCTION.apply(2);
+        }
     }
-
 }

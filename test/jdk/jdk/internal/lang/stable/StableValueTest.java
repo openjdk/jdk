@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -107,6 +108,40 @@ final class StableValueTest {
         var x = assertThrows(UnsupportedOperationException.class, () -> stable.computeIfUnset(supplier));
         assertTrue(x.getMessage().contains("aaa"));
         assertEquals(42, stable.computeIfUnset(() -> 42));
+        assertEquals("StableValue[42]", stable.toString());
+        assertEquals(42, stable.orElse(13));
+        assertFalse(stable.trySet(null));
+        assertFalse(stable.trySet(1));
+        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
+    }
+
+    @Test
+    void computeIfUnset2Arg() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        StableTestUtil.CountingFunction<Integer, Integer> cntFunction = new StableTestUtil.CountingFunction<>(Function.identity());
+        StableTestUtil.CountingFunction<Integer, Integer> cntFunction2 = new StableTestUtil.CountingFunction<>(Function.identity());
+        assertEquals(42, stable.computeIfUnset(42, cntFunction));
+        assertEquals(1, cntFunction.cnt());
+        assertEquals(42, stable.computeIfUnset(42, cntFunction));
+        assertEquals(1, cntFunction.cnt());
+        assertEquals(42, stable.computeIfUnset(13, cntFunction2));
+        assertEquals(0, cntFunction2.cnt());
+        assertEquals("StableValue[42]", stable.toString());
+        assertEquals(42, stable.orElse(null));
+        assertFalse(stable.trySet(null));
+        assertFalse(stable.trySet(1));
+        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
+    }
+
+    @Test
+    void computeIfUnset2ArgException() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        Function<Integer, Integer> function = _ -> {
+            throw new UnsupportedOperationException("aaa");
+        };
+        var x = assertThrows(UnsupportedOperationException.class, () -> stable.computeIfUnset(42, function));
+        assertTrue(x.getMessage().contains("aaa"));
+        assertEquals(42, stable.computeIfUnset(42, Function.identity()));
         assertEquals("StableValue[42]", stable.toString());
         assertEquals(42, stable.orElse(13));
         assertFalse(stable.trySet(null));

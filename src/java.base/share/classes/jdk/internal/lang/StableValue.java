@@ -28,6 +28,7 @@ package jdk.internal.lang;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -144,8 +145,8 @@ public sealed interface StableValue<T>
     boolean isSet();
 
     /**
-     * If the holder value is unset, attempts to compute the holder value using the given
-     * {@code supplier} and enters it into the holder value.
+     * If the holder value is unset, attempts to compute the holder value using the
+     * provided {@code supplier} and enters the result into the holder value.
      *
      * <p>If the {@code supplier} itself throws an (unchecked) exception, the exception
      * is rethrown, and no holder value is set. The most common usage is to construct a
@@ -163,7 +164,7 @@ public sealed interface StableValue<T>
      * if (stable.isSet()) {
      *     return stable.getOrThrow();
      * }
-     * T newValue = supplier.apply(key);
+     * T newValue = supplier.get();
      * stable.trySet(newValue);
      * return newValue;
      * }</pre>
@@ -175,6 +176,48 @@ public sealed interface StableValue<T>
      *         this stable value
      */
     T computeIfUnset(Supplier<? extends T> supplier);
+
+    /**
+     * If the holder value is unset, attempts to compute the holder value using the
+     * provided {@code mapper} applied to the provided {@code input} context and enters
+     * the result into the holder value.
+     *
+     * <p>If the {@code mapper} itself throws an (unchecked) exception, the exception
+     * is rethrown, and no holder value is set. The most common usage is to construct a
+     * new object serving as an initial value or memoized result, as in:
+     *
+     * <pre> {@code
+     * Map<K, StableValue<V>> map = StableValues.ofMap(...);
+     * K key = ...;
+     * T t = map.get(key)
+     *          .computeIfUnset(key, Foo::valueFromKey);
+     * }</pre>
+     *
+     * The method also allows static Functions/lambdas to be used, for example by
+     * providing `this` as an {@code input} and the static Function/lambda accessing
+     * properties of the `this` input.
+     *
+     * @implSpec
+     * The implementation of this method is equivalent to the following steps for this
+     * {@code stable} and a given non-null {@code mapper} and {@code inout}:
+     *
+     * <pre> {@code
+     * if (stable.isSet()) {
+     *     return stable.getOrThrow();
+     * }
+     * T newValue = mapper.apply(input);
+     * stable.trySet(newValue);
+     * return newValue;
+     * }</pre>
+     * Except, the method is atomic and thread-safe with respect to this and all other
+     * methods that can set this StableValue's holder value.
+     *
+     * @param input  to be applied to the {@code mapper}
+     * @param mapper the mapper to be used to compute a holder value
+     * @return the current (existing or computed) holder value associated with
+     *         this stable value
+     */
+    <I> T computeIfUnset(I input, Function<? super I, ? extends T> mapper);
 
     // Convenience methods
 

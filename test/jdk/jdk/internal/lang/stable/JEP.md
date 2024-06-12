@@ -317,7 +317,7 @@ class ErrorMessages {
         // 3. Access the stable list element with as-declared-final performance
         //    (evaluation made before the first access)
         return MESSAGES.get(messageNumber)
-                       .computeIfUnset(() -> readFromFile(messageNumber));
+                .computeIfUnset(messageNumber, ErrorMessages::readFromFile);
     }
 
 }
@@ -364,7 +364,7 @@ class MapDemo {
     //    (evaluation made before the first access)
     static Logger logger(String name) {
         return LOGGERS.get(name)
-                .computeIfUnset(() -> Logger.getLogger(name));
+                .computeIfUnset(name, Logger::getLogger);
     }
 }
 ```
@@ -398,7 +398,7 @@ class Memoized {
 
     // 2. Declare a memoized (cached) function backed by the stable map
     private static final Function<String, Logger> LOGGERS =
-            n -> MAP.get(n).computeIfUnset(() -> Logger.getLogger(n));
+            n -> MAP.get(n).computeIfUnset(n , Logger::getLogger);
 
     ...
 
@@ -421,33 +421,38 @@ Similarly to how a `Function` can be memoized using a backing lazily computed ma
 can be used for an `IntFunction` that will record its cached value in a backing _stable list_:
 
 ```
-// 1. Declare a stable list of default error pages to serve up
-private static final List<StableValue<String>> ERROR_PAGES =
-        StableValues.ofList(SIZE);
+class ErrorMessages {
 
-// 2. Declare a memoized IntFunction backed by the stable list
-private static final IntFunction<String> ERROR_FUNCTION =
-        i -> ERROR_PAGES.get(i).computeIfUnset(() -> readFromFile(i));
+    // 1. Declare a stable list of default error pages to serve up
+    private static final List<StableValue<String>> ERROR_PAGES =
+            StableValues.ofList(SIZE);
 
-// 3. Define a function that is to be called the first
-//    time a particular message number is referenced
-private static String readFromFile(int messageNumber) {
-    try {
-        return Files.readString(Path.of("message-" + messageNumber + ".html"));
-    } catch (IOException e) {
-        throw new UncheckedIOException(e);
+    // 2. Declare a memoized IntFunction backed by the stable list
+    private static final IntFunction<String> ERROR_FUNCTION =
+            i -> ERROR_PAGES.get(i).computeIfUnset(i , ErrorMessages::readFromFile);
+
+    // 3. Define a function that is to be called the first
+    //    time a particular message number is referenced
+    private static String readFromFile(int messageNumber) {
+        try {
+            return Files.readString(Path.of("message-" + messageNumber + ".html"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
+
+    ...
+
+    // 4. Access the memoized list element with as-declared-final performance
+    //    (evaluation made before the first access)
+    String msg =  ERROR_FUNCTION.apply(2);
+
+    // <!DOCTYPE html>
+    // <html lang="en">
+    //   <head><meta charset="utf-8"></head>
+    //   <body>Payment was denied: Insufficient funds.</body>
+    // </html>
 }
-
-// 4. Access the memoized list element with as-declared-final performance
-//    (evaluation made before the first access)
-String msg =  ERROR_FUNCTION.apply(2);
-
-// <!DOCTYPE html>
-// <html lang="en">
-//   <head><meta charset="utf-8"></head>
-//   <body>Payment was denied: Insufficient funds.</body>
-// </html>
 ```
 
 The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able to write such constructs in a few lines.
