@@ -23,7 +23,7 @@
 
 set prompt [lindex $argv $argc-1]
 set stty_init "rows 24 cols 80"
-set timeout 20
+set timeout -1
 
 spawn {*}$argv
 expect {

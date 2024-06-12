@@ -24,7 +24,7 @@
 # This script doesn't verify any output strings, it's only used to simulate tty
 
 set stty_init "rows 24 cols 80"
-set timeout 20
+set timeout -1
 
 # Use `-noecho` below, otherwise, expect will output the expanded "spawn ..."
 # command, which will interfere with asserting output from the java test
