@@ -61,18 +61,14 @@ void ShenandoahLock::contended_lock_internal(Thread* nonJavaThread) {
       //2. When at SP or SP is synchronizing, spin hard to avoid context switching
       SpinPause();
     } else {
-      if (yields < 5) {
-        os::naked_yield();
-        yields ++;
-      } else {
-        os::naked_short_sleep(1);
-      }
+      yield_or_short_sleep(yields);
     }
   }
 }
 
 template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
+  int yields = 0;
   int ctr = os::is_MP() ? 0x1F : 0;
   while (_state == locked ||
       Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
@@ -80,16 +76,12 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
       // Lightly contended, spin a little if SP it NOT synchronizing.
       ctr--;
       SpinPause();
-    } else if (ALLOW_BLOCK) {
-      if (SafepointSynchronize::is_synchronizing()) {
-        //We know SP is synchronizing and block is allosed,
-        //yield to safepoint call to so VM will reach safepoint faster.
-        ThreadBlockInVM block(java_thread, true);
-      } else {
-        os::naked_short_sleep(1);
-      }
+    } else if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
+      //We know SP is synchronizing and block is allosed,
+      //yield to safepoint call to so VM will reach safepoint faster.
+      ThreadBlockInVM block(java_thread, true);
     } else {
-      os::naked_short_sleep(1);
+      yield_or_short_sleep(yields);
     }
   }
 }
