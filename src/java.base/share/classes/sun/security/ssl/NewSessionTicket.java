@@ -411,8 +411,6 @@ final class NewSessionTicket {
                 // Output the handshake message.
                 try {
                     int i = 0;
-                    ByteArrayOutputStream ba = new ByteArrayOutputStream(
-                        1024 * SSLConfiguration.serverNewSessionTicketCount);
                     while (i < SSLConfiguration.serverNewSessionTicketCount) {
                         SessionId newId = new SessionId(true,
                             hc.sslContext.getSecureRandom());
@@ -420,11 +418,10 @@ final class NewSessionTicket {
                             sessionTimeoutSeconds, newId, sessionCache);
                         if (nstm != null) {
                             // should never be null
-                            nstm.write((HandshakeOutStream)ba);
+                            nstm.write(hc.handshakeOutput);
                         }
                         i++;
                     }
-                    hc.handshakeOutput.writeTo(ba);
                     hc.handshakeOutput.flush();
                 } catch (IOException e) {
                     // Low exception likelihood this is data requires not
