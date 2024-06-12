@@ -289,10 +289,11 @@ public:
   void count_positives(Register ary1, Register len,
                        Register result, Register tmp1,
                        XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
+
   // Compare char[] or byte[] arrays.
-  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                     Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
+  void arrays_equals(bool is_array_equ, Register ary1, Register ary2, Register limit,
+                     Register result, Register chr, XMMRegister vec1, XMMRegister vec2,
+                     bool is_char, KRegister mask = knoreg, bool expand_ary2 = false);
 
   void arrays_hashcode(Register str1, Register cnt1, Register result,
                        Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,
@@ -499,5 +500,17 @@ public:
 
   void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
                                   XMMRegister src, int vlen_enc);
+
+
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
+                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                       Register midx, Register length, int vector_len, int vlen_enc);
+
+#ifdef _LP64
+  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
+#endif
+  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                              Register offset, Register rtmp, int vlen_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

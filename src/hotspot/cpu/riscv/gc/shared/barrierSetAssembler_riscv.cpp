@@ -35,6 +35,9 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -208,21 +211,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   }
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register tmp1) {
-  assert(tmp1->is_valid(), "need temp reg");
-
-  __ ld(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    __ add(tmp1, tmp1, var_size_in_bytes);
-  } else {
-    __ add(tmp1, tmp1, con_size_in_bytes);
-  }
-  __ sd(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 static volatile uint32_t _patching_epoch = 0;
 
 address BarrierSetAssembler::patching_epoch_addr() {
@@ -372,3 +360,68 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ load_klass(obj, obj, tmp1); // get klass
   __ beqz(obj, error);           // if klass is null it is broken
 }
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_FloatRegister()) {
+    return opto_reg & ~1;
+  }
+
+  return opto_reg;
+}
+
+#undef __
+#define __ _masm->
+
+void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
+  // Record registers that needs to be saved/restored
+  RegMaskIterator rmi(stub->preserve_set());
+  while (rmi.has_next()) {
+    const OptoReg::Name opto_reg = rmi.next();
+    if (OptoReg::is_reg(opto_reg)) {
+      const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+      if (vm_reg->is_Register()) {
+        _gp_regs += RegSet::of(vm_reg->as_Register());
+      } else if (vm_reg->is_FloatRegister()) {
+        _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else if (vm_reg->is_VectorRegister()) {
+        const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegister::max_slots_per_register - 1));
+        _vp_regs += VectorRegSet::of(vm_reg_base->as_VectorRegister());
+      } else {
+        fatal("Unknown register type");
+      }
+    }
+  }
+
+  // Remove C-ABI SOE registers and tmp regs
+  _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2, x5) + RegSet::of(x8, x9);
+}
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
+  : _masm(masm),
+    _gp_regs(),
+    _fp_regs(),
+    _vp_regs() {
+  // Figure out what registers to save/restore
+  initialize(stub);
+
+  // Save registers
+  __ push_reg(_gp_regs, sp);
+  __ push_fp(_fp_regs, sp);
+  __ push_v(_vp_regs, sp);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  // Restore registers
+  __ pop_v(_vp_regs, sp);
+  __ pop_fp(_fp_regs, sp);
+  __ pop_reg(_gp_regs, sp);
+}
+
+#endif // COMPILER2

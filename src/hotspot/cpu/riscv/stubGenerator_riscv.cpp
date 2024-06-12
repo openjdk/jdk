@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -655,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ rt_call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -1136,9 +1133,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1212,9 +1209,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -2434,7 +2431,7 @@ class StubGenerator: public StubCodeGenerator {
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
@@ -2843,7 +2840,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen()
   {
@@ -2856,8 +2852,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = x12;
     const Register ylen  = x13;
     const Register z     = x14;
-    const Register zlen  = x15;
 
+    const Register tmp0  = x15;
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2868,7 +2864,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
@@ -2884,10 +2880,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = x10;
     const Register xlen  = x11;
     const Register z     = x12;
-    const Register zlen  = x13;
     const Register y     = x14; // == x
     const Register ylen  = x15; // == xlen
 
+    const Register tmp0  = x13; // zlen, unused
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2900,7 +2896,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ mv(y, x);
     __ mv(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave();
     __ ret();
 
@@ -5453,7 +5449,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     }
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry);
+    __ rt_call(runtime_entry);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -5500,8 +5496,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =

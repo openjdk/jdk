@@ -24,10 +24,10 @@ public class T8050993 {
         Set<Integer> expectedLineNumbers = new HashSet<>(Arrays.asList(49, 50, 47, 48));
         for (MethodModel m : someTestIn.methods()) {
             if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 for (Attribute<?> at : code_attribute.attributes()) {
-                    if (Attributes.LINE_NUMBER_TABLE.equals(at)) {
+                    if (Attributes.lineNumberTable().equals(at)) {
                         assert at instanceof LineNumberTableAttribute;
                         LineNumberTableAttribute att = (LineNumberTableAttribute) at;
                         Set<Integer> actualLinesNumbers = Arrays.stream(att.lineNumbers().toArray(new LineNumberInfo[0]))

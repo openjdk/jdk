@@ -1796,6 +1796,130 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
   }
 }
 
+#ifdef _LP64
+void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
+                                                XMMRegister dst, Register base,
+                                                Register idx_base,
+                                                Register offset, Register mask,
+                                                Register mask_idx, Register rtmp,
+                                                int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
+  if (elem_bt == T_SHORT) {
+    for (int i = 0; i < 4; i++) {
+      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      Label skip_load;
+      btq(mask, mask_idx);
+      jccb(Assembler::carryClear, skip_load);
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
+      bind(skip_load);
+      incq(mask_idx);
+    }
+  } else {
+    assert(elem_bt == T_BYTE, "");
+    for (int i = 0; i < 8; i++) {
+      // dst[i] = mask[i] ? src[offset + idx_base[i]] : 0
+      Label skip_load;
+      btq(mask, mask_idx);
+      jccb(Assembler::carryClear, skip_load);
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrb(dst, Address(base, rtmp), i);
+      bind(skip_load);
+      incq(mask_idx);
+    }
+  }
+}
+#endif // _LP64
+
+void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
+                                         Register base, Register idx_base,
+                                         Register offset, Register rtmp,
+                                         int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
+  if (elem_bt == T_SHORT) {
+    for (int i = 0; i < 4; i++) {
+      // dst[i] = src[offset + idx_base[i]]
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
+    }
+  } else {
+    assert(elem_bt == T_BYTE, "");
+    for (int i = 0; i < 8; i++) {
+      // dst[i] = src[offset + idx_base[i]]
+      movl(rtmp, Address(idx_base, i * 4));
+      if (offset != noreg) {
+        addl(rtmp, offset);
+      }
+      pinsrb(dst, Address(base, rtmp), i);
+    }
+  }
+}
+
+/*
+ * Gather using hybrid algorithm, first partially unroll scalar loop
+ * to accumulate values from gather indices into a quad-word(64bit) slice.
+ * A slice may hold 8 bytes or 4 short values. This is followed by a vector
+ * permutation to place the slice into appropriate vector lane
+ * locations in destination vector. Following pseudo code describes the
+ * algorithm in detail:
+ *
+ * DST_VEC = ZERO_VEC
+ * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
+ * TWO_VEC    = {2, 2, 2, 2, 2, 2, 2, 2, 2..}
+ * FOREACH_ITER:
+ *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
+ *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
+ *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
+ *     PERM_INDEX = PERM_INDEX - TWO_VEC
+ *
+ * With each iteration, doubleword permute indices (0,1) corresponding
+ * to gathered quadword gets right shifted by two lane positions.
+ *
+ */
+void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
+                                        Register base, Register idx_base,
+                                        Register offset, Register mask,
+                                        XMMRegister xtmp1, XMMRegister xtmp2,
+                                        XMMRegister temp_dst, Register rtmp,
+                                        Register mask_idx, Register length,
+                                        int vector_len, int vlen_enc) {
+  Label GATHER8_LOOP;
+  assert(is_subword_type(elem_ty), "");
+  movl(length, vector_len);
+  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
+  vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
+  vallones(xtmp2, vlen_enc);
+  vpsubd(xtmp2, xtmp1, xtmp2, vlen_enc);
+  vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
+  load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
+
+  bind(GATHER8_LOOP);
+    // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
+    if (mask == noreg) {
+      vgather8b_offset(elem_ty, temp_dst, base, idx_base, offset, rtmp, vlen_enc);
+    } else {
+      LP64_ONLY(vgather8b_masked_offset(elem_ty, temp_dst, base, idx_base, offset, mask, mask_idx, rtmp, vlen_enc));
+    }
+    // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
+    vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
+    // PERM_INDEX(xtmp1) = PERM_INDEX(xtmp1) - TWO_VEC(xtmp2)
+    vpsubd(xtmp1, xtmp1, xtmp2, vlen_enc);
+    // DST_VEC = DST_VEC OR TEMP_PERM_VEC
+    vpor(dst, dst, temp_dst, vlen_enc);
+    addptr(idx_base,  32 >> (type2aelembytes(elem_ty) - 1));
+    subl(length, 8 >> (type2aelembytes(elem_ty) - 1));
+    jcc(Assembler::notEqual, GATHER8_LOOP);
+}
+
 void C2_MacroAssembler::vgather(BasicType typ, XMMRegister dst, Register base, XMMRegister idx, XMMRegister mask, int vector_len) {
   switch(typ) {
     case T_INT:
@@ -4367,12 +4491,20 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                       Register limit, Register result, Register chr,
-                                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask) {
+                                      XMMRegister vec1, XMMRegister vec2, bool is_char,
+                                      KRegister mask, bool expand_ary2) {
+  // for expand_ary2, limit is the (smaller) size of the second array.
   ShortBranchVerifier sbv(this);
   Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR, COMPARE_BYTE;
 
+  assert((!expand_ary2) || ((expand_ary2) && (UseAVX == 2)),
+         "Expansion only implemented for AVX2");
+
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
   int base_offset    = arrayOopDesc::base_offset_in_bytes(is_char ? T_CHAR : T_BYTE);
+
+  Address::ScaleFactor scaleFactor = expand_ary2 ? Address::times_2 : Address::times_1;
+  int scaleIncr = expand_ary2 ? 8 : 16;
 
   if (is_array_equ) {
     // Check the input args
@@ -4409,14 +4541,20 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
 
   if (UseAVX >= 2) {
     // With AVX2, use 32-byte vector compare
-    Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+    Label COMPARE_WIDE_VECTORS, COMPARE_WIDE_VECTORS_16, COMPARE_TAIL, COMPARE_TAIL_16;
 
     // Compare 32-byte vectors
-    andl(result, 0x0000001f);  //   tail count (in bytes)
-    andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jcc(Assembler::zero, COMPARE_TAIL);
+    if (expand_ary2) {
+      andl(result, 0x0000000f);  //   tail count (in bytes)
+      andl(limit, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL);
+    } else {
+      andl(result, 0x0000001f);  //   tail count (in bytes)
+      andl(limit, 0xffffffe0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL_16);
+    }
 
-    lea(ary1, Address(ary1, limit, Address::times_1));
+    lea(ary1, Address(ary1, limit, scaleFactor));
     lea(ary2, Address(ary2, limit, Address::times_1));
     negptr(limit);
 
@@ -4459,25 +4597,59 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     }//if (VM_Version::supports_avx512vlbw())
 #endif //_LP64
     bind(COMPARE_WIDE_VECTORS);
-    vmovdqu(vec1, Address(ary1, limit, Address::times_1));
-    vmovdqu(vec2, Address(ary2, limit, Address::times_1));
+    vmovdqu(vec1, Address(ary1, limit, scaleFactor));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1), Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
     jcc(Assembler::notZero, FALSE_LABEL);
-    addptr(limit, 32);
+    addptr(limit, scaleIncr * 2);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
     jcc(Assembler::zero, TRUE_LABEL);
 
-    vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
-    vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
+    vmovdqu(vec1, Address(ary1, result, scaleFactor, -32));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, result, Address::times_1, -16), Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
+    }
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, FALSE_LABEL);
-    jmpb(TRUE_LABEL);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    jmp(TRUE_LABEL);
+
+    bind(COMPARE_TAIL_16); // limit is zero
+    movl(limit, result);
+
+    // Compare 16-byte chunks
+    andl(result, 0x0000000f);  //   tail count (in bytes)
+    andl(limit, 0xfffffff0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL);
+
+    lea(ary1, Address(ary1, limit, scaleFactor));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+    bind(COMPARE_WIDE_VECTORS_16);
+    movdqu(vec1, Address(ary1, limit, scaleFactor));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1), Assembler::AVX_128bit);
+    } else {
+      movdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
+    pxor(vec1, vec2);
+
+    ptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, scaleIncr);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);
 
     bind(COMPARE_TAIL); // limit is zero
     movl(limit, result);
@@ -4522,19 +4694,34 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   }
 
   // Compare 4-byte vectors
-  andl(limit, 0xfffffffc); // vector count (in bytes)
-  jccb(Assembler::zero, COMPARE_CHAR);
+  if (expand_ary2) {
+    testl(result, result);
+    jccb(Assembler::zero, TRUE_LABEL);
+  } else {
+    andl(limit, 0xfffffffc); // vector count (in bytes)
+    jccb(Assembler::zero, COMPARE_CHAR);
+  }
 
-  lea(ary1, Address(ary1, limit, Address::times_1));
+  lea(ary1, Address(ary1, limit, scaleFactor));
   lea(ary2, Address(ary2, limit, Address::times_1));
   negptr(limit);
 
   bind(COMPARE_VECTORS);
-  movl(chr, Address(ary1, limit, Address::times_1));
-  cmpl(chr, Address(ary2, limit, Address::times_1));
-  jccb(Assembler::notEqual, FALSE_LABEL);
-  addptr(limit, 4);
-  jcc(Assembler::notZero, COMPARE_VECTORS);
+  if (expand_ary2) {
+    // There are no "vector" operations for bytes to shorts
+    movzbl(chr, Address(ary2, limit, Address::times_1));
+    cmpw(Address(ary1, limit, Address::times_2), chr);
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 1);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+    jmp(TRUE_LABEL);
+  } else {
+    movl(chr, Address(ary1, limit, Address::times_1));
+    cmpl(chr, Address(ary2, limit, Address::times_1));
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 4);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+  }
 
   // Compare trailing char (final 2 bytes), if any
   bind(COMPARE_CHAR);
@@ -5507,7 +5694,6 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(dst, rtmp2);
 }
 
-#ifdef _LP64
 void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src,
                                                     XMMRegister mask, Register rtmp, Register rscratch,
                                                     XMMRegister permv, XMMRegister xtmp, BasicType bt,
@@ -5541,7 +5727,6 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // compressing/expanding the source vector lanes.
   vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
 }
-#endif
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
                                                bool merge, BasicType bt, int vec_enc) {

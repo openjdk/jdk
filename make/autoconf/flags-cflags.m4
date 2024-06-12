@@ -459,7 +459,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     CFLAGS_OS_DEF_JVM="-D_ALLBSD_SOURCE -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    CFLAGS_OS_DEF_JVM="-DAIX -Dalloca'(size)'=__builtin_alloca'(size)' -D_LARGE_FILES"
+    CFLAGS_OS_DEF_JVM="-DAIX -D_LARGE_FILES"
     CFLAGS_OS_DEF_JDK="-D_LARGE_FILES"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE"
@@ -641,11 +641,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   JDK_PICFLAG="$PICFLAG"
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # Linking is different on MacOSX
-    JDK_PICFLAG=''
-    if test "x$STATIC_BUILD" = xtrue; then
-      JVM_PICFLAG=""
-    fi
+    # Linking is different on macOS
+    JVM_PICFLAG=""
   fi
 
   # Extra flags needed when building optional static versions of certain

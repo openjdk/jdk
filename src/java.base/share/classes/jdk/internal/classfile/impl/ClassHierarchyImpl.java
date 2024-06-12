@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.lang.classfile.ClassHierarchyResolver;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.classfile.ClassFile.*;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
 /**
  * Class hierarchy resolution framework is answering questions about classes assignability, common classes ancestor and whether the class represents an interface.
@@ -245,7 +246,7 @@ public final class ClassHierarchyImpl {
             }
 
             return cl.isInterface() ? ClassHierarchyInfo.ofInterface()
-                    : ClassHierarchyInfo.ofClass(cl.getSuperclass().describeConstable().orElseThrow());
+                    : ClassHierarchyInfo.ofClass(referenceClassDesc(cl.getSuperclass()));
         }
     }
 }

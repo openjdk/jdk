@@ -77,6 +77,7 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
 
 void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
+  src_info->set_id(_objs->length());
   _objs->append(src_info);
 
   // Prepare for marking the pointers in this source object
@@ -94,6 +95,7 @@ void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
 void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
   // so that we can copy/relocate it later.
+  src_info->set_has_embedded_pointer();
   address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
@@ -144,7 +146,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 }
 
 ArchiveBuilder::ArchiveBuilder() :
-  _current_dump_space(nullptr),
+  _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
   _last_verified_top(nullptr),
   _num_dump_regions_used(0),
@@ -339,10 +341,10 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_bottom = buffer_bottom;
   _last_verified_top = buffer_bottom;
-  _current_dump_space = &_rw_region;
+  _current_dump_region = &_rw_region;
   _num_dump_regions_used = 1;
   _other_region_used_bytes = 0;
-  _current_dump_space->init(&_shared_rs, &_shared_vs);
+  _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
 
@@ -558,21 +560,21 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   }
 }
 
-void ArchiveBuilder::start_dump_space(DumpRegion* next) {
+void ArchiveBuilder::start_dump_region(DumpRegion* next) {
   address bottom = _last_verified_top;
-  address top = (address)(current_dump_space()->top());
+  address top = (address)(current_dump_region()->top());
   _other_region_used_bytes += size_t(top - bottom);
 
-  current_dump_space()->pack(next);
-  _current_dump_space = next;
+  current_dump_region()->pack(next);
+  _current_dump_region = next;
   _num_dump_regions_used ++;
 
-  _last_verified_top = (address)(current_dump_space()->top());
+  _last_verified_top = (address)(current_dump_region()->top());
 }
 
 void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   address bottom = _last_verified_top;
-  address top = (address)(current_dump_space()->top());
+  address top = (address)(current_dump_region()->top());
   size_t used = size_t(top - bottom) + _other_region_used_bytes;
   int diff = int(estimate) - int(used);
 
@@ -587,6 +589,26 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
   char* archived_str = ro_region_alloc((int)strlen(s) + 1);
   strcpy(archived_str, s);
   return archived_str;
+}
+
+// The objects that have embedded pointers will sink
+// towards the end of the list. This ensures we have a maximum
+// number of leading zero bits in the relocation bitmap.
+int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
+  if ((*a)->has_embedded_pointer() && !(*b)->has_embedded_pointer()) {
+    return 1;
+  } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
+    return -1;
+  } else {
+    // This is necessary to keep the sorting order stable. Otherwise the
+    // archive's contents may not be deterministic.
+    return (*a)->id() - (*b)->id();
+  }
+}
+
+void ArchiveBuilder::sort_metadata_objs() {
+  _rw_src_objs.objs()->sort(compare_src_objs);
+  _ro_src_objs.objs()->sort(compare_src_objs);
 }
 
 void ArchiveBuilder::dump_rw_metadata() {
@@ -608,7 +630,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RO objects ... ");
 
-  start_dump_space(&_ro_region);
+  start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP

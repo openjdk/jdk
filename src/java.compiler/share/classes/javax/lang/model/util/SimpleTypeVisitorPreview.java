@@ -52,8 +52,10 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="SimpleTypeVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see javax.lang.model.util##expectedEvolution
+ * <strong>Expected visitor evolution</strong>
+ * @see AbstractAnnotationValueVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see SimpleTypeVisitor6
  * @see SimpleTypeVisitor7
  * @see SimpleTypeVisitor8
@@ -61,7 +63,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_23)
+@SupportedSourceVersion(RELEASE_24)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class SimpleTypeVisitorPreview<R, P> extends SimpleTypeVisitor14<R, P> {
     /**

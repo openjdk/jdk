@@ -139,7 +139,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
     _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
   } else {
     // It must have been restored from the archived module graph
-    assert(UseSharedSpaces, "must be");
+    assert(CDSConfig::is_using_archive(), "must be");
     assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop system_loader = get_system_class_loader_impl(CHECK);
@@ -152,7 +152,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
     _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
   } else {
     // It must have been restored from the archived module graph
-    assert(UseSharedSpaces, "must be");
+    assert(CDSConfig::is_using_archive(), "must be");
     assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
@@ -1262,7 +1262,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-    if (UseSharedSpaces)
+    if (CDSConfig::is_using_archive())
     {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
@@ -1617,7 +1617,7 @@ void SystemDictionary::initialize(TRAPS) {
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     HeapShared::resolve_classes(THREAD);
   }
 }
@@ -2009,9 +2009,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     }
   }
 
-  // Throw VirtualMachineError or the pending exception in the JavaThread
+  // Throw OOM or the pending exception in the JavaThread
   if (throw_error && !HAS_PENDING_EXCEPTION) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(),
                    "Out of space in CodeCache for method handle intrinsic");
   }
   return nullptr;
