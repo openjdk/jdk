@@ -64,10 +64,11 @@ Help()
   echo
   echo $usage
   echo "options:"
-  echo "c     Specifies the company. Set to Oracle by default."
-  echo "y     Specifies the copyright year. Set to current year by default."
-  echo "h     Print this help."
-  echo "f     Updates all change sets in a full year."
+  echo "-c     Specifies the company. Set to Oracle by default."
+  echo "-y     Specifies the copyright year. Set to current year by default."
+  echo "-f     Updates the copyright for all change sets in a given year,"
+  echo "       as specified by -y."
+  echo "-h     Print this help."
   echo
 }
 
@@ -100,7 +101,7 @@ done
 git_found=false
 [ -d "${this_script_dir}/../../.git" ] && git_found=true
 if [ "$git_found" != "true" ]; then
-  echo "Error: could not auto-detect git as the version control system"
+  echo "Error: Please execute script from within make/scripts."
   exit 1
 else
   echo "Using Git version control system"
