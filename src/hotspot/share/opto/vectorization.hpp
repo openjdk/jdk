@@ -129,7 +129,7 @@ public:
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
-  // should we align vector memory references on this platform?
+  // Should we align vector memory references on this platform?
   static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
 #ifndef PRODUCT
@@ -1326,6 +1326,7 @@ private:
 struct VTransformBoolTest {
   const BoolTest::mask _mask;
   const bool _is_negated;
+
   VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
     _mask(mask), _is_negated(is_negated) {}
 };

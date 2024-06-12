@@ -1623,8 +1623,7 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
 
 // If the j-th input for all nodes in the pack is the same unique input: return it, else nullptr.
 Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
-  Node* p0 = pack->at(0);
-  Node* unique = p0->in(j);
+  Node* unique = pack->at(0)->in(j);
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(j) != unique) {
       return nullptr; // not unique
@@ -1643,7 +1642,7 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
          mask == BoolTest::gt ||
          mask == BoolTest::lt ||
          mask == BoolTest::le,
-         "Bool should be one of: eq,ne,ge,ge,lt,le");
+         "Bool should be one of: eq, ne, ge, gt, lt, le");
 
 #ifdef ASSERT
   for (uint j = 0; j < bool_pack->size(); j++) {
@@ -2097,7 +2096,7 @@ public:
 // (4) Apply the vectorization, including re-ordering the memops and replacing
 //     packed scalars with vector operations.
 bool SuperWord::schedule_and_apply() {
-  if (_packset.length() == 0) {
+  if (_packset.is_empty()) {
     return false; // empty packset
   }
   ResourceMark rm;
@@ -2360,7 +2359,7 @@ bool SuperWord::apply_vectorization() {
         VTransformBoolTest bool_test = _packset.get_bool_test(bool_pack);
         BoolTest::mask test_mask = bool_test._mask;
         if (bool_test._is_negated) {
-           // We can cancle out the negation by swapping the blend inputs.
+           // We can cancel out the negation by swapping the blend inputs.
            swap(blend_in1, blend_in2);
         }
 
