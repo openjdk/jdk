@@ -43,7 +43,6 @@ import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
-
     // Return a new byte array for a UTF16-coded string for len chars
     // Throw an exception if out of range
     public static byte[] newBytesFor(int len) {
@@ -1549,18 +1548,26 @@ final class StringUTF16 {
     }
 
     public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
-        putChar(value, i    , c1);
-        putChar(value, i + 1, c2);
-        putChar(value, i + 2, c3);
-        putChar(value, i + 3, c4);
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        putChar1(value, i    , c1);
+        putChar1(value, i + 1, c2);
+        putChar1(value, i + 2, c3);
+        putChar1(value, i + 3, c4);
     }
 
     public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
-        putChar(value, i    , c1);
-        putChar(value, i + 1, c2);
-        putChar(value, i + 2, c3);
-        putChar(value, i + 3, c4);
-        putChar(value, i + 4, c5);
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        putChar1(value, i    , c1);
+        putChar1(value, i + 1, c2);
+        putChar1(value, i + 2, c3);
+        putChar1(value, i + 3, c4);
+        putChar1(value, i + 4, c5);
+    }
+
+    static void putChar1(byte[] value, int i, char c) {
+        int address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (i << 1);
+        Unsafe.getUnsafe().putByte(value, address    , (byte)(c >> HI_BYTE_SHIFT));
+        Unsafe.getUnsafe().putByte(value, address + 1, (byte)(c >> LO_BYTE_SHIFT));
     }
 
     public static char charAt(byte[] value, int index) {
