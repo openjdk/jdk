@@ -54,7 +54,7 @@ void ShenandoahLock::contended_lock_internal(Thread* nonJavaThread) {
     if (!os::is_MP()) {
       //Only one processor, yield to whenever have the lock.
       os::naked_yield();
-    } else if((ctr++ & 0xFF) != 0 || 
+    } else if((ctr++ & 0xFF) != 0 ||
       (isGCThread && (SafepointSynchronize::is_at_safepoint() || SafepointSynchronize::is_synchronizing()))) {
       //Spin in these cases:
       //1. (ctr++ & 0xFF) != 0: spin up to 256 times then yield/sleep, repeat.
