@@ -1622,7 +1622,7 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
 }
 
 // If the j-th input for all nodes in the pack is the same unique input: return it, else nullptr.
-Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
+Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, int j) const {
   Node* unique = pack->at(0)->in(j);
   for (uint i = 1; i < pack->size(); i++) {
     if (pack->at(i)->in(j) != unique) {
@@ -1633,8 +1633,8 @@ Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
 }
 
 VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
-  BoolNode* bol0 = bool_pack->at(0)->as_Bool();
-  BoolTest::mask mask = bol0->_test._test;
+  BoolNode* bol = bool_pack->at(0)->as_Bool();
+  BoolTest::mask mask = bol->_test._test;
   bool is_negated = false;
   assert(mask == BoolTest::eq ||
          mask == BoolTest::ne ||
@@ -1652,7 +1652,7 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   }
 #endif
 
-  CmpNode* cmp0 = bol0->in(1)->as_Cmp();
+  CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
 
   if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
@@ -1696,7 +1696,7 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
       // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
       // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-      mask = bol0->_test.negate();
+      mask = bol->_test.negate();
       is_negated = true;
     }
   }
@@ -1738,7 +1738,7 @@ bool SuperWord::profitable(const Node_List* p) const {
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
     Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr || _packset.isa_unique_input_or_null(p, 2) == nullptr) {
+    if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
       return false;
     }
   }
@@ -2097,7 +2097,7 @@ public:
 //     packed scalars with vector operations.
 bool SuperWord::schedule_and_apply() {
   if (_packset.is_empty()) {
-    return false; // empty packset
+    return false;
   }
   ResourceMark rm;
 
@@ -2131,17 +2131,18 @@ bool SuperWord::schedule_and_apply() {
 }
 
 bool SuperWord::apply(Node_List& memops_schedule) {
+  Compile* C = phase()->C;
   CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-  phase()->C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
+  C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
 
   apply_memops_reordering_with_schedule(memops_schedule);
-  phase()->C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
+  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
-  phase()->C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
+  C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
 
   bool is_success = apply_vectorization();
-  phase()->C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
 
   return is_success;
 }
@@ -2519,7 +2520,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  Node* unique_input = _packset.isa_unique_input_or_null(p, opd_idx);
+  Node* unique_input = _packset.same_inputs_at_index_or_null(p, opd_idx);
 
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops

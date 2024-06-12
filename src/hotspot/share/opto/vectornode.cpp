@@ -926,28 +926,28 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
 
 bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
   switch (opc) {
-  case Op_SqrtF:
-  case Op_SqrtD:
-  case Op_AbsF:
-  case Op_AbsD:
-  case Op_AbsI:
-  case Op_AbsL:
-  case Op_NegF:
-  case Op_NegD:
-  case Op_RoundF:
-  case Op_RoundD:
-  case Op_ReverseBytesI:
-  case Op_ReverseBytesL:
-  case Op_ReverseBytesUS:
-  case Op_ReverseBytesS:
-  case Op_ReverseI:
-  case Op_ReverseL:
-  case Op_PopCountI:
-  case Op_CountLeadingZerosI:
-  case Op_CountTrailingZerosI:
-    return true;
-  default:
-    return false;
+    case Op_SqrtF:
+    case Op_SqrtD:
+    case Op_AbsF:
+    case Op_AbsD:
+    case Op_AbsI:
+    case Op_AbsL:
+    case Op_NegF:
+    case Op_NegD:
+    case Op_RoundF:
+    case Op_RoundD:
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
+    case Op_ReverseBytesUS:
+    case Op_ReverseBytesS:
+    case Op_ReverseI:
+    case Op_ReverseL:
+    case Op_PopCountI:
+    case Op_CountLeadingZerosI:
+    case Op_CountTrailingZerosI:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -958,12 +958,12 @@ bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
 // another node converting long to int.
 bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc) {
   switch (opc) {
-  case Op_PopCountL:
-  case Op_CountLeadingZerosL:
-  case Op_CountTrailingZerosL:
-    return true;
-  default:
-    return false;
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
   }
 }
 

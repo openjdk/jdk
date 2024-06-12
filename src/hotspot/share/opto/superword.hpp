@@ -362,7 +362,7 @@ public:
     }
   }
 
-  Node* isa_unique_input_or_null(const Node_List* pack, int j) const;
+  Node* same_inputs_at_index_or_null(const Node_List* pack, int j) const;
 
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
