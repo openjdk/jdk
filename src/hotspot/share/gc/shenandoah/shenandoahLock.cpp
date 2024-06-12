@@ -49,7 +49,7 @@ void ShenandoahLock::contended_lock_internal(Thread* nonJavaThread) {
   assert(!nonJavaThread->is_Java_thread(), "Can't be Java Thread.");
   int ctr = 0;
   int yields = 0;
-  int bool isGCThread = nonJavaThread->is_ConcurrentGC_thread() || nonJavaThread->is_Worker_thread();
+  const bool isGCThread = nonJavaThread->is_ConcurrentGC_thread() || nonJavaThread->is_Worker_thread();
   while (_state == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (!os::is_MP()) {
       //Only one processor, yield to whenever have the lock.
