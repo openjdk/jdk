@@ -126,6 +126,10 @@ public:
     bool operator==(I other) {
       return e == other.e;
     }
+
+    bool is_nil() {
+      return e == nullptr;
+    }
   };
   static constexpr const I nil = {nullptr};
 
@@ -163,6 +167,9 @@ public:
     }
     bool operator==(I other) {
       return e == other.e;
+    }
+    bool is_nil() {
+      return e == nullptr;
     }
   };
   static constexpr const I nil = {nullptr};
