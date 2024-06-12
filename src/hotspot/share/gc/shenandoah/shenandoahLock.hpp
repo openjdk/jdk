@@ -40,7 +40,7 @@ private:
   volatile Thread* _owner;
   shenandoah_padding(2);
 
-  template<bool ALLOW_BLOCK>
+  template<bool ALLOW_BLOC, uint32_t MAX_SPINS>
   void contended_lock_internal(Thread* thread);
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
