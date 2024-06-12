@@ -362,7 +362,7 @@ public:
     }
   }
 
-  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, int j, int stride, int offset) const;
+  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
   bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
 
 private:

@@ -2866,9 +2866,9 @@ bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
           (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
 }
 
-Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, int j, int stride, int offset) const {
+Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
   Node* p0 = pack->at(0);
-  Node* def0 = p0->in(j);
+  Node* def0 = p0->in(index);
 
   Node_List* pack_in = get_pack(def0);
   if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
@@ -2876,7 +2876,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, i
   }
 
   for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
+    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
       return nullptr; // use-def mismatch
     }
   }
