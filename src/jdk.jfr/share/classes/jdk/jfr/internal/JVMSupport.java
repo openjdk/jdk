@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,14 @@ import jdk.jfr.internal.util.ValueFormatter;
  * This is needed so a disabled-jfr.jar can be built for non Oracle JDKs.
  */
 public final class JVMSupport {
+    private static final ChunkRotationMonitor TIMESTAMP_MONITOR = new ChunkRotationMonitor();
     private static final String UNSUPPORTED_VM_MESSAGE = "Flight Recorder is not supported on this VM";
     private static final boolean notAvailable = !checkAvailability();
     /*
      * This field will be lazily initialized and the access is not synchronized.
      * The possible data race is benign and is worth of not introducing any contention here.
      */
-    private static Instant lastTimestamp;
+    private static long lastTimestamp;
     private static volatile boolean nativeOK;
 
     private static boolean checkAvailability() {
@@ -102,6 +103,17 @@ public final class JVMSupport {
     }
 
     static long getChunkStartNanos() {
+        // Waiting before a call to JVM.getChunkStartNanos()
+        // ensures that the returned nanosecond, used in the chunk header,
+        // can be associated with a unique millisecond since epoch.
+        // This is important because the method
+        // jdk.management.jfr.RecordingInfo::getStopTime()
+        // returns a truncated millisecond since epoch, which is used
+        // by the parser to ensure that it doesn't parse beyond that
+        // chunk. Without a unique millisecond since epoch, the parser
+        // may abort prematurely at an earlier chunk.
+        // See jdk.jfr.management.StreamBarrier.
+        awaitUniqueTimestamp();
         long nanos = JVM.getChunkStartNanos();
         // JVM::getChunkStartNanos() may return a bumped timestamp, +1 ns or +2 ns.
         // Spin here to give Instant.now() a chance to catch up.
@@ -110,19 +122,23 @@ public final class JVMSupport {
     }
 
     private static void awaitUniqueTimestamp() {
-        if (lastTimestamp == null) {
-            lastTimestamp = Instant.now(); // lazy initialization
+        if (lastTimestamp == 0) {
+            lastTimestamp = Instant.now().toEpochMilli(); // lazy initialization
         }
         while (true) {
-            Instant time = Instant.now();
-            if (!time.equals(lastTimestamp)) {
+            long time = Instant.now().toEpochMilli();
+            if (time != lastTimestamp) {
                 lastTimestamp = time;
                 return;
             }
-            try {
-                Thread.sleep(0, 100);
-            } catch (InterruptedException iex) {
-                // ignore
+            // Wait on a ChunkRotationMonitor object instead of using
+            // Thread::sleep to avoid generating ThreadSleep events.
+            synchronized (TIMESTAMP_MONITOR) {
+                try {
+                    TIMESTAMP_MONITOR.wait(1);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
             }
         }
     }

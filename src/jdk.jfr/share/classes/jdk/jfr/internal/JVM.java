@@ -41,12 +41,8 @@ public final class JVM {
 
     static final long RESERVED_CLASS_ID_LIMIT = 500;
 
-    private static class ChunkRotationMonitor {}
-
     /*
      * The JVM uses the chunk rotation monitor to notify Java that a rotation is warranted.
-     * The monitor type is used to exclude jdk.JavaMonitorWait events from being generated
-     * when Object.wait() is called on this monitor.
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
