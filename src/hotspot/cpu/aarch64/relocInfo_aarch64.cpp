@@ -32,7 +32,7 @@
 #include "runtime/safepoint.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
   if (verify_only)
     return;
 

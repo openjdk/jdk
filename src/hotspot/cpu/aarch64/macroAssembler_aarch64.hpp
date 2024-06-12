@@ -150,6 +150,7 @@ class MacroAssembler: public Assembler {
   void bind(Label& L) {
     Assembler::bind(L);
     code()->clear_last_insn();
+    code()->set_last_label(pc());
   }
 
   void membar(Membar_mask_bits order_constraint);
@@ -1510,7 +1511,7 @@ public:
   void ghash_load_wide(int index, Register data, FloatRegister result, FloatRegister state);
 public:
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
-                       Register zlen, Register tmp1, Register tmp2, Register tmp3,
+                       Register tmp0, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
   void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,

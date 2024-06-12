@@ -1333,21 +1333,6 @@ void MethodData::init() {
   _failed_speculations = nullptr;
 #endif
 
-#if INCLUDE_RTM_OPT
-  _rtm_state = NoRTM; // No RTM lock eliding by default
-  if (UseRTMLocking &&
-      !CompilerOracle::has_option(mh, CompileCommandEnum::NoRTMLockEliding)) {
-    if (CompilerOracle::has_option(mh, CompileCommandEnum::UseRTMLockEliding) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      _rtm_state = UseRTM;
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      _rtm_state = ProfileRTM;
-    }
-  }
-#endif
-
   // Initialize escape flags.
   clear_escape_info();
 }

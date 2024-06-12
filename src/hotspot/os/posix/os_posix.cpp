@@ -425,17 +425,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   return aligned_base;
 }
 
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // All supported POSIX platforms provide C99 semantics.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
-}
-
 int os::get_fileno(FILE* fp) {
   return NOT_AIX(::)fileno(fp);
 }

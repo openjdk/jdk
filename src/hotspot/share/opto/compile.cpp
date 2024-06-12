@@ -713,10 +713,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
+  if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
-    // Need MDO to record RTM code generation state.
     method()->ensure_method_data();
   }
 
@@ -1075,25 +1074,8 @@ void Compile::Init(bool aliasing) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking && has_method() && (method()->method_data_or_null() != nullptr)) {
-    int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option(CompileCommandEnum::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
-      // Don't generate RTM lock eliding code.
-      set_rtm_state(NoRTM);
-    } else if (method_has_option(CompileCommandEnum::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      set_rtm_state(UseRTM);
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      set_rtm_state(ProfileRTM);
-    }
-  }
-#endif
   if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
     set_clinit_barrier_on_entry(true);
   }
@@ -3222,7 +3204,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:

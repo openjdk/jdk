@@ -7780,7 +7780,7 @@ instruct membar_acquire() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_acquire\n\t"
-            "dmb ish" %}
+            "dmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -7834,11 +7834,13 @@ instruct membar_release() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_release\n\t"
-            "dmb ish" %}
+            "dmb ishst\n\tdmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_release");
-    __ membar(Assembler::LoadStore|Assembler::StoreStore);
+    // These will be merged if AlwaysMergeDMB is enabled.
+    __ membar(Assembler::StoreStore);
+    __ membar(Assembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
@@ -16230,7 +16232,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
   ins_cost(700);  // smaller than the next version
-  format %{ "partialSubtypeCheck $result, $sub, super" %}
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
     bool success = false;
