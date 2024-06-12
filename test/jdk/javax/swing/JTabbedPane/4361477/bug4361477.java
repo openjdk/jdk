@@ -30,7 +30,7 @@ import javax.swing.event.*;
  * @test
  * @key headful
  * @bug 4361477
- * @summary JTabbedPane throws ArrayOutOfBoundsException
+ * @summary JTabbedPane throws ArrayIndexOutOfBoundsException
  * @author Oleg Mokhovikov
  * @run main bug4361477
  */
