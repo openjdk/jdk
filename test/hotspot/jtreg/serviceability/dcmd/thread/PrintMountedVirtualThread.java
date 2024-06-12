@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
  * @summary Test of diagnostic command Thread.print with virtual threads
  * @requires vm.continuations
  * @library /test/lib
- * @modules java.base
  * @run junit PrintMountedVirtualThread
  */
 public class PrintMountedVirtualThread {
