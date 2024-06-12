@@ -178,7 +178,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof StableValueImpl<?> other &&
-                Objects.equals(orElse(null), other.orElse(null));
+                // Note that the value returned from `orElse()` can never be
+                // `nullSentinel()` (because it will be unwrapped to `null`).
+                // Therefore, we can safely use this as a marker for "no value set".
+                Objects.equals(orElse(nullSentinel()), other.orElse(nullSentinel()));
     }
 
     @Override
