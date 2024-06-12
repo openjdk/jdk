@@ -26,7 +26,6 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
-#include <chrono>
 
 using NCSS = NativeCallStackStorage;
 
@@ -60,77 +59,5 @@ TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
       if (i == j) continue;
       EXPECT_FALSE(NCSS::StackIndex::equals(si_arr[i],si_arr[j]));
     }
-  }
-}
-
-TEST_VM_F(NativeCallStackStorageTest, PerfTest) {
-  using std::chrono::duration;
-  using std::chrono::duration_cast;
-  using std::chrono::high_resolution_clock;
-  using std::chrono::milliseconds;
-
-  NativeCallStackStorage ncss(true);
-  NativeCallStackStorageWithAllocator<CHeapAllocator> ncss_cheap(true);
-  NativeCallStackStorageWithAllocator<ArenaAllocator> ncss_arena(true);
-
-  auto make_stack = []() -> NativeCallStack {
-    size_t a = os::random();
-    size_t b = os::random();
-    size_t c = os::random();
-    size_t d = os::random();
-    address as[4] = {(address)a, (address)b, (address)c, (address)d};
-    NativeCallStack stack(as, 4);
-    return stack;
-  };
-
-  constexpr const int size = 1000000;
-  tty->print("Generate stacks... ");
-  NativeCallStack* all = NEW_C_HEAP_ARRAY(NativeCallStack, size, mtTest);
-  for (int i = 0; i < size; i++) {
-    all[i] = make_stack();
-  }
-  tty->print_cr("Done");
-
-  auto t1 = high_resolution_clock::now();
-  for (int i = 0; i < size; i++) {
-    ncss.push(all[i]);
-  }
-  auto t2 = high_resolution_clock::now();
-
-  auto ms_int = duration_cast<milliseconds>(t2 - t1);
-  duration<double, std::milli> ms_double = t2 - t1;
-  tty->print_cr("Time taken with GrowableArray: %f", ms_double.count());
-
-  t1 = high_resolution_clock::now();
-  for (int i = 0; i < size; i++) {
-    ncss_cheap.push(all[i]);
-  }
-  t2 = high_resolution_clock::now();
-
-  ms_int = duration_cast<milliseconds>(t2 - t1);
-  ms_double = t2 - t1;
-  tty->print_cr("Time taken with CHeap: %f", ms_double.count());
-
-  t1 = high_resolution_clock::now();
-  for (int i = 0; i < size; i++) {
-    ncss_arena.push(all[i]);
-  }
-  t2 = high_resolution_clock::now();
-
-  ms_int = duration_cast<milliseconds>(t2 - t1);
-  ms_double = t2 - t1;
-  tty->print_cr("Time taken with Arena: %f", ms_double.count());
-
-  {
-    NativeCallStackStorage ncss(true);
-    auto t1 = high_resolution_clock::now();
-    for (int i = 0; i < size; i++) {
-      ncss.push(all[i]);
-    }
-    auto t2 = high_resolution_clock::now();
-
-    auto ms_int = duration_cast<milliseconds>(t2 - t1);
-    duration<double, std::milli> ms_double = t2 - t1;
-    tty->print_cr("Time taken with GrowableArray again: %f", ms_double.count());
   }
 }
