@@ -25,14 +25,23 @@
 
 package jdk.internal.reflect;
 
+import static java.lang.constant.ConstantDescs.*;
+
 import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OptionalDataException;
 import java.io.Serializable;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -427,6 +436,209 @@ public class ReflectionFactory {
             return null;
         } catch (IllegalAccessException ex1) {
             throw new InternalError("Error", ex1);
+        }
+    }
+
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        if (!Serializable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+
+        // build an anonymous+hidden nestmate to perform the read operation
+        // todo: to cache, or not?
+        ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$readObject"), classBuilder -> {
+            classBuilder.withMethod("readObject",
+                MethodTypeDesc.of(CD_void, thisClass, ObjectInputStream.class.describeConstable().orElseThrow(InternalError::new)),
+                Modifier.STATIC | Modifier.PRIVATE,
+                mb -> mb.withCode(cb -> {
+                    // todo: constants somewhere
+                    ClassDesc ois = ClassDesc.of("java.io.ObjectInputStream");
+                    ClassDesc gf = ClassDesc.of("java.io.ObjectInputStream$GetField");
+                    // get our GetField
+                    cb.aload(1);
+                    cb.invokevirtual(ois, "readFields", MethodTypeDesc.of(gf));
+                    cb.astore(2);
+                    // iterate the fields of the class
+                    for (Field field : cl.getDeclaredFields()) {
+                        if ((field.getModifiers() & (Modifier.STATIC | Modifier.TRANSIENT)) != 0) {
+                            continue;
+                        }
+                        boolean isFinal = (field.getModifiers() & Modifier.FINAL) != 0;
+                        String fieldName = field.getName();
+                        Class<?> fieldType = field.getType();
+                        ClassDesc fieldDesc;
+
+                        if (isFinal) {
+                            // todo: constants somewhere
+                            cb.ldc(DynamicConstantDesc.ofNamed(
+                                MethodHandleDesc.ofMethod(
+                                    DirectMethodHandleDesc.Kind.STATIC,
+                                    ClassDesc.of("sun.reflect.ReflectionFactory"),
+                                    "fieldSetterForSerialization",
+                                    MethodTypeDesc.of(
+                                        CD_MethodHandle,
+                                        CD_MethodHandles_Lookup,
+                                        CD_String,
+                                        CD_Class,
+                                        CD_Class
+                                    )
+                                ),
+                                fieldName,
+                                CD_MethodHandle,
+                                thisClass
+                            ));
+                            // stack: <mh>
+                        }
+                        cb.aload(0); // stack: <mh>? this
+                        cb.aload(2); // stack: <mh>? this GetField
+                        cb.ldc(fieldName); // stack: <mh>? this GetField <name>
+
+                        switch (fieldType.descriptorString()) {
+                            case "B" -> {
+                                cb.iconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_byte, CD_String, CD_byte));
+                            }
+                            case "C" -> {
+                                cb.iconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_char, CD_String, CD_char));
+                            }
+                            case "D" -> {
+                                cb.dconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_double, CD_String, CD_double));
+                            }
+                            case "F" -> {
+                                cb.fconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_float, CD_String, CD_float));
+                            }
+                            case "I" -> {
+                                cb.iconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_int, CD_String, CD_int));
+                            }
+                            case "J" -> {
+                                cb.lconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_long, CD_String, CD_long));
+                            }
+                            case "S" -> {
+                                cb.iconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_short, CD_String, CD_short));
+                            }
+                            case "Z" -> {
+                                cb.iconst_0();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_boolean, CD_String, CD_boolean));
+                            }
+                            default -> {
+                                cb.aconst_null();
+                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(CD_Object, CD_String, CD_Object));
+                                cb.checkcast(fieldDesc = fieldType.describeConstable().orElseThrow(InternalError::new));
+                            }
+                        }
+                        if (isFinal) {
+                            // stack: <mh> this <val>
+                            cb.invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDesc.of(CD_void, thisClass, fieldDesc));
+                        } else {
+                            // non-final; store it the usual way
+                            // stack: this <val>
+                            cb.putfield(thisClass, fieldName, fieldDesc);
+                        }
+                    }
+                    cb.return_();
+                })
+            );
+        });
+        try {
+            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
+            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClass(bytes, false, MethodHandles.Lookup.ClassOption.NESTMATE);
+            return hcLookup.findStatic(hcLookup.lookupClass(), "readObject", MethodType.methodType(void.class, cl, ObjectInputStream.class));
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new InternalError("Error in readObject generation", e);
+        }
+    }
+
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        if (!Serializable.class.isAssignableFrom(cl)) {
+            return null;
+        }
+
+        // build an anonymous+hidden nestmate to perform the write operation
+        // todo: to cache, or not?
+        ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$writeObject"), classBuilder -> {
+            classBuilder.withMethod("writeObject",
+                MethodTypeDesc.of(CD_void, thisClass, ObjectOutputStream.class.describeConstable().orElseThrow(InternalError::new)),
+                Modifier.STATIC | Modifier.PRIVATE,
+                mb -> mb.withCode(cb -> {
+                    // todo: constants somewhere
+                    ClassDesc oos = ClassDesc.of("java.io.ObjectOutputStream");
+                    ClassDesc pf = ClassDesc.of("java.io.ObjectOutputStream$PutField");
+                    // get our PutField
+                    cb.aload(1);
+                    cb.invokevirtual(oos, "putFields", MethodTypeDesc.of(pf));
+                    cb.astore(2);
+                    // iterate the fields of the class
+                    for (Field field : cl.getDeclaredFields()) {
+                        if ((field.getModifiers() & (Modifier.STATIC | Modifier.TRANSIENT)) != 0) {
+                            continue;
+                        }
+                        String fieldName = field.getName();
+                        Class<?> fieldType = field.getType();
+
+                        cb.aload(2); // stack: PutField
+                        cb.ldc(fieldName); // stack: PutField fieldName
+                        cb.aload(0); // stack: PutField fieldName this
+
+                        switch (fieldType.descriptorString()) {
+                            case "B" -> {
+                                cb.getfield(thisClass, fieldName, CD_byte);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_byte));
+                            }
+                            case "C" -> {
+                                cb.getfield(thisClass, fieldName, CD_char);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_char));
+                            }
+                            case "D" -> {
+                                cb.getfield(thisClass, fieldName, CD_double);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_double));
+                            }
+                            case "F" -> {
+                                cb.getfield(thisClass, fieldName, CD_float);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_float));
+                            }
+                            case "I" -> {
+                                cb.getfield(thisClass, fieldName, CD_int);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_int));
+                            }
+                            case "J" -> {
+                                cb.getfield(thisClass, fieldName, CD_long);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_long));
+                            }
+                            case "S" -> {
+                                cb.getfield(thisClass, fieldName, CD_short);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_short));
+                            }
+                            case "Z" -> {
+                                cb.getfield(thisClass, fieldName, CD_boolean);
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_boolean));
+                            }
+                            default -> {
+                                cb.getfield(thisClass, fieldName, fieldType.describeConstable().orElseThrow(InternalError::new));
+                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_Object));
+                            }
+                        }
+                    }
+                    // commit fields to stream
+                    cb.aload(1);
+                    cb.invokevirtual(oos, "writeFields", MethodTypeDesc.of(CD_void));
+                    cb.return_();
+                })
+            );
+        });
+        try {
+            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
+            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClass(bytes, false, MethodHandles.Lookup.ClassOption.NESTMATE);
+            return hcLookup.findStatic(hcLookup.lookupClass(), "writeObject", MethodType.methodType(void.class, cl, ObjectOutputStream.class));
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new InternalError("Error in writeObject generation", e);
         }
     }
 

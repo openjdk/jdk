@@ -25,10 +25,15 @@
 
 package sun.reflect;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -158,6 +163,23 @@ public class ReflectionFactory {
     }
 
     /**
+     * Returns a direct MethodHandle for a variation of {@code readObject}
+     * which always initializes its fields from the stream
+     * {@link ObjectInputStream#readFields()} mechanism.
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectInputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code readObject} method
+     *          or {@code null} if the class is not serializable
+     */
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        return delegate.defaultReadObjectForSerialization(cl);
+    }
+
+    /**
      * Returns a direct MethodHandle for the {@code writeObject} method on
      * a Serializable class.
      * The first argument of {@link MethodHandle#invoke} is the serializable
@@ -170,6 +192,23 @@ public class ReflectionFactory {
      */
     public final MethodHandle writeObjectForSerialization(Class<?> cl) {
         return delegate.writeObjectForSerialization(cl);
+    }
+
+    /**
+     * Returns a direct MethodHandle for a variation of {@code writeObject}
+     * which always writes its fields to the stream
+     * {@link ObjectOutputStream#putFields()} mechanism.
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectOutputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code writeObject} method
+     *          or {@code null} if the class is not serializable
+     */
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        return delegate.defaultWriteObjectForSerialization(cl);
     }
 
     /**
@@ -223,6 +262,42 @@ public class ReflectionFactory {
             return cons.newInstance(bool);
         } catch (InstantiationException|IllegalAccessException|InvocationTargetException ex) {
             throw new InternalError("unable to create OptionalDataException", ex);
+        }
+    }
+
+    /**
+     * A constant bootstrap for getting a field setter from within a serializable class
+     * which can set instance fields, even if they are declared to be {@code final},
+     * using {@linkplain Field#setAccessible(boolean) the rules defined for reflection access to final fields}.
+     * The field must exist and be accessible by the given {@code lookup}.
+     * This bootstrap may be used from generated methods.
+     *
+     * @param lookup a lookup which can access the field (must not be {@code null})
+     * @param name the name of the field (must not be {@code null})
+     * @param type the field type (must not be {@code null})
+     * @param cl the Serializable class
+     * @return a method handle which accepts an instance of the lookup class and the value to set (not {@code null})
+     * @throws InternalError if the field is inaccessible or missing
+     * @see Field#setAccessible(boolean)
+     */
+    public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<?> type, Class<?> cl) {
+        try {
+            Field field = cl.getDeclaredField(name);
+            if ((field.getModifiers() & Modifier.STATIC) != 0) {
+                throw new InternalError("Not an instance field");
+            }
+            if ((field.getModifiers() & Modifier.FINAL) != 0) {
+                // todo: there seems to be no way to properly access check here
+                //lookup.accessField(declaringClass, name);
+                lookup.accessClass(cl);
+                field.setAccessible(true);
+                return lookup.unreflectSetter(field);
+            } else {
+                // todo: maybe we don't even need this case...
+                return lookup.findSetter(cl, name, type);
+            }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new InternalError("Unable to access field for writing", e);
         }
     }
 }
