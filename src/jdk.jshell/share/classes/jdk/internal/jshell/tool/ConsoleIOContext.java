@@ -158,7 +158,7 @@ class ConsoleIOContext extends IOContext {
             terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
                 input.setInputStream(in);
                 return nonBlockingInput;
-            }).build();
+            }).nativeSignals(false).build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
