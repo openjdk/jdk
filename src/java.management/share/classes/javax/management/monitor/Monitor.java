@@ -712,11 +712,12 @@ public abstract class Monitor
             //
             cleanupIsComplexTypeAttribute();
 
-            // Cache the Subject and possibly AccessControlContext of the Monitor.start() caller.
+            // Cache the Subject or AccessControlContext of the Monitor.start() caller.
             // The monitor tasks will be executed within this context.
             //
-            subject = Subject.current();
-            if (SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                subject = Subject.current();
+            } else {
                 acc = AccessController.getContext();
             }
 
@@ -1538,7 +1539,7 @@ public abstract class Monitor
             };
             if (ac == null) {
                 // No SecurityManager:
-                Subject.doAs(s, action);
+                Subject.doAs(s, action); // s is permitted to be null
             } else {
                 // ACC means SM is permitted.
                 AccessController.doPrivileged(action, ac);

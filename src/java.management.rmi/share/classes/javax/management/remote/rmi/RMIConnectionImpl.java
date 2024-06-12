@@ -1433,22 +1433,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 }
             } else {
                 // ACC is present, we have a Subject and SM is permitted:
-                return AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> Subject.doAs(subject, op), acc);
-            }
-        } catch (PrivilegedActionException pe) {
-            // Dealing with cause of PrivilegedActionException is the same as handling other Exceptions.
-            Throwable cause = pe.getCause();
-
-            if (cause instanceof Error) {
-                throw new JMXServerErrorException(cause.toString(), (Error) cause);
-            } else if (cause instanceof SecurityException) {
-                throw (SecurityException) cause;
-            } else if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            } else if (cause instanceof Exception) {
-                throw new PrivilegedActionException((Exception) cause);
-            } else {
-                throw new RuntimeException(cause);
+                return AccessController.doPrivileged(op, acc);
             }
         } catch (Exception e) {
             if (e instanceof SecurityException) {
@@ -1622,21 +1607,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try {
-                if (acc == null) {
+                if (acc != null) {
+                    // ACC is present, we have a Subject and SM is permitted:
+                    return AccessController.doPrivileged(
+                            (PrivilegedExceptionAction<T>) () ->
+                                    wrappedClass.cast(mo.get()), acc);
+                } else {
                     // No ACC, therefore no SM. May have a Subject:
                     if (subject != null) {
                         return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
                     } else {
                         return wrappedClass.cast(mo.get());
                     }
-                } else {
-                    // ACC is present, we have a Subject and SM is permitted:
-                    PrivilegedExceptionAction<T> action = new PrivilegedExceptionAction<T>() {
-                        public T run() throws Exception {
-                            return wrappedClass.cast(mo.get());
-                        }
-                    };
-                    return AccessController.doPrivileged(action, acc);
                 }
             } finally {
                 AccessController.doPrivileged(new SetCcl(old));
