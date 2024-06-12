@@ -41,39 +41,55 @@ void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
       contended_lock_internal<false>(JavaThread::cast(thread));
     }
   } else {
-
-    contended_lock_internal_non_java_thread();
+    contended_lock_internal(thread);
   }
 }
 
-void ShenandoahLock::contended_lock_internal_non_java_thread() {
-  assert(!Thread::current()->is_Java_thread(), "Can't be Java Thread.");
+void ShenandoahLock::contended_lock_internal(Thread* nonJavaThread) {
+  assert(!nonJavaThread->is_Java_thread(), "Can't be Java Thread.");
+  int ctr = 0;
+  int yields = 0;
+  int bool isGCThread = nonJavaThread->is_ConcurrentGC_thread() || nonJavaThread->is_Worker_thread();
   while (_state == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if (os::is_MP()) {
+    if (!os::is_MP()) {
+      //Only one processor, yield to whenever have the lock.
+      os::naked_yield();
+    } else if((ctr++ & 0xFF) != 0 || 
+      (isGCThread && (SafepointSynchronize::is_at_safepoint() || SafepointSynchronize::is_synchronizing()))) {
+      //Spin in these cases:
+      //1. (ctr++ & 0xFF) != 0: spin up to 256 times then yield/sleep, repeat.
+      //2. When at SP or SP is synchronizing, spin hard to avoid context switching
       SpinPause();
     } else {
-      os::naked_yield();
+      if (yields < 5) {
+        os::naked_yield();
+        yields ++;
+      } else {
+        os::naked_short_sleep(1);
+      }
     }
   }
 }
 
 template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
-  int ctr = 0;
+  int ctr = os::is_MP() ? 0x1F : 0;
   while (_state == locked ||
       Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if (ctr < 0x1F && !SafepointSynchronize::is_synchronizing()  && os::is_MP()) {
-      // Lightly contended, Spin a little if there are multiple processors,
-      // there is no point in spinning and not giving up on CPU if there is single CPU processor.
-      ctr++;
+    if (ctr > 0 && !SafepointSynchronize::is_synchronizing() ) {
+      // Lightly contended, spin a little if SP it NOT synchronizing.
+      ctr--;
       SpinPause();
     } else if (ALLOW_BLOCK) {
-      // Notify VM we are blocking, and suspend if safepoint was announced
-      // while we were backing off.
-      ThreadBlockInVM block(java_thread, true);
-      os::naked_yield();
+      if (SafepointSynchronize::is_synchronizing()) {
+        //We know SP is synchronizing and block is allosed,
+        //yield to safepoint call to so VM will reach safepoint faster.
+        ThreadBlockInVM block(java_thread, true);
+      } else {
+        os::naked_short_sleep(1);
+      }
     } else {
-      os::naked_yield();
+      os::naked_short_sleep(1);
     }
   }
 }

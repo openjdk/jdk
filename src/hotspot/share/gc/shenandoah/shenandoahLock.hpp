@@ -42,7 +42,7 @@ private:
 
   template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
-  void contended_lock_internal_non_java_thread();
+  void contended_lock_internal(Thread* nonJavaThread);
 
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
