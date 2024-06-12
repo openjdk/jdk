@@ -24,7 +24,7 @@
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  * @requires vm.continuations
  * @library /test/lib
  * @modules java.base
- * @run testng PrintMountedVirtualThread
+ * @run junit PrintMountedVirtualThread
  */
 public class PrintMountedVirtualThread {
 
@@ -48,10 +48,14 @@ public class PrintMountedVirtualThread {
         started.await();
         /* Execute */
         OutputAnalyzer output = executor.execute("Thread.print");
-        output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
-        output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
-        output.shouldMatch("Mounted virtual thread " + "\"Dummy Vthread\"" + " #" + vthread.threadId());
-        shouldFinish.set(true);
+        try {
+            output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
+            output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
+            output.shouldMatch("Mounted virtual thread " + "\"Dummy Vthread\"" + " #" + vthread.threadId());
+
+        } finally {
+            shouldFinish.set(true);
+        }
     }
 
     @Test
