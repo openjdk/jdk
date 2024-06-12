@@ -67,8 +67,6 @@ compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
 compiler/startup/StartupOutput.java 8326615 generic-x64
 
-compiler/rangechecks/TestArrayAccessAboveRCAfterRCCastIIEliminated.java 8332369 generic-all
-
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 #############################################################################
@@ -169,7 +167,7 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8325905 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8324756 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
