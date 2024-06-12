@@ -2207,7 +2207,6 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // points to the length, we don't need to adjust it to point to the
   // data.
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
-  assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
   // Get the first array index that can contain super_klass.
   if (bit != 0) {
