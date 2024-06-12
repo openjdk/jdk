@@ -62,8 +62,8 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing() ) {
       // Lightly contended, spin a little if SP it NOT synchronizing.
-      ctr--;
       SpinPause();
+      ctr--;
     } else if (ALLOW_BLOCK) {
       //We know SP is synchronizing and block is allosed,
       //yield to safepoint call to so VM will reach safepoint faster.
