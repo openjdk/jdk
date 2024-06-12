@@ -216,7 +216,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                         is.close();
                         os.close();
                         serverSock.close();
-                        System.out.println("serverLooback exiting normally");
+                        System.out.println("serverLoopback exiting normally");
                         return;
                     }
                     os.write(bb, 0, n);
@@ -224,7 +224,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                     loopCount.addAndGet(n);
                 }
             } catch (Throwable e) {
-                System.out.println("serverLooback got exception: " + e);
+                System.out.println("serverLoopback got exception: " + e);
                 e.printStackTrace();
             } finally {
                 System.out.println("serverLoopback exiting at count: " + loopCount.get());
