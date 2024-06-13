@@ -3955,6 +3955,20 @@ public class Lower extends TreeTranslator {
         }
 
         /**
+         * This method should be called only when target release <= 14
+         * where LambdaMetaFactory does not spin nestmate classes.
+         *
+         * This method should be removed when --release 14 is not supported.
+         */
+        boolean isPrivateInOtherClass(JCMemberReference tree) {
+            assert !target.runtimeUseNestAccess();
+            return  (tree.sym.flags() & PRIVATE) != 0 &&
+                    !types.isSameType(
+                            types.erasure(tree.sym.enclClass().asType()),
+                            types.erasure(currentClass.asType()));
+        }
+
+        /**
          * Does this reference need to be converted to a lambda
          * (i.e. var args need to be expanded or "super" is used)
          */
@@ -3963,6 +3977,7 @@ public class Lower extends TreeTranslator {
                     tree.hasKind(ReferenceKind.SUPER) ||
                     needsVarArgsConversion(tree) ||
                     isArrayOp(tree) ||
+                    (!target.runtimeUseNestAccess() && isPrivateInOtherClass(tree)) ||
                     isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, currentClass) ||
                     !receiverAccessible(tree) ||
                     (tree.getMode() == ReferenceMode.NEW &&
