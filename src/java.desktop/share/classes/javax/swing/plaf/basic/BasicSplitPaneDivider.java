@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,6 +360,20 @@ public class BasicSplitPaneDivider extends Container
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (splitPane.isOneTouchExpandable() &&
+                rightButton != null &&
+                leftButton != null) {
+
+            rightButton.setEnabled(enabled);
+            leftButton.setEnabled(enabled);
+        }
+    }
 
     /**
      * Paints the divider.
