@@ -94,13 +94,13 @@ public class TestAnnotationTypes extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-required-element-summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="member-summary-table-tab0">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Required Element</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>int</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>int</code></div>
                     <div class="col-second even-row-color"><code><a href="#value()" class="member-name-link">value</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     </section>
                     </li>
@@ -109,13 +109,13 @@ public class TestAnnotationTypes extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-optional-element-summary">
                     <h2>Optional Element Summary</h2>
                     <div class="caption"><span>Optional Elements</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="member-summary-table-tab0">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Optional Element</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>java.lang.String</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="#optional()" class="member-name-link">optional</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     </section>
                     </li>

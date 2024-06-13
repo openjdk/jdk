@@ -60,10 +60,10 @@ public class TestHtmlTableStyles extends JavadocTester {
                     <table summary="Summary" border cellpadding=3 cellspacing=1>""",
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary">""",
+                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="caption-summary-table-tab0">""",
                 """
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table two-column-summary">""",
+                    <div class="summary-table two-column-summary" role="grid" aria-labelledby="caption-summary-table-tab0">""",
                 """
                     <div class="summary-table three-column-summary">""");
 

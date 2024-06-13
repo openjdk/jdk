@@ -82,18 +82,18 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
+                <div class="summary-table two-column-summary" role="grid" aria-labelledby="constructor-summary-table-tab0">
                 <div class="table-header col-first">Constructor</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(Y)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                 </div>
                 </section>""");
         checkOutput("Foo.html", true, """
@@ -121,23 +121,23 @@ public class TestErasure extends JavadocTester {
         // methods
         checkOutput("Foo.html", true, """
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract T</code></div>
+                method-summary-table-tab3" role="row" tabindex="0"><code>abstract T</code></div>
                 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(T)" class="member-name-link">m</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>
+                method-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract &lt;T extends X&gt;<br>T</code></div>
+                method-summary-table-tab3" role="row" tabindex="0"><code>abstract &lt;T extends X&gt;<br>T</code></div>
                 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(X)" class="member-name-link">m</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>
+                method-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract &lt;T extends Y&gt;<br>T</code></div>
+                method-summary-table-tab3" role="row" tabindex="0"><code>abstract &lt;T extends Y&gt;<br>T</code></div>
                 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(Y)" class="member-name-link">m</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>""");
+                method-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("Foo.html", true, """
                 <li><a href="#method-detail" tabindex="0">Method Details</a>
                 <ol class="toc-list">
@@ -188,16 +188,16 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
+                <div class="summary-table two-column-summary" role="grid" aria-labelledby="caption-summary-table-tab0">
                 <div class="table-header col-first">Constructor</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a>\
                 <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                 </div>
                 </section>""");
         checkOutput("Foo.html", true, """
@@ -225,13 +225,13 @@ public class TestErasure extends JavadocTester {
                 method-summary-table-tab3"><code><a href="#m(T)" class="member-name-link">m</a>\
                 <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>
+                method-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract &lt;T extends X&gt;<br>T</code></div>
+                method-summary-table-tab3" role="row" tabindex="0"><code>abstract &lt;T extends X&gt;<br>T</code></div>
                 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(X)" class="member-name-link">m</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>""");
+                method-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("Foo.html", true, """
                 <li><a href="#method-detail" tabindex="0">Method Details</a>
                 <ol class="toc-list">
@@ -287,44 +287,44 @@ public class TestErasure extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("new-list.html", true, """
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(T)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-second even-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-summary-item-name odd-row-color"><a href="Foo.html#m(X)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second odd-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-second odd-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(Y)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""");
+                <div class="col-second even-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("new-list.html", true, """
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(T)">Foo<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-second even-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-summary-item-name odd-row-color"><a href="Foo.html#%3Cinit%3E(X)">Foo<wbr>(T)</a></div>
-                <div class="col-second odd-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-second odd-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(Y)">Foo<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">today</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""");
+                <div class="col-second even-row-color" role="row" tabindex="0">today</div>
+                <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("deprecated-list.html", true, """
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(T)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0"></div>
+                <div class="col-second even-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last even-row-color" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name odd-row-color"><a href="Foo.html#m(X)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second odd-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0"></div>
+                <div class="col-second odd-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(Y)">Foo.m<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0"></div>""");
+                <div class="col-second even-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last even-row-color" role="row" tabindex="0"></div>""");
         checkOutput("deprecated-list.html", true, """
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(T)">Foo<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0"></div>
+                <div class="col-second even-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last even-row-color" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name odd-row-color"><a href="Foo.html#%3Cinit%3E(X)">Foo<wbr>(T)</a></div>
-                <div class="col-second odd-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last odd-row-color" role="tablist" tabindex="0"></div>
+                <div class="col-second odd-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last odd-row-color" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(Y)">Foo<wbr>(T)</a></div>
-                <div class="col-second even-row-color" role="tablist" tabindex="0">tomorrow</div>
-                <div class="col-last even-row-color" role="tablist" tabindex="0"></div>""");
+                <div class="col-second even-row-color" role="row" tabindex="0">tomorrow</div>
+                <div class="col-last even-row-color" role="row" tabindex="0"></div>""");
     }
 
     @Test
@@ -359,23 +359,23 @@ public class TestErasure extends JavadocTester {
                 <div class="col-summary-item-name even-row-color method method-tab1">\
                 <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-m(T)">PREVIEW</a></sup></div>
-                <div class="col-second even-row-color method method-tab1" role="tablist" tabindex="0">Test Feature</div>
-                <div class="col-last even-row-color method method-tab1" role="tablist" tabindex="0"></div>
+                <div class="col-second even-row-color method method-tab1" role="row" tabindex="0">Test Feature</div>
+                <div class="col-last even-row-color method method-tab1" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name odd-row-color method method-tab1">\
                 <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-m(p.Y)">PREVIEW</a></sup></div>
-                <div class="col-second odd-row-color method method-tab1" role="tablist" tabindex="0">Test Feature</div>
-                <div class="col-last odd-row-color method method-tab1" role="tablist" tabindex="0"></div>""");
+                <div class="col-second odd-row-color method method-tab1" role="row" tabindex="0">Test Feature</div>
+                <div class="col-last odd-row-color method method-tab1" role="row" tabindex="0"></div>""");
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
                 <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(T)">PREVIEW</a></sup></div>
-                <div class="col-second even-row-color constructor constructor-tab1" role="tablist" tabindex="0">Test Feature</div>
-                <div class="col-last even-row-color constructor constructor-tab1" role="tablist" tabindex="0"></div>
+                <div class="col-second even-row-color constructor constructor-tab1" role="row" tabindex="0">Test Feature</div>
+                <div class="col-last even-row-color constructor constructor-tab1" role="row" tabindex="0"></div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
                 <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup>\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.Y)">PREVIEW</a></sup></div>
-                <div class="col-second odd-row-color constructor constructor-tab1" role="tablist" tabindex="0">Test Feature</div>
-                <div class="col-last odd-row-color constructor constructor-tab1" role="tablist" tabindex="0"></div>""");
+                <div class="col-second odd-row-color constructor constructor-tab1" role="row" tabindex="0">Test Feature</div>
+                <div class="col-last odd-row-color constructor constructor-tab1" role="row" tabindex="0"></div>""");
     }
 }
