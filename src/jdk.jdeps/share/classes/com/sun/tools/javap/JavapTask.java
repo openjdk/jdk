@@ -867,7 +867,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
-                if (className.indexOf('.') > 0) {
+                if (className.indexOf('.') > 0 || className.indexOf('/') > 0) {
                     //search for classes with a named package in the JDK modules specifed by --system option first
                     try {
                         for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
