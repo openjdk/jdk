@@ -41,10 +41,11 @@ class CgroupV1Controller: public CgroupController {
     char *_path;
 
   public:
-    CgroupV1Controller(char *root, char *mountpoint) {
-      _root = os::strdup(root);
-      _mount_point = os::strdup(mountpoint);
-      _path = nullptr;
+  CgroupV1Controller(char* root, char* mountpoint, char* cgroup_path)
+    : _root(os::strdup(root)),
+      _mount_point(os::strdup(mountpoint)),
+      _path(nullptr) {
+      set_subsystem_path(cgroup_path);
     }
 
     virtual void set_subsystem_path(char *cgroup_path);
@@ -65,10 +66,11 @@ class CgroupV1MemoryController: public CgroupV1Controller {
     void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
 
   public:
-    CgroupV1MemoryController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
-      _uses_mem_hierarchy = false;
+    CgroupV1MemoryController(char* root, char* mountpoint, char* cgroup_path)
+    : CgroupV1Controller(root, mountpoint),
+      _uses_mem_hierarchy(false) {
+      this->set_subsystem_path(cgroup_path);
     }
-
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {

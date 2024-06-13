@@ -38,11 +38,6 @@
 static const char* cg_controller_name[] = { "cpu", "cpuset", "cpuacct", "memory", "pids" };
 
 CgroupSubsystem* CgroupSubsystemFactory::create() {
-  CgroupV1MemoryController* memory = nullptr;
-  CgroupV1Controller* cpuset = nullptr;
-  CgroupV1Controller* cpu = nullptr;
-  CgroupV1Controller* cpuacct = nullptr;
-  CgroupV1Controller* pids = nullptr;
   CgroupInfo cg_infos[CG_INFO_LENGTH];
   u1 cg_type_flags = INVALID_CGROUPS_GENERIC;
   const char* proc_cgroups = "/proc/cgroups";
@@ -94,18 +89,22 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
    *
    */
   assert(is_cgroup_v1(&cg_type_flags), "Cgroup v1 expected");
-  memory = new CgroupV1MemoryController(cg_infos[MEMORY_IDX]._root_mount_path, cg_infos[MEMORY_IDX]._mount_path);
-  memory->set_subsystem_path(cg_infos[MEMORY_IDX]._cgroup_path);
-  
-  cpuset = new CgroupV1Controller(cg_infos[CPUSET_IDX]._root_mount_path, cg_infos[CPUSET_IDX]._mount_path);
-  cpuset->set_subsystem_path(cg_infos[CPUSET_IDX]._cgroup_path);
-  cpu = new CgroupV1Controller(cg_infos[CPU_IDX]._root_mount_path, cg_infos[CPU_IDX]._mount_path);
-  cpu->set_subsystem_path(cg_infos[CPU_IDX]._cgroup_path);
-  cpuacct = new CgroupV1Controller(cg_infos[CPUACCT_IDX]._root_mount_path, cg_infos[CPUACCT_IDX]._mount_path);
-  cpuacct->set_subsystem_path(cg_infos[CPUACCT_IDX]._cgroup_path);
+  CgroupV1MemoryController* memory = new CgroupV1MemoryController(cg_infos[MEMORY_IDX]._root_mount_path,
+                                                                  cg_infos[MEMORY_IDX]._mount_path,
+                                                                  cg_infos[MEMORY_IDX]._cgroup_path);
+  CgroupV1Controller* cpuset = new CgroupV1Controller(cg_infos[CPUSET_IDX]._root_mount_path,
+                                                      cg_infos[CPUSET_IDX]._mount_path,
+                                                      cg_infos[CPUSET_IDX]._cgroup_path);
+  CgroupV1Controller* cpu = new CgroupV1Controller(cg_infos[CPU_IDX]._root_mount_path,
+                                                   cg_infos[CPU_IDX]._mount_path,
+                                                   cg_infos[CPU_IDX]._cgroup_path);
+  CgroupV1Controller* cpuacct = new CgroupV1Controller(cg_infos[CPUACCT_IDX]._root_mount_path,
+                                                       cg_infos[CPUACCT_IDX]._mount_path,
+                                                       cg_infos[CPUACCT_IDX]._cgroup_path);
+  CgroupV1Controller* pids = nullptr;
 
   if (cg_infos[PIDS_IDX]._data_complete) {
-    pids = new CgroupV1Controller(cg_infos[PIDS_IDX]._root_mount_path, cg_infos[PIDS_IDX]._mount_path);
+    pids = new CgroupV1Controller(cg_infos[PIDS_IDX]._root_mount_path, cg_infos[PIDS_IDX]._mount_path, cg_infos[PIDS_IDX]._cgroup_path);
     pids->set_subsystem_path(cg_infos[PIDS_IDX]._cgroup_path);
   } else {
     log_debug(os, container)("CgroupInfo for %s not complete", cg_controller_name[PIDS_IDX]);
