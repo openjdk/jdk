@@ -1203,11 +1203,11 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
   stringStream defaultname;
   const char* name = nullptr;
-  if (::strcmp(default_filename, _filename.value()) == 0) {
+  if (_filename.is_set()) {
+    name = _filename.value();
+  } else {
     defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
     name = defaultname.base();
-  } else {
-    name = _filename.value();
   }
   fileStream fs(name);
   if (fs.is_open()) {
