@@ -69,7 +69,7 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool, or the entry is not of the given type
-     * @since 24
+     * @since 23
      */
     <T extends PoolEntry> T entryByIndex(int index, Class<T> cls);
 

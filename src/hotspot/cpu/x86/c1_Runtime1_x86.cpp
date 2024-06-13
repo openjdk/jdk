@@ -421,7 +421,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
   __ block_comment("save_live_registers");
 
   // Push CPU state in multiple of 16 bytes
-#ifdef LP64
+#ifdef _LP64
   __ subq(rsp, 16 * wordSize);
   __ movq(Address(rsp, 15 * wordSize), rax);
   __ movq(Address(rsp, 14 * wordSize), rcx);

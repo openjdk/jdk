@@ -5896,8 +5896,7 @@ void Assembler::evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, 
 
 #ifdef _LP64
 void Assembler::push2(Register src1, Register src2, bool with_ppx) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
+  assert(VM_Version::supports_apx_f(), "requires APX");
   InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   /* EVEX.BASE */
   int src_enc = src1->encoding();
@@ -5918,8 +5917,7 @@ void Assembler::push2(Register src1, Register src2, bool with_ppx) {
 }
 
 void Assembler::pop2(Register src1, Register src2, bool with_ppx) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
+  assert(VM_Version::supports_apx_f(), "requires APX");
   InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   /* EVEX.BASE */
   int src_enc = src1->encoding();
@@ -5948,15 +5946,13 @@ void Assembler::pop2p(Register src1, Register src2) {
 }
 
 void Assembler::pushp(Register src) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
+  assert(VM_Version::supports_apx_f(), "requires APX");
   int encode = prefixq_and_encode_rex2(src->encoding());
   emit_int8(0x50 | encode);
 }
 
 void Assembler::popp(Register dst) {
-  //FIXME: Uncomment assertion after JDK-8329031
-  //assert(VM_Version::supports_apx_f(), "requires APX");
+  assert(VM_Version::supports_apx_f(), "requires APX");
   int encode = prefixq_and_encode_rex2(dst->encoding());
   emit_int8((unsigned char)0x58 | encode);
 }
@@ -14292,7 +14288,8 @@ void Assembler::pusha() { // 64bit
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
   if (UseAPX) {
-    // Data being pushed by PUSH2 must be 16B-aligned on the stack.
+    // Data being pushed by PUSH2 must be 16B-aligned on the stack, for this push rax upfront
+    // and use it as a temporary register for stack alignment.
     pushp(rax);
     // Move original stack pointer to RAX and align stack pointer to 16B boundary.
     movq(rax, rsp);
@@ -14314,6 +14311,8 @@ void Assembler::pusha_uncached() { // 64bit
     push2p(r8, rdi);
     push2p(rsi, rbp);
     push2p(rbx, rdx);
+    // To maintain 16 byte alignment after rcx is pushed.
+    subq(rsp, 8);
     pushp(rcx);
   } else {
     subq(rsp, 16 * wordSize);
@@ -14347,6 +14346,7 @@ void Assembler::popa() { // 64bit
 void Assembler::popa_uncached() { // 64bit
   if (UseAPX) {
     popp(rcx);
+    addq(rsp, 8);
     // Data being popped by POP2 must be 16B-aligned on the stack.
     pop2p(rdx, rbx);
     pop2p(rbp, rsi);
