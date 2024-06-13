@@ -460,7 +460,7 @@ public class ReflectionFactory {
                         if (Modifier.isStatic(fieldMods) || Modifier.isTransient(fieldMods)) {
                             continue;
                         }
-                        boolean isFinal = (fieldMods & Modifier.FINAL) != 0;
+                        boolean isFinal = Modifier.isFinal(fieldMods);
                         String fieldName = field.getName();
                         Class<?> fieldType = field.getType();
 
