@@ -423,7 +423,6 @@ public final class ConstantBootstraps {
         }
     }
 
-
     /**
      * A constant bootstrap for getting a field setter from within a serializable class
      * which can set instance fields, even if they are declared to be {@code final},
@@ -433,10 +432,16 @@ public final class ConstantBootstraps {
      * @param lookup a lookup which can access the field (must not be {@code null})
      * @param name the name of the field (must not be {@code null})
      * @param type the type of the method handle (must be {@code MethodHandle.class})
-     * @param cl the Serializable class
+     * @param cl the Serializable class (must not be {@code null})
      * @return a method handle which accepts an instance of the lookup class and the value to set (not {@code null})
-     * @throws InternalError if the field is inaccessible or missing
+     * @throws IllegalAccessError if the field is not accessible for writing
+     * @throws NoSuchFieldError if the field is missing
+     * @throws IncompatibleClassChangeError if the field is static
+     * @throws IllegalArgumentException if the type is not {@code MethodHandle}
+     *
      * @see Field#setAccessible(boolean)
+     * @see MethodHandles.Lookup#unreflectSetter(Field)
+     *
      * @since 24
      */
     public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<MethodHandle> type, Class<?> cl) {
@@ -445,10 +450,11 @@ public final class ConstantBootstraps {
         }
         try {
             Field field = cl.getDeclaredField(name);
-            if ((field.getModifiers() & Modifier.STATIC) != 0) {
-                throw new InternalError("Not an instance field");
+            int fieldMods = field.getModifiers();
+            if (Modifier.isStatic(fieldMods)) {
+                throw new IncompatibleClassChangeError("Field " + name + " must not be static");
             }
-            if ((field.getModifiers() & Modifier.FINAL) != 0) {
+            if (Modifier.isFinal(fieldMods)) {
                 // acquire the getter to satisfy access checking
                 lookup.unreflectGetter(field);
                 // this will fail if we are not allowed to set the field
@@ -456,8 +462,8 @@ public final class ConstantBootstraps {
                 // otherwise, our privilege is sufficient
             }
             return lookup.unreflectSetter(field);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new InternalError("Unable to access field for writing", e);
+        } catch (ReflectiveOperationException ex) {
+            throw mapLookupExceptionToError(ex);
         }
     }
 
