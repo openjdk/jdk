@@ -357,9 +357,7 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 
-  if (log_is_enabled(Info, perf, class, link)) {
-      ClassLoader::print_counters(tty);
-  }
+  ClassLoader::print_counters(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads

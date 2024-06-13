@@ -137,17 +137,20 @@ PerfCounter*    ClassLoader::_perf_resolve_mh_count = nullptr;
 PerfCounter*    ClassLoader::_perf_resolve_mt_count = nullptr;
 
 void ClassLoader::print_counters(outputStream *st) {
-  assert(log_is_enabled(Info, perf, class, link), "already checked by the caller");
-  st->print_cr("ClassLoader:");
-  st->print_cr("  clinit:               " JLONG_FORMAT "ms / " JLONG_FORMAT " events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
-  st->print_cr("  link methods:         " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
-  st->print_cr("  method adapters:      " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
-  st->print_cr("  resolve...");
-  st->print_cr("    invokedynamic:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
-  st->print_cr("    invokehandle:    " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
-  st->print_cr("    CP_MethodHandle: " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
-  st->print_cr("    CP_MethodType:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
-  st->cr();
+  // The counters are only active if the logging is enabled, but
+  // we print to the passed in outputStream as requested.
+  if (log_is_enabled(Info, perf, class, link)) {
+    st->print_cr("ClassLoader:");
+    st->print_cr("  clinit:               " JLONG_FORMAT "ms / " JLONG_FORMAT " events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
+    st->print_cr("  link methods:         " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
+    st->print_cr("  method adapters:      " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
+    st->print_cr("  resolve...");
+    st->print_cr("    invokedynamic:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
+    st->print_cr("    invokehandle:    " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
+    st->print_cr("    CP_MethodHandle: " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
+    st->print_cr("    CP_MethodType:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
+    st->cr();
+  }
 }
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = nullptr;
