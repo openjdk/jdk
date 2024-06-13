@@ -197,7 +197,7 @@ public class Main {
     private boolean hasExpiringCert = false;
     private boolean hasExpiringTsaCert = false;
     private boolean noTimestamp = true;
-    private boolean removedEntriesFound = false;
+    private boolean hasNonexistentEntries = false;
 
     // Expiration date. The value could be null if signed by a trusted cert.
     private Date expireDate = null;
@@ -1085,9 +1085,9 @@ public class Main {
                         var signed = entriesInSF.get(s);
                         if (!signed.isEmpty()) {
                             if (verbose != null) {
-                                System.out.println(rb.getString("history.removed.entries") + signed);
+                                System.out.println(rb.getString("history.nonexistent.entries") + signed);
                             }
-                            removedEntriesFound = true;
+                            hasNonexistentEntries = true;
                         }
                     } else {
                         unparsableSignatures.putIfAbsent(s, String.format(
@@ -1324,8 +1324,8 @@ public class Main {
             }
         }
 
-        if (removedEntriesFound) {
-            warnings.add(rb.getString("removed.entries.found"));
+        if (hasNonexistentEntries) {
+            warnings.add(rb.getString("nonexistent.entries.found"));
         }
         if (extraAttrsDetected) {
             warnings.add(rb.getString("extra.attributes.detected"));
