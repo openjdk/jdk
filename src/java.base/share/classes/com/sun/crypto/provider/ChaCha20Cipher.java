@@ -691,10 +691,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param output ByteBuffer that will hold the resulting data.  This
      *      must be large enough to hold the resulting data.
      *
-     * @return the length in bytes of the data written into the {@code out}
+     * @return the length in bytes of the data written into the {@code output}
      *      buffer.
      *
-     * @throws ShortBufferException if the buffer {@code out} does not have
+     * @throws ShortBufferException if the buffer {@code output} does not have
      *      enough space to hold the resulting data.
      */
     @Override
@@ -784,6 +784,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *      must be large enough to hold the resulting data.
      *
      * @return the resulting plaintext or ciphertext bytes.
+     *
+     * @throws ShortBufferException if the buffer {@code output} does not have
+     *      enough space to hold the resulting data.
      *
      * @throws AEADBadTagException if, during decryption, the provided tag
      *      does not match the calculated tag.

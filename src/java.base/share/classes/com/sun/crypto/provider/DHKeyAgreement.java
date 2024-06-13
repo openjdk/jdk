@@ -405,8 +405,7 @@ extends KeyAgreementSpi {
             int keysize = secret.length;
             if (keysize >= BlowfishConstants.BLOWFISH_MAX_KEYSIZE)
                 keysize = BlowfishConstants.BLOWFISH_MAX_KEYSIZE;
-            return new SecretKeySpec(secret, 0, keysize,
-                                                   "Blowfish");
+            return new SecretKeySpec(secret, 0, keysize, "Blowfish");
         } else if (algorithm.equalsIgnoreCase("AES")) {
             // AES
             int keysize = secret.length;

@@ -118,13 +118,13 @@ class AESKeyWrap extends FeedbackCipher {
     // no support for multipart encryption
     @Override
     int encrypt(byte[] pt, int ptOfs, int ptLen, byte[] ct, int ctOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
+        throw new UnsupportedOperationException("multipart not supported");
     }
 
     // no support for multipart decryption
     @Override
     int decrypt(byte[] ct, int ctOfs, int ctLen, byte[] pt, int ptOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
+        throw new UnsupportedOperationException("multipart not supported");
     }
 
     /**

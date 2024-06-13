@@ -210,9 +210,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
     protected void engineInit(byte[] encoded)
         throws IOException
     {
-        String kdfAlgo;
-        String cipherAlgo;
-
         DerValue pBES2_params = new DerValue(encoded);
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
@@ -231,16 +228,15 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             kdf = pBES2_params.data.getDerValue();
         }
 
-        kdfAlgo = parseKDF(kdf);
+        String kdfAlgo = parseKDF(kdf);
 
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
                 + "not an ASN.1 SEQUENCE tag");
         }
-        cipherAlgo = parseES(pBES2_params.data.getDerValue());
+        String cipherAlgo = parseES(pBES2_params.data.getDerValue());
 
-        this.pbes2AlgorithmName = "PBEWith" +
-                kdfAlgo + "And" + cipherAlgo;
+        this.pbes2AlgorithmName = "PBEWith" + kdfAlgo + "And" + cipherAlgo;
     }
 
     @SuppressWarnings("deprecation")

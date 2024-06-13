@@ -273,14 +273,14 @@ public final class RSACipher extends CipherSpi {
         int n = RSACore.getByteLength(rsaKey.getModulus());
         outputSize = n;
         bufOfs = 0;
-        if (Objects.equals(paddingType, PAD_NONE)) {
+        if (paddingType == PAD_NONE) {
             if (params != null) {
                 throw new InvalidAlgorithmParameterException
                 ("Parameters not supported");
             }
             padding = RSAPadding.getInstance(RSAPadding.PAD_NONE, n, random);
             buffer = new byte[n];
-        } else if (Objects.equals(paddingType, PAD_PKCS1)) {
+        } else if (paddingType == PAD_PKCS1) {
             if (params != null) {
                 if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
                     throw new InvalidAlgorithmParameterException(

@@ -871,17 +871,18 @@ final class CipherCore {
         // calculate total input length
         int len = Math.addExact(buffered, inputLen);
         // calculate padding length
+        int totalLen = len;
         int paddingLen = 0;
         // will the total input length be a multiple of blockSize?
         if (unitBytes != blockSize) {
-            if (len < diffBlocksize) {
-                paddingLen = diffBlocksize - len;
+            if (totalLen < diffBlocksize) {
+                paddingLen = diffBlocksize - totalLen;
             } else {
                 paddingLen = blockSize -
-                    ((len - diffBlocksize) % blockSize);
+                    ((totalLen - diffBlocksize) % blockSize);
             }
         } else if (padding != null) {
-            paddingLen = padding.padLength(len);
+            paddingLen = padding.padLength(totalLen);
         }
 
         if (decrypting && (padding != null) &&
@@ -929,7 +930,7 @@ final class CipherCore {
 
     private int fillOutputBuffer(byte[] finalBuf, int finalOffset,
         byte[] output, int outOfs, int finalBufLen, byte[] input)
-        throws ShortBufferException, BadPaddingException,
+        throws BadPaddingException,
         IllegalBlockSizeException {
 
         int len;
