@@ -1883,6 +1883,151 @@ class MutableBigInteger {
     }
 
     /**
+     * Calculate the integer square root {@code floor(sqrt(this))} and the remainder,
+     * where {@code sqrt(.)} denotes the mathematical square root.
+     * The contents of {@code this} are <b>not</b> changed.
+     * The value of {@code this} is assumed to be non-negative.
+     * @throws ArithmeticException if the value returned by {@code bitLength()}
+     * overflows the range of {@code int}.
+     * @return the integer square root of {@code this}
+     */
+    MutableBigInteger[] sqrtRem() {
+        // Special cases.
+        if (this.isZero()) {
+            return new MutableBigInteger[] { this, this };
+        } else if (this.intLen == 1) {
+            MutableBigInteger r = new MutableBigInteger(this);
+
+            final long val = this.value[offset] & LONG_MASK;
+            if (val < 4) { // result is unity
+                r.subtract(ONE);
+                return new MutableBigInteger[] { ONE, r };
+            }
+
+            int s = (int) Math.sqrt(val); // Math.sqrt is exact
+            r.subtract(new MutableBigInteger(s * s));
+            return new MutableBigInteger[] { new MutableBigInteger(s), r };
+        }
+
+        long bitLength = this.bitLength();
+        if (bitLength != (int) bitLength)
+            throw new ArithmeticException("bitLength() integer overflow");
+
+        return sqrtRemZimmermann(this, this.intLen, false);
+    }
+
+    /**
+     * Assume {@code 2 <= limit <= x.intLen}
+     * @implNote The implementation is based on Zimmermann's works available
+     * <a href="https://inria.hal.science/inria-00072854/en/">  here</a> and
+     * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a> 
+     */
+    private static MutableBigInteger[] sqrtRemZimmermann(MutableBigInteger x, int limit, boolean isRecursion) {
+        // Normalize leading int
+        int shift = Integer.numberOfLeadingZeros(x.value[x.offset]) & ~1; // shift must be even
+        if (shift != 0) {
+            x = new MutableBigInteger(Arrays.copyOfRange(x.value, x.offset, limit));
+            x.primitiveLeftShift(shift);
+        }
+
+        if (limit == 2) { // Base case
+            long hi = x.value[x.offset] & LONG_MASK, lo = x.value[x.offset + 1] & LONG_MASK;
+            long s = (long) Math.sqrt(hi); // Math.sqrt is exact
+            long r = hi - s * s;
+
+            final long dividend = (r << 16) | (lo >> 16), divisor = s << 1;
+            final long q = dividend / divisor;
+            final long u = dividend % divisor;
+            s = (s << 16) + q;
+            r = ((u << 16) | (lo & 0xffffL)) - q * q;
+
+            if (r < 0) {
+                r += (s << 1) - 1;
+                s--;
+            }
+
+            // Denormalize
+            if (shift != 0) {
+                s >>= (shift >> 1);
+                r = (((hi << 32) | lo) >>> shift) - s * s;
+            }
+
+            return new MutableBigInteger[] { new MutableBigInteger((int) s),
+                    (r & LONG_MASK) == r ? new MutableBigInteger((int) r)
+                            : new MutableBigInteger(new int[] { 1, (int) r }) };
+        }
+
+        // Recursive case (limit >= 3)
+
+        // Normalize limit
+        if ((limit & 3) != 0) { // limit must be a multiple of 4
+            if (isRecursion) { // In recursive invocations, limit is even
+                int[] xVal = new int[limit + 2];
+                System.arraycopy(x.value, x.offset, xVal, 0, limit);
+                x = new MutableBigInteger(xVal);
+                limit += 2;
+                shift += 64;
+            } else {
+                int intsToAdd = 4 - (limit & 3);
+                int[] xVal = new int[limit + intsToAdd];
+                System.arraycopy(x.value, x.offset, xVal, 0, limit);
+                x = new MutableBigInteger(xVal);
+                limit += intsToAdd;
+                shift += intsToAdd << 5;
+            }
+        }
+
+        MutableBigInteger[] sr = sqrtRemZimmermann(x, limit >> 1, true); // Recursive invocation
+
+        final int blockLength = limit >> 2;
+        MutableBigInteger dividend = x.getBlockZimmermann(1, limit, blockLength);
+        dividend.addDisjoint(sr[1], blockLength);
+        MutableBigInteger twiceS = new MutableBigInteger(sr[0]);
+        twiceS.leftShift(1);
+        MutableBigInteger q = new MutableBigInteger();
+        MutableBigInteger u = dividend.divide(twiceS, q);
+
+        MutableBigInteger r = x.getBlockZimmermann(0, limit, blockLength);
+        r.addDisjoint(u, blockLength);
+        BigInteger qBig = q.toBigInteger();
+        MutableBigInteger qSqr = new MutableBigInteger(qBig.multiply(qBig).mag);
+        int rSign = r.subtract(qSqr);
+
+        MutableBigInteger s = q;
+        s.addShifted(sr[0], blockLength);
+
+        if (rSign == -1) {
+            twiceS = new MutableBigInteger(s);
+            twiceS.leftShift(1);
+
+            r.subtract(twiceS);
+            r.subtract(ONE);
+            s.subtract(ONE);
+        }
+
+        // Denormalize
+        if (shift != 0) {
+            final int halfShift = shift >> 1;
+            if (!r.isZero()) {
+                BigInteger s0 = s.getBlockZimmermann(0, s.intLen, (halfShift + 31) >> 5).toBigInteger();
+                if ((halfShift & 31) != 0)
+                    s0.mag[0] &= (1 << halfShift) - 1;
+
+                r.add(new MutableBigInteger(s0.multiply(s.toBigInteger()).shiftLeft(1).mag));
+                r.subtract(new MutableBigInteger(s0.multiply(s0).mag));
+                r.rightShift(shift);
+            }
+            s.rightShift(halfShift);
+        }
+        return new MutableBigInteger[] { s, r };
+    }
+
+    private MutableBigInteger getBlockZimmermann(int blockIndex, int limit, int blockLength) {
+        int to = offset + limit - (blockIndex * blockLength);
+        return new MutableBigInteger(Arrays.copyOfRange(value, to - blockLength, to));
+    }
+
+    /**
      * Calculate GCD of this and b. This and b are changed by the computation.
      */
     MutableBigInteger hybridGCD(MutableBigInteger b) {

@@ -2719,11 +2719,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  9
      */
     public BigInteger sqrt() {
-        if (this.signum < 0) {
-            throw new ArithmeticException("Negative BigInteger");
-        }
-
-        return new MutableBigInteger(this.mag).sqrt().toBigInteger();
+        return sqrtAndRemainder()[0];
     }
 
     /**
@@ -2742,10 +2738,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  9
      */
     public BigInteger[] sqrtAndRemainder() {
-        BigInteger s = sqrt();
-        BigInteger r = this.subtract(s.square());
-        assert r.compareTo(BigInteger.ZERO) >= 0;
-        return new BigInteger[] {s, r};
+        if (this.signum < 0)
+            throw new ArithmeticException("Negative BigInteger");
+
+        MutableBigInteger[] sqrtRem = new MutableBigInteger(this.mag).sqrtRem();
+        return new BigInteger[] { sqrtRem[0].toBigInteger(), sqrtRem[1].toBigInteger() };
     }
 
     /**
