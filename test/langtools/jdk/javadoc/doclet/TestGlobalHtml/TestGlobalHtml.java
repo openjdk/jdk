@@ -27,12 +27,17 @@
  * @summary  Test to make sure global tags work properly
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestGlobalHtml
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
+import java.nio.file.Path;
 
 public class TestGlobalHtml extends JavadocTester {
+    ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         var tester = new TestGlobalHtml();
@@ -48,10 +53,39 @@ public class TestGlobalHtml extends JavadocTester {
                 testSrc,
                 "pkg1");
         checkExit(Exit.OK);
+    }
 
-        checkOutput("pkg1/C1.html", true,
+    @Test
+    public void testNegative(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
                 """
-                        <p contenteditable="true" draggable="true" spellcheck="true" data-status="deprecated">
-                        """);
+                package p;
+                /**
+                 * class comment
+                 * <a href="https://openjdk.org/">Hyperlink to the OpenJDK website</a>
+                 */
+                public class C {
+                    /**
+                     * <form>
+                     *   <label for="methodname">Method name:</label><br>
+                     *   <input type="text" id="methodname" name="methodname"><br>
+                     *   <label for="paramname">Method Parameter:</label><br>
+                     *   <input type="text" id="paramname" name="paramname">
+                     * </form>
+                     */
+                    public C() {
+                                     
+                    }
+                }
+                """);
+
+        javadoc("--allow-script-in-comments",
+                "-d",
+                "out-negative",
+                "-sourcepath",
+                src.toString(),
+                "p");
+        checkExit(Exit.ERROR);
     }
 }

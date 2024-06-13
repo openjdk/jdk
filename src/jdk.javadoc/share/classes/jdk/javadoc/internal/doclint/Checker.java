@@ -692,7 +692,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             // without checking the validity or applicability of the name
             // custom "data-*" attributes are also accepted
             var attrName = name.toString();
-            if (!attrName.startsWith("on") && !attrName.matches("data-[a-z]+(-[a-z]+)*")) {
+            if (!attrName.startsWith("on") && !attrName.startsWith("data-")) {
                 AttrKind k = currTag.getAttrKind(name);
                 switch (k) {
                     case OK -> { }

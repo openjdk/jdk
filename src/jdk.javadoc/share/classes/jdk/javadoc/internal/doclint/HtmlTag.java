@@ -434,57 +434,76 @@ public enum HtmlTag {
 
     public enum Attr {
         ABBR,
+        ACCESSKEY(true),
         ALIGN,
         ALINK,
         ALT,
-        ARIA_ACTIVEDESCENDANT,
-        ARIA_CONTROLS,
-        ARIA_DESCRIBEDBY,
-        ARIA_EXPANDED,
-        ARIA_LABEL,
-        ARIA_LABELLEDBY,
-        ARIA_LEVEL,
-        ARIA_MULTISELECTABLE,
-        ARIA_OWNS,
-        ARIA_POSINSET,
-        ARIA_SETSIZE,
-        ARIA_READONLY,
-        ARIA_REQUIRED,
-        ARIA_SELECTED,
-        ARIA_SORT,
+        ARIA_ACTIVEDESCENDANT(true),
+        ARIA_CONTROLS(true),
+        ARIA_DESCRIBEDBY(true),
+        ARIA_EXPANDED(true),
+        ARIA_LABEL(true),
+        ARIA_LABELLEDBY(true),
+        ARIA_LEVEL(true),
+        ARIA_MULTISELECTABLE(true),
+        ARIA_OWNS(true),
+        ARIA_POSINSET(true),
+        ARIA_READONLY(true),
+        ARIA_REQUIRED(true),
+        ARIA_SELECTED(true),
+        ARIA_SETSIZE(true),
+        ARIA_SORT(true),
+        AUTOCAPITALIZE(true),
+        AUTOFOCUS(true),
         AXIS,
         BACKGROUND,
         BGCOLOR,
         BORDER,
-        CELLSPACING,
         CELLPADDING,
+        CELLSPACING,
         CHAR,
         CHAROFF,
         CHARSET,
         CITE,
+        CLASS(true),
         CLEAR,
-        CLASS,
         COLOR,
         COLSPAN,
         COMPACT,
+        CONTENTEDITABLE(true),
         COORDS,
         CROSSORIGIN,
         DATETIME,
+        DIR(true),
+        DRAGGABLE(true),
+        ENTERKEYHINT(true),
         FACE,
         FRAME,
         FRAMEBORDER,
         HEADERS,
         HEIGHT,
+        HIDDEN(true),
         HREF,
         HSPACE,
-        ID,
+        ID(true),
+        INERT(true),
+        INPUTMODE(true),
+        IS(true),
+        ITEMID(true),
+        ITEMPROP(true),
+        ITEMREF(true),
+        ITEMSCOPE(true),
+        ITEMTYPE(true),
+        LANG(true),
         LINK,
         LONGDESC,
         MARGINHEIGHT,
         MARGINWIDTH,
         NAME,
+        NONCE(true),
         NOSHADE,
         NOWRAP,
+        POPOVER(true),
         PROFILE,
         REV,
         REVERSED,
@@ -497,11 +516,16 @@ public enum HtmlTag {
         SHAPE,
         SIZE,
         SPACE,
+        SPELLCHECK(true),
         SRC,
         START,
+        STYLE(true),
         SUMMARY,
+        TABINDEX(true),
         TARGET,
         TEXT,
+        TITLE(true),
+        TRANSLATE(true),
         TYPE,
         VALIGN,
         VALUE,
@@ -509,37 +533,22 @@ public enum HtmlTag {
         VLINK,
         VSPACE,
         WIDTH,
-        // Global attributes
-        STYLE,
-        ACCESSKEY,
-        AUTOCAPITALIZE,
-        AUTOFOCUS,
-        CONTENTEDITABLE,
-        DIR,
-        DRAGGABLE,
-        ENTERKEYHINT,
-        HIDDEN,
-        INERT,
-        INPUTMODE,
-        IS,
-        ITEMID,
-        ITEMPROP,
-        ITEMREF,
-        ITEMSCOPE,
-        ITEMTYPE,
-        LANG,
-        NONCE,
-        POPOVER,
-        SPELLCHECK,
-        TABINDEX,
-        TITLE,
-        TRANSLATE,
-        WRITINGSUGGESTIONS;
+        WRITINGSUGGESTIONS(true);
 
         private final String name;
+        private final boolean isGlobal;
 
         Attr() {
+            this(false);
+        }
+
+        Attr(boolean flag) {
             name = StringUtils.toLowerCase(name().replace("_", "-"));
+            isGlobal = flag;
+        }
+
+        public boolean isGlobal() {
+            return isGlobal;
         }
 
         public String getText() {
@@ -553,32 +562,6 @@ public enum HtmlTag {
             }
         }
     }
-
-    private final EnumSet<Attr> GLOBAL_ATTRS = EnumSet.of(
-            Attr.ACCESSKEY,
-            Attr.AUTOCAPITALIZE,
-            Attr.AUTOFOCUS,
-            Attr.CONTENTEDITABLE,
-            Attr.DIR,
-            Attr.DRAGGABLE,
-            Attr.ENTERKEYHINT,
-            Attr.HIDDEN,
-            Attr.INERT,
-            Attr.INPUTMODE,
-            Attr.IS,
-            Attr.ITEMID,
-            Attr.ITEMPROP,
-            Attr.ITEMREF,
-            Attr.ITEMSCOPE,
-            Attr.ITEMTYPE,
-            Attr.LANG,
-            Attr.NONCE,
-            Attr.POPOVER,
-            Attr.SPELLCHECK,
-            Attr.TABINDEX,
-            Attr.TITLE,
-            Attr.TRANSLATE,
-            Attr.WRITINGSUGGESTIONS);
 
     public enum AttrKind {
         OK,
@@ -643,10 +626,6 @@ public enum HtmlTag {
         attrs.put(Attr.ARIA_SELECTED, AttrKind.OK);
         attrs.put(Attr.ARIA_SETSIZE, AttrKind.OK);
         attrs.put(Attr.ARIA_SORT, AttrKind.OK);
-        //this is to allow global attributes
-        for (Attr attr : GLOBAL_ATTRS) {
-            this.attrs.put(attr, AttrKind.OK);
-        }
     }
 
     public boolean accepts(HtmlTag t) {
@@ -687,7 +666,8 @@ public enum HtmlTag {
     }
 
     public AttrKind getAttrKind(Name attrName) {
-        AttrKind k = attrs.get(getAttr(attrName)); // null-safe
+        Attr attr= getAttr(attrName);
+        AttrKind k = attr.isGlobal()? AttrKind.OK: attrs.get(attr); // null-safe
         return (k == null) ? AttrKind.INVALID : k;
     }
 
