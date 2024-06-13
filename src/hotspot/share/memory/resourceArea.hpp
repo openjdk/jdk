@@ -60,10 +60,6 @@ public:
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-  // Bias this resource area to specific memory type
-  // (by default, ResourceArea is tagged as mtThread, per-thread general purpose storage)
-  void bias_to(MEMFLAGS flags);
-
   DEBUG_ONLY(int nesting() const { return _nesting; })
 
   // Capture the state of a ResourceArea needed by a ResourceMark for
@@ -81,7 +77,7 @@ public:
       _chunk(area->_chunk),
       _hwm(area->_hwm),
       _max(area->_max),
-      _size_in_bytes(area->_size_in_bytes)
+      _size_in_bytes(area->size_in_bytes())
       DEBUG_ONLY(COMMA _nesting(area->_nesting))
     {}
   };

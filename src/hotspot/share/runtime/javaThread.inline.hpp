@@ -196,6 +196,11 @@ void JavaThread::enter_critical() {
   _jni_active_critical++;
 }
 
+inline void JavaThread::set_is_attaching_via_jni() {
+  _jni_attach_state = _attaching_via_jni;
+  OrderAccess::fence();
+}
+
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
   OrderAccess::fence();

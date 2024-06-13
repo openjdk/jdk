@@ -478,9 +478,8 @@ private:
 
  public:
   // Constructor
-  JavaThread();                            // delegating constructor
-  JavaThread(bool is_attaching_via_jni);   // for main thread and JNI attached threads
-  JavaThread(ThreadFunction entry_point, size_t stack_size = 0);
+  JavaThread(MEMFLAGS flags = mtThread);   // delegating constructor
+  JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MEMFLAGS flags = mtThread);
   ~JavaThread();
 
 #ifdef ASSERT
@@ -1136,6 +1135,7 @@ private:
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
+  inline void set_is_attaching_via_jni();
   inline void set_done_attaching_via_jni();
 
   // Stack dump assistance:
