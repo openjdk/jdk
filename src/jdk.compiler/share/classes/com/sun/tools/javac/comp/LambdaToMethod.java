@@ -1437,7 +1437,7 @@ public class LambdaToMethod extends TreeTranslator {
             List<ClassSymbol> prevTypesUnderConstruction = typesUnderConstruction;
             List<Frame> prevStack = frameStack;
             try {
-                if (TreeInfo.hasAnyConstructorCall(tree))   // start early construction context
+                if (TreeInfo.isConstructor(tree))       // start early construction context (Object() notwithstanding)
                     typesUnderConstruction = typesUnderConstruction.prepend(currentClass());
                 frameStack = frameStack.prepend(new Frame(tree));
                 super.visitMethodDef(tree);
