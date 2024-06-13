@@ -1920,7 +1920,7 @@ class MutableBigInteger {
      * Assume {@code 2 <= limit <= x.intLen}
      * @implNote The implementation is based on Zimmermann's works available
      * <a href="https://inria.hal.science/inria-00072854/en/">  here</a> and
-     * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a> 
+     * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a>
      */
     private static MutableBigInteger[] sqrtRemZimmermann(MutableBigInteger x, int limit, boolean isRecursion) {
         // Normalize leading int
