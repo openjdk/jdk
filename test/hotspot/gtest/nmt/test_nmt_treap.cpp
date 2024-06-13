@@ -28,7 +28,7 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-class TreapTest : public testing::Test {
+class NMTTreapTest : public testing::Test {
 public:
   struct Cmp {
     static int cmp(int a, int b) {
@@ -147,15 +147,15 @@ public:
   }
 };
 
-TEST_VM_F(TreapTest, InsertingDuplicatesResultsInOneValue) {
+TEST_VM_F(NMTTreapTest, InsertingDuplicatesResultsInOneValue) {
   this->inserting_duplicates_results_in_one_value();
 }
 
-TEST_VM_F(TreapTest, TreapOughtNotLeak) {
+TEST_VM_F(NMTTreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
 }
 
-TEST_VM_F(TreapTest, TestVisitors) {
+TEST_VM_F(NMTTreapTest, TestVisitors) {
   { // Tests with 'default' ordering (ascending)
     TreapCHeap<int, int, Cmp> treap;
     using Node = TreapCHeap<int, int, Cmp>::TreapNode;
@@ -259,11 +259,11 @@ TEST_VM_F(TreapTest, TestVisitors) {
   }
 }
 
-TEST_VM_F(TreapTest, TestFind) {
+TEST_VM_F(NMTTreapTest, TestFind) {
   test_find();
 }
 
-TEST_VM_F(TreapTest, TestClosestLeq) {
+TEST_VM_F(NMTTreapTest, TestClosestLeq) {
   using Node = TreapCHeap<int, int, Cmp>::TreapNode;
   {
     TreapCHeap<int, int, Cmp> treap;
@@ -289,7 +289,7 @@ TEST_VM_F(TreapTest, TestClosestLeq) {
 
 #ifdef ASSERT
 
-TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
+TEST_VM_F(NMTTreapTest, VerifyItThroughStressTest) {
   { // Repeatedly verify a treap of moderate size
     TreapCHeap<int, int, Cmp> treap;
     constexpr const int ten_thousand = 10000;

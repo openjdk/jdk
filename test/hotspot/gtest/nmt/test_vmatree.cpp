@@ -34,14 +34,14 @@ using Tree = VMATree;
 using Node = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
-class VMATreeTest : public testing::Test {
+class NMTVMATreeTest : public testing::Test {
 public:
   NCS ncs;
   constexpr static const int si_len = 2;
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
-  VMATreeTest() : ncs(true) {
+  NMTVMATreeTest() : ncs(true) {
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
     si[0] = ncs.push(stacks[0]);
@@ -172,7 +172,7 @@ public:
 
 
 
-TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
+TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
   for (int i = 99; i >= 0; i--) {
@@ -182,7 +182,7 @@ TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
 }
 
 // Low-level tests inspecting the state of the tree.
-TEST_VM_F(VMATreeTest, LowLevel) {
+TEST_VM_F(NMTVMATreeTest, LowLevel) {
   adjacent_2_nodes(VMATree::empty_regiondata);
   remove_all_leaves_empty_tree(VMATree::empty_regiondata);
   commit_middle(VMATree::empty_regiondata);
@@ -268,7 +268,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 }
 
 // Tests for summary accounting
-TEST_VM_F(VMATreeTest, SummaryAccounting) {
+TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Fully enclosed re-reserving works correctly.
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
@@ -416,7 +416,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 
 constexpr const size_t SimpleVMATracker::num_pages;
 
-TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
+TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   // In this test we use ASSERT macros from gtest instead of EXPECT
   // as any error will propagate and become larger as the test progresses.
   SimpleVMATracker* tr = new SimpleVMATracker();

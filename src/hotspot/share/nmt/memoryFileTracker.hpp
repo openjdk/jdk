@@ -40,7 +40,7 @@
 // storage with its own memory space separate from the process.
 // A typical example of such a file is a memory mapped file.
 class MemoryFileTracker {
-  friend class MemoryFileTrackerTest;
+  friend class NMTMemoryFileTrackerTest;
 
   // Provide caching of stacks.
   NativeCallStackStorage _stack_storage;
@@ -48,7 +48,7 @@ class MemoryFileTracker {
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
     friend MemoryFileTracker;
-    friend class MemoryFileTrackerTest;
+    friend class NMTMemoryFileTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
     VMATree _tree;
