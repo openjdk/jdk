@@ -1610,6 +1610,9 @@ class Assembler : public AbstractAssembler {
   static int inv_simm32(long x)    { return (inv_s_field(x, 31,  0)); }                         // 6-byte instructions only
   static int inv_uimm12(long x)    { return (inv_u_field(x, 11,  0)); }                         // 4-byte instructions only
 
+  // NOTE: PLEASE DON'T USE IT NAKED UNTIL WE DROP SUPPORT FOR MACHINES OLDER THAN Z15!!!!
+  inline void z_popcnt(Register r1, Register r2, int64_t m3);   // population count
+
  private:
 
   // Encode u_field from long value.
@@ -3106,7 +3109,6 @@ class Assembler : public AbstractAssembler {
 
   // Ppopulation count intrinsics.
   inline void z_flogr(Register r1, Register r2);    // find leftmost one
-  inline void z_popcnt(Register r1, Register r2);   // population count
   inline void z_ahhhr(Register r1, Register r2, Register r3);   // ADD halfword high high
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 
