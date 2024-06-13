@@ -2121,18 +2121,24 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
-  if (u_pk->size() != d_pk->size()) {
-    return false;
+  return _packset.pack_input_at_index_or_null(u_pk, u_idx) != nullptr;
+}
+
+Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
+  Node* p0 = pack->at(0);
+  Node* def0 = p0->in(index);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
+    return nullptr; // size mismatch
   }
 
-  for (uint i = 0; i < u_pk->size(); i++) {
-    Node* ui = u_pk->at(i);
-    Node* di = d_pk->at(i);
-    if (ui->in(u_idx) != di) {
-      return false;
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
+      return nullptr; // use-def mismatch
     }
   }
-  return true;
+  return pack_in;
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
@@ -3057,10 +3063,11 @@ void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, VectorS
   vtn_dependencies.set(req->_idx);
 }
 
+// TODO j -> index, maybe rename
 VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_List* pack) {
   Node* p0 = pack->at(0);
 
-  Node_List* pack_in = _packset.isa_pack_input_or_null(pack, j);
+  Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, j);
   if (pack_in != nullptr) {
     // Input is a matching pack -> vtnode already exists.
     assert(j != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
@@ -3068,6 +3075,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   if (VectorNode::is_muladds2i(p0)) {
+    // TODO add assert after fix, maybe update comments!
     // Inputs:                 1    2    3    4
     // Offsets:                0    0    1    1
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
@@ -3077,18 +3085,18 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     //   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0
     //
     // All inputs are strided (stride = 2), either with offset 0 or 1.
-    Node_List* pack_in0 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 0);
+    Node_List* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, j, 2, 0);
     if (pack_in0 != nullptr) {
       return get_vtnode(pack_in0->at(0));
     }
-    Node_List* pack_in1 = _packset.isa_strided_pack_input_or_null(pack, j, 2, 1);
+    Node_List* pack_in1 = _packset.strided_pack_input_at_index_or_null(pack, j, 2, 1);
     if (pack_in1 != nullptr) {
       return get_vtnode(pack_in1->at(0));
     }
   }
 
-  Node* unique = _packset.isa_unique_input_or_null(pack, j);
-  if (unique == nullptr && p0->in(j) == _vloop.iv()) {
+  Node* same_input = _packset.same_inputs_at_index_or_null(pack, j);
+  if (same_input == nullptr && p0->in(j) == _vloop.iv()) {
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
     VTransformNode* iv_vtn = find_scalar(_vloop.iv());
     BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
@@ -3101,44 +3109,45 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     return populate_index;
   }
 
-  if (unique != nullptr && j == 2 && VectorNode::is_shift(p0)) {
+  // TODO maybe refactor together with next block
+  if (same_input != nullptr && j == 2 && VectorNode::is_shift(p0)) {
     // Scalar shift count for vector shift operation: vec2 = shiftV(vec1, scalar_count)
     // Scalar shift operations masks the shift count, but the vector shift does not, so
     // create a special ShiftCount node.
-    VTransformNode* unique_vtn = find_scalar(unique);
+    VTransformNode* same_input_vtn = find_scalar(same_input);
     BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
     juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
     VTransformNode* shift_count = new (_graph.arena()) VTransformShiftCountNode(_graph, pack->size(), element_bt, mask, p0->Opcode());
-    shift_count->set_req(1, unique_vtn);
+    shift_count->set_req(1, same_input_vtn);
     return shift_count;
   }
 
-  if (unique != nullptr) {
-    // Replicate the scalar unique to every vector element. The resulting elements must
+  if (same_input != nullptr) {
+    // Replicate the scalar same_input to every vector element. The resulting elements must
     // be of the same velt_type as p0.
-    VTransformNode* unique_vtn = find_scalar(unique);
+    VTransformNode* same_input_vtn = find_scalar(same_input);
     const Type* element_type = _vloop_analyzer.types().velt_type(p0);
 
     // Scalar rotate has int rotation value. But if we are rotating longs, then we must
     // convert the int rotation to long.
     if (j == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
-      assert(unique->bottom_type()->isa_int(), "scalar rotate expects int rotation");
+      assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
       VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
-      conv->set_req(1, unique_vtn);
-      unique_vtn = conv;
+      conv->set_req(1, same_input_vtn);
+      same_input_vtn = conv;
     }
 
     VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
-    replicate->set_req(1, unique_vtn);
+    replicate->set_req(1, same_input_vtn);
     return replicate;
   }
 
-  // The input is neither a pack not a unique node. SuperWord::profitable does not allow
+  // The input is neither a pack not a same_input node. SuperWord::profitable does not allow
   // any other case. In the future, we could insert a PackNode.
 #ifdef ASSERT
   tty->print_cr("\nSuperWordVTransformBuilder::find_input_for_vector: j=%d", j);
   pack->dump();
-  assert(false, "Pack input was neither a pack nor a unique node");
+  assert(false, "Pack input was neither a pack nor a same_input node");
 #endif
   ShouldNotReachHere();
 }
@@ -3197,102 +3206,3 @@ void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet
   }
 }
 
-Node* PackSet::isa_unique_input_or_null(const Node_List* pack, int j) const {
-  Node* p0 = pack->at(0);
-  Node* unique = p0->in(j);
-  for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != unique) {
-      return nullptr; // not unique
-    }
-  }
-  return unique;
-}
-
-Node_List* PackSet::isa_strided_pack_input_or_null(const Node_List* pack, int j, int stride, int offset) const {
-  Node* p0 = pack->at(0);
-  Node* def0 = p0->in(j);
-
-  Node_List* pack_in = get_pack(def0);
-  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
-    return nullptr; // size mismatch
-  }
-
-  for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(j) != pack_in->at(i * stride + offset)) {
-      return nullptr; // use-def mismatch
-    }
-  }
-  return pack_in;
-}
-
-VTransformBoolTest PackSet::get_bool_test(const Node_List* pack) const {
-  BoolNode* bol0 = pack->at(0)->as_Bool();
-  BoolTest::mask mask = bol0->_test._test;
-  bool is_negated = false;
-  assert(mask == BoolTest::eq ||
-         mask == BoolTest::ne ||
-         mask == BoolTest::ge ||
-         mask == BoolTest::gt ||
-         mask == BoolTest::lt ||
-         mask == BoolTest::le,
-         "Bool should be one of: eq,ne,ge,ge,lt,le");
-
-#ifdef ASSERT
-  for (uint j = 0; j < pack->size(); j++) {
-    Node* m = pack->at(j);
-    assert(m->as_Bool()->_test._test == mask,
-           "all bool nodes must have same test");
-  }
-#endif
-
-  CmpNode* cmp0 = bol0->in(1)->as_Cmp();
-  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
-
-  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
-    // If we have a Float or Double comparison, we must be careful with
-    // handling NaN's correctly. CmpF and CmpD have a return code, as
-    // they are based on the java bytecodes fcmpl/dcmpl:
-    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
-    //  0: cmp_in1 == cmp_in2  (no NaN)
-    //  1: cmp_in1 >  cmp_in2  (no NaN)
-    //
-    // The "mask" selects which of the [-1, 0, 1] cases lead to "true".
-    //
-    // Note: ordered   (O) comparison returns "false" if either input is NaN.
-    //       unordered (U) comparison returns "true"  if either input is NaN.
-    //
-    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
-    // standard way (all comparisons are ordered, except NEQ is unordered).
-    //
-    // In the following, "mask" already matches the cmp code for VectorMaskCmpNode:
-    //   BoolTest::eq:  Case 0     -> EQ_O
-    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
-    //   BoolTest::ge:  Case 0, 1  -> GE_O
-    //   BoolTest::gt:  Case 1     -> GT_O
-    //
-    // But the lt and le comparisons must be converted from unordered to ordered:
-    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
-    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
-    //
-    if (mask == BoolTest::lt || mask == BoolTest::le) {
-      // Negating the mask gives us the negated result, since all non-NaN cases are
-      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
-      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
-      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
-      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
-      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
-      //
-      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
-      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-      mask = bol0->_test.negate();
-      is_negated = true;
-    }
-  }
-
-  return VTransformBoolTest(mask, is_negated);
-}

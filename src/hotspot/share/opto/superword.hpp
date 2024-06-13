@@ -367,6 +367,10 @@ public:
   Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
+  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+    return strided_pack_input_at_index_or_null(pack, index, 1, 0);
+  }
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
