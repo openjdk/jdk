@@ -38,6 +38,9 @@ import java.util.function.Supplier;
  * A stable value is said to be monotonic because the state of a stable value can only go
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
+ *
+ * <a id="Factories"></a>
+ * <h2>Factories</h2>
  * <p>
  * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
@@ -100,11 +103,25 @@ import java.util.function.Supplier;
  * <p>
  * The constructs above are eligible for similar JVM optimizations as the StableValue
  * class itself.
- * <p>
+ *
+ * <a id="Blocking"></a>
+ * <h2>Blocking</h2>
  * All methods that can set the stable value's holder value are guarded such that
  * competing set operations (by other threads) will block if another set operation is
  * already in progress.
- * <p>
+ *
+ * <a id="MemoryConsistency"></a>
+ * <h2>Memory Consistency Properties</h2>
+ * Certain interactions between StableValue operations form
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * relationships:
+ * <ul>
+ * <li>Actions in a thread prior to calling a method that <i>sets</i> the holder value
+ * <i>happen-before</i> any other thread <i>observes</i> a set holder value.</li>
+ * </ul>
+ *
+ * <a id="Nullability"></a>
+ * <h2>Nullability</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
