@@ -1010,6 +1010,24 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  void check_klass_subtype_slow_path_1(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_2(Register sub_klass,
+                                       Register super_klass,
+                                       Register temp_reg,
+                                       Register temp2_reg,
+                                       Register temp3_reg,
+                                       FloatRegister vtemp_reg,
+                                       Label* L_success,
+                                       Label* L_failure,
+                                       bool set_cond_codes = false);
+
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
   bool lookup_secondary_supers_table(Register r_sub_klass,

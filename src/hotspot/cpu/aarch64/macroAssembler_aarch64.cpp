@@ -1515,13 +1515,13 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
   bind(Lexit);
 }
 
-void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
-                                                   Register super_klass,
-                                                   Register temp_reg,
-                                                   Register temp2_reg,
-                                                   Label* L_success,
-                                                   Label* L_failure,
-                                                   bool set_cond_codes) {
+void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
+                                                     Register super_klass,
+                                                     Register temp_reg,
+                                                     Register temp2_reg,
+                                                     Label* L_success,
+                                                     Label* L_failure,
+                                                     bool set_cond_codes) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
 
@@ -1602,6 +1602,116 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   bind(L_fallthrough);
 }
+
+void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
+                                                     Register super_klass,
+                                                     Register temp_reg,
+                                                     Register temp2_reg,
+                                                     Register temp3_reg,
+                                                     FloatRegister vtemp,
+                                                     Label* L_success,
+                                                     Label* L_failure,
+                                                     bool set_cond_codes) {
+  // NB! Callers may assume that, when temp2_reg is a valid register,
+  // this code sets it to a nonzero value.
+
+  RegSet temps = RegSet::of(temp_reg, temp2_reg, temp3_reg);
+
+  assert_different_registers(sub_klass, super_klass, temp_reg);
+  if (temp2_reg != noreg)
+    assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
+
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
+
+  // a couple of useful fields in sub_klass:
+  int ss_offset = in_bytes(Klass::secondary_supers_offset());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
+  Address secondary_supers_addr(sub_klass, ss_offset);
+  Address super_cache_addr(     sub_klass, sc_offset);
+
+  BLOCK_COMMENT("check_klass_subtype_slow_path");
+
+  // Do a linear scan of the secondary super-klass chain.
+  // This code is rarely used, so simplicity is a virtue here.
+  // The repne_scan instruction uses fixed registers, which we must spill.
+  // Don't worry too much about pre-existing connections with the input regs.
+
+  assert(sub_klass != r0, "killed reg"); // killed by mov(r0, super)
+  assert(sub_klass != r2, "killed reg"); // killed by lea(r2, &pst_counter)
+
+  RegSet pushed_registers;
+  if (!temps.contains(r2))    pushed_registers += r2;
+  if (!temps.contains(r5))    pushed_registers += r5;
+
+  if (super_klass != r0) {
+    if (!temps.contains(r0))   pushed_registers += r0;
+  }
+
+  push(pushed_registers, sp);
+
+  // Get super_klass value into r0 (even if it was in r5 or r2).
+  if (super_klass != r0) {
+    mov(r0, super_klass);
+  }
+
+#ifndef PRODUCT
+  incrementw(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
+#endif //PRODUCT
+
+  // We will consult the secondary-super array.
+  ldr(r5, secondary_supers_addr);
+  // Load the array length.
+  ldrw(r2, Address(r5, Array<Klass*>::length_offset_in_bytes()));
+  // Skip to start of data.
+  add(r5, r5, Array<Klass*>::base_offset_in_bytes());
+
+  cmp(sp, zr); // Clear Z flag; SP is never zero
+  // Scan R2 words at [R5] for an occurrence of R0.
+  // Set NZ/Z based on last compare.
+  repne_scan(r5, r0, r2, rscratch1);
+
+  // Unspill the temp. registers:
+  pop(pushed_registers, sp);
+
+  br(Assembler::NE, *L_failure);
+
+  // Success.  Cache the super we found and proceed in triumph.
+
+  if (!UseSecondarySupersCache) {
+    str(super_klass, super_cache_addr);
+  }
+
+  if (L_success != &L_fallthrough) {
+    b(*L_success);
+  }
+
+#undef IS_A_TEMP
+
+  bind(L_fallthrough);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  if (! UseSecondarySupersTable) {
+    check_klass_subtype_slow_path_1
+      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
+  } else {
+    check_klass_subtype_slow_path_2
+      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*vtemp*/fnoreg,
+       L_success, L_failure, set_cond_codes);
+  }
+}
+
 
 // Ensure that the inline code and the stub are using the same registers.
 #define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                    \

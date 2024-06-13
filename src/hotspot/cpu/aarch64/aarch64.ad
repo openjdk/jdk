@@ -16206,32 +16206,34 @@ instruct ShouldNotReachHere() %{
 
 // ============================================================================
 // Partial Subtype Check
-//
+
 // superklass array for an instance of the superklass.  Set a hidden
 // internal cache on a hit (cache is checked with exposed code in
 // gen_subtype_check()).  Return NZ for a miss or zero for a hit.  The
 // encoding ALSO sets flags.
 
-// instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, rFlagsReg cr)
-// %{
-//   match(Set result (PartialSubtypeCheck sub super));
-//   effect(KILL cr, KILL temp);
+instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(!UseSecondarySupersTable);
+  effect(KILL cr, KILL temp);
 
-//   ins_cost(1100);  // slightly larger than the next version
-//   format %{ "partialSubtypeCheck $result, $sub, $super" %}
+  ins_cost(1100);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
-//   ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
+  ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
 
-//   opcode(0x1); // Force zero of result reg on hit
+  opcode(0x1); // Force zero of result reg on hit
 
-//   ins_pipe(pipe_class_memory);
-// %}
+  ins_pipe(pipe_class_memory);
+%}
 
 instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, iRegP_R5 result,
                                  iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
                                  rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
   ins_cost(600);  // slightly larger than the next version
@@ -16243,10 +16245,7 @@ instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, 
                                      $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
                                      $vtemp$$FloatRegister,
                                      $result$$Register, /*L_success*/nullptr);
-    __ cmp($result$$Register, (u1)0);
   %}
-
-  opcode(0x1); // Force zero of result reg on hit
 
   ins_pipe(pipe_class_memory);
 %}
@@ -16283,21 +16282,6 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
 
   ins_pipe(pipe_class_memory);
 %}
-
-// instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, immP0 zero, rFlagsReg cr)
-// %{
-//   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-//   effect(KILL temp, KILL result);
-
-//   ins_cost(1100);  // slightly larger than the next version
-//   format %{ "partialSubtypeCheck $result, $sub, $super == 0" %}
-
-//   ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
-
-//   opcode(0x0); // Don't zero result reg on hit
-
-//   ins_pipe(pipe_class_memory);
-// %}
 
 // Intrisics for String.compareTo()
 
