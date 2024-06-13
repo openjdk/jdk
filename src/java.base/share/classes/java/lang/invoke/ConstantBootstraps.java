@@ -29,6 +29,9 @@ import sun.invoke.util.Wrapper;
 import static java.lang.invoke.MethodHandleNatives.mapLookupExceptionToError;
 import static java.util.Objects.requireNonNull;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 /**
  * Bootstrap methods for dynamically-computed constants.
  *
@@ -417,6 +420,42 @@ public final class ConstantBootstraps {
             throw e; // let specified CCE and other runtime exceptions/errors through
         } catch (Throwable throwable) {
             throw new InternalError(throwable); // Not specified, throw InternalError
+        }
+    }
+
+
+    /**
+     * A constant bootstrap for getting a field setter from within a serializable class
+     * which can set instance fields, even if they are declared to be {@code final},
+     * using {@linkplain Field#setAccessible(boolean) the rules defined for reflection access to final fields}.
+     * The field must exist and be accessible by the given {@code lookup}.
+     *
+     * @param lookup a lookup which can access the field (must not be {@code null})
+     * @param name the name of the field (must not be {@code null})
+     * @param type the field type (must not be {@code null})
+     * @param cl the Serializable class
+     * @return a method handle which accepts an instance of the lookup class and the value to set (not {@code null})
+     * @throws InternalError if the field is inaccessible or missing
+     * @see Field#setAccessible(boolean)
+     * @since 24
+     */
+    public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<?> type, Class<?> cl) {
+        try {
+            Field field = cl.getDeclaredField(name);
+            if ((field.getModifiers() & Modifier.STATIC) != 0) {
+                throw new InternalError("Not an instance field");
+            }
+            if ((field.getModifiers() & Modifier.FINAL) != 0) {
+                // acquire the getter to satisfy access checking
+                lookup.unreflectGetter(field);
+                field.setAccessible(true);
+                return lookup.unreflectSetter(field);
+            } else {
+                // todo: maybe we don't even need this case...
+                return lookup.findSetter(cl, name, type);
+            }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new InternalError("Unable to access field for writing", e);
         }
     }
 

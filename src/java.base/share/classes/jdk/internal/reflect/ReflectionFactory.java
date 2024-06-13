@@ -474,7 +474,7 @@ public class ReflectionFactory {
                             cb.ldc(DynamicConstantDesc.ofNamed(
                                 MethodHandleDesc.ofMethod(
                                     DirectMethodHandleDesc.Kind.STATIC,
-                                    ClassDesc.of("sun.reflect.ReflectionFactory"),
+                                    CD_ConstantBootstraps,
                                     "fieldSetterForSerialization",
                                     MethodTypeDesc.of(
                                         CD_MethodHandle,
