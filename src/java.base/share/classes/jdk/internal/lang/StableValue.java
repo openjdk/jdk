@@ -203,7 +203,7 @@ public sealed interface StableValue<T>
      *
      * <pre> {@code
      * if (stable.isSet()) {
-     *     return stable.getOrThrow();
+     *     return stable.orElseThrow();
      * }
      * T newValue = mapper.apply(input);
      * stable.trySet(newValue);
