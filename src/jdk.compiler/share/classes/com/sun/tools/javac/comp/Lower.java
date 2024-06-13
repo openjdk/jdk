@@ -4040,7 +4040,7 @@ public class Lower extends TreeTranslator {
                 slam.pos = tree.pos;
                 slam.wasMethodReference = true;
                 if (receiverExpression != null) {
-                    // save the receiver expression in the desugared lambda
+                    // use a let expression so that the receiver expression is evaluated eagerly
                     return make.at(tree.pos).LetExpr(
                             make.VarDef(rcvr, translate(receiverExpression)), slam).setType(tree.type);
                 } else {
