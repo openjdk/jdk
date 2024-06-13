@@ -432,14 +432,17 @@ public final class ConstantBootstraps {
      *
      * @param lookup a lookup which can access the field (must not be {@code null})
      * @param name the name of the field (must not be {@code null})
-     * @param type the field type (must not be {@code null})
+     * @param type the type of the method handle (must be {@code MethodHandle.class})
      * @param cl the Serializable class
      * @return a method handle which accepts an instance of the lookup class and the value to set (not {@code null})
      * @throws InternalError if the field is inaccessible or missing
      * @see Field#setAccessible(boolean)
      * @since 24
      */
-    public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<?> type, Class<?> cl) {
+    public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<MethodHandle> type, Class<?> cl) {
+        if (type != MethodHandle.class) {
+            throw new IllegalArgumentException();
+        }
         try {
             Field field = cl.getDeclaredField(name);
             if ((field.getModifiers() & Modifier.STATIC) != 0) {
@@ -448,10 +451,11 @@ public final class ConstantBootstraps {
             if ((field.getModifiers() & Modifier.FINAL) != 0) {
                 // acquire the getter to satisfy access checking
                 lookup.unreflectGetter(field);
+                // this will fail if we are not allowed to set the field
                 field.setAccessible(true);
+                // otherwise, our privilege is sufficient
                 return lookup.unreflectSetter(field);
             } else {
-                // todo: maybe we don't even need this case...
                 return lookup.findSetter(cl, name, type);
             }
         } catch (IllegalAccessException | NoSuchFieldException e) {

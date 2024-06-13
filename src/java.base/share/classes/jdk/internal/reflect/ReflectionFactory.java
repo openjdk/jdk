@@ -25,8 +25,6 @@
 
 package jdk.internal.reflect;
 
-import static java.lang.constant.ConstantDescs.*;
-
 import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -35,6 +33,7 @@ import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
@@ -440,24 +439,20 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl)) {
+        if (!Serializable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
             return null;
         }
 
         // build an anonymous+hidden nestmate to perform the read operation
-        // todo: to cache, or not?
         ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
         byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$readObject"), classBuilder -> {
             classBuilder.withMethod("readObject",
-                MethodTypeDesc.of(CD_void, thisClass, ObjectInputStream.class.describeConstable().orElseThrow(InternalError::new)),
+                MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, ObjectInputStream.class.describeConstable().orElseThrow(InternalError::new)),
                 Modifier.STATIC | Modifier.PRIVATE,
                 mb -> mb.withCode(cb -> {
-                    // todo: constants somewhere
-                    ClassDesc ois = ClassDesc.of("java.io.ObjectInputStream");
-                    ClassDesc gf = ClassDesc.of("java.io.ObjectInputStream$GetField");
                     // get our GetField
                     cb.aload(1);
-                    cb.invokevirtual(ois, "readFields", MethodTypeDesc.of(gf));
+                    cb.invokevirtual(SerializationDescs.CD_ObjectInputStream, "readFields", SerializationDescs.MTD_ObjectInputStream_readFields);
                     cb.astore(2);
                     // iterate the fields of the class
                     for (Field field : cl.getDeclaredFields()) {
@@ -467,25 +462,13 @@ public class ReflectionFactory {
                         boolean isFinal = (field.getModifiers() & Modifier.FINAL) != 0;
                         String fieldName = field.getName();
                         Class<?> fieldType = field.getType();
-                        ClassDesc fieldDesc;
 
                         if (isFinal) {
-                            // todo: constants somewhere
+                            // special setter
                             cb.ldc(DynamicConstantDesc.ofNamed(
-                                MethodHandleDesc.ofMethod(
-                                    DirectMethodHandleDesc.Kind.STATIC,
-                                    CD_ConstantBootstraps,
-                                    "fieldSetterForSerialization",
-                                    MethodTypeDesc.of(
-                                        CD_MethodHandle,
-                                        CD_MethodHandles_Lookup,
-                                        CD_String,
-                                        CD_Class,
-                                        CD_Class
-                                    )
-                                ),
+                                SerializationDescs.DMHD_ConstantBootstraps_fieldSetterForSerialzation,
                                 fieldName,
-                                CD_MethodHandle,
+                                ConstantDescs.CD_MethodHandle,
                                 thisClass
                             ));
                             // stack: <mh>
@@ -494,48 +477,50 @@ public class ReflectionFactory {
                         cb.aload(2); // stack: <mh>? this GetField
                         cb.ldc(fieldName); // stack: <mh>? this GetField <name>
 
-                        switch (fieldType.descriptorString()) {
+                        ClassDesc fieldDesc = fieldType.describeConstable().orElseThrow(InternalError::new);
+
+                        switch (fieldDesc.descriptorString()) {
                             case "B" -> {
                                 cb.iconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_byte, CD_String, CD_byte));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_B);
                             }
                             case "C" -> {
                                 cb.iconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_char, CD_String, CD_char));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_C);
                             }
                             case "D" -> {
                                 cb.dconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_double, CD_String, CD_double));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_D);
                             }
                             case "F" -> {
                                 cb.fconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_float, CD_String, CD_float));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_F);
                             }
                             case "I" -> {
                                 cb.iconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_int, CD_String, CD_int));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_I);
                             }
                             case "J" -> {
                                 cb.lconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_long, CD_String, CD_long));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_J);
                             }
                             case "S" -> {
                                 cb.iconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_short, CD_String, CD_short));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_S);
                             }
                             case "Z" -> {
                                 cb.iconst_0();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(fieldDesc = CD_boolean, CD_String, CD_boolean));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_Z);
                             }
                             default -> {
                                 cb.aconst_null();
-                                cb.invokevirtual(gf, "get", MethodTypeDesc.of(CD_Object, CD_String, CD_Object));
-                                cb.checkcast(fieldDesc = fieldType.describeConstable().orElseThrow(InternalError::new));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_L);
+                                cb.checkcast(fieldDesc);
                             }
                         }
                         if (isFinal) {
                             // stack: <mh> this <val>
-                            cb.invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDesc.of(CD_void, thisClass, fieldDesc));
+                            cb.invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact", MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, fieldDesc));
                         } else {
                             // non-final; store it the usual way
                             // stack: this <val>
@@ -556,24 +541,20 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl)) {
+        if (!Serializable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
             return null;
         }
 
         // build an anonymous+hidden nestmate to perform the write operation
-        // todo: to cache, or not?
         ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
         byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$writeObject"), classBuilder -> {
             classBuilder.withMethod("writeObject",
-                MethodTypeDesc.of(CD_void, thisClass, ObjectOutputStream.class.describeConstable().orElseThrow(InternalError::new)),
+                MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, ObjectOutputStream.class.describeConstable().orElseThrow(InternalError::new)),
                 Modifier.STATIC | Modifier.PRIVATE,
                 mb -> mb.withCode(cb -> {
-                    // todo: constants somewhere
-                    ClassDesc oos = ClassDesc.of("java.io.ObjectOutputStream");
-                    ClassDesc pf = ClassDesc.of("java.io.ObjectOutputStream$PutField");
                     // get our PutField
                     cb.aload(1);
-                    cb.invokevirtual(oos, "putFields", MethodTypeDesc.of(pf));
+                    cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream, "putFields", SerializationDescs.MTD_ObjectOutputStream_putFields);
                     cb.astore(2);
                     // iterate the fields of the class
                     for (Field field : cl.getDeclaredFields()) {
@@ -589,46 +570,46 @@ public class ReflectionFactory {
 
                         switch (fieldType.descriptorString()) {
                             case "B" -> {
-                                cb.getfield(thisClass, fieldName, CD_byte);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_byte));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_byte);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_B);
                             }
                             case "C" -> {
-                                cb.getfield(thisClass, fieldName, CD_char);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_char));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_char);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_C);
                             }
                             case "D" -> {
-                                cb.getfield(thisClass, fieldName, CD_double);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_double));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_double);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_D);
                             }
                             case "F" -> {
-                                cb.getfield(thisClass, fieldName, CD_float);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_float));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_float);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_F);
                             }
                             case "I" -> {
-                                cb.getfield(thisClass, fieldName, CD_int);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_int));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_int);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_I);
                             }
                             case "J" -> {
-                                cb.getfield(thisClass, fieldName, CD_long);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_long));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_long);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_J);
                             }
                             case "S" -> {
-                                cb.getfield(thisClass, fieldName, CD_short);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_short));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_short);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_S);
                             }
                             case "Z" -> {
-                                cb.getfield(thisClass, fieldName, CD_boolean);
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_boolean));
+                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_boolean);
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_Z);
                             }
                             default -> {
                                 cb.getfield(thisClass, fieldName, fieldType.describeConstable().orElseThrow(InternalError::new));
-                                cb.invokevirtual(pf, "put", MethodTypeDesc.of(CD_void, CD_String, CD_Object));
+                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_L);
                             }
                         }
                     }
                     // commit fields to stream
                     cb.aload(1);
-                    cb.invokevirtual(oos, "writeFields", MethodTypeDesc.of(CD_void));
+                    cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream, "writeFields", ConstantDescs.MTD_void);
                     cb.return_();
                 })
             );
@@ -845,4 +826,55 @@ public class ReflectionFactory {
                 cl1.getPackageName() == cl2.getPackageName();
     }
 
+    /**
+     * Holder class for lazy init of serialization constant descriptors.
+     */
+    private static final class SerializationDescs {
+        private SerializationDescs() {
+            // no instances
+        }
+
+        private static final ClassDesc CD_ObjectInputStream = ClassDesc.of("java.io.ObjectInputStream");
+        private static final ClassDesc CD_ObjectInputStream_GetField = ClassDesc.of("java.io.ObjectInputStream$GetField");
+
+        private static final ClassDesc CD_ObjectOutputStream = ClassDesc.of("java.io.ObjectOutputStream");
+        private static final ClassDesc CD_ObjectOutputStream_PutField = ClassDesc.of("java.io.ObjectOutputStream$PutField");
+
+        private static final MethodTypeDesc MTD_ObjectInputStream_readFields = MethodTypeDesc.of(CD_ObjectInputStream_GetField);
+
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_B = MethodTypeDesc.of(ConstantDescs.CD_byte, ConstantDescs.CD_String, ConstantDescs.CD_byte);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_C = MethodTypeDesc.of(ConstantDescs.CD_char, ConstantDescs.CD_String, ConstantDescs.CD_char);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_D = MethodTypeDesc.of(ConstantDescs.CD_double, ConstantDescs.CD_String, ConstantDescs.CD_double);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_F = MethodTypeDesc.of(ConstantDescs.CD_float, ConstantDescs.CD_String, ConstantDescs.CD_float);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_I = MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_String, ConstantDescs.CD_int);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_J = MethodTypeDesc.of(ConstantDescs.CD_long, ConstantDescs.CD_String, ConstantDescs.CD_long);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_L = MethodTypeDesc.of(ConstantDescs.CD_Object, ConstantDescs.CD_String, ConstantDescs.CD_Object);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_S = MethodTypeDesc.of(ConstantDescs.CD_short, ConstantDescs.CD_String, ConstantDescs.CD_short);
+        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_Z = MethodTypeDesc.of(ConstantDescs.CD_boolean, ConstantDescs.CD_String, ConstantDescs.CD_boolean);
+
+        private static final MethodTypeDesc MTD_ObjectOutputStream_putFields = MethodTypeDesc.of(CD_ObjectOutputStream_PutField);
+
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_B = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_byte);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_C = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_char);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_D = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_double);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_F = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_float);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_I = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_int);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_J = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_long);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_L = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_Object);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_S = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_short);
+        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_Z = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_boolean);
+
+        private static final DirectMethodHandleDesc DMHD_ConstantBootstraps_fieldSetterForSerialzation = MethodHandleDesc.ofMethod(
+            DirectMethodHandleDesc.Kind.STATIC,
+            ConstantDescs.CD_ConstantBootstraps,
+            "fieldSetterForSerialization",
+            MethodTypeDesc.of(
+                ConstantDescs.CD_MethodHandle,
+                ConstantDescs.CD_MethodHandles_Lookup,
+                ConstantDescs.CD_String,
+                ConstantDescs.CD_Class,
+                ConstantDescs.CD_Class
+            )
+        );
+    }
 }
