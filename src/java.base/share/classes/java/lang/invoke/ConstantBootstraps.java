@@ -449,14 +449,14 @@ public final class ConstantBootstraps {
             throw new IllegalArgumentException();
         }
         try {
+            // ensure that the caller has private access to {@code cl}
+            lookup = MethodHandles.privateLookupIn(cl, lookup);
             Field field = cl.getDeclaredField(name);
             int fieldMods = field.getModifiers();
             if (Modifier.isStatic(fieldMods)) {
                 throw new IncompatibleClassChangeError("Field " + name + " must not be static");
             }
             if (Modifier.isFinal(fieldMods)) {
-                // acquire the getter to satisfy access checking
-                lookup.unreflectGetter(field);
                 // this will fail if we are not allowed to set the field
                 field.setAccessible(true);
                 // otherwise, our privilege is sufficient
