@@ -88,6 +88,6 @@ public class EnableRevocation {
                 "-strict -verbose -debug -revCheck")
                 .shouldContain("Contacting OCSP server at")
                 .shouldContain("Downloading CRL from")
-                .shouldHaveExitValue(4);
+                .shouldHaveExitValue(36); // aliasNotInStore(32), chainNotValidated(4)
     }
 }
