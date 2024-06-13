@@ -2898,7 +2898,6 @@ bool SuperWord::vtransform() const {
                         NOT_PRODUCT( COMMA is_trace_superword_rejections())
                         NOT_PRODUCT( COMMA is_trace_align_vector())
                         NOT_PRODUCT( COMMA is_trace_superword_info())
-                        NOT_PRODUCT( COMMA is_trace_superword_verbose())
                         );
   {
     ResourceMark rm;

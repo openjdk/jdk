@@ -1418,7 +1418,6 @@ public:
                   NOT_PRODUCT( COMMA const bool is_trace_rejections)
                   NOT_PRODUCT( COMMA const bool is_trace_align_vector)
                   NOT_PRODUCT( COMMA const bool is_trace_info)
-                  NOT_PRODUCT( COMMA const bool is_trace_verbose)
                   ) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
@@ -1431,11 +1430,10 @@ public:
     NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
     NOT_PRODUCT( COMMA _is_trace_align_vector(is_trace_align_vector) )
     NOT_PRODUCT( COMMA _is_trace_info(is_trace_info) )
-    NOT_PRODUCT( COMMA _is_trace_verbose(is_trace_verbose) )
   {
 #ifndef PRODUCT
-    bool is_trace =  _vloop.vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
-    _is_trace_verbose      |= is_trace;
+    bool is_trace     = _vloop.vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+    _is_trace_verbose = _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALL);
     _is_trace_rejections   |= is_trace || _is_trace_verbose;
     _is_trace_align_vector |= is_trace || _is_trace_verbose;
     _is_trace_info         |= is_trace || _is_trace_verbose;
