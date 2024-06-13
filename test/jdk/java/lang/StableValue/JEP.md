@@ -219,7 +219,7 @@ The Stable Values API resides in the [java.lang](https://cr.openjdk.org/~pminbor
 ### Stable values
 
 A _stable value_ is a holder object that is set at most once whereby it
-goes from "unset" to "set". It is expressed as an object of type `java.lang.StableValue`,
+goes from "unset" to "set". It is expressed as an object of type `jdk.internal.lang.StableValue`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (unset) `StableValue` instances are created via the factory method `StableValue::newInstance`:
 
@@ -258,7 +258,8 @@ method simultaneously if they call the `logger()` method at about the same time.
 competing threads, there might be applications where it is a requirement, that a supplying method is
 only called once.
 
-In such cases, it is possible to compute and set an unset value on-demand as shown in this example in which case `StableValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
+In such cases, it is possible to compute and set an unset value on-demand as shown in this example in which
+case `StableValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
 
 ```
 class Bar {
@@ -285,7 +286,8 @@ The Stable Values API provides constructs that allow the creation and handling o
 `List<StableValue<V>>`. Consequently, each element in the list enjoys the same properties as a
 `StableValue`.
 
-Like a `StableValue` object, a `List` of stable value elements is created via a factory method by providing the size of the desired `List`:
+Like a `StableValue` object, a `List` of stable value elements is created via a factory method by
+providing the size of the desired `List`:
 
 ```
 static <V> List<StableValue<V>> StableValues.ofList(int size) { ... }
@@ -374,8 +376,8 @@ arbitrarily, but pre-specified, keys in a resource-efficient and performant way.
 high-performance, non-evicting caches may now be easily and reliably realized.
 
 It is worth remembering, that the stable collections all promise the function provided at computation
-(used to lazily compute elements or values) is invoked at most once per index or key; even
-though used from several threads.
+(used to lazily compute elements or values) is invoked at most once per index or key (absent any Exceptions);
+even though used from several threads.
 
 ### Memoized functions
 
@@ -455,7 +457,28 @@ class ErrorMessages {
 }
 ```
 
-The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able to write such constructs in a few lines.
+The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or 
+a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able
+to write such constructs in a few lines.
+
+An advantage with memoized functions, compared to working directly with StableValues, is that the initialization logic
+can be centralized and maintained in a single place, usually at the same place where the memoized function is defined.
+
+The StableValues API offers yet another factory for memoized suppliers that will invoke a provided `original` 
+supplier at most once (if successful) and also allows an optional `threadFactory` to be provided from which 
+a new value-computing background thread will be created:
+
+```
+static final Supplier<T> MEMOIZED = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
+```
+
+This can provide a best-of-several-worlds situation where the memoized supplier can be quickly defined (as no
+computation is made by the defining thread), the holder value is computed in a background thread (thus neither
+interfering significantly with the critical startup path nor with future accessing threads), and the threads actually 
+accessing the holder value can access the holder value with as-if-final performance and without having to compute
+a holder value. This is true under the assumption, that the background thread can complete computation before accessing
+threads requires a holder value. If this is not the case, at least some reduction of blocking time can be enjoyed as 
+the background thread has a head start compared to the accessing threads.
 
 ## Alternatives
 

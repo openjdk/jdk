@@ -227,8 +227,9 @@ public sealed interface StableValue<T>
      * <p>
      * If this method returns without throwing an Exception, a holder value is always set.
      *
-     * @param input  to be applied to the {@code mapper}
+     * @param input  context to be applied to the {@code mapper}
      * @param mapper the mapper to be used to compute a holder value
+     * @param <I>    The type of the {@code input} context
      * @return the current (existing or computed) holder value associated with
      *         this stable value
      */
