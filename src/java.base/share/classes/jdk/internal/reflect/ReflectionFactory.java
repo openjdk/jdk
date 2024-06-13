@@ -439,7 +439,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
+        if (!Serializable.class.isAssignableFrom(cl) || Externalizable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
             return null;
         }
 
@@ -456,10 +456,11 @@ public class ReflectionFactory {
                     cb.astore(2);
                     // iterate the fields of the class
                     for (Field field : cl.getDeclaredFields()) {
-                        if ((field.getModifiers() & (Modifier.STATIC | Modifier.TRANSIENT)) != 0) {
+                        int fieldMods = field.getModifiers();
+                        if (Modifier.isStatic(fieldMods) || Modifier.isTransient(fieldMods)) {
                             continue;
                         }
-                        boolean isFinal = (field.getModifiers() & Modifier.FINAL) != 0;
+                        boolean isFinal = (fieldMods & Modifier.FINAL) != 0;
                         String fieldName = field.getName();
                         Class<?> fieldType = field.getType();
 
@@ -541,7 +542,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
+        if (!Serializable.class.isAssignableFrom(cl) || Externalizable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
             return null;
         }
 
@@ -558,7 +559,8 @@ public class ReflectionFactory {
                     cb.astore(2);
                     // iterate the fields of the class
                     for (Field field : cl.getDeclaredFields()) {
-                        if ((field.getModifiers() & (Modifier.STATIC | Modifier.TRANSIENT)) != 0) {
+                        int fieldMods = field.getModifiers();
+                        if (Modifier.isStatic(fieldMods) || Modifier.isTransient(fieldMods)) {
                             continue;
                         }
                         String fieldName = field.getName();
