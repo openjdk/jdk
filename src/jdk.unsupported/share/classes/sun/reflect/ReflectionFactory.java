@@ -171,6 +171,8 @@ public class ReflectionFactory {
      * @param cl a Serializable class
      * @return  a direct MethodHandle for the synthetic {@code readObject} method
      *          or {@code null} if the class is not serializable
+     *
+     * @since 24
      */
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
         return delegate.defaultReadObjectForSerialization(cl);
@@ -203,6 +205,8 @@ public class ReflectionFactory {
      * @param cl a Serializable class
      * @return  a direct MethodHandle for the synthetic {@code writeObject} method
      *          or {@code null} if the class is not serializable
+     *
+     * @since 24
      */
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
         return delegate.defaultWriteObjectForSerialization(cl);
