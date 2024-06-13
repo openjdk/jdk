@@ -835,8 +835,8 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
   const VPointer* a = *p1;
   const VPointer* b = *p2;
 
-  int cmp_offset = a->offset_in_bytes() - b->offset_in_bytes();
-  if (cmp_offset != 0) { return cmp_offset; }
+  if (a->offset_in_bytes() < b->offset_in_bytes()) { return -1; }
+  if (a->offset_in_bytes() > b->offset_in_bytes()) { return  1; }
 
   return a->mem()->_idx - b->mem()->_idx;
 }
