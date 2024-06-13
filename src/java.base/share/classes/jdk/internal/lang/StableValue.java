@@ -162,7 +162,7 @@ public sealed interface StableValue<T>
      *
      * <pre> {@code
      * if (stable.isSet()) {
-     *     return stable.getOrThrow();
+     *     return stable.orElseThrow();
      * }
      * T newValue = supplier.get();
      * stable.trySet(newValue);
