@@ -39,33 +39,29 @@ class CgroupV1Controller: public CgroupController {
 
     /* Constructed subsystem directory */
     char *_path;
+    void set_subsystem_path(char *cgroup_path);
 
   public:
-  CgroupV1Controller(char* root, char* mountpoint, char* cgroup_path)
-    : _root(os::strdup(root)),
-      _mount_point(os::strdup(mountpoint)),
-      _path(nullptr) {
-      set_subsystem_path(cgroup_path);
-    }
-
-    void set_subsystem_path(char *cgroup_path);
-    char *subsystem_path() { return _path; }
+    CgroupV1Controller(char* root, char* mountpoint, char* cgroup_path)
+      : _root(os::strdup(root)),
+        _mount_point(os::strdup(mountpoint)),
+        _path(nullptr) {
+        set_subsystem_path(cgroup_path);
+      }
+      char *subsystem_path() { return _path; }
 };
 
 class CgroupV1MemoryController: public CgroupV1Controller {
-
-  public:
-    bool is_hierarchical() { return _uses_mem_hierarchy; }
-    void set_subsystem_path(char *cgroup_path);
-  private:
     /* Some container runtimes set limits via cgroup
      * hierarchy. If set to true consider also memory.stat
      * file if everything else seems unlimited */
     bool _uses_mem_hierarchy;
     jlong uses_mem_hierarchy();
     void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
+    void set_subsystem_path(char *cgroup_path);
 
   public:
+    bool is_hierarchical() { return _uses_mem_hierarchy; }
     CgroupV1MemoryController(char* root, char* mountpoint, char* cgroup_path)
     : CgroupV1Controller(root, mountpoint, cgroup_path),
       _uses_mem_hierarchy(false) {
