@@ -481,10 +481,9 @@ bool SuperWord::SLP_extract() {
   filter_packs_for_profitable();
 
   DEBUG_ONLY(verify_packs();)
+  DEBUG_ONLY(verify_no_extract());
 
-  schedule();
-
-  return output();
+  return schedule_and_apply();
 }
 
 // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
@@ -1466,7 +1465,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
 // that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
-  if (!vectors_should_be_aligned()) {
+  if (!VLoop::vectors_should_be_aligned()) {
     return;
   }
 
@@ -1592,20 +1591,12 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     } else if (p0->is_Cmp()) {
       // Cmp -> Bool -> Cmove
       retValue = UseVectorCmov;
-    } else if (requires_long_to_int_conversion(opc)) {
-      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-      // returns int type, but Vector API for them returns long type. To unify
-      // the implementation in backend, superword splits the vector implementation
-      // for Java API into an execution node with long type plus another node
-      // converting long to int.
+    } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+      // Requires extra vector long -> int conversion.
       retValue = VectorNode::implemented(opc, size, T_LONG) &&
                  VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
-      // Vector unsigned right shift for signed subword types behaves differently
-      // from Java Spec. But when the shift amount is a constant not greater than
-      // the number of sign extended bits, the unsigned right shift can be
-      // vectorized to a signed right shift.
-      if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
+      if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, velt_basic_type(p0))) {
         opc = Op_RShiftI;
       }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
@@ -1630,36 +1621,87 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
-// Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-// returns int type, but Vector API for them returns long type. To unify
-// the implementation in backend, superword splits the vector implementation
-// for Java API into an execution node with long type plus another node
-// converting long to int.
-bool SuperWord::requires_long_to_int_conversion(int opc) {
-  switch(opc) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-      return true;
-    default:
-      return false;
-  }
-}
-
-//------------------------------same_inputs--------------------------
-// For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(const Node_List* p, int idx) const {
-  Node* p0 = p->at(0);
-  uint vlen = p->size();
-  Node* p0_def = p0->in(idx);
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* pi_def = pi->in(idx);
-    if (p0_def != pi_def) {
-      return false;
+// If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
+Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int index) const {
+  Node* p0_in = pack->at(0)->in(index);
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(index) != p0_in) {
+      return nullptr; // not same
     }
   }
-  return true;
+  return p0_in;
+}
+
+VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
+  BoolNode* bol = bool_pack->at(0)->as_Bool();
+  BoolTest::mask mask = bol->_test._test;
+  bool is_negated = false;
+  assert(mask == BoolTest::eq ||
+         mask == BoolTest::ne ||
+         mask == BoolTest::ge ||
+         mask == BoolTest::gt ||
+         mask == BoolTest::lt ||
+         mask == BoolTest::le,
+         "Bool should be one of: eq, ne, ge, gt, lt, le");
+
+#ifdef ASSERT
+  for (uint j = 0; j < bool_pack->size(); j++) {
+    Node* m = bool_pack->at(j);
+    assert(m->as_Bool()->_test._test == mask,
+           "all bool nodes must have same test");
+  }
+#endif
+
+  CmpNode* cmp0 = bol->in(1)->as_Cmp();
+  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
+
+  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+    // If we have a Float or Double comparison, we must be careful with
+    // handling NaN's correctly. CmpF and CmpD have a return code, as
+    // they are based on the java bytecodes fcmpl/dcmpl:
+    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+    //  0: cmp_in1 == cmp_in2  (no NaN)
+    //  1: cmp_in1 >  cmp_in2  (no NaN)
+    //
+    // The "mask" selects which of the [-1, 0, 1] cases lead to "true".
+    //
+    // Note: ordered   (O) comparison returns "false" if either input is NaN.
+    //       unordered (U) comparison returns "true"  if either input is NaN.
+    //
+    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+    // standard way (all comparisons are ordered, except NEQ is unordered).
+    //
+    // In the following, "mask" already matches the cmp code for VectorMaskCmpNode:
+    //   BoolTest::eq:  Case 0     -> EQ_O
+    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+    //   BoolTest::ge:  Case 0, 1  -> GE_O
+    //   BoolTest::gt:  Case 1     -> GT_O
+    //
+    // But the lt and le comparisons must be converted from unordered to ordered:
+    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+    //
+    if (mask == BoolTest::lt || mask == BoolTest::le) {
+      // Negating the mask gives us the negated result, since all non-NaN cases are
+      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
+      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
+      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
+      //
+      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
+      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      mask = bol->_test.negate();
+      is_negated = true;
+    }
+  }
+
+  return VTransformBoolTest(mask, is_negated);
 }
 
 //------------------------------profitable---------------------------
@@ -1696,10 +1738,9 @@ bool SuperWord::profitable(const Node_List* p) const {
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
     Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr)
+    if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
       return false;
-    if (!same_inputs(p, 2))
-      return false;
+    }
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -2042,7 +2083,9 @@ public:
   }
 };
 
-// The C2 graph (specifically the memory graph), needs to be re-ordered.
+// We want to replace the packed scalars from the PackSet and replace them
+// with vector operations. This requires scheduling and re-ordering the memory
+// graph. We take these steps:
 // (1) Build the PacksetGraph. It combines the dependency graph with the
 //     packset. The PacksetGraph gives us the dependencies that must be
 //     respected after scheduling.
@@ -2050,10 +2093,11 @@ public:
 //     a linear order of all memops in the body. The order respects the
 //     dependencies of the PacksetGraph.
 // (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
-// (4) Use the memops_schedule to re-order the memops in all slices.
-void SuperWord::schedule() {
-  if (_packset.length() == 0) {
-    return; // empty packset
+// (4) Apply the vectorization, including re-ordering the memops and replacing
+//     packed scalars with vector operations.
+bool SuperWord::schedule_and_apply() {
+  if (_packset.is_empty()) {
+    return false;
   }
   ResourceMark rm;
 
@@ -2079,27 +2123,40 @@ void SuperWord::schedule() {
     }
 #endif
     _packset.clear();
-    return;
+    return false;
   }
 
+  // (4) Apply the vectorization, including re-ordering the memops.
+  return apply(memops_schedule);
+}
+
+bool SuperWord::apply(Node_List& memops_schedule) {
+  Compile* C = phase()->C;
+  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
+  C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
+
+  apply_memops_reordering_with_schedule(memops_schedule);
+  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
+
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
+  C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
+
+  bool is_success = apply_vectorization();
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
+
+  return is_success;
+}
+
+// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
+// and track the current memory state of each slice.
+void SuperWord::apply_memops_reordering_with_schedule(Node_List& memops_schedule) {
 #ifndef PRODUCT
   if (is_trace_superword_info()) {
-    tty->print_cr("SuperWord::schedule: memops_schedule:");
+    tty->print_cr("\nSuperWord::apply_memops_reordering_with_schedule:");
     memops_schedule.dump();
   }
 #endif
 
-  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-  phase()->C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
-
-  // (4) Use the memops_schedule to re-order the memops in all slices.
-  schedule_reorder_memops(memops_schedule);
-}
-
-
-// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
-// and track the current memory state of each slice.
-void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   int max_slices = phase()->C->num_alias_types();
   // When iterating over the memops_schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
@@ -2180,32 +2237,24 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   }
 }
 
-//------------------------------output---------------------------
 // Convert packs into vector node operations
 // At this point, all correctness and profitability checks have passed.
 // We start the irreversible process of editing the C2 graph. Should
 // there be an unexpected situation (assert fails), then we can only
 // bail out of the compilation, as the graph has already been partially
 // modified. We bail out, and retry without SuperWord.
-bool SuperWord::output() {
+bool SuperWord::apply_vectorization() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = phase()->C;
-  if (_packset.is_empty()) {
-    return false;
-  }
+  assert(!_packset.is_empty(), "vectorization requires non-empty packset");
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("SuperWord::output    ");
+    tty->print("SuperWord::apply_vectorization ");
     lpt()->dump_head();
   }
 #endif
-  phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
-
-  adjust_pre_loop_limit_to_align_main_loop_vectors();
-
-  DEBUG_ONLY(verify_no_extract());
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
@@ -2214,7 +2263,7 @@ bool SuperWord::output() {
     Node* n = body().at(i);
     Node_List* p = get_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
-      // After schedule_reorder_memops, we know that the memops have the same order in the pack
+      // After apply_memops_reordering_with_schedule, we know that the memops have the same order in the pack
       // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
       // and "n" is the last node in the slice from the pack.
       Node* first = p->at(0);
@@ -2294,79 +2343,32 @@ bool SuperWord::output() {
 
         BoolNode* bol = n->in(1)->as_Bool();
         assert(bol != nullptr, "must have Bool above CMove");
-        BoolTest::mask bol_test = bol->_test._test;
-        assert(bol_test == BoolTest::eq ||
-               bol_test == BoolTest::ne ||
-               bol_test == BoolTest::ge ||
-               bol_test == BoolTest::gt ||
-               bol_test == BoolTest::lt ||
-               bol_test == BoolTest::le,
-               "CMove bool should be one of: eq,ne,ge,ge,lt,le");
-        Node_List* p_bol = get_pack(bol);
-        assert(p_bol != nullptr, "CMove must have matching Bool pack");
-
-#ifdef ASSERT
-        for (uint j = 0; j < p_bol->size(); j++) {
-          Node* m = p_bol->at(j);
-          assert(m->as_Bool()->_test._test == bol_test,
-                 "all bool nodes must have same test");
-        }
-#endif
+        Node_List* bool_pack = get_pack(bol);
+        assert(bool_pack != nullptr, "CMove must have matching Bool pack");
 
         CmpNode* cmp = bol->in(1)->as_Cmp();
         assert(cmp != nullptr, "must have cmp above CMove");
-        Node_List* p_cmp = get_pack(cmp);
-        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
+        Node_List* cmp_pack = get_pack(cmp);
+        assert(cmp_pack != nullptr, "Bool must have matching Cmp pack");
 
-        Node* cmp_in1 = vector_opd(p_cmp, 1);
-        Node* cmp_in2 = vector_opd(p_cmp, 2);
+        Node* cmp_in1 = vector_opd(cmp_pack, 1);
+        Node* cmp_in2 = vector_opd(cmp_pack, 2);
 
         Node* blend_in1 = vector_opd(p, 2);
         Node* blend_in2 = vector_opd(p, 3);
 
-        if (cmp->Opcode() == Op_CmpF || cmp->Opcode() == Op_CmpD) {
-          // If we have a Float or Double comparison, we must be careful with
-          // handling NaN's correctly. CmpF and CmpD have a return code, as
-          // they are based on the java bytecodes fcmpl/dcmpl:
-          // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
-          //  0: cmp_in1 == cmp_in2  (no NaN)
-          //  1: cmp_in1 >  cmp_in2  (no NaN)
-          //
-          // The "bol_test" selects which of the [-1, 0, 1] cases lead to "true".
-          //
-          // Note: ordered   (O) comparison returns "false" if either input is NaN.
-          //       unordered (U) comparison returns "true"  if either input is NaN.
-          //
-          // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
-          // standard way (all comparisons are ordered, except NEQ is unordered).
-          //
-          // In the following, "bol_test" already matches the cmp code for VectorMaskCmpNode:
-          //   BoolTest::eq:  Case 0     -> EQ_O
-          //   BoolTest::ne:  Case -1, 1 -> NEQ_U
-          //   BoolTest::ge:  Case 0, 1  -> GE_O
-          //   BoolTest::gt:  Case 1     -> GT_O
-          //
-          // But the lt and le comparisons must be converted from unordered to ordered:
-          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
-          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
-          //
-          if (bol_test == BoolTest::lt || bol_test == BoolTest::le) {
-            // Negating the bol_test and swapping the blend-inputs leaves all non-NaN cases equal,
-            // but converts the unordered (U) to an ordered (O) comparison.
-            //      VectorBlend(VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            //      VectorBlend(VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            bol_test = bol->_test.negate();
-            swap(blend_in1, blend_in2);
-          }
+        VTransformBoolTest bool_test = _packset.get_bool_test(bool_pack);
+        BoolTest::mask test_mask = bool_test._mask;
+        if (bool_test._is_negated) {
+           // We can cancel out the negation by swapping the blend inputs.
+           swap(blend_in1, blend_in2);
         }
 
         // VectorMaskCmp
-        ConINode* bol_test_node  = igvn().intcon((int)bol_test);
+        ConINode* test_mask_node  = igvn().intcon((int)test_mask);
         BasicType bt = velt_basic_type(cmp);
         const TypeVect* vt = TypeVect::make(bt, vlen);
-        VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
+        VectorNode* mask = new VectorMaskCmpNode(test_mask, cmp_in1, cmp_in2, test_mask_node, vt);
         phase()->register_new_node_with_ctrl_of(mask, p->at(0));
         igvn()._worklist.push(mask);
 
@@ -2408,40 +2410,23 @@ bool SuperWord::output() {
             vlen_in_bytes = in2->as_Vector()->length_in_bytes();
           }
         } else {
-          // Vector unsigned right shift for signed subword types behaves differently
-          // from Java Spec. But when the shift amount is a constant not greater than
-          // the number of sign extended bits, the unsigned right shift can be
-          // vectorized to a signed right shift.
-          if (VectorNode::can_transform_shift_op(n, velt_basic_type(n))) {
+          if (VectorNode::can_use_RShiftI_instead_of_URShiftI(n, velt_basic_type(n))) {
             opc = Op_RShiftI;
           }
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
-                 opc == Op_AbsF || opc == Op_AbsD ||
-                 opc == Op_AbsI || opc == Op_AbsL ||
-                 opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
-                 opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
-                 opc == Op_ReverseI || opc == Op_ReverseL ||
-                 opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
-                 opc == Op_CountTrailingZerosI) {
+      } else if (VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (requires_long_to_int_conversion(opc)) {
-        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-        // returns int type, but Vector API for them returns long type. To unify
-        // the implementation in backend, superword splits the vector implementation
-        // for Java API into an execution node with long type plus another node
-        // converting long to int.
+      } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         phase()->register_new_node_with_ctrl_of(longval, first);
+        // Requires extra vector long -> int conversion.
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2525,8 +2510,6 @@ bool SuperWord::output() {
     }
   }
 
-  phase()->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
-
   return true;
 }
 
@@ -2537,13 +2520,13 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  bool have_same_inputs = same_inputs(p, opd_idx);
+  Node* same_input = _packset.same_inputs_at_index_or_null(p, opd_idx);
 
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
   // all inputs are the same iv, so we do a same inputs check here.
-  if (opd == iv() && !have_same_inputs) {
+  if (opd == iv() && same_input == nullptr) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -2554,7 +2537,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     return vn;
   }
 
-  if (have_same_inputs) {
+  if (same_input != nullptr) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
         assert(false, "shift's count can't be vector");
@@ -2849,7 +2832,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
   assert(is_java_primitive(def_bt), "sanity %s", type2name(def_bt));
 
   // Nodes like Long.bitCount: expect long input, and int output.
-  if (requires_long_to_int_conversion(use->Opcode())) {
+  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(use->Opcode())) {
     return type2aelembytes(def_bt) == 8 &&
            type2aelembytes(use_bt) == 4;
   }
@@ -2996,7 +2979,7 @@ VStatus VLoopBody::construct() {
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        requires_long_to_int_conversion(n->Opcode())) ||
+        VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }
@@ -3173,7 +3156,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // determined by SuperWord::filter_packs_for_alignment().
 void SuperWord::determine_mem_ref_and_aw_for_main_loop_alignment() {
   if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
   }
 
