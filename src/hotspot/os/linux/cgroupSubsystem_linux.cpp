@@ -189,27 +189,23 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     if (sscanf(p, "%s %d %*d %d", name, &hierarchy_id, &enabled) != 3) {
       continue;
     }
+    CG_INFO index = CG_INFO_INVALID;
     if (strcmp(name, "memory") == 0) {
-      cg_infos[MEMORY_IDX]._name = os::strdup(name);
-      cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
+      index = MEMORY_IDX;
     } else if (strcmp(name, "cpuset") == 0) {
-      cg_infos[CPUSET_IDX]._name = os::strdup(name);
-      cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
+      index = CPUSET_IDX;
     } else if (strcmp(name, "cpu") == 0) {
-      cg_infos[CPU_IDX]._name = os::strdup(name);
-      cg_infos[CPU_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPU_IDX]._enabled = (enabled == 1);
+      index = CPU_IDX;
     } else if (strcmp(name, "cpuacct") == 0) {
-      cg_infos[CPUACCT_IDX]._name = os::strdup(name);
-      cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
+      index = CPUACCT_IDX;
     } else if (strcmp(name, "pids") == 0) {
       log_debug(os, container)("Detected optional pids controller entry in %s", proc_cgroups);
-      cg_infos[PIDS_IDX]._name = os::strdup(name);
-      cg_infos[PIDS_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[PIDS_IDX]._enabled = (enabled == 1);
+      index = PIDS_IDX;
+    }
+    if (index != CG_INFO_INVALID) {
+      cg_infos[index]._name = os::strdup(name);
+      cg_infos[index]._hierarchy_id = hierarchy_id;
+      cg_infos[index]._enabled = (enabled == 1);
     }
   }
   fclose(cgroups);
@@ -403,29 +399,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   // What follows is cgroups v1
   log_debug(os, container)("Detected cgroups hybrid or legacy hierarchy, using cgroups v1 controllers");
 
-  if (!cg_infos[MEMORY_IDX]._data_complete) {
-    log_debug(os, container)("Required cgroup v1 memory subsystem not found");
-    cleanup(cg_infos);
-    *flags = INVALID_CGROUPS_V1;
-    return false;
-  }
-  if (!cg_infos[CPUSET_IDX]._data_complete) {
-    log_debug(os, container)("Required cgroup v1 cpuset subsystem not found");
-    cleanup(cg_infos);
-    *flags = INVALID_CGROUPS_V1;
-    return false;
-  }
-  if (!cg_infos[CPU_IDX]._data_complete) {
-    log_debug(os, container)("Required cgroup v1 cpu subsystem not found");
-    cleanup(cg_infos);
-    *flags = INVALID_CGROUPS_V1;
-    return false;
-  }
-  if (!cg_infos[CPUACCT_IDX]._data_complete) {
-    log_debug(os, container)("Required cgroup v1 cpuacct subsystem not found");
-    cleanup(cg_infos);
-    *flags = INVALID_CGROUPS_V1;
-    return false;
+  for (int i = CG_INFO_START; i < CG_INFO_REQUIRED_END; i++) {
+    if (!cg_infos[i]._data_complete) {
+      log_debug(os, container)("Required cgroup v1 memory subsystem not found");
+      cleanup(cg_infos);
+      *flags = INVALID_CGROUPS_V1;
+      return false;
+    }
   }
   if (log_is_enabled(Debug, os, container) && !cg_infos[PIDS_IDX]._data_complete) {
     log_debug(os, container)("Optional cgroup v1 pids subsystem not found");
