@@ -165,9 +165,10 @@ final class StableValuesSafePublicationTest {
                     if (System.currentTimeMillis() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
                                 Stream.of(STABLES)
+                                        .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
-                        fail("Giving up! Non-nulls seen by a new thread: " + nonNulls);
+                        fail("Giving up! Set stables seen by a new thread: " + nonNulls);
                     }
                 }
             }
