@@ -1321,6 +1321,15 @@ void Threads::print_on(outputStream* st, bool print_stacks,
         p->trace_stack();
       } else {
         p->print_stack_on(st);
+        const oop thread_oop = p->threadObj();
+        if (thread_oop != nullptr) {
+          if (p->is_vthread_mounted()) {
+            const oop vt = p->vthread();
+            assert(vt != nullptr, "vthread should not be null when vthread is mounted");
+            st->print_cr("   Mounted virtual thread \"%s\" #" INT64_FORMAT, JavaThread::name_for(vt), (int64_t)java_lang_Thread::thread_id(vt));
+            p->print_vthread_stack_on(st);
+          }
+        }
       }
     }
     st->cr();

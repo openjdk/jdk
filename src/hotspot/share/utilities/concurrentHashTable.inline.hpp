@@ -1056,6 +1056,15 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
+inline size_t ConcurrentHashTable<CONFIG, F>::
+  get_dynamic_node_size(size_t value_size)
+{
+  assert(Node::is_dynamic_sized_value_compatible(), "VALUE must be compatible");
+  assert(value_size >= sizeof(VALUE), "must include the VALUE");
+  return sizeof(Node) - sizeof(VALUE) + value_size;
+}
+
+template <typename CONFIG, MEMFLAGS F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   shrink(Thread* thread, size_t size_limit_log2)
 {

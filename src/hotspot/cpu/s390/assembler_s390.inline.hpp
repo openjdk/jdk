@@ -748,7 +748,7 @@ inline void Assembler::z_brxhg(Register r1, Register r3, Label& L) {z_brxhg(r1, 
 inline void Assembler::z_brxlg(Register r1, Register r3, Label& L) {z_brxlg(r1, r3, target(L)); }
 
 inline void Assembler::z_flogr( Register r1, Register r2)              { emit_32( FLOGR_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_popcnt(Register r1, Register r2)              { emit_32( POPCNT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_popcnt(Register r1, Register r2, int64_t  m3) { emit_32( POPCNT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
 inline void Assembler::z_ahhhr( Register r1, Register r2, Register r3) { emit_32( AHHHR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_ahhlr( Register r1, Register r2, Register r3) { emit_32( AHHLR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 
