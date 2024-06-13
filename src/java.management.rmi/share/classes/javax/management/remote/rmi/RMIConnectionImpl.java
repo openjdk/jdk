@@ -117,7 +117,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             // An authenticated Subject was provided.
             // Subject Delegation has been removed.
             if (SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-                // SM is allowed.  Will use ACC with Subject:
+                // SM is allowed.  Will use ACC created with Subject:
                 this.acc = JMXSubjectDomainCombiner.getContext(subject);
             } else {
                 this.acc = null;
@@ -1306,7 +1306,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     return action.run();
                 }
             } else {
-                // ACC is present, we have a Subject and SM is permitted:
+                // ACC is present, meaning SM is permitted:
                 return AccessController.doPrivileged(action, acc);
             }
         } finally {
@@ -1432,14 +1432,12 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     return op.run();
                 }
             } else {
-                // ACC is present, we have a Subject and SM is permitted:
+                // ACC is present, meaning SM is permitted:
                 return AccessController.doPrivileged(op, acc);
             }
         } catch (Exception e) {
-            if (e instanceof SecurityException) {
-                throw (SecurityException) e;
-            } else if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
+            if (e instanceof RuntimeException rte) {
+                throw rte;
             } else {
                 throw new PrivilegedActionException(e);
             }
@@ -1608,7 +1606,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try {
                 if (acc != null) {
-                    // ACC is present, we have a Subject and SM is permitted:
+                    // ACC is present, meaning SM is permitted:
                     return AccessController.doPrivileged(
                             (PrivilegedExceptionAction<T>) () ->
                                     wrappedClass.cast(mo.get()), acc);
