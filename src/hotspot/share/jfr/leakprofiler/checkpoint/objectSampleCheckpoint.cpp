@@ -273,23 +273,19 @@ static void install_stack_traces(const ObjectSampler* sampler) {
   iterate_samples(installer);
 }
 
-static inline void reset_write_state(const JfrBlobHandle& handle) {
-  handle->reset_write_state();
-}
-
 // Resets the blob write states from the previous epoch.
 static void reset_blob_write_state(const ObjectSampler* sampler, JavaThread* jt) {
   assert(sampler != nullptr, "invariant");
   const ObjectSample* sample = sampler->last_resolved();
   while (sample != nullptr) {
     if (sample->has_stacktrace()) {
-      reset_write_state(sample->stacktrace());
+      sample->stacktrace()->reset_write_state();
     }
     if (sample->has_thread()) {
-      reset_write_state(sample->thread());
+      sample->thread()->reset_write_state();
     }
     if (sample->has_type_set()) {
-      reset_write_state(sample->type_set());
+      sample->type_set()->reset_write_state();
     }
     sample = sample->next();
   }
