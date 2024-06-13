@@ -2811,7 +2811,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   return true;
 }
 
-// MulAddS2I takes shorts 4 shorts and produces an int. We can reinterpret
+// MulAddS2I takes 4 shorts and produces an int. We can reinterpret
 // the 4 shorts as two ints: a = (a0, a1) and b = (b0, b1).
 //
 // Inputs:                 1    2    3    4
@@ -2819,7 +2819,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 //   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1
 //
 // But permutations are possible, because add and mul are commutative. For
-// simplicity, we the first input is always either a0 or a1. These are all
+// simplicity, the first input is always either a0 or a1. These are all
 // the possible permutations:
 //
 //   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1     (case 1)
@@ -2849,8 +2849,7 @@ bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
 }
 
 Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
-  Node* p0 = pack->at(0);
-  Node* def0 = p0->in(index);
+  Node* def0 = pack->at(0)->in(index);
 
   Node_List* pack_in = get_pack(def0);
   if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
