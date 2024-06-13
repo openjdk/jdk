@@ -415,6 +415,7 @@ inline NativeJump* nativeJump_at(address address) {
 
 class NativeCall: public RawNativeCall {
 public:
+  static int byte_size() { return instruction_size; }
   // NativeCall::next_instruction_address() is used only to define the
   // range where to look for the relocation information. We need not
   // walk over composed instructions (as long as the relocation information

@@ -761,7 +761,7 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
       if (dir->is_default_directive() || dir->match(method)) {
         match = dir->get_for(comp);
         assert(match != nullptr, "Consistency");
-        if (match->EnableOption) {
+        if (match->EnableOption || dir->is_default_directive()) {
           // The directiveSet for this compile is also enabled -> success
           dir->inc_refcount();
           break;
