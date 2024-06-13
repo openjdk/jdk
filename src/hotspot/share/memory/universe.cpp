@@ -361,7 +361,7 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
 static void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = vmClasses::Object_klass();
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
     if (k->is_instance_klass()) {
@@ -394,7 +394,7 @@ void Universe::genesis(TRAPS) {
     // determine base vtable size; without that we cannot create the array klasses
     compute_base_vtable_size();
 
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
@@ -425,7 +425,7 @@ void Universe::genesis(TRAPS) {
 
 
 #if INCLUDE_CDS
-    if (UseSharedSpaces) {
+    if (CDSConfig::is_using_archive()) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
              vmClasses::Cloneable_klass(), "u3");
@@ -527,7 +527,7 @@ void Universe::genesis(TRAPS) {
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
-    if (UseSharedSpaces &&
+    if (CDSConfig::is_using_archive() &&
         ArchiveHeapLoader::is_in_use() &&
         _basic_type_mirrors[T_INT].resolve() != nullptr) {
       assert(ArchiveHeapLoader::can_use(), "Sanity");
@@ -565,7 +565,7 @@ void Universe::fixup_mirrors(TRAPS) {
   assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     // Cache the start of the static fields
     InstanceMirrorKlass::init_offset_of_static_fields();
   }
@@ -877,7 +877,7 @@ jint universe_init() {
 
 #if INCLUDE_CDS
   DynamicArchive::check_for_dynamic_dump();
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
@@ -1062,7 +1062,7 @@ bool universe_post_init() {
   assert(!is_init_completed(), "Error: initialization not yet completed!");
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     reinitialize_vtables();
     reinitialize_itables();
   }

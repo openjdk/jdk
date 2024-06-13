@@ -2070,11 +2070,6 @@ private:
   int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
-#if INCLUDE_RTM_OPT
-  // State of RTM code generation during compilation of the method
-  int               _rtm_state;
-#endif
-
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -2267,22 +2262,6 @@ public:
 #if INCLUDE_JVMCI
   FailedSpeculation** get_failed_speculations_address() {
     return &_failed_speculations;
-  }
-#endif
-
-#if INCLUDE_RTM_OPT
-  int rtm_state() const {
-    return _rtm_state;
-  }
-  void set_rtm_state(RTMState rstate) {
-    _rtm_state = (int)rstate;
-  }
-  void atomic_set_rtm_state(RTMState rstate) {
-    Atomic::store(&_rtm_state, (int)rstate);
-  }
-
-  static ByteSize rtm_state_offset() {
-    return byte_offset_of(MethodData, _rtm_state);
   }
 #endif
 
