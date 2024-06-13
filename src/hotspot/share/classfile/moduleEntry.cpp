@@ -266,6 +266,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _name(name),
     _loader_data(loader_data),
     _reads(nullptr),
+    _reads_is_archived(false),
     _version(nullptr),
     _location(nullptr),
     CDS_ONLY(_shared_path_index(-1) COMMA)
@@ -468,7 +469,7 @@ void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
 
 void ModuleEntry::init_as_archived_entry() {
   DEBUG_ONLY(
-    if (_reads == nullptr) { _reads_is_growable = true; }
+    //if (_reads == nullptr) { _reads_is_growable = true; }
   )
   set_archived_reads(write_growable_array(reads()));
 
@@ -518,9 +519,6 @@ void ModuleEntry::verify_archived_module_entries() {
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   assert(UseSharedSpaces, "runtime only");
   set_loader_data(loader_data);
-  DEBUG_ONLY(
-    _reads_is_archived = true;
-  )
   set_reads(restore_growable_array(archived_reads()));
   JFR_ONLY(INIT_ID(this);)
 }

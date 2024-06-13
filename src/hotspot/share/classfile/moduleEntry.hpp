@@ -68,9 +68,12 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
-  void* _reads; // list of modules that are readable by this module
-  DEBUG_ONLY(bool _reads_is_growable);
-  DEBUG_ONLY(bool _reads_is_archived);
+
+  union {
+    GrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
+    Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
+  };
+  bool _reads_is_archived;
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -118,22 +121,20 @@ public:
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
   GrowableArray<ModuleEntry*>* reads() const {
-    assert(_reads_is_growable, "sanity");
-    return (GrowableArray<ModuleEntry*>*)_reads;
+    assert(!_reads_is_archived, "sanity");
+    return _reads;
   }
   void set_reads(GrowableArray<ModuleEntry*>* r) {
     _reads = r;
-    DEBUG_ONLY(_reads_is_growable = true);
-    DEBUG_ONLY(_reads_is_archived = false);
+    _reads_is_archived = false;
   }
   Array<ModuleEntry*>* archived_reads() const {
     assert(_reads_is_archived, "sanity");
-    return (Array<ModuleEntry*>*)_reads;
+    return _archived_reads;
   }
   void set_archived_reads(Array<ModuleEntry*>* r) {
-    _reads = r;
-    DEBUG_ONLY(_reads_is_growable = false);
-    DEBUG_ONLY(_reads_is_archived = true);
+    _archived_reads = r;
+    _reads_is_archived = true;
   }
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
