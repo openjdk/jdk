@@ -89,6 +89,7 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
    *
    */
   assert(is_cgroup_v1(&cg_type_flags), "Cgroup v1 expected");
+  // The following are required to exist, determine_type will fail and return false otherwise.
   CgroupV1MemoryController* memory = new CgroupV1MemoryController(cg_infos[MEMORY_IDX]._root_mount_path,
                                                                   cg_infos[MEMORY_IDX]._mount_path,
                                                                   cg_infos[MEMORY_IDX]._cgroup_path);
@@ -201,12 +202,9 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 
   is_cgroupsV2 = true;
   all_required_controllers_enabled = true;
-  for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    // pids controller is optional. All other controllers are required
-    if (i != PIDS_IDX) {
-      is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
-      all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
-    }
+  for (int i = 0; i < CG_INFO_REQUIRED_END; i++) {
+    is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
+    all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
     if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
       log_debug(os, container)("controller %s is not enabled\n", cg_controller_name[i]);
     }

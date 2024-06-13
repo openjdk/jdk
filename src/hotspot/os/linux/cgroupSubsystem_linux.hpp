@@ -69,7 +69,7 @@ enum CG_INFO {
   CPU_IDX,
   CPUACCT_IDX,
   MEMORY_IDX,
-  PIDS_IDX,
+  PIDS_IDX, // pids is not required
   CG_INFO_REQUIRED_END = PIDS_IDX,
   CG_INFO_LENGTH = PIDS_IDX+1
 };
