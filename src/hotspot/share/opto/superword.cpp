@@ -2811,7 +2811,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   }
 
   if (VectorNode::is_muladds2i(use)) {
-    assert(1 <= u_idx && u_idx <= 4, "expected range for the 4 inputs");
     return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
   }
 
@@ -2834,16 +2833,16 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 //
 // Inputs:                 1    2    3    4
 // Offsets:                0    0    1    1
-//   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1
 //
 // But permutations are possible, because add and mul are commutative. For
 // simplicity, we the first input is always either a0 or a1. These are all
 // the possible permutations:
 //
-//   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1     (case 1)
-//   v = MulAddS2I(a, b) = a0 * b0 + b1 + a1     (case 2)
-//   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0     (case 3)
-//   v = MulAddS2I(a, b) = a1 * b1 + b0 + a0     (case 4)
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1     (case 1)
+//   v = MulAddS2I(a, b) = a0 * b0 + b1 * a1     (case 2)
+//   v = MulAddS2I(a, b) = a1 * b1 + a0 * b0     (case 3)
+//   v = MulAddS2I(a, b) = a1 * b1 + b0 * a0     (case 4)
 //
 // To vectorize, we expect (a0, a1) to be consecutive in one input pack,
 // and (b0, b1) in the other input pack. Thus, both a and b are strided,
