@@ -254,6 +254,12 @@ class CgroupInfo : public StackObj {
       _mount_path = nullptr;
     }
 
+    ~CgroupInfo() {
+      os::free(_name);
+      os::free(_cgroup_path);
+      os::free(_root_mount_path);
+      os::free(_mount_path);
+    }
 };
 
 class CgroupSubsystemFactory: AllStatic {
@@ -287,7 +293,6 @@ class CgroupSubsystemFactory: AllStatic {
                                const char* proc_self_cgroup,
                                const char* proc_self_mountinfo,
                                u1* flags);
-    static void cleanup(CgroupInfo* cg_infos);
 };
 
 #endif // CGROUP_SUBSYSTEM_LINUX_HPP

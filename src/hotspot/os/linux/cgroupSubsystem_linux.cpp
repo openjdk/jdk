@@ -65,7 +65,6 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     //       all controllers.
     CgroupController* unified = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path, cg_infos[MEMORY_IDX]._cgroup_path);
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
-    cleanup(cg_infos);
     return new CgroupV2Subsystem(unified);
   }
 
@@ -97,7 +96,7 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
    */
   assert(is_cgroup_v1(&cg_type_flags), "Cgroup v1 expected");
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    CgroupInfo info = cg_infos[i];
+    CgroupInfo& info = cg_infos[i];
     if (info._data_complete) { // pids controller might have incomplete data
       if (strcmp(info._name, "memory") == 0) {
         memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path);
@@ -119,7 +118,6 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
       log_debug(os, container)("CgroupInfo for %s not complete", cg_controller_name[i]);
     }
   }
-  cleanup(cg_infos);
   return new CgroupV1Subsystem(cpuset, cpu, cpuacct, pids, memory);
 }
 
@@ -226,7 +224,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   if (!all_required_controllers_enabled) {
     // one or more required controllers disabled, disable container support
     log_debug(os, container)("One or more required controllers disabled at kernel level.");
-    cleanup(cg_infos);
     *flags = INVALID_CGROUPS_GENERIC;
     return false;
   }
@@ -241,7 +238,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   if (cgroup == nullptr) {
     log_debug(os, container)("Can't open %s, %s",
                              proc_self_cgroup, os::strerror(errno));
-    cleanup(cg_infos);
     *flags = INVALID_CGROUPS_GENERIC;
     return false;
   }
@@ -302,7 +298,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   if (mntinfo == nullptr) {
       log_debug(os, container)("Can't open %s, %s",
                                proc_self_mountinfo, os::strerror(errno));
-      cleanup(cg_infos);
       *flags = INVALID_CGROUPS_GENERIC;
       return false;
   }
@@ -379,7 +374,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   // No point in continuing.
   if (!any_cgroup_mounts_found) {
     log_trace(os, container)("No relevant cgroup controllers mounted.");
-    cleanup(cg_infos);
     *flags = INVALID_CGROUPS_NO_MOUNT;
     return false;
   }
@@ -387,7 +381,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   if (is_cgroupsV2) {
     if (!cgroupv2_mount_point_found) {
       log_trace(os, container)("Mount point for cgroupv2 not found in /proc/self/mountinfo");
-      cleanup(cg_infos);
       *flags = INVALID_CGROUPS_V2;
       return false;
     }
@@ -402,7 +395,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   for (int i = CG_INFO_START; i < CG_INFO_REQUIRED_END; i++) {
     if (!cg_infos[i]._data_complete) {
       log_debug(os, container)("Required cgroup v1 memory subsystem not found");
-      cleanup(cg_infos);
       *flags = INVALID_CGROUPS_V1;
       return false;
     }
@@ -415,16 +407,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   *flags = CGROUPS_V1;
   return true;
 };
-
-void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
-  assert(cg_infos != nullptr, "Invariant");
-  for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    os::free(cg_infos[i]._name);
-    os::free(cg_infos[i]._cgroup_path);
-    os::free(cg_infos[i]._root_mount_path);
-    os::free(cg_infos[i]._mount_path);
-  }
-}
 
 /* active_processor_count
  *
