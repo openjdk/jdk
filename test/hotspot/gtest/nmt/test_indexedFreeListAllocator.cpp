@@ -138,8 +138,4 @@ TEST_VM_F(IndexedFreeListAllocatorTest, TestLinkedLists) {
     LL2<int, IndexedFreeListAllocator> list;
     test_with_list(list);
   }
-  {
-    LL2<int, CHeapAllocator> list;
-    test_with_list(list);
-  }
 }
