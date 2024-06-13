@@ -420,11 +420,6 @@ public class LambdaToMethod extends TreeTranslator {
                 syntheticInits.append(captured_local);
             }
         }
-        // add captured outer this instances (used only when `this' capture itself is illegal)
-        for (Symbol fv : localContext.getSymbolMap(CAPTURED_OUTER_THIS).keySet()) {
-            JCExpression captured_local = make.QualThis(fv.type);
-            syntheticInits.append(captured_local);
-        }
 
         //then, determine the arguments to the indy call
         List<JCExpression> indy_args = translate(syntheticInits.toList(), localContext.prev);
@@ -1463,11 +1458,6 @@ public class LambdaToMethod extends TreeTranslator {
             List<JCVariableDecl> syntheticParams;
 
             /**
-             * to prevent recursion, track local classes processed
-             */
-            final Set<Symbol> freeVarProcessedLocalClasses;
-
-            /**
              * For method references converted to lambdas.  The method
              * reference receiver expression. Must be treated like a captured
              * variable.
@@ -1504,13 +1494,10 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
-                translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_OUTER_THIS, new LinkedHashMap<Symbol, Symbol>());
-
-                freeVarProcessedLocalClasses = new HashSet<>();
+                translatedSymbols.put(PARAM, new LinkedHashMap<>());
+                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<>());
             }
 
              /**
@@ -1610,16 +1597,6 @@ public class LambdaToMethod extends TreeTranslator {
                             }
                         };
                         break;
-                    case CAPTURED_OUTER_THIS:
-                        Name name = names.fromString(sym.flatName().toString().replace('.', '$') + names.dollarThis);
-                        ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym) {
-                            @Override
-                            public Symbol baseSymbol() {
-                                //keep mapping with original captured symbol
-                                return sym;
-                            }
-                        };
-                        break;
                     case LOCAL_VAR:
                         ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym) {
                             @Override
@@ -1681,20 +1658,6 @@ public class LambdaToMethod extends TreeTranslator {
                                 return t;
                             }
                             break;
-                        case CAPTURED_OUTER_THIS:
-                            Optional<Symbol> proxy = m.keySet().stream()
-                                    .filter(out -> lambdaIdent.sym.isMemberOf(out.type.tsym, types))
-                                    .reduce((a, b) -> a.isEnclosedBy((ClassSymbol)b) ? a : b);
-                            if (proxy.isPresent()) {
-                                // Transform outer instance variable references anchoring them to the captured synthetic.
-                                Symbol tSym = m.get(proxy.get());
-                                JCExpression t = make.Ident(tSym).setType(lambdaIdent.sym.owner.type);
-                                t = make.Select(t, lambdaIdent.name);
-                                t.setType(lambdaIdent.type);
-                                TreeInfo.setSymbol(t, lambdaIdent.sym);
-                                return t;
-                            }
-                            break;
                     }
                 }
                 return null;
@@ -1737,10 +1700,6 @@ public class LambdaToMethod extends TreeTranslator {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
                     parameterSymbols.append((VarSymbol) thisSym);
                 }
-                for (Symbol thisSym : getSymbolMap(CAPTURED_OUTER_THIS).values()) {
-                    params.append(make.VarDef((VarSymbol) thisSym, null));
-                    parameterSymbols.append((VarSymbol) thisSym);
-                }
                 for (Symbol thisSym : getSymbolMap(PARAM).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
                     parameterSymbols.append((VarSymbol) thisSym);
@@ -1766,18 +1725,12 @@ public class LambdaToMethod extends TreeTranslator {
         }
 
         /**
-         * This class retains all the useful information about a method reference;
-         * the contents of this class are filled by the LambdaAnalyzer visitor,
-         * and the used by the main translation routines in order to adjust method
-         * references (i.e. in case a bridge is needed)
+         * Simple subclass modelling the translation context of a method reference.
          */
         final class ReferenceTranslationContext extends TranslationContext<JCMemberReference> {
 
-            final boolean isSuper;
-
             ReferenceTranslationContext(JCMemberReference tree) {
                 super(tree);
-                this.isSuper = tree.hasKind(ReferenceKind.SUPER);
             }
         }
     }
@@ -1791,14 +1744,12 @@ public class LambdaToMethod extends TreeTranslator {
         PARAM,          // original to translated lambda parameters
         LOCAL_VAR,      // original to translated lambda locals
         CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
-        CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
-        CAPTURED_OUTER_THIS; // used when `this' capture is illegal, but outer this capture is legit (JDK-8129740)
+        CAPTURED_THIS;  // class symbols to translated synthetic parameters (for captured member access)
 
         boolean propagateAnnotations() {
             switch (this) {
                 case CAPTURED_VAR:
                 case CAPTURED_THIS:
-                case CAPTURED_OUTER_THIS:
                     return false;
                 default:
                     return true;
