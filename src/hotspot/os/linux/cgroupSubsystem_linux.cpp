@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include <string.h>
 #include <math.h>
 #include <errno.h>
@@ -29,9 +30,7 @@
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "os_linux.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
