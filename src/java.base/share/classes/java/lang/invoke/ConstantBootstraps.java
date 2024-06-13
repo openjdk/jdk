@@ -424,20 +424,21 @@ public final class ConstantBootstraps {
     }
 
     /**
-     * A constant bootstrap for getting a field setter from within a serializable class
-     * which can set instance fields, even if they are declared to be {@code final},
-     * using {@linkplain Field#setAccessible(boolean) the rules defined for reflection access to final fields}.
-     * The field must exist and be accessible by the given {@code lookup}.
+     * Acquires a {@link MethodHandle} which, when called, sets the value of an
+     * instance field in the given class, even if it is declared to be {@code final},
+     * according to {@linkplain Field#setAccessible(boolean) the rules defined for reflection access to final fields}.
+     * The given {@code lookup} must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess() full privilege access},
+     * and must be able to access instances of the given class {@code cl}.
      *
      * @param lookup a lookup which can access the field (must not be {@code null})
      * @param name the name of the field (must not be {@code null})
      * @param type the type of the method handle (must be {@code MethodHandle.class})
-     * @param cl the Serializable class (must not be {@code null})
-     * @return a method handle which accepts an instance of the lookup class and the value to set (not {@code null})
+     * @param cl the {@code Serializable} class which contains the named field (must not be {@code null})
+     * @return a method handle which accepts an instance of the class {@code cl} and the value to set (not {@code null})
      * @throws IllegalAccessError if the field is not accessible for writing
-     * @throws NoSuchFieldError if the field is missing
-     * @throws IncompatibleClassChangeError if the field is static
-     * @throws IllegalArgumentException if the type is not {@code MethodHandle}
+     * @throws NoSuchFieldError if the field is not present on {@code cl}
+     * @throws IncompatibleClassChangeError if the field is present, but is not static
+     * @throws IllegalArgumentException if {@code type} is not {@code MethodHandle}
      *
      * @see Field#setAccessible(boolean)
      * @see MethodHandles.Lookup#unreflectSetter(Field)
