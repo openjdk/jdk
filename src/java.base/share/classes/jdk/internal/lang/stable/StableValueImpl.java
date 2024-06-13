@@ -63,38 +63,41 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T value) {
-        if (valuePlain() != null) {
+        if (value() != null) {
             return false;
         }
         synchronized (mutex) {
+            // Updates to the `value` is always made under `mutex` synchronization
+            // meaning plain memory semantics is enough here.
             if (valuePlain() != null) {
                 return false;
             }
-            // Prevents reordering of store operations with other store operations.
-            // This means any stores made to fields in the `value` object prior to this
-            // point cannot be reordered with the CAS operation of the reference to the
-            // `value` field.
-            // In other words, if a reader (using plain memory semantics) can observe a
-            // `value` reference, any field updates made prior to this fence are
-            // guaranteed to be seen.
-            UNSAFE.storeStoreFence(); // Redundant as a volatile put provides a store barrier?
-
-            // We are alone here under the `mutex`
-            // This upholds the invariant, the `@Stable value` field is written to
-            // at most once.
-            UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, wrap(value));
+            set0(value);
             return true;
         }
     }
 
     @ForceInline
+    private void set0(T value) {
+        // Prevents reordering of store operations with other store operations.
+        // This means any stores made to fields in the `value` object prior to this
+        // point cannot be reordered with the CAS operation of the reference to the
+        // `value` field.
+        // In other words, if a reader (using plain memory semantics) can observe a
+        // `value` reference, any field updates made prior to this fence are
+        // guaranteed to be seen.
+        UNSAFE.storeStoreFence(); // Redundant as a volatile put provides a store barrier?
+
+        // We are alone here under the `mutex`
+        // This upholds the invariant, the `@Stable value` field is written to
+        // at most once.
+        UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, wrap(value));
+    }
+
+    @ForceInline
     @Override
     public T orElseThrow() {
-        T t = valuePlain();
-        if (t != null) {
-            return unwrap(t);
-        }
-        t = valueVolatile();
+        final T t = value();
         if (t != null) {
             return unwrap(t);
         }
@@ -104,11 +107,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        T t = valuePlain();
-        if (t != null) {
-            return unwrap(t);
-        }
-        t = valueVolatile();
+        final T t = value();
         if (t != null) {
             return unwrap(t);
         }
@@ -118,17 +117,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return valuePlain() != null || valueVolatile() != null;
+        return value() != null;
     }
 
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        T t = valuePlain();
-        if (t != null) {
-            return unwrap(t);
-        }
-        t = valueVolatile();
+        final T t = value();
         if (t != null) {
             return unwrap(t);
         }
@@ -138,11 +133,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public <I> T computeIfUnset(I input, Function<? super I, ? extends T> function) {
-        T t = valuePlain();
-        if (t != null) {
-            return unwrap(t);
-        }
-        t = valueVolatile();
+        final T t = value();
         if (t != null) {
             return unwrap(t);
         }
@@ -162,11 +153,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
             if (provider instanceof Supplier<?> supplier) {
                 t = (T) supplier.get();
             } else {
-                t = ((Function<I, T>) provider).apply(input);;
+                t = ((Function<I, T>) provider).apply(input);
             }
-            // Todo: Do not go into sync again...
-            trySet(t);
-            return orElseThrow();
+            set0(t);
+            return t;
         }
     }
 
@@ -186,19 +176,22 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        return "StableValue" + render(valueVolatile());
+        return "StableValue" + render(value());
+    }
+
+    @SuppressWarnings("unchecked")
+    @ForceInline
+    // First, try to read the value using plain memory semantics.
+    // If not set, fall back to `volatile` memory semantics.
+    private T value() {
+        final T t = valuePlain();
+        return t != null ? t : (T) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
 
     @ForceInline
     private T valuePlain() {
         // Appears to be faster than `(T) UNSAFE.getReference(this, VALUE_OFFSET)`
         return value;
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    private T valueVolatile() {
-        return (T) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
 
     // Wraps null values into a sentinel value
@@ -209,7 +202,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Unwraps null sentinel values into null
     @ForceInline
     private static <T> T unwrap(T t) {
-        return t == nullSentinel() ? null : t;
+        return t != nullSentinel() ? t : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -218,10 +211,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     private static <T> String render(T t) {
-        if (t != null) {
-            return t == nullSentinel() ? "[null]" : "[" + t + "]";
-        }
-        return ".unset";
+        return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
 

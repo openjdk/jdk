@@ -78,7 +78,7 @@ import java.util.function.Supplier;
  *                                                   IntFunction<? extends R> original) {
  *         List<StableValue<R>> backing = StableValues.ofList(size);
  *         return i -> backing.get(i)
- *                       .computeIfUnset(() -> original.apply(i));
+ *                       .computeIfUnset(i, original::apply);
  *     }
  * }
  * A memoized Function, for the allowed given {@code input} values and where the
@@ -93,7 +93,7 @@ import java.util.function.Supplier;
  *                 throw new IllegalArgumentException("Input not allowed: "+t);
  *             }
  *             return backing.get(t)
- *                         .computeIfUnset(() -> original.apply(t));
+ *                         .computeIfUnset(t, original);
  *         };
  *     }
  * }
@@ -120,6 +120,8 @@ public sealed interface StableValue<T>
     /**
      * {@return {@code true} if the holder value was set to the provided {@code value},
      * otherwise returns {@code false}}
+     * <p>
+     * When this method returns, a holder value is always set.
      *
      * @param value to set (nullable)
      */
@@ -128,6 +130,7 @@ public sealed interface StableValue<T>
     /**
      * {@return the set holder value (nullable) if set, otherwise return the
      * {@code other} value}
+     *
      * @param other to return if the stable holder value is not set
      */
     T orElse(T other);
@@ -152,24 +155,27 @@ public sealed interface StableValue<T>
      * is rethrown, and no holder value is set. The most common usage is to construct a
      * new object serving as an initial value or memoized result, as in:
      *
-     * <pre> {@code
-     * T t = stable.computeIfUnset(T::new);
-     * }</pre>
+     * {@snippet lang = java :
+     *     T t = stable.computeIfUnset(T::new);
+     * }
      *
      * @implSpec
      * The implementation of this method is equivalent to the following steps for this
      * {@code stable} and a given non-null {@code supplier}:
      *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.orElseThrow();
+     * {@snippet lang = java :
+     *     if (stable.isSet()) {
+     *         return stable.orElseThrow();
+     *     }
+     *     T newValue = supplier.get();
+     *     stable.trySet(newValue);
+     *     return newValue;
      * }
-     * T newValue = supplier.get();
-     * stable.trySet(newValue);
-     * return newValue;
-     * }</pre>
-     * Except, the method is atomic and thread-safe with respect to this and all other
-     * methods that can set this StableValue's holder value.
+     * Except, the method is atomic, thread-safe and guarded with synchronization
+     * with respect to this method and all other methods that can set this StableValue's
+     * holder value.
+     * <p>
+     * If this method returns without throwing an Exception, a holder value is always set.
      *
      * @param supplier the supplier to be used to compute a holder value
      * @return the current (existing or computed) holder value associated with
@@ -186,31 +192,40 @@ public sealed interface StableValue<T>
      * is rethrown, and no holder value is set. The most common usage is to construct a
      * new object serving as an initial value or memoized result, as in:
      *
-     * <pre> {@code
-     * Map<K, StableValue<V>> map = StableValues.ofMap(...);
-     * K key = ...;
-     * T t = map.get(key)
-     *          .computeIfUnset(key, Foo::valueFromKey);
-     * }</pre>
-     *
+     * {@snippet lang = java :
+     *     Map<K, StableValue<V>> map = StableValues.ofMap(...);
+     *     K key = ...;
+     *     T t = map.get(key)
+     *              .computeIfUnset(key, Foo::valueFromKey);
+     * }
+     *<p>
      * The method also allows static Functions/lambdas to be used, for example by
      * providing `this` as an {@code input} and the static Function/lambda accessing
      * properties of the `this` input.
+     * <p>
+     * This method can also be used to emulate a compare-and-exchange idiom for a
+     * given {@code stable} and {@code candidate} value, as in:
+     * {@snippet lang = java :
+     *    T t = stable.computeIfUnset(candidate, Function.identity());
+     * }
      *
      * @implSpec
      * The implementation of this method is equivalent to the following steps for this
      * {@code stable} and a given non-null {@code mapper} and {@code inout}:
      *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.orElseThrow();
+     * {@snippet lang = java :
+     *     if (stable.isSet()) {
+     *         return stable.orElseThrow();
+     *     }
+     *     T newValue = mapper.apply(input);
+     *     stable.trySet(newValue);
+     *     return newValue;
      * }
-     * T newValue = mapper.apply(input);
-     * stable.trySet(newValue);
-     * return newValue;
-     * }</pre>
-     * Except, the method is atomic and thread-safe with respect to this and all other
-     * methods that can set this StableValue's holder value.
+     * Except, the method is atomic, thread-safe and guarded with synchronization
+     * with respect to this method and all other methods that can set this StableValue's
+     * holder value.
+     * <p>
+     * If this method returns without throwing an Exception, a holder value is always set.
      *
      * @param input  to be applied to the {@code mapper}
      * @param mapper the mapper to be used to compute a holder value
@@ -224,6 +239,8 @@ public sealed interface StableValue<T>
     /**
      * Sets the holder value to the provided {@code value}, or, if already set,
      * throws {@linkplain IllegalStateException}}
+     * <p>
+     * When this method returns (or throws an Exception), a holder value is always set.
      *
      * @param value to set (nullable)
      * @throws IllegalStateException if a holder value is already set
