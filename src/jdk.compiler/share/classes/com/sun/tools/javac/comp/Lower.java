@@ -3894,46 +3894,27 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitReference(JCMemberReference tree) {
-        ReferenceTranslationContext rcontext = new ReferenceTranslationContext(tree);
-        if (rcontext.needsConversionToLambda()) {
+        if (needsConversionToLambda(tree)) {
             // Convert to a lambda, and process as such
-            MemberReferenceToLambda conv = new MemberReferenceToLambda(tree, rcontext);
-            JCLambda lambda = translate(conv.lambda());
-            lambda.methodReceiverExpression = translate(conv.getReceiverExpression());
-            result = lambda;
+            MemberReferenceToLambda conv = new MemberReferenceToLambda(tree);
+            result = translate(conv.lambda());
         } else {
             super.visitReference(tree);
         }
     }
-
-    /**
-     * This class retains all the useful information about a method reference;
-     * the contents of this class are filled by the LambdaAnalyzer visitor,
-     * and the used by the main translation routines in order to adjust method
-     * references (i.e. in case a bridge is needed)
-     */
-    final class ReferenceTranslationContext {
-
-        final boolean isSuper;
-        final JCMemberReference tree;
-
-        ReferenceTranslationContext(JCMemberReference tree) {
-            this.tree = tree;
-            this.isSuper = tree.hasKind(ReferenceKind.SUPER);
-        }
-
-        boolean needsVarArgsConversion() {
+    // where
+        boolean needsVarArgsConversion(JCMemberReference tree) {
             return tree.varargsElement != null;
         }
 
         /**
          * @return Is this an array operation like clone()
          */
-        boolean isArrayOp() {
+        boolean isArrayOp(JCMemberReference tree) {
             return tree.sym.owner == syms.arrayClass;
         }
 
-        boolean receiverAccessible() {
+        boolean receiverAccessible(JCMemberReference tree) {
             //hack needed to workaround 292 bug (7087658)
             //when 292 issue is fixed we should remove this and change the backend
             //code to always generate a method handle to an accessible method
@@ -3945,7 +3926,7 @@ public class Lower extends TreeTranslator {
          * relationship for intersection types.
          * Have similar problems for union types too.
          */
-        boolean interfaceParameterIsIntersectionOrUnionType() {
+        boolean interfaceParameterIsIntersectionOrUnionType(JCMemberReference tree) {
             List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
             for (; tl.nonEmpty(); tl = tl.tail) {
                 Type pt = tl.head;
@@ -3967,32 +3948,27 @@ public class Lower extends TreeTranslator {
             return false;
         }
 
+        private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
+                                                                              Symbol currentClass) {
+            return ((targetReference.flags() & PROTECTED) != 0 &&
+                    targetReference.packge() != currentClass.packge());
+        }
+
         /**
          * Does this reference need to be converted to a lambda
          * (i.e. var args need to be expanded or "super" is used)
          */
-        final boolean needsConversionToLambda() {
-            return interfaceParameterIsIntersectionOrUnionType() ||
-                    isSuper ||
-                    needsVarArgsConversion() ||
-                    isArrayOp() ||
+        boolean needsConversionToLambda(JCMemberReference tree) {
+            return interfaceParameterIsIntersectionOrUnionType(tree) ||
+                    tree.hasKind(ReferenceKind.SUPER) ||
+                    needsVarArgsConversion(tree) ||
+                    isArrayOp(tree) ||
                     isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, currentClass) ||
-                    !receiverAccessible() ||
+                    !receiverAccessible(tree) ||
                     (tree.getMode() == ReferenceMode.NEW &&
                             tree.kind != ReferenceKind.ARRAY_CTOR &&
                             (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
         }
-
-        Type bridgedRefSig() {
-            return types.erasure(types.findDescriptorSymbol(tree.target.tsym).type);
-        }
-    }
-
-    private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
-                                                                          Symbol currentClass) {
-        return ((targetReference.flags() & PROTECTED) != 0 &&
-                targetReference.packge() != currentClass.packge());
-    }
 
     /**
      * Converts a method reference which cannot be used directly into a lambda
@@ -4000,16 +3976,14 @@ public class Lower extends TreeTranslator {
     private class MemberReferenceToLambda {
 
         private final JCMemberReference tree;
-        private final ReferenceTranslationContext localContext;
         private final ListBuffer<JCExpression> args = new ListBuffer<>();
         private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+        private final MethodSymbol owner = new MethodSymbol(0, names.empty, Type.noType, currentClass);
 
         private JCExpression receiverExpression = null;
-        private MethodSymbol owner = new MethodSymbol(0, names.empty, Type.noType, currentClass);
 
-        MemberReferenceToLambda(JCMemberReference tree, ReferenceTranslationContext localContext) {
+        MemberReferenceToLambda(JCMemberReference tree) {
             this.tree = tree;
-            this.localContext = localContext;
         }
 
         JCLambda lambda() {
@@ -4025,6 +3999,10 @@ public class Lower extends TreeTranslator {
                         : expressionNew();
 
                 JCLambda slam = make.Lambda(params.toList(), expr);
+                if (receiverExpression != null) {
+                    // save the receiver expression in the desugared lambda
+                    slam.methodReceiverExpression = translate(receiverExpression);
+                }
                 slam.target = tree.target;
                 slam.type = tree.type;
                 slam.pos = tree.pos;
@@ -4040,7 +4018,7 @@ public class Lower extends TreeTranslator {
          * @return The receiver variable symbol, if any
          */
         VarSymbol addParametersReturnReceiver() {
-            Type samDesc = localContext.bridgedRefSig();
+            Type samDesc = types.erasure(types.findDescriptorSymbol(tree.target.tsym).type);
             List<Type> samPTypes = samDesc.getParameterTypes();
             List<Type> descPTypes = tree.getDescriptorType(types).getParameterTypes();
 
@@ -4067,7 +4045,7 @@ public class Lower extends TreeTranslator {
             int implSize = implPTypes.size();
             int samSize = samPTypes.size();
             // Last parameter to copy from referenced method, exclude final var args
-            int last = localContext.needsVarArgsConversion() ? implSize - 1 : implSize;
+            int last = needsVarArgsConversion(tree) ? implSize - 1 : implSize;
 
             // Failsafe -- assure match-up
             boolean checkForIntersection = tree.varargsElement != null || implSize == descPTypes.size();
@@ -4111,10 +4089,6 @@ public class Lower extends TreeTranslator {
             return rcvr;
         }
 
-        JCExpression getReceiverExpression() {
-            return receiverExpression;
-        }
-
         private JCExpression makeReceiver(VarSymbol rcvr) {
             if (rcvr == null) return null;
             JCExpression rcvrExpr = make.Ident(rcvr);
@@ -4153,7 +4127,7 @@ public class Lower extends TreeTranslator {
                     setType(tree.sym.erasure(types).getReturnType());
 
             apply = transTypes.coerce(attrEnv, apply,
-                    types.erasure(localContext.tree.referentType.getReturnType()));
+                    types.erasure(tree.referentType.getReturnType()));
 
             setVarargsIfNeeded(apply, tree.varargsElement);
             return apply;
