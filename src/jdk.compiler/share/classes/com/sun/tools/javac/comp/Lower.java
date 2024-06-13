@@ -4022,7 +4022,7 @@ public class Lower extends TreeTranslator {
             this.tree = tree;
         }
 
-        JCLambda lambda() {
+        JCExpression lambda() {
             int prevPos = make.pos;
             try {
                 make.at(tree);
@@ -4035,15 +4035,17 @@ public class Lower extends TreeTranslator {
                         : expressionNew();
 
                 JCLambda slam = make.Lambda(params.toList(), expr);
-                if (receiverExpression != null) {
-                    // save the receiver expression in the desugared lambda
-                    slam.methodReceiverExpression = translate(receiverExpression);
-                }
-                slam.wasMethodReference = true;
                 slam.target = tree.target;
                 slam.type = tree.type;
                 slam.pos = tree.pos;
-                return slam;
+                slam.wasMethodReference = true;
+                if (receiverExpression != null) {
+                    // save the receiver expression in the desugared lambda
+                    return make.at(tree.pos).LetExpr(
+                            make.VarDef(rcvr, translate(receiverExpression)), slam).setType(tree.type);
+                } else {
+                    return slam;
+                }
             } finally {
                 make.at(prevPos);
             }
@@ -4064,7 +4066,8 @@ public class Lower extends TreeTranslator {
             switch (tree.kind) {
                 case BOUND:
                     // The receiver is explicit in the method reference
-                    rcvr = addParameter("rec$", tree.getQualifierExpression().type, false);
+                    rcvr = new VarSymbol(SYNTHETIC, names.fromString("rec$"), tree.getQualifierExpression().type, owner);
+                    rcvr.pos = tree.pos;
                     receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
                     break;
                 case UNBOUND:

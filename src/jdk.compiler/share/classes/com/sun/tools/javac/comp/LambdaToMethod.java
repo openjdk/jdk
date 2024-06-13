@@ -405,9 +405,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         ListBuffer<JCExpression> syntheticInits = new ListBuffer<>();
 
-        if (localContext.methodReferenceReceiver != null) {
-            syntheticInits.append(localContext.methodReferenceReceiver);
-        } else if (!sym.isStatic()) {
+        if (!sym.isStatic()) {
             syntheticInits.append(makeThis(
                     sym.owner.enclClass().asType(),
                     localContext.owner.enclClass()));
@@ -1062,10 +1060,6 @@ public class LambdaToMethod extends TreeTranslator {
             List<Frame> prevStack = frameStack;
             try {
                 LambdaTranslationContext context = new LambdaTranslationContext(tree);
-                if (tree.methodReceiverExpression != null) {
-                    JCExpression rcvr = translate(tree.methodReceiverExpression);
-                    context.methodReferenceReceiver = rcvr;
-                }
                 frameStack = frameStack.prepend(new Frame(tree));
                 for (JCVariableDecl param : tree.params) {
                     context.addSymbol(param.sym, PARAM);
@@ -1456,13 +1450,6 @@ public class LambdaToMethod extends TreeTranslator {
             MethodSymbol translatedSym;
 
             List<JCVariableDecl> syntheticParams;
-
-            /**
-             * For method references converted to lambdas.  The method
-             * reference receiver expression. Must be treated like a captured
-             * variable.
-             */
-            JCExpression methodReferenceReceiver;
 
             LambdaTranslationContext(JCLambda tree) {
                 super(tree);
