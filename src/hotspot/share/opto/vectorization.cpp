@@ -2042,7 +2042,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
-  } else if (VectorNode::can_transform_shift_op(first, bt)) {
+  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
