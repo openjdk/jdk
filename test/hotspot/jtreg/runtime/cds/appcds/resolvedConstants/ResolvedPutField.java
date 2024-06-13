@@ -27,6 +27,7 @@
  * @summary Fieldref entry for putfield bytecodes for a final field cannot be preresolved if it's used by a
  *          method outside of <clinit>
  * @requires vm.cds
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @build ResolvedPutFieldHelper
  * @build ResolvedPutField
