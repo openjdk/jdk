@@ -191,7 +191,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register recv_klass     = Z_tmp_1,
                  holder_klass   = Z_tmp_2, // declaring interface klass (DEFC)
                  resolved_klass = Z_tmp_3, // resolved interface klass (REFC)
-                 temp           = Z_R0_scratch, // not used as index, So should be fine
+                 temp           = Z_R1_scratch,
                  temp2          = Z_tmp_4;
 
 
