@@ -26,6 +26,7 @@
  * @test
  * @summary Dump time resolutiom of constant pool entries.
  * @requires vm.cds
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @build ResolvedConstants
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
