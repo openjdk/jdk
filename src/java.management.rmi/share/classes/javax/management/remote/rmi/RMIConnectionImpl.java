@@ -1298,16 +1298,19 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         return getServerNotifFwd().fetchNotifs(csn, t, mn);
                     }
             };
-            if (acc == null) {
-                // No ACC, therefore no SM. May have a Subject:
-                if (subject != null) {
-                    return Subject.doAs(subject, action);
-                } else {
+            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                // Modern case
+                if (subject == null)
                     return action.run();
-                }
+                else
+                    return Subject.doAs(subject, action);
             } else {
-                // ACC is present, meaning SM is permitted:
-                return AccessController.doPrivileged(action, acc);
+                // SM permitted
+                if (acc == null) {
+                    return action.run(); // No Subject or ACC
+                } else {
+                    return AccessController.doPrivileged(action, acc);
+                }
             }
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
@@ -1424,16 +1427,32 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         serverCommunicatorAdmin.reqIncoming();
         try {
             PrivilegedOperation op = new PrivilegedOperation(operation, params);
-            if (acc == null) {
-                // No ACC, therefore no SM. May have a Subject:
-                if (subject != null) {
-                    return Subject.doAs(subject, op);
+            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                // Modern case
+                if (subject == null) {
+                    try {
+                        return op.run();
+                    } catch (Exception e) {
+                        if (e instanceof RuntimeException)
+                           throw (RuntimeException) e;
+                        throw new PrivilegedActionException(e);
+                    }
                 } else {
-                    return op.run();
+                    return Subject.doAs(subject, op);
                 }
             } else {
-                // ACC is present, meaning SM is permitted:
-                return AccessController.doPrivileged(op, acc);
+                // SM permitted
+                if (acc == null) {
+                    try {
+                        return op.run();
+                    } catch (Exception e) {
+                        if (e instanceof RuntimeException)
+                           throw (RuntimeException) e;
+                        throw new PrivilegedActionException(e);
+                    }
+                } else {
+                    return AccessController.doPrivileged(op, acc);
+                }
             }
         } catch (Exception e) {
             if (e instanceof RuntimeException rte) {
@@ -1605,15 +1624,19 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try {
-                if (acc != null) {
-                    // ACC is present, meaning SM is permitted:
-                    return AccessController.doPrivileged(
-                            (PrivilegedExceptionAction<T>) () ->
-                                    wrappedClass.cast(mo.get()), acc);
-                } else {
-                    // No ACC, therefore no SM. May have a Subject:
+                if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                    // Modern case
                     if (subject != null) {
                         return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
+                    } else {
+                        return wrappedClass.cast(mo.get());
+                    }
+                } else {
+                    // SM permitted
+                    if (acc != null) {
+                        return AccessController.doPrivileged(
+                                (PrivilegedExceptionAction<T>) () ->
+                                        wrappedClass.cast(mo.get()), acc);
                     } else {
                         return wrappedClass.cast(mo.get());
                     }
