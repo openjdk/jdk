@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -885,13 +885,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        try {
-            FloatToDecimal.appendTo(f, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + FloatToDecimal.MAX_CHARS);
+        FloatToDecimal toDecimal = isLatin1() ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, f);
         return this;
-
     }
 
     /**
@@ -907,11 +904,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        try {
-            DoubleToDecimal.appendTo(d, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + DoubleToDecimal.MAX_CHARS);
+        DoubleToDecimal toDecimal = isLatin1() ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, d);
         return this;
     }
 
