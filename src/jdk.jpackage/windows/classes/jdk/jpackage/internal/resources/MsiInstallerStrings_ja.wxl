@@ -1,6 +1,5 @@
 <?xml version = '1.0' encoding = 'utf-8'?>
 <WixLocalization Culture="ja-jp" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="932">
-  <String Id="message.install.dir.exist">フォルダ[INSTALLDIR]はすでに存在します。そのフォルダにインストールしますか?</String>
   <String Id="MainFeatureTitle">主な機能</String>
   <String Id="DowngradeErrorMessage">[ProductName]のより上位のバージョンがすでにインストールされています。ダウングレードは無効です。セットアップを終了します。</String>
   <String Id="DisallowUpgradeErrorMessage">[ProductName]のより下位のバージョンがすでにインストールされています。アップグレードは無効です。セットアップを終了します。</String>
@@ -11,6 +10,9 @@
   <String Id="ShortcutPromptDlgDescription">作成するショートカットを選択します。</String>
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">デスクトップ・ショートカットの作成</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">スタート・メニューのショートカットの作成</String>
+
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName]セットアップ</String>
+  <String Id="InstallDirNotEmptyDlgInstallDirExistMessage">フォルダ[INSTALLDIR]はすでに存在します。そのフォルダにインストールしますか?</String>
+
   <String Id="ContextMenuCommandLabel">[ProductName]で開く</String>
 </WixLocalization>

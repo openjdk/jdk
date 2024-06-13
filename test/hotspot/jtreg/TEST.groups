@@ -254,7 +254,6 @@ tier2_compiler = \
   compiler/parsing/ \
   compiler/rangechecks/ \
   compiler/reflection/ \
-  compiler/rtm/ \
   compiler/runtime/Test6826736.java \
   compiler/stable/ \
   compiler/stringopts/ \

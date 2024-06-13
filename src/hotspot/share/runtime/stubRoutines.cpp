@@ -149,6 +149,8 @@ address StubRoutines::_sha3_implCompressMB   = nullptr;
 address StubRoutines::_updateBytesCRC32 = nullptr;
 address StubRoutines::_crc_table_adr =    nullptr;
 
+address StubRoutines::_string_indexof_array[4]   =    { nullptr };
+
 address StubRoutines::_crc32c_table_addr = nullptr;
 address StubRoutines::_updateBytesCRC32C = nullptr;
 address StubRoutines::_updateBytesAdler32 = nullptr;
