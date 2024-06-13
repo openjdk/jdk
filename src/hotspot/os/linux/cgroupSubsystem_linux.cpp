@@ -343,26 +343,22 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         continue;
       }
       while ((token = strsep(&cptr, ",")) != nullptr) {
+        CG_INFO index = CG_INFO_INVALID;
         if (strcmp(token, "memory") == 0) {
-          any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, MEMORY_IDX, token, tmpmount, tmproot);
-          cg_infos[MEMORY_IDX]._data_complete = true;
+          index = MEMORY_IDX;
         } else if (strcmp(token, "cpuset") == 0) {
-          any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPUSET_IDX, token, tmpmount, tmproot);
-          cg_infos[CPUSET_IDX]._data_complete = true;
+          index = CPUSET_IDX;
         } else if (strcmp(token, "cpu") == 0) {
-          any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPU_IDX, token, tmpmount, tmproot);
-          cg_infos[CPU_IDX]._data_complete = true;
+          index = CPU_IDX;
         } else if (strcmp(token, "cpuacct") == 0) {
-          any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPUACCT_IDX, token, tmpmount, tmproot);
-          cg_infos[CPUACCT_IDX]._data_complete = true;
+          index = CPUACCT_IDX;
         } else if (strcmp(token, "pids") == 0) {
+          index = PIDS_IDX;
+        }
+        if (index != CG_INFO_INVALID) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, PIDS_IDX, token, tmpmount, tmproot);
-          cg_infos[PIDS_IDX]._data_complete = true;
+          set_controller_paths(cg_infos, index, token, tmpmount, tmproot);
+          cg_infos[index]._data_complete = true;
         }
       }
     }
