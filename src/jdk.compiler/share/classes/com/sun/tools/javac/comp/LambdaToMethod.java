@@ -47,7 +47,6 @@ import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
-import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -68,7 +67,6 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.type.TypeKind;
 
 import com.sun.tools.javac.main.Option;
 
@@ -298,7 +296,7 @@ public class LambdaToMethod extends TreeTranslator {
                 int prevPos = make.pos;
                 try {
                     make.at(tree);
-                    kInfo.addMethod(makeDeserializeMethod(tree.sym)); //:TODO
+                    kInfo.addMethod(makeDeserializeMethod(tree.sym));
                 } finally {
                     make.at(prevPos);
                 }
@@ -796,36 +794,6 @@ public class LambdaToMethod extends TreeTranslator {
      */
     private VarSymbol makeSyntheticVar(long flags, Name name, Type type, Symbol owner) {
         return new VarSymbol(flags | SYNTHETIC, name, type, owner);
-    }
-
-    /**
-     * Set varargsElement field on a given tree (must be either a new class tree
-     * or a method call tree)
-     */
-    private void setVarargsIfNeeded(JCTree tree, Type varargsElement) {
-        if (varargsElement != null) {
-            switch (tree.getTag()) {
-                case APPLY: ((JCMethodInvocation)tree).varargsElement = varargsElement; break;
-                case NEWCLASS: ((JCNewClass)tree).varargsElement = varargsElement; break;
-                case TYPECAST: setVarargsIfNeeded(((JCTypeCast) tree).expr, varargsElement); break;
-                default: throw new AssertionError();
-            }
-        }
-    }
-
-    /**
-     * Convert method/constructor arguments by inserting appropriate cast
-     * as required by type-erasure - this is needed when bridging a lambda/method
-     * reference, as the bridged signature might require downcast to be compatible
-     * with the generated signature.
-     */
-    private List<JCExpression> convertArgs(Symbol meth, List<JCExpression> args, Type varargsElement) {
-       Assert.check(meth.kind == MTH);
-       List<Type> formals = types.erasure(meth.type).getParameterTypes();
-       if (varargsElement != null) {
-           Assert.check((meth.flags() & VARARGS) != 0);
-       }
-       return transTypes.translateArgs(args, formals, varargsElement, attrEnv);
     }
 
     // </editor-fold>
@@ -1383,42 +1351,6 @@ public class LambdaToMethod extends TreeTranslator {
             return (sym.kind == VAR || sym.kind == MTH)
                     && !sym.isStatic()
                     && sym.name != names.init;
-        }
-
-        /**
-         *  This is used to filter out those select nodes that need to be adjusted
-         *  when translating away lambda expressions - at the moment, this is the
-         *  set of nodes that select `this' (qualified this)
-         */
-        private boolean lambdaFieldAccessFilter(JCFieldAccess fAccess) {
-            return (context instanceof LambdaTranslationContext lambdaContext)
-                    && !fAccess.sym.isStatic()
-                    && fAccess.name == names._this
-                    && (fAccess.sym.owner.kind == TYP)
-                    && !lambdaContext.translatedSymbols.get(CAPTURED_OUTER_THIS).isEmpty();
-        }
-
-        /**
-         * This is used to filter out those new class expressions that need to
-         * be qualified with an enclosing tree
-         */
-        private boolean lambdaNewClassFilter(TranslationContext<?> context, JCNewClass tree) {
-            if (context != null
-                    && tree.encl == null
-                    && tree.def == null
-                    && !tree.type.getEnclosingType().hasTag(NONE)) {
-                Type encl = tree.type.getEnclosingType();
-                Type current = context.owner.enclClass().type;
-                while (!current.hasTag(NONE)) {
-                    if (current.tsym.isSubClass(encl.tsym, types)) {
-                        return true;
-                    }
-                    current = current.getEnclosingType();
-                }
-                return false;
-            } else {
-                return false;
-            }
         }
 
         private class Frame {

@@ -109,6 +109,7 @@ public class Lower extends TreeTranslator {
     private final boolean optimizeOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
+    private int variableIndex = 0;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -2777,15 +2778,18 @@ public class Lower extends TreeTranslator {
         Type prevRestype = currentRestype;
         JCMethodDecl prevMethodDef = currentMethodDef;
         MethodSymbol prevMethodSym = currentMethodSym;
+        int prevVariableIndex = variableIndex;
         try {
             currentRestype = types.erasure(tree.type.getReturnType());
             currentMethodDef = tree;
             currentMethodSym = tree.sym;
+            variableIndex = 0;
             visitMethodDefInternal(tree);
         } finally {
             currentRestype = prevRestype;
             currentMethodDef = prevMethodDef;
             currentMethodSym = prevMethodSym;
+            variableIndex = prevVariableIndex;
         }
     }
 
@@ -2951,7 +2955,7 @@ public class Lower extends TreeTranslator {
 
             // preserving the side effects of the value
             VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
-                    names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
+                    names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
                     types.erasure(tree.expr.type),
                     currentMethodSym);
             JCStatement var = make.at(tree.pos())
@@ -3820,6 +3824,7 @@ public class Lower extends TreeTranslator {
 
     public void visitVarDef(JCVariableDecl tree) {
         MethodSymbol oldMethodSym = currentMethodSym;
+        int prevVariableIndex = variableIndex;
         tree.mods = translate(tree.mods);
         tree.vartype = translate(tree.vartype);
         if (currentMethodSym == null) {
@@ -3829,9 +3834,13 @@ public class Lower extends TreeTranslator {
                                  names.empty, null,
                                  currentClass);
         }
-        if (tree.init != null) tree.init = translate(tree.init, tree.type);
-        result = tree;
-        currentMethodSym = oldMethodSym;
+        try {
+            if (tree.init != null) tree.init = translate(tree.init, tree.type);
+            result = tree;
+        } finally {
+            currentMethodSym = oldMethodSym;
+            variableIndex = prevVariableIndex;
+        }
     }
 
     public void visitBlock(JCBlock tree) {
@@ -3843,8 +3852,14 @@ public class Lower extends TreeTranslator {
                                  names.empty, null,
                                  currentClass);
         }
-        super.visitBlock(tree);
-        currentMethodSym = oldMethodSym;
+        int prevVariableIndex = variableIndex;
+        try {
+            variableIndex = 0;
+            super.visitBlock(tree);
+        } finally {
+            currentMethodSym = oldMethodSym;
+            variableIndex = prevVariableIndex;
+        }
     }
 
     public void visitDoLoop(JCDoWhileLoop tree) {
@@ -3878,18 +3893,24 @@ public class Lower extends TreeTranslator {
     @Override
     public void visitLambda(JCLambda tree) {
         Type expectedRet = types.findDescriptorType(tree.type).getReturnType();
-        if (tree.body.hasTag(JCTree.Tag.BLOCK)) {
-            Type prevRestype = currentRestype;
-            try {
-                currentRestype = expectedRet;
-                super.visitLambda(tree);
-            } finally {
-                currentRestype = prevRestype;
+        int prevVariableIndex = variableIndex;
+        try {
+            variableIndex = 0;
+            if (tree.body.hasTag(JCTree.Tag.BLOCK)) {
+                Type prevRestype = currentRestype;
+                try {
+                    currentRestype = expectedRet;
+                    super.visitLambda(tree);
+                } finally {
+                    currentRestype = prevRestype;
+                }
+            } else {
+                tree.body = translate((JCExpression) tree.body, expectedRet);
             }
-        } else {
-            tree.body = translate((JCExpression)tree.body, expectedRet);
+            result = tree;
+        } finally {
+            variableIndex = prevVariableIndex;
         }
-        result = tree;
     }
 
     @Override
@@ -4337,7 +4358,7 @@ public class Lower extends TreeTranslator {
             //switch ($selector != null ? $mapVar[$selector.ordinal()] : -1) {...}
             //replacing case null with case -1:
             VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
-                                               names.fromString("s" + tree.pos + this.target.syntheticNameChar()),
+                                               names.fromString("s" + variableIndex++ + this.target.syntheticNameChar()),
                                                selector.type,
                                                currentMethodSym);
             JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
@@ -4494,13 +4515,13 @@ public class Lower extends TreeTranslator {
              */
 
             VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
-                                               names.fromString("s" + tree.pos + target.syntheticNameChar()),
+                                               names.fromString("s" + variableIndex++ + target.syntheticNameChar()),
                                                syms.stringType,
                                                currentMethodSym);
             stmtList.append(make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type));
 
             VarSymbol dollar_tmp = new VarSymbol(SYNTHETIC,
-                                                 names.fromString("tmp" + tree.pos + target.syntheticNameChar()),
+                                                 names.fromString("tmp" + variableIndex++ + target.syntheticNameChar()),
                                                  syms.intType,
                                                  currentMethodSym);
             JCVariableDecl dollar_tmp_def =
@@ -4642,7 +4663,7 @@ public class Lower extends TreeTranslator {
             while (constants.contains(replacementValue)) replacementValue++;
 
             VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
-                                               names.fromString("s" + tree.pos + this.target.syntheticNameChar()),
+                                               names.fromString("s" + variableIndex++ + this.target.syntheticNameChar()),
                                                selector.type,
                                                currentMethodSym);
             JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
