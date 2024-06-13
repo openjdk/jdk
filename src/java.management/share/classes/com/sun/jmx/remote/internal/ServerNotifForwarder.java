@@ -344,16 +344,13 @@ public class ServerNotifForwarder {
     //----------------
     // PRIVATE METHODS
     //----------------
-
     @SuppressWarnings("removal")
     private Subject getSubject() {
-        Subject subject = null;
         if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-            subject = Subject.current();
+            return Subject.current();
         } else {
-            subject = Subject.getSubject(AccessController.getContext());
+            return Subject.getSubject(AccessController.getContext());
         }
-        return subject;
     }
 
     private void checkState() throws IOException {
