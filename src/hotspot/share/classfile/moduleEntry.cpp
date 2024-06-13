@@ -266,7 +266,6 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _name(name),
     _loader_data(loader_data),
     _reads(nullptr),
-    _reads_is_archived(false),
     _version(nullptr),
     _location(nullptr),
     CDS_ONLY(_shared_path_index(-1) COMMA)
@@ -301,6 +300,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
                                name != nullptr ? name->as_C_string() : UNNAMED_MODULE);
     }
   }
+  DEBUG_ONLY(_reads_is_archived = false);
 
   JFR_ONLY(INIT_ID(this);)
 }
@@ -468,9 +468,6 @@ void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 void ModuleEntry::init_as_archived_entry() {
-  DEBUG_ONLY(
-    //if (_reads == nullptr) { _reads_is_growable = true; }
-  )
   set_archived_reads(write_growable_array(reads()));
 
   _loader_data = nullptr;  // re-init at runtime
