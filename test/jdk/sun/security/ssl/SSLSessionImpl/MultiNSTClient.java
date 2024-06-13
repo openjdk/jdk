@@ -76,14 +76,16 @@ public class MultiNSTClient {
             System.out.println("I'm here");
             boolean pass = true;
             try {
-                List<String> list = output.stderrShouldContain("MultiNST PSK").asLines().stream().filter(s -> s.contains("MultiNST PSK")).toList();
-                List<String> serverPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Server)")).toList();
-                List<String> clientPSK = list.stream().filter(s -> s.contains("MultiNST PSK (Client)")).toList();
-                //System.err.println("found server: " + serverPSK.size() + " " + serverPSK);
+                List<String> list = output.stderrShouldContain("MultiNST PSK").
+                    asLines().stream().filter(s ->
+                        s.contains("MultiNST PSK")).toList();
+                List<String> serverPSK = list.stream().filter(s ->
+                    s.contains("MultiNST PSK (Server)")).toList();
+                List<String> clientPSK = list.stream().filter(s ->
+                    s.contains("MultiNST PSK (Client)")).toList();
                 System.out.println("found list: " + list.size());
                 System.out.println("found server: " + serverPSK.size());
                 serverPSK.stream().forEach(s -> System.out.println("\t" + s));
-                //System.err.println("found client: " + clientPSK.size() + " " + clientPSK);
                 System.out.println("found client: " + clientPSK.size());
                 clientPSK.stream().forEach(s -> System.out.println("\t" + s));
                 for (int i = 0; i < 2; i++) {
@@ -151,6 +153,7 @@ public class MultiNSTClient {
         if (initialSession.toString().equalsIgnoreCase(newSession.toString())) {
             throw new Exception("new session is the same as the initial.");
         }
+
         System.out.println("------  Closing connections");
         client1.close();
         client2.close();

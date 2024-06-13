@@ -121,9 +121,9 @@ final class SSLConfiguration implements Cloneable {
     static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
             "jdk.tls.enableDtlsResumeCookie", true);
 
-    // Number of NewSessionTickets (NST) that will be sent by the server.
+    // Number of NewSessionTickets that will be sent by the server.
     static final int serverNewSessionTicketCount;
-    // Default for NST
+    // Default for NewSessionTickets
     static final int SERVER_NST_DEFAULT = 3;
 
     // Is the extended_master_secret extension supported?
@@ -197,6 +197,12 @@ final class SSLConfiguration implements Cloneable {
             maxInboundServerCertChainLen = inboundServerLen;
         }
 
+        /*
+         * jdk.tls.server.newSessionTicketCount system property
+         * Sets the number of NewSessionTickets sent to a TLS 1.3 resumption
+         * client.  The value must be between 1 and 10.  Default is defined by
+         * SERVER_NST_DEFAULT.
+         */
         Integer nstServerCount = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.server.newSessionTicketCount");
         if (nstServerCount == null || nstServerCount < 1 ||
