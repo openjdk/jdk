@@ -115,6 +115,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
+                                                                            \
+  product(bool, UseAPX, false, EXPERIMENTAL,                                \
+          "Use Intel Advanced Performance Extensions")                      \
+                                                                            \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
           "Control whether Knights platform setting should be used")        \
                                                                             \
@@ -150,51 +154,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   product(bool, UseFastStosb, false,                                        \
           "Use fast-string operation for zeroing: rep stosb")               \
-                                                                            \
-  /* Use Restricted Transactional Memory for lock eliding */                \
-  product(bool, UseRTMLocking, false,                                       \
-          "(Deprecated) Enable RTM lock eliding for inflated locks "        \
-          "in compiled code")                                               \
-                                                                            \
-  product(bool, UseRTMForStackLocks, false, EXPERIMENTAL,                   \
-          "Enable RTM lock eliding for stack locks in compiled code")       \
-                                                                            \
-  product(bool, UseRTMDeopt, false,                                         \
-          "(Deprecated) Perform deopt and recompilation based on "          \
-          "RTM abort ratio")                                                \
-                                                                            \
-  product(int, RTMRetryCount, 5,                                            \
-          "(Deprecated) Number of RTM retries on lock abort or busy")       \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMSpinLoopCount, 100, EXPERIMENTAL,                         \
-          "Spin count for lock to become free before RTM retry")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMAbortThreshold, 1000, EXPERIMENTAL,                       \
-          "Calculate abort ratio after this number of aborts")              \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMLockingThreshold, 10000, EXPERIMENTAL,                    \
-          "Lock count at which to do RTM lock eliding without "             \
-          "abort ratio calculation")                                        \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMAbortRatio, 50, EXPERIMENTAL,                             \
-          "Lock abort ratio at which to stop use RTM lock eliding")         \
-          range(0, 100) /* natural range */                                 \
-                                                                            \
-  product(int, RTMTotalCountIncrRate, 64, EXPERIMENTAL,                     \
-          "Increment total RTM attempted lock count once every n times")    \
-          range(1, max_jint)                                                \
-          constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
-                                                                            \
-  product(intx, RTMLockingCalculationDelay, 0, EXPERIMENTAL,                \
-          "Number of milliseconds to wait before start calculating aborts " \
-          "for RTM locking")                                                \
-                                                                            \
-  product(bool, UseRTMXendForLockBusy, true, EXPERIMENTAL,                  \
-          "Use RTM Xend instead of Xabort when lock busy")                  \
                                                                             \
   /* assembler */                                                           \
   product(bool, UseCountLeadingZerosInstruction, false,                     \
@@ -234,8 +193,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
                                                                             \
-  product(bool, UseAPX, false, EXPERIMENTAL,                                \
-          "Use Advanced Performance Extensions on x86")                     \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP
