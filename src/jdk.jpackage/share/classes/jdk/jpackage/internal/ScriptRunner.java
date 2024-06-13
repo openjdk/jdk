@@ -107,7 +107,7 @@ class ScriptRunner {
             public Path resourceDir() {
                 return StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
             }
-            
+
             @Override
             public Path configDir() {
                 return StandardBundlerParam.CONFIG_ROOT.fetchFrom(params);
