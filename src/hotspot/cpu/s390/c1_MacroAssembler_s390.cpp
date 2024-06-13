@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,31 +39,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  Label ic_miss, ic_hit;
-  verify_oop(receiver, FILE_AND_LINE);
-  int klass_offset = oopDesc::klass_offset_in_bytes();
-
-  if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
-    if (VM_Version::has_CompareBranch()) {
-      z_cgij(receiver, 0, Assembler::bcondEqual, ic_miss);
-    } else {
-      z_ltgr(receiver, receiver);
-      z_bre(ic_miss);
-    }
-  }
-
-  compare_klass_ptr(iCache, klass_offset, receiver, false);
-  z_bre(ic_hit);
-
-  // If icache check fails, then jump to runtime routine.
-  // Note: RECEIVER must still contain the receiver!
-  load_const_optimized(Z_R1_scratch, AddressLiteral(SharedRuntime::get_ic_miss_stub()));
-  z_br(Z_R1_scratch);
-  align(CodeEntryAlignment);
-  bind(ic_hit);
-}
 
 void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
@@ -189,7 +164,7 @@ void C1_MacroAssembler::try_allocate(
   Register obj,                        // result: Pointer to object after successful allocation.
   Register var_size_in_bytes,          // Object size in bytes if unknown at compile time; invalid otherwise.
   int      con_size_in_bytes,          // Object size in bytes if   known at compile time.
-  Register t1,                         // Temp register: Must be global register for incr_allocated_bytes.
+  Register t1,                         // Temp register.
   Label&   slow_case                   // Continuation point if fast allocation fails.
 ) {
   if (UseTLAB) {
@@ -216,7 +191,6 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_bytes, Register Rzero) {
-  Label done;
   assert_different_registers(objectFields, len_in_bytes, Rzero);
 
   // Initialize object fields.
@@ -228,7 +202,6 @@ void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_b
   // Use Rzero as src length, then mvcle will copy nothing
   // and fill the object with the padding value 0.
   move_long_ext(objectFields, as_Register(Rzero->encoding()-1), 0);
-  bind(done);
 }
 
 void C1_MacroAssembler::allocate_object(
@@ -296,10 +269,11 @@ void C1_MacroAssembler::allocate_array(
   Register len,                        // array length
   Register t1,                         // temp register
   Register t2,                         // temp register
-  int      hdr_size,                   // object header size in words
+  int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
-  Label&   slow_case                   // Continuation point if fast allocation fails.
+  Label&   slow_case,                  // Continuation point if fast allocation fails.
+  bool     zero_array                  // zero the allocated array or not
 ) {
   assert_different_registers(obj, len, t1, t2, klass);
 
@@ -322,23 +296,25 @@ void C1_MacroAssembler::allocate_array(
     case  8: z_sllg(arr_size, len, 3); break;
     default: ShouldNotReachHere();
   }
-  add2reg(arr_size, hdr_size * wordSize + MinObjAlignmentInBytesMask); // Add space for header & alignment.
-  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);            // Align array size.
+  add2reg(arr_size, base_offset_in_bytes + MinObjAlignmentInBytesMask); // Add space for header & alignment.
+  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);             // Align array size.
 
   try_allocate(obj, arr_size, 0, t1, slow_case);
 
   initialize_header(obj, klass, len, noreg, t1);
 
   // Clear rest of allocated space.
-  Label done;
-  Register object_fields = t1;
-  Register Rzero = Z_R1_scratch;
-  z_aghi(arr_size, -(hdr_size * BytesPerWord));
-  z_bre(done); // Jump if size of fields is zero.
-  z_la(object_fields, hdr_size * BytesPerWord, obj);
-  z_xgr(Rzero, Rzero);
-  initialize_body(object_fields, arr_size, Rzero);
-  bind(done);
+  if (zero_array) {
+    Label done;
+    Register object_fields = t1;
+    Register Rzero = Z_R1_scratch;
+    z_aghi(arr_size, -base_offset_in_bytes);
+    z_bre(done); // Jump if size of fields is zero.
+    z_la(object_fields, base_offset_in_bytes, obj);
+    z_xgr(Rzero, Rzero);
+    initialize_body(object_fields, arr_size, Rzero);
+    bind(done);
+  }
 
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {

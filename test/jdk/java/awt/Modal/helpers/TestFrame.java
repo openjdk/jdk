@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public class TestFrame extends Frame implements ActionListener,
 
     public static int delay = 500;
     public static int keyDelay = 100;
+    private static final boolean IS_ON_WAYLAND =
+            System.getenv("WAYLAND_DISPLAY") != null;
 
     public TestFrame() {
         super();
@@ -251,7 +253,7 @@ public class TestFrame extends Frame implements ActionListener,
                                  String        message) throws Exception {
         dummyClicked.reset();
         clickButton(dummyButton, robot);
-        dummyClicked.waitForFlagTriggered();
+        dummyClicked.waitForFlagTriggered(attempts);
 
         String msg = "Clicking the frame Dummy button " + (refState ?
             "did not trigger an action." :
@@ -277,6 +279,9 @@ public class TestFrame extends Frame implements ActionListener,
                                      String message,
                                      Button b) throws Exception {
         focusGained.reset();
+        if (IS_ON_WAYLAND) {
+            toFront();
+        }
         clickInside(robot);
 
         focusGained.waitForFlagTriggered();
@@ -293,6 +298,9 @@ public class TestFrame extends Frame implements ActionListener,
                                             String message,
                                             Button b) throws Exception {
         focusGained.reset();
+        if (IS_ON_WAYLAND) {
+            toFront();
+        }
         clickInside(robot);
 
         robot.waitForIdle(delay);

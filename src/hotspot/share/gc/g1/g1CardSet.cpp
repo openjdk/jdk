@@ -26,7 +26,7 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -57,24 +57,24 @@ static uint default_log2_card_regions_per_region() {
   uint log2_card_regions_per_heap_region = 0;
 
   const uint card_container_limit = G1CardSetContainer::LogCardsPerRegionLimit;
-  if (card_container_limit < (uint)HeapRegion::LogCardsPerRegion) {
-    log2_card_regions_per_heap_region = (uint)HeapRegion::LogCardsPerRegion - card_container_limit;
+  if (card_container_limit < (uint)G1HeapRegion::LogCardsPerRegion) {
+    log2_card_regions_per_heap_region = (uint)G1HeapRegion::LogCardsPerRegion - card_container_limit;
   }
 
   return log2_card_regions_per_heap_region;
 }
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
-  G1CardSetConfiguration(HeapRegion::LogCardsPerRegion - default_log2_card_regions_per_region(),                                                                                   /* inline_ptr_bits_per_card */
+  G1CardSetConfiguration(G1HeapRegion::LogCardsPerRegion - default_log2_card_regions_per_region(),                                                                                   /* inline_ptr_bits_per_card */
                          G1RemSetArrayOfCardsEntries,                               /* max_cards_in_array */
                          (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100,  /* cards_in_bitmap_threshold_percent */
                          G1RemSetHowlNumBuckets,                                    /* num_buckets_in_howl */
                          (double)G1RemSetCoarsenHowlToFullPercent / 100,            /* cards_in_howl_threshold_percent */
-                         (uint)HeapRegion::CardsPerRegion >> default_log2_card_regions_per_region(),
+                         (uint)G1HeapRegion::CardsPerRegion >> default_log2_card_regions_per_region(),
                                                                                     /* max_cards_in_card_set */
                          default_log2_card_regions_per_region())                    /* log2_card_regions_per_region */
 {
-  assert((_log2_card_regions_per_heap_region + _log2_cards_per_card_region) == (uint)HeapRegion::LogCardsPerRegion,
+  assert((_log2_card_regions_per_heap_region + _log2_cards_per_card_region) == (uint)G1HeapRegion::LogCardsPerRegion,
          "inconsistent heap region virtualization setup");
 }
 
@@ -395,7 +395,7 @@ G1CardSet::~G1CardSet() {
 
 void G1CardSet::initialize(MemRegion reserved) {
   const uint BitsInUint = sizeof(uint) * BitsPerByte;
-  const uint CardBitsWithinCardRegion = MIN2((uint)HeapRegion::LogCardsPerRegion, G1CardSetContainer::LogCardsPerRegionLimit);
+  const uint CardBitsWithinCardRegion = MIN2((uint)G1HeapRegion::LogCardsPerRegion, G1CardSetContainer::LogCardsPerRegionLimit);
 
   // Check if the number of cards within a region fits an uint.
   if (CardBitsWithinCardRegion > BitsInUint) {
@@ -533,7 +533,7 @@ G1AddCardResult G1CardSet::add_to_howl(ContainerPtr parent_container,
   ContainerPtr container;
 
   uint bucket = _config->howl_bucket_index(card_in_region);
-  ContainerPtr volatile* bucket_entry = howl->get_container_addr(bucket);
+  ContainerPtr volatile* bucket_entry = howl->container_addr(bucket);
 
   while (true) {
     if (Atomic::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {

@@ -385,7 +385,7 @@ final class CertificateMessage {
                 if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Empty client certificate chain");
                 } else {
                     return;
@@ -1162,7 +1162,7 @@ final class CertificateMessage {
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
                 if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.CERTIFICATE_REQUIRED,
                         "Empty client certificate chain");
                 } else {
                     // optional client authentication
@@ -1186,7 +1186,7 @@ final class CertificateMessage {
                 T13CertificateMessage certificateMessage )throws IOException {
             if (certificateMessage.certEntries == null ||
                     certificateMessage.certEntries.isEmpty()) {
-                throw chc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                throw chc.conContext.fatal(Alert.DECODE_ERROR,
                     "Empty server certificate chain");
             }
 

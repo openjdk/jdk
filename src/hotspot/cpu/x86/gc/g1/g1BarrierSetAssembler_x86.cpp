@@ -28,8 +28,8 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
@@ -269,8 +269,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register thread,
                                                   Register tmp,
                                                   Register tmp2) {
-  // Generated code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 #ifdef _LP64
   assert(thread == r15_thread, "must be");
 #endif // _LP64
@@ -288,7 +286,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ movptr(tmp, store_addr);
   __ xorptr(tmp, new_val);
-  __ shrptr(tmp, HeapRegion::LogOfHRGrainBytes);
+  __ shrptr(tmp, G1HeapRegion::LogOfHRGrainBytes);
   __ jcc(Assembler::equal, done);
 
   // crosses regions, storing null?
@@ -320,6 +318,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   // dirty card and log.
 
   __ movb(Address(card_addr, 0), G1CardTable::dirty_card_val());
+
+  // The code below assumes that buffer index is pointer sized.
+  STATIC_ASSERT(in_bytes(G1DirtyCardQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   __ movptr(tmp2, queue_index);
   __ testptr(tmp2, tmp2);

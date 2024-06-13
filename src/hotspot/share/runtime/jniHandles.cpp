@@ -83,7 +83,7 @@ static void report_handle_allocation_failure(AllocFailType alloc_failmode,
 }
 
 jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jobject res = nullptr;
   if (!obj.is_null()) {
@@ -105,7 +105,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
 }
 
 jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jweak res = nullptr;
   if (!obj.is_null()) {

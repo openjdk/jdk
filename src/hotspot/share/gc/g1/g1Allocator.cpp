@@ -28,11 +28,12 @@
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/heapRegionType.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
@@ -88,14 +89,14 @@ void G1Allocator::release_mutator_alloc_regions() {
   }
 }
 
-bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
+bool G1Allocator::is_retained_old_region(G1HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
 void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             OldGCAllocRegion* old,
-                                            HeapRegion** retained_old) {
-  HeapRegion* retained_region = *retained_old;
+                                            G1HeapRegion** retained_old) {
+  G1HeapRegion* retained_region = *retained_old;
   *retained_old = nullptr;
 
   // We will discard the current GC alloc region if:
@@ -118,7 +119,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // it's retired again.
     _g1h->old_set_remove(retained_region);
     old->set(retained_region);
-    _g1h->hr_printer()->reuse(retained_region);
+    G1HeapRegionPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
 }
@@ -189,7 +190,7 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   // humongous objects.
 
   uint node_index = current_node_index();
-  HeapRegion* hr = mutator_alloc_region(node_index)->get();
+  G1HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
 
   if (hr == nullptr || hr->free() < MinTLABSize) {

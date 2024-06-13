@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   InstanceKlass* ik = find_builtin_class(class_name);
 
   if (ik != nullptr && !ik->shared_loading_failed()) {
@@ -107,7 +107,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
                                                           Handle protection_domain,
                                                           const ClassFileStream* cfs,
                                                           TRAPS) {
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     return nullptr;
   }
   if (class_name == nullptr) {  // don't do this for hidden classes
@@ -389,7 +389,7 @@ bool SystemDictionaryShared::has_platform_or_app_classes() {
 InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
                  Symbol* name, Handle class_loader, TRAPS) {
   InstanceKlass* k = nullptr;
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     if (!has_platform_or_app_classes()) {
       return nullptr;
     }
@@ -841,7 +841,7 @@ InstanceKlass* SystemDictionaryShared::retrieve_lambda_proxy_class(const RunTime
 }
 
 InstanceKlass* SystemDictionaryShared::get_shared_nest_host(InstanceKlass* lambda_ik) {
-  assert(!CDSConfig::is_dumping_static_archive() && UseSharedSpaces, "called at run time with CDS enabled only");
+  assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(lambda_ik);
   return record->nest_host();
 }
@@ -892,7 +892,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
 
 void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass,
                                                             TRAPS) {
-  assert(!CDSConfig::is_dumping_static_archive() && UseSharedSpaces, "called at run time with CDS enabled only");
+  assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
 
   int length = record->_num_verifier_constraints;
@@ -1002,7 +1002,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
 // the purpose of checking class loader constraints.
 bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
-  assert(!CDSConfig::is_dumping_static_archive() && UseSharedSpaces, "called at run time with CDS enabled only");
+  assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
   if (klass->is_shared_boot_class()) {
     // No class loader constraint check performed for boot classes.
@@ -1290,7 +1290,7 @@ void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
 
 const RunTimeClassInfo*
 SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
-  if (!UseSharedSpaces || !name->is_shared()) {
+  if (!CDSConfig::is_using_archive() || !name->is_shared()) {
     // The names of all shared classes must also be a shared Symbol.
     return nullptr;
   }
@@ -1348,7 +1348,7 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
-const char* class_loader_name_for_shared(Klass* k) {
+static const char* class_loader_name_for_shared(Klass* k) {
   assert(k != nullptr, "Sanity");
   assert(k->is_shared(), "Must be");
   assert(k->is_instance_klass(), "Must be");
@@ -1427,7 +1427,7 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
 }
 
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     if (is_static) {
       _static_archive.print_on("", st);
     } else {
@@ -1444,7 +1444,7 @@ void SystemDictionaryShared::print_on(outputStream* st) {
 }
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     _static_archive.print_table_statistics("Static ", st);
     if (DynamicArchive::is_mapped()) {
       _dynamic_archive.print_table_statistics("Dynamic ", st);

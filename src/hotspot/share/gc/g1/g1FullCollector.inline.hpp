@@ -28,7 +28,7 @@
 #include "gc/g1/g1FullCollector.hpp"
 
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 
@@ -62,11 +62,11 @@ void G1FullCollector::update_from_skip_compacting_to_compacting(uint region_idx)
   _region_attr_table.set_compacting(region_idx);
 }
 
-void G1FullCollector::set_compaction_top(HeapRegion* r, HeapWord* value) {
+void G1FullCollector::set_compaction_top(G1HeapRegion* r, HeapWord* value) {
   Atomic::store(&_compaction_tops[r->hrm_index()], value);
 }
 
-HeapWord* G1FullCollector::compaction_top(HeapRegion* r) const {
+HeapWord* G1FullCollector::compaction_top(G1HeapRegion* r) const {
   return Atomic::load(&_compaction_tops[r->hrm_index()]);
 }
 
@@ -90,11 +90,11 @@ bool G1FullCollector::has_humongous() {
   return _has_humongous;
 }
 
-void G1FullCollector::add_humongous_region(HeapRegion* hr) {
+void G1FullCollector::add_humongous_region(G1HeapRegion* hr) {
   _humongous_compaction_regions.append(hr);
 }
 
-GrowableArrayCHeap<HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
+GrowableArrayCHeap<G1HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
   return _humongous_compaction_regions;
 }
 

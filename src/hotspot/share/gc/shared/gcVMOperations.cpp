@@ -130,9 +130,9 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  // Clean up old interpreter OopMap entries that were replaced
-  // during the GC thread root traversal.
-  OopMapCache::cleanup_old_entries();
+  // GC thread root traversal likely used OopMapCache a lot, which
+  // might have created lots of old entries. Trigger the cleanup now.
+  OopMapCache::trigger_cleanup();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
@@ -215,11 +215,9 @@ void VM_CollectForMetadataAllocation::doit() {
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
-  if (!MetadataAllocationFailALot) {
-    _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != nullptr) {
-      return;
-    }
+  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+  if (_result != nullptr) {
+    return;
   }
 
 #if INCLUDE_G1GC

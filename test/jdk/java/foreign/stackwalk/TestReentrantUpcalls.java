@@ -76,7 +76,7 @@ public class TestReentrantUpcalls extends NativeTestHelper {
     }
 
     static void m(int depth, MemorySegment thisStub, MethodHandle downcallHandle) throws Throwable {
-        if (depth < 100) {
+        if (depth < 50) {
             downcallHandle.invokeExact(depth + 1, thisStub);
         } else {
             WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/true);

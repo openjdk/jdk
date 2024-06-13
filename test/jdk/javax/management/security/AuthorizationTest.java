@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
  * @modules java.management.rmi
  * @library /test/lib
  * @compile Simple.java
- * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials
- * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username2 -Dpassword=password2 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials -expectedCreateException -expectedSetException -expectedInvokeException
- * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username6 -Dpassword=password6 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials -expectedCreateException -expectedGetException -expectedSetException -expectedInvokeException
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow -DDEBUG_STANDARD -Dusername=username2 -Dpassword=password2 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials -expectedCreateException -expectedSetException -expectedInvokeException
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow -DDEBUG_STANDARD -Dusername=username6 -Dpassword=password6 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials -expectedCreateException -expectedGetException -expectedSetException -expectedInvokeException
  * @run main/othervm/timeout=300/policy=java.policy.authorization -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.password.file -populate -client -mapType credentials
  * @run main/othervm/timeout=300/policy=java.policy.authorization -DDEBUG_STANDARD -Dusername=username3 -Dpassword=password3 AuthorizationTest -server -mapType x.password.file -populate -client -mapType credentials -expectedGetException
  * @run main/othervm/timeout=300/policy=java.policy.authorization -DDEBUG_STANDARD -Dusername=username5 -Dpassword=password5 AuthorizationTest -server -mapType x.password.file -populate -client -mapType credentials -expectedCreateException -expectedGetException -expectedSetException -expectedInvokeException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.FileForceEvent;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.Blocker;
@@ -59,7 +60,8 @@ import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
-
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.event.FileWriteEvent;
 import jdk.internal.access.foreign.UnmapperProxy;
 
 public class FileChannelImpl
@@ -72,12 +74,17 @@ public class FileChannelImpl
     // Used to make native read and write calls
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // file reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
+
     // File descriptor
     private final FileDescriptor fd;
 
     // File access mode (immutable)
     private final boolean writable;
     private final boolean readable;
+    private final boolean sync;  // O_SYNC or O_DSYNC
 
     // Required to prevent finalization of creating stream (immutable)
     private final Closeable parent;
@@ -122,12 +129,14 @@ public class FileChannelImpl
     }
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
-                            boolean writable, boolean direct, Closeable parent)
+                            boolean writable, boolean sync, boolean direct,
+                            Closeable parent)
     {
         this.fd = fd;
         this.path = path;
         this.readable = readable;
         this.writable = writable;
+        this.sync = sync;
         this.direct = direct;
         this.parent = parent;
         if (direct) {
@@ -150,9 +159,9 @@ public class FileChannelImpl
     // and RandomAccessFile::getChannel
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   boolean direct, Closeable parent)
+                                   boolean sync, boolean direct, Closeable parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, direct, parent);
+        return new FileChannelImpl(fd, path, readable, writable, sync, direct, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -216,6 +225,13 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dst);
+        }
+        return implRead(dst);
+    }
+
+    private int implRead(ByteBuffer dst) throws IOException {
         ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
@@ -230,11 +246,11 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    long comp = Blocker.begin();
+                    boolean attempted = Blocker.begin(direct);
                     try {
                         n = IOUtil.read(fd, dst, -1, direct, alignment, nd);
                     } finally {
-                        Blocker.end(comp);
+                        Blocker.end(attempted);
                     }
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
@@ -246,8 +262,34 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplRead(ByteBuffer dst) throws IOException {
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = implRead(dst);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
+
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dsts, offset, length);
+        }
+        return implRead(dsts, offset, length);
+    }
+
+    private long implRead(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, dsts.length);
@@ -265,11 +307,11 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    long comp = Blocker.begin();
+                    boolean attempted = Blocker.begin(direct);
                     try {
                         n = IOUtil.read(fd, dsts, offset, length, direct, alignment, nd);
                     } finally {
-                        Blocker.end(comp);
+                        Blocker.end(attempted);
                     }
 
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
@@ -282,8 +324,34 @@ public class FileChannelImpl
         }
     }
 
+    private long traceImplRead(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        long bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = implRead(dsts, offset, length);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
+
     @Override
     public int write(ByteBuffer src) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            return traceImplWrite(src);
+        }
+        return implWrite(src);
+    }
+
+    private int implWrite(ByteBuffer src) throws IOException {
         ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
@@ -298,11 +366,11 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    long comp = Blocker.begin();
+                    boolean attempted = Blocker.begin(sync || direct);
                     try {
                         n = IOUtil.write(fd, src, -1, direct, alignment, nd);
                     } finally {
-                        Blocker.end(comp);
+                        Blocker.end(attempted);
                     }
 
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
@@ -315,10 +383,31 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplWrite(ByteBuffer src) throws IOException {
+        int bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            bytesWritten = implWrite(src);
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                FileWriteEvent.commit(start, duration, path, bytes);
+            }
+        }
+        return bytesWritten;
+    }
+
     @Override
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            return traceImplWrite(srcs, offset, length);
+        }
+        return implWrite(srcs, offset, length);
+    }
+
+    private long implWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
         Objects.checkFromIndexSize(offset, length, srcs.length);
         ensureOpen();
         if (!writable)
@@ -334,11 +423,11 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    long comp = Blocker.begin();
+                    boolean attempted = Blocker.begin(sync || direct);
                     try {
                         n = IOUtil.write(fd, srcs, offset, length, direct, alignment, nd);
                     } finally {
-                        Blocker.end(comp);
+                        Blocker.end(attempted);
                     }
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
@@ -350,6 +439,21 @@ public class FileChannelImpl
         }
     }
 
+    private long traceImplWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            bytesWritten = implWrite(srcs, offset, length);
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                FileWriteEvent.commit(start, duration, path, bytes);
+            }
+        }
+        return bytesWritten;
+    }
     // -- Other operations --
 
     @Override
@@ -365,13 +469,8 @@ public class FileChannelImpl
                     return 0;
                 boolean append = fdAccess.getAppend(fd);
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        // in append-mode then position is advanced to end before writing
-                        p = (append) ? nd.size(fd) : nd.seek(fd, -1);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    // in append-mode then position is advanced to end before writing
+                    p = (append) ? nd.size(fd) : nd.seek(fd, -1);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(p);
             } finally {
@@ -396,12 +495,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        p = nd.seek(fd, newPosition);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    p = nd.seek(fd, newPosition);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
@@ -424,12 +518,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return -1;
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        s = nd.size(fd);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    s = nd.size(fd);
                 } while ((s == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(s);
             } finally {
@@ -461,24 +550,14 @@ public class FileChannelImpl
                 // get current size
                 long size;
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        size = nd.size(fd);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    size = nd.size(fd);
                 } while ((size == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
 
                 // get current position
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        p = nd.seek(fd, -1);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    p = nd.seek(fd, -1);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
@@ -487,12 +566,7 @@ public class FileChannelImpl
                 // truncate file if given size is less than the current size
                 if (newSize < size) {
                     do {
-                        long comp = Blocker.begin();
-                        try {
-                            rv = nd.truncate(fd, newSize);
-                        } finally {
-                            Blocker.end(comp);
-                        }
+                        rv = nd.truncate(fd, newSize);
                     } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                     if (!isOpen())
                         return null;
@@ -502,12 +576,7 @@ public class FileChannelImpl
                 if (p > newSize)
                     p = newSize;
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        rp = nd.seek(fd, p);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    rp = nd.seek(fd, p);
                 } while ((rp == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
@@ -518,8 +587,7 @@ public class FileChannelImpl
         }
     }
 
-    @Override
-    public void force(boolean metaData) throws IOException {
+    private void implForce(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
         int ti = -1;
@@ -529,11 +597,11 @@ public class FileChannelImpl
             if (!isOpen())
                 return;
             do {
-                long comp = Blocker.begin();
+                boolean attempted = Blocker.begin();
                 try {
                     rv = nd.force(fd, metaData);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
             } while ((rv == IOStatus.INTERRUPTED) && isOpen());
         } finally {
@@ -541,6 +609,17 @@ public class FileChannelImpl
             endBlocking(rv > -1);
             assert IOStatus.check(rv);
         }
+    }
+
+    @Override
+    public void force(boolean metaData) throws IOException {
+        if (!FileForceEvent.enabled()) {
+            implForce(metaData);
+            return;
+        }
+        long start = FileForceEvent.timestamp();
+        implForce(metaData);
+        FileForceEvent.offer(start, path, metaData);
     }
 
     // Assume at first that the underlying kernel supports sendfile/equivalent;
@@ -624,12 +703,7 @@ public class FileChannelImpl
         long n;
         boolean append = fdAccess.getAppend(targetFD);
         do {
-            long comp = Blocker.begin();
-            try {
-                n = nd.transferTo(fd, position, count, targetFD, append);
-            } finally {
-                Blocker.end(comp);
-            }
+            n = nd.transferTo(fd, position, count, targetFD, append);
         } while ((n == IOStatus.INTERRUPTED) && isOpen());
         return n;
     }
@@ -857,20 +931,18 @@ public class FileChannelImpl
             if (position > sz)
                 return 0;
 
-            // Now position <= sz so remaining >= 0 and
-            // remaining == 0 if and only if sz == 0
-            long remaining = sz - position;
-
-            // Adjust count only if remaining > 0, i.e.,
-            // sz > position which means sz > 0
-            if (remaining > 0 && remaining < count)
-                count = remaining;
-
             // System calls supporting fast transfers might not work on files
             // which advertise zero size such as those in Linux /proc
             if (sz > 0) {
-                // Attempt a direct transfer, if the kernel supports it, limiting
-                // the number of bytes according to which platform
+                // Now sz > 0 and position <= sz so remaining >= 0 and
+                // remaining == 0 if and only if sz == position
+                long remaining = sz - position;
+
+                if (remaining >= 0 && remaining < count)
+                    count = remaining;
+
+                // Attempt a direct transfer, if the kernel supports it,
+                // limiting the number of bytes according to which platform
                 int icount = (int) Math.min(count, nd.maxDirectTransferSize());
                 long n;
                 if ((n = transferToDirect(position, icount, target)) >= 0)
@@ -897,12 +969,7 @@ public class FileChannelImpl
         long n;
         boolean append = fdAccess.getAppend(fd);
         do {
-            long comp = Blocker.begin();
-            try {
-                n = nd.transferFrom(srcFD, fd, position, count, append);
-            } finally {
-                Blocker.end(comp);
-            }
+            n = nd.transferFrom(srcFD, fd, position, count, append);
         } while ((n == IOStatus.INTERRUPTED) && isOpen());
         return n;
     }
@@ -1061,6 +1128,13 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst, long position) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dst, position);
+        }
+        return implRead(dst, position);
+    }
+
+    private int implRead(ByteBuffer dst, long position) throws IOException {
         if (dst == null)
             throw new NullPointerException();
         if (position < 0)
@@ -1079,6 +1153,25 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplRead(ByteBuffer dst, long position) throws IOException {
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = implRead(dst, position);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
+
     private int readInternal(ByteBuffer dst, long position) throws IOException {
         assert !nd.needsPositionLock() || Thread.holdsLock(positionLock);
         int n = 0;
@@ -1090,11 +1183,11 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                long comp = Blocker.begin();
+                boolean attempted = Blocker.begin(direct);
                 try {
                     n = IOUtil.read(fd, dst, position, direct, alignment, nd);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
@@ -1107,6 +1200,13 @@ public class FileChannelImpl
 
     @Override
     public int write(ByteBuffer src, long position) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplWrite(src, position);
+        }
+        return implWrite(src, position);
+    }
+
+    private int implWrite(ByteBuffer src, long position) throws IOException {
         if (src == null)
             throw new NullPointerException();
         if (position < 0)
@@ -1125,6 +1225,22 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplWrite(ByteBuffer src, long position) throws IOException {
+        int bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            bytesWritten = implWrite(src, position);
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                long bytes = bytesWritten > 0 ? bytesWritten : 0;
+                FileWriteEvent.commit(start, duration, path, bytes);
+            }
+        }
+        return bytesWritten;
+    }
+
     private int writeInternal(ByteBuffer src, long position) throws IOException {
         assert !nd.needsPositionLock() || Thread.holdsLock(positionLock);
         int n = 0;
@@ -1135,11 +1251,11 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                long comp = Blocker.begin();
+                boolean attempted = Blocker.begin(sync || direct);
                 try {
                     n = IOUtil.write(fd, src, position, direct, alignment, nd);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
@@ -1364,12 +1480,7 @@ public class FileChannelImpl
             synchronized (positionLock) {
                 long filesize;
                 do {
-                    long comp = Blocker.begin();
-                    try {
-                        filesize = nd.size(fd);
-                    } finally {
-                        Blocker.end(comp);
-                    }
+                    filesize = nd.size(fd);
                 } while ((filesize == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
@@ -1381,12 +1492,7 @@ public class FileChannelImpl
                     }
                     int rv;
                     do {
-                        long comp = Blocker.begin();
-                        try {
-                            rv = nd.truncate(fd, position + size);
-                        } finally {
-                            Blocker.end(comp);
-                        }
+                        rv = nd.truncate(fd, position + size);
                     } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                     if (!isOpen())
                         return null;
@@ -1577,11 +1683,11 @@ public class FileChannelImpl
                 return null;
             int n;
             do {
-                long comp = Blocker.begin();
+                boolean attempted = Blocker.begin();
                 try {
                     n = nd.lock(fd, true, position, size, shared);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
             } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
             if (isOpen()) {

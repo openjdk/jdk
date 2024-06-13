@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4165985
+ * @bug 4165985 8326332
  * @summary Determine the end of the first sentence using BreakIterator.
  * If the first sentence of "method" is parsed correctly, the test passes.
  * Correct Answer: "This is a class (i.e. it is indeed a class)."
@@ -76,5 +76,10 @@ public class TestBreakIterator extends JavadocTester {
                 """
                     <div class="block">A constant indicating that the keyLocation is indeterminate
                      or not relevant.</div>""");
+
+        checkOutput("pkg/BreakIteratorTest.html", true,
+                """
+                    <div class="block">Inline tags <i><a href="../index-all.html">extending
+                     beyond the first sentence.</a></i></div>""");
     }
 }

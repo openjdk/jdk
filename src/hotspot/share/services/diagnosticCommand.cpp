@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
@@ -308,7 +309,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (is_java_agent) {
     if (_option.value() == nullptr) {
-      JvmtiAgentList::load_agent("instrument", "false", _libpath.value(), output());
+      JvmtiAgentList::load_agent("instrument", false, _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -325,12 +326,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiAgentList::load_agent("instrument", "false", opt, output());
+      JvmtiAgentList::load_agent("instrument", false, opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiAgentList::load_agent(_libpath.value(), "true", _option.value(), output());
+    JvmtiAgentList::load_agent(_libpath.value(), true, _option.value(), output());
   }
 }
 
@@ -1023,7 +1024,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
     output()->print("Dynamic dump: ");
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
     }
@@ -1189,18 +1190,25 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MemMapPrinter::print_all_mappings(output(), _human_readable.value());
 }
 
+static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
   _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _filename("-F", "file path", "STRING", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_human_readable);
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream default_name;
-  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
-  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  stringStream defaultname;
+  const char* name = nullptr;
+  if (::strcmp(default_filename, _filename.value()) == 0) {
+    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
+    name = defaultname.base();
+  } else {
+    name = _filename.value();
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

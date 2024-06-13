@@ -29,7 +29,7 @@
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
@@ -389,7 +389,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
 
   if (use_ReduceInitialCardMarks() && obj == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // Keep this code in sync with CardTableBarrierSet::on_slowpath_allocation_exit.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.
@@ -453,8 +453,8 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
 
     // Should be able to do an unsigned compare of region_size instead of
     // and extra shift. Do we have an unsigned compare??
-    // Node* region_size = __ ConI(1 << HeapRegion::LogOfHRGrainBytes);
-    Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(checked_cast<jint>(HeapRegion::LogOfHRGrainBytes)));
+    // Node* region_size = __ ConI(1 << G1HeapRegion::LogOfHRGrainBytes);
+    Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(checked_cast<jint>(G1HeapRegion::LogOfHRGrainBytes)));
 
     // if (xor_res == 0) same region so skip
     __ if_then(xor_res, BoolTest::ne, zeroX, likely); {

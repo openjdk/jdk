@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,6 @@ class SafepointSynchronize : AllStatic {
       _synchronizing    = 1,                   // Synchronizing in progress
       _synchronized     = 2                    // All Java threads are running in native, blocked in OS or stopped at safepoint.
                                                // VM thread and any NonJavaThread may be running.
-  };
-
-  // The enums are listed in the order of the tasks when done serially.
-  enum SafepointCleanupTasks {
-    SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
-    SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES,
-    SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
-    SAFEPOINT_CLEANUP_STRING_TABLE_REHASH,
-    SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP,
-    // Leave this one last.
-    SAFEPOINT_CLEANUP_NUM_TASKS
   };
 
  private:
@@ -158,9 +147,6 @@ public:
 
   // Exception handling for page polling
   static void handle_polling_page_exception(JavaThread *thread);
-
-  static bool is_cleanup_needed();
-  static void do_cleanup_tasks();
 
   static void set_is_at_safepoint()             { _state = _synchronized; }
   static void set_is_not_at_safepoint()         { _state = _not_synchronized; }
@@ -244,7 +230,6 @@ private:
   // Absolute
   static jlong _last_safepoint_begin_time_ns;
   static jlong _last_safepoint_sync_time_ns;
-  static jlong _last_safepoint_cleanup_time_ns;
   static jlong _last_safepoint_end_time_ns;
 
   // Relative
@@ -256,7 +241,6 @@ private:
 
   static VM_Operation::VMOp_Type _current_type;
   static jlong     _max_sync_time;
-  static jlong     _max_cleanup_time;
   static jlong     _max_vmop_time;
   static uint64_t  _op_count[VM_Operation::VMOp_Terminating];
 
@@ -267,7 +251,6 @@ public:
 
   static void begin(VM_Operation::VMOp_Type type);
   static void synchronized(int nof_threads, int nof_running, int traps);
-  static void cleanup();
   static void end();
 
   static void statistics_exit_log();

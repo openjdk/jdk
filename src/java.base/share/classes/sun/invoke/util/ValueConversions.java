@@ -65,7 +65,7 @@ public class ValueConversions {
         return caches;
     }
 
-    /// Converting references to values.
+    //--- Converting references to values.
 
     // There are several levels of this unboxing conversions:
     //   no conversions:  exactly Integer.valueOf, etc.
@@ -222,7 +222,7 @@ public class ValueConversions {
 
     private static final Integer ZERO_INT = 0, ONE_INT = 1;
 
-    /// Primitive conversions
+    //--- Primitive conversions
     /**
      * Produce a Number which represents the given value {@code x}
      * according to the primitive type of the given wrapper {@code wrap}.
@@ -274,7 +274,7 @@ public class ValueConversions {
             return (int) x;
     }
 
-    /// Converting primitives to references
+    //--- Converting primitives to references
 
     static Integer boxInteger(int x) {
         return x;
@@ -336,7 +336,7 @@ public class ValueConversions {
         throw new IllegalArgumentException("cannot find box adapter for " + wrap);
     }
 
-    /// Constant functions
+    //--- Constant functions
 
     static void ignore(Object x) {
         // no value to return; this is an unbox of null
@@ -360,7 +360,7 @@ public class ValueConversions {
     }
 
 
-    /// Primitive conversions.
+    //--- Primitive conversions.
     // These are supported directly by the JVM, usually by a single instruction.
     // In the case of narrowing to a subword, there may be a pair of instructions.
     // In the case of booleans, there may be a helper routine to manage a 1-bit value.

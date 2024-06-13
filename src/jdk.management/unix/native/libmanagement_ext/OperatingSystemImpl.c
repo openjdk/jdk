@@ -74,14 +74,6 @@ static jlong page_size = 0;
 
 #endif /* _ALLBSD_SOURCE */
 
-#if defined(_AIX)
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-#endif
-
 // true = get available swap in bytes
 // false = get total swap in bytes
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {

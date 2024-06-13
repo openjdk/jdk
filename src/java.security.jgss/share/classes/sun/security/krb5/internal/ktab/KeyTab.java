@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import sun.security.jgss.krb5.ServiceCreds;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class represents key table. The key table functions deal with storing
  * and retrieving service keys for use in authentication exchanges.
@@ -64,7 +66,6 @@ import sun.security.jgss.krb5.ServiceCreds;
  */
 public class KeyTab implements KeyTabConstants {
 
-    private static final boolean DEBUG = Krb5.DEBUG;
     private static String defaultTabName = null;
 
     // Attention: Currently there is no way to remove a keytab from this map,
@@ -101,14 +102,14 @@ public class KeyTab implements KeyTabConstants {
         } catch (FileNotFoundException e) {
             entries.clear();
             isMissing = true;
-            if (DEBUG) {
-                System.out.println("Cannot load keytab " + tabName + ": " + e);
+            if (DEBUG != null) {
+                DEBUG.println("Cannot load keytab " + tabName + ": " + e);
             }
         } catch (Exception ioe) {
             entries.clear();
             isValid = false;
-            if (DEBUG) {
-                System.out.println("Cannot load keytab " + tabName + ": " + ioe);
+            if (DEBUG != null) {
+                DEBUG.println("Cannot load keytab " + tabName + ": " + ioe);
             }
         }
     }
@@ -263,8 +264,8 @@ public class KeyTab implements KeyTabConstants {
         while (kis.available() > 0) {
             entryLength = kis.readEntryLength();
             entry = kis.readEntry(entryLength, kt_vno);
-            if (DEBUG) {
-                System.out.println(">>> KeyTab: load() entry length: " +
+            if (DEBUG != null) {
+                DEBUG.println(">>> KeyTab: load() entry length: " +
                         entryLength + "; type: " +
                         (entry != null? entry.keyType : 0));
             }
@@ -293,8 +294,8 @@ public class KeyTab implements KeyTabConstants {
         EncryptionKey key;
         int size = entries.size();
         ArrayList<EncryptionKey> keys = new ArrayList<>(size);
-        if (DEBUG) {
-            System.out.println("Looking for keys for: " + service);
+        if (DEBUG != null) {
+            DEBUG.println("Looking for keys for: " + service);
         }
         for (int i = size-1; i >= 0; i--) {
             entry = entries.elementAt(i);
@@ -304,12 +305,12 @@ public class KeyTab implements KeyTabConstants {
                                         entry.keyType,
                                         entry.keyVersion);
                     keys.add(key);
-                    if (DEBUG) {
-                        System.out.println("Added key: " + entry.keyType +
+                    if (DEBUG != null) {
+                        DEBUG.println("Added key: " + entry.keyType +
                             ", version: " + entry.keyVersion);
                     }
-                } else if (DEBUG) {
-                    System.out.println("Found unsupported keytype (" +
+                } else if (DEBUG != null) {
+                    DEBUG.println("Found unsupported keytype (" +
                         entry.keyType + ") for " + service);
                 }
             }
@@ -347,8 +348,8 @@ public class KeyTab implements KeyTabConstants {
             if (entry.service.match(service)) {
                 if (EType.isSupported(entry.keyType)) {
                     return true;
-                } else if (DEBUG) {
-                    System.out.println("Found unsupported keytype (" +
+                } else if (DEBUG != null) {
+                    DEBUG.println("Found unsupported keytype (" +
                         entry.keyType + ") for " + service);
                 }
             }

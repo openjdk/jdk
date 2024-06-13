@@ -91,6 +91,13 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
     void print_on(outputStream* st) const {};
     void print_value_on(outputStream* st) const {};
+
+    static bool is_dynamic_sized_value_compatible() {
+      // To support dynamically sized Value types, where part of the payload is
+      // allocated beyond the end of the object, it must be that the _value
+      // field ends where the Node object ends. (No end padding).
+      return offset_of(Node, _value) + sizeof(_value) == sizeof(Node);
+    }
   };
 
   // Only constructed with placement new from an array allocated with MEMFLAGS
@@ -419,6 +426,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
   size_t get_size_log2(Thread* thread);
   static size_t get_node_size() { return sizeof(Node); }
+  static size_t get_dynamic_node_size(size_t value_size);
   bool is_max_size_reached() { return _size_limit_reached; }
 
   // This means no paused bucket resize operation is going to resume
@@ -524,8 +532,9 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f, outputStream* st,
                      const char* table_name);
 
-  // Moves all nodes from this table to to_cht
-  bool try_move_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
+  // Moves all nodes from this table to to_cht with new hash code.
+  // Must be done at a safepoint.
+  void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
 
   // Scoped multi getter.
   class MultiGetHandle : private ScopedCS {

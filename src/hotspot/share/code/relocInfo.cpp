@@ -117,13 +117,13 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
-void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit) {
+void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
   if (nm == nullptr && begin != nullptr) {
     // allow nmethod to be deduced from beginning address
     CodeBlob* cb = CodeCache::find_blob(begin);
-    nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+    nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
   }
   guarantee(nm != nullptr, "must be able to deduce nmethod from other arguments");
 
@@ -150,8 +150,7 @@ void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit)
 
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
-  assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)) ||
-         ((cs->locs_start() == nullptr) && (cs->locs_end() == nullptr)), "valid start and end pointer");
+  assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)), "valid start and end pointer");
   _current = cs->locs_start()-1;
   _end     = cs->locs_end();
   _addr    = cs->start();
@@ -277,30 +276,6 @@ DEFINE_COPY_INTO_AUX(Relocation)
 #undef DEFINE_COPY_INTO_AUX
 #undef DEFINE_COPY_INTO
 
-//////// Methods for RelocationHolder
-
-RelocationHolder RelocationHolder::plus(int offset) const {
-  if (offset != 0) {
-    switch (type()) {
-    case relocInfo::none:
-      break;
-    case relocInfo::oop_type:
-      {
-        oop_Relocation* r = (oop_Relocation*)reloc();
-        return oop_Relocation::spec(r->oop_index(), r->offset() + offset);
-      }
-    case relocInfo::metadata_type:
-      {
-        metadata_Relocation* r = (metadata_Relocation*)reloc();
-        return metadata_Relocation::spec(r->metadata_index(), r->offset() + offset);
-      }
-    default:
-      ShouldNotReachHere();
-    }
-  }
-  return (*this);
-}
-
 //////// Methods for flyweight Relocation types
 
 // some relocations can compute their own values
@@ -402,24 +377,24 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
 
 void oop_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
-  p = pack_2_ints_to(p, _oop_index, _offset);
+  p = pack_1_int_to(p, _oop_index);
   dest->set_locs_end((relocInfo*) p);
 }
 
 
 void oop_Relocation::unpack_data() {
-  unpack_2_ints(_oop_index, _offset);
+  _oop_index = unpack_1_int();
 }
 
 void metadata_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
-  p = pack_2_ints_to(p, _metadata_index, _offset);
+  p = pack_1_int_to(p, _metadata_index);
   dest->set_locs_end((relocInfo*) p);
 }
 
 
 void metadata_Relocation::unpack_data() {
-  unpack_2_ints(_metadata_index, _offset);
+  _metadata_index = unpack_1_int();
 }
 
 
@@ -633,20 +608,18 @@ address virtual_call_Relocation::cached_value() {
 }
 
 Method* virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
 }
 
-bool virtual_call_Relocation::clear_inline_cache() {
-  // No stubs for ICs
-  // Clean IC
+void virtual_call_Relocation::clear_inline_cache() {
   ResourceMark rm;
   CompiledIC* icache = CompiledIC_at(this);
-  return icache->set_to_clean();
+  icache->set_to_clean();
 }
 
 
@@ -661,26 +634,18 @@ void opt_virtual_call_Relocation::unpack_data() {
 }
 
 Method* opt_virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
 }
 
-template<typename CompiledICorStaticCall>
-static bool set_to_clean_no_ic_refill(CompiledICorStaticCall* ic) {
-  guarantee(ic->set_to_clean(), "Should not need transition stubs");
-  return true;
-}
-
-bool opt_virtual_call_Relocation::clear_inline_cache() {
-  // No stubs for ICs
-  // Clean IC
+void opt_virtual_call_Relocation::clear_inline_cache() {
   ResourceMark rm;
-  CompiledIC* icache = CompiledIC_at(this);
-  return set_to_clean_no_ic_refill(icache);
+  CompiledDirectCall* callsite = CompiledDirectCall::at(this);
+  callsite->set_to_clean();
 }
 
 address opt_virtual_call_Relocation::static_stub() {
@@ -699,9 +664,9 @@ address opt_virtual_call_Relocation::static_stub() {
 }
 
 Method* static_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
@@ -717,10 +682,10 @@ void static_call_Relocation::unpack_data() {
   _method_index = unpack_1_int();
 }
 
-bool static_call_Relocation::clear_inline_cache() {
-  // Safe call site info
-  CompiledStaticCall* handler = this->code()->compiledStaticCall_at(this);
-  return set_to_clean_no_ic_refill(handler);
+void static_call_Relocation::clear_inline_cache() {
+  ResourceMark rm;
+  CompiledDirectCall* callsite = CompiledDirectCall::at(this);
+  callsite->set_to_clean();
 }
 
 
@@ -759,11 +724,10 @@ address trampoline_stub_Relocation::get_trampoline_for(address call, nmethod* co
   return nullptr;
 }
 
-bool static_stub_Relocation::clear_inline_cache() {
+void static_stub_Relocation::clear_inline_cache() {
   // Call stub is only used when calling the interpreted code.
   // It does not really need to be cleared, except that we want to clean out the methodoop.
-  CompiledDirectStaticCall::set_stub_to_clean(this);
-  return true;
+  CompiledDirectCall::set_stub_to_clean(this);
 }
 
 
@@ -866,8 +830,8 @@ void RelocIterator::print_current() {
         raw_oop   = *oop_addr;
         oop_value = r->oop_value();
       }
-      tty->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " offset=%d]",
-                 p2i(oop_addr), p2i(raw_oop), r->offset());
+      tty->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
+                 p2i(oop_addr), p2i(raw_oop));
       // Do not print the oop by default--we want this routine to
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != nullptr) {
@@ -889,8 +853,8 @@ void RelocIterator::print_current() {
         raw_metadata   = *metadata_addr;
         metadata_value = r->metadata_value();
       }
-      tty->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " offset=%d]",
-                 p2i(metadata_addr), p2i(raw_metadata), r->offset());
+      tty->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
+                 p2i(metadata_addr), p2i(raw_metadata));
       if (metadata_value != nullptr) {
         tty->print("metadata_value=" INTPTR_FORMAT ": ", p2i(metadata_value));
         metadata_value->print_value_on(tty);

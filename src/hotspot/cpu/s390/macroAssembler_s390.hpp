@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +258,7 @@ class MacroAssembler: public Assembler {
 
   // nop padding
   void align(int modulus);
+  void align(int modulus, int target);
   void align_address(int modulus);
 
   //
@@ -565,6 +567,9 @@ class MacroAssembler: public Assembler {
 
   // Get the pc where the last call will return to. Returns _last_calls_return_pc.
   inline address last_calls_return_pc();
+
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
  private:
   static bool is_call_far_patchable_variant0_at(address instruction_addr); // Dynamic TOC: load target addr from CP and call.
@@ -1017,6 +1022,19 @@ class MacroAssembler: public Assembler {
                        Register z,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
+
+  // These generate optimized code for all supported s390 implementations, and are preferred for most uses.
+  void pop_count_int(Register dst, Register src, Register tmp);
+  void pop_count_long(Register dst, Register src, Register tmp);
+
+  // For legacy (pre-z15) use, but will work on all supported s390 implementations.
+  void pop_count_int_without_ext3(Register dst, Register src, Register tmp);
+  void pop_count_long_without_ext3(Register dst, Register src, Register tmp);
+
+  // Only for use on z15 or later s390 implementations.
+  void pop_count_int_with_ext3(Register dst, Register src);
+  void pop_count_long_with_ext3(Register dst, Register src);
+
 };
 
 /**

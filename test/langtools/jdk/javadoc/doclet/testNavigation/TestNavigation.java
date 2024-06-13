@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
- *           8196200 8196202 8223378 8258659 8261976 8320458
+ *           8196200 8196202 8223378 8258659 8261976 8320458 8329537
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -179,6 +179,12 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/A.X.html",
                 """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html">pkg1</a></li>
+                    <li><a href="A.html">A</a></li>
+                    <li><a href="A.X.html" class="current-selection">X</a></li>
+                    </ol>""",
+                """
                     <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
@@ -204,6 +210,12 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/A.Y.html",
                 """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html">pkg1</a></li>
+                    <li><a href="A.html">A</a></li>
+                    <li><a href="A.Y.html" class="current-selection">Y</a></li>
+                    </ol>""",
+                """
                     <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
@@ -218,6 +230,13 @@ public class TestNavigation extends JavadocTester {
                     </ol>""");
 
         checkOrder("pkg1/A.X.IC.html",
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html">pkg1</a></li>
+                    <li><a href="A.html">A</a></li>
+                    <li><a href="A.X.html">X</a></li>
+                    <li><a href="A.X.IC.html" class="current-selection">IC</a></li>
+                    </ol>""",
                 """
                     <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
@@ -411,8 +430,7 @@ public class TestNavigation extends JavadocTester {
                 """
                     <ol class="sub-nav-list">
                     <li><a href="package-summary.html">Unnamed Package</a></li>
-                    &nbsp;&gt;&nbsp;
-                    <li><a href="C.html" class="current-selection" title="class in Unnamed Package">C</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>""");
     }
 

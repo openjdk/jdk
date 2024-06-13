@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ void ModuleEntry::set_location(Symbol* location) {
 
   if (location != nullptr) {
     location->increment_refcount();
-    CDS_ONLY(if (UseSharedSpaces) {
+    CDS_ONLY(if (CDSConfig::is_using_archive()) {
         _shared_path_index = FileMapInfo::get_module_shared_path_index(location);
       });
   }
@@ -481,7 +481,7 @@ void ModuleEntry::init_as_archived_entry() {
   if (_location != nullptr) {
     _location = ArchiveBuilder::get_buffered_symbol(_location);
   }
-  JFR_ONLY(set_trace_id(0));// re-init at runtime
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);
@@ -513,14 +513,14 @@ void ModuleEntry::verify_archived_module_entries() {
 #endif // PRODUCT
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   set_loader_data(loader_data);
   _reads = restore_growable_array((Array<ModuleEntry*>*)_reads);
   JFR_ONLY(INIT_ID(this);)
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module(loader_data->add_handle(module_handle));
@@ -541,7 +541,7 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
 }
 
 void ModuleEntry::clear_archived_oops() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   HeapShared::clear_root(_archived_module_index);
 }
 
@@ -586,7 +586,7 @@ void ModuleEntryTable::init_archived_entries(Array<ModuleEntry*>* archived_modul
 
 void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
                                              Array<ModuleEntry*>* archived_modules) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
@@ -596,7 +596,7 @@ void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
 }
 
 void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array<ModuleEntry*>* archived_modules) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
     archived_entry->restore_archived_oops(loader_data);

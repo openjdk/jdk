@@ -224,11 +224,20 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt*2-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
-    Node *box = new BoxLockNode(next_monitor());
+    BoxLockNode* osr_box = new BoxLockNode(next_monitor());
     // Check for bailout after new BoxLockNode
     if (failing()) { return; }
-    box = _gvn.transform(box);
 
+    // This OSR locking region is unbalanced because it does not have Lock node:
+    // locking was done in Interpreter.
+    // This is similar to Coarsened case when Lock node is eliminated
+    // and as result the region is marked as Unbalanced.
+
+    // Emulate Coarsened state transition from Regular to Unbalanced.
+    osr_box->set_coarsened();
+    osr_box->set_unbalanced();
+
+    Node* box = _gvn.transform(osr_box);
 
     // Displaced headers and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
@@ -588,12 +597,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       // Add check to deoptimize the nmethod once the holder class is fully initialized
       clinit_deopt();
     }
-
-    // Add check to deoptimize the nmethod if RTM state was changed
-    rtm_deopt();
   }
 
-  // Check for bailouts during method entry or RTM state check setup.
+  // Check for bailouts during method entry.
   if (failing()) {
     if (log)  log->done("parse");
     C->set_default_node_notes(caller_nn);
@@ -1007,7 +1013,8 @@ void Parse::do_exits() {
        (wrote_final() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
-    _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+    _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
+                          alloc_with_final());
 
     // If Memory barrier is created for final fields write
     // and allocation node does not escape the initialize method,
@@ -1805,11 +1812,24 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
             const JVMState* jvms = map()->jvms();
             if (EliminateNestedLocks &&
                 jvms->is_mon(j) && jvms->is_monitor_box(j)) {
-              // BoxLock nodes are not commoning.
+              // BoxLock nodes are not commoning when EliminateNestedLocks is on.
               // Use old BoxLock node as merged box.
               assert(newin->jvms()->is_monitor_box(j), "sanity");
               // This assert also tests that nodes are BoxLock.
               assert(BoxLockNode::same_slot(n, m), "sanity");
+              BoxLockNode* old_box = m->as_BoxLock();
+              if (n->as_BoxLock()->is_unbalanced() && !old_box->is_unbalanced()) {
+                // Preserve Unbalanced status.
+                //
+                // `old_box` can have only Regular or Coarsened status
+                // because this code is executed only during Parse phase and
+                // Incremental Inlining before EA and Macro nodes elimination.
+                //
+                // Incremental Inlining is executed after IGVN optimizations
+                // during which BoxLock can be marked as Coarsened.
+                old_box->set_coarsened(); // Verifies state
+                old_box->set_unbalanced();
+              }
               C->gvn_replace_by(n, m);
             } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
@@ -2178,47 +2198,10 @@ void Parse::clinit_deopt() {
   guard_klass_being_initialized(holder);
 }
 
-// Add check to deoptimize if RTM state is not ProfileRTM
-void Parse::rtm_deopt() {
-#if INCLUDE_RTM_OPT
-  if (C->profile_rtm()) {
-    assert(C->has_method(), "only for normal compilations");
-    assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
-    assert(depth() == 1, "generate check only for main compiled method");
-
-    // Set starting bci for uncommon trap.
-    set_parse_bci(is_osr_parse() ? osr_bci() : 0);
-
-    // Load the rtm_state from the MethodData.
-    const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
-    Node* mdo = makecon(adr_type);
-    int offset = in_bytes(MethodData::rtm_state_offset());
-    Node* adr_node = basic_plus_adr(mdo, mdo, offset);
-    Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-    // Separate Load from Cmp by Opaque.
-    // In expand_macro_nodes() it will be replaced either
-    // with this load when there are locks in the code
-    // or with ProfileRTM (cmp->in(2)) otherwise so that
-    // the check will fold.
-    Node* profile_state = makecon(TypeInt::make(ProfileRTM));
-    Node* opq   = _gvn.transform( new Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
-    Node* chk   = _gvn.transform( new CmpINode(opq, profile_state) );
-    Node* tst   = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
-    // Branch to failure if state was changed
-    { BuildCutout unless(this, tst, PROB_ALWAYS);
-      uncommon_trap(Deoptimization::Reason_rtm_state_change,
-                    Deoptimization::Action_make_not_entrant);
-    }
-  }
-#endif
-}
-
 //------------------------------return_current---------------------------------
 // Append current _map to _exit_return
 void Parse::return_current(Node* value) {
-  if (RegisterFinalizersAtInit &&
-      method()->intrinsic_id() == vmIntrinsics::_Object_init) {
+  if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
   }
 

@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+ */
+
+/*
  * Javadoc style sheet
  */
 
@@ -250,6 +257,10 @@ ol.sub-nav-list li {
     list-style:none;
     scroll-snap-align: start;
 }
+ol.sub-nav-list li:not(:first-child) {
+    list-style-type: " > ";
+    margin-left: 20px;
+}
 ol.sub-nav-list a {
     padding: 3px;
 }
@@ -361,9 +372,13 @@ dl.notes > dt {
     color:var(--body-text-color);
 }
 dl.notes > dd {
-    margin:5px 10px 10px 0;
+    margin:5px 10px 10px 15px;
     font-size:var(--block-font-size);
-    font-family:var(--block-font-family)
+    font-family:var(--block-font-family);
+}
+dl.notes > dd > ul, dl.notes > dd > ol {
+    margin-bottom: 1em;
+    margin-top: 1em;
 }
 dl.name-value > dt {
     margin-left:1px;
@@ -536,8 +551,9 @@ ul.ref-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
-ul.tag-list, ul.tag-list-long {
+dl.notes > dd > ul.tag-list, dl.notes > dd > ul.tag-list-long {
     padding-left: 0;
+    margin: 0;
     list-style: none;
 }
 ul.tag-list li {

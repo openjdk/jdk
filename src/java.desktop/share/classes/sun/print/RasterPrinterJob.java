@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
@@ -279,6 +280,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PageRanges pageRangesAttr;
     protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
+    protected OutputBin outputBinAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
     protected int mDestType = RasterPrinterJob.FILE;
@@ -1228,6 +1230,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        outputBinAttr = null;
         printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
@@ -1272,6 +1275,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
         sidesAttr = (Sides)attributes.get(Sides.class);
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
+        }
+
+        outputBinAttr = (OutputBin)attributes.get(OutputBin.class);
+        if (!isSupportedValue(outputBinAttr,  attributes)) {
+            outputBinAttr = null;
         }
 
         printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);
@@ -2396,6 +2404,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                      * the page on the next iteration of the loop.
                      */
                     bandGraphics.setTransform(uniformTransform);
+                    bandGraphics.translate(-deviceAddressableX, deviceAddressableY);
                     bandGraphics.transform(deviceTransform);
                     deviceTransform.translate(0, -bandHeight);
 
@@ -2418,12 +2427,12 @@ public abstract class RasterPrinterJob extends PrinterJob {
                          * We also need to translate by the adjusted amount
                          * so that printing appears in the correct place.
                          */
-                        int bandX = deviceLeft - deviceAddressableX;
+                        int bandX = deviceLeft;
                         if (bandX < 0) {
                             bandGraphics.translate(bandX/xScale,0);
                             bandX = 0;
                         }
-                        int bandY = deviceTop + bandTop - deviceAddressableY;
+                        int bandY = deviceTop;
                         if (bandY < 0) {
                             bandGraphics.translate(0,bandY/yScale);
                             bandY = 0;
@@ -2434,7 +2443,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                         painterGraphics.setDelegate((Graphics2D) bandGraphics.create());
                         painter.print(painterGraphics, origPage, pageIndex);
                         painterGraphics.dispose();
-                        printBand(data, bandX, bandY, bandWidth, bandHeight);
+                        printBand(data, bandX, bandTop + bandY, bandWidth, bandHeight);
                     }
                 }
 
@@ -2615,5 +2624,27 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if (onTop != null) {
             parentWindowID = DialogOwnerAccessor.getID(onTop);
         }
+    }
+
+    protected String getOutputBinValue(Attribute attr) {
+        if (attr instanceof CustomOutputBin customOutputBin) {
+            return customOutputBin.getChoiceName();
+        } else if (attr instanceof OutputBin) {
+            PrintService ps = getPrintService();
+            if (ps == null) {
+                return null;
+            }
+            String name = attr.toString();
+            OutputBin[] outputBins = (OutputBin[]) ps
+                    .getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin outputBin : outputBins) {
+                String choice = ((CustomOutputBin) outputBin).getChoiceName();
+                if (name.equalsIgnoreCase(choice) || name.replaceAll("-", "").equalsIgnoreCase(choice)) {
+                    return choice;
+                }
+            }
+            return null;
+        }
+        return null;
     }
 }

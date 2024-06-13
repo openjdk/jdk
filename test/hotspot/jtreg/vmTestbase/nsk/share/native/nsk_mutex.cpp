@@ -22,7 +22,7 @@
  */
 
 #include <stdlib.h>
-#include "nsk_mutex.h"
+#include "nsk_mutex.hpp"
 
 extern "C" {
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
 }
 
 // Caller needs ResourceMark.
-void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
+static void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
   const char* package_name = package->name()->as_C_string();
   if (package->module()->is_named()) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
@@ -560,9 +560,7 @@ void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
 char* Modules::_archived_main_module_name = nullptr;
-#endif
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
@@ -596,15 +594,15 @@ void Modules::serialize(SerializeClosure* soc) {
 
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
-      MetaspaceShared::disable_optimized_module_handling();
+      CDSConfig::stop_using_optimized_module_handling();
     }
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI

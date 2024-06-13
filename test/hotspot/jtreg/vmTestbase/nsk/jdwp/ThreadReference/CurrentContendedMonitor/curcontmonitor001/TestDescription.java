@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@
  *     Next, debugger obtains from debuggee classID for tested thread class
  *     and threadID as the value of a class static field. Also debugger
  *     suspends the thread before sending the tested command. The tested
- *     thread is waiting for the object at this moment.
+ *     thread is waiting to re-enter the object monitor after being
+ *     notified during execution of the Object.wait(long) method.
  *     Then, debugger creates command packet for ThreadReference.CurrenContendedMonitor
  *     command with the found threadID as an argument, writes packet to
  *     the transport channel, and waits for a reply packet.
@@ -62,7 +63,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdwp.ThreadReference.CurrentContendedMonitor.curcontmonitor001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

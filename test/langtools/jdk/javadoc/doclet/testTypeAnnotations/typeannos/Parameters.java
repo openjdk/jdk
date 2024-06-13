@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ class Parameters {
     void array2Deep(@ParamA String @ParamA [] @ParamB [] a) {}
     void array2First(String @ParamA [] [] a) {}
     void array2Second(String [] @ParamB [] a) {}
+
+    void primitive(@ParamA int a) {}
+    void primitiveArray1Deep(@ParamA int @ParamB [] a) {}
 }
 
 class ParaParameterized<K, V> { }

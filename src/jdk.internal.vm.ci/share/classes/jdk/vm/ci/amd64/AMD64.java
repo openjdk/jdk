@@ -232,6 +232,8 @@ public class AMD64 extends Architecture {
         CET_IBT,
         CET_SS,
         AVX512_IFMA,
+        AVX_IFMA,
+        APX_F,
     }
 
     private final EnumSet<CPUFeature> features;

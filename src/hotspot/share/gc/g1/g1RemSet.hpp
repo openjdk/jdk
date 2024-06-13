@@ -26,10 +26,10 @@
 #define SHARE_GC_G1_G1REMSET_HPP
 
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/ticks.hpp"
@@ -39,7 +39,6 @@
 
 class BitMap;
 class CardTableBarrierSet;
-class CodeBlobClosure;
 class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
@@ -109,7 +108,7 @@ public:
   void exclude_region_from_scan(uint region_idx);
   // Creates a snapshot of the current _top values at the start of collection to
   // filter out card marks that we do not want to scan.
-  void prepare_region_for_scan(HeapRegion* region);
+  void prepare_region_for_scan(G1HeapRegion* region);
 
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.

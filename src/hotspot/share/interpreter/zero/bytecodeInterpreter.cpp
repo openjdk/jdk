@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1607,10 +1607,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);
@@ -1991,11 +1991,9 @@ run:
             size_t obj_size = ik->size_helper();
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
-              // Initialize object field block:
-              //   - if TLAB is pre-zeroed, we can skip this path
-              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
-              //     this area, and we still need to initialize it
-              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+              // Initialize object field block.
+              if (!ZeroTLAB) {
+                // The TLAB was not pre-zeroed, we need to clear the memory here.
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
@@ -2249,7 +2247,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        u4 index = Bytes::get_native_u4(pc+1);
         ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
@@ -2445,7 +2443,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             if (entry->is_vfinal()) {
               callee = entry->method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }

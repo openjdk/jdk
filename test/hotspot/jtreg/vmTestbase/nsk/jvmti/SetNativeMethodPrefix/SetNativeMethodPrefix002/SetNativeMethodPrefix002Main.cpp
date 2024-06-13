@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 #include <string.h>
 #include <jvmti.h>
 
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
-#include "jni_tools.h"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
+#include "jni_tools.hpp"
 
 extern "C" {
 

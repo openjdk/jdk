@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,35 @@
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
-
-// The ability to dump the FMG depends on many factors checked by
-// is_dumping_full_module_graph(), but can be unconditionally disabled by
-// _dumping_full_module_graph_disabled. (Ditto for loading the FMG).
-bool CDSConfig::_dumping_full_module_graph_disabled = false;
-bool CDSConfig::_loading_full_module_graph_disabled = false;
+bool CDSConfig::_is_using_optimized_module_handling = true;
+bool CDSConfig::_is_dumping_full_module_graph = true;
+bool CDSConfig::_is_using_full_module_graph = true;
 
 char* CDSConfig::_default_archive_path = nullptr;
 char* CDSConfig::_static_archive_path = nullptr;
 char* CDSConfig::_dynamic_archive_path = nullptr;
+
+int CDSConfig::get_status() {
+  assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
+  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
+         (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
+         (is_using_archive()                ? IS_USING_ARCHIVE : 0);
+}
+
 
 void CDSConfig::initialize() {
   if (is_dumping_static_archive()) {
@@ -59,8 +67,12 @@ void CDSConfig::initialize() {
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
   //
   // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
-  if (is_dumping_static_archive() || UseSharedSpaces) {
+  if (is_dumping_static_archive() || is_using_archive()) {
     init_shared_archive_paths();
+  }
+
+  if (!is_dumping_heap()) {
+    _is_dumping_full_module_graph = false;
   }
 }
 
@@ -128,7 +140,7 @@ void CDSConfig::init_shared_archive_paths() {
     if (is_dumping_static_archive()) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
-    check_unsupported_dumping_properties();
+    check_unsupported_dumping_module_options();
 
     if (os::same_files(default_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
@@ -223,55 +235,77 @@ void CDSConfig::init_shared_archive_paths() {
   }
 }
 
-void CDSConfig::check_system_property(const char* key, const char* value) {
+void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_internal_module_property(key)) {
-    MetaspaceShared::disable_optimized_module_handling();
+    stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
-  }
-  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.validation") == 0 ||
-      strcmp(key, "java.system.class.loader") == 0) {
-    disable_loading_full_module_graph();
-    disable_dumping_full_module_graph();
-    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 }
 
-static const char* unsupported_properties[] = {
-  "jdk.module.limitmods",
-  "jdk.module.upgrade.path",
-  "jdk.module.patch.0"
-};
-static const char* unsupported_options[] = {
-  "--limit-modules",
-  "--upgrade-module-path",
-  "--patch-module"
-};
+void CDSConfig::check_incompatible_property(const char* key, const char* value) {
+  static const char* incompatible_properties[] = {
+    "java.system.class.loader",
+    "jdk.module.showModuleResolution",
+    "jdk.module.validation"
+  };
 
-void CDSConfig::check_unsupported_dumping_properties() {
-  assert(is_dumping_archive(), "this function is only used with CDS dump time");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  // If a vm option is found in the unsupported_options array, vm will exit with an error message.
+  for (const char* property : incompatible_properties) {
+    if (strcmp(key, property) == 0) {
+      stop_dumping_full_module_graph();
+      stop_using_full_module_graph();
+      log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
+      break;
+    }
+  }
+
+}
+
+// Returns any JVM command-line option, such as "--patch-module", that's not supported by CDS.
+static const char* find_any_unsupported_module_option() {
+  // Note that arguments.cpp has translated the command-line options into properties. If we find an
+  // unsupported property, translate it back to its command-line option for better error reporting.
+
+  // The following properties are checked by Arguments::is_internal_module_property() and cannot be
+  // directly specified in the command-line.
+  static const char* unsupported_module_properties[] = {
+    "jdk.module.limitmods",
+    "jdk.module.upgrade.path",
+    "jdk.module.patch.0"
+  };
+  static const char* unsupported_module_options[] = {
+    "--limit-modules",
+    "--upgrade-module-path",
+    "--patch-module"
+  };
+
+  assert(ARRAY_SIZE(unsupported_module_properties) == ARRAY_SIZE(unsupported_module_options), "must be");
   SystemProperty* sp = Arguments::system_properties();
   while (sp != nullptr) {
-    for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-      if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
-        vm_exit_during_initialization(
-          "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
+    for (uint i = 0; i < ARRAY_SIZE(unsupported_module_properties); i++) {
+      if (strcmp(sp->key(), unsupported_module_properties[i]) == 0) {
+        return unsupported_module_options[i];
       }
     }
     sp = sp->next();
   }
 
+  return nullptr; // not found
+}
+
+void CDSConfig::check_unsupported_dumping_module_options() {
+  assert(is_dumping_archive(), "this function is only used with CDS dump time");
+  const char* option = find_any_unsupported_module_option();
+  if (option != nullptr) {
+    vm_exit_during_initialization("Cannot use the following option when dumping the shared archive", option);
+  }
   // Check for an exploded module build in use with -Xshare:dump.
   if (!Arguments::has_jimage()) {
     vm_exit_during_initialization("Dumping the shared archive is not supported with an exploded module build");
   }
 }
 
-bool CDSConfig::check_unsupported_cds_runtime_properties() {
-  assert(UseSharedSpaces, "this function is only used with -Xshare:{on,auto}");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
+bool CDSConfig::has_unsupported_runtime_module_options() {
+  assert(is_using_archive(), "this function is only used with -Xshare:{on,auto}");
   if (ArchiveClassesAtExit != nullptr) {
     // dynamic dumping, just return false for now.
     // check_unsupported_dumping_properties() will be called later to check the same set of
@@ -279,20 +313,19 @@ bool CDSConfig::check_unsupported_cds_runtime_properties() {
     // are used.
     return false;
   }
-  for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-    if (Arguments::get_property(unsupported_properties[i]) != nullptr) {
-      if (RequireSharedSpaces) {
-        warning("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      } else {
-        log_info(cds)("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      }
-      return true;
+  const char* option = find_any_unsupported_module_option();
+  if (option != nullptr) {
+    if (RequireSharedSpaces) {
+      warning("CDS is disabled when the %s option is specified.", option);
+    } else {
+      log_info(cds)("CDS is disabled when the %s option is specified.", option);
     }
+    return true;
   }
   return false;
 }
 
-bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_flag_cmd_line) {
+bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
   if (is_dumping_static_archive()) {
     if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -337,10 +370,10 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_fl
     }
   }
 
-  if (UseSharedSpaces && patch_mod_javabase) {
+  if (is_using_archive() && patch_mod_javabase) {
     Arguments::no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
-  if (UseSharedSpaces && check_unsupported_cds_runtime_properties()) {
+  if (is_using_archive() && has_unsupported_runtime_module_options()) {
     UseSharedSpaces = false;
   }
 
@@ -355,53 +388,59 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_fl
   return true;
 }
 
+bool CDSConfig::is_using_archive() {
+  return UseSharedSpaces;
+}
+
+bool CDSConfig::is_logging_lambda_form_invokers() {
+  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
+}
+
+void CDSConfig::stop_using_optimized_module_handling() {
+  _is_using_optimized_module_handling = false;
+  _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
+  _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::is_dumping_heap() {
   // heap dump is not supported in dynamic dump
   return is_dumping_static_archive() && HeapShared::can_write();
 }
 
-bool CDSConfig::is_dumping_full_module_graph() {
-  if (!_dumping_full_module_graph_disabled &&
-      is_dumping_heap() &&
-      MetaspaceShared::use_optimized_module_handling()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool CDSConfig::is_loading_full_module_graph() {
+bool CDSConfig::is_using_full_module_graph() {
   if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
     return true;
   }
 
-  if (!_loading_full_module_graph_disabled &&
-      UseSharedSpaces &&
-      ArchiveHeapLoader::can_use() &&
-      MetaspaceShared::use_optimized_module_handling()) {
+  if (!_is_using_full_module_graph) {
+    return false;
+  }
+
+  if (is_using_archive() && ArchiveHeapLoader::can_use()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");
     return true;
   } else {
+    _is_using_full_module_graph = false;
     return false;
   }
 }
 
-void CDSConfig::disable_dumping_full_module_graph(const char* reason) {
-  if (!_dumping_full_module_graph_disabled) {
-    _dumping_full_module_graph_disabled = true;
+void CDSConfig::stop_dumping_full_module_graph(const char* reason) {
+  if (_is_dumping_full_module_graph) {
+    _is_dumping_full_module_graph = false;
     if (reason != nullptr) {
       log_info(cds)("full module graph cannot be dumped: %s", reason);
     }
   }
 }
 
-void CDSConfig::disable_loading_full_module_graph(const char* reason) {
+void CDSConfig::stop_using_full_module_graph(const char* reason) {
   assert(!ClassLoaderDataShared::is_full_module_graph_loaded(), "you call this function too late!");
-  if (!_loading_full_module_graph_disabled) {
-    _loading_full_module_graph_disabled = true;
+  if (_is_using_full_module_graph) {
+    _is_using_full_module_graph = false;
     if (reason != nullptr) {
       log_info(cds)("full module graph cannot be loaded: %s", reason);
     }

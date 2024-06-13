@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +34,6 @@ import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -448,21 +446,6 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected Content getClassContentHeader() {
         return getContentHeader();
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        List<Content> subnavLinks = new ArrayList<>();
-        if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
-            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
-        }
-        PackageElement pkg = utils.containingPackage(typeElement);
-        subnavLinks.add(getPackageLink(pkg, getLocalizedPackageName(pkg)));
-        subnavLinks.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                        .style(HtmlStyle.currentSelection)
-                        .skipPreview(true)));
-        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     protected void addFooter() {

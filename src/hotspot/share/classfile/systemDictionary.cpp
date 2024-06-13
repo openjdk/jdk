@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
     _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
   } else {
     // It must have been restored from the archived module graph
-    assert(UseSharedSpaces, "must be");
-    assert(CDSConfig::is_loading_full_module_graph(), "must be");
+    assert(CDSConfig::is_using_archive(), "must be");
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop system_loader = get_system_class_loader_impl(CHECK);
       assert(_java_system_loader.resolve() == system_loader, "must be");
@@ -152,8 +152,8 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
     _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
   } else {
     // It must have been restored from the archived module graph
-    assert(UseSharedSpaces, "must be");
-    assert(CDSConfig::is_loading_full_module_graph(), "must be");
+    assert(CDSConfig::is_using_archive(), "must be");
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
       assert(_java_platform_loader.resolve() == platform_loader, "must be");
@@ -212,13 +212,13 @@ void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
 // ----------------------------------------------------------------------------
 // Parallel class loading check
 
-bool is_parallelCapable(Handle class_loader) {
+static bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
-bool is_parallelDefine(Handle class_loader) {
+static bool is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
    if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
@@ -280,7 +280,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
 
 #ifdef ASSERT
 // Used to verify that class loading succeeded in adding k to the dictionary.
-void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
+static void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
   MutexLocker mu(SystemDictionary_lock);
   ClassLoaderData* loader_data = k->class_loader_data();
   Dictionary* dictionary = loader_data->dictionary();
@@ -367,8 +367,8 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
       k = k->array_klass(ndims, CHECK_NULL);
     }
   } else {
-    k = Universe::typeArrayKlassObj(t);
-    k = TypeArrayKlass::cast(k)->array_klass(ndims, CHECK_NULL);
+    k = Universe::typeArrayKlass(t);
+    k = k->array_klass(ndims, CHECK_NULL);
   }
   return k;
 }
@@ -723,10 +723,10 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // Make sure we have the right class in the dictionary
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
-  // Check if the protection domain is present it has the right access
   if (protection_domain() != nullptr) {
-    // Verify protection domain. If it fails an exception is thrown
-    dictionary->validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
+    // A SecurityManager (if installed) may prevent this protection_domain from accessing loaded_class
+    // by throwing a SecurityException.
+    dictionary->check_package_access(loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
 
   return loaded_class;
@@ -782,7 +782,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      k = Universe::typeArrayKlassObj(t);
+      k = Universe::typeArrayKlass(t);
     } else {
       k = SystemDictionary::find_instance_klass(current, ss.as_symbol(), class_loader, protection_domain);
     }
@@ -965,7 +965,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
   // (2) Check if we are loading into the same module from the same location as in dump time.
 
-  if (MetaspaceShared::use_optimized_module_handling()) {
+  if (CDSConfig::is_using_optimized_module_handling()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
     assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
@@ -1262,7 +1262,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-    if (UseSharedSpaces)
+    if (CDSConfig::is_using_archive())
     {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
@@ -1276,7 +1276,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     if (k == nullptr) {
       // Use VM class loader
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
-      k = ClassLoader::load_class(class_name, search_only_bootloader_append, CHECK_NULL);
+      k = ClassLoader::load_class(class_name, pkg_entry, search_only_bootloader_append, CHECK_NULL);
     }
 
     // find_or_define_instance_class may return a different InstanceKlass
@@ -1617,7 +1617,7 @@ void SystemDictionary::initialize(TRAPS) {
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     HeapShared::resolve_classes(THREAD);
   }
 }
@@ -1727,7 +1727,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      klass = Universe::typeArrayKlassObj(t);
+      klass = Universe::typeArrayKlass(t);
     } else {
       MutexLocker mu(current, SystemDictionary_lock);
       klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader_data(class_loader));
@@ -1799,8 +1799,8 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 // Add entry to resolution error table to record the error when the first
 // attempt to resolve a reference to a class has failed.
 void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int which,
-                                            Symbol* error, Symbol* message,
-                                            Symbol* cause, Symbol* cause_msg) {
+                                            Symbol* error, const char* message,
+                                            Symbol* cause, const char* cause_msg) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
@@ -1817,7 +1817,8 @@ void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
 
 // Lookup resolution error table. Returns error if found, otherwise null.
 Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, int which,
-                                                Symbol** message, Symbol** cause, Symbol** cause_msg) {
+                                                const char** message,
+                                                Symbol** cause, const char** cause_msg) {
 
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
@@ -2008,9 +2009,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     }
   }
 
-  // Throw VirtualMachineError or the pending exception in the JavaThread
+  // Throw OOM or the pending exception in the JavaThread
   if (throw_error && !HAS_PENDING_EXCEPTION) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(),
                    "Out of space in CodeCache for method handle intrinsic");
   }
   return nullptr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jl
 
 
 NEEDS_CLEANUP // remove this definitions ?
-const Register IC_Klass    = rax;   // where the IC klass is cached
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
@@ -336,23 +335,7 @@ void LIR_Assembler::osr_entry() {
 
 // inline cache check; done before the frame is built.
 int LIR_Assembler::check_icache() {
-  Register receiver = FrameMap::receiver_opr->as_register();
-  Register ic_klass = IC_Klass;
-  const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  const bool do_post_padding = VerifyOops || UseCompressedClassPointers;
-  if (!do_post_padding) {
-    // insert some nops so that the verified entry point is aligned on CodeEntryAlignment
-    __ align(CodeEntryAlignment, __ offset() + ic_cmp_size);
-  }
-  int offset = __ offset();
-  __ inline_cache_check(receiver, IC_Klass);
-  assert(__ offset() % CodeEntryAlignment == 0 || do_post_padding, "alignment must be correct");
-  if (do_post_padding) {
-    // force alignment after the cache check.
-    // It's been verified to be aligned if !VerifyOops
-    __ align(CodeEntryAlignment);
-  }
-  return offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
@@ -1635,10 +1618,11 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       len,
                       tmp1,
                       tmp2,
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -3470,7 +3454,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
   __ call_VM_leaf(entry, 0);
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {

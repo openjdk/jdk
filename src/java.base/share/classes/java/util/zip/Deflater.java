@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
  * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a method
+ * in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ * <p>
  * This class deflates sequences of bytes into ZLIB compressed data format.
  * The input byte sequence is provided in either byte array or byte buffer,
  * via one of the {@code setInput()} methods. The output byte sequence is
@@ -53,36 +57,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and
  * {@code Inflater}.
- *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah";
- *     byte[] input = inputString.getBytes("UTF-8");
- *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *     compresser.end();
- *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
- * }
- * </pre></blockquote>
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
  * To release resources used by this {@code Deflater}, the {@link #end()} method
@@ -196,6 +171,7 @@ public class Deflater {
      * @param level the compression level (0-9)
      * @param nowrap if true then use GZIP compatible compression
      */
+    @SuppressWarnings("this-escape")
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
@@ -331,6 +307,8 @@ public class Deflater {
      * @param dictionary the dictionary data bytes
      * @see Inflater#inflate
      * @see Inflater#getAdler()
+     *
+     * @since 11
      */
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
@@ -817,12 +795,16 @@ public class Deflater {
     /**
      * Returns the total number of uncompressed bytes input so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesRead()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesRead()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of uncompressed bytes input so far
      */
+    @Deprecated(since = "23")
     public int getTotalIn() {
         return (int) getBytesRead();
     }
@@ -843,12 +825,16 @@ public class Deflater {
     /**
      * Returns the total number of compressed bytes output so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesWritten()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesWritten()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of compressed bytes output so far
      */
+    @Deprecated(since = "23")
     public int getTotalOut() {
         return (int) getBytesWritten();
     }

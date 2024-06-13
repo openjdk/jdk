@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
+import jdk.jfr.Name;
 import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
@@ -54,8 +56,8 @@ public final class MetadataRepository {
 
     private static final MetadataRepository instance = new MetadataRepository();
 
-    private final List<EventType> nativeEventTypes = new ArrayList<>(150);
-    private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
+    private final Map<String, EventType> nativeEventTypes = LinkedHashMap.newHashMap(150);
+    private final Map<String, EventControl> nativeControls = LinkedHashMap.newHashMap(150);
     private final SettingsManager settingsManager = new SettingsManager();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
@@ -71,10 +73,10 @@ public final class MetadataRepository {
         for (Type type : TypeLibrary.getTypes()) {
             if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
-                pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
-                pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
-                pEventType.setHasLevel(eventType.getAnnotation(Level.class) != null);
-                pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
+                pEventType.setHasCutoff(type.hasAnnotation(Cutoff.class));
+                pEventType.setHasThrottle(type.hasAnnotation(Throttle.class));
+                pEventType.setHasLevel(type.hasAnnotation(Level.class));
+                pEventType.setHasPeriod(type.hasAnnotation(Period.class));
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.
                 if (pEventType.hasPeriod()) {
@@ -83,8 +85,9 @@ public final class MetadataRepository {
                         PeriodicEvents.addJVMEvent(pEventType);
                     }
                 }
-                nativeControls.add(new EventControl(pEventType));
-                nativeEventTypes.add(eventType);
+                String name = eventType.getName();
+                nativeControls.put(name, new EventControl(pEventType));
+                nativeEventTypes.put(name,eventType);
             }
         }
     }
@@ -101,7 +104,7 @@ public final class MetadataRepository {
                 eventTypes.add(ec.getEventType());
             }
         }
-        for (EventType t : nativeEventTypes) {
+        for (EventType t : nativeEventTypes.values()) {
             if (PrivateAccess.getInstance().isVisible(t)) {
                 eventTypes.add(t);
             }
@@ -141,10 +144,6 @@ public final class MetadataRepository {
         }
         EventConfiguration configuration = getConfiguration(eventClass, true);
         if (configuration == null) {
-            if (eventClass.getAnnotation(MirrorEvent.class) != null) {
-                // Don't register mirror classes.
-                return null;
-            }
             PlatformEventType pe = findMirrorType(eventClass);
             configuration = makeConfiguration(eventClass, pe, dynamicAnnotations, dynamicFields);
         }
@@ -159,8 +158,7 @@ public final class MetadataRepository {
     }
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
-        String fullName = eventClass.getModule().getName() + ":" + eventClass.getName();
-        Class<? extends Event> mirrorClass = MirrorEvents.find(fullName);
+        Class<? extends MirrorEvent> mirrorClass = MirrorEvents.find(eventClass);
         if (mirrorClass == null) {
             return null; // not a mirror
         }
@@ -200,6 +198,32 @@ public final class MetadataRepository {
         if (pEventType == null) {
             pEventType = (PlatformEventType) TypeLibrary.createType(eventClass, dynamicAnnotations, dynamicFields);
         }
+        // Check for native mirror.
+        // Note, defining an event in metadata.xml is not a generic mechanism to emit
+        // native data in Java. For example, calling JVM.getStackTraceId(int, long)
+        // and assign the result to a long field is not enough to always get a proper
+        // stack trace. Purpose of the mechanism is to transfer metadata, such as
+        // native type IDs, without specialized Java logic for each type.
+        if (Utils.isJDKClass(eventClass)) {
+            Name name = eventClass.getAnnotation(Name.class);
+            if (name != null) {
+                String n = name.value();
+                EventType nativeType = nativeEventTypes.get(n);
+                if (nativeType != null) {
+                    var nativeFields = nativeType.getFields();
+                    var eventFields = pEventType.getFields();
+                    var comparator = Comparator.comparing(ValueDescriptor::getName);
+                    if (!Utils.compareLists(nativeFields, eventFields, comparator)) {
+                        throw new InternalError("Field for native mirror event " + n + " doesn't match Java event");
+                    }
+                    nativeEventTypes.remove(n);
+                    nativeControls.remove(n);
+                    TypeLibrary.removeType(nativeType.getId());
+                    pEventType.setAnnotations(nativeType.getAnnotationElements());
+                    pEventType.setFields(nativeType.getFields());
+                }
+            }
+        }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
         EventControl ec = new EventControl(pEventType, eventClass);
         EventConfiguration configuration = newEventConfiguration(eventType, ec);
@@ -226,7 +250,7 @@ public final class MetadataRepository {
     public synchronized List<EventControl> getEventControls() {
         List<Class<? extends jdk.internal.event.Event>> eventClasses = JVM.getAllEventClasses();
         ArrayList<EventControl> controls = new ArrayList<>(eventClasses.size() + nativeControls.size());
-        controls.addAll(nativeControls);
+        controls.addAll(nativeControls.values());
         for (Class<? extends jdk.internal.event.Event> clazz : eventClasses) {
             EventConfiguration eh = JVMSupport.getConfiguration(clazz);
             if (eh != null) {

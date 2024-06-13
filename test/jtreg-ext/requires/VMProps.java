@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
@@ -68,6 +67,9 @@ public class VMProps implements Callable<Map<String, String>> {
     // value known to jtreg as an indicator of error state
     private static final String ERROR_STATE = "__ERROR__";
 
+    private static final String GC_PREFIX = "-XX:+Use";
+    private static final String GC_SUFFIX = "GC";
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static class SafeMap {
@@ -83,10 +85,6 @@ public class VMProps implements Callable<Map<String, String>> {
                 value = ERROR_STATE + t;
             }
             map.put(key, value);
-        }
-
-        public void putAll(Map<String, String> map) {
-            map.entrySet().forEach(e -> put(e.getKey(), () -> e.getValue()));
         }
     }
 
@@ -140,7 +138,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
-        map.putAll(xOptFlags()); // -Xmx4g -> @requires vm.opt.x.Xmx == "4g" )
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -354,8 +351,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
 
-        String GC_PREFIX  = "-XX:+Use";
-        String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
         if (jtropts != null) {
             for (String opt : jtropts.split(",")) {
@@ -425,13 +420,15 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if compiler in use supports RTM and false otherwise.
+     * @return "true" if compiler in use supports RTM and "false" otherwise.
+     * Note: Lightweight locking does not support RTM (for now).
      */
     protected String vmRTMCompiler() {
         boolean isRTMCompiler = false;
 
         if (Compiler.isC2Enabled() &&
-            (Platform.isX86() || Platform.isX64() || Platform.isPPC())) {
+            (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
+            is_LM_LIGHTWEIGHT().equals("false")) {
             isRTMCompiler = true;
         }
         return "" + isRTMCompiler;
@@ -466,7 +463,31 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if this VM can write Java heap objects into the CDS archive
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if the VM options specified via the "test.cds.runtime.options"
+     * property is compatible with writing Java heap objects into the CDS archive
+     */
+    protected boolean isCDSRuntimeOptionsCompatible() {
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts == null) {
+            return true;
+        }
+        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        String G1GC_ENABLED = "-XX:+UseG1GC";
+        for (String opt : jtropts.split(",")) {
+            if (opt.equals(CCP_DISABLED)) {
+                return false;
+            }
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
+                !opt.equals(G1GC_ENABLED)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -485,6 +506,34 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
+    }
+
+    /**
+     * @return LockingMode.
+     */
+    protected String vmLockingMode() {
+        return "" + WB.getIntVMFlag("LockingMode");
+    }
+
+    /**
+     * @return "true" if LockingMode == 0 (LM_MONITOR)
+     */
+    protected String is_LM_MONITOR() {
+        return "" + vmLockingMode().equals("0");
+    }
+
+    /**
+     * @return "true" if LockingMode == 1 (LM_LEGACY)
+     */
+    protected String is_LM_LEGACY() {
+        return "" + vmLockingMode().equals("1");
+    }
+
+    /**
+     * @return "true" if LockingMode == 2 (LM_LIGHTWEIGHT)
+     */
+    protected String is_LM_LIGHTWEIGHT() {
+        return "" + vmLockingMode().equals("2");
     }
 
     /**
@@ -658,14 +707,15 @@ public class VMProps implements Callable<Map<String, String>> {
      * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
      * which JVM is started with don't affect its behavior "significantly".
      * {@code TEST_VM_FLAGLESS} enviroment variable can be used to force this
-     * method to return true and allow any flags.
+     * method to return true or false and allow or reject any flags.
      *
      * @return true if there are no JVM flags
      */
     private String isFlagless() {
         boolean result = true;
-        if (System.getenv("TEST_VM_FLAGLESS") != null) {
-            return "" + result;
+        String flagless = System.getenv("TEST_VM_FLAGLESS");
+        if (flagless != null) {
+            return "" + "true".equalsIgnoreCase(flagless);
         }
 
         List<String> allFlags = allFlags().toList();
@@ -717,27 +767,6 @@ public class VMProps implements Callable<Map<String, String>> {
 
     private Stream<String> allFlags() {
         return Stream.of((System.getProperty("test.vm.opts", "") + " " + System.getProperty("test.java.opts", "")).trim().split("\\s+"));
-    }
-
-    /**
-     * Parses extra options, options that start with -X excluding the
-     * bare -X option (as it is not considered an extra option).
-     * Ignores extra options not starting with -X
-     *
-     * This could be improved to handle extra options not starting
-     * with -X as well as "standard" options.
-     */
-    private Map<String, String> xOptFlags() {
-        return allFlags()
-            .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:") && !s.equals("-X"))
-            .map(s -> s.replaceFirst("-", ""))
-            .map(flag -> flag.splitWithDelimiters("[:0123456789]", 2))
-            .collect(Collectors.toMap(a -> "vm.opt.x." + a[0],
-                                      a -> (a.length == 1)
-                                      ? "true" // -Xnoclassgc
-                                      : (a[1].equals(":")
-                                         ? a[2]            // ["-XshowSettings", ":", "system"]
-                                         : a[1] + a[2]))); // ["-Xmx", "4", "g"]
     }
 
     /*

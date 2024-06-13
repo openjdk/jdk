@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public final class Math {
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.</ul>
      *
-     * <p>The computed result must be within 1 ulp of the exact result.
+     * <p>The computed result must be within 1.25 ulps of the exact result.
      * Results must be semi-monotonic.
      *
      * @param   a   an angle, in radians.

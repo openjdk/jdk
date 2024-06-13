@@ -1079,23 +1079,16 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                         anno = "BAD OOP";
                         if (collHeap instanceof SerialHeap) {
                           SerialHeap heap = (SerialHeap) collHeap;
-                          for (int i = 0; i < heap.nGens(); i++) {
-                            if (heap.getGen(i).isIn(handle)) {
-                              if (i == 0) {
-                                anno = "NewGen ";
-                              } else if (i == 1) {
-                                anno = "OldGen ";
-                              } else {
-                                anno = "Gen " + i + " ";
-                              }
-                              bad = false;
-                              break;
-                            }
+                          if (heap.youngGen().isIn(handle)) {
+                            anno = "NewGen ";
+                            bad = false;
+                          } else if (heap.oldGen().isIn(handle)) {
+                            anno = "OldGen ";
+                            bad = false;
                           }
-
                         } else if (collHeap instanceof G1CollectedHeap) {
                           G1CollectedHeap heap = (G1CollectedHeap)collHeap;
-                          HeapRegion region = heap.hrm().getByAddress(handle);
+                          G1HeapRegion region = heap.hrm().getByAddress(handle);
 
                           if (region == null) {
                             // intentionally skip

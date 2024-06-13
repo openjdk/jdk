@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,8 @@ void VirtualMemory::update_peak(size_t size) {
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
-  // Only if thread stack is backed by virtual memory
-  if (ThreadStackTracker::track_as_vm()) {
-    // Snapshot current thread stacks
-    VirtualMemoryTracker::snapshot_thread_stacks();
-  }
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::snapshot_thread_stacks();
   as_snapshot()->copy_to(s);
 }
 
@@ -560,7 +557,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 // Given an existing memory mapping registered with NMT, split the mapping in
 //  two. The newly created two mappings will be registered under the call
 //  stack and the memory flags of the original section.
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split) {
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -576,8 +573,8 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")  with size " SIZE_FORMAT,
                 name, p2i(rgn.base()), rgn.size(), split);
   // Now, create two new regions.
-  add_reserved_region(addr, split, original_stack, original_flags);
-  add_reserved_region(addr + split, size - split, original_stack, original_flags);
+  add_reserved_region(addr, split, original_stack, flag);
+  add_reserved_region(addr + split, size - split, original_stack, split_flag);
 
   return true;
 }

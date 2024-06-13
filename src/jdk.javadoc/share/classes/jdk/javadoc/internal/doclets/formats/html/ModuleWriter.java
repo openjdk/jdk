@@ -274,15 +274,6 @@ public class ModuleWriter extends HtmlDocletWriter {
         return body;
     }
 
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        return super.getNavBar(pageMode, element)
-                .setSubNavLinks(List.of(
-                    links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
-                            Text.of(mdle.getQualifiedName()),
-                            HtmlStyle.currentSelection, "")));
-    }
-
     protected Content getContentHeader() {
         return new ContentBuilder();
     }
