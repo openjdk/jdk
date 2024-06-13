@@ -4700,7 +4700,7 @@ public class Lower extends TreeTranslator {
             TreeInfo.name(tree.selected) == names._super &&
             !types.isDirectSuperInterface(((JCFieldAccess)tree.selected).selected.type.tsym, currentClass);
         tree.selected = translate(tree.selected);
-        if (tree.name == names._class) {
+        if (tree.name == names._class && tree.selected.type.isPrimitiveOrVoid()) {
             result = classOf(tree.selected);
         }
         else if (tree.name == names._super &&
