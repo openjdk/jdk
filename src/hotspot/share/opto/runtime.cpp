@@ -1357,6 +1357,27 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
+
+// String IndexOf function
+const TypeFunc* OptoRuntime::string_IndexOf_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // haystack array
+  fields[argp++] = TypeInt::INT;        // haystack length
+  fields[argp++] = TypePtr::NOTNULL;    // needle array
+  fields[argp++] = TypeInt::INT;        // needle length
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // Index of needle in haystack
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // Base64 decode function
 const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   int argcnt = 7;
@@ -1835,14 +1856,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-#if INCLUDE_RTM_OPT
-    } else if (c->tag() == NamedCounter::RTMLockingCounter) {
-      RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
-      if (rlc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        rlc->print_on(tty);
-      }
-#endif
     }
     c = c->next();
   }
@@ -1884,12 +1897,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     st.print("@%d", bci);
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
-  NamedCounter* c;
-  if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.freeze());
-  } else {
-    c = new NamedCounter(st.freeze(), tag);
-  }
+  NamedCounter* c = new NamedCounter(st.freeze(), tag);
 
   // atomically add the new counter to the head of the list.  We only
   // add counters so this is safe.

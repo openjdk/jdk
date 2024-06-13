@@ -172,7 +172,7 @@ public:
       // Deleting permanent symbol should not occur very often (insert race condition),
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
-      size_t alloc_size = _local_table->get_node_size() + value.byte_size() + value.effective_length();
+      size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
         log_trace_symboltable_helper(&value, "Leaked permanent symbol");
       }
@@ -182,7 +182,7 @@ public:
 
 private:
   static void* allocate_node_impl(size_t size, Value const& value) {
-    size_t alloc_size = size + value.byte_size() + value.effective_length();
+    size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
       MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);

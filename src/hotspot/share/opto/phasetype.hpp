@@ -68,9 +68,10 @@
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(AUTO_VECTORIZE1_BEFORE_APPLY,   "AutoVectorization 1, Before Apply") \
-  flags(AUTO_VECTORIZE2_AFTER_REORDER,  "AutoVectorization 2, Before Apply Memop Reordering") \
-  flags(AUTO_VECTORIZE3_AFTER_APPLY,    "AutoVectorization 3, After Apply") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,       "AutoVectorization 1, Before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,      "AutoVectorization 2, After Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_APPLY,        "AutoVectorization 4, After Apply") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
