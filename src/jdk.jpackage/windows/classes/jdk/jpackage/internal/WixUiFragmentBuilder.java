@@ -507,7 +507,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             this.wxsFileName = wxsFileName;
             this.wixVariables = new WixVariables();
 
-            addResource(createResource(wxsFileName, params).setCategory(category).setPublicName(
+            addResource(createResource.apply(wxsFileName).setCategory(category).setPublicName(
                     wxsFileName), wxsFileName);
         }
 

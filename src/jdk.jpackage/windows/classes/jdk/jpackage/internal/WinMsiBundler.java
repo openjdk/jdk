@@ -343,10 +343,9 @@ public class WinMsiBundler  extends AbstractBundler {
 
         WixPipeline wixPipeline = new WixPipeline()
                 .setToolset(wixToolset)
-                .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
-                .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-                .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
-                        wixVars);
+                .setWixObjDir(workshop.buildRoot().resolve("wixobj"))
+                .setWorkDir(workshop.appImageDir())
+                .addSource(workshop.configDir().resolve("main.wxs"), wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -359,7 +358,7 @@ public class WinMsiBundler  extends AbstractBundler {
             case Wix3 -> {
                 wixPipeline.addLightOptions("-sice:ICE27");
 
-                if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
+                if (!pkg.isSystemWideInstall()) {
                     wixPipeline.addLightOptions("-sice:ICE91");
                 }
             }
@@ -370,7 +369,7 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        final Path configDir = CONFIG_ROOT.fetchFrom(params);
+        final Path configDir = workshop.configDir();
 
         var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
             return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
@@ -381,21 +380,21 @@ public class WinMsiBundler  extends AbstractBundler {
         // Copy standard l10n files.
         for (var path : primaryWxlFiles) {
             var name = path.getFileName().toString();
-            wixResources.addResource(createResource(name, params).setPublicName(name).setCategory(
+            wixResources.addResource(workshop.createResource(name).setPublicName(name).setCategory(
                     I18N.getString("resource.wxl-file")), path);
         }
 
-        wixResources.addResource(createResource("main.wxs", params).setPublicName("main.wxs").
+        wixResources.addResource(workshop.createResource("main.wxs").setPublicName("main.wxs").
                 setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
 
-        wixResources.addResource(createResource("overrides.wxi", params).setPublicName(
+        wixResources.addResource(workshop.createResource("overrides.wxi").setPublicName(
                 "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
                 configDir.resolve("overrides.wxi"));
 
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
+        List<Path> customWxlFiles = getWxlFilesFromDir(workshop.resourceDir()).stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
@@ -408,7 +407,7 @@ public class WinMsiBundler  extends AbstractBundler {
         // Copy custom l10n files.
         for (var path : customWxlFiles) {
             var name = path.getFileName().toString();
-            wixResources.addResource(createResource(name, params).setPublicName(name).
+            wixResources.addResource(workshop.createResource(name).setPublicName(name).
                     setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
                     getString("resource.wxl-file")), configDir.resolve(name));
         }
