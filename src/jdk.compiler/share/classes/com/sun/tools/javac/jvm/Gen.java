@@ -879,13 +879,14 @@ public class Gen extends JCTree.Visitor {
      *  @param pts      The expression's expected types (i.e. the formal parameter
      *                  types of the invoked method).
      */
-    public void genArgs(List<JCExpression> trees, List<Type> pts) {
+    public void genArgs(JCTree tree, List<JCExpression> trees, List<Type> pts) {
         for (List<JCExpression> l = trees; l.nonEmpty(); l = l.tail) {
+            Assert.checkNonNull(l.head, "" + tree);
             genExpr(l.head, pts.head).load();
             pts = pts.tail;
         }
         // require lists be of same length
-        Assert.check(pts.isEmpty());
+        Assert.check(pts.isEmpty(), tree);
     }
 
 /* ************************************************************************
@@ -1302,7 +1303,7 @@ public class Gen extends JCTree.Visitor {
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
                               boolean patternSwitch) {
         int limit = code.nextreg;
-        Assert.check(!selector.type.hasTag(CLASS));
+        Assert.check(!selector.type.hasTag(CLASS), swtch);
         int switchStart = patternSwitch ? code.entryPoint() : -1;
         int startpcCrt = genCrt ? code.curCP() : 0;
         Assert.check(code.isStatementStart());
@@ -1931,7 +1932,7 @@ public class Gen extends JCTree.Visitor {
         // the parameters of the method's external type (that is, any implicit
         // outer instance of a super(...) call appears as first parameter).
         MethodSymbol msym = (MethodSymbol)TreeInfo.symbol(tree.meth);
-        genArgs(tree.args,
+        genArgs(tree, tree.args,
                 msym.externalType(types).getParameterTypes());
         if (!msym.isDynamic()) {
             code.statBegin(tree.pos);
@@ -2038,7 +2039,7 @@ public class Gen extends JCTree.Visitor {
         // Generate code for all arguments, where the expected types are
         // the parameters of the constructor's external type (that is,
         // any implicit outer instance appears as first parameter).
-        genArgs(tree.args, tree.constructor.externalType(types).getParameterTypes());
+        genArgs(tree, tree.args, tree.constructor.externalType(types).getParameterTypes());
 
         items.makeMemberItem(tree.constructor, true).invoke();
         result = items.makeStackItem(tree.type);
