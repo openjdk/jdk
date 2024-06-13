@@ -930,8 +930,7 @@ final class CipherCore {
 
     private int fillOutputBuffer(byte[] finalBuf, int finalOffset,
         byte[] output, int outOfs, int finalBufLen, byte[] input)
-        throws BadPaddingException,
-        IllegalBlockSizeException {
+        throws BadPaddingException, IllegalBlockSizeException {
 
         int len;
         try {
