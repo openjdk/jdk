@@ -81,7 +81,6 @@ jlong CgroupV1MemoryController::uses_mem_hierarchy() {
 }
 
 void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
-  CgroupV1Controller::set_subsystem_path(cgroup_path);
   jlong hierarchy = uses_mem_hierarchy();
   if (hierarchy > 0) {
     set_hierarchical(true);

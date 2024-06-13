@@ -436,8 +436,8 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
                             &container_engine };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
-                                                       (char*)testCases[i]->mount_path);
-    ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
+                                                       (char*)testCases[i]->mount_path,
+                                                       (char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }

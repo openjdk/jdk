@@ -105,7 +105,6 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
 
   if (cg_infos[PIDS_IDX]._data_complete) {
     pids = new CgroupV1Controller(cg_infos[PIDS_IDX]._root_mount_path, cg_infos[PIDS_IDX]._mount_path, cg_infos[PIDS_IDX]._cgroup_path);
-    pids->set_subsystem_path(cg_infos[PIDS_IDX]._cgroup_path);
   } else {
     log_debug(os, container)("CgroupInfo for %s not complete", cg_controller_name[PIDS_IDX]);
   }

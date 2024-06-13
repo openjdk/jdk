@@ -48,7 +48,7 @@ class CgroupV1Controller: public CgroupController {
       set_subsystem_path(cgroup_path);
     }
 
-    virtual void set_subsystem_path(char *cgroup_path);
+    void set_subsystem_path(char *cgroup_path);
     char *subsystem_path() { return _path; }
 };
 
@@ -67,9 +67,9 @@ class CgroupV1MemoryController: public CgroupV1Controller {
 
   public:
     CgroupV1MemoryController(char* root, char* mountpoint, char* cgroup_path)
-    : CgroupV1Controller(root, mountpoint),
+    : CgroupV1Controller(root, mountpoint, cgroup_path),
       _uses_mem_hierarchy(false) {
-      this->set_subsystem_path(cgroup_path);
+      set_subsystem_path(cgroup_path);
     }
 };
 
