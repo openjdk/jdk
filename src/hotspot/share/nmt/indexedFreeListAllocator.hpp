@@ -95,5 +95,4 @@ public:
   }
 };
 
-
 #endif // SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
