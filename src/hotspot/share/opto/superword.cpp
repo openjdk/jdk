@@ -1858,6 +1858,29 @@ void PackSet::verify() const {
 }
 #endif
 
+void VTransformGraph::apply() {
+#ifndef PRODUCT
+  if (_is_trace_info || TraceLoopOpts) {
+    tty->print_cr("\nVLoopTransformGraph::apply:");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
+  assert(cl()->is_main_loop(), "auto vectorization only for main loops");
+#endif
+
+  Compile* C = phase()->C;
+  C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl());
+
+  apply_memops_reordering_with_schedule();
+  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl());
+
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
+  C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
+
+  apply_vectorization();
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl());
+}
+
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
 // We reorder all slices in parallel, ensuring that the memops inside each slice are
 // ordered according to the _schedule. This means that all packed memops are consecutive

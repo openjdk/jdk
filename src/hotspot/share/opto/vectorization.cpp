@@ -1892,29 +1892,7 @@ void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>&
     n->print();
   }
 }
-#endif
 
-void VTransformGraph::apply() {
-#ifndef PRODUCT
-  if (_is_trace_info || TraceLoopOpts) {
-    tty->print_cr("\nVLoopTransformGraph::apply:");
-    lpt()->dump_head();
-    lpt()->head()->dump();
-  }
-#endif
-
-  assert(cl()->is_main_loop(), "auto vectorization only for main loops");
-  phase()->C->print_method(PHASE_AUTO_VECTORIZE1_BEFORE_APPLY, 4, cl());
-
-  apply_memops_reordering_with_schedule();
-  phase()->C->print_method(PHASE_AUTO_VECTORIZE2_AFTER_REORDER, 4, cl());
-
-  adjust_pre_loop_limit_to_align_main_loop_vectors();
-  apply_vectorization();
-  phase()->C->print_method(PHASE_AUTO_VECTORIZE3_AFTER_APPLY, 4, cl());
-}
-
-#ifndef PRODUCT
 void VTransformApplyStatus::trace(VTransformNode* vtn) const {
   tty->print("  apply: ");
   vtn->print();
