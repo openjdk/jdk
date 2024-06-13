@@ -134,9 +134,7 @@ void VM_Version::setup_cpu_available_features() {
           // Feature string is expected to be in multi-character form
           // like rvc, rvv, etc so that it will be easier to specify
           // target feature string in tests.
-          strcat(buf, " ");
-          strcat(buf, "r");
-          strcat(buf, "v");
+          strcat(buf, " rv");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
