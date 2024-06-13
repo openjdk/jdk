@@ -22,23 +22,13 @@
  */
 
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @bug 8240654
  * @summary Test printing alpha colors - banded printing works with ZGC.
  * @key headful printer
  * @requires (os.family == "windows")
- * @requires vm.gc.ZSinglegen
- * @run main/manual/othervm -XX:+UseZGC -XX:-ZGenerational -Dsun.java2d.d3d=false AlphaPrintTest
- */
-
-/*
- * @test id=ZGenerational
- * @bug 8240654
- * @summary Test printing alpha colors - banded printing works with ZGC.
- * @key headful printer
- * @requires (os.family == "windows")
- * @requires vm.gc.ZGenerational
- * @run main/manual/othervm -XX:+UseZGC -XX:+ZGenerational -Dsun.java2d.d3d=false AlphaPrintTest
+ * @requires vm.gc.Z
+ * @run main/manual/othervm -XX:+UseZGC -Dsun.java2d.d3d=false AlphaPrintTest
  */
 
 import java.awt.Color;

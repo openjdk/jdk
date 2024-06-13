@@ -46,19 +46,11 @@
  */
 
 /*
- * @test id=with_ZGC_Singlegen
- * @requires vm.gc.ZSinglegen
+ * @test id=with_ZGC
+ * @requires vm.gc.Z
  * @bug 8198540
  * @summary Test TypeConverterFactory is not leaking method handles (Z GC)
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational TypeConverterFactoryMemoryLeakTest
- */
-
-/*
- * @test id=with_ZGC_Generational
- * @requires vm.gc.ZGenerational
- * @bug 8198540
- * @summary Test TypeConverterFactory is not leaking method handles (Z GC)
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational TypeConverterFactoryMemoryLeakTest
+ * @run main/othervm -XX:+UseZGC TypeConverterFactoryMemoryLeakTest
  */
 
 /*

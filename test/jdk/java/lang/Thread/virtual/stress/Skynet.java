@@ -28,22 +28,12 @@
  * @requires !vm.debug | vm.gc != "Z"
  * @run main/othervm/timeout=300 -Xmx1500m Skynet
  */
-
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+UseZGC -XX:-ZGenerational
- *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.ZGenerational
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+UseZGC -XX:+ZGenerational
+ *     -XX:+UseZGC
  *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
  */
 

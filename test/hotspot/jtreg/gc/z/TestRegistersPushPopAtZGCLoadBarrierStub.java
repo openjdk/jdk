@@ -31,7 +31,7 @@ package gc.z;
  * @library /test/lib /
  * @modules jdk.incubator.vector
  *
- * @requires vm.gc.ZGenerational & vm.debug
+ * @requires vm.gc.Z & vm.debug
  * @requires os.arch=="aarch64"
  *
  * @run driver gc.z.TestRegistersPushPopAtZGCLoadBarrierStub
@@ -316,7 +316,6 @@ public class TestRegistersPushPopAtZGCLoadBarrierStub {
         command.add("-XX:-UseOnStackReplacement");
         command.add("-XX:-TieredCompilation");
         command.add("-XX:+UseZGC");
-        command.add("-XX:+ZGenerational");
         command.add("--add-modules=jdk.incubator.vector");
         command.add("-XX:CompileCommand=print," +  Launcher.class.getName() + "::" + test_name);
         command.add(Launcher.class.getName());
