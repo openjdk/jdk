@@ -142,6 +142,8 @@ extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed f
 extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
+extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
+
 extern Monitor* ContinuationRelativize_lock;
 
 #if INCLUDE_JVMCI

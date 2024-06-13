@@ -454,27 +454,15 @@ void trampoline_stub_Relocation::unpack_data() {
 
 void external_word_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
-#ifndef _LP64
-  p = pack_1_int_to(p, (int32_t) (intptr_t)_target);
-#else
-  jlong t = (jlong) _target;
-  int32_t lo = low(t);
-  int32_t hi = high(t);
-  p = pack_2_ints_to(p, lo, hi);
-#endif /* _LP64 */
+  int index = ExternalsRecorder::find_index(_target);
+  p = pack_1_int_to(p, index);
   dest->set_locs_end((relocInfo*) p);
 }
 
 
 void external_word_Relocation::unpack_data() {
-#ifndef _LP64
-  _target = (address) (intptr_t)unpack_1_int();
-#else
-  jint lo, hi;
-  unpack_2_ints(lo, hi);
-  jlong t = jlong_from(hi, lo);;
-  _target = (address) t;
-#endif /* _LP64 */
+  int index = unpack_1_int();
+  _target = ExternalsRecorder::at(index);
 }
 
 
