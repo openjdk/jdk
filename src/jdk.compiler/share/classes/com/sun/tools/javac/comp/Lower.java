@@ -4813,22 +4813,6 @@ public class Lower extends TreeTranslator {
     }
 
     // needed for the lambda deserialization method, which is expressed as a big switch on strings
-    public JCTree translateStringSwitch(Env<AttrContext> env, MethodSymbol msym, JCSwitch tree, TreeMaker make) {
-        try {
-            this.attrEnv = env;
-            this.make = make;
-            this.currentMethodSym = msym;
-            proxies = new HashMap<>();
-            return visitStringSwitch(tree, tree.selector, tree.cases);
-        } finally {
-            this.attrEnv = null;
-            this.make = null;
-            this.currentMethodSym = null;
-            this.proxies = null;
-        }
-    }
-
-    // needed for the lambda deserialization method, which is expressed as a big switch on strings
     public JCMethodDecl translateMethod(Env<AttrContext> env, JCMethodDecl methodDecl, TreeMaker make) {
         try {
             this.attrEnv = env;
@@ -4840,6 +4824,7 @@ public class Lower extends TreeTranslator {
             this.attrEnv = null;
             this.make = null;
             this.currentClass = null;
+            // the two fields below are set when visiting the method
             this.currentMethodSym = null;
             this.currentMethodDef = null;
             this.proxies = null;
