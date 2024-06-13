@@ -324,9 +324,6 @@ public class LambdaToMethod extends TreeTranslator {
     @Override
     public void visitLambda(JCLambda tree) {
         LambdaTranslationContext localContext = (LambdaTranslationContext)context;
-        if (context == null) {
-            throw new AssertionError(tree);
-        }
         MethodSymbol sym = localContext.translatedSym;
         MethodType lambdaType = (MethodType) sym.type;
 
@@ -1095,7 +1092,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitLambda(JCLambda tree) {
-            analyzeLambda(tree, "lambda.stat");
+            analyzeLambda(tree, tree.methodReceiverExpression != null ? "mref.stat.1" : "lambda.stat");
         }
 
         private LambdaTranslationContext analyzeLambda(JCLambda tree, String statKey) {
