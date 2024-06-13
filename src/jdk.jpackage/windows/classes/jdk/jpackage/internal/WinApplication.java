@@ -54,11 +54,14 @@ interface WinApplication extends Application {
                     Internal.WIN_SHORTCUT_HINT_PARAM), WinShortcutStartMenu,
                     List.of(MENU_HINT, Internal.WIN_MENU_HINT_PARAM)).entrySet().stream().filter(
                     e -> {
-                        return e.getValue().stream().allMatch(param -> {
-                            return param.fetchFrom(launcherParams);
-                        });
-                    }).map(
-                            Map.Entry::getKey).collect(Collectors.toSet());
+                        var shortcutParams = e.getValue();
+                        if (launcherParams.containsKey(shortcutParams.get(0).getID())) {
+                            // This is an explicit shortcut configuration for an addition launcher
+                            return shortcutParams.get(0).fetchFrom(launcherParams);
+                        } else {
+                            return shortcutParams.get(1).fetchFrom(launcherParams);
+                        }
+                    }).map(Map.Entry::getKey).collect(Collectors.toSet());
 
             return new WinLauncher.Impl(launcher, isConsole, shortcuts);
         });
