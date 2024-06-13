@@ -215,7 +215,7 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
 
 }
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(_AIX)
 TEST_VM(CommittedVirtualMemory, test_full_committed_in_range){
   bool   result;
   size_t committed_size;

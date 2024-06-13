@@ -150,6 +150,13 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+
+#ifdef _AIX
+  committed_start = start;
+  committed_size = size;
+  return true;
+#endif
+
   int mincore_return_value;
   const size_t stripe = 1024;  // query this many pages each time
   mincore_vec_t* vec = (mincore_vec_t*) malloc(stripe + 1, mtInternal);
@@ -160,7 +167,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   // set a guard
   vec[stripe] = 'X';
-  size_t page_sz = NOT_AIX(os::vm_page_size()) AIX_ONLY(sysconf(_SC_PAGESIZE));
+  size_t page_sz = os::vm_page_size();
   uintx pages = size / page_sz;
 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
@@ -179,7 +186,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     pages -= pages_to_query;
 
     // Get stable read
-    while ((mincore_return_value = mincore(AIX_ONLY((char*)) loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
