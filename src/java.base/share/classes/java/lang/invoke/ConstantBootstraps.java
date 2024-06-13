@@ -454,10 +454,8 @@ public final class ConstantBootstraps {
                 // this will fail if we are not allowed to set the field
                 field.setAccessible(true);
                 // otherwise, our privilege is sufficient
-                return lookup.unreflectSetter(field);
-            } else {
-                return lookup.findSetter(cl, name, type);
             }
+            return lookup.unreflectSetter(field);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new InternalError("Unable to access field for writing", e);
         }
