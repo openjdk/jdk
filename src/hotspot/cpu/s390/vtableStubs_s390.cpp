@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,34 +185,32 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
 
   // Entry arguments:
-  //  Z_method: Interface
+  //  Z_method: CompiledICData
   //  Z_ARG1:   Receiver
   NearLabel no_such_interface;
-  const Register rcvr_klass = Z_tmp_1,
-                 interface  = Z_tmp_2;
+  const Register recv_klass     = Z_tmp_1,
+                 holder_klass   = Z_tmp_2, // declaring interface klass (DEFC)
+                 resolved_klass = Z_tmp_3, // resolved interface klass (REFC)
+                 temp           = Z_R0_scratch, // not used as index, So should be fine
+                 temp2          = Z_tmp_4;
+
+
 
   // Get receiver klass.
   // Must do an explicit check if offset too large or implicit checks are disabled.
   address npe_addr = __ pc(); // npe is short for null pointer exception
-  __ load_klass(rcvr_klass, Z_ARG1);
+  __ load_klass(recv_klass, Z_ARG1);
 
-  // Receiver subtype check against REFC.
-  __ z_lg(interface, Address(Z_method, CompiledICData::itable_refc_klass_offset()));
-  __ lookup_interface_method(rcvr_klass, interface, noreg,
-                             noreg, Z_R1, no_such_interface, /*return_method=*/ false);
+  __ z_lg(holder_klass, Address(Z_method, CompiledICData::itable_defc_klass_offset()));
+  __ z_lg(resolved_klass, Address(Z_method, CompiledICData::itable_refc_klass_offset()));
 
-  // Get Method* and entrypoint for compiler
-  __ z_lg(interface, Address(Z_method, CompiledICData::itable_defc_klass_offset()));
-  __ lookup_interface_method(rcvr_klass, interface, itable_index,
-                             Z_method, Z_R1, no_such_interface, /*return_method=*/ true);
+  __ lookup_interface_method_stub(recv_klass, holder_klass, resolved_klass, Z_method,
+                                  temp, temp2, itable_index, no_such_interface);
 
 #ifndef PRODUCT
   if (DebugVtables) {
-    NearLabel ok1;
     __ z_ltgr(Z_method, Z_method);
-    __ z_brne(ok1);
-    __ stop("method is null", 103);
-    __ bind(ok1);
+    __ asm_assert(Assembler::bcondNotEqual, "method is null", 103); // Z_method should be NE to 0
   }
 #endif
 

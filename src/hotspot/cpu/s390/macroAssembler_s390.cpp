@@ -2788,6 +2788,132 @@ void MacroAssembler::tlab_allocate(Register obj,
   }
 }
 
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then, we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
+
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  BLOCK_COMMENT("lookup_interface_method_stub {");
+
+  int vtable_start_offset = in_bytes(Klass::vtable_start_offset());
+  int itable_offset_entry_size = itableOffsetEntry::size() * wordSize;
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
+
+  Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
+
+  z_llgf(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add2reg(recv_klass, vtable_start_offset + ioffset);
+
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
+  // temp_itbl_klass = itable[0]._interface;
+  int vtblEntrySize = vtableEntry::size_in_bytes();
+  z_sllg(scan_temp, scan_temp, exact_log2(vtblEntrySize));
+  z_lg(temp_itbl_klass, Address(recv_klass, scan_temp));
+
+  z_lghi(holder_offset, 0);
+
+  // scan_temp = &(itable[0]._interface)
+  z_la(scan_temp, Address(recv_klass, scan_temp));
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  z_cgr(holder_klass, resolved_klass);
+  z_brne(L_loop_search_resolved_entry);
+
+  z_cgr(temp_itbl_klass, holder_klass);
+  z_bre(L_holder_found);
+
+  z_cghi(temp_itbl_klass, 0);
+  branch_optimized(bcondEqual, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto holder_found; // Found!
+  //     }
+  //     scan_temp += itable_offset_entry_size
+  //   } while (temp_itbl_klass != 0);
+  //   goto no_such_interface // Not found.
+  NearLabel L_search_holder;
+  bind(L_search_holder);
+  add2reg(scan_temp, itable_offset_entry_size);
+  z_lg(temp_itbl_klass, Address(scan_temp));
+  z_cgr(temp_itbl_klass, holder_klass);
+  z_bre(L_holder_found);
+  z_cghi(temp_itbl_klass, 0);
+  z_brne(L_search_holder);
+
+  z_bru(L_no_such_interface); // not found, we're done here
+
+  // Loop: Look for resolved_class record in itable
+  //   while (true) {
+  //     temp_itbl_klass = *(scan_temp);
+  //     scan_temp += itable_offset_entry_size
+  //     if (temp_itbl_klass == 0) {
+  //       goto L_no_such_interface;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //     if (temp_itbl_klass == holder_klass) {
+  //        holder_offset = scan_temp;
+  //     }
+  //   }
+  //
+  NearLabel L_loop_search_resolved;
+  bind(L_loop_search_resolved);
+  add2reg(scan_temp, itable_offset_entry_size);
+
+  z_lg(temp_itbl_klass, Address(scan_temp));
+
+  bind(L_loop_search_resolved_entry);
+
+  z_cghi(temp_itbl_klass, 0);
+  branch_optimized(bcondEqual, L_no_such_interface);
+
+  z_cgr(temp_itbl_klass, resolved_klass);
+  z_bre(L_resolved_found);
+
+  z_cgr(temp_itbl_klass, holder_klass);
+  z_brne(L_loop_search_resolved);
+  z_lgr(holder_offset, scan_temp);
+
+  z_bru(L_loop_search_resolved);
+
+  bind(L_resolved_found);
+  z_cghi(holder_offset, 0);
+  z_bre(L_search_holder);
+  z_lgr(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  z_llgf(method_result, Address(scan_temp, ooffset - ioffset));
+  add2reg(recv_klass, itable_index * wordSize + in_bytes(itableMethodEntry::method_offset())
+    - vtable_start_offset - ioffset); // subtract offsets to restore the original value of recv_klass
+  z_lg(method_result, Address(recv_klass, method_result));
+  BLOCK_COMMENT("} lookup_interface_method_stub");
+}
+
 // Emitter for interface method lookup.
 //   input: recv_klass, intf_klass, itable_index
 //   output: method_result

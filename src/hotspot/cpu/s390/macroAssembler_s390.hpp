@@ -670,6 +670,15 @@ class MacroAssembler: public Assembler {
                                Label&             no_such_interface,
                                bool               return_method = true);
 
+  void lookup_interface_method_stub(Register r_recv_klass,
+                                    Register r_holder_klass,
+                                    Register r_resolved_klass,
+                                    Register r_method_result,
+                                    Register r_temp,
+                                    Register r_temp2,
+                                    int      itable_index,
+                                    Label&   nl_no_such_interface);
+
   // virtual method calling
   void lookup_virtual_method(Register             recv_klass,
                              RegisterOrConstant   vtable_index,
