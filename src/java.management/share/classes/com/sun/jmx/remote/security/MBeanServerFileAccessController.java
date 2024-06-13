@@ -307,9 +307,7 @@ public class MBeanServerFileAccessController
         if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
             s = Subject.current();
         } else {
-            @SuppressWarnings("removal")
             final AccessControlContext acc = AccessController.getContext();
-            //@SuppressWarnings("removal")
             s = AccessController.doPrivileged(new PrivilegedAction<>() {
                         public Subject run() {
                             return Subject.getSubject(acc);
