@@ -67,14 +67,14 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     void initFromParams(Workshop workshop, WinMsiPackage pkg) {
         super.initFromParams(workshop, pkg);
 
-        Path appImageRoot = Workshop.appImageDir(workshop, pkg);
+        Path appImageRoot = workshop.appImageDir();
 
         systemWide = pkg.isSystemWideInstall();
 
         registryKeyPath = Path.of("Software",
                 pkg.app().vendor(),
                 pkg.app().name(),
-                pkg.app().version()).toString();
+                pkg.version()).toString();
 
         installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(pkg.
                 relativeInstallDir());
@@ -109,10 +109,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         if (!launchersAsServices.isEmpty()) {
             // Service installer tool will be installed in launchers directory
-            serviceInstaller = new InstallableFile(
-                    pkg.serviceInstaller(),
-                    installedAppImage.launchersDirectory().resolve(
-                            serviceInstaller.installPath()));
+            serviceInstaller = new InstallableFile(pkg.serviceInstaller().toAbsolutePath()
+                    .normalize(), installedAppImage.launchersDirectory().resolve(pkg
+                            .serviceInstaller().getFileName()));
         }
 
         programMenuFolderName = pkg.startMenuGroupName();

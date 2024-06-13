@@ -27,6 +27,12 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
+import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 
 interface Launcher {
 
@@ -49,8 +55,8 @@ interface Launcher {
     String description();
 
     /**
-     * null for the default or resource directory icon empty path for not icon any other value for
-     * custom icon
+     * Null for the default or resource directory icon, empty path for no icon, other value for
+     * custom icon.
      */
     Path icon();
 
@@ -110,12 +116,17 @@ interface Launcher {
     }
 
     static Launcher createFromParams(Map<String, ? super Object> params) {
-        var name = StandardBundlerParam.APP_NAME.fetchFrom(params);
-        var startupInfo = LauncherStartupInfo.createFromParams(params);
-        var isService = StandardBundlerParam.LAUNCHER_AS_SERVICE.fetchFrom(params);
-        var version = StandardBundlerParam.VERSION.fetchFrom(params);
-        var release = StandardBundlerParam.RELEASE.fetchFrom(params);
-        var description = StandardBundlerParam.DESCRIPTION.fetchFrom(params);
+        var name = APP_NAME.fetchFrom(params);
+
+        LauncherStartupInfo startupInfo = null;
+        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
+            startupInfo = LauncherStartupInfo.createFromParams(params);
+        }
+
+        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
+        var version = VERSION.fetchFrom(params);
+        var release = RELEASE.fetchFrom(params);
+        var description = DESCRIPTION.fetchFrom(params);
         var icon = StandardBundlerParam.ICON.fetchFrom(params);
         var fa = FileAssociation.fetchFrom(params);
 

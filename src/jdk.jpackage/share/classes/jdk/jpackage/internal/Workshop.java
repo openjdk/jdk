@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Map;
+import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 
 interface Workshop {
@@ -35,11 +36,11 @@ interface Workshop {
     Path resourceDir();
 
     /**
-     * Returns path to the root folder of application image. When building app image this is the
-     * path to a root directory where application image is assembled. When building a package this
-     * is the path to input application image.
+     * Returns path to application image directory. When building app image this is the path to a
+     * directory where it is assembled. When building a package this is the path to the source app
+     * image.
      */
-    default Path appImageRoot() {
+    default Path appImageDir() {
         return buildRoot().resolve("image");
     }
 
@@ -49,14 +50,6 @@ interface Workshop {
 
     default OverridableResource createResource(String defaultName) {
         return new OverridableResource(defaultName).setResourceDir(resourceDir());
-    }
-
-    static Path appImageDir(Workshop workshop, Application app) {
-        return workshop.appImageRoot().resolve(app.appImageDirName());
-    }
-
-    static Path appImageDir(Workshop workshop, Package pkg) {
-        return workshop.appImageRoot().resolve(pkg.relativeInstallDir());
     }
 
     record Impl(Path buildRoot, Path resourceDir) implements Workshop {
@@ -85,11 +78,38 @@ interface Workshop {
     static Workshop createFromParams(Map<String, ? super Object> params) throws ConfigException {
         var root = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
         var resourceDir = StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
-        return new Impl(root, resourceDir);
+
+        var defaultWorkshop = new Impl(root, resourceDir);
+
+        Path appImageDir;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            appImageDir = StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+        } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
+            appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
+        } else {
+            Path dir;
+            if (PACKAGE_TYPE.fetchFrom(params).equals("app-image") || OperatingSystem.isWindows()) {
+                dir = Application.TARGET_APPLICATION.fetchFrom(params).appImageDirName();
+            } else {
+                dir = Package.TARGET_PACKAGE.fetchFrom(params).relativeInstallDir();
+            }
+
+            appImageDir = defaultWorkshop.buildRoot().resolve("image").resolve(dir);
+        }
+
+        return new Proxy(defaultWorkshop) {
+            @Override
+            public Path appImageDir() {
+                return appImageDir;
+            }
+        };
     }
 
     static final StandardBundlerParam<Workshop> WORKSHOP = new StandardBundlerParam<>(
             "workshop", Workshop.class, params -> {
                 return toFunction(Workshop::createFromParams).apply(params);
             }, null);
+
+    static final StandardBundlerParam<String> PACKAGE_TYPE = new StandardBundlerParam<>(
+            Arguments.CLIOptions.PACKAGE_TYPE.getId(), String.class, null, null);
 }

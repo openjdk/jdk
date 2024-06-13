@@ -204,6 +204,7 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
 
+        // Order is important!
         var pkg = WinMsiPackage.TARGET_PACKAGE.fetchFrom(params);
         var workshop = Workshop.WORKSHOP.fetchFrom(params);
 
@@ -211,13 +212,13 @@ public class WinMsiBundler  extends AbstractBundler {
 
         // we either have an application image or need to build one
         if (appImage != null) {
-            IOUtils.copyRecursive(appImage, Workshop.appImageDir(workshop, pkg));
+            IOUtils.copyRecursive(appImage, workshop.appImageDir());
         } else {
-            Files.createDirectories(workshop.appImageRoot());
-            appImageBundler.execute(params, workshop.appImageRoot());
+            Files.createDirectories(workshop.appImageDir().getParent());
+            appImageBundler.execute(params, workshop.appImageDir().getParent());
         }
 
-        var appImageLayout = pkg.appLayout().resolveAt(Workshop.appImageDir(workshop, pkg));
+        var appImageLayout = pkg.appLayout().resolveAt(workshop.appImageDir());
 
         // Configure installer icon
         if (pkg.isRuntimeInstaller()) {
@@ -250,12 +251,13 @@ public class WinMsiBundler  extends AbstractBundler {
     public Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
 
+        // Order is important!
         var pkg = WinMsiPackage.TARGET_PACKAGE.fetchFrom(params);
         var workshop = Workshop.WORKSHOP.fetchFrom(params);
 
         IOUtils.writableOutputDir(outputParentDir);
 
-        Path imageDir = Workshop.appImageDir(workshop, pkg);
+        Path imageDir = workshop.appImageDir();
         try {
             prepareProto(params);
             for (var wixFragment : wixFragments) {
@@ -315,8 +317,8 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpAboutURL", value);
         });
 
-        data.put("JpAppSizeKb", Long.toString(pkg.appLayout().resolveAt(Workshop.appImageDir(
-                workshop, pkg)).sizeInBytes() >> 10));
+        data.put("JpAppSizeKb", Long.toString(pkg.appLayout().resolveAt(workshop.appImageDir())
+                .sizeInBytes() >> 10));
 
         data.put("JpConfigDir", workshop.configDir().toAbsolutePath().toString());
 
@@ -359,7 +361,7 @@ public class WinMsiBundler  extends AbstractBundler {
                         entry -> entry.getKey(),
                         entry -> entry.getValue().path)))
         .setWixObjDir(workshop.buildRoot().resolve("wixobj"))
-        .setWorkDir(Workshop.appImageDir(workshop, pkg))
+        .setWorkDir(workshop.appImageDir())
         .addSource(workshop.configDir().resolve("main.wxs"), wixVars);
 
         for (var wixFragment : wixFragments) {

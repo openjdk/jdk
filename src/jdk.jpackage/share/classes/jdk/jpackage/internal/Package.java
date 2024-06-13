@@ -27,9 +27,11 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
@@ -51,6 +53,12 @@ interface Package {
 
         String suffix() {
             return suffix;
+        }
+
+        static PackageType fromCmdLineType(String type) {
+            return Stream.of(values()).filter(pt -> {
+                return pt.suffix().substring(1).equals(type);
+            }).findAny().get();
         }
 
         private final String suffix;
@@ -163,7 +171,7 @@ interface Package {
 
     static Package createFromParams(Map<String, ? super Object> params, Application app,
             PackageType type) throws ConfigException {
-        var name = Optional.ofNullable(APP_NAME.fetchFrom(params)).orElseGet(app::name);
+        var name = Optional.ofNullable(INSTALLER_NAME.fetchFrom(params)).orElseGet(app::name);
         var description = Optional.ofNullable(DESCRIPTION.fetchFrom(params)).orElseGet(app::name);
         var version = Optional.ofNullable(VERSION.fetchFrom(params)).orElseGet(app::version);
         var aboutURL = ABOUT_URL.fetchFrom(params);
@@ -174,10 +182,10 @@ interface Package {
                 .orElseGet(() -> {
                     switch (type) {
                         case WinExe, WinMsi -> {
-                            return Path.of(name);
+                            return app.appImageDirName();
                         }
                         case LinuxDeb, LinuxRpm -> {
-                            return Path.of("/opt").resolve(name);
+                            return Path.of("/opt").resolve(app.appImageDirName());
                         }
                         case MacDmg, MacPkg -> {
                             String root;
@@ -186,7 +194,7 @@ interface Package {
                             } else {
                                 root = "/Applications";
                             }
-                            return Path.of(root).resolve(name + ".app");
+                            return Path.of(root).resolve(app.appImageDirName());
                         }
                         default -> {
                             throw new IllegalArgumentException();
@@ -200,6 +208,15 @@ interface Package {
         return new Impl(app, type, name, description, version, aboutURL, licenseFile,
                 predefinedAppImage, relativeInstallDir);
     }
-    
+
     final static String PARAM_ID = "target.package";
+
+    static final StandardBundlerParam<Package> TARGET_PACKAGE = new StandardBundlerParam<>(
+            PARAM_ID, Package.class, params -> {
+                return toSupplier(() -> {
+                    return Package.createFromParams(params, Application.TARGET_APPLICATION
+                            .fetchFrom(params), PackageType.fromCmdLineType(Workshop.PACKAGE_TYPE
+                            .fetchFrom(params)));
+                }).get();
+            }, null);
 }

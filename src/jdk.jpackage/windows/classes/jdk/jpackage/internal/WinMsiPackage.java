@@ -49,11 +49,11 @@ interface WinMsiPackage extends Package {
     boolean isSystemWideInstall();
 
     default UUID upgradeCode() {
-        return createNameUUID("UpgradeCode", app().vendor(), name());
+        return createNameUUID("UpgradeCode", app().vendor(), app().name());
     }
 
     default UUID productCode() {
-        return createNameUUID("ProductCode", app().vendor(), name(), version());
+        return createNameUUID("ProductCode", app().vendor(), app().name(), version());
     }
 
     Path serviceInstaller();
@@ -153,7 +153,7 @@ interface WinMsiPackage extends Package {
             Path resourceDir = RESOURCE_DIR.fetchFrom(params);
             if (resourceDir != null) {
                 serviceInstaller = resourceDir.resolve("service-installer.exe");
-                if (Files.exists(serviceInstaller)) {
+                if (!Files.exists(serviceInstaller)) {
                     throw new ConfigException(I18N.getString(
                             "error.missing-service-installer"), I18N.getString(
                                     "error.missing-service-installer.advice"));
@@ -180,7 +180,7 @@ interface WinMsiPackage extends Package {
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
-    static class Internal {
+    final static class Internal {
 
         private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER
                 = new StandardBundlerParam<>(
@@ -241,6 +241,6 @@ interface WinMsiPackage extends Package {
 
     static final StandardBundlerParam<WinMsiPackage> TARGET_PACKAGE = new StandardBundlerParam<>(
             Package.PARAM_ID, WinMsiPackage.class, params -> {
-                return toFunction(WinMsiPackage::createFromParams).apply(params);                
+                return toFunction(WinMsiPackage::createFromParams).apply(params);
             }, null);
 }

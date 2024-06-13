@@ -41,7 +41,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
@@ -213,7 +212,7 @@ interface Application {
                     mainParams), APP_NAME.fetchFrom(launcherParams)));
         }
         return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(), ADD_LAUNCHERS
-                .getID(), FILE_ASSOCIATIONS.getID(), PREDEFINED_APP_IMAGE.getID());
+                .getID(), FILE_ASSOCIATIONS.getID());
     }
 
     final static String PARAM_ID = "target.application";

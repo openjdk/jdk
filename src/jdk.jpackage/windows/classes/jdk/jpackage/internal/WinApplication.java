@@ -24,8 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_MENU_HINT;
+import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
@@ -45,11 +48,17 @@ interface WinApplication extends Application {
     static WinApplication createFromParams(Map<String, ? super Object> params) throws ConfigException {
         var app = Application.createFromParams(params, launcherParams -> {
             var launcher = Launcher.createFromParams(launcherParams);
-            var isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
-            var shortcuts = Map.of(WinShortcutDesktop, SHORTCUT_HINT, WinShortcutStartMenu, MENU_HINT)
-                    .entrySet().stream().filter(e -> {
-                        return e.getValue().fetchFrom(launcherParams);
-                    }).map(Map.Entry::getKey).collect(Collectors.toSet());
+            boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
+
+            var shortcuts = Map.of(WinShortcutDesktop, List.of(SHORTCUT_HINT,
+                    Internal.WIN_SHORTCUT_HINT_PARAM), WinShortcutStartMenu,
+                    List.of(MENU_HINT, Internal.WIN_MENU_HINT_PARAM)).entrySet().stream().filter(
+                    e -> {
+                        return e.getValue().stream().allMatch(param -> {
+                            return param.fetchFrom(launcherParams);
+                        });
+                    }).map(
+                            Map.Entry::getKey).collect(Collectors.toSet());
 
             return new WinLauncher.Impl(launcher, isConsole, shortcuts);
         });
@@ -60,4 +69,23 @@ interface WinApplication extends Application {
             Application.PARAM_ID, WinApplication.class, params -> {
                 return toFunction(WinApplication::createFromParams).apply(params);
             }, null);
+
+    static final class Internal {
+
+        private static final StandardBundlerParam<Boolean> WIN_MENU_HINT_PARAM = new StandardBundlerParam<>(
+                WIN_MENU_HINT.getId(),
+                Boolean.class,
+                p -> false,
+                // valueOf(null) is false,
+                // and we actually do want null in some cases
+                (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
+
+        private static final StandardBundlerParam<Boolean> WIN_SHORTCUT_HINT_PARAM = new StandardBundlerParam<>(
+                WIN_SHORTCUT_HINT.getId(),
+                Boolean.class,
+                p -> false,
+                // valueOf(null) is false,
+                // and we actually do want null in some cases
+                (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
+    }
 }
