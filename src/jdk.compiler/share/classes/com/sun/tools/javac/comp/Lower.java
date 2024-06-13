@@ -4003,6 +4003,7 @@ public class Lower extends TreeTranslator {
                     // save the receiver expression in the desugared lambda
                     slam.methodReceiverExpression = translate(receiverExpression);
                 }
+                slam.wasMethodReference = true;
                 slam.target = tree.target;
                 slam.type = tree.type;
                 slam.pos = tree.pos;
@@ -4823,6 +4824,24 @@ public class Lower extends TreeTranslator {
             this.attrEnv = null;
             this.make = null;
             this.currentMethodSym = null;
+            this.proxies = null;
+        }
+    }
+
+    // needed for the lambda deserialization method, which is expressed as a big switch on strings
+    public JCMethodDecl translateMethod(Env<AttrContext> env, JCMethodDecl methodDecl, TreeMaker make) {
+        try {
+            this.attrEnv = env;
+            this.make = make;
+            this.currentClass = methodDecl.sym.enclClass();
+            proxies = new HashMap<>();
+            return translate(methodDecl);
+        } finally {
+            this.attrEnv = null;
+            this.make = null;
+            this.currentClass = null;
+            this.currentMethodSym = null;
+            this.currentMethodDef = null;
             this.proxies = null;
         }
     }

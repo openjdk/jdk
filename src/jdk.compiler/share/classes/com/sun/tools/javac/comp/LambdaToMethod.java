@@ -651,7 +651,7 @@ public class LambdaToMethod extends TreeTranslator {
             br.target = sw;
         }
         JCBlock body = make.Block(0L, List.of(
-                (JCStatement)lower.translateStringSwitch(attrEnv, kInfo.deserMethodSym, sw, make),
+                sw,
                 make.Throw(makeNewClass(
                     syms.illegalArgumentExceptionType,
                     List.of(make.Literal("Invalid lambda deserialization"))))));
@@ -666,7 +666,7 @@ public class LambdaToMethod extends TreeTranslator {
         deser.sym = kInfo.deserMethodSym;
         deser.type = kInfo.deserMethodSym.type;
         //System.err.printf("DESER: '%s'\n", deser);
-        return deser;
+        return lower.translateMethod(attrEnv, deser, make);
     }
 
     /** Make an attributed class instance creation expression.
@@ -1092,7 +1092,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitLambda(JCLambda tree) {
-            analyzeLambda(tree, tree.methodReceiverExpression != null ? "mref.stat.1" : "lambda.stat");
+            analyzeLambda(tree, tree.wasMethodReference ? "mref.stat.1" : "lambda.stat");
         }
 
         private LambdaTranslationContext analyzeLambda(JCLambda tree, String statKey) {
