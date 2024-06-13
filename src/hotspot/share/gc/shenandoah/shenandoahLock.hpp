@@ -49,7 +49,7 @@ public:
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
     // Try to lock fast, or dive into contended lock handling.
-    if (_state == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+    if (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
       contended_lock(allow_block_for_safepoint);
     }
 
