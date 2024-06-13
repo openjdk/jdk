@@ -72,6 +72,8 @@ private:
   struct Link;
   using Allocator = ALLOCATOR<Link, mtNMT>;
   using LinkPtr = typename Allocator::I;
+  LinkPtr nil() { return Allocator::nil; }
+
   Allocator _allocator;
 
   struct Link {
@@ -88,7 +90,7 @@ private:
   StackIndex put(const NativeCallStack& value) {
     int bucket = value.calculate_hash() % _table_size;
     LinkPtr link = _table[bucket];
-    while (!link.is_nil()) {
+    while (link != nil()) {
       Link& l = _allocator.at(link);
       if (value.equals(get(l.stack))) {
         return l.stack;

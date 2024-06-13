@@ -22,10 +22,7 @@
 
  */
 
-#include "memory/allocation.hpp"
-#include "memory/arena.hpp"
 #include "utilities/growableArray.hpp"
-#include "runtime/os.hpp"
 
 #ifndef SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
 #define SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
@@ -38,23 +35,8 @@
 template<typename E, MEMFLAGS flag>
 class IndexedFreeListAllocator {
 public:
-  struct I {
-    friend IndexedFreeListAllocator<E, flag>;
-    int32_t _idx;
-
-    bool operator !=(I other) {
-      return _idx != other._idx;
-    }
-    bool operator==(I other) {
-      return _idx == other._idx;
-    }
-
-    bool is_nil() {
-      return *this == IndexedFreeListAllocator<E, flag>::nil;
-    }
-  };
-
-  static constexpr const I nil = I{-1};
+  using I = int32_t;
+  static constexpr const I nil = -1;
 
 private:
   // A free list allocator element is either a link to the next free space
@@ -72,7 +54,7 @@ public:
 
   IndexedFreeListAllocator(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
-    _free_start(I{nil._idx}) {}
+    _free_start(nil) {}
 
   template<typename... Args>
   I allocate(Args... args) {
@@ -80,8 +62,8 @@ public:
     int i;
     if (_free_start != nil) {
       // Must point to already existing index
-      be = &_backing_storage.at(_free_start._idx);
-      i = _free_start._idx;
+      be = &_backing_storage.at(_free_start);
+      i = _free_start;
       _free_start = be->link;
     } else {
       // There are no free elements, allocate a new one.
@@ -94,103 +76,24 @@ public:
   }
 
   void free(I i) {
-    assert(!i.is_nil() || (i._idx > 0 && i._idx < _backing_storage.length()), "out of bounds free");
-    if (i.is_nil()) return;
-    BackingElement& be_freed = _backing_storage.at(i._idx);
+    assert(i != nil || (i > 0 && i < _backing_storage.length()), "out of bounds free");
+    if (i != nil) return;
+    BackingElement& be_freed = _backing_storage.at(i);
     be_freed.link = _free_start;
     _free_start = i;
   }
 
   E& at(I i) {
-    assert(!i.is_nil(), "null pointer dereference");
-    assert(i._idx > 0 && i._idx < _backing_storage.length(), "out of bounds dereference");
-    return reinterpret_cast<E&>(_backing_storage.at(i._idx).e);
+    assert(i != nil, "null pointer dereference");
+    assert(i > 0 && i < _backing_storage.length(), "out of bounds dereference");
+    return reinterpret_cast<E&>(_backing_storage.at(i).e);
   }
 
   const E& at(I i) const {
-    assert(!i.is_nil(), "null pointer dereference");
-    return reinterpret_cast<const E&>(_backing_storage.at(i._idx).e);
+    assert(i != nil, "null pointer dereference");
+    return reinterpret_cast<const E&>(_backing_storage.at(i).e);
   }
 };
 
-// A CHeap allocator
-template<typename E, MEMFLAGS flag>
-class CHeapAllocator {
-public:
-  struct I {
-    E* e;
-    bool operator !=(I other) {
-      return e != other.e;
-    }
-    bool operator==(I other) {
-      return e == other.e;
-    }
-
-    bool is_nil() {
-      return e == nullptr;
-    }
-  };
-  static constexpr const I nil = {nullptr};
-
-  template<typename... Args>
-  I allocate(Args... args) {
-    void* place = os::malloc(sizeof(E), flag);
-    ::new (place) E(args...);
-    return I{static_cast<E*>(place)};
-  }
-
-  void free(I i) {
-    return os::free(i.e);
-  }
-
-  E& at(I i) {
-    return *i.e;
-  };
-
-  const E& at(I i) const {
-    return *i.e;
-  };
-};
-
-// An Arena allocator
-template<typename E, MEMFLAGS flag>
-class ArenaAllocator {
-  Arena _arena;
-public:
-  ArenaAllocator() : _arena(flag) {}
-
-  struct I {
-    E* e;
-    bool operator !=(I other) {
-      return e != other.e;
-    }
-    bool operator==(I other) {
-      return e == other.e;
-    }
-    bool is_nil() {
-      return e == nullptr;
-    }
-  };
-  static constexpr const I nil = {nullptr};
-
-  template<typename... Args>
-  I allocate(Args... args) {
-    void* place = _arena.Amalloc(sizeof(E));
-    ::new (place) E(args...);
-    return I{static_cast<E*>(place)};
-  }
-
-  void free(I i) {
-    _arena.Afree(i.e, sizeof(E));
-  }
-
-  E& at(I i) {
-    return *i.e;
-  };
-
-  const E& at(I i) const {
-    return *i.e;
-  };
-};
 
 #endif // SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
