@@ -221,7 +221,7 @@ public interface JavaShellToolBuilder {
      * @param columns number of displayed columns
      * @param rows number of displayed rows
      * @return the {@code JavaShellToolBuilder} instance
-     * @since 23
+     * @since 24
      */
     default JavaShellToolBuilder windowSize(int columns, int rows) {
         return this;
