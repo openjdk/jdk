@@ -5042,8 +5042,6 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-static const uint64_t right_16_bits = right_n_bits(16);
-
   void adler32_process_bytes(Register buff, Register s1, Register s2, Register count,
     VectorRegister vtable, VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister *vs2acc,
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2,
@@ -5152,7 +5150,6 @@ static const uint64_t right_16_bits = right_n_bits(16);
     Register temp0 = c_rarg4;
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
-    Register right_16_bits = c_rarg7;
     Register step = x28; // t3
 
     VectorRegister vzero = v31;
@@ -5206,14 +5203,14 @@ static const uint64_t right_16_bits = right_n_bits(16);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
-    __ mv(right_16_bits, right_n_bits(16));
 
     __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
     if (!UseZbb) {
-      __ andr(s2, s2, right_16_bits);
-      __ andr(s1, adler, right_16_bits); // s1 = (adler & 0xffff)
+      __ mv(temp0, right_n_bits(16));
+      __ andr(s2, s2, temp0);
+      __ andr(s1, adler, temp0); // s1 = (adler & 0xffff)
     } else {
       __ zext_h(s2, s2);
       __ zext_h(s1, adler);
