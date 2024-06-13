@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,7 @@
  */
 package sun.security.ssl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -119,11 +116,6 @@ final class NewSessionTicket {
 
             this.ticketLifetime = Record.getInt32(m);
             this.ticket = Record.getBytes16(m);
-        }
-
-        @Override
-        public SSLHandshake handshakeType() {
-            return NEW_SESSION_TICKET;
         }
 
         @Override
@@ -224,11 +216,6 @@ final class NewSessionTicket {
             this.extensions = new SSLExtensions(this, m, supportedExtensions);
         }
 
-        @Override
-        public SSLHandshake handshakeType() {
-            return NEW_SESSION_TICKET;
-        }
-
         int getTicketAgeAdd() {
             return ticketAgeAdd;
         }
@@ -317,7 +304,7 @@ final class NewSessionTicket {
         }
 
         @Override
-        public byte[] produce(ConnectionContext context) throws IOException {
+        public byte[] produce(ConnectionContext context) {
             HandshakeContext hc = (HandshakeContext)context;
 
             // See note on TransportContext.needHandshakeFinishedStatus.
@@ -617,7 +604,7 @@ final class NewSessionTicket {
                     SSLLogger.fine(
                             "Discarding NewSessionTicket with lifetime " +
                             nstm.ticketLifetime, nstm);
-                };
+                }
                 return;
             }
 
@@ -718,17 +705,8 @@ final class NewSessionTicket {
 
             hc.handshakeSession.setPskIdentity(nstm.ticket);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("Consuming NewSessionTicket\n" +
-                        nstm.toString());
+                SSLLogger.fine("Consuming NewSessionTicket\n" + nstm);
             }
-        }
-    }
-    class Handler implements Thread.UncaughtExceptionHandler {
-
-        @Override
-        public void uncaughtException(Thread t, Throwable e) {
-            System.err.println("Thread caught: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }
