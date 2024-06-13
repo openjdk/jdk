@@ -30,9 +30,10 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test*
- *                   -Xbatch -XX:LoopUnrollLimit=100
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
  *                   --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+ *                   -Xbatch
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=100
  *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
  */
 

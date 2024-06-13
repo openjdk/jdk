@@ -71,10 +71,10 @@ public class TestUnorderedReduction {
         }
 
         switch (args[0]) {
-            case "Vanilla-Unaligned"         -> { framework.addFlags("-XX:-AlignVector"); }
-            case "Vanilla-Aligned"           -> { framework.addFlags("-XX:+AlignVector"); }
-            case "MaxVectorSize16-Unaligned" -> { framework.addFlags("-XX:-AlignVector", "-XX:MaxVectorSize=16"); }
-            case "MaxVectorSize32-Aligned"   -> { framework.addFlags("-XX:+AlignVector", "-XX:MaxVectorSize=32"); }
+            case "Vanilla-Unaligned"         -> { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector"); }
+            case "Vanilla-Aligned"           -> { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector"); }
+            case "MaxVectorSize16-Unaligned" -> { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:MaxVectorSize=16"); }
+            case "MaxVectorSize32-Aligned"   -> { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:MaxVectorSize=32"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();

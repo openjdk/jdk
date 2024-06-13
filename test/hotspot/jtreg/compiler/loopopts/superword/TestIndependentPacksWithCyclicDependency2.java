@@ -30,8 +30,8 @@
  *          Before fix, this hit: "assert(!is_visited) failed: visit only once"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/othervm -XX:LoopUnrollLimit=250
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency2::test
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency2::test
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *                   compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency2
  */
 

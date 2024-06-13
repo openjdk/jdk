@@ -68,8 +68,8 @@ public class TestMulAddS2I {
 
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+AlignVector");
-        TestFramework.runWithFlags("-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector");
     }
 
     @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh"})

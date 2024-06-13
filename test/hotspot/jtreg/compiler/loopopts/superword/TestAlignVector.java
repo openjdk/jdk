@@ -93,7 +93,7 @@ public class TestAlignVector {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestAlignVector.class);
         framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                           "-XX:LoopUnrollLimit=250");
+                           "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         switch (args[0]) {
             case "NoAlignVector"     -> { framework.addFlags("-XX:-AlignVector"); }

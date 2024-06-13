@@ -1283,7 +1283,7 @@ public class TestDependencyOffsets {
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::init",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::test*",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::verify",
-                           "-XX:LoopUnrollLimit=250");
+                           "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         if (args.length != 1) {
             throw new RuntimeException("Test requires exactly one argument!");

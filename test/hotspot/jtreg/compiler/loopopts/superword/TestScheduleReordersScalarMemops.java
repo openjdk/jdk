@@ -54,8 +54,8 @@ public class TestScheduleReordersScalarMemops {
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::test*",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::verify",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::init",
-                                   "-XX:LoopUnrollLimit=1000",
-                                   "-XX:-TieredCompilation", "-Xbatch");
+                                   "-XX:-TieredCompilation", "-Xbatch",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     TestScheduleReordersScalarMemops() {

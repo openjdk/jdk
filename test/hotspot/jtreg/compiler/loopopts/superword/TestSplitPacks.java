@@ -70,7 +70,7 @@ public class TestSplitPacks {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=1000");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     public TestSplitPacks() {

@@ -41,7 +41,7 @@ public class TestGeneralizedReductions {
 
     public static void main(String[] args) throws Exception {
         // Fix maximum number of unrolls for test stability.
-        TestFramework.runWithFlags("-XX:LoopMaxUnroll=16");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopMaxUnroll=16");
     }
 
     @Run(test = {"testReductionOnGlobalAccumulator",

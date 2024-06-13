@@ -76,7 +76,7 @@ public class TestIndependentPacksWithCyclicDependency {
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::test*",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::verify",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::init",
-                                   "-XX:LoopUnrollLimit=1000");
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     TestIndependentPacksWithCyclicDependency() {
