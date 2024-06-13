@@ -654,7 +654,7 @@ final class ProxyGenerator {
         private final Class<?> returnType;
         private final String methodFieldName;
         private Class<?>[] exceptionTypes;
-        private FieldRefEntry methodFieldCache;
+        private final FieldRefEntry methodField;
 
         private ProxyMethod(Method method, String sig, Class<?>[] parameterTypes,
                             Class<?> returnType, Class<?>[] exceptionTypes,
@@ -666,6 +666,8 @@ final class ProxyGenerator {
             this.exceptionTypes = exceptionTypes;
             this.fromClass = fromClass;
             this.methodFieldName = methodFieldName;
+            this.methodField = cp.fieldRefEntry(thisClassCE,
+                cp.nameAndTypeEntry(methodFieldName, CD_Method));
         }
 
         /**
@@ -677,14 +679,6 @@ final class ProxyGenerator {
             this(method, method.toShortSignature(),
                  method.getSharedParameterTypes(), method.getReturnType(),
                  method.getSharedExceptionTypes(), method.getDeclaringClass(), methodFieldName);
-        }
-
-        private FieldRefEntry methodField() {
-            var cache = methodFieldCache;
-            if (cache != null)
-                return cache;
-            return methodFieldCache = cp.fieldRefEntry(thisClassCE,
-                    cp.nameAndTypeEntry(methodFieldName, CD_Method));
         }
 
         /**
@@ -701,7 +695,7 @@ final class ProxyGenerator {
                         cob.aload(cob.receiverSlot())
                            .getfield(handlerField)
                            .aload(cob.receiverSlot())
-                           .getstatic(methodField());
+                           .getstatic(methodField);
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
@@ -808,7 +802,7 @@ final class ProxyGenerator {
             }
             // lookup the method
             cob.invokevirtual(classGetMethod)
-               .putstatic(methodField());
+               .putstatic(methodField);
         }
 
         /*
