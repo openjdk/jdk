@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8306580
  * @summary Test the writing error when archive file cannot be created
  * @requires vm.cds
  * @library /test/lib

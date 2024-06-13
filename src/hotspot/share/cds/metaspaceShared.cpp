@@ -438,7 +438,6 @@ private:
   ArchiveHeapInfo _heap_info;
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
-  bool _failed;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
@@ -450,14 +449,13 @@ private:
 public:
 
   VM_PopulateDumpSharedSpace(StaticArchiveBuilder& b) :
-    VM_Operation(), _heap_info(), _map_info(nullptr), _builder(b), _failed(false) {}
+    VM_Operation(), _heap_info(), _map_info(nullptr), _builder(b) {}
 
   bool skip_operation() const { return false; }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   ArchiveHeapInfo* heap_info()  { return &_heap_info; }
   FileMapInfo* map_info() const { return _map_info; }
-  bool failed() const { return _failed; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
@@ -515,10 +513,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   SystemDictionaryShared::check_excluded_classes();
 
   _builder.gather_source_objs();
-  if (_builder.reserve_buffer() == nullptr) {
-    this->_failed = true;
-    return;
-  }
+  _builder.reserve_buffer();
 
   CppVtables::dumptime_init(&_builder);
 
@@ -793,7 +788,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
 
-  if (op.failed() || !write_static_archive(&builder, op.map_info(), op.heap_info())) {
+  if (!write_static_archive(&builder, op.map_info(), op.heap_info())) {
     THROW_MSG(vmSymbols::java_io_IOException(), "Encountered error while dumping");
   }
 }
