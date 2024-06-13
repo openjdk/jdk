@@ -1664,7 +1664,6 @@ public:
   VTransformElementWiseVectorNode(VTransformGraph& graph, uint req, int number_of_nodes) :
     VTransformVectorNode(graph, req, number_of_nodes) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
-  static bool is_unary_element_wise_opcode(int opc);
   virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)

@@ -2039,33 +2039,6 @@ VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
   return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-bool VTransformElementWiseVectorNode::is_unary_element_wise_opcode(int opc) {
-  switch (opc) {
-  case Op_SqrtF:
-  case Op_SqrtD:
-  case Op_AbsF:
-  case Op_AbsD:
-  case Op_AbsI:
-  case Op_AbsL:
-  case Op_NegF:
-  case Op_NegD:
-  case Op_RoundF:
-  case Op_RoundD:
-  case Op_ReverseBytesI:
-  case Op_ReverseBytesL:
-  case Op_ReverseBytesUS:
-  case Op_ReverseBytesS:
-  case Op_ReverseI:
-  case Op_ReverseL:
-  case Op_PopCountI:
-  case Op_CountLeadingZerosI:
-  case Op_CountTrailingZerosI:
-    return true;
-  default:
-    return false;
-  }
-}
-
 VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
@@ -2094,7 +2067,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   } else if (VectorNode::can_transform_shift_op(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
-  } else if (VectorNode::requires_long_to_int_conversion(opc)) {
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
     VectorNode* long_vn = VectorNode::make(opc, in1, nullptr, vlen, T_LONG);
@@ -2102,7 +2075,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
-             is_unary_element_wise_opcode(opc)) {
+             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
     assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
     vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {

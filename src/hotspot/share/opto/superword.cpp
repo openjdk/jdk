@@ -3038,9 +3038,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Nod
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
-           VectorNode::requires_long_to_int_conversion(opc) ||
+           VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
-           VTransformElementWiseVectorNode::is_unary_element_wise_opcode(opc) ||
+           VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
            opc == Op_FmaD ||
            opc == Op_FmaF ||
            opc == Op_SignumF ||
