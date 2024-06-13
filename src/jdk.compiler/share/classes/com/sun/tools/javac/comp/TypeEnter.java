@@ -498,7 +498,7 @@ public class TypeEnter implements Completer {
                     }
 
                     for (ExportsDirective export : currentModule.exports) {
-                        if (export.modules != null && !export.modules.contains(env.toplevel.packge.modle)) {
+                        if (export.modules != null && !export.modules.contains(env.toplevel.modle)) {
                             continue;
                         }
 

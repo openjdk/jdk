@@ -56,6 +56,10 @@ const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEAT
 address VM_Version::_cpuinfo_segv_addr = 0;
 // Address of instruction after the one which causes SEGV
 address VM_Version::_cpuinfo_cont_addr = 0;
+// Address of instruction which causes APX specific SEGV
+address VM_Version::_cpuinfo_segv_addr_apx = 0;
+// Address of instruction after the one which causes APX specific SEGV
+address VM_Version::_cpuinfo_cont_addr_apx = 0;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
@@ -63,9 +67,11 @@ static const int stub_size = 2000;
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
   typedef void (*detect_virt_stub_t)(uint32_t, uint32_t*);
+  typedef void (*clear_apx_test_state_t)(void);
 }
 static get_cpu_info_stub_t get_cpu_info_stub = nullptr;
 static detect_virt_stub_t detect_virt_stub = nullptr;
+static clear_apx_test_state_t clear_apx_test_state_stub = nullptr;
 
 #ifdef _LP64
 
@@ -102,6 +108,27 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
+  address clear_apx_test_state() {
+#   define __ _masm->
+    address start = __ pc();
+    // EGPRs are call clobbered registers, Explicit clearing of r16 and r31 during signal
+    // handling guarantees that preserved register values post signal handling were
+    // re-instantiated by operating system and not because they were not modified externally.
+
+    /* FIXME Uncomment following code after OS enablement of
+    bool save_apx = UseAPX;
+    VM_Version::set_apx_cpuFeatures();
+    UseAPX = true;
+    // EGPR state save/restoration.
+    __ mov64(r16, 0L);
+    __ mov64(r31, 0L);
+    UseAPX = save_apx;
+    VM_Version::clean_cpuFeatures();
+    */
+    __ ret(0);
+    return start;
+  }
+
   address generate_get_cpu_info() {
     // Flags to test CPU type.
     const uint32_t HS_EFL_AC = 0x40000;
@@ -113,7 +140,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
-    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, ext_cpuid8, done, wrapup;
+    Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
+    Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
     StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
@@ -288,7 +316,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 4), rdx);
 
     //
-    // cpuid(0x7) Structured Extended Features
+    // cpuid(0x7) Structured Extended Features Enumeration Leaf.
     //
     __ bind(sef_cpuid);
     __ movl(rax, 7);
@@ -303,12 +331,16 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi, 12), rdx);
 
-    // ECX = 1
+    //
+    // cpuid(0x7) Structured Extended Features Enumeration Sub-Leaf 1.
+    //
+    __ bind(sefsl1_cpuid);
     __ movl(rax, 7);
     __ movl(rcx, 1);
     __ cpuid();
-    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_ecx1_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sefsl1_cpuid7_offset())));
     __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rdx);
 
     //
     // Extended cpuid(0x80000000)
@@ -387,6 +419,46 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
+#ifndef PRODUCT
+    //
+    // Check if OS has enabled XGETBV instruction to access XCR0
+    // (OSXSAVE feature flag) and CPU supports APX
+    //
+    // To enable APX, check CPUID.EAX=7.ECX=1.EDX[21] bit for HW support
+    // and XCRO[19] bit for OS support to save/restore extended GPR state.
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sefsl1_cpuid7_offset())));
+    __ movl(rax, 0x200000);
+    __ andl(rax, Address(rsi, 4));
+    __ cmpl(rax, 0x200000);
+    __ jcc(Assembler::notEqual, vector_save_restore);
+    // check _cpuid_info.xem_xcr0_eax.bits.apx_f
+    __ movl(rax, 0x80000);
+    __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits apx_f
+    __ cmpl(rax, 0x80000);
+    __ jcc(Assembler::notEqual, vector_save_restore);
+
+    /* FIXME: Uncomment while integrating JDK-8329032
+    bool save_apx = UseAPX;
+    VM_Version::set_apx_cpuFeatures();
+    UseAPX = true;
+    __ mov64(r16, VM_Version::egpr_test_value());
+    __ mov64(r31, VM_Version::egpr_test_value());
+    */
+    __ xorl(rsi, rsi);
+    VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
+    // Generate SEGV
+    __ movl(rax, Address(rsi, 0));
+
+    VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
+    /* FIXME: Uncomment after integration of JDK-8329032
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
+    __ movq(Address(rsi, 0), r16);
+    __ movq(Address(rsi, 8), r31);
+
+    UseAPX = save_apx;
+    */
+#endif
+    __ bind(vector_save_restore);
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports AVX
@@ -580,6 +652,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
+
     generate_vzeroupper(wrapup);
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
@@ -940,6 +1013,7 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
     }
   }
+
   if (UseAVX > use_avx_limit) {
     if (UseSSE < 4) {
       warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
@@ -963,6 +1037,16 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VBMI2;
     _features &= ~CPU_AVX512_BITALG;
     _features &= ~CPU_AVX512_IFMA;
+    _features &= ~CPU_APX_F;
+  }
+
+  // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  if (UseAPX && !apx_supported) {
+    warning("UseAPX is not supported on this CPU, setting it to false");
+    FLAG_SET_DEFAULT(UseAPX, false);
+  } else if (FLAG_IS_DEFAULT(UseAPX)) {
+    FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
   if (UseAVX < 2) {
@@ -1000,14 +1084,6 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_AVX512_IFMA;
       _features &= ~CPU_AVX_IFMA;
     }
-  }
-
-  // APX support not enabled yet
-  if (UseAPX) {
-    if (!FLAG_IS_DEFAULT(UseAPX)) {
-        warning("APX is not supported on this CPU.");
-    }
-    FLAG_SET_DEFAULT(UseAPX, false);
   }
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
@@ -1245,55 +1321,6 @@ void VM_Version::get_processor_features() {
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
-
-  if (!supports_rtm() && UseRTMLocking) {
-    vm_exit_during_initialization("RTM instructions are not available on this CPU");
-  }
-
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking) {
-    if (!CompilerConfig::is_c2_enabled()) {
-      // Only C2 does RTM locking optimization.
-      vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-    }
-    if (is_intel_family_core()) {
-      if ((_model == CPU_MODEL_HASWELL_E3) ||
-          (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
-          (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
-        // currently a collision between SKL and HSW_E3
-        if (!UnlockExperimentalVMOptions && UseAVX < 3) {
-          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this "
-                                        "platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
-        } else {
-          warning("UseRTMLocking is only available as experimental option on this platform.");
-        }
-      }
-    }
-    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
-      // RTM locking should be used only for applications with
-      // high lock contention. For now we do not use it by default.
-      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-  } else { // !UseRTMLocking
-    if (UseRTMForStackLocks) {
-      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
-        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
-      }
-      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
-    }
-    if (UseRTMDeopt) {
-      FLAG_SET_DEFAULT(UseRTMDeopt, false);
-    }
-    if (PrintPreciseRTMLockingStatistics) {
-      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
-    }
-  }
-#else
-  if (UseRTMLocking) {
-    // Only C2 does RTM locking optimization.
-    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-  }
-#endif
 
 #ifdef COMPILER2
   if (UseFPUForSpilling) {
@@ -2143,6 +2170,10 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+void VM_Version::clear_apx_test_state() {
+  clear_apx_test_state_stub();
+}
+
 static bool _vm_version_initialized = false;
 
 void VM_Version::initialize() {
@@ -2160,6 +2191,8 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
+  clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
+                                     g.clear_apx_test_state());
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
@@ -2958,6 +2991,10 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_SSE4_2;
   if (std_cpuid1_ecx.bits.popcnt != 0)
     result |= CPU_POPCNT;
+  if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
+      xem_xcr0_eax.bits.apx_f != 0) {
+    result |= CPU_APX_F;
+  }
   if (std_cpuid1_ecx.bits.avx != 0 &&
       std_cpuid1_ecx.bits.osxsave != 0 &&
       xem_xcr0_eax.bits.sse != 0 &&
@@ -2968,7 +3005,7 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       result |= CPU_F16C;
     if (sef_cpuid7_ebx.bits.avx2 != 0) {
       result |= CPU_AVX2;
-      if (sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
+      if (sefsl1_cpuid7_eax.bits.avx_ifma != 0)
         result |= CPU_AVX_IFMA;
     }
     if (sef_cpuid7_ecx.bits.gfni != 0)
@@ -3140,6 +3177,17 @@ bool VM_Version::os_supports_avx_vectors() {
     }
   }
   return retVal;
+}
+
+bool VM_Version::os_supports_apx_egprs() {
+  if (!supports_apx_f()) {
+    return false;
+  }
+  if (_cpuid_info.apx_save[0] != egpr_test_value() ||
+      _cpuid_info.apx_save[1] != egpr_test_value()) {
+    return false;
+  }
+  return true;
 }
 
 uint VM_Version::cores_per_cpu() {

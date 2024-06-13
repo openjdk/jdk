@@ -138,13 +138,13 @@
   }
 
   // Does the CPU supports vector variable rotate instructions?
-  static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+  static bool supports_vector_variable_rotates(void) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+  static bool supports_vector_constant_rotates(int shift) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?

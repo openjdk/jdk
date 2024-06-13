@@ -1,0 +1,5 @@
+DA_DUConstructors.java:23:17: compiler.err.var.might.already.be.assigned: x
+DA_DUConstructors.java:42:23: compiler.err.var.might.not.have.been.initialized: x
+- compiler.note.preview.filename: DA_DUConstructors.java, DEFAULT
+- compiler.note.preview.recompile
+2 errors

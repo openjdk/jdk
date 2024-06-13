@@ -266,7 +266,7 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
-  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT

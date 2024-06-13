@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
+ *           8331947
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -156,6 +157,9 @@ public class TestPreview extends JavadocTester {
                     <li><a href="package-summary.html">preview</a></li>
                     <li><a href="Core.html" class="current-selection">Core</a></li>
                     </ol>""");
+
+        // 8331947: Support preview features without JEP should not be included in Preview API page
+        checkOutput("preview-list.html", false, "supportMethod");
     }
 
     @Test
