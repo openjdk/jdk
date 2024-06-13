@@ -2881,14 +2881,14 @@ public:
 //
 //   RangeCheck[i+0]           RangeCheck[i+0]
 //   StoreB[i+0]
-//   RangeCheck[i+1]           RangeCheck[i+1]
+//   RangeCheck[i+3]           RangeCheck[i+3]
 //   StoreB[i+1]         -->   pass:             fail:
 //   StoreB[i+2]               StoreI[i+0]       StoreB[i+0]
 //   StoreB[i+3]
 //
 // The 4 StoreB are merged into a single StoreI node. We have to be careful with RangeCheck[i+1]: before
 // the optimization, if this RangeCheck[i+1] fails, then we execute only StoreB[i+0], and then trap. After
-// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+1], and StoreB[i+0] on the
+// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+3], and StoreB[i+0] on the
 // failing path.
 //
 // Note: For normal array stores, every store at first has a RangeCheck. But they can be removed with:
@@ -2900,11 +2900,11 @@ public:
 //                              RangeCheck[i+0]                         RangeCheck[i+0] <- before first store
 //                              StoreB[i+0]                             StoreB[i+0]     <- first store
 //                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3] <- only RC between first and last store
-//                              StoreB[i+0]                             StoreB[i+1]     <- second store
+//                              StoreB[i+1]                             StoreB[i+1]     <- second store
 //                              RangeCheck[i+2]     --> removed
-//                              StoreB[i+0]                             StoreB[i+2]
+//                              StoreB[i+2]                             StoreB[i+2]
 //                              RangeCheck[i+3]     --> removed
-//                              StoreB[i+0]                             StoreB[i+3]     <- last store
+//                              StoreB[i+3]                             StoreB[i+3]     <- last store
 //
 //                              Thus, it is a common pattern that between the first and last store in a chain
 //                              of adjacent stores there remains exactly one RangeCheck, located between the
@@ -3067,6 +3067,11 @@ bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Nod
   }
 
   // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+#ifndef VM_LITTLE_ENDIAN
+  // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+  // Swapping n1 with n2 gives same pattern as on little endian platforms.
+  swap(n1, n2);
+#endif // !VM_LITTLE_ENDIAN
   Node const* base_n2;
   jint shift_n2;
   if (!is_con_RShift(n2, base_n2, shift_n2)) {
@@ -3281,8 +3286,13 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     jlong mask = (((jlong)1) << bits_per_store) - 1;
     for (uint i = 0; i < merge_list.size(); i++) {
       jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+#ifdef VM_LITTLE_ENDIAN
       con = con << bits_per_store;
       con = con | (mask & con_i);
+#else // VM_LITTLE_ENDIAN
+      con_i = (mask & con_i) << (i * bits_per_store);
+      con = con | con_i;
+#endif // VM_LITTLE_ENDIAN
     }
     merged_input_value = _phase->longcon(con);
   } else {
@@ -3290,16 +3300,22 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     //             |                                  |
     //           _store                             first
     //
-    merged_input_value = first->in(MemNode::ValueIn);
-    Node const* base_last;
-    jint shift_last;
-    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    Node* hi = _store->in(MemNode::ValueIn);
+    Node* lo = first->in(MemNode::ValueIn);
+#ifndef VM_LITTLE_ENDIAN
+    // `_store` and `first` are swapped in the diagram above
+    swap(hi, lo);
+#endif // !VM_LITTLE_ENDIAN
+    Node const* hi_base;
+    jint hi_shift;
+    merged_input_value = lo;
+    bool is_true = is_con_RShift(hi, hi_base, hi_shift);
     assert(is_true, "must detect con RShift");
-    if (merged_input_value != base_last && merged_input_value->Opcode() == Op_ConvL2I) {
+    if (merged_input_value != hi_base && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
       merged_input_value = merged_input_value->in(1);
     }
-    if (merged_input_value != base_last) {
+    if (merged_input_value != hi_base) {
       // merged_input_value is not the base
       return nullptr;
     }
@@ -3473,7 +3489,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-#ifdef VM_LITTLE_ENDIAN
   if (MergeStores && UseUnalignedAccesses) {
     if (phase->C->post_loop_opts_phase()) {
       MergePrimitiveArrayStores merge(phase, this);
@@ -3483,7 +3498,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->C->record_for_post_loop_opts_igvn(this);
     }
   }
-#endif
 
   return nullptr;                  // No further progress
 }

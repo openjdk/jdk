@@ -630,6 +630,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * asSlice(offset, newSize, 1);
      * }
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long, long)
      *
@@ -646,6 +649,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Returns a slice of this memory segment, at the given offset, with the provided
      * alignment constraint. The returned segment's address is the address of this
      * segment plus the given offset; its size is specified by the given argument.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @param offset The new segment base offset (relative to the address of this segment),
      *               specified in bytes
@@ -670,6 +676,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * asSlice(offset, layout.byteSize(), layout.byteAlignment());
      * }
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long, long)
      *
@@ -693,6 +702,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * asSlice(offset, byteSize() - offset);
      * }
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long)
      *
@@ -706,6 +718,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Returns a new memory segment that has the same address and scope as this segment,
      * but with the provided size.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @param newSize the size of the returned segment
      * @return a new memory segment that has the same address and scope as
@@ -741,6 +756,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@link #byteSize()}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
@@ -786,6 +804,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@code newSize}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its

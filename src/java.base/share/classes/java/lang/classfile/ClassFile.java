@@ -45,6 +45,7 @@ import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.CD_module_info;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -392,7 +393,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
+        return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);
@@ -1482,6 +1483,12 @@ public sealed interface ClassFile
     int JAVA_23_VERSION = 67;
 
     /**
+     * The class major version of JAVA_24.
+     * @since 24
+     */
+    int JAVA_24_VERSION = 68;
+
+    /**
      * A minor version number indicating a class uses preview features
      * of a Java SE version since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
@@ -1492,7 +1499,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_23_VERSION;
+        return JAVA_24_VERSION;
     }
 
     /**

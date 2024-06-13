@@ -54,17 +54,23 @@ public class DummyTargetApplication {
     }
 
     public void runTargetApplication() {
-        pipe = SocketIOPipe.createClientIOPipe(log, argParser.getPort(), 0);
-        log.display("Sending signal '" + AODTestRunner.SIGNAL_READY_FOR_ATTACH + "'");
-        pipe.println(AODTestRunner.SIGNAL_READY_FOR_ATTACH);
+        try {
+            pipe = SocketIOPipe.createClientIOPipe(log, argParser.getPort(), 0);
+            log.display("Sending signal '" + AODTestRunner.SIGNAL_READY_FOR_ATTACH + "'");
+            pipe.println(AODTestRunner.SIGNAL_READY_FOR_ATTACH);
 
-        targetApplicationActions();
+            targetApplicationActions();
 
-        String signal = pipe.readln();
-        log.display("Signal received: '" + signal + "'");
+            String signal = pipe.readln();
+            log.display("Signal received: '" + signal + "'");
 
-        if ((signal == null) || !signal.equals(AODTestRunner.SIGNAL_FINISH))
-            throw new TestBug("Unexpected signal: '" + signal + "'");
+            if ((signal == null) || !signal.equals(AODTestRunner.SIGNAL_FINISH))
+                throw new TestBug("Unexpected signal: '" + signal + "'");
+        } finally {
+            if (pipe != null) {
+                pipe.close();
+            }
+        }
     }
 
     public static void main(String[] args) {

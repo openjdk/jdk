@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,11 @@ public class TestParallelGCWithCDS {
                     out.shouldContain(HELLO);
                 } else {
                     String pattern = "((Too small maximum heap)" +
-                                       "|(GC triggered before VM initialization completed)" +
-                                       "|(java.lang.OutOfMemoryError: Java heap space))";
+                                     "|(GC triggered before VM initialization completed)" +
+                                     "|(java.lang.OutOfMemoryError: Java heap space)" +
+                                     "|(Initial heap size set to a larger value than the maximum heap size))";
                     out.shouldMatch(pattern);
+                    out.shouldNotHaveFatalError();
                 }
                 n++;
             }

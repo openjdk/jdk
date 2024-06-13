@@ -251,20 +251,9 @@
   void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
                     BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
 
-  // In Matcher::scalable_predicate_reg_slots,
-  // we assume each predicate register is one-eighth of the size of
-  // scalable vector register, one mask bit per vector byte.
-  void spill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vse8_v(v, t0);
-  }
+  void spill_vmask(VectorRegister v, int offset);
 
-  void unspill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vle8_v(v, t0);
-  }
+  void unspill_vmask(VectorRegister v, int offset);
 
   void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
