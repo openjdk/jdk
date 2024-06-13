@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,12 @@
 // This is a tree representation. See: https://developer.apple.com/documentation/appkit/nsoutlineview
 
 @interface OutlineAccessibility : ListAccessibility <NSAccessibilityOutline>
-
+{
+    NSMutableArray<id<NSAccessibilityRow>> *rowCache;
+    BOOL rowCacheValid;
+    NSMutableArray<id<NSAccessibilityRow>> *selectedRowCache;
+    BOOL selectedRowCacheValid;
+}
 @property(readonly) BOOL isTreeRootVisible;
 
 @end

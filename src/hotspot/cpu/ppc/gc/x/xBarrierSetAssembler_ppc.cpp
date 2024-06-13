@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ void XBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators
       __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers, preserve_R3);
     }
 
-    __ save_LR_CR(tmp1);
+    __ save_LR(tmp1);
     __ push_frame_reg_args(nbytes_save, tmp1);
   }
 
@@ -138,7 +138,7 @@ void XBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators
   Register result = R3_RET;
   if (needs_frame) {
     __ pop_frame();
-    __ restore_LR_CR(tmp1);
+    __ restore_LR(tmp1);
 
     if (preserve_R3) {
       __ mr(R0, R3_RET);
@@ -220,7 +220,7 @@ void XBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, DecoratorSet
     __ std(dst, -BytesPerWord * ++nbytes_save, R1_SP);
     __ std(count, -BytesPerWord * ++nbytes_save, R1_SP);
 
-    __ save_LR_CR(tmp_R11);
+    __ save_LR(tmp_R11);
     __ push_frame_reg_args(nbytes_save, tmp_R11);
   }
 
@@ -243,7 +243,7 @@ void XBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, DecoratorSet
   __ call_VM_leaf(XBarrierSetRuntime::load_barrier_on_oop_array_addr());
 
   __ pop_frame();
-  __ restore_LR_CR(tmp_R11);
+  __ restore_LR(tmp_R11);
 
   {
     __ ld(count, -BytesPerWord * nbytes_save--, R1_SP);
@@ -357,7 +357,7 @@ void XBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_parameters) * BytesPerWord;
 
   __ save_volatile_gprs(R1_SP, -nbytes_save);
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
 
   // Load arguments back again from the stack.
   __ ld(R3_ARG1, (intptr_t) -1 * BytesPerWord, R1_SP); // ref
@@ -371,7 +371,7 @@ void XBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ mr(R0, R3_RET);
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@ import nsk.share.test.LazyFormatString;
  * Error messages appeares in log stream in all modes. Additional log massages,
  * printed with <code>display()</code> method will be filtered out, if log mode
  * is not verbose. In verbose log made messages of both types are printed.
- * Additionally, in verbose mode a summary of all occured errors will be printed
- * at the program exit, by automatically invoking method
- * <code>printErrorsSummary()</code>.
  * <p>
  * To provide printing messages from different sources into one log
  * with distinct prefixes use internal <code>Log.Logger</code> class.
@@ -69,14 +66,11 @@ import nsk.share.test.LazyFormatString;
  * @see ArgumentParser
  * @see Log.Logger
  */
-public class Log extends FinalizableObject {
+public class Log {
     /**
      * Report step-by-step activity to this stream.
-     *
-     * @deprecated  Tests should not use this field directly.
      */
-    @Deprecated
-    protected PrintStream out = null;
+    private PrintStream out = null;
 
     /**
      * Is log-mode verbose?
@@ -114,7 +108,7 @@ public class Log extends FinalizableObject {
 
         public static int nameToLevel(String value) throws IllegalArgumentException {
             Integer level = NAME_TO_LEVEL_MAP.get(value.toLowerCase());
-            if ( level == null )
+           if ( level == null )
                 throw new IllegalArgumentException("Wrong trace level: " + value);
 
             return level;
@@ -134,16 +128,6 @@ public class Log extends FinalizableObject {
      * Default value is <code>0</code> a.k.a. <code>TraceLevel.INFO</code>;
      */
     private int traceLevel = TraceLevel.DEFAULT;
-
-    /**
-     * Is printing errors summary enabled? Default value is <code>true</code>;
-     */
-    private boolean errorsSummaryEnabled = true;
-
-    /**
-     * Is printing saved verbose messages on error enabled? Default value is <code>true</code>;
-     */
-    private boolean verboseOnErrorEnabled = true;
 
     /**
      * This <code>errosBuffer</code> will keep all messages printed via
@@ -188,8 +172,6 @@ public class Log extends FinalizableObject {
      */
     @Deprecated
     protected Log() {
-        // install finalizer to print errors summary at exit
-        registerCleanup();
         // Don't log exceptions from this method. It would just add unnecessary logs.
         loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
     }
@@ -232,34 +214,6 @@ public class Log extends FinalizableObject {
      */
     public boolean verbose() {
         return verbose;
-    }
-
-    /**
-     * Return <i>true</i> if printing errors summary at exit is enabled.
-     */
-    public boolean isErrorsSummaryEnabled() {
-        return errorsSummaryEnabled;
-    }
-
-    /**
-     * Enable or disable printing errors summary at exit.
-     */
-    public void enableErrorsSummary(boolean enable) {
-        errorsSummaryEnabled = enable;
-    }
-
-    /**
-     * Return <i>true</i> if printing saved verbose messages on error is enabled.
-     */
-    public boolean isVerboseOnErrorEnabled() {
-        return errorsSummaryEnabled;
-    }
-
-    /**
-     * Enable or disable printing saved verbose messages on error.
-     */
-    public void enableVerboseOnError(boolean enable) {
-        verboseOnErrorEnabled = enable;
     }
 
     /**
@@ -315,7 +269,7 @@ public class Log extends FinalizableObject {
     @Deprecated
     public synchronized void println(String message) {
         doPrint(message);
-        if (!verbose() && isVerboseOnErrorEnabled()) {
+        if (!verbose()) {
             keepLog(composeLine(message));
         }
     }
@@ -371,10 +325,8 @@ public class Log extends FinalizableObject {
     public synchronized void display(Object message) {
         if (verbose()) {
             doPrint(message.toString());
-        } else if (isVerboseOnErrorEnabled()) {
-            keepLog(composeLine(message.toString()));
         } else {
-            // ignore
+            keepLog(composeLine(message.toString()));
         }
     }
 
@@ -384,7 +336,7 @@ public class Log extends FinalizableObject {
      * into <code>errorsBuffer</code>.
      */
     public synchronized void complain(Object message) {
-        if (!verbose() && isVerboseOnErrorEnabled()) {
+        if (!verbose()) {
             PrintStream stream = findOutStream();
             stream.println("#>  ");
             stream.println("#>  WARNING: switching log to verbose mode,");
@@ -395,9 +347,6 @@ public class Log extends FinalizableObject {
         }
         String msgStr = message.toString();
         printError(msgStr);
-        if (isErrorsSummaryEnabled()) {
-            keepError(msgStr);
-        }
 
         logExceptionForFailureAnalysis(msgStr);
     }
@@ -469,7 +418,9 @@ public class Log extends FinalizableObject {
      */
     @Deprecated
     protected synchronized void logTo(PrintStream stream) {
-        cleanup(); // flush older log stream
+        if (out != null) {
+            out.flush();
+        }
         out = stream;
         verbose = true;
     }
@@ -571,59 +522,6 @@ public class Log extends FinalizableObject {
      */
     private synchronized void keepLog(String message) {
         logBuffer.addElement(message);
-    }
-
-    /**
-     * Keep the given error <code>message</code> into <code>errorsBuffer</code>.
-     */
-    private synchronized void keepError(String message) {
-        errorsBuffer.addElement(message);
-    }
-
-    /**
-     * Print errors messages summary from errors buffer if any;
-     * print a warning message first.
-     */
-    private synchronized void printErrorsSummary() {
-        if (errorsBuffer.size() <= 0)
-            return;
-
-        PrintStream stream = findOutStream();
-        stream.println();
-        stream.println();
-        stream.println("#>  ");
-        stream.println("#>  SUMMARY: Following errors occured");
-        stream.println("#>      during test execution:");
-        stream.println("#>  ");
-        stream.flush();
-
-        for (Enumeration e = errorsBuffer.elements(); e.hasMoreElements(); ) {
-            printError((String) e.nextElement());
-        }
-    }
-
-    /**
-     * Print errors summary if mode is verbose, flush and cancel output stream.
-     *
-     * This is replacement of the finalize() method and is called when this
-     * Log instance becomes unreachable.
-     *
-     */
-    @Override
-    public void cleanup() {
-        if (verbose() && isErrorsSummaryEnabled()) {
-            printErrorsSummary();
-        }
-        if (out != null)
-            out.flush();
-        out = null;
-    }
-
-    /**
-     * Perform finalization at the exit.
-     */
-    public void finalizeAtExit() {
-        cleanup();
     }
 
     /**
