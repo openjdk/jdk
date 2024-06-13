@@ -30,7 +30,6 @@
  */
 
 import jdk.internal.lang.StableValue;
-import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -48,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 final class StableValuesSafePublicationTest {
+
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors() / 2;
     private static final StableValue<Holder>[] STABLES = stables();
@@ -134,10 +134,14 @@ final class StableValuesSafePublicationTest {
             }
         }
 
+        // a = 0, b = 0 : index 0
         assertEquals(0, histogram[0]);
+        // a = 1, b = 0 : index 1
         assertEquals(0, histogram[1]);
+        // a = 0, b = 1 : index 2
         assertEquals(0, histogram[2]);
-        // We should only observe a = b = 1 -> 3
+        // a = 1, b = 1 : index 3
+        // All observations should end up in this bucket
         assertEquals(THREADS * SIZE, histogram[3]);
     }
 
@@ -168,10 +172,6 @@ final class StableValuesSafePublicationTest {
         } catch (InterruptedException ie) {
             fail(ie);
         }
-    }
-
-    private static long objOffset(int i) {
-        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) i;
     }
 
 }
