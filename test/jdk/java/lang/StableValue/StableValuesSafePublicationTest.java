@@ -38,18 +38,16 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class StableValuesSafePublicationTest {
 
     private static final int SIZE = 100_000;
-    private static final int THREADS = Runtime.getRuntime().availableProcessors() / 2;
+    private static final int THREADS = Runtime.getRuntime().availableProcessors();
     private static final StableValue<Holder>[] STABLES = stables();
 
     static StableValue<Holder>[] stables() {
@@ -98,10 +96,14 @@ final class StableValuesSafePublicationTest {
         @Override
         public void run() {
             StableValue<Holder> s;
+            long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
                 s = stables[i];
                 s.trySet(new Holder());
-                LockSupport.parkNanos(1000);
+                deadlineNs += 1000;
+                while (System.nanoTime() < deadlineNs) {
+                    Thread.onSpinWait();
+                }
             }
         }
     }
