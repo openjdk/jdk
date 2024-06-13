@@ -91,8 +91,8 @@ void NativeLibraryUnloadEvent::set_result(bool result) {
 }
 
 static void set_additional_data(EventNativeLibraryLoad& event, const NativeLibraryLoadEvent& helper) {
-  event.set_fpEnvCorrectionAttempt(helper.get_fp_env_correction_attempt());
-  event.set_fpEnvCorrectionSuccess(helper.get_fp_env_correction_success());
+  event.set_fpuCorrectionAttempt(helper.get_fp_env_correction_attempt());
+  event.set_fpuCorrectionSuccess(helper.get_fp_env_correction_success());
 }
 
 static void set_additional_data(EventNativeLibraryUnload& event, const NativeLibraryUnloadEvent& helper) {
