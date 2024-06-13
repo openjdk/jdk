@@ -1856,14 +1856,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-#if INCLUDE_RTM_OPT
-    } else if (c->tag() == NamedCounter::RTMLockingCounter) {
-      RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
-      if (rlc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        rlc->print_on(tty);
-      }
-#endif
     }
     c = c->next();
   }
@@ -1905,12 +1897,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     st.print("@%d", bci);
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
-  NamedCounter* c;
-  if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.freeze());
-  } else {
-    c = new NamedCounter(st.freeze(), tag);
-  }
+  NamedCounter* c = new NamedCounter(st.freeze(), tag);
 
   // atomically add the new counter to the head of the list.  We only
   // add counters so this is safe.

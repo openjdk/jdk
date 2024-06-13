@@ -362,6 +362,10 @@ public:
     }
   }
 
+  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
+
+  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -545,12 +549,6 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return &_arena; }
 
-  // should we align vector memory references on this platform?
-  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
-
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx) const;
-
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -600,13 +598,10 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
-
-  // Convert packs into vector node operations
-  bool output();
+  bool schedule_and_apply();
+  bool apply(Node_List& memops_schedule);
+  void apply_memops_reordering_with_schedule(Node_List& memops_schedule);
+  bool apply_vectorization();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
 
@@ -631,8 +626,6 @@ private:
 
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n) const;
-
-  static bool requires_long_to_int_conversion(int opc);
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
