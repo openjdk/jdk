@@ -188,6 +188,7 @@ public class IO {
 
 
     // adapted from https://junit.org/junit5/docs/current/user-guide/#extensions-lifecycle-callbacks-timing-extension
+    // remove after CODETOOLS-7903752 propagates to jtreg that this test is routinely run by
 
     public static class TimingExtension implements BeforeTestExecutionCallback,
             AfterTestExecutionCallback {
