@@ -44,6 +44,7 @@ private:
   bool                    _has_non_immed_oops;
   bool                    _unregistered;
   ShenandoahReentrantLock _lock;
+  ShenandoahReentrantLock _ic_lock;
 
 public:
   ShenandoahNMethod(nmethod *nm, GrowableArray<oop*>& oops, bool has_non_immed_oops);
@@ -51,6 +52,7 @@ public:
 
   inline nmethod* nm() const;
   inline ShenandoahReentrantLock* lock();
+  inline ShenandoahReentrantLock* ic_lock();
   inline void oops_do(OopClosure* oops, bool fix_relocations = false);
   // Update oops when the nmethod is re-registered
   void update();
@@ -59,6 +61,7 @@ public:
 
   static ShenandoahNMethod* for_nmethod(nmethod* nm);
   static inline ShenandoahReentrantLock* lock_for_nmethod(nmethod* nm);
+  static inline ShenandoahReentrantLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void heal_nmethod(nmethod* nm);
   static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);
@@ -119,7 +122,7 @@ public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);
   ~ShenandoahNMethodTableSnapshot();
 
-  void parallel_blobs_do(CodeBlobClosure *f);
+  void parallel_nmethods_do(NMethodClosure *f);
   void concurrent_nmethods_do(NMethodClosure* cl);
 };
 

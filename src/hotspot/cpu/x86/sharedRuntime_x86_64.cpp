@@ -1354,9 +1354,48 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ stop("Incorrect rsp at continuation_enter_cleanup");
   __ bind(L_good_sp);
 #endif
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // rax may hold an exception oop, save it before the call
+    __ push(rax);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    __ pop(rax);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
@@ -1441,8 +1480,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     // Make sure the call is patchable
     __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
     // Emit stub for static call
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1478,8 +1516,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
 
   // Emit stub for static call
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1921,13 +1958,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
-
-    if (UseRTMLocking) {
-      // Abort RTM transaction before calling JNI
-      // because critical section will be large and will be
-      // aborted anyway. Also nmethod could be deoptimized.
-      __ xabort(0);
-    }
 
 #ifdef ASSERT
   __ check_stack_alignment(rsp, "improperly aligned stack");
@@ -2884,11 +2914,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   address start = __ pc();
 
-  if (UseRTMLocking) {
-    // Abort RTM transaction before possible nmethod deoptimization.
-    __ xabort(0);
-  }
-
   // Push self-frame.  We get here with a return address on the
   // stack, so rsp is 8-byte aligned until we allocate our frame.
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog!
@@ -3074,13 +3099,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   int frame_size_in_words;
   bool cause_return = (poll_type == POLL_AT_RETURN);
   bool save_wide_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
-
-  if (UseRTMLocking) {
-    // Abort RTM transaction before calling runtime
-    // because critical section will be large and will be
-    // aborted anyway. Also nmethod could be deoptimized.
-    __ xabort(0);
-  }
 
   // Make room for return address (or push it again)
   if (!cause_return) {
@@ -3698,4 +3716,3 @@ void OptoRuntime::generate_exception_blob() {
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
 #endif // COMPILER2
-

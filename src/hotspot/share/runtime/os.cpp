@@ -75,6 +75,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
@@ -107,6 +108,16 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   va_end(args);
   assert(result >= 0, "os::snprintf error");
   assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
+  return result;
+}
+
+int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
+  // If an encoding error occurred (result < 0) then it's not clear
+  // whether the buffer is NUL terminated, so ensure it is.
+  if ((result < 0) && (len > 0)) {
+    buf[len - 1] = '\0';
+  }
   return result;
 }
 
@@ -1199,6 +1210,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#if !INCLUDE_ASAN
+
   bool accessible = is_readable_pointer(addr);
 
   // Check if addr is a JNI handle.
@@ -1253,7 +1266,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
-    Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
+    Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
     if (Klass::is_valid(k)) {
       st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));
@@ -1285,7 +1298,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#endif // !INCLUDE_ASAN
+
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
+
 }
 
 static bool is_pointer_bad(intptr_t* ptr) {
@@ -1705,6 +1721,13 @@ const char* os::errno_name(int e) {
   return errno_to_string(e, true);
 }
 
+// create binary file, rewriting existing file if required
+int os::create_binary_file(const char* path, bool rewrite_existing) {
+  int oflags = O_WRONLY | O_CREAT WINDOWS_ONLY(| O_BINARY);
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
+}
+
 #define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
 
 void os::trace_page_sizes(const char* str,
@@ -1912,7 +1935,11 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     return nullptr; // overflow
   }
 
-  char* const hi_att = align_down(MIN2(max, absolute_max) - bytes, alignment_adjusted);
+  char* const hi_end = MIN2(max, absolute_max);
+  if ((uintptr_t)hi_end < bytes) {
+    return nullptr; // no need to go on
+  }
+  char* const hi_att = align_down(hi_end - bytes, alignment_adjusted);
   if (hi_att > max) {
     return nullptr; // overflow
   }

@@ -407,31 +407,53 @@ public class SuperInitGood {
         }
     }
 
-    // local class declared before super(), but not used until after super()
+    // we allow 'this' reference prior to super() for field assignments only
     public static class Test20 {
-        public Test20() {
-            class Foo {
-                Foo() {
-                    Test20.this.hashCode();
-                }
-            }
+        private int x;
+        public Test20(short x) {
+            x = x;
             super();
-            new Foo();
+        }
+        public Test20(int x) {
+            this.x = x;
+            super();
+        }
+        public Test20(char x) {
+            Test20.this.x = x;
+            super();
+        }
+        public Test20(byte y) {
+            x = y;
+            this((int)y);
+            this.x++;
         }
     }
 
-    // local class inside super() parameter list
-    public static class Test21 extends AtomicReference<Object> {
-        private int x;
-        public Test21() {
-            super(switch ("foo".hashCode()) {
-                default -> {
-                    class Nested {{ System.out.println(x); }}       // class is NOT instantiated - OK
-                    yield "bar";
+    // allow creating and using local and anonymous classes before super()
+    // they will not have enclosing instances though
+    public static class Test21 {
+        public Test21(int x) {
+            Runnable r = new Runnable() {
+                public void run() {
+                    this.hashCode();
                 }
-            });
+            };
+            r.run();
+            super();
+            r.run();
+        }
+        public Test21(float x) {
+            class Foo {
+                public void bar() {
+                    this.hashCode();
+                }
+            };
+            new Foo().bar();
+            super();
+            new Foo().bar();
         }
     }
+
 
     public static void main(String[] args) {
         new Test0();
@@ -474,7 +496,8 @@ public class SuperInitGood {
             assert false : "unexpected exception: " + e;
         }
         new Test19(123);
-        new Test20();
-        new Test21();
+        new Test20(123);
+        new Test21((int)123);
+        new Test21((float)123);
     }
 }

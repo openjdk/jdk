@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 6274264 6274241 5070281
- * @summary test retransformClasses
- * @author Robert Field, Sun Microsystems
- *
- * @enablePreview
- * @modules java.instrument
- * @run shell/timeout=240 MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
- * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
  */
 
 import java.lang.constant.ClassDesc;
@@ -91,7 +79,7 @@ class RetransformAgent {
                                    .addMethodEntryInjection(
                                         nname,
                                         cb -> {
-                                           cb.constantInstruction(fixedIndex);
+                                           cb.loadConstant(fixedIndex);
                                            cb.invokestatic(
                                                    CD_RetransformAgent,
                                                    "callTracker", MTD_void_int);

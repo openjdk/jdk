@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,6 @@ public class Binder extends DebugeeBinder {
      */
     public Debugee makeLocalDebugee(Process process) {
         LocalLaunchedDebugee debugee = new LocalLaunchedDebugee(process, this);
-
-        debugee.registerCleanup();
         return debugee;
     }
 
@@ -187,8 +185,7 @@ public class Binder extends DebugeeBinder {
 
         Debugee debugee = null;
 
-        String classPath = null;
-//        classPath = System.getProperty("java.class.path");
+        String classPath = System.getProperty("test.class.path");
 
         prepareForPipeConnection(argumentHandler);
 
@@ -755,11 +752,9 @@ public class Binder extends DebugeeBinder {
             vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }
 
-/*
-        if (classPath != null) {
+        if (classPath != null && !vmArgs.contains("-cp") && !vmArgs.contains("-classpath")) {
             vmArgs += " -classpath " + quote + classPath + quote;
         }
- */
 
         if (vmArgs.length() > 0) {
             arg = (Connector.StringArgument) arguments.get("options");
@@ -939,9 +934,6 @@ public class Binder extends DebugeeBinder {
         }
 
         RemoteLaunchedDebugee debugee = new RemoteLaunchedDebugee(this);
-
-        debugee.registerCleanup();
-
         return debugee;
     }
 
@@ -952,9 +944,6 @@ public class Binder extends DebugeeBinder {
     protected ManualLaunchedDebugee startManualDebugee(String cmd) {
         ManualLaunchedDebugee debugee = new ManualLaunchedDebugee(this);
         debugee.launchDebugee(cmd);
-
-        debugee.registerCleanup();
-
         return debugee;
     }
 

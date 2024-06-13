@@ -38,6 +38,7 @@ struct ZNMethodDataBarrier {
 class ZNMethodData : public CHeapObj<mtGC> {
 private:
   ZReentrantLock              _lock;
+  ZReentrantLock              _ic_lock;
   ZArray<ZNMethodDataBarrier> _barriers;
   ZArray<oop*>                _immediate_oops;
   bool                        _has_non_immediate_oops;
@@ -46,6 +47,7 @@ public:
   ZNMethodData();
 
   ZReentrantLock* lock();
+  ZReentrantLock* ic_lock();
 
   const ZArray<ZNMethodDataBarrier>* barriers() const;
   const ZArray<oop*>* immediate_oops() const;

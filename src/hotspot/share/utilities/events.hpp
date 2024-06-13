@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ template <class T> class EventLogBase : public EventLog {
   EventRecord<T>* _records;
 
  public:
-  EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
+  EventLogBase(const char* name, const char* handle, int length = LogEventsBufferEntries):
     _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
@@ -220,6 +220,12 @@ class Events : AllStatic {
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;
 
+  // A log for memory protection related messages
+  static StringEventLog* _memprotect_messages;
+
+  // A log for nmethod flush operations
+  static StringEventLog* _nmethod_flush_messages;
+
   // A log for VM Operations
   static StringEventLog* _vm_operations;
 
@@ -259,6 +265,10 @@ class Events : AllStatic {
   // Logs a generic message with timestamp and format as printf.
   static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
+  static void log_memprotect(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_nmethod_flush(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
   static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_zgc_phase_switch(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
@@ -286,6 +296,24 @@ inline void Events::log(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_memprotect(Thread* thread, const char* format, ...) {
+  if (LogEvents && _memprotect_messages != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _memprotect_messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_nmethod_flush(Thread* thread, const char* format, ...) {
+  if (LogEvents && _nmethod_flush_messages != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _nmethod_flush_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }

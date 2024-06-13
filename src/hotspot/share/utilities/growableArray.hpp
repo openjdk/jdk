@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ public:
 };
 
 template <typename E> class GrowableArrayIterator;
-template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator;
 
 // Extends GrowableArrayBase with a typed data array.
 //
@@ -118,13 +117,13 @@ class GrowableArrayView : public GrowableArrayBase {
 protected:
   E* _data; // data array
 
-  GrowableArrayView<E>(E* data, int capacity, int initial_len) :
+  GrowableArrayView(E* data, int capacity, int initial_len) :
       GrowableArrayBase(capacity, initial_len), _data(data) {}
 
   ~GrowableArrayView() {}
 
 public:
-  bool operator==(const GrowableArrayView<E>& rhs) const {
+  bool operator==(const GrowableArrayView& rhs) const {
     if (_len != rhs._len)
       return false;
     for (int i = 0; i < _len; i++) {
@@ -135,7 +134,7 @@ public:
     return true;
   }
 
-  bool operator!=(const GrowableArrayView<E>& rhs) const {
+  bool operator!=(const GrowableArrayView& rhs) const {
     return !(*this == rhs);
   }
 
@@ -154,17 +153,31 @@ public:
     return &_data[i];
   }
 
-  E first() const {
+  E& first() {
     assert(_len > 0, "empty");
     return _data[0];
   }
 
-  E top() const {
+  E const& first() const {
     assert(_len > 0, "empty");
-    return _data[_len-1];
+    return _data[0];
   }
 
-  E last() const {
+  E& top() {
+    assert(_len > 0, "empty");
+    return _data[_len - 1];
+  }
+
+  E const& top() const {
+    assert(_len > 0, "empty");
+    return _data[_len - 1];
+  }
+
+  E& last() {
+    return top();
+  }
+
+  E const& last() const {
     return top();
   }
 
@@ -288,10 +301,12 @@ public:
   }
 
   void sort(int f(E*, E*)) {
+    if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
   }
   // sort by fixed-stride sub arrays:
   void sort(int f(E*, E*), int stride) {
+    if (_data == nullptr) return;
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
@@ -352,7 +367,7 @@ template <typename E>
 class GrowableArrayFromArray : public GrowableArrayView<E> {
 public:
 
-  GrowableArrayFromArray<E>(E* data, int len) :
+  GrowableArrayFromArray(E* data, int len) :
     GrowableArrayView<E>(data, len, len) {}
 };
 
@@ -409,7 +424,7 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  E at_grow(int i, const E& fill = E()) {
+  E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
@@ -487,7 +502,7 @@ public:
     return this->at(location);
   }
 
-  void swap(GrowableArrayWithAllocator<E, Derived>* other) {
+  void swap(GrowableArrayWithAllocator* other) {
     ::swap(this->_data, other->_data);
     ::swap(this->_len, other->_len);
     ::swap(this->_capacity, other->_capacity);
@@ -689,8 +704,8 @@ public:
 //  See: init_checks.
 
 template <typename E>
-class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
-  friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
+class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
+  friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
 
   static E* allocate(int max) {
@@ -738,7 +753,7 @@ public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
 
   explicit GrowableArray(int initial_capacity) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+      GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity),
           initial_capacity),
       _metadata() {
@@ -746,7 +761,7 @@ public:
   }
 
   GrowableArray(int initial_capacity, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+      GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity, memflags),
           initial_capacity),
       _metadata(memflags) {
@@ -754,7 +769,7 @@ public:
   }
 
   GrowableArray(int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+      GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity),
           initial_capacity, initial_len, filler),
       _metadata() {
@@ -762,7 +777,7 @@ public:
   }
 
   GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+      GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity, memflags),
           initial_capacity, initial_len, filler),
       _metadata(memflags) {
@@ -770,7 +785,7 @@ public:
   }
 
   GrowableArray(Arena* arena, int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+      GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity, arena),
           initial_capacity, initial_len, filler),
       _metadata(arena) {
@@ -841,7 +856,6 @@ public:
 template <typename E>
 class GrowableArrayIterator : public StackObj {
   friend class GrowableArrayView<E>;
-  template <typename F, typename UnaryPredicate> friend class GrowableArrayFilterIterator;
 
  private:
   const GrowableArrayView<E>* _array; // GrowableArray we iterate over
@@ -854,65 +868,15 @@ class GrowableArrayIterator : public StackObj {
 
  public:
   GrowableArrayIterator() : _array(nullptr), _position(0) { }
-  GrowableArrayIterator<E>& operator++() { ++_position; return *this; }
-  E operator*()                          { return _array->at(_position); }
+  GrowableArrayIterator& operator++() { ++_position; return *this; }
+  E operator*()                       { return _array->at(_position); }
 
-  bool operator==(const GrowableArrayIterator<E>& rhs)  {
+  bool operator==(const GrowableArrayIterator& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position == rhs._position;
   }
 
-  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
-    assert(_array == rhs._array, "iterator belongs to different array");
-    return _position != rhs._position;
-  }
-};
-
-// Custom STL-style iterator to iterate over elements of a GrowableArray that satisfy a given predicate
-template <typename E, class UnaryPredicate>
-class GrowableArrayFilterIterator : public StackObj {
-  friend class GrowableArrayView<E>;
-
- private:
-  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
-  int _position;                      // Current position in the GrowableArray
-  UnaryPredicate _predicate;          // Unary predicate the elements of the GrowableArray should satisfy
-
- public:
-  GrowableArrayFilterIterator(const GrowableArrayIterator<E>& begin, UnaryPredicate filter_predicate) :
-      _array(begin._array), _position(begin._position), _predicate(filter_predicate) {
-    // Advance to first element satisfying the predicate
-    while(_position != _array->length() && !_predicate(_array->at(_position))) {
-      ++_position;
-    }
-  }
-
-  GrowableArrayFilterIterator<E, UnaryPredicate>& operator++() {
-    do {
-      // Advance to next element satisfying the predicate
-      ++_position;
-    } while(_position != _array->length() && !_predicate(_array->at(_position)));
-    return *this;
-  }
-
-  E operator*() { return _array->at(_position); }
-
-  bool operator==(const GrowableArrayIterator<E>& rhs)  {
-    assert(_array == rhs._array, "iterator belongs to different array");
-    return _position == rhs._position;
-  }
-
-  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
-    assert(_array == rhs._array, "iterator belongs to different array");
-    return _position != rhs._position;
-  }
-
-  bool operator==(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
-    assert(_array == rhs._array, "iterator belongs to different array");
-    return _position == rhs._position;
-  }
-
-  bool operator!=(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+  bool operator!=(const GrowableArrayIterator& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position != rhs._position;
   }

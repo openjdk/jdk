@@ -34,11 +34,13 @@ import java.util.HashMap;
 import sun.print.IPPPrintService;
 import sun.print.CustomMediaSizeName;
 import sun.print.CustomMediaTray;
+import sun.print.CustomOutputBin;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.Attribute;
@@ -60,6 +62,7 @@ public class CUPSPrinter  {
     // CUPS does not support multi-threading.
     private static synchronized native String[] getMedia(String printer);
     private static synchronized native float[] getPageSizes(String printer);
+    private static synchronized native String[] getOutputBins(String printer);
     private static synchronized native void
         getResolutions(String printer, ArrayList<Integer> resolutionList);
     //public static boolean useIPPMedia = false; will be used later
@@ -68,10 +71,12 @@ public class CUPSPrinter  {
     private MediaSizeName[] cupsMediaSNames;
     private CustomMediaSizeName[] cupsCustomMediaSNames;
     private MediaTray[] cupsMediaTrays;
+    private OutputBin[] cupsOutputBins;
 
     public  int nPageSizes = 0;
     public  int nTrays = 0;
     private  String[] media;
+    private  String[] outputBins;
     private  float[] pageSizes;
     int[]   resolutionsArray;
     private String printer;
@@ -144,6 +149,8 @@ public class CUPSPrinter  {
             for (int i=0; i < resolutionList.size(); i++) {
                 resolutionsArray[i] = resolutionList.get(i);
             }
+
+            outputBins = getOutputBins(printer);
         }
     }
 
@@ -183,6 +190,14 @@ public class CUPSPrinter  {
     MediaTray[] getMediaTrays() {
         initMedia();
         return cupsMediaTrays;
+    }
+
+    /**
+     * Returns array of OutputBins derived from PPD.
+     */
+    OutputBin[] getOutputBins() {
+        initMedia();
+        return cupsOutputBins;
     }
 
     /**
@@ -261,6 +276,15 @@ public class CUPSPrinter  {
             cupsMediaTrays[i] = mt;
         }
 
+        if (outputBins == null) {
+            cupsOutputBins = new OutputBin[0];
+        } else {
+            int nBins = outputBins.length / 2;
+            cupsOutputBins = new OutputBin[nBins];
+            for (int i = 0; i < nBins; i++) {
+                cupsOutputBins[i] = CustomOutputBin.createOutputBin(outputBins[i*2], outputBins[i*2+1]);
+            }
+        }
     }
 
     /**
