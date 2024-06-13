@@ -785,13 +785,13 @@ public class TestSearch extends JavadocTester {
                     notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-labelledby="all-classes-table-tab0">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,
                 """
                     <div class="caption"><span>Package Summary</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     """);

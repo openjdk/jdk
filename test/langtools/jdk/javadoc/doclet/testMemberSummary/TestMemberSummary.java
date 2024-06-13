@@ -70,7 +70,7 @@ public class TestMemberSummary extends JavadocTester {
 
         checkOutput("pkg/PrivateParent.html", true,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private </code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
                     " class="member-name-link">PrivateParent</a><wbr>(int&nbsp;i)</code></div>""");
 
@@ -92,89 +92,89 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg3/Members.html", true,
                 """
                     <div class="caption"><span>Nested Classes</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private static @interface&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private static @interface&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.A.html" class="type-name-link" title="annotation interface in pkg3">Members.A</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
-                    <div class="col-first odd-row-color" role="tablist" tabindex="0"><code>private static final class&nbsp;</code></div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
+                    <div class="col-first odd-row-color" role="row" tabindex="0"><code>private static final class&nbsp;</code></div>
                     <div class="col-second odd-row-color"><code><a href="Members.C.html" class="type-name-link" title="class in pkg3">Members.C</a></code></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private static enum&nbsp;</code></div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private static enum&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.E.html" class="type-name-link" title="enum class in pkg3">Members.E</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
-                    <div class="col-first odd-row-color" role="tablist" tabindex="0"><code>private static interface&nbsp;</code></div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
+                    <div class="col-first odd-row-color" role="row" tabindex="0"><code>private static interface&nbsp;</code></div>
                     <div class="col-second odd-row-color"><code><a href="Members.I.html" class="type-name-link" title="interface in pkg3">Members.I</a></code></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private static final record&nbsp;</code></div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private static final record&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.R.html" class="type-name-link" title="class in pkg3">Members.R</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""",
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Field</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private static final int</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private static final int</code></div>
                     <div class="col-second even-row-color"><code><a href="#F" class="member-name-link">F</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""",
                 """
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier</div>
                     <div class="table-header col-second">Constructor</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private </code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E()" class="member-name-link">Members</a>()</code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """);
         checkOutput("pkg3/Members.A.html", true,
                 """
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Required Element</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>int</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>int</code></div>
                     <div class="col-second even-row-color"><code><a href="#v()" class="member-name-link">v</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""",
                 """
                     <div class="caption"><span>Optional Elements</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Optional Element</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>java.lang.String</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="#s()" class="member-name-link">s</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """);
         checkOutput("pkg3/Members.E.html", true,
                 """
                     <h2>Enum Constant Summary</h2>
                     <div class="caption"><span>Enum Constants</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Enum Constant</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><code><a href="#C" class="member-name-link">C</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("pkg3/Members.R.html", true,
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Field</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private final int</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>private final int</code></div>
                     <div class="col-second even-row-color"><code><a href="#i" class="member-name-link">i</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">The field for the <code>i</code> record component.</div>
                     </div>""");
     }

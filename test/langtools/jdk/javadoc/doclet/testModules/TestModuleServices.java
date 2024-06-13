@@ -158,19 +158,19 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">Provides a service whose name is ServiceProvider.</div>""");
         checkOutput("moduleServiceProviderNoDescription/module-summary.html", true,
                 """
                     <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">A service Interface for service providers.</div>""");
         checkOutput("moduleServiceUser/module-summary.html", true,
                 """
                     <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">If no other provider is found, a default internal implementat\
                     ion will be used.</div>""");
         checkOutput("moduleServiceUserNoDescription/module-summary.html", true,
@@ -229,13 +229,13 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="p1/B.html" title="class in p1">B</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """);
 
@@ -264,11 +264,11 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """);
 
@@ -327,7 +327,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
@@ -366,11 +366,11 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">abc</div>
                     </div>
                     </div>
@@ -409,22 +409,22 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">abc</div>
                     </div>
                     </div>
                     """,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p2/B.html" title="class in p2">B</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">def</div>
                     </div>
                     </div>

@@ -85,6 +85,6 @@ public class TestEmptyInheritDoc extends JavadocTester {
                    method-summary-table-tab2 method-summary-table-tab4"><code>\
                    <a href="#act()" class="member-name-link">act</a>()</code></div>
                    <div class="col-last even-row-color method-summary-table \
-                   method-summary-table-tab2 method-summary-table-tab4" role="tablist" tabindex="0"></div>""");
+                   method-summary-table-tab2 method-summary-table-tab4" role="row" tabindex="0"></div>""");
     }
 }

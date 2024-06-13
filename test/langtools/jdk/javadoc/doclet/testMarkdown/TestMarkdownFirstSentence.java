@@ -257,7 +257,7 @@ public class TestMarkdownFirstSentence extends JavadocTester {
                 """
                     <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C.html" title="clas\
                     s in p">C</a></div>
-                    <div class="col-last even-row-color class-summary class-summary-tab2" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color class-summary class-summary-tab2" role="row" tabindex="0">
                     <div class="block">This is the class description.</div>
                     </div>""");
 

@@ -170,7 +170,7 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 "Indirect Opens",
                 """
                     <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">opensto</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">opensto</div>
                     </div>
                     """);
     }
@@ -197,7 +197,7 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 """
                     <div class="caption"><span>""" + typeString + """
                     </span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">From</div>
                     <div class="table-header col-last">Packages</div>
                     <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>

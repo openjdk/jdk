@@ -67,80 +67,80 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="s1/package-summary.html">t.p1.s1</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="s2/package-summary.html">t.p1.s2</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color"><a href="s3/package-summary.html">t.p1.s3</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p1/s1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="../s2/package-summary.html">t.p1.s2</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color"><a href="../s3/package-summary.html">t.p1.s3</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p1/s2/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="../s1/package-summary.html">t.p1.s1</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color"><a href="../s3/package-summary.html">t.p1.s3</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p1/s3/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="t1/package-summary.html">t.p1.s3.t1</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color"><a href="t2/package-summary.html">t.p1.s3.t2</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="../s1/package-summary.html">t.p1.s1</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color"><a href="../s2/package-summary.html">t.p1.s2</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p1/s3/t1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1.s3</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="../t2/package-summary.html">t.p1.s3.t2</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p1/s3/t2/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1.s3</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color"><a href="../t1/package-summary.html">t.p1.s3.t1</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
         checkOutput("t/p2/package-summary.html", false,
                 """
@@ -171,56 +171,56 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("m/pkg/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary">
+                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
                         <div class="col-plain even-row-color"><a href="../module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="sub1/package-summary.html">pkg.sub1</a></div>
-                        <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                         <div class="col-plain odd-row-color"><a href="../../o/module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
-                        <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                         </div>""");
         checkOutput("m/pkg/sub1/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary">
+                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
                         <div class="col-plain even-row-color"><a href="../../module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../package-summary.html">pkg</a></div>
-                        <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                         <div class="col-plain odd-row-color"><a href="../../../o/module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="../../../o/pkg/sub2/package-summary.html">pkg.sub2</a></div>
-                        <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                         </div>""");
         checkOutput("o/pkg/sub2/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary">
+                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
                         <div class="col-plain even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../../../m/pkg/package-summary.html">pkg</a></div>
-                        <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                         <div class="col-plain odd-row-color"><a href="../../module-summary.html">o</a></div>
                         <div class="col-first odd-row-color"><a href="sub/package-summary.html">pkg.sub2.sub</a></div>
-                        <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>
                         <div class="col-plain even-row-color"><a href="../../../m/module-summary.html">m</a></div>
                         <div class="col-first even-row-color"><a href="../../../m/pkg/sub1/package-summary.html">pkg.sub1</a></div>
-                        <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                         </div>""");
         checkOutput("o/pkg/sub2/sub/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table two-column-summary">
+                        <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                         <div class="table-header col-first">Package</div>
                         <div class="table-header col-last">Description</div>
                         <div class="col-first even-row-color"><a href="../package-summary.html">pkg.sub2</a></div>
-                        <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                        <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                         </div>""");
     }
 

@@ -82,7 +82,7 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary" role="grid" aria-labelledby="constructor-summary-table-tab0">
+                <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                 <div class="table-header col-first">Constructor</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-constructor-name even-row-color"><code>\
@@ -188,7 +188,7 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary" role="grid" aria-labelledby="caption-summary-table-tab0">
+                <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                 <div class="table-header col-first">Constructor</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-constructor-name even-row-color"><code>\

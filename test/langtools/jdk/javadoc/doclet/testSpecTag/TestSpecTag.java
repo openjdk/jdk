@@ -91,7 +91,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">label</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">label</div>
                     <div class="col-last even-row-color">
                     <ul class="ref-list">
                     <li><code><a href="p/C.html#label">class p.C</a></code></li>
@@ -355,7 +355,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <div class="table-tabs" role="row" aria-orientation="horizontal">\
                     <button id="external-specs-tab0" role="tab" aria-selected="true" aria-controls="external-specs.tabpanel" \
                     tabindex="0" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs', 2)" \
                     class="active-table-tab">All Specifications</button>\
@@ -366,7 +366,7 @@ public class TestSpecTag extends JavadocTester {
                     tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
                     class="table-tab">example.net</button></div>
                     <div id="external-specs.tabpanel" role="tabpanel" aria-labelledby="external-specs-tab0">
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-labelledby="external-specs-tab0">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>""",
                 """
@@ -457,7 +457,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>
                     <div class="col-first even-row-color"><a href="http://example.com/index.html">abc def</a></div>

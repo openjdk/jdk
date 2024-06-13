@@ -609,7 +609,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
         checkOutput("typeannos/RepeatingOnField.html", true,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>(package private) java.lang.Integer</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>(package private) java.lang.Integer</code></div>
                     <div class="col-second even-row-color"><code><a href="#i1" class="member-name-li\
                     nk">i1</a></code></div>""",
 
@@ -621,7 +621,7 @@ public class TestTypeAnnotations extends JavadocTester {
                     annotation interface in typeannos">@RepTypeUseB</a> java.lang.Integer</code></div>
                     <div class="col-second odd-row-color"><code><a href="\
                     #i2" class="member-name-link">i2</a></code></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last odd-row-color" role="row" tabindex="0">&nbsp;</div>""",
 
                 """
                     <div class="col-first even-row-color"><code>(package private) <a href="RepTypeUseA.ht\

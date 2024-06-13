@@ -94,7 +94,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-required-element-summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="member-summary-table-tab0">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Required Element</div>
                     <div class="table-header col-last">Description</div>
@@ -109,7 +109,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-optional-element-summary">
                     <h2>Optional Element Summary</h2>
                     <div class="caption"><span>Optional Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="member-summary-table-tab0">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Optional Element</div>
                     <div class="table-header col-last">Description</div>

@@ -441,16 +441,16 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="caption"><span>Method parameters in <a href="../package-summary.htm\
                     l">pkg2</a> with type arguments of type <a href="../Foo4.html" title="class in\
                      pkg2">Foo4</a></span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>void</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>void</code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t3.</span><code><a href="../ClassUseTest3.html#method(java.util.Set)" class="mem\
                     ber-name-link">method</a><wbr>(java.util.Set&lt;<a href="../Foo4.html" title="cl\
                     ass in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="caption"><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
                     /a> with type arguments of type <a href="../Foo4.html" title="class in pkg2">Foo\

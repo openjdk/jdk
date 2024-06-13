@@ -214,7 +214,7 @@ public class TestLists extends JavadocTester {
                     <section class="field-summary" id="field-summary">
                     <h2>Field Summary</h2>
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary">""",
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
                 """
                     </section>
                     </li>
@@ -223,7 +223,7 @@ public class TestLists extends JavadocTester {
                     <section class="constructor-summary" id="constructor-summary">
                     <h2>Constructor Summary</h2>
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
 
         checkOutput("p/E.html", true,
                 """
@@ -234,7 +234,7 @@ public class TestLists extends JavadocTester {
                     <section class="constants-summary" id="enum-constant-summary">
                     <h2>Enum Constant Summary</h2>
                     <div class="caption"><span>Enum Constants</span></div>
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
 
         checkOutput("p/A.html", true,
                 """
@@ -245,7 +245,7 @@ public class TestLists extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-required-element-summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary">""");
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
 
     }
 }

@@ -526,7 +526,7 @@ public class TestModules extends JavadocTester {
                     <div class="block">The overview summary page header.</div>
                     <div id="all-modules-table">
                     <div class="caption"><span>Modules</span></div>
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
         checkOutput("index.html", false,
                 """
                     </div>
@@ -536,7 +536,7 @@ public class TestModules extends JavadocTester {
                     </div>
                     <div id="all-modules-table">
                     <div class="caption"><span>Modules</span></div>
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
     }
 
     void checkHtml5NoDescription(boolean found) {
@@ -662,7 +662,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div id="all-modules-table">
                     <div class="caption"><span>Modules</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Module</div>
                     <div class="table-header col-last">Description</div>
                     """);
@@ -670,7 +670,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div id="all-modules-table">
                     <div class="caption"><span>Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     """);
@@ -705,7 +705,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>""",
                 """
@@ -716,7 +716,7 @@ public class TestModules extends JavadocTester {
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
     }
 
     void checkModuleSummary() {
@@ -734,15 +734,15 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <section class="packages-summary" id="packages-summary">
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>
                     """);
@@ -759,7 +759,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">&nbsp;</div>
                     </div>""",
                 """
                     <!-- ============ PACKAGES SUMMARY =========== -->
@@ -770,22 +770,22 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.ht\
                     ml" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     </div>""",
                 """
                     <div class="caption"><span>Opens</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>""");
     }
@@ -801,14 +801,14 @@ public class TestModules extends JavadocTester {
                     ase <span id="searchphrase" class="search-tag-result">search phrase</span>. Make\
                      sure there are no exported packages.</div>""",
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>
                     </div>
-                    <div class="col-first odd-row-color" role="tablist" tabindex="0">transitive</div>
+                    <div class="col-first odd-row-color" role="row" tabindex="0">transitive</div>
                     <div class="col-second odd-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""");
     }
@@ -877,12 +877,12 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color all-modules-table all-modules-table-tab1"><\
                     a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color all-modules-table all-modules-table-tab1" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""",
                 """
                     <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a\
                      href="moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>""",
                 """
                     <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a\
@@ -919,31 +919,31 @@ public class TestModules extends JavadocTester {
                     </ol>""",
                 """
                     <div class="caption"><span>Indirect Requires</span></div>
-                    <div class="details-table three-column-summary">""",
+                    <div class="details-table three-column-summary" role="grid" aria-label="details-table">""",
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""",
                 """
                     <div class="caption"><span>Indirect Exports</span></div>
-                    <div class="details-table two-column-summary">""",
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">""",
                 """
                     <div class="caption"><span>Requires</span></div>
-                    <div class="details-table three-column-summary">
+                    <div class="details-table three-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Modifier</div>
                     <div class="table-header col-second">Module</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Indirect Requires</span></div>
-                    <div class="details-table three-column-summary">
+                    <div class="details-table three-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">Modifier</div>
                     <div class="table-header col-second">Module</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div class="caption"><span>Indirect Opens</span></div>
-                    <div class="details-table two-column-summary">
+                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
                     <div class="table-header col-first">From</div>
                     <div class="table-header col-last">Packages</div>""",
                 """
@@ -957,7 +957,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""");
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <ol class="toc-list">
@@ -968,16 +968,16 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <div id="package-summary-table">
                     <div class="caption"><span>Opens</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     </div>""",
                 """
@@ -988,22 +988,22 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive static</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">transitive static</div>
                     <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
     void checkModuleModeAll(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
-                    <div class="col-second even-row-color" role="tablist" tabindex="0">java.base</div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-first even-row-color" role="row" tabindex="0"> </div>
+                    <div class="col-second even-row-color" role="row" tabindex="0">java.base</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""",
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"> </div>
                     <div class="col-second even-row-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleC module.</div>
                     </div>""",
                 """
@@ -1012,8 +1012,8 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first odd-row-color package-summary-table package-summary-table-\
                     tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-second odd-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">All Modules</div>
-                    <div class="col-last odd-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-second odd-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">All Modules</div>
+                    <div class="col-last odd-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
@@ -1033,8 +1033,8 @@ public class TestModules extends JavadocTester {
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab3"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div\
                     >
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab3" role="tablist" tabindex="0">None</div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>""");
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab3" role="row" tabindex="0">None</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab3" role="row" tabindex="0">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <ol class="toc-list">
@@ -1046,17 +1046,17 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">None</div>
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">All Modules</div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">None</div>
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">All Modules</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="row" tabindex="0">&nbsp;</div>""",
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
-                    <div class="col-second even-row-color" role="tablist" tabindex="0">java.base</div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-first even-row-color" role="row" tabindex="0"> </div>
+                    <div class="col-second even-row-color" role="row" tabindex="0">java.base</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClass2InModuleB.html"\
                      title="class in testpkgmdlB">TestClass2InModuleB</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="col-first even-row-color"><a href="testpkg2mdlB/TestInterface2InModuleB.h\
                     tml" title="interface in testpkg2mdlB">TestInterface2InModuleB</a></div>
@@ -1093,15 +1093,15 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleC/module-summary.html", found,
                 """
                     <div class="caption"><span>Exports</span></div>
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-second">Exported To Modules</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first odd-row-color" role="tablist" tabindex="0">transitive static</div>
+                    <div class="col-first odd-row-color" role="row" tabindex="0">transitive static</div>
                     <div class="col-second odd-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color" role="row" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
@@ -1120,7 +1120,7 @@ public class TestModules extends JavadocTester {
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">This module is deprecated.</div>""");
         checkOutput("moduleB/module-summary.html", !found,
                 """
@@ -1190,7 +1190,7 @@ public class TestModules extends JavadocTester {
                     her Modules</button>\
                     </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel" aria-labelledby="all-modules-table-tab0">
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-labelledby="all-modules-table-tab0">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1271,7 +1271,7 @@ public class TestModules extends JavadocTester {
                     ackage Group 1</button>\
                     </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel" aria-labelledby="all-packages-table-tab0">
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" role="grid" aria-labelledby="all-packages-table-tab0">""");
     }
 
     void checkGroupOptionPackageOrdering() {
@@ -1348,12 +1348,12 @@ public class TestModules extends JavadocTester {
                 """
                     div id="package-summary-table">
                     <div class="caption"><span>Exports</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color package-summary-table package-summary-table-tab1">\
                     <a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     </div>
                     """);
@@ -1415,18 +1415,18 @@ public class TestModules extends JavadocTester {
         checkOutput("allpackages-index.html", true,
                 """
                     <div class="caption"><span>Package Summary</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     """);
         checkOutput("allclasses-index.html", found,
                 """
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     """);
         checkOutput("allpackages-index.html", found,
                 """
                     <div class="caption"><span>Package Summary</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
                     """);
         checkOutput("allclasses-index.html", !found,
                 """

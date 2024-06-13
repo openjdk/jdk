@@ -136,7 +136,7 @@ public class TestUseOption extends JavadocTester {
                 Subinterfaces of <a href="../UsedInterface.html" title="interface in pkg1">UsedI\
                 nterface</a> in <a href="../package-summary.html">pkg1""",
             """
-                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>interface&nbsp;</code></div>
+                <div class="col-first even-row-color" role="row" tabindex="0"><code>interface&nbsp;</code></div>
                 <div class="col-second even-row-color"><code><a href="\
                 ../SubInterface.html" class="type-name-link" title="interface in pkg1">SubInterface</a>&lt;T&gt;\
                 </code></div>"""
@@ -146,7 +146,7 @@ public class TestUseOption extends JavadocTester {
                 Methods in <a href="../package-summary.html">pkg1</a> that throw <a href="../Use\
                 dThrowable.html" title="class in pkg1">UsedThrowable</a>""",
             """
-                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>void</code></div>
+                <div class="col-first even-row-color" role="row" tabindex="0"><code>void</code></div>
                 <div class="col-second even-row-color"><span class="type-name-label">C1.</span><code>\
                 <a href="../C1.html#methodInC1ThrowsThrowable()" class="member-name-link">\
                 methodInC1ThrowsThrowable</a>()</code></div>"""
@@ -177,7 +177,7 @@ public class TestUseOption extends JavadocTester {
                     <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed-package">UsedInC</a></div>""",
                 """
                     <div class="col-first even-row-color"><a href="#unnamed-package">Unnamed Package</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>"""
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>"""
         );
     }
 
@@ -235,14 +235,14 @@ public class TestUseOption extends JavadocTester {
                     in <a href="../package-summary.html">Unnamed Package</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>class&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>class&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
                     title="class in Unnamed Package">Two</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """,
                 """
@@ -251,13 +251,13 @@ public class TestUseOption extends JavadocTester {
                     in <a href="../package-summary.html">Unnamed Package</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Interface</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>interface&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>interface&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Three.html" class="type-name-link" title="interface in Unnamed Package">Three</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """,
                 """
@@ -266,14 +266,14 @@ public class TestUseOption extends JavadocTester {
                     <a href="../One.html" title="class in Unnamed Package">One</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary">
+                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>class&nbsp;</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>class&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
                     title="class in Unnamed Package">Two</a></code></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                    <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>
                     """);
     }
