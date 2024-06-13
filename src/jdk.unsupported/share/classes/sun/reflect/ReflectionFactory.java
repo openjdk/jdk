@@ -287,9 +287,8 @@ public class ReflectionFactory {
                 throw new InternalError("Not an instance field");
             }
             if ((field.getModifiers() & Modifier.FINAL) != 0) {
-                // todo: there seems to be no way to properly access check here
-                //lookup.accessField(declaringClass, name);
-                lookup.accessClass(cl);
+                // acquire the getter to satisfy access checking
+                lookup.unreflectGetter(field);
                 field.setAccessible(true);
                 return lookup.unreflectSetter(field);
             } else {
