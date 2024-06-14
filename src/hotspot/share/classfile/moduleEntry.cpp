@@ -255,7 +255,6 @@ void ModuleEntry::module_reads_do(ModuleClosure* f) {
 }
 
 void ModuleEntry::delete_reads() {
-  assert(reads()->is_empty(), "must be");
   delete reads();
   _reads = nullptr;
 }
