@@ -84,11 +84,11 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-labelledby="class-summary-tab0">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-labelledby="class-summary-tab0">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,

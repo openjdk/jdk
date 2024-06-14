@@ -229,7 +229,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
@@ -264,7 +264,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
@@ -327,7 +327,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
@@ -366,7 +366,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
@@ -409,7 +409,7 @@ public class TestModuleServices extends JavadocTester {
         checkOutput("m/module-summary.html", true,
                 """
                     <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
@@ -420,7 +420,7 @@ public class TestModuleServices extends JavadocTester {
                     """,
                 """
                     <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">Type</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="p2/B.html" title="class in p2">B</a></div>

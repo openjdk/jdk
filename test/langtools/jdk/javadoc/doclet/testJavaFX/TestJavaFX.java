@@ -195,7 +195,7 @@ public class TestJavaFX extends JavadocTester {
                     <section class="property-summary" id="property-summary">
                     <h2>Property Summary</h2>
                     <div class="caption"><span>Properties</span></div>
-                    <div class="summary-table three-column-summary">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <div class="col-first even-row-color"><code>final <a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></div>
                     """,
@@ -208,7 +208,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <h2>Property Summary</h2>
                     <div id="method-summary-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <div class="table-tabs" role="row" aria-orientation="horizontal">\
                     <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
                     rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
                     nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
@@ -367,7 +367,7 @@ public class TestJavaFX extends JavadocTester {
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
+                    ab2 method-summary-table-tab4" role="row" tabindex="0"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#alphaProperty(java.util.List)" c\
                     lass="member-name-link">alphaProperty</a><wbr>(java.util.List&lt;T&gt;&nbsp;foo)\

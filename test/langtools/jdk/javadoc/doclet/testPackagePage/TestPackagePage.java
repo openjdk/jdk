@@ -88,7 +88,7 @@ public class TestPackagePage extends JavadocTester {
                 """
                     <div id="all-classes-table">
                     <div class="caption"><span>Classes</span></div>
-                    <div class="summary-table two-column-summary role="table" aria-label="summary-table"">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>
                     """);

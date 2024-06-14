@@ -77,7 +77,7 @@ public class TestSystemPropertyPage extends JavadocTester {
 
                 """
                     <div class="caption"><span>System Properties Summary</span></div>
-                    <div class="summary-table two-column-summary">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Property</div>
                     <div class="table-header col-last">Referenced In</div>
                     <div class="col-first even-row-color" role="tablist" tabindex="0">user.address</div>

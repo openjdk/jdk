@@ -197,7 +197,7 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 """
                     <div class="caption"><span>""" + typeString + """
                     </span></div>
-                    <div class="details-table two-column-summary" role="grid" aria-label="details-table">
+                    <div class="details-table two-column-summary" role="table" aria-label="details-table">
                     <div class="table-header col-first">From</div>
                     <div class="table-header col-last">Packages</div>
                     <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>

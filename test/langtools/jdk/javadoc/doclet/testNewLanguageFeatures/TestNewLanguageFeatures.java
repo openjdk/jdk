@@ -163,7 +163,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     """,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>&lt;T extends java.lang.Object &amp; java.l\
+                    ab2 method-summary-table-tab4" role="row" tabindex="0"><code>&lt;T extends java.lang.Object &amp; java.l\
                     ang.Comparable&lt;? super T&gt;&gt;<br>T</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodtThatReturnsTypeParameters\

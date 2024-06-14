@@ -457,7 +457,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-labelledby="external-specs-tab0">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>
                     <div class="col-first even-row-color"><a href="http://example.com/index.html">abc def</a></div>

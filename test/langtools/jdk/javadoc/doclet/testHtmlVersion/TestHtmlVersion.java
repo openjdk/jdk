@@ -97,7 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-labelledby="class-summary-tab0">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -453,7 +453,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div id="method-summary-table">
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-labelledby="method-summary-table-tab0">
                     """,
                 """
                     <section class="method-details" id="method-detail">
