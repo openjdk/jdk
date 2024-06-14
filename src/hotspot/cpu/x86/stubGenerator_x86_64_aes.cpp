@@ -173,17 +173,6 @@ static address ghash_polynomial_two_one_addr() {
 }
 
 // This mask is used for incrementing counter value
-ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_ADDBE_0123[] = {
-    0x0000000000000000UL, 0x0000000000000000UL,
-    0x0000000000000000UL, 0x0100000000000000UL,
-    0x0000000000000000UL, 0x0200000000000000UL,
-    0x0000000000000000UL, 0x0300000000000000UL,
-};
-static address counter_mask_addbe_0123_addr() {
-    return (address)COUNTER_MASK_ADDBE_0123;
-}
-
-// This mask is used for incrementing counter value
 ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_ADDBE_4444[] = {
     0x0000000000000000UL, 0x0400000000000000UL,
     0x0000000000000000UL, 0x0400000000000000UL,
@@ -3328,7 +3317,7 @@ void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out,
   __ vaesenc(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
   __ vaesenc(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
   ev_load_key(AESKEY1, key, 6 * 16, rbx);
-   
+
   //load plain / cipher text(recycle GH3xx registers)
   loadData(in, pos, DATA1, DATA2, DATA3, DATA4);
 
@@ -3472,7 +3461,7 @@ void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out,
 //Encrypt / decrypt the initial 16 blocks
 void StubGenerator::initial_blocks_16_avx512(Register in, Register out, Register ct, Register pos, Register key, Register avx512_subkeyHtbl,
                                              Register CTR_CHECK, Register rounds, XMMRegister CTR, XMMRegister GHASH,  XMMRegister ADDBE_4x4,
-                                             XMMRegister ADDBE_1234, XMMRegister SHUF_MASK, int stack_offset, bool no_ghash) {
+                                             XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHUF_MASK, int stack_offset, bool no_ghash) {
   const XMMRegister B00_03 = xmm7;
   const XMMRegister B04_07 = xmm10;
   const XMMRegister B08_11 = xmm11;
@@ -3494,8 +3483,8 @@ void StubGenerator::initial_blocks_16_avx512(Register in, Register out, Register
   __ jmp(next_16_ok);
   __ bind(next_16_overflow);
   __ vpshufb(CTR, CTR, SHUF_MASK, Assembler::AVX_512bit);
-  __ movdqu(B12_15, ADDBE_4x4);
-  __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
+  __ evmovdquq(B12_15, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx);
+  __ vpaddd(B00_03, CTR, ADD_1234, Assembler::AVX_512bit);
   __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
   __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
   __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
@@ -3824,6 +3813,7 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   const XMMRegister SHUF_MASK = xmm29;
   const XMMRegister ADDBE_4x4 = xmm27;
   const XMMRegister ADDBE_1234 = xmm28;
+  const XMMRegister ADD_1234 = xmm13;
   const KRegister MASKREG = k1;
   const Register pos = rax;
   const Register rounds = r15;
@@ -3856,12 +3846,14 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
   __ evmovdquq(ADDBE_4x4, ExternalAddress(counter_mask_addbe_4444_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_0123_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
   __ evmovdquq(SHUF_MASK, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADD_1234, ExternalAddress(counter_mask_add_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
 
-  //Broadcast counter value to 512 bit register
+  //Shuffle counter, Broadcast counter value to 512 bit register and subtract 1 from the pre-incremented counter value
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
+  __ vpsubd(CTR_BLOCKx, CTR_BLOCKx, ADD_1234, Assembler::AVX_128bit);
   __ evshufi64x2(CTR_BLOCKx, CTR_BLOCKx, CTR_BLOCKx, 0, Assembler::AVX_512bit);
-  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
 
   __ movdl(CTR_CHECK, CTR_BLOCKx);
   __ andl(CTR_CHECK, 255);
@@ -3869,13 +3861,12 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   // Reshuffle counter
   __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
 
-  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx,  ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset, false);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx,  ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK, stack_offset, false);
   __ addl(pos, 16 * 16);
   __ cmpl(len, 32 * 16);
   __ jcc(Assembler::below, MESG_BELOW_32_BLKS);
 
-  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, SHUF_MASK, stack_offset + 16, false);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK, stack_offset + 16, false);
   __ addl(pos, 16 * 16);
   __ subl(len, 32 * 16);
 
@@ -3923,16 +3914,23 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
   __ bind(GHASH_DONE);
-  __ evpxorq(ZTMP21, ZTMP21, ZTMP21, Assembler::AVX_512bit);
-
-  //Pre-increment counter for next operation
-  __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ADDBE_1234, Assembler::AVX_128bit);
+  //Pre-increment counter for next operation, make sure that counter value is incremented on the LSB
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
+  __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ExternalAddress(counter_mask_add_1234_addr()), Assembler::AVX_128bit, rbx);
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
   __ movdqu(Address(counter, 0), CTR_BLOCKx);
   //Load ghash lswap mask
   __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
   //Shuffle ghash using lbswap_mask and store it
   __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
   __ movdqu(Address(state, 0), AAD_HASHx);
+
+  //Zero out sensitive data
+  __ evpxorq(ZTMP21, ZTMP21, ZTMP21, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP0, ZTMP0, ZTMP0, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP1, ZTMP1, ZTMP1, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP2, ZTMP2, ZTMP2, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP3, ZTMP3, ZTMP3, Assembler::AVX_512bit);
 
   __ bind(ENC_DEC_DONE);
 }

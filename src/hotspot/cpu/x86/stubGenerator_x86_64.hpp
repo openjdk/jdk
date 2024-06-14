@@ -388,7 +388,7 @@ class StubGenerator: public StubCodeGenerator {
   void generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl);
   void initial_blocks_16_avx512(Register in, Register out, Register ct, Register pos, Register key, Register avx512_subkeyHtbl,
                                 Register CTR_CHECK, Register rounds, XMMRegister CTR, XMMRegister GHASH,  XMMRegister ADDBE_4x4,
-                                XMMRegister ADDBE_1234, XMMRegister SHUF_MASK, int stack_offset, bool no_ghash);
+                                XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHUF_MASK, int stack_offset, bool no_ghash);
   void gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, Register subkeyHtbl, int ghashin_offset,
                                int hashkey_offset, bool start_ghash, bool do_reduction);
   void ghash16_avx512(bool start_ghash, bool do_reduction, Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, int in_offset,
