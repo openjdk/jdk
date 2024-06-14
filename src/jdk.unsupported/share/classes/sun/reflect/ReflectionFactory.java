@@ -27,6 +27,7 @@ package sun.reflect;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -176,6 +177,32 @@ public class ReflectionFactory {
      */
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
         return delegate.defaultReadObjectForSerialization(cl);
+    }
+
+    /**
+     * {@return the declared <code>serialPersistentFields</code> from a serializable class,
+     * or <code>null</code> if none is declared or the class is not a valid
+     * serializable class}
+     *
+     * @param cl a Serializable class
+     *
+     * @since 24
+     */
+    public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
+        return delegate.serialPersistentFieldsOf(cl);
+    }
+
+    /**
+     * {@return the declared <code>serialVersionUID</code> from a serializable class,
+     * or <code>0L</code> if none is declared or the class is not a valid
+     * serializable class}
+     *
+     * @param cl a Serializable class
+     *
+     * @since 24
+     */
+    public final long serialVersionUIDOf(Class<?> cl) {
+        return delegate.serialVersionUIDOf(cl);
     }
 
     /**

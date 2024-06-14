@@ -29,6 +29,7 @@ import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.classfile.ClassFile;
@@ -47,6 +48,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
 import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
@@ -439,7 +441,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl) || Externalizable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
+        if (! isValidSerializable(cl)) {
             return null;
         }
 
@@ -542,7 +544,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
-        if (!Serializable.class.isAssignableFrom(cl) || Externalizable.class.isAssignableFrom(cl) || cl.isEnum() || cl.isRecord() || cl.isHidden()) {
+        if (! isValidSerializable(cl)) {
             return null;
         }
 
@@ -623,6 +625,53 @@ public class ReflectionFactory {
         } catch (IllegalAccessException | NoSuchMethodException e) {
             throw new InternalError("Error in writeObject generation", e);
         }
+    }
+
+    public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return null;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialPersistentFields");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return null;
+            }
+            field.setAccessible(true);
+            return (ObjectStreamField[]) field.get(null);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    public final long serialVersionUIDOf(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return 0;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialVersionUID");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return 0;
+            }
+            field.setAccessible(true);
+            return field.getLong(null);
+        } catch (ReflectiveOperationException e) {
+            return 0;
+        }
+    }
+
+    private static boolean isValidSerializable(Class<?> cl) {
+        return Serializable.class.isAssignableFrom(cl)
+            && ! cl.isInterface()
+            && ! cl.isArray()
+            && ! Proxy.isProxyClass(cl)
+            && ! Externalizable.class.isAssignableFrom(cl)
+            && ! cl.isEnum()
+            && ! cl.isRecord()
+            && ! cl.isHidden();
     }
 
     /**
