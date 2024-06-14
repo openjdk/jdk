@@ -55,6 +55,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/ubsan.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -244,10 +245,7 @@ public:
 
   // we use this method at some places for writing to 0 e.g. to cause a crash;
   // ubsan does not know that this is the desired behavior
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
-  void put(T x) {
+  ATTRIBUTE_NO_UBSAN void put(T x) {
     GuardUnsafeAccess guard(_thread);
     *addr() = normalize_for_write(x);
   }
