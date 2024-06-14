@@ -68,10 +68,6 @@ abstract class SHA3 extends DigestBase {
     private final byte suffix;
     private long[] state = new long[DM*DM];
 
-    // The following array is allocated to size WIDTH bytes, but we only
-    // ever use the first blockSize bytes it (for bytes <-> long conversions)
-    private byte[] byteState = new byte[WIDTH];
-
     static final VarHandle asLittleEndian
             = MethodHandles.byteArrayViewVarHandle(long[].class,
             ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
@@ -112,13 +108,14 @@ abstract class SHA3 extends DigestBase {
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
+        byte[] byteState = new byte[8];
         int numOfPadding =
-            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
+            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % blockSize));
         if (numOfPadding < 1) {
             throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
         implCompress(buffer, 0);
-        int availableBytes = buffer.length;
+        int availableBytes = blockSize; // i.e. buffer.length
         int numBytes = engineGetDigestLength();
         while (numBytes > availableBytes) {
             for (int i = 0; i < availableBytes / 8 ; i++) {
@@ -130,18 +127,16 @@ abstract class SHA3 extends DigestBase {
         }
         int numLongs = (numBytes + 7) / 8;
 
-        if (numLongs == numBytes * 8) {
-            for (int i = 0; i < numLongs; i++) {
-                asLittleEndian.set(out, ofs, state[i]);
-                ofs += 8;
-            }
+        for (int i = 0; i < numLongs - 1; i++) {
+            asLittleEndian.set(out, ofs, state[i]);
+            ofs += 8;
+        }
+        if (numBytes == numLongs * 8) {
+            asLittleEndian.set(out, ofs, state[numLongs - 1]);
         } else {
-            int o = 0;
-            for (int i = 0; i < numLongs; i++) {
-                asLittleEndian.set(byteState, o, state[i]);
-                o += 8;
-            }
-            System.arraycopy(byteState, 0, out, ofs, numBytes);
+            asLittleEndian.set(byteState, 0, state[numLongs - 1]);
+            System.arraycopy(byteState, 0,
+                    out, ofs, numBytes - (numLongs - 1) * 8);
         }
     }
 
@@ -149,7 +144,7 @@ abstract class SHA3 extends DigestBase {
      * Resets the internal state to start a new hash.
      */
     void implReset() {
-        Arrays.fill(state,0L);
+        Arrays.fill(state, 0L);
     }
 
     /**
@@ -295,7 +290,6 @@ abstract class SHA3 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
-        copy.byteState = copy.byteState.clone();
         return copy;
     }
 
