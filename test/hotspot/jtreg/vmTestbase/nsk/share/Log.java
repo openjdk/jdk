@@ -217,6 +217,9 @@ public class Log {
      * Enable or disable verbose mode for printing messages.
      */
     public void enableVerbose(boolean enable) {
+        if (!enable) {
+            throw new RuntimeException("The non-verbose logging is not supported.");
+        }
         if (!verbose) {
             flushLogBuffer();
         }
