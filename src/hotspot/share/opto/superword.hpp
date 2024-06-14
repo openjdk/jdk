@@ -676,15 +676,13 @@ private:
     _idx_to_vtnode.put_when_absent(n->_idx, vtn);
   }
 
-  // TODO replace all j -> index
-  // TODO set_req -> do we need to pass pack/n and vtn???
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
   VTransformNode* get_vtnode_vector_input_at_index(const Node_List* pack, const int index);
   VTransformNode* get_vtnode_or_wrap_as_input_scalar(Node* n);
-  void set_req_with_scalar(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node* n);
-  void set_req_with_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node_List* pack);
-  void set_all_req_with_scalars(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n);
-  void set_all_req_with_vectors(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack);
+  void set_req_with_scalar(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
+  void set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
+  void set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void add_dependencies_of_node_to_vtn(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
