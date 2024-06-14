@@ -666,9 +666,14 @@ public enum HtmlTag {
     }
 
     public AttrKind getAttrKind(Name attrName) {
-        Attr attr= getAttr(attrName);
-        AttrKind k = attr.isGlobal()? AttrKind.OK: attrs.get(attr); // null-safe
-        return (k == null) ? AttrKind.INVALID : k;
+        Attr attr = getAttr(attrName);
+        AttrKind kind = null;
+
+        if (attr != null) {
+            kind = attr.isGlobal() ? AttrKind.OK : attrs.get(attr);  // get is null-safe
+        }
+
+        return (kind != null) ? kind : AttrKind.INVALID;
     }
 
     private static AttrMap attrs(AttrKind k, Attr... attrs) {
