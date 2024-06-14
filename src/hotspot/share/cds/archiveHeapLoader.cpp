@@ -61,7 +61,6 @@ ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
-// avoid adding to CompressedOops::base() == nullptr
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("undefined")))
 #endif
