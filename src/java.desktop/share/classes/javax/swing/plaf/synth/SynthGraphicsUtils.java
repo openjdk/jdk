@@ -674,7 +674,7 @@ public class SynthGraphicsUtils {
                 int mnemIndex = lh.getMenuItem().getDisplayedMnemonicIndex();
                 // Check to see if the Mnemonic should be rendered in GTK.
                 if (UIManager.getBoolean("RootPane.altPress")
-                    && SynthLookAndFeel.isMnemonicHidden() == true) {
+                    && SynthLookAndFeel.isMnemonicHidden()) {
                     mnemIndex = -1;
                 }
 
