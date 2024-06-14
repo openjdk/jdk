@@ -273,7 +273,8 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _has_default_read_edges(false),
     _must_walk_reads(false),
     _is_open(is_open),
-    _is_patched(false) {
+    _is_patched(false),
+    DEBUG_ONLY(_reads_is_archived(false) COMMA) {
 
   // Initialize fields specific to a ModuleEntry
   if (_name == nullptr) {
@@ -300,7 +301,6 @@ ModuleEntry::ModuleEntry(Handle module_handle,
                                name != nullptr ? name->as_C_string() : UNNAMED_MODULE);
     }
   }
-  DEBUG_ONLY(_reads_is_archived = false);
 
   JFR_ONLY(INIT_ID(this);)
 }
