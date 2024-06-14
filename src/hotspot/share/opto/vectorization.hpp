@@ -1688,13 +1688,9 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
 };
 
-// Reduction of some initial scalar value and a vector, resulting in a new scalar.
-//   val = init;
-//   for (v in vector) { val = val OP v; }
-//   return val;
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
-  // req = 3 -> [ctrl, init, vector]
+  // req = 3 -> [ctrl, scalar init, vector]
   VTransformReductionVectorNode(VTransformGraph& graph, int number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }

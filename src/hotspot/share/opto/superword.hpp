@@ -661,8 +661,7 @@ private:
   // Helper methods for building VTransformGraph.
   VTransformNode* get_vtnode_or_null(Node* n) const {
     VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
-    if (ptr == nullptr) { return nullptr; }
-    return *ptr;
+    return (ptr == nullptr) ? nullptr : *ptr;
   }
 
   VTransformNode* get_vtnode(Node* n) const {
