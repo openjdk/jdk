@@ -1537,10 +1537,13 @@ public abstract class Monitor
                     return null;
                 }
             };
-            if (ac == null) {
-                // No SecurityManager:
+            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
+                // No SecurityManager permitted:
                 Subject.doAs(s, action); // s is permitted to be null
             } else {
+                if (ac == null) {
+                    throw new SecurityException("AccessControlContext cannot be null");
+                }
                 // ACC means SM is permitted.
                 AccessController.doPrivileged(action, ac);
             }
