@@ -10110,7 +10110,7 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
   match(Set result (PartialSubtypeCheck sub super));
   effect(KILL tmp, KILL cr);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super\t#@partialSubtypeCheck" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
@@ -10127,7 +10127,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
   effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
 
-  ins_cost(700);  // smaller than the next version
+  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
@@ -10156,7 +10156,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 su
   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
   effect(KILL tmp, KILL result);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super == 0\t#@partialSubtypeCheckVsZero" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
