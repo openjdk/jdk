@@ -180,14 +180,14 @@ bool ShenandoahHeuristics::should_start_gc() {
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
-    log_info(gc)("Trigger: %s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+    log_info(gc, ergo)("Trigger: %s", GCCause::to_string(GCCause::_metadata_GC_threshold));
     return true;
   }
 
   if (ShenandoahGuaranteedGCInterval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > ShenandoahGuaranteedGCInterval) {
-      log_info(gc)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+      log_info(gc, ergo)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
                    last_time_ms, ShenandoahGuaranteedGCInterval);
       return true;
     }
