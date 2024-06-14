@@ -346,11 +346,7 @@ public class ServerNotifForwarder {
     //----------------
     @SuppressWarnings("removal")
     private Subject getSubject() {
-        if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-            return Subject.current();
-        } else {
-            return Subject.getSubject(AccessController.getContext());
-        }
+       return Subject.current();
     }
 
     private void checkState() throws IOException {
