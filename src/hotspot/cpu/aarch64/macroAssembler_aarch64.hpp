@@ -1028,6 +1028,13 @@ public:
                                        Label* L_failure,
                                        bool set_cond_codes = false);
 
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
   bool lookup_secondary_supers_table(Register r_sub_klass,

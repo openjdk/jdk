@@ -1515,6 +1515,10 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
   bind(Lexit);
 }
 
+void queef(int n, int len) {
+  asm("nop");
+}
+
 void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
@@ -1590,7 +1594,7 @@ void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
 
   // Success.  Cache the super we found and proceed in triumph.
 
-  if (!UseSecondarySupersCache) {
+  if (UseSecondarySupersCache) {
     str(super_klass, super_cache_addr);
   }
 
@@ -1603,6 +1607,18 @@ void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
   bind(L_fallthrough);
 }
 
+Register MacroAssembler::allocate_if_noreg(Register r,
+                                  RegSetIterator<Register> &available_regs,
+                                  RegSet &regs_to_push) {
+  if (!r->is_valid()) {
+    r = *available_regs;
+    ++available_regs;
+    regs_to_push += r;
+  }
+  return r;
+}
+
+
 void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
@@ -1614,13 +1630,11 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
                                                      bool set_cond_codes) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
+  bool temp2_reg_was_valid = temp2_reg->is_valid();
 
   RegSet temps = RegSet::of(temp_reg, temp2_reg, temp3_reg);
 
-  assert_different_registers(sub_klass, super_klass, temp_reg);
-  if (temp2_reg != noreg)
-    assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
-
+  assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
 
   Label L_fallthrough;
   int label_nulls = 0;
@@ -1628,69 +1642,38 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
   if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1, "at most one null in the batch");
 
-  // a couple of useful fields in sub_klass:
-  int ss_offset = in_bytes(Klass::secondary_supers_offset());
-  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
-  Address secondary_supers_addr(sub_klass, ss_offset);
-  Address super_cache_addr(     sub_klass, sc_offset);
-
   BLOCK_COMMENT("check_klass_subtype_slow_path");
 
-  // Do a linear scan of the secondary super-klass chain.
-  // This code is rarely used, so simplicity is a virtue here.
-  // The repne_scan instruction uses fixed registers, which we must spill.
-  // Don't worry too much about pre-existing connections with the input regs.
+  RegSetIterator<Register> available_regs
+    = (RegSet::range(r0, r15) - temps - sub_klass - super_klass).begin();
 
-  assert(sub_klass != r0, "killed reg"); // killed by mov(r0, super)
-  assert(sub_klass != r2, "killed reg"); // killed by lea(r2, &pst_counter)
+  RegSet pushed_regs;
 
-  RegSet pushed_registers;
-  if (!temps.contains(r2))    pushed_registers += r2;
-  if (!temps.contains(r5))    pushed_registers += r5;
+  temp_reg = allocate_if_noreg(temp_reg, available_regs, pushed_regs);
+  temp2_reg = allocate_if_noreg(temp2_reg, available_regs, pushed_regs);
+  temp3_reg = allocate_if_noreg(temp3_reg, available_regs, pushed_regs);
+  Register result = allocate_if_noreg(noreg, available_regs, pushed_regs);
 
-  if (super_klass != r0) {
-    if (!temps.contains(r0))   pushed_registers += r0;
-  }
+  push(pushed_regs, sp);
 
-  push(pushed_registers, sp);
-
-  // Get super_klass value into r0 (even if it was in r5 or r2).
-  if (super_klass != r0) {
-    mov(r0, super_klass);
-  }
-
-#ifndef PRODUCT
-  incrementw(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
-#endif //PRODUCT
-
-  // We will consult the secondary-super array.
-  ldr(r5, secondary_supers_addr);
-  // Load the array length.
-  ldrw(r2, Address(r5, Array<Klass*>::length_offset_in_bytes()));
-  // Skip to start of data.
-  add(r5, r5, Array<Klass*>::base_offset_in_bytes());
-
-  cmp(sp, zr); // Clear Z flag; SP is never zero
-  // Scan R2 words at [R5] for an occurrence of R0.
-  // Set NZ/Z based on last compare.
-  repne_scan(r5, r0, r2, rscratch1);
+  lookup_secondary_supers_table(sub_klass,
+                                super_klass,
+                                temp_reg, temp2_reg, temp3_reg, fnoreg, result,
+                                nullptr);
+  cmp(result, zr);
 
   // Unspill the temp. registers:
-  pop(pushed_registers, sp);
+  pop(pushed_regs, sp);
+
+  if (temp2_reg_was_valid) {
+    mov(temp2_reg, 1);
+  }
 
   br(Assembler::NE, *L_failure);
-
-  // Success.  Cache the super we found and proceed in triumph.
-
-  if (!UseSecondarySupersCache) {
-    str(super_klass, super_cache_addr);
-  }
 
   if (L_success != &L_fallthrough) {
     b(*L_success);
   }
-
-#undef IS_A_TEMP
 
   bind(L_fallthrough);
 }
@@ -1841,15 +1824,13 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   BLOCK_COMMENT("lookup_secondary_supers_table {");
 
   const Register
-    r_array_base   = temp1,
-    r_array_length = temp2,
-    r_array_index  = temp3,
-    r_bitmap       = rscratch2;
+    r_array_index = temp3,
+    slot          = rscratch1,
+    r_bitmap      = rscratch2;
 
   // lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &poo)));
   // blr(rscratch1);
 
-  const Register slot = rscratch1;
   ldrb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
 
   // Make sure that result is nonzero if the test below misses.
@@ -1867,12 +1848,36 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   lslv(temp2, r_bitmap, slot);
   tbz(temp2, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1, L_fallthrough);
 
+  /* push(RegSet::of(r0, r1), sp); */
+  /* mov(r0, 1); */
+  /* mov(r1, 2); */
+  /* rt_call(CAST_FROM_FN_PTR(address, queef)); */
+  /* pop(RegSet::of(r0, r1), sp); */
+
+  bool must_save_v0 = vtemp == fnoreg;
+  if (must_save_v0) {
+    // temp1 and result are free, so use them to preserve vtemp
+    vtemp = v0;
+    mov(temp1,  vtemp, D, 0);
+    mov(result, vtemp, D, 1);
+  }
+
   // Get the first array index that can contain super_klass into r_array_index.
-  fmovd(vtemp, temp2);
+  mov(vtemp, D, 0, temp2);
   cnt(vtemp, T8B, vtemp);
   addv(vtemp, T8B, vtemp);
-  fmovd(r_array_index, vtemp);
+  mov(r_array_index, vtemp, D, 0);
+
+  if (must_save_v0) {
+    mov(vtemp, D, 0, temp1 );
+    mov(vtemp, D, 1, result);
+  }
+
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
+
+  const Register
+    r_array_base   = temp1,
+    r_array_length = temp2;
 
   // The value i in r_array_index is >= 1, so even though r_array_base
   // points to the length, we don't need to adjust it to point to the
