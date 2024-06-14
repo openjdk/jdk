@@ -32,13 +32,17 @@
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.UnresolvedAddressException;
+import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 public class OpenLeak {
 
+    final CompletableFuture<Boolean> result = new CompletableFuture<>();
     @Test
     public void test() throws Exception {
         InetAddress lo = InetAddress.getLoopbackAddress();
@@ -59,14 +63,35 @@ public class OpenLeak {
             isa = new InetSocketAddress(lo, 61);
             try (SocketChannel sc3 = SocketChannel.open(isa)) {};
             Assumptions.abort("Could not find a suitable port");
+            return;
         } catch (ConnectException x) { }
 
+        SocketAddress sa = InetSocketAddress.createUnresolved(isa.getHostString(), isa.getPort());
         System.out.println("Expecting Connection Refused for " + isa);
-        for (int i=0; i<100000; i++) {
-            try {
-                SocketChannel.open(isa);
-                throw new RuntimeException("This should not happen");
-            } catch (ConnectException x) { }
+        System.out.println("Expecting UnresolvedAddressException for " + sa);
+        int i = 0;
+        try {
+            for (i = 0; i < 250000; i++) {
+                try {
+                    SocketChannel.open(sa);
+                    throw new RuntimeException("This should not happen");
+                } catch (UnresolvedAddressException x) {
+                    if (i > 250000 - 10) {
+                        System.out.println(x);
+                    }
+                }
+                try {
+                    SocketChannel.open(isa);
+                    throw new RuntimeException("This should not happen");
+                } catch (ConnectException x) {
+                    if (i > 250000 - 10) {
+                        System.out.println(x);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            System.out.println("Failed at " + i + " with " + t);
+            throw t;
         }
     }
 
