@@ -4539,11 +4539,11 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
 
     address start = __ pc();
     const Register
-      r_super_klass  = R3_ARG1,
-      r_array_base   = R4_ARG2,
-      r_array_length = R5_ARG3,
+      r_super_klass  = R4_ARG2,
+      r_array_base   = R3_ARG1,
+      r_array_length = R7_ARG5,
       r_array_index  = R6_ARG4,
-      r_sub_klass    = R7_ARG5,
+      r_sub_klass    = R5_ARG3,
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;
 
@@ -4561,9 +4561,9 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
 
     address start = __ pc();
     const Register
-      r_super_klass  = R3_ARG1,
-      r_array_base   = R4_ARG2,
-      temp1          = R5_ARG3,
+      r_super_klass  = R4_ARG2,
+      r_array_base   = R3_ARG1,
+      temp1          = R7_ARG5,
       r_array_index  = R6_ARG4,
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;

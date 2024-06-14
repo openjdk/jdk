@@ -2153,11 +2153,11 @@ void MacroAssembler::repne_scan(Register addr, Register value, Register count, R
 // Ensure that the inline code and the stub are using the same registers.
 #define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                       \
 do {                                                                  \
-  assert(r_super_klass  == R3_ARG1                                 && \
-         r_array_base   == R4_ARG2                                 && \
-         r_array_length == R5_ARG3                                 && \
+  assert(r_super_klass  == R4_ARG2                                 && \
+         r_array_base   == R3_ARG1                                 && \
+         r_array_length == R7_ARG5                                 && \
          (r_array_index == R6_ARG4      || r_array_index == noreg) && \
-         (r_sub_klass   == R7_ARG5      || r_sub_klass   == noreg) && \
+         (r_sub_klass   == R5_ARG3      || r_sub_klass   == noreg) && \
          (r_bitmap      == R11_scratch1 || r_bitmap      == noreg) && \
          (result        == R8_ARG6      || result        == noreg), "registers must match ppc64.ad"); \
 } while(0)
@@ -2394,8 +2394,11 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   cmpd(CCR0, result, linear_result);
   beq(CCR0, passed);
 
+  assert_different_registers(R3_ARG1, r_sub_klass, linear_result, result);
   mr_if_needed(R3_ARG1, r_super_klass);
+  assert_different_registers(R4_ARG2, linear_result, result);
   mr_if_needed(R4_ARG2, r_sub_klass);
+  assert_different_registers(R5_ARG3, result);
   neg(R5_ARG3, linear_result);
   neg(R6_ARG4, result);
   const char* msg = "mismatch";

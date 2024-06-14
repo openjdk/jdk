@@ -12041,8 +12041,8 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
   ins_pipe(pipe_class_default);
 %}
 
-instruct partialSubtypeCheckConstSuper(rarg5RegP sub, rarg1RegP super_reg, immP super_con, rarg6RegP result,
-                                       rarg2RegP tempR1, rarg3RegP tempR2, rarg4RegP tempR3, rscratch1RegP tempR4,
+instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP super_con, rarg6RegP result,
+                                       rarg1RegP tempR1, rarg5RegP tempR2, rarg4RegP tempR3, rscratch1RegP tempR4,
                                        flagsRegCR0 cr0, regCTR ctr)
 %{
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
