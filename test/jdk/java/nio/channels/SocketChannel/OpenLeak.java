@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,48 @@
  * @summary SocketChannel.open(SocketAddress) leaks file descriptor if
  *     connection cannot be established
  * @build OpenLeak
- * @run main/othervm -Djava.security.manager=allow OpenLeak
+ * @run junit/othervm OpenLeak
  */
 
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+
 public class OpenLeak {
 
-    public static void main(String[] args) throws Exception {
-        InetAddress lh = InetAddress.getLocalHost();
-        InetSocketAddress isa = new InetSocketAddress(lh, 12345);
+    @Test
+    public void test() throws Exception {
+        InetAddress lo = InetAddress.getLoopbackAddress();
 
-        System.setSecurityManager( new SecurityManager() );
+        // Try to find a suitable port that will cause a
+        // Connection Rejected exception
+
+        // port 47 is reserved - there should be nothing there...
+        InetSocketAddress isa = new InetSocketAddress(lo, 47);
+        try (SocketChannel sc1 = SocketChannel.open(isa)) {
+            // If we manage to connect, let's try to use some other
+            // port.
+            // port 51 is reserved too - there should be nothing there...
+            isa = new InetSocketAddress(lo, 51);
+            try (SocketChannel sc2 = SocketChannel.open(isa)) {};
+            // OK, last attempt...
+            // port 61 is reserved too - there should be nothing there...
+            isa = new InetSocketAddress(lo, 61);
+            try (SocketChannel sc3 = SocketChannel.open(isa)) {};
+            Assumptions.abort("Could not find a suitable port");
+        } catch (ConnectException x) { }
+
+        System.out.println("Expecting Connection Refused for " + isa);
         for (int i=0; i<100000; i++) {
             try {
                 SocketChannel.open(isa);
                 throw new RuntimeException("This should not happen");
-            } catch (SecurityException x) { }
+            } catch (ConnectException x) { }
         }
-
     }
 
 }
