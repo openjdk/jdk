@@ -104,25 +104,15 @@ public class Launcher extends DebugeeBinder {
         String[] jdbCmdArgs = makeJdbCmdLine(classToExecute);
 
         if (argumentHandler.isDefaultConnector()) {
-
             localDefaultLaunch(jdbCmdArgs, classToExecute);
-
         } else if (argumentHandler.isRawLaunchingConnector()) {
-
             localRawLaunch(jdbCmdArgs, classToExecute);
-
         } else if (argumentHandler.isLaunchingConnector()) {
-
             localLaunch(jdbCmdArgs, classToExecute);
-
         } else if (argumentHandler.isAttachingConnector()) {
-
             localLaunchAndAttach(jdbCmdArgs, classToExecute);
-
         } else if (argumentHandler.isListeningConnector()) {
-
             localLaunchAndListen(jdbCmdArgs, classToExecute);
-
         } else {
             throw new TestBug("Unexpected connector type for local launch mode"
                               + argumentHandler.getConnectorType());
