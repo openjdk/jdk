@@ -362,8 +362,9 @@ public:
     }
   }
 
+  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
   Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
-
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
 private:
