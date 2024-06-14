@@ -29,6 +29,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -62,7 +63,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/checkedCast.hpp"
@@ -1014,7 +1016,9 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     }
 
   case JVM_CONSTANT_Dynamic:
-    {
+    { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_invokedynamic_time(),
+                                ClassLoader::perf_resolve_invokedynamic_count());
+
       // Resolve the Dynamically-Computed constant to invoke the BSM in order to obtain the resulting oop.
       BootstrapInfo bootstrap_specifier(this_cp, cp_index);
 
@@ -1072,7 +1076,9 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     break;
 
   case JVM_CONSTANT_MethodHandle:
-    {
+    { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_handle_time(),
+                                ClassLoader::perf_resolve_method_handle_count());
+
       int ref_kind                 = this_cp->method_handle_ref_kind_at(cp_index);
       int callee_index             = this_cp->method_handle_klass_index_at(cp_index);
       Symbol*  name =      this_cp->method_handle_name_ref_at(cp_index);
@@ -1120,7 +1126,9 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     }
 
   case JVM_CONSTANT_MethodType:
-    {
+    { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_type_time(),
+                                ClassLoader::perf_resolve_method_type_count());
+
       Symbol*  signature = this_cp->method_type_signature_at(cp_index);
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",

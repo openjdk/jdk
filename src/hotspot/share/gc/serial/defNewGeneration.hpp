@@ -191,7 +191,6 @@ class DefNewGeneration: public Generation {
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
   // Thread-local allocation buffers
-  bool supports_tlab_allocation() const { return true; }
   size_t tlab_capacity() const;
   size_t tlab_used() const;
   size_t unsafe_max_tlab_alloc() const;

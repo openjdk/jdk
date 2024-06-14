@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -156,7 +157,6 @@ static void print_method_profiling_data() {
   }
 }
 
-
 #ifndef PRODUCT
 
 // Statistics printing (method invocation histogram)
@@ -265,7 +265,7 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
-  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -356,6 +356,8 @@ void print_statistics() {
   }
 
   ThreadsSMRSupport::log_statistics();
+
+  ClassLoader::print_counters(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads

@@ -901,15 +901,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
       case Op_CountPositives: {
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 
@@ -1074,15 +1065,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
         // String intrinsics are large and have loops.
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 

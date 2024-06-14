@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -928,6 +928,10 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
+  // some internal addresses, _last_insn _last_label, are used during code emission,
+  // adjust them in expansion
+  adjust_internal_address(insts_begin(), cb.insts_begin());
+
   // Copy the temporary code buffer into the current code buffer.
   // Basically, do {*this = cb}, except for some control information.
   this->take_over_code_from(&cb);
@@ -947,6 +951,15 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     this->print();
   }
 #endif //PRODUCT
+}
+
+void CodeBuffer::adjust_internal_address(address from, address to) {
+  if (_last_insn != nullptr) {
+    _last_insn += to - from;
+  }
+  if (_last_label != nullptr) {
+    _last_label += to - from;
+  }
 }
 
 void CodeBuffer::take_over_code_from(CodeBuffer* cb) {

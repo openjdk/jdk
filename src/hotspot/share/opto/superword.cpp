@@ -43,7 +43,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
   _arena(mtCompiler),
-  _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer
@@ -453,11 +452,8 @@ bool SuperWord::transform_loop() {
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  // Ensure extra info is allocated.
-  initialize_node_info();
-
-  // Attempt vectorization
-  find_adjacent_refs();
+  // Find "seed" pairs.
+  create_adjacent_memop_pairs();
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
@@ -485,251 +481,138 @@ bool SuperWord::SLP_extract() {
   filter_packs_for_profitable();
 
   DEBUG_ONLY(verify_packs();)
+  DEBUG_ONLY(verify_no_extract());
 
-  schedule();
-
-  return output();
+  return schedule_and_apply();
 }
 
-//------------------------------find_adjacent_refs---------------------------
-// Find the adjacent memory references and create pack pairs for them.
-// We can find adjacent memory references by comparing their relative
-// alignment. Whether the final vectors can be aligned is determined later
-// once all vectors are extended and combined.
-void SuperWord::find_adjacent_refs() {
-  // Get list of memory operations
-  Node_List memops;
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
-    if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
-        is_java_primitive(n->as_Mem()->memory_type())) {
-      int align = memory_alignment(n->as_Mem(), 0);
-      if (align != bottom_align) {
-        memops.push(n);
-      }
-    }
-  }
+// Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+void SuperWord::create_adjacent_memop_pairs() {
+  ResourceMark rm;
+  GrowableArray<const VPointer*> vpointers;
+
+  collect_valid_vpointers(vpointers);
+
+  // Sort the VPointers. This does 2 things:
+  //  - Separate the VPointer into groups: all memops that have the same opcode and the same
+  //    VPointer, except for the offset. Adjacent memops must have the same opcode and the
+  //    same VPointer, except for a shift in the offset. Thus, two memops can only be adjacent
+  //    if they are in the same group. This decreases the work.
+  //  - Sort by offset inside the groups. This decreases the work needed to determine adjacent
+  //    memops inside a group.
+  vpointers.sort(VPointer::cmp_for_sort);
+
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
-    tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
+    tty->print_cr("\nSuperWord::create_adjacent_memop_pairs:");
   }
 #endif
 
-  int max_idx;
-
-  while (memops.size() != 0) {
-    // Find a memory reference to align to.
-    MemNode* mem_ref = find_align_to_ref(memops, max_idx);
-    if (mem_ref == nullptr) break;
-    int iv_adjustment = get_iv_adjustment(mem_ref);
-
-    const VPointer& align_to_ref_p = vpointer(mem_ref);
-    // Set alignment relative to "align_to_ref" for all related memory operations.
-    for (int i = memops.size() - 1; i >= 0; i--) {
-      MemNode* s = memops.at(i)->as_Mem();
-      if (isomorphic(s, mem_ref) &&
-           (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
-        const VPointer& p2 = vpointer(s);
-        if (p2.comparable(align_to_ref_p)) {
-          int align = memory_alignment(s, iv_adjustment);
-          set_alignment(s, align);
-        }
-      }
-    }
-
-    // Create initial pack pairs of memory operations for which alignment was set.
-    for (uint i = 0; i < memops.size(); i++) {
-      Node* s1 = memops.at(i);
-      int align = alignment(s1);
-      if (align == top_align) continue;
-      for (uint j = 0; j < memops.size(); j++) {
-        Node* s2 = memops.at(j);
-        if (alignment(s2) == top_align) continue;
-        if (s1 != s2 && are_adjacent_refs(s1, s2)) {
-          if (stmts_can_pack(s1, s2, align)) {
-            if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-              _pairset.add_pair(s1, s2);
-            }
-          }
-        }
-      }
-    }
-
-    // Remove used mem nodes.
-    for (int i = memops.size() - 1; i >= 0; i--) {
-      MemNode* m = memops.at(i)->as_Mem();
-      if (alignment(m) != top_align) {
-        memops.remove(i);
-      }
-    }
-  } // while (memops.size() != 0)
+  create_adjacent_memop_pairs_in_all_groups(vpointers);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::find_adjacent_refs");
+    tty->print_cr("\nAfter Superword::create_adjacent_memop_pairs");
     _pairset.print();
   }
 #endif
 }
 
-//------------------------------find_align_to_ref---------------------------
-// Find a memory reference to align the loop induction variable to.
-// Looks first at stores then at loads, looking for a memory reference
-// with the largest number of references similar to it.
-MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
-  GrowableArray<int> cmp_ct(arena(), memops.size(), memops.size(), 0);
-
-  // Count number of comparable memory ops
-  for (uint i = 0; i < memops.size(); i++) {
-    MemNode* s1 = memops.at(i)->as_Mem();
-    const VPointer& p1 = vpointer(s1);
-    for (uint j = i+1; j < memops.size(); j++) {
-      MemNode* s2 = memops.at(j)->as_Mem();
-      if (isomorphic(s1, s2)) {
-        const VPointer& p2 = vpointer(s2);
-        if (p1.comparable(p2)) {
-          (*cmp_ct.adr_at(i))++;
-          (*cmp_ct.adr_at(j))++;
-        }
-      }
+// Collect all memops vpointers that could potentially be vectorized.
+void SuperWord::collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers) {
+  for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    if (p.valid() &&
+        !mem->is_LoadStore() &&
+        is_java_primitive(mem->memory_type())) {
+      vpointers.append(&p);
     }
-  }
-
-  // Find Store (or Load) with the greatest number of "comparable" references,
-  // biggest vector size, smallest data size and smallest iv offset.
-  int max_ct        = 0;
-  int max_vw        = 0;
-  int max_idx       = -1;
-  int min_size      = max_jint;
-  int min_iv_offset = max_jint;
-  for (uint j = 0; j < memops.size(); j++) {
-    MemNode* s = memops.at(j)->as_Mem();
-    if (s->is_Store()) {
-      int vw = vector_width_in_bytes(s);
-      assert(vw > 1, "sanity");
-      const VPointer& p = vpointer(s);
-      if ( cmp_ct.at(j) >  max_ct ||
-          (cmp_ct.at(j) == max_ct &&
-            ( vw >  max_vw ||
-             (vw == max_vw &&
-              ( data_size(s) <  min_size ||
-               (data_size(s) == min_size &&
-                p.offset_in_bytes() < min_iv_offset)))))) {
-        max_ct = cmp_ct.at(j);
-        max_vw = vw;
-        max_idx = j;
-        min_size = data_size(s);
-        min_iv_offset = p.offset_in_bytes();
-      }
-    }
-  }
-  // If no stores, look at loads
-  if (max_ct == 0) {
-    for (uint j = 0; j < memops.size(); j++) {
-      MemNode* s = memops.at(j)->as_Mem();
-      if (s->is_Load()) {
-        int vw = vector_width_in_bytes(s);
-        assert(vw > 1, "sanity");
-        const VPointer& p = vpointer(s);
-        if ( cmp_ct.at(j) >  max_ct ||
-            (cmp_ct.at(j) == max_ct &&
-              ( vw >  max_vw ||
-               (vw == max_vw &&
-                ( data_size(s) <  min_size ||
-                 (data_size(s) == min_size &&
-                  p.offset_in_bytes() < min_iv_offset)))))) {
-          max_ct = cmp_ct.at(j);
-          max_vw = vw;
-          max_idx = j;
-          min_size = data_size(s);
-          min_iv_offset = p.offset_in_bytes();
-        }
-      }
-    }
-  }
-
-#ifndef PRODUCT
-  if (is_trace_superword_verbose()) {
-    tty->print_cr("\nVector memops after find_align_to_ref");
-    for (uint i = 0; i < memops.size(); i++) {
-      MemNode* s = memops.at(i)->as_Mem();
-      s->dump();
-    }
-  }
-#endif
-
-  idx = max_idx;
-  if (max_ct > 0) {
-#ifndef PRODUCT
-    if (is_trace_superword_adjacent_memops()) {
-      tty->print("SuperWord::find_align_to_ref: ");
-      memops.at(max_idx)->as_Mem()->dump();
-    }
-#endif
-    return memops.at(max_idx)->as_Mem();
-  }
-  return nullptr;
+  });
 }
 
-//---------------------------get_vw_bytes_special------------------------
-int SuperWord::get_vw_bytes_special(MemNode* s) {
-  // Get the vector width in bytes.
-  int vw = vector_width_in_bytes(s);
-
-  // Check for special case where there is an MulAddS2I usage where short vectors are going to need combined.
-  BasicType btype = velt_basic_type(s);
-  if (type2aelembytes(btype) == 2) {
-    bool should_combine_adjacent = true;
-    for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-      Node* user = s->fast_out(i);
-      if (!VectorNode::is_muladds2i(user)) {
-        should_combine_adjacent = false;
-      }
-    }
-    if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size_auto_vectorization(btype)*type2aelembytes(btype), vw * 2);
-    }
+// For each group, find the adjacent memops.
+void SuperWord::create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers) {
+  int group_start = 0;
+  while (group_start < vpointers.length()) {
+    int group_end = find_group_end(vpointers, group_start);
+    create_adjacent_memop_pairs_in_one_group(vpointers, group_start, group_end);
+    group_start = group_end;
   }
-
-  // Check for special case where there is a type conversion between different data size.
-  int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::max_vector_size_auto_vectorization(btype)) {
-    vw = MIN2(vectsize * type2aelembytes(btype), vw);
-  }
-
-  return vw;
 }
 
-//---------------------------get_iv_adjustment---------------------------
-// Calculate loop's iv adjustment for this memory ops.
-int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  const VPointer& align_to_ref_p = vpointer(mem_ref);
-  int offset = align_to_ref_p.offset_in_bytes();
-  int scale  = align_to_ref_p.scale_in_bytes();
-  int elt_size = align_to_ref_p.memory_size();
-  int vw       = get_vw_bytes_special(mem_ref);
-  assert(vw > 1, "sanity");
-  int iv_adjustment;
-  if (scale != 0) {
-    int stride_sign = (scale * iv_stride()) > 0 ? 1 : -1;
-    // At least one iteration is executed in pre-loop by default. As result
-    // several iterations are needed to align memory operations in main-loop even
-    // if offset is 0.
-    int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-    iv_adjustment = iv_adjustment_in_bytes/elt_size;
-  } else {
-    // This memory op is not dependent on iv (scale == 0)
-    iv_adjustment = 0;
+// Step forward until we find a VPointer of another group, or we reach the end of the array.
+int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start) {
+  int group_end = group_start + 1;
+  while (group_end < vpointers.length() &&
+         VPointer::cmp_for_sort_by_group(
+           vpointers.adr_at(group_start),
+           vpointers.adr_at(group_end)
+         ) == 0) {
+    group_end++;
   }
+  return group_end;
+}
 
+// Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
+// Create pairs and add them to the pairset.
+void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, const int group_end) {
 #ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print("SuperWord::get_iv_adjustment: n = %d, noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d: ",
-      mem_ref->_idx, offset, iv_adjustment, elt_size, scale, iv_stride(), vw);
-    mem_ref->dump();
+  if (is_trace_superword_adjacent_memops()) {
+    tty->print_cr(" group:");
+    for (int i = group_start; i < group_end; i++) {
+      const VPointer* p = vpointers.at(i);
+      tty->print("  ");
+      p->print();
+    }
   }
 #endif
-  return iv_adjustment;
+
+  MemNode* first = vpointers.at(group_start)->mem();
+  int element_size = data_size(first);
+
+  // For each ref in group: find others that can be paired:
+  for (int i = group_start; i < group_end; i++) {
+    const VPointer* p1 = vpointers.at(i);
+    MemNode* mem1 = p1->mem();
+
+    bool found = false;
+    // For each ref in group with larger or equal offset:
+    for (int j = i + 1; j < group_end; j++) {
+      const VPointer* p2 = vpointers.at(j);
+      MemNode* mem2 = p2->mem();
+      assert(mem1 != mem2, "look only at pair of different memops");
+
+      // Check for correct distance.
+      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
+      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
+      assert(p1->offset_in_bytes() <= p2->offset_in_bytes(), "must be sorted by offset");
+      if (p1->offset_in_bytes() + element_size > p2->offset_in_bytes()) { continue; }
+      if (p1->offset_in_bytes() + element_size < p2->offset_in_bytes()) { break; }
+
+      // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
+      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
+
+      if (!can_pack_into_pair(mem1, mem2)) { continue; }
+
+#ifndef PRODUCT
+      if (is_trace_superword_adjacent_memops()) {
+        if (found) {
+          tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
+        } else {
+          tty->print_cr(" pair:");
+        }
+        tty->print("  ");
+        p1->print();
+        tty->print("  ");
+        p2->print();
+      }
+#endif
+
+      if (!found) {
+        _pairset.add_pair(mem1, mem2);
+      }
+    }
+  }
 }
 
 void VLoopMemorySlices::find_memory_slices() {
@@ -809,10 +692,8 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
 #endif
 }
 
-//------------------------------stmts_can_pack---------------------------
-// Can s1 and s2 be in a pack with s1 immediately preceding s2 and
-// s1 aligned at "align"
-bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
+// Check if two nodes can be packed into a pair.
+bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
 
   // Do not use superword for non-primitives
   BasicType bt1 = velt_basic_type(s1);
@@ -831,13 +712,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
-          int s1_align = alignment(s1);
-          int s2_align = alignment(s2);
-          if (s1_align == top_align || s1_align == align) {
-            if (s2_align == top_align || s2_align == align + data_size(s1)) {
-              return true;
-            }
-          }
+          return true;
         }
       }
     }
@@ -1013,16 +888,6 @@ bool VLoopReductions::is_marked_reduction_pair(const Node* s1, const Node* s2) c
   return false;
 }
 
-//------------------------------set_alignment---------------------------
-void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
-  set_alignment(s1, align);
-  if (align == top_align || align == bottom_align) {
-    set_alignment(s2, align);
-  } else {
-    set_alignment(s2, align + data_size(s1));
-  }
-}
-
 // Extend pairset by following use->def and def->use links from pair members.
 void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   bool changed;
@@ -1058,57 +923,25 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
 #endif
 }
 
-//------------------------------adjust_alignment_for_type_conversion---------------------------------
-// Adjust the target alignment if conversion between different data size exists in def-use nodes.
-int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
-  // Do not use superword for non-primitives
-  BasicType bt1 = velt_basic_type(s);
-  BasicType bt2 = velt_basic_type(t);
-  if (!is_java_primitive(bt1) || !is_java_primitive(bt2)) {
-    return align;
-  }
-  if (longer_type_for_conversion(s) != T_ILLEGAL ||
-      longer_type_for_conversion(t) != T_ILLEGAL) {
-    align = align / data_size(s) * data_size(t);
-  }
-  return align;
-}
-
 bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Load()) return false;
 
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: s1 %d, align %d",
-                  s1->_idx, alignment(s1));
-  }
-#endif
   bool changed = false;
   int start = s1->is_Store() ? MemNode::ValueIn   : 1;
   int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
   for (int j = start; j < end; j++) {
-    int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
     if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
-    align = adjust_alignment_for_type_conversion(s1, t1, align);
-    if (stmts_can_pack(t1, t2, align)) {
+    if (can_pack_into_pair(t1, t2)) {
       if (estimate_cost_savings_when_packing_as_pair(t1, t2) >= 0) {
         _pairset.add_pair(t1, t2);
-#ifndef PRODUCT
-        if (is_trace_superword_alignment()) {
-          tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: set_alignment(%d, %d, %d)",
-                        t1->_idx, t2->_idx, align);
-        }
-#endif
-        set_alignment(t1, t2, align);
         changed = true;
       }
     }
@@ -1122,17 +955,9 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
 bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Store()) return false;
 
-  int align = alignment(s1);
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: s1 %d, align %d",
-                  s1->_idx, align);
-  }
-#endif
   int savings = -1;
   Node* u1 = nullptr;
   Node* u2 = nullptr;
@@ -1150,28 +975,18 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
       }
       if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
       if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
-      int adjusted_align = alignment(s1);
-      adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
-      if (stmts_can_pack(t1, t2, adjusted_align)) {
+      if (can_pack_into_pair(t1, t2)) {
         int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
           u1 = t1;
           u2 = t2;
-          align = adjusted_align;
         }
       }
     }
   }
   if (savings >= 0) {
     _pairset.add_pair(u1, u2);
-#ifndef PRODUCT
-    if (is_trace_superword_alignment()) {
-      tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: set_alignment(%d, %d, %d)",
-                    u1->_idx, u2->_idx, align);
-    }
-#endif
-    set_alignment(u1, u2, align);
     return true; // changed
   }
   return false; // no change
@@ -1650,7 +1465,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
 // that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
-  if (!vectors_should_be_aligned()) {
+  if (!VLoop::vectors_should_be_aligned()) {
     return;
   }
 
@@ -1776,20 +1591,12 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     } else if (p0->is_Cmp()) {
       // Cmp -> Bool -> Cmove
       retValue = UseVectorCmov;
-    } else if (requires_long_to_int_conversion(opc)) {
-      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-      // returns int type, but Vector API for them returns long type. To unify
-      // the implementation in backend, superword splits the vector implementation
-      // for Java API into an execution node with long type plus another node
-      // converting long to int.
+    } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+      // Requires extra vector long -> int conversion.
       retValue = VectorNode::implemented(opc, size, T_LONG) &&
                  VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
-      // Vector unsigned right shift for signed subword types behaves differently
-      // from Java Spec. But when the shift amount is a constant not greater than
-      // the number of sign extended bits, the unsigned right shift can be
-      // vectorized to a signed right shift.
-      if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
+      if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, velt_basic_type(p0))) {
         opc = Op_RShiftI;
       }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
@@ -1814,31 +1621,87 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
-bool SuperWord::requires_long_to_int_conversion(int opc) {
-  switch(opc) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-      return true;
-    default:
-      return false;
-  }
-}
-
-//------------------------------same_inputs--------------------------
-// For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(const Node_List* p, int idx) const {
-  Node* p0 = p->at(0);
-  uint vlen = p->size();
-  Node* p0_def = p0->in(idx);
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* pi_def = pi->in(idx);
-    if (p0_def != pi_def) {
-      return false;
+// If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
+Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int index) const {
+  Node* p0_in = pack->at(0)->in(index);
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(index) != p0_in) {
+      return nullptr; // not same
     }
   }
-  return true;
+  return p0_in;
+}
+
+VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
+  BoolNode* bol = bool_pack->at(0)->as_Bool();
+  BoolTest::mask mask = bol->_test._test;
+  bool is_negated = false;
+  assert(mask == BoolTest::eq ||
+         mask == BoolTest::ne ||
+         mask == BoolTest::ge ||
+         mask == BoolTest::gt ||
+         mask == BoolTest::lt ||
+         mask == BoolTest::le,
+         "Bool should be one of: eq, ne, ge, gt, lt, le");
+
+#ifdef ASSERT
+  for (uint j = 0; j < bool_pack->size(); j++) {
+    Node* m = bool_pack->at(j);
+    assert(m->as_Bool()->_test._test == mask,
+           "all bool nodes must have same test");
+  }
+#endif
+
+  CmpNode* cmp0 = bol->in(1)->as_Cmp();
+  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
+
+  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+    // If we have a Float or Double comparison, we must be careful with
+    // handling NaN's correctly. CmpF and CmpD have a return code, as
+    // they are based on the java bytecodes fcmpl/dcmpl:
+    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+    //  0: cmp_in1 == cmp_in2  (no NaN)
+    //  1: cmp_in1 >  cmp_in2  (no NaN)
+    //
+    // The "mask" selects which of the [-1, 0, 1] cases lead to "true".
+    //
+    // Note: ordered   (O) comparison returns "false" if either input is NaN.
+    //       unordered (U) comparison returns "true"  if either input is NaN.
+    //
+    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+    // standard way (all comparisons are ordered, except NEQ is unordered).
+    //
+    // In the following, "mask" already matches the cmp code for VectorMaskCmpNode:
+    //   BoolTest::eq:  Case 0     -> EQ_O
+    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+    //   BoolTest::ge:  Case 0, 1  -> GE_O
+    //   BoolTest::gt:  Case 1     -> GT_O
+    //
+    // But the lt and le comparisons must be converted from unordered to ordered:
+    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+    //
+    if (mask == BoolTest::lt || mask == BoolTest::le) {
+      // Negating the mask gives us the negated result, since all non-NaN cases are
+      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
+      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
+      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
+      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
+      //
+      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
+      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+      mask = bol->_test.negate();
+      is_negated = true;
+    }
+  }
+
+  return VTransformBoolTest(mask, is_negated);
 }
 
 //------------------------------profitable---------------------------
@@ -1875,10 +1738,9 @@ bool SuperWord::profitable(const Node_List* p) const {
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
     Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr)
+    if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
       return false;
-    if (!same_inputs(p, 2))
-      return false;
+    }
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -2221,7 +2083,9 @@ public:
   }
 };
 
-// The C2 graph (specifically the memory graph), needs to be re-ordered.
+// We want to replace the packed scalars from the PackSet and replace them
+// with vector operations. This requires scheduling and re-ordering the memory
+// graph. We take these steps:
 // (1) Build the PacksetGraph. It combines the dependency graph with the
 //     packset. The PacksetGraph gives us the dependencies that must be
 //     respected after scheduling.
@@ -2229,10 +2093,11 @@ public:
 //     a linear order of all memops in the body. The order respects the
 //     dependencies of the PacksetGraph.
 // (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
-// (4) Use the memops_schedule to re-order the memops in all slices.
-void SuperWord::schedule() {
-  if (_packset.length() == 0) {
-    return; // empty packset
+// (4) Apply the vectorization, including re-ordering the memops and replacing
+//     packed scalars with vector operations.
+bool SuperWord::schedule_and_apply() {
+  if (_packset.is_empty()) {
+    return false;
   }
   ResourceMark rm;
 
@@ -2258,27 +2123,40 @@ void SuperWord::schedule() {
     }
 #endif
     _packset.clear();
-    return;
+    return false;
   }
 
+  // (4) Apply the vectorization, including re-ordering the memops.
+  return apply(memops_schedule);
+}
+
+bool SuperWord::apply(Node_List& memops_schedule) {
+  Compile* C = phase()->C;
+  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
+  C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl);
+
+  apply_memops_reordering_with_schedule(memops_schedule);
+  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl);
+
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
+  C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl);
+
+  bool is_success = apply_vectorization();
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl);
+
+  return is_success;
+}
+
+// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
+// and track the current memory state of each slice.
+void SuperWord::apply_memops_reordering_with_schedule(Node_List& memops_schedule) {
 #ifndef PRODUCT
   if (is_trace_superword_info()) {
-    tty->print_cr("SuperWord::schedule: memops_schedule:");
+    tty->print_cr("\nSuperWord::apply_memops_reordering_with_schedule:");
     memops_schedule.dump();
   }
 #endif
 
-  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-  phase()->C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
-
-  // (4) Use the memops_schedule to re-order the memops in all slices.
-  schedule_reorder_memops(memops_schedule);
-}
-
-
-// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
-// and track the current memory state of each slice.
-void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   int max_slices = phase()->C->num_alias_types();
   // When iterating over the memops_schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
@@ -2359,32 +2237,24 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   }
 }
 
-//------------------------------output---------------------------
 // Convert packs into vector node operations
 // At this point, all correctness and profitability checks have passed.
 // We start the irreversible process of editing the C2 graph. Should
 // there be an unexpected situation (assert fails), then we can only
 // bail out of the compilation, as the graph has already been partially
 // modified. We bail out, and retry without SuperWord.
-bool SuperWord::output() {
+bool SuperWord::apply_vectorization() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = phase()->C;
-  if (_packset.is_empty()) {
-    return false;
-  }
+  assert(!_packset.is_empty(), "vectorization requires non-empty packset");
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("SuperWord::output    ");
+    tty->print("SuperWord::apply_vectorization ");
     lpt()->dump_head();
   }
 #endif
-  phase()->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
-
-  adjust_pre_loop_limit_to_align_main_loop_vectors();
-
-  DEBUG_ONLY(verify_no_extract());
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
@@ -2393,7 +2263,7 @@ bool SuperWord::output() {
     Node* n = body().at(i);
     Node_List* p = get_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
-      // After schedule_reorder_memops, we know that the memops have the same order in the pack
+      // After apply_memops_reordering_with_schedule, we know that the memops have the same order in the pack
       // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
       // and "n" is the last node in the slice from the pack.
       Node* first = p->at(0);
@@ -2473,79 +2343,32 @@ bool SuperWord::output() {
 
         BoolNode* bol = n->in(1)->as_Bool();
         assert(bol != nullptr, "must have Bool above CMove");
-        BoolTest::mask bol_test = bol->_test._test;
-        assert(bol_test == BoolTest::eq ||
-               bol_test == BoolTest::ne ||
-               bol_test == BoolTest::ge ||
-               bol_test == BoolTest::gt ||
-               bol_test == BoolTest::lt ||
-               bol_test == BoolTest::le,
-               "CMove bool should be one of: eq,ne,ge,ge,lt,le");
-        Node_List* p_bol = get_pack(bol);
-        assert(p_bol != nullptr, "CMove must have matching Bool pack");
-
-#ifdef ASSERT
-        for (uint j = 0; j < p_bol->size(); j++) {
-          Node* m = p_bol->at(j);
-          assert(m->as_Bool()->_test._test == bol_test,
-                 "all bool nodes must have same test");
-        }
-#endif
+        Node_List* bool_pack = get_pack(bol);
+        assert(bool_pack != nullptr, "CMove must have matching Bool pack");
 
         CmpNode* cmp = bol->in(1)->as_Cmp();
         assert(cmp != nullptr, "must have cmp above CMove");
-        Node_List* p_cmp = get_pack(cmp);
-        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
+        Node_List* cmp_pack = get_pack(cmp);
+        assert(cmp_pack != nullptr, "Bool must have matching Cmp pack");
 
-        Node* cmp_in1 = vector_opd(p_cmp, 1);
-        Node* cmp_in2 = vector_opd(p_cmp, 2);
+        Node* cmp_in1 = vector_opd(cmp_pack, 1);
+        Node* cmp_in2 = vector_opd(cmp_pack, 2);
 
         Node* blend_in1 = vector_opd(p, 2);
         Node* blend_in2 = vector_opd(p, 3);
 
-        if (cmp->Opcode() == Op_CmpF || cmp->Opcode() == Op_CmpD) {
-          // If we have a Float or Double comparison, we must be careful with
-          // handling NaN's correctly. CmpF and CmpD have a return code, as
-          // they are based on the java bytecodes fcmpl/dcmpl:
-          // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
-          //  0: cmp_in1 == cmp_in2  (no NaN)
-          //  1: cmp_in1 >  cmp_in2  (no NaN)
-          //
-          // The "bol_test" selects which of the [-1, 0, 1] cases lead to "true".
-          //
-          // Note: ordered   (O) comparison returns "false" if either input is NaN.
-          //       unordered (U) comparison returns "true"  if either input is NaN.
-          //
-          // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
-          // standard way (all comparisons are ordered, except NEQ is unordered).
-          //
-          // In the following, "bol_test" already matches the cmp code for VectorMaskCmpNode:
-          //   BoolTest::eq:  Case 0     -> EQ_O
-          //   BoolTest::ne:  Case -1, 1 -> NEQ_U
-          //   BoolTest::ge:  Case 0, 1  -> GE_O
-          //   BoolTest::gt:  Case 1     -> GT_O
-          //
-          // But the lt and le comparisons must be converted from unordered to ordered:
-          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
-          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
-          //
-          if (bol_test == BoolTest::lt || bol_test == BoolTest::le) {
-            // Negating the bol_test and swapping the blend-inputs leaves all non-NaN cases equal,
-            // but converts the unordered (U) to an ordered (O) comparison.
-            //      VectorBlend(VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            //      VectorBlend(VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-            // <==> VectorBlend(VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-            bol_test = bol->_test.negate();
-            swap(blend_in1, blend_in2);
-          }
+        VTransformBoolTest bool_test = _packset.get_bool_test(bool_pack);
+        BoolTest::mask test_mask = bool_test._mask;
+        if (bool_test._is_negated) {
+           // We can cancel out the negation by swapping the blend inputs.
+           swap(blend_in1, blend_in2);
         }
 
         // VectorMaskCmp
-        ConINode* bol_test_node  = igvn().intcon((int)bol_test);
+        ConINode* test_mask_node  = igvn().intcon((int)test_mask);
         BasicType bt = velt_basic_type(cmp);
         const TypeVect* vt = TypeVect::make(bt, vlen);
-        VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
+        VectorNode* mask = new VectorMaskCmpNode(test_mask, cmp_in1, cmp_in2, test_mask_node, vt);
         phase()->register_new_node_with_ctrl_of(mask, p->at(0));
         igvn()._worklist.push(mask);
 
@@ -2587,40 +2410,23 @@ bool SuperWord::output() {
             vlen_in_bytes = in2->as_Vector()->length_in_bytes();
           }
         } else {
-          // Vector unsigned right shift for signed subword types behaves differently
-          // from Java Spec. But when the shift amount is a constant not greater than
-          // the number of sign extended bits, the unsigned right shift can be
-          // vectorized to a signed right shift.
-          if (VectorNode::can_transform_shift_op(n, velt_basic_type(n))) {
+          if (VectorNode::can_use_RShiftI_instead_of_URShiftI(n, velt_basic_type(n))) {
             opc = Op_RShiftI;
           }
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtF || opc == Op_SqrtD ||
-                 opc == Op_AbsF || opc == Op_AbsD ||
-                 opc == Op_AbsI || opc == Op_AbsL ||
-                 opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
-                 opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
-                 opc == Op_ReverseI || opc == Op_ReverseL ||
-                 opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
-                 opc == Op_CountTrailingZerosI) {
+      } else if (VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, nullptr, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (requires_long_to_int_conversion(opc)) {
-        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
-        // returns int type, but Vector API for them returns long type. To unify
-        // the implementation in backend, superword splits the vector implementation
-        // for Java API into an execution node with long type plus another node
-        // converting long to int.
+      } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         phase()->register_new_node_with_ctrl_of(longval, first);
+        // Requires extra vector long -> int conversion.
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2704,8 +2510,6 @@ bool SuperWord::output() {
     }
   }
 
-  phase()->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
-
   return true;
 }
 
@@ -2716,13 +2520,13 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  bool have_same_inputs = same_inputs(p, opd_idx);
+  Node* same_input = _packset.same_inputs_at_index_or_null(p, opd_idx);
 
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
   // all inputs are the same iv, so we do a same inputs check here.
-  if (opd == iv() && !have_same_inputs) {
+  if (opd == iv() && same_input == nullptr) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -2733,7 +2537,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     return vn;
   }
 
-  if (have_same_inputs) {
+  if (same_input != nullptr) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
         assert(false, "shift's count can't be vector");
@@ -2948,7 +2752,17 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
 bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   Node_List* u_pk = get_pack(use);
   if (u_pk == nullptr) return false;
-  if (is_marked_reduction(use)) return true;
+
+  // Reduction: first input is internal connection.
+  if (is_marked_reduction(use) && u_idx == 1) {
+#ifdef ASSERT
+      for (uint i = 1; i < u_pk->size(); i++) {
+        assert(u_pk->at(i - 1) == u_pk->at(i)->in(1), "internal connection");
+      }
+#endif
+    return true;
+  }
+
   Node* def = use->in(u_idx);
   Node_List* d_pk = get_pack(def);
   if (d_pk == nullptr) {
@@ -2975,49 +2789,111 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
-  if (VectorNode::is_muladds2i(use)) {
-    // MulAddS2I takes shorts and produces ints - hence the special checks
-    // on alignment and size.
-    if (u_pk->size() * 2 != d_pk->size()) {
-      return false;
-    }
-    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (alignment(ui) != alignment(di) * 2) {
-        return false;
-      }
-    }
-    return true;
+  if (!is_velt_basic_type_compatible_use_def(use, def)) {
+    return false;
   }
 
-  if (u_pk->size() != d_pk->size())
-    return false;
+  if (VectorNode::is_muladds2i(use)) {
+    return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
+  }
 
-  if (longer_type_for_conversion(use) != T_ILLEGAL) {
-    // These opcodes take a type of a kind of size and produce a type of
-    // another size - hence the special checks on alignment and size.
-    for (uint i = 0; i < u_pk->size(); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (ui->in(u_idx) != di) {
-        return false;
-      }
-      if (alignment(ui) / type2aelembytes(velt_basic_type(ui)) !=
-          alignment(di) / type2aelembytes(velt_basic_type(di))) {
-        return false;
-      }
-    }
-    return true;
+  if (u_pk->size() != d_pk->size()) {
+    return false;
   }
 
   for (uint i = 0; i < u_pk->size(); i++) {
     Node* ui = u_pk->at(i);
     Node* di = d_pk->at(i);
-    if (ui->in(u_idx) != di || alignment(ui) != alignment(di))
+    if (ui->in(u_idx) != di) {
       return false;
+    }
   }
   return true;
+}
+
+// MulAddS2I takes 4 shorts and produces an int. We can reinterpret
+// the 4 shorts as two ints: a = (a0, a1) and b = (b0, b1).
+//
+// Inputs:                 1    2    3    4
+// Offsets:                0    0    1    1
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1
+//
+// But permutations are possible, because add and mul are commutative. For
+// simplicity, the first input is always either a0 or a1. These are all
+// the possible permutations:
+//
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1     (case 1)
+//   v = MulAddS2I(a, b) = a0 * b0 + b1 * a1     (case 2)
+//   v = MulAddS2I(a, b) = a1 * b1 + a0 * b0     (case 3)
+//   v = MulAddS2I(a, b) = a1 * b1 + b0 * a0     (case 4)
+//
+// To vectorize, we expect (a0, a1) to be consecutive in one input pack,
+// and (b0, b1) in the other input pack. Thus, both a and b are strided,
+// with stride = 2. Further, a0 and b0 have offset 0, whereas a1 and b1
+// have offset 1.
+bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
+  assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
+
+  bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
+  Node_List* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
+
+  return pack1 != nullptr &&
+         pack2 != nullptr &&
+         pack3 != nullptr &&
+         pack4 != nullptr &&
+         ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
+          (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
+}
+
+Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
+  Node* def0 = pack->at(0)->in(index);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
+    return nullptr; // size mismatch
+  }
+
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
+      return nullptr; // use-def mismatch
+    }
+  }
+  return pack_in;
+}
+
+// Check if the output type of def is compatible with the input type of use, i.e. if the
+// types have the same size.
+bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) const {
+  assert(in_bb(def) && in_bb(use), "both use and def are in loop");
+
+  // Conversions are trivially compatible.
+  if (VectorNode::is_convert_opcode(use->Opcode())) {
+    return true;
+  }
+
+  BasicType use_bt = velt_basic_type(use);
+  BasicType def_bt = velt_basic_type(def);
+
+  assert(is_java_primitive(use_bt), "sanity %s", type2name(use_bt));
+  assert(is_java_primitive(def_bt), "sanity %s", type2name(def_bt));
+
+  // Nodes like Long.bitCount: expect long input, and int output.
+  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(use->Opcode())) {
+    return type2aelembytes(def_bt) == 8 &&
+           type2aelembytes(use_bt) == 4;
+  }
+
+  // MulAddS2I: expect short input, and int output.
+  if (VectorNode::is_muladds2i(use)) {
+    return type2aelembytes(def_bt) == 2 &&
+           type2aelembytes(use_bt) == 4;
+  }
+
+  // Default case: input size of use equals output size of def.
+  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
 }
 
 // Return nullptr if success, else failure message
@@ -3150,15 +3026,9 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
-// Initialize per node info
-void SuperWord::initialize_node_info() {
-  Node* last = body().at(body().length() - 1);
-  grow_node_info(bb_idx(last));
-}
-
 BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        requires_long_to_int_conversion(n->Opcode())) ||
+        VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }
@@ -3175,34 +3045,6 @@ BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   int dst_size = type2aelembytes(dst_t);
   return src_size == dst_size ? T_ILLEGAL
                               : (src_size > dst_size ? src_t : dst_t);
-}
-
-int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
-  BasicType bt = velt_basic_type(n);
-  BasicType vt = bt;
-
-  // find the longest type among def nodes.
-  uint start, end;
-  VectorNode::vector_operands(n, &start, &end);
-  for (uint i = start; i < end; ++i) {
-    Node* input = n->in(i);
-    if (!in_bb(input)) continue;
-    BasicType newt = longer_type_for_conversion(input);
-    vt = (newt == T_ILLEGAL) ? vt : newt;
-  }
-
-  // find the longest type among use nodes.
-  for (uint i = 0; i < n->outcnt(); ++i) {
-    Node* output = n->raw_out(i);
-    if (!in_bb(output)) continue;
-    BasicType newt = longer_type_for_conversion(output);
-    vt = (newt == T_ILLEGAL) ? vt : newt;
-  }
-
-  int max = Matcher::max_vector_size_auto_vectorization(vt);
-  // If now there is no vectors for the longest type, the nodes with the longest
-  // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
-  return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 
 void VLoopTypes::compute_vector_element_type() {
@@ -3308,36 +3150,6 @@ void VLoopTypes::compute_vector_element_type() {
 #endif
 }
 
-//------------------------------memory_alignment---------------------------
-// Alignment within a vector memory reference
-int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
-  }
-#endif
-  const VPointer& p = vpointer(s);
-  if (!p.valid()) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
-    return bottom_align;
-  }
-  int vw = get_vw_bytes_special(s);
-  if (vw < 2) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
-    return bottom_align; // No vectors for this type
-  }
-  int offset  = p.offset_in_bytes();
-  offset     += iv_adjust*p.memory_size();
-  int off_rem = offset % vw;
-  int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
-  }
-#endif
-  return off_mod;
-}
-
 // Smallest type containing range of values
 const Type* VLoopTypes::container_type(Node* n) const {
   if (n->is_Mem()) {
@@ -3393,7 +3205,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // determined by SuperWord::filter_packs_for_alignment().
 void SuperWord::determine_mem_ref_and_aw_for_main_loop_alignment() {
   if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
   }
 
@@ -3793,10 +3605,6 @@ void VLoopBody::print() const {
   }
 }
 #endif
-
-// ========================= SWNodeInfo =====================
-
-const SWNodeInfo SWNodeInfo::initial;
 
 //
 // --------------------------------- vectorization/simd -----------------------------------
