@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -454,6 +455,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
      * will be unchanged. If set==1, then the values of b will be assigned to a.
      * The behavior is undefined if swap has any value other than 0 or 1.
      */
+    @ForceInline
     @IntrinsicCandidate
     protected static void conditionalAssign(int set, long[] a, long[] b) {
         int maskValue = -set;

@@ -31,6 +31,7 @@ import sun.security.util.math.SmallValue;
 import sun.security.util.math.IntegerFieldModuloP;
 import java.math.BigInteger;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 
 // Reference:
 // - [1] Shay Gueron and Vlad Krasnov "Fast Prime Field Elliptic Curve
@@ -114,44 +115,6 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         return super.getSmallValue(value);
     }
 
-    /*
-     * This function is used by IntegerPolynomial.setProduct(SmallValue v) to
-     * multiply by a small constant (i.e. (int) 1,2,3,4). Instead of doing a
-     * montgomery conversion followed by a montgomery multiplication, just use
-     * the spare top (64-BITS_PER_LIMB) bits to multiply by a constant. (See [1]
-     * Section 4 )
-     *
-     * Will return an unreduced value
-     */
-    @Override
-    protected void multByInt(long[] a, long b) {
-        assert (b < (1 << BITS_PER_LIMB));
-        if (b == 2) {
-            for (int i = 0; i < NUM_LIMBS; i++) {
-                a[i] <<= 1;
-            }
-            reducePositive(a);
-        } else if (b == 3) {
-            for (int i = 0; i < NUM_LIMBS; i++) {
-                a[i] *= 3;
-            }
-            reducePositive(a);
-            reducePositive(a);
-        } else if (b == 4) {
-            for (int i = 0; i < NUM_LIMBS; i++) {
-                a[i] <<= 2;
-            }
-            reducePositive(a);
-            reducePositive(a);
-            reducePositive(a);
-        } else {
-            for (int i = 0; i < NUM_LIMBS; i++) {
-                a[i] *= b;
-            }
-            reduce(a);
-        }
-    }
-
     @Override
     public ImmutableIntegerModuloP fromMontgomery(ImmutableIntegerModuloP n) {
         assert n.getField() == MontgomeryIntegerPolynomialP256.ONE;
@@ -201,6 +164,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         reducePositive(r);
     }
 
+    @ForceInline
     @IntrinsicCandidate
     private void multImpl(long[] a, long[] b, long[] r) {
         long aa0 = a[0];
@@ -565,6 +529,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
     }
 
     // Used when limbs a could overflow by one modulus.
+    @ForceInline
     protected void reducePositive(long[] a) {
         long aa0 = a[0];
         long aa1 = a[1] + (aa0>>BITS_PER_LIMB);
