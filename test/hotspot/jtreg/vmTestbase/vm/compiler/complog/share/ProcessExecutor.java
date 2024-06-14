@@ -132,7 +132,7 @@ public class ProcessExecutor {
     }
 
     public long getPid() {
-        return process.toHandle().pid();
+        return process.pid();
     }
 
     public OutputStream getStdIn() {
