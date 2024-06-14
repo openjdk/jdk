@@ -127,7 +127,7 @@ public class Log {
      * Threshold value for printing trace messages for debugging purpose.
      * Default value is <code>0</code> a.k.a. <code>TraceLevel.INFO</code>;
      */
-    private final int traceLevel = TraceLevel.TRACE_DEBUG + 1;
+    private int traceLevel = TraceLevel.DEFAULT;
 
     /**
      * This <code>errosBuffer</code> will keep all messages printed via
@@ -202,6 +202,7 @@ public class Log {
      */
     public Log(PrintStream stream, ArgumentParser argsParser) {
         this(stream, argsParser.verbose());
+        traceLevel = argsParser.getTraceLevel();
     }
 
     /////////////////////////////////////////////////////////////////
@@ -227,6 +228,14 @@ public class Log {
 
     public int getTraceLevel() {
         return traceLevel;
+    }
+
+    /**
+     * Set threshold for printing trace messages.
+     * Warning: trace level changes may NOT be observed by other threads immediately.
+     */
+    public void setTraceLevel(int level) {
+        traceLevel = level;
     }
 
     /**
