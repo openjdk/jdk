@@ -362,6 +362,11 @@ public:
     }
   }
 
+  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
+  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
+  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -384,18 +389,6 @@ public:
   NOT_PRODUCT(static void print_pack(Node_List* pack);)
 };
 
-// ========================= SuperWord =====================
-
-// -----------------------------SWNodeInfo---------------------------------
-// Per node info needed by SuperWord
-class SWNodeInfo {
- public:
-  int         _alignment; // memory alignment for a node
-
-  SWNodeInfo() : _alignment(-1) {}
-  static const SWNodeInfo initial;
-};
-
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -407,9 +400,6 @@ class SuperWord : public ResourceObj {
   // VSharedData, and reused over many AutoVectorizations.
   Arena _arena;
 
-  enum consts { top_align = -1, bottom_align = -666 };
-
-  GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
 
   PairSet _pairset;
@@ -461,6 +451,11 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.body().bb_idx(n);
   }
 
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    return _vloop_analyzer.body().for_each_mem(callback);
+  }
+
   // VLoopTypes accessors
   const Type* velt_type(Node* n) const {
     return _vloop_analyzer.types().velt_type(n);
@@ -506,11 +501,6 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_alignment() const {
-    // Too verbose for TraceSuperWord
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
@@ -531,15 +521,9 @@ class SuperWord : public ResourceObj {
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
-  bool is_trace_superword_verbose() const {
-    // Too verbose for TraceSuperWord
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
@@ -549,7 +533,7 @@ class SuperWord : public ResourceObj {
 
   bool is_trace_align_vector() const {
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
-           is_trace_superword_verbose();
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 #endif
 
@@ -566,37 +550,22 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return &_arena; }
 
-  int get_vw_bytes_special(MemNode* s);
-
-  // Ensure node_info contains element "i"
-  void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
-
-  // should we align vector memory references on this platform?
-  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
-
-  // memory alignment for a node
-  int alignment(Node* n) const               { return _node_info.adr_at(bb_idx(n))->_alignment; }
-  void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
-
-  // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  static bool requires_long_to_int_conversion(int opc);
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx) const;
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
 private:
   bool SLP_extract();
-  // Find the adjacent memory references and create pack pairs for them.
-  void find_adjacent_refs();
-  // Find a memory reference to align the loop induction variable to.
-  MemNode* find_align_to_ref(Node_List &memops, int &idx);
-  // Calculate loop's iv adjustment for this memory ops.
-  int get_iv_adjustment(MemNode* mem);
 
-  // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
-  bool stmts_can_pack(Node* s1, Node* s2, int align);
+  // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+  void create_adjacent_memop_pairs();
+  void collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers);
+  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*>& vpointers);
+  static int find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start);
+  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);
+
+  // Various methods to check if we can pack two nodes.
+  bool can_pack_into_pair(Node* s1, Node* s2);
   // Is s1 immediately before s2 in memory?
   bool are_adjacent_refs(Node* s1, Node* s2) const;
   // Are s1 and s2 similar?
@@ -606,8 +575,6 @@ private:
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
-  void set_alignment(Node* s1, Node* s2, int align);
-  int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
 
   void extend_pairset_with_more_pairs_by_following_use_and_def();
   bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
@@ -632,13 +599,10 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
-
-  // Convert packs into vector node operations
-  bool output();
+  bool schedule_and_apply();
+  bool apply(Node_List& memops_schedule);
+  void apply_memops_reordering_with_schedule(Node_List& memops_schedule);
+  bool apply_vectorization();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
 
@@ -661,16 +625,13 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  // Initialize per node info
-  void initialize_node_info();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n) const;
-  // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
-  int max_vector_size_in_def_use_chain(Node* n);
+
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
-  // Alignment within a vector memory reference
-  int memory_alignment(MemNode* s, int iv_adjust);
+
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
