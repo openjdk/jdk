@@ -435,21 +435,16 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         d4 += n4 & LIMB_MASK;
 
         c5 += d1 + dd0 + (d0 >>> BITS_PER_LIMB);
-        c6 += d2 + dd1 + (c5 >>> BITS_PER_LIMB);
-        c7 += d3 + dd2 + (c6 >>> BITS_PER_LIMB);
-        c8 += d4 + dd3 + (c7 >>> BITS_PER_LIMB);
-        c9 = dd4 + (c8 >>> BITS_PER_LIMB);
+        c6 += d2 + dd1;
+        c7 += d3 + dd2;
+        c8 += d4 + dd3;
+        c9 = dd4;
 
-        c5 &= LIMB_MASK;
-        c6 &= LIMB_MASK;
-        c7 &= LIMB_MASK;
-        c8 &= LIMB_MASK;
-
-        r[0] = c5 & LIMB_MASK;
-        r[1] = c6 & LIMB_MASK;
-        r[2] = c7 & LIMB_MASK;
-        r[3] = c8 & LIMB_MASK;
-        r[4] = c9 & LIMB_MASK;
+        r[0] = c5;
+        r[1] = c6;
+        r[2] = c7;
+        r[3] = c8;
+        r[4] = c9;
     }
 
     @Override
