@@ -81,8 +81,8 @@ class CgroupV1MemoryController : public CgroupMemoryController {
 
   public:
     CgroupV1MemoryController(CgroupV1Controller* reader)
-	    : _reader(reader),
-	      _uses_mem_hierarchy(false) {
+      : _reader(reader),
+        _uses_mem_hierarchy(false) {
     }
 
 };
