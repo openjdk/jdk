@@ -3215,37 +3215,31 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_vector_input_at_index(con
     return populate_index;
   }
 
-  // TODO maybe refactor together with next block
-  if (same_input != nullptr && index == 2 && VectorNode::is_shift(p0)) {
-    // Scalar shift count for vector shift operation: vec2 = shiftV(vec1, scalar_count)
-    // Scalar shift operations masks the shift count, but the vector shift does not, so
-    // create a special ShiftCount node.
-    VTransformNode* same_input_vtn = get_vtnode_or_wrap_as_input_scalar(same_input);
-    BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
-    juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-    VTransformNode* shift_count = new (_graph.arena()) VTransformShiftCountNode(_graph, pack->size(), element_bt, mask, p0->Opcode());
-    shift_count->set_req(1, same_input_vtn);
-    return shift_count;
-  }
-
   if (same_input != nullptr) {
-    // Replicate the scalar same_input to every vector element. The resulting elements must
-    // be of the same velt_type as p0.
     VTransformNode* same_input_vtn = get_vtnode_or_wrap_as_input_scalar(same_input);
-    const Type* element_type = _vloop_analyzer.types().velt_type(p0);
-
-    // Scalar rotate has int rotation value. But if we are rotating longs, then we must
-    // convert the int rotation to long.
-    if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
-      assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
-      VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
-      conv->set_req(1, same_input_vtn);
-      same_input_vtn = conv;
+    if (index == 2 && VectorNode::is_shift(p0)) {
+      // Scalar shift count for vector shift operation: vec2 = shiftV(vec1, scalar_count)
+      // Scalar shift operations masks the shift count, but the vector shift does not, so
+      // create a special ShiftCount node.
+      BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
+      juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      VTransformNode* shift_count = new (_graph.arena()) VTransformShiftCountNode(_graph, pack->size(), element_bt, mask, p0->Opcode());
+      shift_count->set_req(1, same_input_vtn);
+      return shift_count;
+    } else {
+      // Replicate the scalar same_input to every vector element.
+      const Type* element_type = _vloop_analyzer.types().velt_type(p0);
+      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+        // Scalar rotate has int rotation value, but the scalar rotate expects longs.
+        assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
+        VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
+        conv->set_req(1, same_input_vtn);
+        same_input_vtn = conv;
+      }
+      VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
+      replicate->set_req(1, same_input_vtn);
+      return replicate;
     }
-
-    VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
-    replicate->set_req(1, same_input_vtn);
-    return replicate;
   }
 
   // The input is neither a pack not a same_input node. SuperWord::profitable does not allow
