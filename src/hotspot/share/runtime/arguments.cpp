@@ -748,7 +748,7 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
 
 static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
   // strtod allows leading whitespace, but our flag format does not.
-  if (*value == '\0' || isspace(*value)) {
+  if (*value == '\0' || isspace((unsigned char) *value)) {
     return false;
   }
   char* end;
@@ -1178,13 +1178,13 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '\n') in_comment = false;
       } else {
         if (c == '#') in_comment = true;
-        else if (!isspace(c)) {
+        else if (!isspace((unsigned char) c)) {
           in_white_space = false;
           token[pos++] = checked_cast<char>(c);
         }
       }
     } else {
-      if (c == '\n' || (!in_quote && isspace(c))) {
+      if (c == '\n' || (!in_quote && isspace((unsigned char) c))) {
         // token ends at newline, or at unquoted whitespace
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
@@ -3141,7 +3141,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   // parse all options
   while (rd < buffer_end) {
     // skip leading white space from the input string
-    while (rd < buffer_end && isspace(*rd)) {
+    while (rd < buffer_end && isspace((unsigned char) *rd)) {
       rd++;
     }
 
@@ -3154,7 +3154,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
     // Tokens are strings of non white space characters separated
     // by one or more white spaces.
-    while (rd < buffer_end && !isspace(*rd)) {
+    while (rd < buffer_end && !isspace((unsigned char) *rd)) {
       if (*rd == '\'' || *rd == '"') {      // handle a quoted string
         int quote = *rd;                    // matching quote to look for
         rd++;                               // don't copy open quote
