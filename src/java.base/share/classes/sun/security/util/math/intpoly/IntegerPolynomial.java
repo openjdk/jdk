@@ -824,7 +824,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             }
 
             IntegerPolynomial.this.square(limbs, limbs);
-            numAdds = 0; 
+            numAdds = 0;
             return this;
         }
 
