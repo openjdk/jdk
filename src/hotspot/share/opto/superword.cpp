@@ -3101,8 +3101,7 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
     }
 
     for (uint k = 0; k < pack->size(); k++) {
-      Node* n = pack->at(k);
-      add_dependencies(vtn, vtn_dependencies, n);
+      add_dependencies_of_node_to_vtn(pack->at(k), vtn, vtn_dependencies);
     }
   }
 }
@@ -3130,7 +3129,7 @@ void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_d
       set_all_req_with_scalars(vtn, vtn_dependencies, n);
     }
 
-    add_dependencies(vtn, vtn_dependencies, n);
+    add_dependencies_of_node_to_vtn(n, vtn, vtn_dependencies);
   }
 }
 
@@ -3295,7 +3294,7 @@ void SuperWordVTransformBuilder::set_all_req_with_vectors(VTransformNode* vtn, V
   }
 }
 
-void SuperWordVTransformBuilder::add_dependencies(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n) {
+void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtn(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
