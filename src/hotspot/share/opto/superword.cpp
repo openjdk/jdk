@@ -1878,6 +1878,8 @@ bool SuperWord::schedule_and_apply() const {
   return true;
 }
 
+// Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
+// correctness and profitability checks have passed, and the graph was successfully scheduled.
 void VTransformGraph::apply() {
 #ifndef PRODUCT
   if (_is_trace_info || TraceLoopOpts) {
@@ -1992,8 +1994,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
   }
 }
 
-// We call "apply" on every VTransformNode, which replaces the packed scalar nodes
-// with vector nodes.
+// We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
 void VTransformGraph::apply_vectorization() const {
   Compile* C = phase()->C;
 #ifndef PRODUCT
@@ -2036,9 +2037,7 @@ void VTransformGraph::apply_vectorization() const {
       if (slp_max_unroll_factor == max_vector_length) {
 #ifndef PRODUCT
         if (TraceSuperWordLoopUnrollAnalysis) {
-          tty->print_cr("vector loop(unroll=%d, len=%d)\n",
-                        max_vector_length,
-                        max_vector_width * BitsPerByte);
+          tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vector_length, max_vector_width * BitsPerByte);
         }
 #endif
         // For atomic unrolled loops which are vector mapped, instigate more unrolling
