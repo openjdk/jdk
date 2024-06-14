@@ -667,7 +667,7 @@ public enum HtmlTag {
 
     public AttrKind getAttrKind(Name attrName) {
         Attr attr = getAttr(attrName);
-        if (attr==null){
+        if (attr == null) {
             return AttrKind.INVALID;
         }
         return attr.isGlobal() ?
