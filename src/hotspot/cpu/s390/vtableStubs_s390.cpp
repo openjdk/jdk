@@ -194,14 +194,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                  temp           = Z_R1_scratch,
                  temp2          = Z_tmp_4;
 
-
-
   // Get receiver klass.
   // Must do an explicit check if offset too large or implicit checks are disabled.
   address npe_addr = __ pc(); // npe is short for null pointer exception
   __ load_klass(recv_klass, Z_ARG1);
 
-  __ z_lg(holder_klass, Address(Z_method, CompiledICData::itable_defc_klass_offset()));
+  __ z_lg(holder_klass,   Address(Z_method, CompiledICData::itable_defc_klass_offset()));
   __ z_lg(resolved_klass, Address(Z_method, CompiledICData::itable_refc_klass_offset()));
 
   __ lookup_interface_method_stub(recv_klass, holder_klass, resolved_klass, Z_method,
@@ -210,7 +208,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     __ z_ltgr(Z_method, Z_method);
-    __ asm_assert(Assembler::bcondNotEqual, "method is null", 103); // Z_method should be NE to 0
+    __ asm_assert(Assembler::bcondNotEqual, "method is null", 103); // Z_method shouldn't be 0
   }
 #endif
 
