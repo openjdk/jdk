@@ -2867,8 +2867,8 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
 
   // Loop: Look for resolved_class record in itable
   //   while (true) {
-  //     temp_itbl_klass = *(scan_temp);
   //     scan_temp += itable_offset_entry_size
+  //     temp_itbl_klass = *(scan_temp);
   //     if (temp_itbl_klass == 0) {
   //       goto L_no_such_interface;
   //     }
