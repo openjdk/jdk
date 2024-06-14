@@ -482,7 +482,7 @@ bool SuperWord::SLP_extract() {
   DEBUG_ONLY(verify_packs();)
   DEBUG_ONLY(verify_no_extract());
 
-  return vtransform();
+  return schedule_and_apply();
 }
 
 // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
@@ -1858,7 +1858,7 @@ void PackSet::verify() const {
 }
 #endif
 
-bool SuperWord::vtransform() const {
+bool SuperWord::schedule_and_apply() const {
   if (_packset.is_empty()) { return false; }
 
   VTransformGraph graph(_vloop_analyzer,

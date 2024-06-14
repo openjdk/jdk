@@ -627,7 +627,7 @@ private:
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  bool vtransform() const;
+  bool schedule_and_apply() const;
 };
 
 // Facility class that builds a VTransformGraph from a SuperWord PackSet.
