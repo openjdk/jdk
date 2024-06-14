@@ -136,12 +136,12 @@ public class ECDSAPrimitive {
         int valueLength = computedSig.length / 2;
         byte[] computedR = Arrays.copyOf(computedSig, valueLength);
         byte[] expectedR = values.get("R");
-        Assert.assertEqualsInt(expectedR, computedR, "R");
+        Asserts.assertEquals(new BigInteger(1, expectedR), new BigInteger(1, computedR), "R");
 
         byte[] computedS = Arrays.copyOfRange(computedSig, valueLength,
                 2 * valueLength);
         byte[] expectedS = values.get("S");
-        Assert.assertEqualsInt(expectedS, computedS, "S");
+        Asserts.assertEquals(new BigInteger(1, expectedS), new BigInteger(1, computedS), "S");
 
         // ensure public key is correct
         byte[] expectedQx = values.get("Qx");
@@ -403,10 +403,10 @@ public class ECDSAPrimitive {
             byte[] computedQy = new byte[length];
             publicKey.getX().asByteArray(computedQx);
             ArrayUtil.reverse(computedQx);
-            Assert.assertEqualsByteArray(expectedQx, computedQx, "Qx");
+            Asserts.assertEqualsByteArray(expectedQx, computedQx, "Qx");
             publicKey.getY().asByteArray(computedQy);
             ArrayUtil.reverse(computedQy);
-            Assert.assertEqualsByteArray(expectedQy, computedQy, "Qy");
+            Asserts.assertEqualsByteArray(expectedQy, computedQy, "Qy");
             BigInteger bigX = publicKey.getX().asBigInteger();
             BigInteger bigY = publicKey.getY().asBigInteger();
             return new ECPoint(bigX, bigY);
@@ -424,22 +424,6 @@ public class ECDSAPrimitive {
     private static class ImproperSignatureException extends Exception {
 
         private static final long serialVersionUID = 1;
-    }
-
-    static class Assert extends Asserts {
-
-        public static void assertEqualsInt(byte[] expected, byte[] actual,
-                                           String msg) {
-
-            BigInteger intExpected = new BigInteger(1, expected);
-            BigInteger intActual = new BigInteger(1, actual);
-            if (!intExpected.equals(intActual)) {
-                msg = Objects.toString(msg, "assertEqualsInt")
-                        + ": expected " + intExpected.toString(16)
-                        + " to equal " + intActual.toString(16);
-                fail(msg);
-            }
-        }
     }
 
 }
