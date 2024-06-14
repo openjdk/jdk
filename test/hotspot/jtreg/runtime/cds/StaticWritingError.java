@@ -31,47 +31,14 @@
  */
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryPermission;
-import java.nio.file.attribute.AclEntryType;
-import java.nio.file.attribute.AclFileAttributeView;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.List;
-
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class StaticWritingError {
     public static void main(String[] args) throws Exception {
-        String directoryName = "unwritable";
+        String directoryName = "nosuchdir";
         String archiveName = "staticWritingError.jsa";
-
-        // Create directory that cannot be written to
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            // Windows filesystem uses Access Control Lists instead of permissions
-            Path dir = Files.createTempDirectory(directoryName);
-            AclFileAttributeView view = Files.getFileAttributeView(dir, AclFileAttributeView.class);
-                UserPrincipal owner = view.getOwner();
-                List<AclEntry> acl = view.getAcl();
-
-            // Insert entry to deny WRITE and EXECUTE
-            AclEntry entry = AclEntry.newBuilder()
-                .setType(AclEntryType.DENY)
-                .setPrincipal(owner)
-                .setPermissions(AclEntryPermission.WRITE_DATA,
-                                AclEntryPermission.EXECUTE)
-                .build();
-            acl.add(0, entry);
-            view.setAcl(acl);
-       } else {
-            File directory = new File(directoryName);
-            directory.mkdir();
-            directory.setReadable(false);
-            directory.setWritable(false);
-       }
 
         // Perform static dump and attempt to write archive in unwritable directory
         CDSOptions opts = (new CDSOptions())

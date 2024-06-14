@@ -656,7 +656,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      MetaspaceShared::writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+      MetaspaceShared::writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
 }
@@ -803,10 +803,6 @@ bool MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo*
     return false;
   }
   builder->write_archive(map_info, heap_info);
-
-  if (PrintSystemDictionaryAtExit) {
-    SystemDictionary::print();
-  }
 
   if (AllowArchivingWithJavaAgent) {
     log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
