@@ -3853,9 +3853,6 @@ public class Resolve {
         Assert.check(env.info.ctorPrologue);
         Assert.check((v.flags_field & STATIC) == 0);
 
-        // The flexible constructors feature must be enabled
-        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
-
         // The symbol must appear in the LHS of an assignment statement
         if (!(env.tree instanceof JCAssign assign))
             return false;
@@ -3871,6 +3868,9 @@ public class Resolve {
         // If an early reference, the field must not be declared in a superclass
         if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
             return false;
+
+        // The flexible constructors feature must be enabled
+        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
 
         // OK
         return true;
