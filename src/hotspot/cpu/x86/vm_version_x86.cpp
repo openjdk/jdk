@@ -108,6 +108,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
+#if !defined(PRODUCT) && defined(_LP64)
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
@@ -126,6 +127,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ ret(0);
     return start;
   }
+#endif
 
   address generate_get_cpu_info() {
     // Flags to test CPU type.
@@ -417,7 +419,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) && defined(_LP64)
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports APX
@@ -2164,9 +2166,11 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+#if !defined(PRODUCT) && defined(_LP64)
 void VM_Version::clear_apx_test_state() {
   clear_apx_test_state_stub();
 }
+#endif
 
 static bool _vm_version_initialized = false;
 
@@ -2185,8 +2189,10 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
+#if !defined(PRODUCT) &&  defined(_LP64)
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
+#endif
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
