@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,7 +663,7 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("union JfrNativeSettings {");
             out.write("  // Array version.");
-            out.write("  jfrNativeEventSetting bits[NUMBER_OF_EVENTS];");
+            out.write("  jfrNativeEventSetting bits[NUMBER_OF_EVENTS + NUMBER_OF_RESERVED_EVENTS];");
             out.write("  // Then, to make it easy to debug,");
             out.write("  // add named struct members also.");
             out.write("  struct {");
