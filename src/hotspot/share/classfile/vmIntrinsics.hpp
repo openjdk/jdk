@@ -529,8 +529,8 @@ class methodHandle;
   /* support for sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256 */                                      \
   do_class(sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, "sun/security/util/math/intpoly/MontgomeryIntegerPolynomialP256")  \
   do_intrinsic(_intpoly_montgomeryMult_P256, sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, intPolyMult_name, intPolyMult_signature, F_R) \
-  do_name(intPolyMult_name, "mult")                                                                                     \
-  do_signature(intPolyMult_signature, "([J[J[J)I")                                                                      \
+  do_name(intPolyMult_name, "multImpl")                                                                                     \
+  do_signature(intPolyMult_signature, "([J[J[J)V")                                                                      \
                                                                                                                         \
   do_class(sun_security_util_math_intpoly_IntegerPolynomial, "sun/security/util/math/intpoly/IntegerPolynomial")        \
   do_intrinsic(_intpoly_assign, sun_security_util_math_intpoly_IntegerPolynomial, intPolyAssign_name, intPolyAssign_signature, F_S) \
