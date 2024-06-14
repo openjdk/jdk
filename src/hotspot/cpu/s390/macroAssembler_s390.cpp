@@ -2847,11 +2847,11 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
 
   // Loop: Look for holder_klass record in itable
   //   do {
+  //     scan_temp += itable_offset_entry_size
   //     temp_itbl_klass = *(scan_temp);
   //     if (temp_itbl_klass == holder_klass) {
   //       goto holder_found; // Found!
   //     }
-  //     scan_temp += itable_offset_entry_size
   //   } while (temp_itbl_klass != 0);
   //   goto no_such_interface // Not found.
   NearLabel L_search_holder;
