@@ -165,7 +165,7 @@ void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
 
 void ClassLoaderStatsVMOperation::doit() {
   ClassLoaderStatsClosure clsc (_out);
-  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&clsc);
+  ClassLoaderDataGraph::loaded_cld_do(&clsc);
   clsc.print();
 }
 
