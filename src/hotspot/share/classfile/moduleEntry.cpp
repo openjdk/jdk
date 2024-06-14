@@ -209,7 +209,7 @@ void ModuleEntry::set_is_open(bool is_open) {
 // module will return false.
 bool ModuleEntry::has_reads_list() const {
   assert_locked_or_safepoint(Module_lock);
-  return ((_reads != nullptr) && !reads()->is_empty());
+  return ((reads() != nullptr) && !reads()->is_empty());
 }
 
 // Purge dead module entries out of reads list.
