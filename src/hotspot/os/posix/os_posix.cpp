@@ -155,7 +155,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   committed_start = start;
   committed_size = size;
   return true;
-#endif
+#else
 
   int mincore_return_value;
   const size_t stripe = 1024;  // query this many pages each time
@@ -235,6 +235,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(committed_pages == 0, "Should not have committed region");
     return false;
   }
+#endif
 }
 
 int os::get_native_stack(address* stack, int frames, int toSkip) {
