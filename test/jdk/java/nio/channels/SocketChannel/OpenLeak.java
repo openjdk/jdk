@@ -38,6 +38,7 @@ import java.nio.channels.UnresolvedAddressException;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class OpenLeak {
 
@@ -69,32 +70,32 @@ public class OpenLeak {
         //   where close should be called
         SocketAddress sa = InetSocketAddress.createUnresolved(isa.getHostString(), isa.getPort());
 
-        System.out.println("Expecting Connection Refused for " + isa);
-        System.out.println("Expecting UnresolvedAddressException for " + sa);
+        System.err.println("Expecting Connection Refused for " + isa);
+        System.err.println("Expecting UnresolvedAddressException for " + sa);
         int i = 0;
         try {
             for (i = 0; i < MAX_LOOP; i++) {
                 try {
                     SocketChannel.open(sa);
-                    throw new RuntimeException("This should not happen");
+                    fail("This should not happen");
                 } catch (UnresolvedAddressException x) {
                     if (i < 5 || i >= MAX_LOOP - 5) {
                         // print a message for the first five and last 5 exceptions
-                        System.out.println(x);
+                        System.err.println(x);
                     }
                 }
                 try {
                     SocketChannel.open(isa);
-                    throw new RuntimeException("This should not happen");
+                    fail("This should not happen");
                 } catch (ConnectException x) {
                     if (i < 5 || i >= MAX_LOOP - 5) {
                         // print a message for the first five and last 5 exceptions
-                        System.out.println(x);
+                        System.err.println(x);
                     }
                 }
             }
         } catch (Throwable t) {
-            System.out.println("Failed at " + i + " with " + t);
+            System.err.println("Failed at " + i + " with " + t);
             throw t;
         }
     }
