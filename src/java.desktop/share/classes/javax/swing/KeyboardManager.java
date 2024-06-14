@@ -302,6 +302,23 @@ class KeyboardManager {
              }
          }
 
+         // also check if a customDefaultMenuBar wants the event
+        JMenuBar customDefaultMenuBar = Desktop.getDesktop().getCustomDefaultMenuBar();
+        if (customDefaultMenuBar != null) {
+            if (customDefaultMenuBar.isEnabled()) {
+                boolean extended = (ksE != null) && !ksE.equals(ks);
+                if (extended) {
+                    fireBinding(customDefaultMenuBar, ksE, e, pressed);
+                }
+                if (!extended || !e.isConsumed()) {
+                    fireBinding(customDefaultMenuBar, ks, e, pressed);
+                }
+                if (e.isConsumed()) {
+                    return true;
+                }
+            }
+        }
+
          return e.isConsumed();
     }
 
