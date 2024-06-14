@@ -38,6 +38,8 @@ import javax.swing.JSplitPane;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class TestSplitPaneEnableTest {
     private static JButton leftOneTouchButton;
@@ -48,53 +50,69 @@ public class TestSplitPaneEnableTest {
     private static volatile int prevDivLoc;
     private static volatile int curDivLoc;
 
-    public static void main(String[] args) throws Exception {
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
-            Robot robot = new Robot();
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame();
-                jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                     new JButton("Left"),
-                                     new JButton("Right"));
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-                frame.getContentPane().add(jsp);
-                jsp.setUI(new TestSplitPaneUI());
-                jsp.setOneTouchExpandable(true);
+    public static void main(String[] args) throws Exception {
+        Robot robot = new Robot();
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing LAF : " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
-                jsp.setEnabled(false);
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    frame = new JFrame("SplitPaneTest");
+                    jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                         new JButton("Left"),
+                                         new JButton("Right"));
 
-                frame.setSize(400, 200);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            });
+                    frame.getContentPane().add(jsp);
+                    jsp.setUI(new TestSplitPaneUI());
+                    jsp.setOneTouchExpandable(true);
 
-            robot.waitForIdle();
-            robot.delay(1000);
+                    jsp.setEnabled(false);
 
-            SwingUtilities.invokeAndWait(() -> {
-                loc = leftOneTouchButton.getLocationOnScreen();
-                prevDivLoc = jsp.getDividerLocation();
-            });
-            robot.mouseMove(loc.x, loc.y);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                    frame.setSize(400, 200);
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                });
 
-            robot.waitForIdle();
-            robot.delay(1000);
+                robot.waitForIdle();
+                robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> {
-                curDivLoc = jsp.getDividerLocation();
-            });
-            System.out.println("current Divider location " + curDivLoc);
-            if (curDivLoc != prevDivLoc) {
-                throw new RuntimeException("Divider position changed on disabled oneTouchExpandable arrow click");
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
+                SwingUtilities.invokeAndWait(() -> {
+                    loc = leftOneTouchButton.getLocationOnScreen();
+                    prevDivLoc = jsp.getDividerLocation();
+                });
+                robot.mouseMove(loc.x, loc.y);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+                robot.waitForIdle();
+                robot.delay(1000);
+
+                SwingUtilities.invokeAndWait(() -> {
+                    curDivLoc = jsp.getDividerLocation();
+                });
+                System.out.println("current Divider location " + curDivLoc);
+                if (curDivLoc != prevDivLoc) {
+                    throw new RuntimeException("Divider position changed on disabled oneTouchExpandable arrow click");
                 }
-            });
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                });
+            }
         }
     }
 
