@@ -3729,6 +3729,13 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2_OR_JVMCI
 
+  if (log_is_enabled(Info, perf, class, link)) {
+    if (!UsePerfData) {
+      warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+    }
+  }
+
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
