@@ -764,8 +764,8 @@ class VPointer : public ArenaObj {
   }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-  for (int i = 0; i < nodes.length(); i++) {
-    MemNode* mem = nodes.at(i)->as_Mem();
+    for (int i = 0; i < nodes.length(); i++) {
+      MemNode* mem = nodes.at(i)->as_Mem();
       VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between

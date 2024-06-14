@@ -706,7 +706,7 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   }
 
   // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
-  // and will still be vectorized by SuperWordVTransformBuilder::find_input_for_vector.
+  // and will still be vectorized by SuperWordVTransformBuilder::get_vector_input_at_index.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
@@ -770,7 +770,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to
 // PopulateIndex vector node. We skip the pack creation of these nodes. They
-// will be vectorized by SuperWordVTransformBuilder::find_input_for_vector.
+// will be vectorized by SuperWordVTransformBuilder::get_vector_input_at_index.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
   return n1->is_Add() &&
          n2->is_Add() &&
@@ -3180,13 +3180,13 @@ void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, VectorS
 }
 
 // TODO j -> index, maybe rename
-VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_List* pack) {
+VTransformNode* SuperWordVTransformBuilder::get_vector_input_at_index(const Node_List* pack, const int index) {
   Node* p0 = pack->at(0);
 
-  Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, j);
+  Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, index);
   if (pack_in != nullptr) {
     // Input is a matching pack -> vtnode already exists.
-    assert(j != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
+    assert(index != 2 || !VectorNode::is_shift(p0), "shift's count cannot be vector");
     return get_vtnode(pack_in->at(0));
   }
 
@@ -3201,18 +3201,18 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
     //   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0
     //
     // All inputs are strided (stride = 2), either with offset 0 or 1.
-    Node_List* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, j, 2, 0);
+    Node_List* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 0);
     if (pack_in0 != nullptr) {
       return get_vtnode(pack_in0->at(0));
     }
-    Node_List* pack_in1 = _packset.strided_pack_input_at_index_or_null(pack, j, 2, 1);
+    Node_List* pack_in1 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 1);
     if (pack_in1 != nullptr) {
       return get_vtnode(pack_in1->at(0));
     }
   }
 
-  Node* same_input = _packset.same_inputs_at_index_or_null(pack, j);
-  if (same_input == nullptr && p0->in(j) == _vloop.iv()) {
+  Node* same_input = _packset.same_inputs_at_index_or_null(pack, index);
+  if (same_input == nullptr && p0->in(index) == _vloop.iv()) {
     // PopulateIndex: [iv+0, iv+1, iv+2, ...]
     VTransformNode* iv_vtn = find_scalar(_vloop.iv());
     BasicType p0_bt = _vloop_analyzer.types().velt_basic_type(p0);
@@ -3226,7 +3226,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   }
 
   // TODO maybe refactor together with next block
-  if (same_input != nullptr && j == 2 && VectorNode::is_shift(p0)) {
+  if (same_input != nullptr && index == 2 && VectorNode::is_shift(p0)) {
     // Scalar shift count for vector shift operation: vec2 = shiftV(vec1, scalar_count)
     // Scalar shift operations masks the shift count, but the vector shift does not, so
     // create a special ShiftCount node.
@@ -3246,7 +3246,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
 
     // Scalar rotate has int rotation value. But if we are rotating longs, then we must
     // convert the int rotation to long.
-    if (j == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+    if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
       assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
       VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
       conv->set_req(1, same_input_vtn);
@@ -3261,7 +3261,7 @@ VTransformNode* SuperWordVTransformBuilder::find_input_for_vector(int j, Node_Li
   // The input is neither a pack not a same_input node. SuperWord::profitable does not allow
   // any other case. In the future, we could insert a PackNode.
 #ifdef ASSERT
-  tty->print_cr("\nSuperWordVTransformBuilder::find_input_for_vector: j=%d", j);
+  tty->print_cr("\nSuperWordVTransformBuilder::get_vector_input_at_index: index=%d", index);
   pack->dump();
   assert(false, "Pack input was neither a pack nor a same_input node");
 #endif
@@ -3279,7 +3279,7 @@ VTransformNode* SuperWordVTransformBuilder::find_scalar(Node* n) {
 }
 
 void SuperWordVTransformBuilder::set_req_for_vector(VTransformNode* vtn, VectorSet& vtn_dependencies, int j, Node_List* pack) {
-  VTransformNode* req = find_input_for_vector(j, pack);
+  VTransformNode* req = get_vector_input_at_index(pack, j);
   vtn->set_req(j, req);
   vtn_dependencies.set(req->_idx);
 }

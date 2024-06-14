@@ -676,8 +676,9 @@ private:
     _idx_to_vtnode.put_when_absent(n->_idx, vtn);
   }
 
+  // TODO replace all j -> index
   VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
-  VTransformNode* find_input_for_vector(int j, Node_List* pack);
+  VTransformNode* get_vector_input_at_index(const Node_List* pack, const int index);
   VTransformNode* find_scalar(Node* n);
   void set_req_for_scalar(VTransformNode* vtn, VectorSet& dependency_set, int j, Node* n);
   void set_req_for_vector(VTransformNode* vtn, VectorSet& dependency_set, int j, Node_List* pack);
