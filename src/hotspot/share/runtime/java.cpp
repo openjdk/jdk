@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -431,6 +432,10 @@ void before_exit(JavaThread* thread, bool halt) {
   if (EnableJVMCI) {
     JVMCI::shutdown(thread);
   }
+#endif
+
+#if INCLUDE_CDS
+  ClassListWriter::write_resolved_constants();
 #endif
 
   // Hang forever on exit if we're reporting an error.

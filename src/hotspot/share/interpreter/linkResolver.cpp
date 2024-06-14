@@ -974,9 +974,14 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
   }
 }
 
-void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, const methodHandle& method, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_field_access(fieldDescriptor& fd,
+                                        const constantPoolHandle& pool,
+                                        int index,
+                                        const methodHandle& method,
+                                        Bytecodes::Code byte,
+                                        bool initialize_class, TRAPS) {
   LinkInfo link_info(pool, index, method, byte, CHECK);
-  resolve_field(fd, link_info, byte, true, CHECK);
+  resolve_field(fd, link_info, byte, initialize_class, CHECK);
 }
 
 void LinkResolver::resolve_field(fieldDescriptor& fd,
