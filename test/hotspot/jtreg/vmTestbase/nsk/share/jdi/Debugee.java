@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.util.*;
  * @see Binder
  * @see DebugeeProcess
  */
-abstract public class Debugee extends DebugeeProcess {
+public class Debugee extends DebugeeProcess {
 
     /**
      * Mirror of the debugee VM. This must be initialized by every
@@ -64,6 +64,13 @@ abstract public class Debugee extends DebugeeProcess {
     /** Create new <code>Debugee</code> object for a given binder. */
     protected Debugee (Binder binder) {
         super(binder);
+        this.binder = binder;
+        this.argumentHandler = (ArgumentHandler)binder.getArgumentHandler();
+    }
+
+    protected Debugee (Process process, Binder binder) {
+        super(binder);
+        this.process = process;
         this.binder = binder;
         this.argumentHandler = (ArgumentHandler)binder.getArgumentHandler();
     }
