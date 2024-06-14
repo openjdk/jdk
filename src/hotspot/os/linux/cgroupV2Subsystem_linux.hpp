@@ -82,16 +82,16 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     /* One unified controller */
     CgroupV2Controller* _unified = nullptr;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController<CgroupMemoryController*>* _memory = nullptr;
-    CachingCgroupController<CgroupCpuController*>* _cpu = nullptr;
+    CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
+    CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
 
   public:
     CgroupV2Subsystem(CgroupV2MemoryController* memory,
                       CgroupV2CpuController* cpu,
                       CgroupV2Controller* unified) :
         _unified(unified),
-        _memory(new CachingCgroupController<CgroupMemoryController*>(memory)),
-        _cpu(new CachingCgroupController<CgroupCpuController*>(cpu)) {
+        _memory(new CachingCgroupController<CgroupMemoryController>(memory)),
+        _cpu(new CachingCgroupController<CgroupCpuController>(cpu)) {
     }
 
     jlong read_memory_limit_in_bytes();
@@ -116,8 +116,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     const char * container_type() {
       return "cgroupv2";
     }
-    CachingCgroupController<CgroupMemoryController*>* memory_controller() { return _memory; }
-    CachingCgroupController<CgroupCpuController*>* cpu_controller() { return _cpu; }
+    CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }
+    CachingCgroupController<CgroupCpuController>* cpu_controller() { return _cpu; }
 };
 
 #endif // CGROUP_V2_SUBSYSTEM_LINUX_HPP

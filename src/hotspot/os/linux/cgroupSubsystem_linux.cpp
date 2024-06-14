@@ -485,7 +485,7 @@ int CgroupSubsystem::active_processor_count() {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController<CgroupCpuController*>* contrl = cpu_controller();
+  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
   CachedMetric* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
     int val = (int)cpu_limit->value();
@@ -511,7 +511,7 @@ int CgroupSubsystem::active_processor_count() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupSubsystem::memory_limit_in_bytes() {
-  CachingCgroupController<CgroupMemoryController*>* contrl = memory_controller();
+  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
   CachedMetric* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
