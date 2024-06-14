@@ -2007,7 +2007,7 @@ class MutableBigInteger {
         int intEnd = offset + intLen;
         if (from >= intEnd)
             return new MutableBigInteger();
-        
+
         int[] block = new int[blockLength];
         System.arraycopy(value, from, block, 0, Math.min(intEnd - from, blockLength));
         return new MutableBigInteger(block);
