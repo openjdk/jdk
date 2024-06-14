@@ -101,7 +101,7 @@ public class TestPreview extends JavadocTester {
                     <div class="caption"><span>Packages</span></div>
                     </div>
                     <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
-                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="package-tab0">
+                    <div class="summary-table three-column-summary" role="table" aria-labelledby="package-tab0">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Package</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
@@ -117,7 +117,7 @@ public class TestPreview extends JavadocTester {
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
                     <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
-                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="record-class-tab0">
+                    <div class="summary-table three-column-summary" role="table" aria-labelledby="record-class-tab0">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Record Class</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
@@ -132,7 +132,7 @@ public class TestPreview extends JavadocTester {
                     <div class="caption"><span>Methods</span></div>
                     </div>
                     <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
-                    <div class="summary-table three-column-summary" role="grid" aria-labelledby="method-tab0">
+                    <div class="summary-table three-column-summary" role="table" aria-labelledby="method-tab0">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>

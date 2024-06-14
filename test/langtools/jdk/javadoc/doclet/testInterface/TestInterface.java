@@ -224,7 +224,7 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.html", true,
             """
                 <div class="caption"><span>Nested Classes</span></div>
-                <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                 <div class="table-header col-first">Modifier and Type</div>
                 <div class="table-header col-second">Interface</div>
                 <div class="table-header col-last">Description</div>

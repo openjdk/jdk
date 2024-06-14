@@ -60,36 +60,36 @@ public class TestHtmlTableStyles extends JavadocTester {
                     <table summary="Summary" border cellpadding=3 cellspacing=1>""",
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table three-column-summary">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg1/package-summary.html", true,
                 """
                     <div class="caption"><span>Classes</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg1/class-use/TestTable.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("index.html", true,
                 """
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("deprecated-list.html", true,
             """
                     <div id="method">
                     <div class="caption"><span>Deprecated Methods</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("constant-values.html", true,
             """
-                <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
     }
 }

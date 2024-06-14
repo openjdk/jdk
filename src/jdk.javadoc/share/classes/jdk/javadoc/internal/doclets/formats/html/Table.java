@@ -321,7 +321,7 @@ public class Table<T> extends Content {
             }
         }
         int colIndex = 0;
-        Pattern pattern = Pattern.compile("<(?:a)\\b");
+        Pattern pattern = Pattern.compile("<a\\b");
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Only make element tabbable if it doesn't contain tabbable content to avoid widget_tabbable_single(Potential Violation)
@@ -393,7 +393,7 @@ public class Table<T> extends Content {
             } else {
                 main.add(getCaption(occurringTabs.iterator().next().label()));
             }
-            table.put(HtmlAttr.ROLE, "grid")
+            table.put(HtmlAttr.ROLE, "table")
                  .put(HtmlAttr.ARIA_LABEL, tableStyle.cssName());
             table.add(getTableBody());
             main.add(table);
@@ -403,7 +403,7 @@ public class Table<T> extends Content {
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
             HtmlId defaultTabId = HtmlIds.forTab(id, 0);
-            table.put(HtmlAttr.ROLE, "grid")
+            table.put(HtmlAttr.ROLE, "table")
                  .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             if (renderTabs) {
                 tablist.add(createTab(defaultTabId, HtmlStyle.activeTableTab, true, defaultTab));

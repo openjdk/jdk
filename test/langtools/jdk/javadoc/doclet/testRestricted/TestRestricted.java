@@ -153,7 +153,7 @@ public class TestRestricted extends JavadocTester {
                 <li>
                 <div id="method">
                 <div class="caption"><span>Methods</span></div>
-                <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                 <div class="table-header col-first">Method</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color"><a href="pkg/I.html#restrictedMet\

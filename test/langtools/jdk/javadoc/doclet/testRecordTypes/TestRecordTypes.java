@@ -519,7 +519,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <div id="record-class">
                     <div class="caption"><span>Deprecated Record Classes</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
@@ -551,7 +551,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <div id="method">
                     <div class="caption"><span>Deprecated Methods</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>

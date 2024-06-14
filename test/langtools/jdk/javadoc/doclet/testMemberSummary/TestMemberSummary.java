@@ -92,7 +92,7 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg3/Members.html", true,
                 """
                     <div class="caption"><span>Nested Classes</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
@@ -114,7 +114,7 @@ public class TestMemberSummary extends JavadocTester {
                     </div>""",
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Field</div>
                     <div class="table-header col-last">Description</div>
@@ -124,7 +124,7 @@ public class TestMemberSummary extends JavadocTester {
                     </div>""",
                 """
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier</div>
                     <div class="table-header col-second">Constructor</div>
                     <div class="table-header col-last">Description</div>
@@ -136,7 +136,7 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg3/Members.A.html", true,
                 """
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Required Element</div>
                     <div class="table-header col-last">Description</div>
@@ -146,7 +146,7 @@ public class TestMemberSummary extends JavadocTester {
                     </div>""",
                 """
                     <div class="caption"><span>Optional Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Optional Element</div>
                     <div class="table-header col-last">Description</div>
@@ -159,7 +159,7 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <h2>Enum Constant Summary</h2>
                     <div class="caption"><span>Enum Constants</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Enum Constant</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><code><a href="#C" class="member-name-link">C</a></code></div>
@@ -168,7 +168,7 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg3/Members.R.html", true,
                 """
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Field</div>
                     <div class="table-header col-last">Description</div>

@@ -67,7 +67,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="s1/package-summary.html">t.p1.s1</a></div>
@@ -80,7 +80,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/s1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
@@ -93,7 +93,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/s2/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
@@ -106,7 +106,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/s3/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1</a></div>
@@ -123,7 +123,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/s3/t1/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1.s3</a></div>
@@ -134,7 +134,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("t/p1/s3/t2/package-summary.html", true,
                 """
                     <div class="caption"><span>Related Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="../package-summary.html">t.p1.s3</a></div>
@@ -171,7 +171,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("m/pkg/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                        <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
@@ -185,7 +185,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("m/pkg/sub1/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                        <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
@@ -199,7 +199,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("o/pkg/sub2/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                        <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                         <div class="table-header col-first">Module</div>
                         <div class="table-header col-second">Package</div>
                         <div class="table-header col-last">Description</div>
@@ -216,7 +216,7 @@ public class TestRelatedPackages extends JavadocTester {
         checkOutput("o/pkg/sub2/sub/package-summary.html", true,
                 """
                         <div class="caption"><span>Related Packages</span></div>
-                        <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                        <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                         <div class="table-header col-first">Package</div>
                         <div class="table-header col-last">Description</div>
                         <div class="col-first even-row-color"><a href="../package-summary.html">pkg.sub2</a></div>

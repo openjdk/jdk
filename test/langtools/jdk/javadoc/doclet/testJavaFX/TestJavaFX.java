@@ -326,7 +326,7 @@ public class TestJavaFX extends JavadocTester {
                     <section class="property-summary" id="property-summary">
                     <h2>Property Summary</h2>
                     <div class="caption"><span>Properties</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/Test.html", false,
                 """

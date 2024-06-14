@@ -84,91 +84,91 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/C2.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/C3.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         checkOutput("pkg2/package-use.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""");
 
         // Overview Summary
         checkOutput("index.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
     }
 
     /*
@@ -642,7 +642,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 """
                     <div class="col-first odd-row-color"><code><a href="#NO_EXCLUDE" class="member-n\
                     ame-link">NO_EXCLUDE</a></code></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color" role="row" tabindex="0">
                     <div class="block">Test comment.</div>
                     </div>""");
 
@@ -655,7 +655,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>boolean</code></div>
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code>boolean</code></div>
                     <div class="col-second even-row-color"><code><a href="#value()" class="member-name-link">value</a></code></div>
                     <div class="col-last even-row-color" role="row" tabindex="0">&nbsp;</div>
                     </div>""");
@@ -716,7 +716,7 @@ public class TestHtmlTableTags extends JavadocTester {
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
+                    <div class="col-first even-row-color" role="row" tabindex="0"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
                     tatic&nbsp;final&nbsp;java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CONSTANT1</a></code></div>
                     <div class="col-last even-row-color" role="row" tabindex="0"><code>"C1"</code></div>

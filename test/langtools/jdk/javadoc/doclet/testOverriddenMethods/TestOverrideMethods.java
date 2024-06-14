@@ -315,7 +315,7 @@ public class TestOverrideMethods  extends JavadocTester {
         // Only those should be shown in summary; m1, m3, m9 should listed as declared in Base
         checkOutput("pkg6/Sub.html", true,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>

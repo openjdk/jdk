@@ -235,7 +235,7 @@ public class TestUseOption extends JavadocTester {
                     in <a href="../package-summary.html">Unnamed Package</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
@@ -251,7 +251,7 @@ public class TestUseOption extends JavadocTester {
                     in <a href="../package-summary.html">Unnamed Package</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Interface</div>
                     <div class="table-header col-last">Description</div>
@@ -266,7 +266,7 @@ public class TestUseOption extends JavadocTester {
                     <a href="../One.html" title="class in Unnamed Package">One</a></span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>

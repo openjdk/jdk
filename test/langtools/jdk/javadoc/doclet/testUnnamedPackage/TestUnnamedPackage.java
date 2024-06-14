@@ -79,7 +79,7 @@ public class TestUnnamedPackage extends JavadocTester {
                 """
                     <div id="all-classes-table">
                     <div class="caption"><span>Classes</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><\
@@ -92,7 +92,7 @@ public class TestUnnamedPackage extends JavadocTester {
         checkOutput("allpackages-index.html", true,
                 """
                     <div class="caption"><span>Package Summary</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color"><a href="package-summary.html">Unnamed Package</a></div>

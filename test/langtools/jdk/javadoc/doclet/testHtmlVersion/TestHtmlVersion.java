@@ -79,7 +79,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -97,7 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -120,7 +120,7 @@ public class TestHtmlVersion extends JavadocTester {
                         <li>
                         <div id="class-summary">
                         <div class="caption"><span>Classes</span></div>
-                        <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""");
+                        <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""");
 
         // Test for package-tree page
         checkOutput("pkg/package-tree.html", true,
@@ -162,7 +162,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -183,7 +183,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -211,7 +211,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -360,17 +360,17 @@ public class TestHtmlVersion extends JavadocTester {
                     <section class="nested-class-summary" id="nested-class-summary">
                     <h2>Nested Class Summary</h2>
                     <div class="caption"><span>Nested Classes</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="field-summary" id="field-summary">
                     <h2>Field Summary</h2>
                     <div class="caption"><span>Fields</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="constructor-summary" id="constructor-summary">
                     <h2>Constructor Summary</h2>
                     <div class="caption"><span>Constructors</span></div>
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="method-summary" id="method-summary">
                     <h2>Method Summary</h2>""",
@@ -412,7 +412,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="caption"><span>Enum Constants</span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     """,
                 """
                     <section class="method-summary" id="method-summary">
@@ -453,7 +453,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div id="method-summary-table">
                     """,
                 """
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">
                     """,
                 """
                     <section class="method-details" id="method-detail">
@@ -537,12 +537,12 @@ public class TestHtmlVersion extends JavadocTester {
                     <section class="member-summary" id="annotation-interface-required-element-summary">
                     <h2>Required Element Summary</h2>
                     <div class="caption"><span>Required Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="member-summary" id="annotation-interface-optional-element-summary">
                     <h2>Optional Element Summary</h2>
                     <div class="caption"><span>Optional Elements</span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="details" id="annotation-interface-element-detail">
                     <ul class="details-list">
@@ -571,7 +571,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <div class="summary-table two-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <section class="detail" id="pkg">
                     <h2>Uses of <a href="../RegClass.html" title="class in pkg1">RegClass</a> in <a \
@@ -579,7 +579,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="caption"><span>Fields in <a href="../../pkg/package-summary.html">pk\
                     g</a> declared as <a href="../RegClass.html" title="class in pkg1">RegClass</a><\
                     /span></div>
-                    <div class="summary-table three-column-summary" role="grid" aria-label="summary-table">""",
+                    <div class="summary-table three-column-summary" role="table" aria-label="summary-table">""",
                 """
                     <footer role="contentinfo">""",
                 """
