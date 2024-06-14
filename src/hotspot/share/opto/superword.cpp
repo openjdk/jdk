@@ -1858,6 +1858,26 @@ void PackSet::verify() const {
 }
 #endif
 
+bool SuperWord::vtransform() const {
+  if (_packset.is_empty()) { return false; }
+
+  VTransformGraph graph(_vloop_analyzer,
+                        _mem_ref_for_main_loop_alignment,
+                        _aw_for_main_loop_alignment
+                        NOT_PRODUCT( COMMA is_trace_superword_rejections())
+                        NOT_PRODUCT( COMMA is_trace_align_vector())
+                        NOT_PRODUCT( COMMA is_trace_superword_info())
+                        );
+  {
+    ResourceMark rm;
+    SuperWordVTransformBuilder builder(_packset, graph);
+  }
+
+  if (!graph.schedule()) { return false; }
+  graph.apply();
+  return true;
+}
+
 void VTransformGraph::apply() {
 #ifndef PRODUCT
   if (_is_trace_info || TraceLoopOpts) {
@@ -2948,26 +2968,6 @@ bool SuperWord::same_origin_idx(Node* a, Node* b) const {
 }
 bool SuperWord::same_generation(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
-}
-
-bool SuperWord::vtransform() const {
-  if (_packset.is_empty()) { return false; }
-
-  VTransformGraph graph(_vloop_analyzer,
-                        _mem_ref_for_main_loop_alignment,
-                        _aw_for_main_loop_alignment
-                        NOT_PRODUCT( COMMA is_trace_superword_rejections())
-                        NOT_PRODUCT( COMMA is_trace_align_vector())
-                        NOT_PRODUCT( COMMA is_trace_superword_info())
-                        );
-  {
-    ResourceMark rm;
-    SuperWordVTransformBuilder builder(_packset, graph);
-  }
-
-  if (!graph.schedule()) { return false; }
-  graph.apply();
-  return true;
 }
 
 void SuperWordVTransformBuilder::build_vtransform() {
