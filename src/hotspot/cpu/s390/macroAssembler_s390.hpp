@@ -677,7 +677,7 @@ class MacroAssembler: public Assembler {
                                     Register temp,
                                     Register temp2,
                                     int      itable_index,
-                                    Label&   nl_no_such_interface);
+                                    Label&   L_no_such_interface);
 
   // virtual method calling
   void lookup_virtual_method(Register             recv_klass,
