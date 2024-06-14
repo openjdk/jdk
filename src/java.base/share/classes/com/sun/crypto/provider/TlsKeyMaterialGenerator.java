@@ -105,8 +105,6 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         SecretKey clientMacKey = null;
         SecretKey serverMacKey = null;
-        SecretKey clientCipherKey;
-        SecretKey serverCipherKey;
         IvParameterSpec clientIv = null;
         IvParameterSpec serverIv = null;
 
@@ -194,6 +192,8 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         System.arraycopy(keyBlock, ofs, serverKeyBytes, 0, keyLength);
         ofs += keyLength;
 
+        SecretKey clientCipherKey;
+        SecretKey serverCipherKey;
         try {
             if (!isExportable) {
                 // cipher keys
