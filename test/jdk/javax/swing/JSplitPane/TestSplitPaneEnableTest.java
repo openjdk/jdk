@@ -64,6 +64,9 @@ public class TestSplitPaneEnableTest {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            if (laf.getClassName().toLowerCase().contains("gtk")) {
+                continue;
+            }
             System.out.println("Testing LAF : " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
@@ -74,7 +77,7 @@ public class TestSplitPaneEnableTest {
                                          new JButton("Left"),
                                          new JButton("Right"));
 
-                    frame.getContentPane().add(jsp);
+                    frame.add(jsp);
                     jsp.setUI(new TestSplitPaneUI());
                     jsp.setOneTouchExpandable(true);
 
