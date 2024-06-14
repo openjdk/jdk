@@ -686,7 +686,6 @@ private:
   void set_all_req_with_scalars(VTransformNode* vtn, VectorSet& vtn_dependencies, Node* n);
   void set_all_req_with_vectors(VTransformNode* vtn, VectorSet& vtn_dependencies, Node_List* pack);
   void add_dependencies_of_node_to_vtn(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
