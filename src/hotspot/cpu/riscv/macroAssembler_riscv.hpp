@@ -595,7 +595,7 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
-  void load_link(const address source, Register temp);
+  void load_link_jump(const address source, Register temp);
   void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
@@ -1197,8 +1197,7 @@ public:
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
   //
-  // Old patchable far calls: (-XX:+UseTrampolines)
-  //   - trampoline call:
+  // - trampoline call (old patchable far call / -XX:+UseTrampolines):
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
   //     and a register-indirect call. It has the advantages of reaching anywhere in
@@ -1237,7 +1236,7 @@ public:
   // --
 
   // Emit a direct call if the entry address will always be in range,
-  // otherwise a patachable far call.
+  // otherwise a patchable far call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1245,7 +1244,13 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
-  address patchable_far_call(Address entry);
+  address patchable_far_call(Address entry) {
+    return UseTrampolines ? trampoline_call(entry) : load_call(entry);
+  }
+ private:
+  address trampoline_call(Address entry);
+  address load_call(Address entry);
+ public:
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();

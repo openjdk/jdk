@@ -978,7 +978,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
   }
 }
 
-void MacroAssembler::load_link(const address source, Register temp) {
+void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert(temp != noreg && temp != x0, "expecting a register");
   assert(temp == x5, "expecting a register");
   assert_cond(source != nullptr);
@@ -993,14 +993,9 @@ void MacroAssembler::jump_link(const address dest, Register temp) {
   assert(UseTrampolines, "Must be");
   assert_cond(dest != nullptr);
   int64_t distance = dest - pc();
-  if (is_simm21(distance) && ((distance % 2) == 0)) {
-    Assembler::jal(x1, distance);
-  } else {
-    assert(temp != noreg && temp != x0, "expecting a register");
-    int32_t offset = 0;
-    la(temp, dest, offset);
-    jalr(temp, offset);
-  }
+  assert(is_simm21(distance), "Must be");
+  assert((distance % 2) == 0, "Must be");
+  Assembler::jal(x1, distance);
 }
 
 void MacroAssembler::j(const address dest, Register temp) {
@@ -3729,7 +3724,7 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
 
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::patchable_far_call(Address entry) {
+address MacroAssembler::trampoline_call(Address entry) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type ||
          entry.rspec().type() == relocInfo::opt_virtual_call_type ||
          entry.rspec().type() == relocInfo::static_call_type ||
@@ -3737,18 +3732,13 @@ address MacroAssembler::patchable_far_call(Address entry) {
 
   address target = entry.target();
 
+  // We need a trampoline if branches are far.
   if (!in_scratch_emit_size()) {
-    if (entry.rspec().type() == relocInfo::runtime_call_type && UseTrampolines) {
+    if (entry.rspec().type() == relocInfo::runtime_call_type) {
       assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
       code()->share_trampoline_for(entry.target(), offset());
     } else {
-      address stub = nullptr;
-      if (UseTrampolines) {
-        // We need a trampoline if branches are far.
-        stub = emit_trampoline_stub(offset(), target);
-      } else {
-        stub = emit_address_stub(offset(), target);
-      }
+      address stub = emit_trampoline_stub(offset(), target);
       if (stub == nullptr) {
         postcond(pc() == badAddress);
         return nullptr; // CodeCache is full
@@ -3764,11 +3754,37 @@ address MacroAssembler::patchable_far_call(Address entry) {
   }
 #endif
   relocate(entry.rspec(), [&] {
-    if (UseTrampolines) {
-      jump_link(target, t0);
-    } else {
-      load_link(target, t0);
+    jump_link(target, t0);
+  });
+
+  postcond(pc() != badAddress);
+  return call_pc;
+}
+
+address MacroAssembler::load_call(Address entry) {
+  assert(entry.rspec().type() == relocInfo::runtime_call_type ||
+         entry.rspec().type() == relocInfo::opt_virtual_call_type ||
+         entry.rspec().type() == relocInfo::static_call_type ||
+         entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
+
+  address target = entry.target();
+
+  if (!in_scratch_emit_size()) {
+    address stub = emit_address_stub(offset(), target);
+    if (stub == nullptr) {
+      postcond(pc() == badAddress);
+      return nullptr; // CodeCache is full
     }
+  }
+
+  address call_pc = pc();
+#ifdef ASSERT
+  if (entry.rspec().type() != relocInfo::runtime_call_type) {
+    assert_alignment(call_pc);
+  }
+#endif
+  relocate(entry.rspec(), [&] {
+    load_link_jump(target, t0);
   });
 
   postcond(pc() != badAddress);
@@ -4639,7 +4655,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
         return nullptr;
       }
     } else {
-      rt_call(zero_blocks.target(), t0);
+      rt_call(zero_blocks.target());
     }
   }
   bind(around);
