@@ -1905,66 +1905,6 @@ void VTransformApplyStatus::trace(VTransformNode* vtn) const {
 }
 #endif
 
-// We call "apply" on every VTransformNode, which replaces the packed scalar nodes
-// with vector nodes.
-void VTransformGraph::apply_vectorization() const {
-#ifndef PRODUCT
-  if (_is_trace_verbose) {
-    tty->print_cr("\nVTransformGraph::apply_vectorization:");
-  }
-#endif
-
-  ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
-
-  uint max_vector_length = 0; // number of elements
-  uint max_vector_width  = 0; // total width in bytes
-
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyStatus status = vtn->apply(_vloop_analyzer,
-                                              vnode_idx_to_transformed_node);
-    NOT_PRODUCT( if (_is_trace_verbose) { status.trace(vtn); } )
-
-    vnode_idx_to_transformed_node.at_put(vtn->_idx, status.node());
-    max_vector_length = MAX2(max_vector_length, status.vector_length());
-    max_vector_width  = MAX2(max_vector_width,  status.vector_width());
-  }
-
-  assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
-  cl()->mark_loop_vectorized();
-
-  if (max_vector_width > phase()->C->max_vector_size()) {
-    phase()->C->set_max_vector_size(max_vector_width);
-  }
-
-  if (SuperWordLoopUnrollAnalysis) {
-    if (cl()->has_passed_slp()) {
-      uint slp_max_unroll_factor = cl()->slp_max_unroll();
-      if (slp_max_unroll_factor == max_vector_length) {
-#ifndef PRODUCT
-        if (TraceSuperWordLoopUnrollAnalysis) {
-          tty->print_cr("vector loop(unroll=%d, len=%d)\n",
-                        max_vector_length,
-                        max_vector_width * BitsPerByte);
-        }
-#endif
-        // For atomic unrolled loops which are vector mapped, instigate more unrolling
-        cl()->set_notpassed_slp();
-        // if vector resources are limited, do not allow additional unrolling
-        if (Matcher::float_pressure_limit() > 8) {
-          phase()->C->set_major_progress();
-          cl()->mark_do_unroll_only();
-        }
-      }
-    }
-  }
-}
-
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
   assert(n != nullptr, "must find input IR node");
