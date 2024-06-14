@@ -42,13 +42,15 @@ bool AssertionPredicatesWithHalt::is_assertion_predicate_success_proj(const Node
   if (predicate_proj == nullptr || !predicate_proj->is_IfProj() || !predicate_proj->in(0)->is_If()) {
     return false;
   }
-  return has_opaque4(predicate_proj) && has_halt(predicate_proj);
+  return has_assertion_predicate_opaque(predicate_proj) && has_halt(predicate_proj);
 }
 
-// Check if the If node of `predicate_proj` has an Opaque4 node as input.
-bool AssertionPredicatesWithHalt::has_opaque4(const Node* predicate_proj) {
+// Check if the If node of `predicate_proj` has an Opaque4 (Template Assertion Predicate) or an
+// OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
+bool AssertionPredicatesWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
-  return iff->in(1)->Opcode() == Op_Opaque4;
+  Node* bol = iff->in(1);
+  return bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.

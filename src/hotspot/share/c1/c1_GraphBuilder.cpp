@@ -4472,6 +4472,7 @@ void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
   array_copy->set_flag(Instruction::OmitChecksFlag, true);
   append_split(array_copy);
   apush(new_array);
+  append(new MemBar(lir_membar_storestore));
 }
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {

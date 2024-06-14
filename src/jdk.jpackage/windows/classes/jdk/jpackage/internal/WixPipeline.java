@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -45,7 +46,7 @@ public class WixPipeline {
         lightOptions = new ArrayList<>();
     }
 
-    WixPipeline setToolset(Map<WixTool, Path> v) {
+    WixPipeline setToolset(WixToolset v) {
         toolset = v;
         return this;
     }
@@ -79,13 +80,92 @@ public class WixPipeline {
     }
 
     void buildMsi(Path msi) throws IOException {
+        Objects.requireNonNull(workDir);
+
+        switch (toolset.getType()) {
+            case Wix3 -> buildMsiWix3(msi);
+            case Wix4 -> buildMsiWix4(msi);
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    private void addWixVariblesToCommandLine(
+            Map<String, String> otherWixVariables, List<String> cmdline) {
+        Stream.of(wixVariables, Optional.ofNullable(otherWixVariables).
+                orElseGet(Collections::emptyMap)).filter(Objects::nonNull).
+                reduce((a, b) -> {
+                    a.putAll(b);
+                    return a;
+                }).ifPresent(wixVars -> {
+            var entryStream = wixVars.entrySet().stream();
+
+            Stream<String> stream;
+            switch (toolset.getType()) {
+                case Wix3 -> {
+                    stream = entryStream.map(wixVar -> {
+                        return String.format("-d%s=%s", wixVar.getKey(), wixVar.
+                                getValue());
+                    });
+                }
+                case Wix4 -> {
+                    stream = entryStream.map(wixVar -> {
+                        return Stream.of("-d", String.format("%s=%s", wixVar.
+                                getKey(), wixVar.getValue()));
+                    }).flatMap(Function.identity());
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
+
+            stream.reduce(cmdline, (ctnr, wixVar) -> {
+                ctnr.add(wixVar);
+                return ctnr;
+            }, (x, y) -> {
+                x.addAll(y);
+                return x;
+            });
+        });
+    }
+
+    private void buildMsiWix4(Path msi) throws IOException {
+        var mergedSrcWixVars = sources.stream().map(wixSource -> {
+            return Optional.ofNullable(wixSource.variables).orElseGet(
+                    Collections::emptyMap).entrySet().stream();
+        }).flatMap(Function.identity()).collect(Collectors.toMap(
+                Map.Entry::getKey, Map.Entry::getValue));
+
+        List<String> cmdline = new ArrayList<>(List.of(
+                toolset.getToolPath(WixTool.Wix4).toString(),
+                "build",
+                "-nologo",
+                "-pdbtype", "none",
+                "-intermediatefolder", wixObjDir.toAbsolutePath().toString(),
+                "-ext", "WixToolset.Util.wixext",
+                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86"
+        ));
+
+        cmdline.addAll(lightOptions);
+
+        addWixVariblesToCommandLine(mergedSrcWixVars, cmdline);
+
+        cmdline.addAll(sources.stream().map(wixSource -> {
+            return wixSource.source.toAbsolutePath().toString();
+        }).toList());
+
+        cmdline.addAll(List.of("-out", msi.toString()));
+
+        execute(cmdline);
+    }
+
+    private void buildMsiWix3(Path msi) throws IOException {
         List<Path> wixObjs = new ArrayList<>();
         for (var source : sources) {
-            wixObjs.add(compile(source));
+            wixObjs.add(compileWix3(source));
         }
 
         List<String> lightCmdline = new ArrayList<>(List.of(
-                toolset.get(WixTool.Light).toString(),
+                toolset.getToolPath(WixTool.Light3).toString(),
                 "-nologo",
                 "-spdb",
                 "-ext", "WixUtilExtension",
@@ -99,31 +179,20 @@ public class WixPipeline {
         execute(lightCmdline);
     }
 
-    private Path compile(WixSource wixSource) throws IOException {
-        UnaryOperator<Path> adjustPath = path -> {
-            return workDir != null ? path.toAbsolutePath() : path;
-        };
-
-        Path wixObj = adjustPath.apply(wixObjDir).resolve(IOUtils.replaceSuffix(
+    private Path compileWix3(WixSource wixSource) throws IOException {
+        Path wixObj = wixObjDir.toAbsolutePath().resolve(IOUtils.replaceSuffix(
                 IOUtils.getFileName(wixSource.source), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(
-                toolset.get(WixTool.Candle).toString(),
+                toolset.getToolPath(WixTool.Candle3).toString(),
                 "-nologo",
-                adjustPath.apply(wixSource.source).toString(),
+                wixSource.source.toAbsolutePath().toString(),
                 "-ext", "WixUtilExtension",
                 "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86",
                 "-out", wixObj.toAbsolutePath().toString()
         ));
 
-        Map<String, String> appliedVaribales = new HashMap<>();
-        Stream.of(wixVariables, wixSource.variables)
-                .filter(Objects::nonNull)
-                .forEachOrdered(appliedVaribales::putAll);
-
-        appliedVaribales.entrySet().stream().map(wixVar -> String.format("-d%s=%s",
-                wixVar.getKey(), wixVar.getValue())).forEachOrdered(
-                cmdline::add);
+        addWixVariblesToCommandLine(wixSource.variables, cmdline);
 
         execute(cmdline);
 
@@ -131,8 +200,8 @@ public class WixPipeline {
     }
 
     private void execute(List<String> cmdline) throws IOException {
-        Executor.of(new ProcessBuilder(cmdline).directory(
-                workDir != null ? workDir.toFile() : null)).executeExpectSuccess();
+        Executor.of(new ProcessBuilder(cmdline).directory(workDir.toFile())).
+                executeExpectSuccess();
     }
 
     private static final class WixSource {
@@ -140,7 +209,7 @@ public class WixPipeline {
         Map<String, String> variables;
     }
 
-    private Map<WixTool, Path> toolset;
+    private WixToolset toolset;
     private Map<String, String> wixVariables;
     private List<String> lightOptions;
     private Path wixObjDir;

@@ -66,6 +66,8 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * @jvms 4.3.2 Field Descriptors
      */
     public static ReferenceClassDescImpl ofValidated(String descriptor) {
+        assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false)
+                == descriptor.length() : descriptor;
         return new ReferenceClassDescImpl(descriptor);
     }
 
@@ -115,10 +117,10 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ClassDesc constant = (ClassDesc) o;
-        return descriptor.equals(constant.descriptorString());
+        if (o instanceof ReferenceClassDescImpl constant) {
+            return descriptor.equals(constant.descriptor);
+        }
+        return false;
     }
 
     @Override

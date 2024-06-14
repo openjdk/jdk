@@ -191,7 +191,6 @@ class DefNewGeneration: public Generation {
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
   // Thread-local allocation buffers
-  bool supports_tlab_allocation() const { return true; }
   size_t tlab_capacity() const;
   size_t tlab_used() const;
   size_t unsafe_max_tlab_alloc() const;
@@ -231,9 +230,6 @@ class DefNewGeneration: public Generation {
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
   void gc_epilogue(bool full);
-
-  // Save the tops for eden, from, and to
-  void record_spaces_top();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.

@@ -109,7 +109,7 @@ public class TestG1NUMATouchRegions {
     // 1. -UseLargePages: default page, page size < G1HeapRegionSize
     //    +UseLargePages: large page size <= G1HeapRegionSize
     //
-    //    Each 'int' represents a numa id of single HeapRegion (bottom page).
+    //    Each 'int' represents a numa id of single G1HeapRegion (bottom page).
     //    e.g. 1MB heap region, 2MB page size and 2 NUMA nodes system
     //         Check the first set(2 regions)
     //         0| ...omitted..| 0

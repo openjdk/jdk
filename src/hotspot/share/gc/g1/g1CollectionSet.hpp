@@ -35,7 +35,7 @@ class G1GCPhaseTimes;
 class G1ParScanThreadStateSet;
 class G1Policy;
 class G1SurvivorRegions;
-class HeapRegion;
+class G1HeapRegion;
 class HeapRegionClaimer;
 class HeapRegionClosure;
 
@@ -168,10 +168,10 @@ class G1CollectionSet {
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 
   // Update the incremental collection set information when adding a region.
-  void add_young_region_common(HeapRegion* hr);
+  void add_young_region_common(G1HeapRegion* hr);
 
   // Add the given old region to the head of the current collection set.
-  void add_old_region(HeapRegion* hr);
+  void add_old_region(G1HeapRegion* hr);
 
   void move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions);
   // Prepares old regions in the given set for optional collection later. Does not
@@ -271,10 +271,10 @@ public:
   void abandon_optional_collection_set(G1ParScanThreadStateSet* pss);
 
   // Add eden region to the collection set.
-  void add_eden_region(HeapRegion* hr);
+  void add_eden_region(G1HeapRegion* hr);
 
   // Add survivor region to the collection set.
-  void add_survivor_regions(HeapRegion* hr);
+  void add_survivor_regions(G1HeapRegion* hr);
 
 #ifndef PRODUCT
   bool verify_young_ages();

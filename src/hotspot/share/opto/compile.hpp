@@ -53,7 +53,6 @@ class Block;
 class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
-class CastIINode;
 class CloneMap;
 class CompilationFailureInfo;
 class ConnectionGraph;
@@ -356,7 +355,6 @@ class Compile : public Phase {
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
-  RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
 
@@ -668,10 +666,6 @@ private:
   void          set_print_inlining(bool z)       { _print_inlining = z; }
   bool              print_intrinsics() const     { return _print_intrinsics; }
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
-  RTMState          rtm_state()  const           { return _rtm_state; }
-  void          set_rtm_state(RTMState s)        { _rtm_state = s; }
-  bool              use_rtm() const              { return (_rtm_state & NoRTM) == 0; }
-  bool          profile_rtm() const              { return _rtm_state == ProfileRTM; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
@@ -1315,8 +1309,6 @@ private:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
-
-  void remove_range_check_cast(CastIINode* cast);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

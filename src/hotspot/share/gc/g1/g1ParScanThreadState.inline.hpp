@@ -89,7 +89,7 @@ inline void G1ParScanThreadState::remember_reference_into_optional_region(T* p) 
   verify_task(p);
 }
 
-G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const HeapRegion* hr) {
+G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const G1HeapRegion* hr) {
   assert(hr->index_in_opt_cset() < _max_num_optional_regions,
          "Trying to access optional region idx %u beyond " SIZE_FORMAT " " HR_FORMAT,
          hr->index_in_opt_cset(), _max_num_optional_regions, HR_FORMAT_PARAMS(hr));
@@ -109,7 +109,7 @@ template <class T> bool G1ParScanThreadState::enqueue_if_new(T* p) {
 }
 
 template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region(T* p, oop obj) {
-  assert(!HeapRegion::is_in_same_region(p, obj), "Should have filtered out cross-region references already.");
+  assert(!G1HeapRegion::is_in_same_region(p, obj), "Should have filtered out cross-region references already.");
   assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
   assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
 
@@ -120,7 +120,7 @@ template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region
 
 template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj) {
   assert(obj != nullptr, "Must be");
-  if (HeapRegion::is_in_same_region(p, obj)) {
+  if (G1HeapRegion::is_in_same_region(p, obj)) {
     return;
   }
   G1HeapRegionAttr from_attr = _g1h->region_attr(p);
@@ -144,14 +144,14 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
 }
 
 template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
-  assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
+  assert(!G1HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
   assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
   // We relabel all regions that failed evacuation as old gen without remembered,
   // and so pre-filter them out in the caller.
   assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to enqueue reference into collection set region");
 
 #ifdef ASSERT
-  HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
+  G1HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
   assert(region_attr.remset_is_tracked() == hr_obj->rem_set()->is_tracked(),
          "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
          BOOL_TO_STR(region_attr.remset_is_tracked()),
