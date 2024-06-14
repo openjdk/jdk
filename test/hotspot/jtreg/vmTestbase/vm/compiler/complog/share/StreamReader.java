@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package vm.compiler.complog.share;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

@@ -20,37 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package vm.compiler.complog.share;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.IOException;
-import nsk.share.TestFailure;
+import nsk.share.log.Log;
 
-public class StreamMessageOutput implements MessageOutput {
-        private OutputStream out;
-        private PrintStream pout;
+/*
+ * StreamListener that logs everything to Log at debug priority.
+ */
+public class StreamLogger implements StreamListener {
+        private String prefix;
+        private Log log;
 
-        public StreamMessageOutput() {
+        public StreamLogger(String prefix, Log log) {
+                this.prefix = prefix;
+                this.log = log;
         }
 
-        public StreamMessageOutput(OutputStream out) {
-                bind(out);
+        public void onStart() {
+                // do nothing
         }
 
-        public void bind(OutputStream out) {
-                this.out = out;
-                this.pout = new PrintStream(out, true); // Autoflush is important
+        public void onFinish() {
+                // do nothing
         }
 
-        public void start() {
+        public void onRead(String s) {
+                log.debug(prefix + s);
         }
 
-        public void send(String msg) {
-                pout.println(msg);
-        }
-
-        public void finish() {
-                pout.close();
+        public void onException(Throwable e) {
+                log.debug(prefix + "Exception");
+                log.debug(e);
         }
 }

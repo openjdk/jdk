@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,67 +46,4 @@ public final class ProcessUtils {
      * @return true if it was successful
      */
     public static native boolean sendCtrlBreak();
-
-    /**
-     * Send any signal to java process on Unix. It currently does nothing on Windows.
-     *
-     * @return true if it was successful
-     */
-    public static native boolean sendSignal(int signalNum);
-
-    /**
-     * Force java process to dump core.
-     *
-     * This is done by sending SIGSEGV on unix systems.
-     *
-     * @return true if it was successful, false if not (for example on Windows)
-     */
-    public static native boolean dumpCore();
-
-    /**
-     * Get PID of java process.
-     *
-     * @return PID
-     */
-    public static native int getPid();
-
-    public static int getPid(Process process) {
-        Throwable exception;
-        try {
-            Field pidField = process.getClass().getDeclaredField("pid");
-            pidField.setAccessible(true);
-            return ((Integer) pidField.get(process)).intValue();
-        } catch (NoSuchFieldException e) {
-            exception = e;
-        } catch (IllegalAccessException e) {
-            exception = e;
-        }
-        // Try to get Windows handle
-        try {
-            Field handleField = process.getClass().getDeclaredField("handle");
-            handleField.setAccessible(true);
-            long handle = ((Long) handleField.get(process)).longValue();
-            return getWindowsPid(handle);
-        } catch (NoSuchFieldException e) {
-            exception = e;
-        } catch (IllegalAccessException e) {
-            exception = e;
-        }
-        throw new TestBug("Unable to determine pid from process class " + process.getClass(), exception);
-    }
-
-    private static native int getWindowsPid(long handle);
-
-    @SuppressWarnings("restriction")
-    public static void dumpHeapWithHotspotDiagnosticMXBean(String fileName) throws IOException {
-        System.err.println("Dumping heap to " + fileName);
-
-        File f = new File(fileName);
-        if (f.exists())
-            f.delete();
-
-        HotSpotDiagnosticMXBean b = ManagementFactory.getPlatformMXBeans(
-                com.sun.management.HotSpotDiagnosticMXBean.class).get(0);
-        b.dumpHeap(fileName, false);
-    }
 }

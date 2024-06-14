@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share;
+package vm.mlvm.share;
 
 import java.io.File;
 import java.io.FileInputStream;

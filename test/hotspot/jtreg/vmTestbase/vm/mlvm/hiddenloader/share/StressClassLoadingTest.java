@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ import vm.share.options.IgnoreUnknownArgumentsHandler;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.CustomClassLoaders;
-import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
+import vm.mlvm.share.FileUtils;
 
 /**
  * Does stress-testing of class loading subsystem.
@@ -164,7 +163,7 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                             c = CustomClassLoaders.makeClassBytesLoader(classBytes, className)
                                     .loadClass(className);
                         }
-                        UnsafeAccess.unsafe.ensureClassInitialized(c);
+                        MethodHandles.lookup().ensureInitialized(c);
                     } catch (Throwable e) {
                         Env.traceVerbose(e, "parser caught exception");
                     }
