@@ -696,7 +696,7 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         if (option.equals("debugee.launch")
                 || option.equals("debugee.host")
                 || option.equals("test.host")) {
-            throw new RuntimeException("debugee.host option is not supported.");
+            throw new RuntimeException("option " + option + " is not supported.");
         }
 
         if (option.equals("jvmdi.strict")) {
