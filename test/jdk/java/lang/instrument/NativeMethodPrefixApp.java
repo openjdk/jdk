@@ -25,6 +25,7 @@
 import java.io.File;
 import java.nio.file.Path;
 import java.lang.management.*;
+import java.util.zip.CRC32;
 
 import bootreporter.*;
 import jdk.test.lib.helpers.ClassFileInstaller;
@@ -96,6 +97,10 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         final OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
                 "-javaagent:" + agentJar.toString(),
+                // We disable CheckIntrinsic because the NativeMethodPrefixAgent modifies
+                // the native method names, which then causes a failure in the VM check
+                // for the presence of an intrinsic on a @IntrinsicCandidate native method.
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:-CheckIntrinsics",
                 NativeMethodPrefixApp.class.getName());
         oa.shouldHaveExitValue(0);
         // make available stdout/stderr in the logs, even in case of successful completion
@@ -109,6 +114,10 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         java.lang.reflect.Array.getLength(new short[5]);
         RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
         System.err.println(mxbean.getVmVendor());
+        // Simply load a class containing an @IntrinsicCandidate on a native method
+        // to exercise the VM code which verifies the presence of the intrinsic
+        // implementation for that method.
+        System.err.println(new CRC32());
 
         NativeMethodPrefixAgent.checkErrors();
 

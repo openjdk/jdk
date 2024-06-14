@@ -148,7 +148,7 @@ public class PrintNullString extends Frame {
             // API 3: null & empty drawString(Iterator, int, int);
             try {
                 g2d.drawString(nullIterator, 20, 120);
-                g2d.drawString("FAILURE: No NPE for null iterator, float", 20, 120);
+                g2d.drawString("FAILURE: No NPE for null iterator, int", 20, 120);
             } catch (NullPointerException e) {
                 g2d.drawString("caught expected NPE for null iterator, int", 20, 120);
             }
@@ -169,7 +169,7 @@ public class PrintNullString extends Frame {
             }
 
             try {
-                g2d.drawString(emptyIterator, 20, 180);
+                g2d.drawString(emptyIterator, 20.0f, 180.0f);
                 g2d.drawString("FAILURE: No IAE for empty iterator, float", 20, 180);
             } catch (IllegalArgumentException e) {
                 g2d.drawString("caught expected IAE for empty iterator, float", 20, 180);

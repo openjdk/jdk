@@ -160,6 +160,7 @@ class NativeCall: public NativeInstruction {
     return_address_offset       =    5
   };
 
+  static int byte_size()                    { return instruction_size; }
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   int   displacement() const                { return (jint) int_at(displacement_offset); }
