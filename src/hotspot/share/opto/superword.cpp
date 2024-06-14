@@ -3179,7 +3179,6 @@ void SuperWordVTransformBuilder::set_req_for_scalar(VTransformNode* vtn, VectorS
   vtn_dependencies.set(req->_idx);
 }
 
-// TODO j -> index, maybe rename
 VTransformNode* SuperWordVTransformBuilder::get_vector_input_at_index(const Node_List* pack, const int index) {
   Node* p0 = pack->at(0);
 
@@ -3191,15 +3190,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vector_input_at_index(const Node
   }
 
   if (VectorNode::is_muladds2i(p0)) {
-    // TODO add assert after fix, maybe update comments!
-    // Inputs:                 1    2    3    4
-    // Offsets:                0    0    1    1
-    //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
-    //
-    // Inputs:                 1    2    3    4
-    // Offsets:                1    1    0    0
-    //   v = MulAddS2I(a, b) = a1 * b1 + a0 + b0
-    //
+    assert(_packset.is_muladds2i_pack_with_pack_inputs(pack), "inputs must all be packs");
     // All inputs are strided (stride = 2), either with offset 0 or 1.
     Node_List* pack_in0 = _packset.strided_pack_input_at_index_or_null(pack, index, 2, 0);
     if (pack_in0 != nullptr) {
