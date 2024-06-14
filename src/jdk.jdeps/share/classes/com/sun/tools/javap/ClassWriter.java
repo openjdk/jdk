@@ -856,6 +856,10 @@ public class ClassWriter extends BasicWriter {
                 map.compute(loc, (_, v) -> v | flag.mask());
             }
         }
+
+        // Peculiarities from AccessFlag.maskToAccessFlag
+        map.put(AccessFlag.Location.METHOD, Modifier.STRICT);
+
         LOCATION_MASKS = map;
     }
 
