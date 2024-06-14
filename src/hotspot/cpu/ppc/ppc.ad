@@ -12053,12 +12053,11 @@ instruct partialSubtypeCheckConstSuper(rarg5RegP sub, rarg1RegP super_reg, immP 
   format %{ "partialSubtypeCheck $result, $sub, $super_reg" %}
 
   ins_encode %{
-    bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                                 $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
-                                                 $result$$Register, super_klass_slot);
+      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+                                       $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
+                                       $result$$Register, super_klass_slot);
     } else {
       address stub = StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot);
       Register r_stub_addr = $tempR1$$Register;
