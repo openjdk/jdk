@@ -88,10 +88,10 @@ class CgroupV2Subsystem: public CgroupSubsystem {
   public:
     CgroupV2Subsystem(CgroupV2MemoryController* memory,
                       CgroupV2CpuController* cpu,
-                      CgroupV2Controller* unified) {
-      _unified = unified;
-      _memory = new CachingCgroupController<CgroupMemoryController*>(memory);
-      _cpu = new CachingCgroupController<CgroupCpuController*>(cpu);
+                      CgroupV2Controller* unified) :
+        _unified(unified),
+        _memory(new CachingCgroupController<CgroupMemoryController*>(memory)),
+        _cpu(new CachingCgroupController<CgroupCpuController*>(cpu)) {
     }
 
     jlong read_memory_limit_in_bytes();
