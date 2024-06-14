@@ -80,7 +80,7 @@ public class TestSystemPropertyPage extends JavadocTester {
                     <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Property</div>
                     <div class="table-header col-last">Referenced In</div>
-                    <div class="col-first even-row-color" role="tablist" tabindex="0">user.address</div>
+                    <div class="col-first even-row-color" role="row" tabindex="0">user.address</div>
                     <div class="col-last even-row-color">
                     <div class="block"><code><a href="pkg2/B.html#user.address">class pkg2.B</a></code>, <a href="pkg1/doc-files/WithTitle.html#user.address"><code>package pkg1: </code>Example Title</a></div>
                     </div>

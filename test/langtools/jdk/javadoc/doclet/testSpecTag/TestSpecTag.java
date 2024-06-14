@@ -355,7 +355,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="table-tabs" role="row" aria-orientation="horizontal">\
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="external-specs-tab0" role="tab" aria-selected="true" aria-controls="external-specs.tabpanel" \
                     tabindex="0" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs', 2)" \
                     class="active-table-tab">All Specifications</button>\
@@ -457,7 +457,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-labelledby="external-specs-tab0">
+                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>
                     <div class="col-first even-row-color"><a href="http://example.com/index.html">abc def</a></div>

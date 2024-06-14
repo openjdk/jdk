@@ -910,7 +910,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="row" tabindex="0">&nbsp;</div>""",
                 """
                     <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
@@ -983,7 +983,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.ht\
                     ml" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduletags/module-summary.html", found,
@@ -1087,7 +1087,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first odd-row-color"><a href="testpkgmdlB/TestClassInModuleB.htm\
                     l" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
+                    <div class="col-last odd-row-color" role="row" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduleC/module-summary.html", found,
@@ -1421,7 +1421,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("allclasses-index.html", found,
                 """
-                    <div class="summary-table two-column-summary" role="table" aria-label="summary-table">
+                    <div class="summary-table two-column-summary" role="table" aria-labelledby="all-classes-table-tab0">
                     """);
         checkOutput("allpackages-index.html", found,
                 """

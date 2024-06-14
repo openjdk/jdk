@@ -177,7 +177,7 @@ public class TestModuleServices extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
                     ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color" role="tablist" tabindex="0">
+                    <div class="col-last even-row-color" role="row" tabindex="0">
                     <div class="block">A service Interface for service providers.</div>""");
         checkOutput("moduleServiceProvider/module-summary.html", false,
                 "A service Interface for service providers.");
