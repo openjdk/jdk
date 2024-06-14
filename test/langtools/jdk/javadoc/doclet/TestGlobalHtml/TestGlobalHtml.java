@@ -75,7 +75,6 @@ public class TestGlobalHtml extends JavadocTester {
                      * </form>
                      */
                     public C() {
-                                     
                     }
                 }
                 """);

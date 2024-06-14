@@ -96,7 +96,7 @@ public class C1 {
      *   <p itemprop="name">toString</p>
      * </div>
      *
-     * @return A string.
+     * @return a string.
      */
     @Override
     public String toString() {
