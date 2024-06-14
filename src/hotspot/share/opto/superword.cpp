@@ -2143,23 +2143,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   return _packset.pack_input_at_index_or_null(u_pk, u_idx) != nullptr;
 }
 
-Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
-  Node* p0 = pack->at(0);
-  Node* def0 = p0->in(index);
-
-  Node_List* pack_in = get_pack(def0);
-  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
-    return nullptr; // size mismatch
-  }
-
-  for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
-      return nullptr; // use-def mismatch
-    }
-  }
-  return pack_in;
-}
-
 // MulAddS2I takes 4 shorts and produces an int. We can reinterpret
 // the 4 shorts as two ints: a = (a0, a1) and b = (b0, b1).
 //
