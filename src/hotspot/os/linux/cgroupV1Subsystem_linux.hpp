@@ -50,23 +50,25 @@ class CgroupV1Controller: public CgroupController {
     char *subsystem_path() { return _path; }
 };
 
-class CgroupV1MemoryController: public CgroupV1Controller, public CgroupMemoryController {
+class CgroupV1MemoryController : public CgroupMemoryController {
 
+  private:
+    CgroupV1Controller* _reader;
   public:
     bool is_hierarchical() { return _uses_mem_hierarchy; }
     void set_subsystem_path(char *cgroup_path);
-    jlong read_memory_limit_in_bytes(julong upper_bound);
-    jlong memory_usage_in_bytes();
-    jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap);
-    jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap);
-    jlong memory_soft_limit_in_bytes(julong upper_bound);
-    jlong memory_max_usage_in_bytes();
-    jlong rss_usage_in_bytes();
-    jlong cache_usage_in_bytes();
+    jlong read_memory_limit_in_bytes(julong upper_bound) override;
+    jlong memory_usage_in_bytes() override;
+    jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) override;
+    jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) override;
+    jlong memory_soft_limit_in_bytes(julong upper_bound) override;
+    jlong memory_max_usage_in_bytes() override;
+    jlong rss_usage_in_bytes() override;
+    jlong cache_usage_in_bytes() override;
     jlong kernel_memory_usage_in_bytes();
     jlong kernel_memory_limit_in_bytes(julong host_mem);
     jlong kernel_memory_max_usage_in_bytes();
-    void print_version_specific_info(outputStream* st, julong host_mem);
+    void print_version_specific_info(outputStream* st, julong host_mem) override;
   private:
     /* Some container runtimes set limits via cgroup
      * hierarchy. If set to true consider also memory.stat
@@ -78,21 +80,24 @@ class CgroupV1MemoryController: public CgroupV1Controller, public CgroupMemoryCo
     jlong read_mem_swap(julong host_total_memsw);
 
   public:
-    CgroupV1MemoryController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
-      _uses_mem_hierarchy = false;
+    CgroupV1MemoryController(CgroupV1Controller* reader)
+	    : _reader(reader),
+	      _uses_mem_hierarchy(false) {
     }
 
 };
 
-class CgroupV1CpuController: public CgroupV1Controller, public CgroupCpuController {
+class CgroupV1CpuController: public CgroupCpuController {
+
+  private:
+    CgroupV1Controller* _reader;
+  public:
+    int cpu_quota() override;
+    int cpu_period() override;
+    int cpu_shares() override;
 
   public:
-    int cpu_quota();
-    int cpu_period();
-    int cpu_shares();
-
-  public:
-    CgroupV1CpuController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
+    CgroupV1CpuController(CgroupV1Controller* reader) : _reader(reader) {
     }
 };
 

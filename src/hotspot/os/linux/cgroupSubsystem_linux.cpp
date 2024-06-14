@@ -62,13 +62,14 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   if (is_cgroup_v2(&cg_type_flags)) {
     // Cgroups v2 case, we have all the info we need.
     // Construct the subsystem, free resources and return
-    // Note: any index in cg_infos will do as the path is the same for
-    //       all controllers.
-    CgroupV2MemoryController* memory = new CgroupV2MemoryController(cg_infos[MEMORY_IDX]._mount_path, cg_infos[MEMORY_IDX]._cgroup_path);
-    CgroupV2CpuController* cpu = new CgroupV2CpuController(cg_infos[CPU_IDX]._mount_path, cg_infos[CPU_IDX]._cgroup_path);
+    // Note: We use the memory for non-cpu non-memory controller look-ups.
+    //       Perhaps we ought to have separate controllers for all.
+    CgroupV2Controller* mem_other = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path, cg_infos[MEMORY_IDX]._cgroup_path);
+    CgroupV2MemoryController* memory = new CgroupV2MemoryController(mem_other);
+    CgroupV2CpuController* cpu = new CgroupV2CpuController(new CgroupV2Controller(cg_infos[CPU_IDX]._mount_path, cg_infos[CPU_IDX]._cgroup_path));
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
     cleanup(cg_infos);
-    return new CgroupV2Subsystem(memory, cpu);
+    return new CgroupV2Subsystem(memory, cpu, mem_other);
   }
 
   /*
@@ -102,14 +103,15 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     CgroupInfo info = cg_infos[i];
     if (info._data_complete) { // pids controller might have incomplete data
       if (strcmp(info._name, "memory") == 0) {
-        memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path);
+        memory = new CgroupV1MemoryController(new CgroupV1Controller(info._root_mount_path, info._mount_path));
         memory->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuset") == 0) {
         cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path);
         cpuset->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpu") == 0) {
-        cpu = new CgroupV1CpuController(info._root_mount_path, info._mount_path);
-        cpu->set_subsystem_path(info._cgroup_path);
+        CgroupV1Controller* c_r = new CgroupV1Controller(info._root_mount_path, info._mount_path);
+        cpu = new CgroupV1CpuController(c_r);
+        c_r->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuacct") == 0) {
         cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path);
         cpuacct->set_subsystem_path(info._cgroup_path);

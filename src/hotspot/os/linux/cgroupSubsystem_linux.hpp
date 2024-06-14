@@ -196,7 +196,7 @@ class CachingCgroupController : public CHeapObj<mtInternal> {
 };
 
 // Pure virtual class representing version agnostic CPU controllers
-class CgroupCpuController {
+class CgroupCpuController: public CHeapObj<mtInternal> {
   public:
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
@@ -204,7 +204,7 @@ class CgroupCpuController {
 };
 
 // Pure virtual class representing version agnostic memory controllers
-class CgroupMemoryController {
+class CgroupMemoryController: public CHeapObj<mtInternal> {
   public:
     virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
     virtual jlong memory_usage_in_bytes() = 0;
