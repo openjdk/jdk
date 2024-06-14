@@ -1995,6 +1995,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes
 // with vector nodes.
 void VTransformGraph::apply_vectorization() const {
+  Compile* C = phase()->C;
 #ifndef PRODUCT
   if (_is_trace_verbose) {
     tty->print_cr("\nVTransformGraph::apply_vectorization:");
@@ -2025,8 +2026,8 @@ void VTransformGraph::apply_vectorization() const {
   assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
   cl()->mark_loop_vectorized();
 
-  if (max_vector_width > phase()->C->max_vector_size()) {
-    phase()->C->set_max_vector_size(max_vector_width);
+  if (max_vector_width > C->max_vector_size()) {
+    C->set_max_vector_size(max_vector_width);
   }
 
   if (SuperWordLoopUnrollAnalysis) {
@@ -2044,7 +2045,7 @@ void VTransformGraph::apply_vectorization() const {
         cl()->set_notpassed_slp();
         // if vector resources are limited, do not allow additional unrolling
         if (Matcher::float_pressure_limit() > 8) {
-          phase()->C->set_major_progress();
+          C->set_major_progress();
           cl()->mark_do_unroll_only();
         }
       }
