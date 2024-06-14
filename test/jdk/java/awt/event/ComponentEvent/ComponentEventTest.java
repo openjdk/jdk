@@ -25,12 +25,14 @@ import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.Choice;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Label;
 import java.awt.List;
 import java.awt.Panel;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Scrollbar;
 import java.awt.TextArea;
@@ -38,6 +40,7 @@ import java.awt.TextField;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.InputEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 /*
@@ -50,12 +53,16 @@ import java.util.ArrayList;
 public class ComponentEventTest {
 
     private static Frame frame;
-    private static Component[] components;
-    private static boolean componentHidden = false;
-    private static boolean componentShown = false;
-    private static boolean componentMoved = false;
-    private static boolean componentResized = false;
-    private static ArrayList<ComponentEvent> events =
+    private static int DELAY = 500;
+    private static Robot robot;
+    private volatile static Component[] components;
+    private volatile static boolean componentHidden = false;
+    private volatile static boolean componentShown = false;
+    private volatile static boolean componentMoved = false;
+    private volatile static boolean componentResized = false;
+    private volatile static Point compAt;
+    private volatile static Dimension compSize;
+    private volatile static ArrayList<ComponentEvent> events =
         new ArrayList<ComponentEvent>();
 
     private static final ComponentListener componentListener =
@@ -126,256 +133,255 @@ public class ComponentEventTest {
 
     public static void main(String[] args) throws Exception {
         try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
+            robot = new Robot();
             robot.setAutoWaitForIdle(true);
 
             EventQueue.invokeAndWait(ComponentEventTest::initializeGUI);
+            robot.delay(DELAY);
             robot.waitForIdle();
-
-            robot.mouseMove(
-                components[0].getLocationOnScreen().x
-                    + components[0].getSize().width / 2,
-                components[0].getLocationOnScreen().y
-                    + components[0].getSize().height / 2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-            // Hide all components and check if the ComponentEvent is triggered
-            for (int i = 0; i < components.length; i++) {
-                Component currentComponent = components[i];
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(false);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentHidden) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentHidden not triggered for "
-                            + currentComponent.getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(false);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (componentHidden) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentHidden triggered when setVisible(false) "
-                            + "called for a hidden "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(true);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentShown) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentShown not triggered for "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(true);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (componentShown) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentShown triggered when setVisible(true) "
-                            + "called for a shown " + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setLocation(
-                        currentComponent.getLocation().x + 1,
-                        currentComponent.getLocation().y);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentMoved) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentMoved not triggered for "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setSize(
-                        currentComponent.getSize().width + 1,
-                        currentComponent.getSize().height);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentResized) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentResized not triggered for "
-                            + components[i].getClass());
-                }
-
-                // Disable the components and do the same set of operations
-
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setEnabled(false);
-                    frame.invalidate();
-                    frame.validate();
-                });
-                robot.waitForIdle();
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(false);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentHidden) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentHidden not triggered for disabled "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(false);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (componentHidden) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentHidden triggered when setVisible(false) "
-                            + "called for a hidden disabled "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(true);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentShown) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentShown not triggered for disabled "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setVisible(true);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (componentShown) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentShown triggered when setVisible(true) "
-                            + "called for a shown disabled "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setLocation(
-                        currentComponent.getLocation().x - 1,
-                        currentComponent.getLocation().y);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentMoved) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentMoved not triggered for disabled "
-                            + components[i].getClass());
-                }
-
-                resetValues();
-                EventQueue.invokeAndWait(() -> {
-                    currentComponent.setSize(
-                        currentComponent.getSize().width - 1,
-                        currentComponent.getSize().height);
-                    frame.invalidate();
-                    frame.validate();
-                });
-
-                robot.waitForIdle();
-                if (!componentResized) {
-                    throw new RuntimeException(
-                        "FAIL: ComponentResized not triggered for disabled "
-                            + components[i].getClass());
-                }
-            }
-
-            EventQueue.invokeAndWait(() -> {
-                frame.dispose();
-                frame.setVisible(true);
-            });
-
-            robot.waitForIdle();
-
-            resetValues();
-            EventQueue.invokeAndWait(() -> {
-                frame.setExtendedState(Frame.ICONIFIED);
-            });
-
-            robot.waitForIdle();
-            if (componentShown || componentHidden || componentMoved
-                || componentResized) {
-                System.err.print("Events triggered are: ");
-                for (int j = 0; j < events.size();
-                    System.err.print(events.get(j) + "; "), j++);
-                System.err.println("");
-                throw new RuntimeException(
-                    "FAIL: ComponentEvent triggered when frame is iconified");
-            }
-
-            resetValues();
-            EventQueue.invokeAndWait(() -> {
-                frame.setExtendedState(Frame.NORMAL);
-            });
-
-            robot.waitForIdle();
-            if (componentShown || componentHidden) {
-                System.err.print("Events triggered are: ");
-                for (int j = 0; j < events.size();
-                    System.err.print(events.get(j) + "; "), j++);
-                System.err.println("");
-                throw new RuntimeException(
-                    "FAIL: ComponentEvent triggered when frame is set to normal state");
-            }
+            doTest();
 
             System.out.println("Test PASSED");
         } finally {
             EventQueue.invokeAndWait(ComponentEventTest::disposeFrame);
         }
+    }
+
+    private static void doTest()
+        throws InvocationTargetException, InterruptedException {
+
+        EventQueue.invokeAndWait(() -> {
+            compAt = components[0].getLocationOnScreen();
+            compSize = components[0].getSize();
+        });
+
+        robot.mouseMove(compAt.x + compSize.width / 2,
+            compAt.y + compSize.height / 2);
+
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+     // Hide all components and check if the ComponentEvent is triggered
+        for (int i = 0; i < components.length; i++) {
+            doTestForComponent(i);
+        }
+
+        EventQueue.invokeAndWait(() -> {
+            frame.dispose();
+            frame.setVisible(true);
+        });
+
+        robot.delay(DELAY);
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            frame.setExtendedState(Frame.ICONIFIED);
+        });
+
+        robot.delay(DELAY);
+        if (componentShown || componentHidden || componentMoved
+            || componentResized) {
+            System.err.print("Events triggered are: ");
+            for (int j = 0; j < events.size();
+                System.err.print(events.get(j) + "; "), j++);
+            System.err.println("");
+            throw new RuntimeException(
+                "FAIL: ComponentEvent triggered when frame is iconified");
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            frame.setExtendedState(Frame.NORMAL);
+        });
+
+        robot.delay(DELAY);
+        if (componentShown || componentHidden) {
+            System.err.print("Events triggered are: ");
+            for (int j = 0; j < events.size();
+                System.err.print(events.get(j) + "; "), j++);
+            System.err.println("");
+            throw new RuntimeException(
+                "FAIL: ComponentEvent triggered when frame is set to normal state");
+        }
+    }
+
+    private static void doTestForComponent(int i)
+        throws InvocationTargetException, InterruptedException {
+        Component currentComponent = components[i];
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(false);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentHidden) {
+            throw new RuntimeException(
+                "FAIL: ComponentHidden not triggered for "
+                    + currentComponent.getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(false);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (componentHidden) {
+            throw new RuntimeException(
+                "FAIL: ComponentHidden triggered when setVisible(false) "
+                    + "called for a hidden " + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(true);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentShown) {
+            throw new RuntimeException("FAIL: ComponentShown not triggered for "
+                + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(true);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (componentShown) {
+            throw new RuntimeException(
+                "FAIL: ComponentShown triggered when setVisible(true) "
+                    + "called for a shown " + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setLocation(currentComponent.getLocation().x + 1,
+                currentComponent.getLocation().y);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentMoved) {
+            throw new RuntimeException("FAIL: ComponentMoved not triggered for "
+                + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setSize(currentComponent.getSize().width + 1,
+                currentComponent.getSize().height);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentResized) {
+            throw new RuntimeException(
+                "FAIL: ComponentResized not triggered for "
+                    + components[i].getClass());
+        }
+
+        // Disable the components and do the same set of operations
+
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setEnabled(false);
+            resetFrame();
+        });
+        robot.delay(DELAY);
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(false);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentHidden) {
+            throw new RuntimeException(
+                "FAIL: ComponentHidden not triggered for disabled "
+                    + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(false);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (componentHidden) {
+            throw new RuntimeException(
+                "FAIL: ComponentHidden triggered when setVisible(false) "
+                    + "called for a hidden disabled "
+                    + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(true);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentShown) {
+            throw new RuntimeException(
+                "FAIL: ComponentShown not triggered for disabled "
+                    + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setVisible(true);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (componentShown) {
+            throw new RuntimeException(
+                "FAIL: ComponentShown triggered when setVisible(true) "
+                    + "called for a shown disabled "
+                    + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setLocation(currentComponent.getLocation().x - 1,
+                currentComponent.getLocation().y);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentMoved) {
+            throw new RuntimeException(
+                "FAIL: ComponentMoved not triggered for disabled "
+                    + components[i].getClass());
+        }
+
+        resetValues();
+        EventQueue.invokeAndWait(() -> {
+            currentComponent.setSize(currentComponent.getSize().width - 1,
+                currentComponent.getSize().height);
+            resetFrame();
+        });
+
+        robot.delay(DELAY);
+        if (!componentResized) {
+            throw new RuntimeException(
+                "FAIL: ComponentResized not triggered for disabled "
+                    + components[i].getClass());
+        }
+
+    }
+
+    private static void resetFrame() {
+        frame.invalidate();
+        frame.validate();
     }
 
     private static void resetValues() {
