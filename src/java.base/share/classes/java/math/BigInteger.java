@@ -4098,8 +4098,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(mag, 0, mag.length, 0,
-                ArraysSupport.T_INT) * signum;
+        return ArraysSupport.hashCode(mag, 0, mag.length, 0) * signum;
     }
 
     /**

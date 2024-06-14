@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
+
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -63,6 +65,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
 import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.constant.ConstantUtils.*;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -249,14 +252,14 @@ public class MethodHandleProxies {
 
             // the field name holding the method handle for this method
             String fieldName = "m" + count++;
-            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m), true);
+            var md = methodTypeDesc(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
             var thrown = JLRA.getExecutableSharedExceptionTypes(m);
             var exceptionTypeDescs =
                     thrown.length == 0 ? DEFAULT_RETHROWS
                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
-                                                       Arrays.stream(thrown).map(MethodHandleProxies::desc))
+                                                       Arrays.stream(thrown).map(ConstantUtils::referenceClassDesc))
                                                .distinct().toList();
-            methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
+            methods.add(new MethodInfo(md, exceptionTypeDescs, fieldName));
 
             // find the types referenced by this method
             addElementType(referencedTypes, m.getReturnType());
@@ -279,7 +282,8 @@ public class MethodHandleProxies {
         int i = intfcName.lastIndexOf('.');
         // jdk.MHProxy#.Interface
         String className = packageName + "." + (i > 0 ? intfcName.substring(i + 1) : intfcName);
-        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods);
+        byte[] template = createTemplate(loader, binaryNameToDesc(className),
+                referenceClassDesc(intfc), uniqueName, methods);
         // define the dynamic module to the class loader of the interface
         var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
 
@@ -335,17 +339,17 @@ public class MethodHandleProxies {
         }
     }
 
-    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
-    private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
-    private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
+    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(referenceClassDesc(RuntimeException.class), referenceClassDesc(Error.class));
+    private static final ClassDesc CD_UndeclaredThrowableException = referenceClassDesc(UndeclaredThrowableException.class);
+    private static final ClassDesc CD_IllegalAccessException = referenceClassDesc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
     private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle =
             methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
     private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle =
             MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
     private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
-    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle =
-            desc(MT_void_Lookup_MethodHandle_MethodHandle);
+    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle
+            = methodTypeDesc(MT_void_Lookup_MethodHandle_MethodHandle);
     private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
     private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
@@ -529,16 +533,6 @@ public class MethodHandleProxies {
         } catch (Throwable e) {
             throw uncaughtException(e);
         }
-    }
-
-    private static ClassDesc desc(Class<?> cl) {
-        return cl.describeConstable().orElseThrow(() -> newInternalError("Cannot convert class "
-                + cl.getName() + " to a constant"));
-    }
-
-    private static MethodTypeDesc desc(MethodType mt) {
-        return mt.describeConstable().orElseThrow(() -> newInternalError("Cannot convert method type "
-                + mt + " to a constant"));
     }
 
     private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();

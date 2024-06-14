@@ -89,7 +89,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param returnType a {@link ClassDesc} describing the return type
      * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
-    public static MethodTypeDescImpl ofValidated(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
+    public static MethodTypeDescImpl ofValidated(ClassDesc returnType, ClassDesc... trustedArgTypes) {
         if (trustedArgTypes.length == 0)
             return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
         return new MethodTypeDescImpl(returnType, trustedArgTypes);

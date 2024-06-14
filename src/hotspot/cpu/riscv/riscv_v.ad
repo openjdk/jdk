@@ -75,9 +75,11 @@ source %{
         break;
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
-      case Op_ReverseBytesV:
       case Op_PopCountVL:
       case Op_PopCountVI:
+      case Op_ReverseBytesV:
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
         return UseZvbb;
       case Op_LoadVectorGather:
       case Op_LoadVectorGatherMasked:
@@ -387,6 +389,122 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector-immediate add (unpredicated)
+
+instruct vadd_immI(vReg dst, vReg src1, immI5 con) %{
+  match(Set dst (AddVB src1 (Replicate con)));
+  match(Set dst (AddVS src1 (Replicate con)));
+  match(Set dst (AddVI src1 (Replicate con)));
+  format %{ "vadd_immI $dst, $src1, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               $con$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_immL(vReg dst, vReg src1, immL5 con) %{
+  match(Set dst (AddVL src1 (Replicate con)));
+  format %{ "vadd_immL $dst, $src1, $con" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               $con$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar add (unpredicated)
+
+instruct vadd_regI(vReg dst, vReg src1, iRegIorL2I src2) %{
+  match(Set dst (AddVB src1 (Replicate src2)));
+  match(Set dst (AddVS src1 (Replicate src2)));
+  match(Set dst (AddVI src1 (Replicate src2)));
+  format %{ "vadd_regI $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_regL(vReg dst, vReg src1, iRegL src2) %{
+  match(Set dst (AddVL src1 (Replicate src2)));
+  format %{ "vadd_regL $dst, $src1, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-immediate add (predicated)
+
+instruct vadd_immI_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVB (Binary dst_src (Replicate con)) v0));
+  match(Set dst_src (AddVS (Binary dst_src (Replicate con)) v0));
+  match(Set dst_src (AddVI (Binary dst_src (Replicate con)) v0));
+  format %{ "vadd_immI_masked $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_immL_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
+  format %{ "vadd_immL_masked $dst_src, $dst_src, $con" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vadd_vi(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               $con$$constant, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar add (predicated)
+
+instruct vadd_regI_masked(vReg dst_src, iRegIorL2I src2, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVB (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (AddVS (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (AddVI (Binary dst_src (Replicate src2)) v0));
+  format %{ "vadd_regI_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vadd_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
+  match(Set dst_src (AddVL (Binary dst_src (Replicate src2)) v0));
+  format %{ "vadd_regL_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vadd_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector sub
 
 instruct vsub(vReg dst, vReg src1, vReg src2) %{
@@ -447,6 +565,64 @@ instruct vsub_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfsub_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar sub (unpredicated)
+
+instruct vsub_regI(vReg dst, vReg src1, iRegIorL2I src2) %{
+  match(Set dst (SubVB src1 (Replicate src2)));
+  match(Set dst (SubVS src1 (Replicate src2)));
+  match(Set dst (SubVI src1 (Replicate src2)));
+  format %{ "vsub_regI $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsub_regL(vReg dst, vReg src1, iRegL src2) %{
+  match(Set dst (SubVL src1 (Replicate src2)));
+  format %{ "vsub_regL $dst, $src1, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar sub (predicated)
+
+instruct vsub_regI_masked(vReg dst_src, iRegIorL2I src2, vRegMask_V0 v0) %{
+  match(Set dst_src (SubVB (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (SubVS (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (SubVI (Binary dst_src (Replicate src2)) v0));
+  format %{ "vsub_regI_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsub_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
+  match(Set dst_src (SubVL (Binary dst_src (Replicate src2)) v0));
+  format %{ "vsub_regL_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vsub_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1463,6 +1639,64 @@ instruct vmul_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfmul_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar mul (unpredicated)
+
+instruct vmul_regI(vReg dst, vReg src1, iRegIorL2I src2) %{
+  match(Set dst (MulVB src1 (Replicate src2)));
+  match(Set dst (MulVS src1 (Replicate src2)));
+  match(Set dst (MulVI src1 (Replicate src2)));
+  format %{ "vmul_regI $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmul_regL(vReg dst, vReg src1, iRegL src2) %{
+  match(Set dst (MulVL src1 (Replicate src2)));
+  format %{ "vmul_regL $dst, $src1, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector-scalar mul (predicated)
+
+instruct vmul_regI_masked(vReg dst_src, iRegIorL2I src2, vRegMask_V0 v0) %{
+  match(Set dst_src (MulVB (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (MulVS (Binary dst_src (Replicate src2)) v0));
+  match(Set dst_src (MulVI (Binary dst_src (Replicate src2)) v0));
+  format %{ "vmul_regI_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmul_regL_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
+  match(Set dst_src (MulVL (Binary dst_src (Replicate src2)) v0));
+  format %{ "vmul_regL_masked $dst_src, $dst_src, $src2" %}
+  ins_encode %{
+    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
+    __ vmul_vx(as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($dst_src$$reg),
+               as_Register($src2$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3057,6 +3291,200 @@ instruct vshiftcnt(vReg dst, iRegIorL2I cnt) %{
   ins_pipe(pipe_slow);
 %}
 
+// --------------------------------- Vector Rotation ----------------------------------
+//
+// Following rotate instruct's are shared by vectorization (in SLP, superword.cpp) and Vector API.
+//
+// Rotate behaviour in vectorization is defined by java API, which includes:
+//  1. Integer.rorateRight, Integer.rorateLeft.
+//     `rotation by any multiple of 32 is a no-op, so all but the last five bits of the rotation distance can be ignored`.
+//  2. Long.rorateRight, Long.rorateLeft.
+//     `rotation by any multiple of 64 is a no-op, so all but the last six bits of the rotation distance can be ignored`.
+//
+// Rotate behaviour in Vector API is defined as below, e.g.
+//  1. For Byte ROR, `a ROR b` is: (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))))
+//  2. For Short ROR, `a ROR b` is: (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))))
+//  3. For Integer ROR, `a ROR b` is: Integer.rotateRight(a, ((int)b))
+//  4. For Long ROR, `a ROR b` is: Long.rotateRight(a, ((int)b))
+//
+// Basically, the behaviour between vectorization and Vector API is the same for Long and Integer, except that Vector API
+// also supports Byte and Short rotation. But we can still share the intrinsics between vectorization and Vector API.
+//
+// NOTE: As vror.vi encodes 6-bits immediate rotate amount, which is different from other vector-immediate instructions,
+//       implementation of vector rotation for long and other types can be unified.
+
+// Rotate right
+
+instruct vrotate_right(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateRightV src (Replicate shift)));
+  format %{ "vrotate_right_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_imm(vReg dst, vReg src, immI shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right_imm $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate right - masked
+
+instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
+  format %{ "vrotate_right_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src (Replicate shift)) v0));
+  format %{ "vrotate_right_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
+  format %{ "vrotate_right_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate left
+
+instruct vrotate_left(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrotate_left $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_reg(vReg dst, vReg src, iRegIorL2I shift) %{
+  match(Set dst (RotateLeftV src (Replicate shift)));
+  format %{ "vrotate_left_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+               as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_imm(vReg dst, vReg src, immI shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrotate_left_imm $dst, $src, $shift\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    con = bits - con;
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate left - masked
+
+instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
+  format %{ "vrotate_left_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_reg_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src (Replicate shift)) v0));
+  format %{ "vrotate_left_reg_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrol_vx(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_left_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+  match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
+  format %{ "vrotate_left_imm_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint32_t bits = type2aelembytes(bt) * 8;
+    uint32_t con = (unsigned)$shift$$constant & (bits - 1);
+    if (con == 0) {
+      return;
+    }
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    con = bits - con;
+    __ vror_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+               con, Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector sqrt
 
 instruct vsqrt_fp(vReg dst, vReg src) %{
@@ -4367,12 +4795,11 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
 
 // ------------------------------ Vector Load Gather ---------------------------
 
-instruct gather_load(vReg dst, indirect mem, vReg idx) %{
-  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4 ||
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP_DEF dst);
-  format %{ "gather_load $dst, $mem, $idx" %}
+  format %{ "gather_loadS $dst, $mem, $idx" %}
   ins_encode %{
     __ vmv1r_v(as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -4385,12 +4812,28 @@ instruct gather_load(vReg dst, indirect mem, vReg idx) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct gather_load_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, vReg tmp) %{
-  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4 ||
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+instruct gather_loadD(vReg dst, indirect mem, vReg idx) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+  match(Set dst (LoadVectorGather mem idx));
+  effect(TEMP_DEF dst);
+  format %{ "gather_loadD $dst, $mem, $idx" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vzext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg));
+    __ vsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), (int)sew);
+    __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
+                  as_VectorRegister($dst$$reg));
+ %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct gather_loadS_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
   match(Set dst (LoadVectorGatherMasked mem (Binary idx v0)));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "gather_load_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
+  format %{ "gather_loadS_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vmv1r_v(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -4405,14 +4848,32 @@ instruct gather_load_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, vR
   ins_pipe(pipe_slow);
 %}
 
+instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx v0)));
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "gather_loadD_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
+    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
+    __ vxor_vv(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg),
+               as_VectorRegister($dst$$reg));
+    __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
+                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+ %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector Store Scatter -------------------------
 
-instruct scatter_store(indirect mem, vReg src, vReg idx, vReg tmp) %{
-  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4 ||
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+instruct scatter_storeS(indirect mem, vReg src, vReg idx, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
   match(Set mem (StoreVectorScatter mem (Binary src idx)));
   effect(TEMP tmp);
-  format %{ "scatter_store $mem, $idx, $src\t# KILL $tmp" %}
+  format %{ "scatter_storeS $mem, $idx, $src\t# KILL $tmp" %}
   ins_encode %{
     __ vmv1r_v(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
@@ -4425,12 +4886,28 @@ instruct scatter_store(indirect mem, vReg src, vReg idx, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct scatter_store_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0, vReg tmp) %{
-  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4 ||
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+instruct scatter_storeD(indirect mem, vReg src, vReg idx, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+  match(Set mem (StoreVectorScatter mem (Binary src idx)));
+  effect(TEMP tmp);
+  format %{ "scatter_storeD $mem, $idx, $src\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
+    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
+    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
+    __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
+                  as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct scatter_storeS_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
   match(Set mem (StoreVectorScatterMasked mem (Binary src (Binary idx v0))));
   effect(TEMP tmp);
-  format %{ "scatter_store_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
+  format %{ "scatter_storeS_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vmv1r_v(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
@@ -4438,6 +4915,23 @@ instruct scatter_store_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0, 
     __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
     __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
     __ vsuxei32_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
+                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct scatter_storeD_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0, vReg tmp) %{
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+  match(Set mem (StoreVectorScatterMasked mem (Binary src (Binary idx v0))));
+  effect(TEMP tmp);
+  format %{ "scatter_storeD_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
+    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
+    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
+    __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
                   as_VectorRegister($tmp$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);

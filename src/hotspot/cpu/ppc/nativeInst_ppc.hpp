@@ -137,6 +137,8 @@ class NativeCall: public NativeInstruction {
     instruction_size                            = 16 // Used in shared code for calls with reloc_info.
   };
 
+  static int byte_size() { return instruction_size; }
+
   static bool is_call_at(address a) {
     return Assembler::is_bl(*(int*)(a));
   }

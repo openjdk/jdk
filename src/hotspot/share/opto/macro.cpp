@@ -2428,7 +2428,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque3   ||
                n->is_Opaque4()             ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2481,30 +2480,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-#if INCLUDE_RTM_OPT
-      } else if ((n->Opcode() == Op_Opaque3) && ((Opaque3Node*)n)->rtm_opt()) {
-        assert(C->profile_rtm(), "should be used only in rtm deoptimization code");
-        assert((n->outcnt() == 1) && n->unique_out()->is_Cmp(), "");
-        Node* cmp = n->unique_out();
-#ifdef ASSERT
-        // Validate graph.
-        assert((cmp->outcnt() == 1) && cmp->unique_out()->is_Bool(), "");
-        BoolNode* bol = cmp->unique_out()->as_Bool();
-        assert((bol->outcnt() == 1) && bol->unique_out()->is_If() &&
-               (bol->_test._test == BoolTest::ne), "");
-        IfNode* ifn = bol->unique_out()->as_If();
-        assert((ifn->outcnt() == 2) &&
-               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change) != nullptr, "");
-#endif
-        Node* repl = n->in(1);
-        if (!_has_locks) {
-          // Remove RTM state check if there are no locks in the code.
-          // Replace input to compare the same value.
-          repl = (cmp->in(1) == n) ? cmp->in(2) : cmp->in(1);
-        }
-        _igvn.replace_node(n, repl);
-        success = true;
-#endif
       } else if (n->is_Opaque4()) {
         // With Opaque4 nodes, the expectation is that the test of input 1
         // is always equal to the constant value of input 2. So we can
