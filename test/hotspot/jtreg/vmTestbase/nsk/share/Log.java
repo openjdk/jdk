@@ -221,9 +221,6 @@ public class Log {
         if (!enable) {
             throw new RuntimeException("The non-verbose logging is not supported.");
         }
-        if (!verbose) {
-            flushLogBuffer();
-        }
     }
 
     public int getTraceLevel() {
