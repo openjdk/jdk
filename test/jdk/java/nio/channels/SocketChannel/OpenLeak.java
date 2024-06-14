@@ -35,21 +35,20 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
-import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 public class OpenLeak {
 
-    final CompletableFuture<Boolean> result = new CompletableFuture<>();
+    private static final int MAX_LOOP = 250000;
+
     @Test
     public void test() throws Exception {
         InetAddress lo = InetAddress.getLoopbackAddress();
 
         // Try to find a suitable port that will cause a
         // Connection Rejected exception
-
         // port 47 is reserved - there should be nothing there...
         InetSocketAddress isa = new InetSocketAddress(lo, 47);
         try (SocketChannel sc1 = SocketChannel.open(isa)) {
@@ -66,17 +65,21 @@ public class OpenLeak {
             return;
         } catch (ConnectException x) { }
 
+        // create an unresolved address to test another path
+        //   where close should be called
         SocketAddress sa = InetSocketAddress.createUnresolved(isa.getHostString(), isa.getPort());
+
         System.out.println("Expecting Connection Refused for " + isa);
         System.out.println("Expecting UnresolvedAddressException for " + sa);
         int i = 0;
         try {
-            for (i = 0; i < 250000; i++) {
+            for (i = 0; i < MAX_LOOP; i++) {
                 try {
                     SocketChannel.open(sa);
                     throw new RuntimeException("This should not happen");
                 } catch (UnresolvedAddressException x) {
-                    if (i > 250000 - 10) {
+                    if (i < 5 || i >= MAX_LOOP - 5) {
+                        // print a message for the first five and last 5 exceptions
                         System.out.println(x);
                     }
                 }
@@ -84,7 +87,8 @@ public class OpenLeak {
                     SocketChannel.open(isa);
                     throw new RuntimeException("This should not happen");
                 } catch (ConnectException x) {
-                    if (i > 250000 - 10) {
+                    if (i < 5 || i >= MAX_LOOP - 5) {
+                        // print a message for the first five and last 5 exceptions
                         System.out.println(x);
                     }
                 }
