@@ -635,8 +635,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private AbstractStringBuilder appendNull() {
-        int count = this.count;
         ensureCapacityInternal(count + 4);
+        int count = this.count;
         byte[] val = this.value;
         if (isLatin1()) {
             StringLatin1.putCharsAt(val, count, 'n', 'u', 'l', 'l');
@@ -763,9 +763,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
+        ensureCapacityInternal(count + (b ? 4 : 5));
         int count = this.count;
-        int spaceNeeded = count + (b ? 4 : 5);
-        ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
@@ -780,7 +779,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                 StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
-        this.count = spaceNeeded;
+        this.count = count + (b ? 4 : 5);
         return this;
     }
 
