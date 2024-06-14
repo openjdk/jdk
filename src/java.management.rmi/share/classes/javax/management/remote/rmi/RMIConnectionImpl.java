@@ -1454,12 +1454,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     return AccessController.doPrivileged(op, acc);
                 }
             }
-        } catch (Exception e) {
-            if (e instanceof RuntimeException rte) {
-                throw rte;
-            } else {
-                throw new PrivilegedActionException(e);
-            }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
         } finally {
