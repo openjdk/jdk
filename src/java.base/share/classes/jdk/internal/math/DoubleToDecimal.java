@@ -37,8 +37,8 @@ import static jdk.internal.math.MathUtils.*;
  * This class exposes a method to render a {@code double} as a string.
  */
 public final class DoubleToDecimal extends ToDecimal {
-    public static DoubleToDecimal LATIN1 = new DoubleToDecimal(ToDecimal.LATIN1);
-    public static DoubleToDecimal UTF16  = new DoubleToDecimal(ToDecimal.UTF16);
+    public static final DoubleToDecimal LATIN1 = new DoubleToDecimal(ToDecimal.LATIN1);
+    public static final DoubleToDecimal UTF16  = new DoubleToDecimal(ToDecimal.UTF16);
 
     /*
      * For full details about this code see the following references:
