@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,37 +168,31 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == R3_ARG1->as_VMReg(), "receiver expected in R3_ARG1");
 
   // Entry arguments:
-  //  R19_method: Interface
+  //  R19_method: CompiledICData
   //  R3_ARG1:    Receiver
 
   Label L_no_such_interface;
-  const Register rcvr_klass = R11_scratch1,
-                 interface  = R12_scratch2,
-                 tmp1       = R21_tmp1,
-                 tmp2       = R22_tmp2;
+  const Register recv_klass     = R11_scratch1,
+                 holder_klass   = R12_scratch2, // declaring interface klass (DEFC)
+                 resolved_klass = R21_tmp1,     // resolved  interface klass (REFC)
+                 temp           = R22_tmp2,
+                 temp2          = R23_tmp3;
 
   address npe_addr = __ pc(); // npe = null pointer exception
-  __ load_klass_check_null(rcvr_klass, R3_ARG1);
+  __ load_klass_check_null(recv_klass, R3_ARG1);
 
   // Receiver subtype check against REFC.
-  __ ld(interface, CompiledICData::itable_refc_klass_offset(), R19_method);
-  __ lookup_interface_method(rcvr_klass, interface, noreg,
-                             R0, tmp1, tmp2,
-                             L_no_such_interface, /*return_method=*/ false);
+  __ ld(resolved_klass, CompiledICData::itable_refc_klass_offset(), R19_method);
+  __ ld(holder_klass,   CompiledICData::itable_defc_klass_offset(), R19_method);
 
   // Get Method* and entrypoint for compiler
-  __ ld(interface, CompiledICData::itable_defc_klass_offset(), R19_method);
-  __ lookup_interface_method(rcvr_klass, interface, itable_index,
-                             R19_method, tmp1, tmp2,
-                             L_no_such_interface, /*return_method=*/ true);
+  __ lookup_interface_method_stub(recv_klass, holder_klass, resolved_klass, R19_method,
+                                  temp, temp2, itable_index, L_no_such_interface);
 
 #ifndef PRODUCT
   if (DebugVtables) {
-    Label ok;
     __ cmpd(CCR0, R19_method, 0);
-    __ bne(CCR0, ok);
-    __ stop("method is null");
-    __ bind(ok);
+    __ asm_assert(false /* check_equal */, "method is null");
   }
 #endif
 
