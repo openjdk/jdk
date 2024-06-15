@@ -431,17 +431,16 @@ public final class DoubleToDecimal extends ToDecimal {
         for (; e < 0; ++e) {
             putDigit(str, index++, 0);
         }
-        putDigit(str, index++, h);
-        put8Digits(str, index, m);
-        return lowDigits(str, index + 8, l);
+        putDigit(str, index, h);
+        put8Digits(str, index + 1, m);
+        return lowDigits(str, index + 9, l);
     }
 
     private int toChars3(byte[] str, int index, int h, int m, int l, int e) {
         /* -3 >= e | e > 7: computerized scientific notation */
         putCharsAt(str, index, '0' + h, '.');
-        index += 2;
-        put8Digits(str, index, m);
-        index = lowDigits(str, index + 8, l);
+        put8Digits(str, index + 2, m);
+        index = lowDigits(str, index + 10, l);
         return exponent(str, index, e - 1);
     }
 

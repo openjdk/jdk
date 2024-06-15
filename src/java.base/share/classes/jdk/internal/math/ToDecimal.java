@@ -37,12 +37,12 @@ sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     /* Used for left-to-tight digit extraction */
     static final int MASK_28 = (1 << 28) - 1;
 
-    static final int NON_SPECIAL    = 0;
-    static final int PLUS_ZERO      = 0x100;
-    static final int MINUS_ZERO     = 0x200;
-    static final int PLUS_INF       = 0x300;
-    static final int MINUS_INF      = 0x400;
-    static final int NAN            = 0x500;
+    static final int NON_SPECIAL = 0;
+    static final int PLUS_ZERO   = 0x100;
+    static final int MINUS_ZERO  = 0x200;
+    static final int PLUS_INF    = 0x300;
+    static final int MINUS_INF   = 0x400;
+    static final int NAN         = 0x500;
 
     static final byte LATIN1 = 0;
     static final byte UTF16  = 1;
@@ -178,7 +178,7 @@ sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
             case MINUS_ZERO -> "-0.0";
             case PLUS_INF   -> "Infinity";
             case MINUS_INF  -> "-Infinity";
-            default -> "NaN";
+            default         -> "NaN";
         };
     }
 }

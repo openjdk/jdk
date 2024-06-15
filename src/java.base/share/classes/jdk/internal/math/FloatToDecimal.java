@@ -391,15 +391,15 @@ public final class FloatToDecimal extends ToDecimal {
         for (; e < 0; ++e) {
             putDigit(str, index++, 0);
         }
-        putDigit(str, index++, h);
-        put8Digits(str, index, l);
-        return removeTrailingZeroes(str, index + 8);
+        putDigit(str, index, h);
+        put8Digits(str, index + 1, l);
+        return removeTrailingZeroes(str, index + 9);
     }
 
     private int toChars3(byte[] str, int index, int h, int l, int e) {
         /* -3 >= e | e > 7: computerized scientific notation */
         putCharsAt(str, index, '0' + h, '.');
-        put8Digits(str, index + 2, l);
+        put8Digits(str, index + 2     , l  );
         index = removeTrailingZeroes(str, index + 10);
         return exponent(str, index, e - 1);
     }
