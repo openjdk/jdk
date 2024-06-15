@@ -3413,15 +3413,14 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 #ifdef ASSERT
   {
     // r_result should have either 0 or 1 value
-    NearLabel check_0, check_1;
 
     // check for 0
     z_chi(r_result, 0);
-    asm_assert(bcondNotLow, "r_result >= 0", 33);
+    asm_assert(bcondNotLow, "r_result should be equal or greater than 0", 33);
 
     // check for 1
     z_chi(r_result, 1);
-    asm_assert(bcondNotHigh, "r_result <= 1", 33);
+    asm_assert(bcondNotHigh, "r_result should be equal or less than 1", 33);
   }
 #endif // ASSERT
 
