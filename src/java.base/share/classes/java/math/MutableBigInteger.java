@@ -1949,7 +1949,7 @@ class MutableBigInteger {
             }
 
             sqrt = new MutableBigInteger((int) s);
-            rem = (r & LONG_MASK) == r ? new MutableBigInteger((int) r)
+            rem = r <= LONG_MASK ? new MutableBigInteger((int) r)
                     : new MutableBigInteger(new int[] { 1, (int) r });
         }
 
@@ -1967,8 +1967,7 @@ class MutableBigInteger {
             rem = x.getBlockZimmermann(0, limit, blockLength);
             rem.addDisjoint(u, blockLength);
             BigInteger qBig = q.toBigInteger();
-            MutableBigInteger qSqr = new MutableBigInteger(qBig.multiply(qBig).mag);
-            int rSign = rem.subtract(qSqr);
+            int rSign = rem.subtract(new MutableBigInteger(qBig.multiply(qBig).mag));
 
             q.addShifted(sqrt, blockLength);
             sqrt = q;
@@ -1977,8 +1976,8 @@ class MutableBigInteger {
                 twiceSqrt = new MutableBigInteger(sqrt);
                 twiceSqrt.leftShift(1);
 
-                rem.subtract(twiceSqrt);
                 rem.add(ONE);
+                rem.subtract(twiceSqrt);
                 sqrt.subtract(ONE);
             }
         }
@@ -1989,10 +1988,11 @@ class MutableBigInteger {
         if (shift != 0) {
             final int halfShift = shift >> 1;
             if (!rem.isZero()) {
-                BigInteger s0 = sqrt.getBlockZimmermann(0, sqrt.intLen, (halfShift + 31) >> 5).toBigInteger();
-                if (s0.mag.length != 0 && (halfShift & 31) != 0)
+                final int s0Len = (halfShift + 31) >> 5;
+                BigInteger s0 = sqrt.getBlockZimmermann(0, sqrt.intLen, s0Len).toBigInteger();
+                if (s0.mag.length == s0Len && (halfShift & 31) != 0)
                     s0.mag[0] &= (1 << halfShift) - 1;
-
+        
                 rem.add(new MutableBigInteger(s0.multiply(sqrt.toBigInteger()).shiftLeft(1).mag));
                 rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
                 rem.rightShift(shift);
