@@ -53,7 +53,7 @@ public class TestIOException extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         var tester = new TestIOException();
-        if(Platform.isRoot() && ! tester.isWindows()) {
+        if(Platform.isRoot() && !tester.isWindows()) {
             throw new SkippedException("root user has privileged will make this test fail.");
         }
         tester.runTests();
