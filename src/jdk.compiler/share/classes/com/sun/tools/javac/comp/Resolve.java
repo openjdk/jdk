@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3947,21 +3947,34 @@ public class Resolve {
     }
 
     /**
-     * Resolve an appropriate implicit this instance for t's container.
-     * JLS 8.8.5.1 and 15.9.2
+     * Resolve an appropriate implicit outer instance for type t.
+     * This assumes that an outer instance exists (i.e., t.tsym.hasOuterInstance()).
      */
-    Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t) {
-        return resolveImplicitThis(pos, env, t, false);
+    Type resolveImplicitOuterInstance(DiagnosticPosition pos, Env<AttrContext> env, Type t) {
+        return resolveImplicitOuterInstance(pos, env, t, false);
     }
 
-    Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t, boolean isSuperCall) {
-        Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
-                         ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
-                         : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if (env.info.ctorPrologue && thisType.tsym == env.enclClass.sym) {
-            log.error(pos, Errors.CantRefBeforeCtorCalled(names._this));
+    Type resolveImplicitOuterInstance(DiagnosticPosition pos, Env<AttrContext> env, Type t, boolean isSuperCall) {
+        Assert.check(t.tsym.hasOuterInstance());
+
+        // Resolve the target type
+        Type targetType;
+        if (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)) {
+            Type outerType = t.tsym.innermostAccessibleEnclosingClass().type;
+            targetType = resolveSelf(pos, env, outerType.tsym, names._this).type;
+        } else
+            targetType = resolveSelfContaining(pos, env, t.tsym, isSuperCall).type;
+
+        // Verify we're not in an early construction context for that type
+        for (Env<AttrContext> env1 = env; env1 != null; env1 = env1.outer) {
+            if (env1.info.ctorPrologue && targetType.tsym == env1.enclClass.sym) {
+                log.error(pos, Errors.CantRefBeforeCtorCalled(names._this));
+                break;
+            }
         }
-        return thisType;
+
+        // Done
+        return targetType;
     }
 
 /* ***************************************************************************

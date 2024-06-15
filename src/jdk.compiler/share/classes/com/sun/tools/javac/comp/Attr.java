@@ -2586,10 +2586,10 @@ public class Attr extends JCTree.Visitor {
                         chk.checkRefType(qualifier.pos(),
                                          attribExpr(qualifier, localEnv,
                                                     encl));
-                    } else if (methName == names._super) {
+                    } else if (methName == names._super && site.tsym.hasOuterInstance()) {
                         // qualifier omitted; check for existence
                         // of an appropriate implicit qualifier.
-                        rs.resolveImplicitThis(tree.meth.pos(),
+                        rs.resolveImplicitOuterInstance(tree.meth.pos(),
                                                localEnv, site, true);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
@@ -2797,11 +2797,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.encl.pos(), Errors.QualifiedNewOfStaticClass(clazztype.tsym));
                 }
             }
-        } else if (!clazztype.tsym.isInterface() &&
-                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
-                   clazztype.getEnclosingType().hasTag(CLASS)) {
+        } else if (clazztype.tsym.hasOuterInstance()) {
             // Check for the existence of an apropos outer instance
-            rs.resolveImplicitThis(tree.pos(), env, clazztype);
+            rs.resolveImplicitOuterInstance(tree.pos(), env, clazztype);
         }
 
         // Attribute constructor arguments.
@@ -3725,12 +3723,9 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null &&
-                    enclosingType.hasTag(CLASS) &&
-                    (exprType.tsym.flags_field & NOOUTERTHIS) == 0) {
+                if (exprType.tsym.hasOuterInstance()) {
                     // Check for the existence of an appropriate outer instance
-                    rs.resolveImplicitThis(that.pos(), env, exprType);
+                    rs.resolveImplicitOuterInstance(that.pos(), env, exprType);
                 }
             }
 
