@@ -114,9 +114,6 @@ class Generation: public CHeapObj<mtGC> {
   // Like "allocate", but performs any necessary locking internally.
   virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Thread-local allocation buffers
-  virtual bool supports_tlab_allocation() const { return false; }
-
   // Perform a heap collection, attempting to create (at least) enough
   // space to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the resulting

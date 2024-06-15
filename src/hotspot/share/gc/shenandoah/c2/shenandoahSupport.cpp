@@ -1333,6 +1333,14 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       OuterStripMinedLoopNode* outer = head->as_OuterStripMinedLoop();
       hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
     }
+    if (head->is_BaseCountedLoop() && ctrl->is_IfProj() && ctrl->in(0)->is_BaseCountedLoopEnd() &&
+        head->as_BaseCountedLoop()->loopexit() == ctrl->in(0)) {
+      Node* entry = head->in(LoopNode::EntryControl);
+      Node* backedge = head->in(LoopNode::LoopBackControl);
+      Node* new_head = new LoopNode(entry, backedge);
+      phase->register_control(new_head, phase->get_loop(entry), entry);
+      phase->lazy_replace(head, new_head);
+    }
   }
 
   // Expand load-reference-barriers
