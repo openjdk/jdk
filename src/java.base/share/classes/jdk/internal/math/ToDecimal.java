@@ -31,7 +31,7 @@ import jdk.internal.access.SharedSecrets;
 
 import static java.lang.Math.multiplyHigh;
 
-public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
+sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /* Used for left-to-tight digit extraction */
@@ -56,7 +56,7 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
      */
     private final byte coder;
 
-    public ToDecimal(byte coder) {
+    ToDecimal(byte coder) {
         this.coder = coder;
     }
 
@@ -90,7 +90,7 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
         if (coder == LATIN1) {
             put8DigitsLatin1(str, index, m);
         } else {
-            put8DigitsUTF16(str, index, m);
+            put8DigitsUTF16 (str, index, m);
         }
     }
 
@@ -174,10 +174,10 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
 
     static String special(int type) {
         return switch (type) {
-            case PLUS_ZERO -> "0.0";
+            case PLUS_ZERO  -> "0.0";
             case MINUS_ZERO -> "-0.0";
-            case PLUS_INF -> "Infinity";
-            case MINUS_INF -> "-Infinity";
+            case PLUS_INF   -> "Infinity";
+            case MINUS_INF  -> "-Infinity";
             default -> "NaN";
         };
     }
