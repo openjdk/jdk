@@ -489,7 +489,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * safe for external use.  The {@code magnitude} array is assumed to be
      * unchanged for the duration of the constructor call.
      */
-    private BigInteger(int signum, int[] magnitude) {
+    BigInteger(int signum, int[] magnitude) {
         this.mag = stripLeadingZeroInts(magnitude);
 
         if (signum < -1 || signum > 1)

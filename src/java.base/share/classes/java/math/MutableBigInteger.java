@@ -1994,11 +1994,12 @@ class MutableBigInteger {
         if (shift != 0) {
             final int halfShift = shift >> 1;
             if (!rem.isZero()) {
-                final int s0Len = (halfShift + 31) >> 5;
-                BigInteger s0 = sqrt.getBlockZimmermann(0, sqrt.intLen, s0Len).toBigInteger();
-                if (s0.mag.length == s0Len && (halfShift & 31) != 0)
-                    s0.mag[0] &= (1 << halfShift) - 1;
+                final int sqrtEnd = sqrt.offset + sqrt.intLen, s0Len = (halfShift + 31) >> 5;
+                int[] s0Mag = Arrays.copyOfRange(sqrt.value, sqrtEnd - s0Len, sqrtEnd);
+                if (s0Mag[0] != 0 && (halfShift & 31) != 0)
+                    s0Mag[0] &= (1 << halfShift) - 1;
 
+                BigInteger s0 = new BigInteger(1, s0Mag);
                 rem.add(new MutableBigInteger(s0.multiply(sqrt.toBigInteger()).shiftLeft(1).mag));
                 rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
                 rem.rightShift(shift);
