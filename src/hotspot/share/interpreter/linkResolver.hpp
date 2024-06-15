@@ -293,7 +293,16 @@ class LinkResolver: AllStatic {
                                    const constantPoolHandle& pool,
                                    int index,
                                    const methodHandle& method,
-                                   Bytecodes::Code byte, TRAPS);
+                                   Bytecodes::Code byte,
+                                   bool initialize_class, TRAPS);
+  static void resolve_field_access(fieldDescriptor& result,
+                                   const constantPoolHandle& pool,
+                                   int index,
+                                   const methodHandle& method,
+                                   Bytecodes::Code byte, TRAPS) {
+    resolve_field_access(result, pool, index, method, byte,
+                         /* initialize_class*/true, THREAD);
+  }
   static void resolve_field(fieldDescriptor& result, const LinkInfo& link_info,
                             Bytecodes::Code access_kind,
                             bool initialize_class, TRAPS);
