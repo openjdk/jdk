@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @test
  * @bug 8164130
  * @summary test IOException handling
- * @library ../../lib
+ * @library ../../lib /test/lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
+ * @build jdk.test.lib.Platform
  * @run main TestIOException
  */
 
@@ -39,6 +40,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import javadoc.tester.JavadocTester;
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 /**
  * Tests IO Exception handling.
@@ -50,6 +53,9 @@ public class TestIOException extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         var tester = new TestIOException();
+        if(Platform.isRoot() && ! tester.isWindows()) {
+            throw new SkippedException("root user has privileged will make this test fail.");
+        }
         tester.runTests();
     }
 
