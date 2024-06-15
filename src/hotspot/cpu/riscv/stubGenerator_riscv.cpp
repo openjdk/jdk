@@ -2807,6 +2807,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(true, false);
   }
 
+#ifdef COMPILER2
   address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
 
@@ -2851,7 +2852,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#ifdef COMPILER2
   address generate_mulAdd()
   {
     __ align(CodeEntryAlignment);
