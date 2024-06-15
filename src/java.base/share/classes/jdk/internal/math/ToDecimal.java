@@ -26,7 +26,8 @@
 
 package jdk.internal.math;
 
-import jdk.internal.misc.Unsafe;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 import static java.lang.Double.MIN_EXPONENT;
 import static java.lang.Double.PRECISION;
@@ -37,18 +38,7 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int HI_BYTE_SHIFT;
-    private static final int LO_BYTE_SHIFT;
-    static {
-        if (UNSAFE.isBigEndian()) {
-            HI_BYTE_SHIFT = 8;
-            LO_BYTE_SHIFT = 0;
-        } else {
-            HI_BYTE_SHIFT = 0;
-            LO_BYTE_SHIFT = 8;
-        }
-    }
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /* Used for left-to-tight digit extraction */
     static final int MASK_28 = (1 << 28) - 1;
@@ -80,7 +70,7 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
         if (coder == LATIN1) {
             str[index] = (byte) c;
         } else {
-            putCharUTF16(str, index, (char) c);
+            JLA.putCharUTF16(str, index, (char) c);
         }
     }
 
@@ -89,8 +79,8 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
             str[index    ] = (byte) c1;
             str[index + 1] = (byte) c2;
         } else {
-            putCharUTF16(str, index    , c1);
-            putCharUTF16(str, index + 1, c2);
+            JLA.putCharUTF16(str, index    , c1);
+            JLA.putCharUTF16(str, index + 1, c2);
         }
     }
 
@@ -123,22 +113,9 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
         int y = y(m);
         for (int i = 0; i < 8; ++i) {
             int t = 10 * y;
-            putCharUTF16(str, index + i, '0' + (t >>> 28));
+            JLA.putCharUTF16(str, index + i, '0' + (t >>> 28));
             y = t & MASK_28;
         }
-    }
-
-    private static void putCharUTF16(byte[] str, int index, int c) {
-        index <<= 1;
-        str[index    ] = (byte)(c >> HI_BYTE_SHIFT);
-        str[index + 1] = (byte)(c >> LO_BYTE_SHIFT);
-    }
-
-
-    private static char charAtUTF16(byte[] str, int index) {
-        index <<= 1;
-        return (char)(((str[index    ] & 0xff) << HI_BYTE_SHIFT)
-                | ((str[index + 1] & 0xff) << LO_BYTE_SHIFT));
     }
 
     static int y(int a) {
@@ -165,11 +142,11 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
                 ++index;
             }
         } else {
-            while (charAtUTF16(str, index - 1) == '0') {
+            while (JLA.getUTF16Char(str, index - 1) == '0') {
                 --index;
             }
             /* ... but do not remove the one directly to the right of '.' */
-            if (charAtUTF16(str, index - 1) == '.') {
+            if (JLA.getUTF16Char(str, index - 1) == '.') {
                 ++index;
             }
         }
