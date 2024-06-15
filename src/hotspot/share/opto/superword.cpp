@@ -57,11 +57,26 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 {
 }
 
+#define TRACE_UNROLLING_ANALYSIS_FAILURE(message)                          \
+  NOT_PRODUCT(                                                             \
+    if (TraceSuperWordLoopUnrollAnalysis) {                                \
+      tty->print_cr("SuperWord::unrolling_analysis: failed: %s", message); \
+    }                                                                      \
+  )
+
 void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
   CountedLoopNode* cl   = vloop.cl();
   Node* cl_exit         = vloop.cl_exit();
   PhaseIdealLoop* phase = vloop.phase();
+
+#ifndef PRODUCT
+  if (TraceSuperWordLoopUnrollAnalysis) {
+    tty->print_cr("SuperWord::unrolling_analysis:\n");
+    lpt->dump_head();
+    cl->dump();
+  }
+#endif
 
   bool is_slp = true;
   size_t ignored_size = lpt->_body.size();
@@ -105,6 +120,9 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
           is_slp = false;
+          TRACE_UNROLLING_ANALYSIS_FAILURE("memory phi backedge problem?");
+          NOT_PRODUCT( n->dump(); )
+          NOT_PRODUCT( n_tail->dump(); )
           break;
         }
       }
@@ -119,6 +137,8 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     if (n->is_LoadStore() || n->is_MergeMem() ||
       (n->is_Proj() && !n->as_Proj()->is_CFG())) {
       is_slp = false;
+      TRACE_UNROLLING_ANALYSIS_FAILURE("node not allowed");
+      NOT_PRODUCT( n->dump(); )
       break;
     }
 
@@ -192,11 +212,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       // stop looking, we already have the max vector to map to.
       if (cur_max_vector < local_loop_unroll_factor) {
         is_slp = false;
-#ifndef PRODUCT
-        if (TraceSuperWordLoopUnrollAnalysis) {
-          tty->print_cr("slp analysis fails: unroll limit greater than max vector\n");
-        }
-#endif
+        TRACE_UNROLLING_ANALYSIS_FAILURE("unroll limit greater than max vector");
         break;
       }
 

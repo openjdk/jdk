@@ -89,24 +89,24 @@ VStatus VLoop::check_preconditions_helper() {
 
   // Check for control flow in the body
   _cl_exit = _cl->loopexit();
-  bool has_cfg = _cl_exit->in(0) != _cl;
-  if (has_cfg && !is_allow_cfg()) {
-#ifndef PRODUCT
-    if (is_trace_preconditions()) {
-      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
-      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
-      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
-      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
-      _lpt->dump_head();
-    }
-#endif
-    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
-  }
-
-  // Make sure the are no extra control users of the loop backedge
-  if (_cl->back_control()->outcnt() != 1) {
-    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
-  }
+//  bool has_cfg = _cl_exit->in(0) != _cl;
+//  if (has_cfg && !is_allow_cfg()) {
+//#ifndef PRODUCT
+//    if (is_trace_preconditions()) {
+//      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+//      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+//      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+//      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+//      _lpt->dump_head();
+//    }
+//#endif
+//    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
+//  }
+//
+//  // Make sure the are no extra control users of the loop backedge
+//  if (_cl->back_control()->outcnt() != 1) {
+//    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
+//  }
 
   // To align vector memory accesses in the main-loop, we will have to adjust
   // the pre-loop limit.
