@@ -264,7 +264,7 @@ class MutableBigInteger {
     final int compare(MutableBigInteger b) {
         this.normalize();
         b.normalize();
-        
+
         int blen = b.intLen;
         if (intLen < blen)
             return -1;
@@ -290,6 +290,9 @@ class MutableBigInteger {
      * would return, but doesn't change the value of {@code b}.
      */
     private int compareShifted(MutableBigInteger b, int ints) {
+        this.normalize();
+        b.normalize();
+
         int blen = b.intLen;
         int alen = intLen - ints;
         if (alen < blen)
