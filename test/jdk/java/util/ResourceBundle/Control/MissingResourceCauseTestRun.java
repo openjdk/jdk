@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @build jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Utils
  *        jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.Platform
  *        MissingResourceCauseTest
  *        NonResourceBundle
  *        PrivateConstructorRB
@@ -50,9 +51,14 @@ import java.nio.file.Paths;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class MissingResourceCauseTestRun {
     public static void main(String[] args) throws Throwable {
+        if(Platform.isRoot() && !Platform.isWindows()) {
+            throw new SkippedException("root user has privileged will make this test fail.");
+        }
         Path path = Paths.get("UnreadableRB.properties");
         Files.deleteIfExists(path);
         try {
