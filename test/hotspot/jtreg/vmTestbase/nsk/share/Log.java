@@ -74,15 +74,15 @@ public class Log {
 
     /**
      * Is log-mode verbose?
-     * Default value is <code>false</code>.
+     * Always enabled.
      */
-    private boolean verbose = false;
+    private final boolean verbose = true;
 
     /**
      * Should log messages prefixed with timestamps?
-     * Default value is <code>false</code>.
+     * Always enabled.
      */
-    private boolean timestamp = false;
+    private final boolean timestamp = true;
 
     /**
      * Names for trace levels
@@ -193,7 +193,6 @@ public class Log {
      */
     public Log(PrintStream stream, boolean verbose) {
         this(stream);
-        this.verbose = verbose;
     }
 
     /**
@@ -204,7 +203,6 @@ public class Log {
     public Log(PrintStream stream, ArgumentParser argsParser) {
         this(stream, argsParser.verbose());
         traceLevel = argsParser.getTraceLevel();
-        timestamp = argsParser.isTimestamp();
     }
 
     /////////////////////////////////////////////////////////////////
@@ -220,10 +218,9 @@ public class Log {
      * Enable or disable verbose mode for printing messages.
      */
     public void enableVerbose(boolean enable) {
-        if (!verbose) {
-            flushLogBuffer();
+        if (!enable) {
+            throw new RuntimeException("The non-verbose logging is not supported.");
         }
-        verbose = enable;
     }
 
     public int getTraceLevel() {
@@ -422,7 +419,6 @@ public class Log {
             out.flush();
         }
         out = stream;
-        verbose = true;
     }
 
     /////////////////////////////////////////////////////////////////
