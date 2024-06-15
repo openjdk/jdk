@@ -2900,6 +2900,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
 
   z_bru(L_loop_search_resolved);
 
+  // See if we already have a holder klass. If not, go and scan for it.
   bind(L_resolved_found);
   z_cghi(holder_offset, 0);
   z_bre(L_search_holder);
