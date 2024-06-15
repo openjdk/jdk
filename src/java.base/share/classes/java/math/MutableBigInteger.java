@@ -262,6 +262,9 @@ class MutableBigInteger {
      * greater than {@code b}.
      */
     final int compare(MutableBigInteger b) {
+        this.normalize();
+        b.normalize();
+        
         int blen = b.intLen;
         if (intLen < blen)
             return -1;
@@ -815,7 +818,7 @@ class MutableBigInteger {
         // Add common parts of both numbers
         while (x > 0 && y > 0) {
             x--; y--;
-            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
+            int bval = y < addend.intLen ? addend.value[y+addend.offset] : 0;
             sum = (value[x+offset] & LONG_MASK) +
                 (bval & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
@@ -834,7 +837,7 @@ class MutableBigInteger {
         }
         while (y > 0) {
             y--;
-            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
+            int bval = y < addend.intLen ? addend.value[y+addend.offset] : 0;
             sum = (bval & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
             carry = sum >>> 32;
@@ -886,7 +889,7 @@ class MutableBigInteger {
         y -= x;
         rstart -= x;
 
-        int len = Math.min(y, addend.value.length-addend.offset);
+        int len = Math.min(y, addend.intLen);
         System.arraycopy(addend.value, addend.offset, result, rstart+1-y, len);
 
         // zero the gap
@@ -1992,7 +1995,7 @@ class MutableBigInteger {
                 BigInteger s0 = sqrt.getBlockZimmermann(0, sqrt.intLen, s0Len).toBigInteger();
                 if (s0.mag.length == s0Len && (halfShift & 31) != 0)
                     s0.mag[0] &= (1 << halfShift) - 1;
-        
+
                 rem.add(new MutableBigInteger(s0.multiply(sqrt.toBigInteger()).shiftLeft(1).mag));
                 rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
                 rem.rightShift(shift);
