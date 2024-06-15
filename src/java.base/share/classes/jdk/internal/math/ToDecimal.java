@@ -29,13 +29,7 @@ package jdk.internal.math;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
-import static java.lang.Double.MIN_EXPONENT;
-import static java.lang.Double.PRECISION;
-import static java.lang.Double.SIZE;
-import static java.lang.Float.*;
-import static java.lang.Integer.*;
 import static java.lang.Math.multiplyHigh;
-import static jdk.internal.math.MathUtils.*;
 
 public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
