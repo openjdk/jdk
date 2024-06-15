@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -187,5 +190,96 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
 void ClassListWriter::delete_classlist() {
   if (_classlist_file != nullptr) {
     delete _classlist_file;
+  }
+}
+
+class ClassListWriter::WriteResolveConstantsCLDClosure : public CLDClosure {
+public:
+  void do_cld(ClassLoaderData* cld) {
+    for (Klass* klass = cld->klasses(); klass != nullptr; klass = klass->next_link()) {
+      if (klass->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(klass);
+        write_resolved_constants_for(ik);
+      }
+    }
+  }
+};
+
+void ClassListWriter::write_resolved_constants() {
+  if (!is_enabled()) {
+    return;
+  }
+  MutexLocker lock(ClassLoaderDataGraph_lock);
+  MutexLocker lock2(ClassListFile_lock, Mutex::_no_safepoint_check_flag);
+
+  WriteResolveConstantsCLDClosure closure;
+  ClassLoaderDataGraph::loaded_cld_do(&closure);
+}
+
+void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data()) ||
+      ik->is_hidden()) {
+    return;
+  }
+  if (LambdaFormInvokers::may_be_regenerated_class(ik->name())) {
+    return;
+  }
+  if (ik->name()->equals("jdk/internal/module/SystemModules$all")) {
+    // This class is regenerated during JDK build process, so the classlist
+    // may not match the version that's in the real jdk image.
+    return;
+  }
+
+  if (!has_id(ik)) { // do not resolve CP for classes loaded by custom loaders.
+    return;
+  }
+
+  ResourceMark rm;
+  ConstantPool* cp = ik->constants();
+  GrowableArray<bool> list(cp->length(), cp->length(), false);
+  bool print = false;
+
+  for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
+    switch (cp->tag_at(cp_index).value()) {
+    case JVM_CONSTANT_Class:
+      {
+        Klass* k = cp->resolved_klass_at(cp_index);
+        if (k->is_instance_klass()) {
+          list.at_put(cp_index, true);
+          print = true;
+        }
+      }
+      break;
+    }
+  }
+
+  if (cp->cache() != nullptr) {
+    Array<ResolvedFieldEntry>* field_entries = cp->cache()->resolved_field_entries();
+    if (field_entries != nullptr) {
+      for (int i = 0; i < field_entries->length(); i++) {
+        ResolvedFieldEntry* rfe = field_entries->adr_at(i);
+        if (rfe->is_resolved(Bytecodes::_getstatic) ||
+            rfe->is_resolved(Bytecodes::_putstatic) ||
+            rfe->is_resolved(Bytecodes::_getfield) ||
+            rfe->is_resolved(Bytecodes::_putfield)) {
+          list.at_put(rfe->constant_pool_index(), true);
+          print = true;
+        }
+      }
+    }
+  }
+
+  if (print) {
+    outputStream* stream = _classlist_file;
+    stream->print("@cp %s", ik->name()->as_C_string());
+    for (int i = 0; i < list.length(); i++) {
+      if (list.at(i)) {
+        constantTag cp_tag = cp->tag_at(i).value();
+        assert(cp_tag.value() == JVM_CONSTANT_Class ||
+               cp_tag.value() == JVM_CONSTANT_Fieldref, "sanity");
+        stream->print(" %d", i);
+      }
+    }
+    stream->cr();
   }
 }
