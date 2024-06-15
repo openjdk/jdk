@@ -37,8 +37,8 @@ import static jdk.internal.math.MathUtils.*;
  * This class exposes a method to render a {@code float} as a string.
  */
 public final class FloatToDecimal extends ToDecimal {
-    public static FloatToDecimal LATIN1 = new FloatToDecimal(ToDecimal.LATIN1);
-    public static FloatToDecimal UTF16  = new FloatToDecimal(ToDecimal.UTF16);
+    public static final FloatToDecimal LATIN1 = new FloatToDecimal(ToDecimal.LATIN1);
+    public static final FloatToDecimal UTF16  = new FloatToDecimal(ToDecimal.UTF16);
 
     /*
      * For full details about this code see the following references:

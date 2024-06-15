@@ -37,9 +37,6 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
-    static final byte LATIN1 = 0;
-    static final byte UTF16  = 1;
-
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
@@ -63,6 +60,16 @@ public sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal{
     static final int MINUS_INF      = 0x400;
     static final int NAN            = 0x500;
 
+    static final byte LATIN1 = 0;
+    static final byte UTF16  = 1;
+
+    /**
+     * The identifier of the encoding used to encode the bytes. The supported values in this implementation are
+     *
+     * LATIN1
+     * UTF16
+     *
+     */
     private final byte coder;
 
     public ToDecimal(byte coder) {
