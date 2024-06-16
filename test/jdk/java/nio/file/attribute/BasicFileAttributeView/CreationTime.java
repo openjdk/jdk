@@ -74,7 +74,7 @@ public class CreationTime {
 
     /**
      * read the output of linux command `stat -c "%w" file`, if the output is "-",
-     * then the file system doesn't support birth time 
+     * then the file system doesn't support birth time
      */
     public static boolean supportBirthTimeOnLinux(Path file) {
         try {
