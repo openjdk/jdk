@@ -160,7 +160,7 @@ void C1_MacroAssembler::try_allocate(
   Register obj,                        // result: Pointer to object after successful allocation.
   Register var_size_in_bytes,          // Object size in bytes if unknown at compile time; invalid otherwise.
   int      con_size_in_bytes,          // Object size in bytes if   known at compile time.
-  Register t1,                         // Temp register: Must be global register for incr_allocated_bytes.
+  Register t1,                         // Temp register.
   Label&   slow_case                   // Continuation point if fast allocation fails.
 ) {
   if (UseTLAB) {
@@ -187,7 +187,6 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_bytes, Register Rzero) {
-  Label done;
   assert_different_registers(objectFields, len_in_bytes, Rzero);
 
   // Initialize object fields.
@@ -199,7 +198,6 @@ void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_b
   // Use Rzero as src length, then mvcle will copy nothing
   // and fill the object with the padding value 0.
   move_long_ext(objectFields, as_Register(Rzero->encoding()-1), 0);
-  bind(done);
 }
 
 void C1_MacroAssembler::allocate_object(
@@ -270,7 +268,8 @@ void C1_MacroAssembler::allocate_array(
   int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
-  Label&   slow_case                   // Continuation point if fast allocation fails.
+  Label&   slow_case,                  // Continuation point if fast allocation fails.
+  bool     zero_array                  // zero the allocated array or not
 ) {
   assert_different_registers(obj, len, t1, t2, klass);
 
@@ -301,15 +300,17 @@ void C1_MacroAssembler::allocate_array(
   initialize_header(obj, klass, len, noreg, t1);
 
   // Clear rest of allocated space.
-  Label done;
-  Register object_fields = t1;
-  Register Rzero = Z_R1_scratch;
-  z_aghi(arr_size, -base_offset_in_bytes);
-  z_bre(done); // Jump if size of fields is zero.
-  z_la(object_fields, base_offset_in_bytes, obj);
-  z_xgr(Rzero, Rzero);
-  initialize_body(object_fields, arr_size, Rzero);
-  bind(done);
+  if (zero_array) {
+    Label done;
+    Register object_fields = t1;
+    Register Rzero = Z_R1_scratch;
+    z_aghi(arr_size, -base_offset_in_bytes);
+    z_bre(done); // Jump if size of fields is zero.
+    z_la(object_fields, base_offset_in_bytes, obj);
+    z_xgr(Rzero, Rzero);
+    initialize_body(object_fields, arr_size, Rzero);
+    bind(done);
+  }
 
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {

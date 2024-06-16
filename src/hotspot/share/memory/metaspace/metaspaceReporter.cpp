@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,7 +116,7 @@ static void print_settings(outputStream* out, size_t scale) {
   out->print("Current GC threshold: ");
   print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
   out->cr();
-  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
+  out->print_cr("CDS: %s", (CDSConfig::is_using_archive() ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
   Settings::print_on(out);
 }
 

@@ -357,7 +357,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
         ResourceMark rm(THREAD);
         int pool_index = bootstrap_specifier->bss_index();
         ClassListWriter w;
-        w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+        w.stream()->print("%s %s", ClassListParser::lambda_proxy_tag(), pool->pool_holder()->name()->as_C_string());
         CDSIndyInfo cii;
         ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
         GrowableArray<const char*>* indy_items = cii.items();

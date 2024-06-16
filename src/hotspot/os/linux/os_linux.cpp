@@ -314,7 +314,10 @@ static jlong host_free_swap() {
 }
 
 jlong os::free_swap_space() {
-  jlong host_free_swap_val = host_free_swap();
+  // os::total_swap_space() might return the containerized limit which might be
+  // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
+  jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
+  assert(host_free_swap_val >= 0, "sysinfo failed?");
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -1353,7 +1356,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do { s++; } while (s && isspace(*s));
+        do { s++; } while (s && isspace((unsigned char) *s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -5219,7 +5222,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == nullptr) return -1;
 
   // Skip blank chars
-  do { s++; } while (s && isspace(*s));
+  do { s++; } while (s && isspace((unsigned char) *s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,

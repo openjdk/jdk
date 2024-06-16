@@ -450,6 +450,15 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
       <xsl:value-of select="$space"/>
       <xsl:text>PreserveExceptionMark __em(this_thread);</xsl:text>
     </xsl:if>
+    <xsl:value-of select="$space"/>
+    <xsl:if test="$trace='Trace'">
+      <xsl:text>if (trace_flags) {</xsl:text>
+      <xsl:value-of select="$space"/>
+      <xsl:text>  curr_thread_name = JvmtiTrace::safe_get_current_thread_name();</xsl:text>
+      <xsl:value-of select="$space"/>
+      <xsl:text>}</xsl:text>
+      <xsl:value-of select="$space"/>
+    </xsl:if>
   </xsl:if>
 </xsl:template>
 
