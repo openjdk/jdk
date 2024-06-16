@@ -130,7 +130,7 @@ public final class FloatToDecimal extends ToDecimal {
         int pair = LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
-            return charsToString(str, pair & 0xFF);
+            return asciiBytesToString(str, pair & 0xFF);
         }
         return special(type);
     }

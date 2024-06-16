@@ -168,7 +168,7 @@ sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
 
     /* Using the deprecated constructor enhances performance */
     @SuppressWarnings("deprecation")
-    static String charsToString(byte[] str, int index) {
+    static String asciiBytesToString(byte[] str, int index) {
         return new String(str, 0, 0, index);
     }
 
