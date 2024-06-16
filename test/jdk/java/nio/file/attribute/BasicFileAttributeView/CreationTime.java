@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,23 @@
  * questions.
  */
 
-/* @test
- * @bug 8011536 8151430 8316304
+/* @test id=tmp
+ * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
- *     that support it.
+ *     that support it, test directory is /tmp.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
  * @run main CreationTime
+ */
+
+ /* @test id=cwd
+ * @bug 8011536 8151430 8316304 8334339
+ * @summary Basic test for creationTime attribute on platforms/file systems
+ *     that support it, test directory is JTwork/scratch. The JTwork/scratch
+ *     directory maybe at diff disk partition to /tmp on linux
+ * @library  ../.. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main CreationTime .
  */
 
 import java.lang.foreign.Linker;
@@ -35,9 +45,12 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
 import java.time.Instant;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class CreationTime {
 
@@ -59,6 +72,20 @@ public class CreationTime {
         view.setTimes(null, null, time);
     }
 
+    public static boolean supportBirthTimeOnLinux(Path file) {
+        try {
+            String filePath = file.toAbsolutePath().toString();
+            ProcessBuilder pb = new ProcessBuilder("stat", "-c", "%w", filePath);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String l = b.readLine();
+            if (l != null && l.equals("-")) { return false; }
+        } catch(Exception e) {
+        }
+        return true;
+    }
+
     static void test(Path top) throws IOException {
         Path file = Files.createFile(top.resolve("foo"));
 
@@ -68,8 +95,13 @@ public class CreationTime {
         FileTime creationTime = creationTime(file);
         Instant now = Instant.now();
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
-            err.println("File creation time reported as: " + creationTime);
-            throw new RuntimeException("Expected to be close to: " + now);
+            System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
+            if(0 == creationTime.toMillis() && Platform.isLinux() && !supportBirthTimeOnLinux(file) ) {
+                throw new SkippedException("birth time not support for: " + file);
+            } else {
+                err.println("File creation time reported as: " + creationTime);
+                throw new RuntimeException("Expected to be close to: " + now);
+            }
         }
 
         /**
@@ -95,7 +127,7 @@ public class CreationTime {
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
         }
-        System.out.println("supportsCreationTimeRead == " + supportsCreationTimeRead);
+        System.out.println(top + " supportsCreationTimeRead == " + supportsCreationTimeRead);
 
         /**
          * If the creation-time attribute is supported then change the file's
@@ -127,7 +159,12 @@ public class CreationTime {
 
     public static void main(String[] args) throws IOException {
         // create temporary directory to run tests
-        Path dir = TestUtil.createTemporaryDirectory();
+        Path dir;
+        if(0 == args.length) {
+            dir = TestUtil.createTemporaryDirectory();
+        } else {
+            dir = TestUtil.createTemporaryDirectory(args[0]);
+        }
         try {
             test(dir);
         } finally {
