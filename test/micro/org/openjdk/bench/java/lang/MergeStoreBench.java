@@ -92,6 +92,7 @@ public class MergeStoreBench {
      * L LittleEndian
      * V VarHandle
      * U Unsafe
+     * R ReverseBytes
      * ```
      */
 
