@@ -30,7 +30,7 @@
  * @run main CreationTime
  */
 
- /* @test id=cwd
+/* @test id=cwd
  * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it, test directory is JTwork/scratch. The JTwork/scratch
