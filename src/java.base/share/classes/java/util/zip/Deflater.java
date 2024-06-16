@@ -901,7 +901,7 @@ public class Deflater implements AutoCloseable {
     @Override
     public void close() {
         synchronized (zsRef) {
-            // check if already closed
+            // check if we are already closed to avoid calling end() more than once
             if (zsRef.address() == 0) {
                 return;
             }
