@@ -294,7 +294,8 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_
 
 int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
   int max_pred_depth = 0;
-  if (!n->is_Phi()) { // ignore backedge
+  if (!n->is_CountedLoop() &&
+      !(n->is_Phi() && n->in(0)->is_CountedLoop())) { // ignore backedge
     for (PredsIterator it(*this, n); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
