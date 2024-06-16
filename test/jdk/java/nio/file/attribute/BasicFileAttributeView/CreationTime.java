@@ -72,6 +72,10 @@ public class CreationTime {
         view.setTimes(null, null, time);
     }
 
+    /**
+     * read the output of linux command `stat -c "%w" file`, if the output is "-",
+     * then the file system doesn't support birth time 
+     */
     public static boolean supportBirthTimeOnLinux(Path file) {
         try {
             String filePath = file.toAbsolutePath().toString();
