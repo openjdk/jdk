@@ -611,22 +611,22 @@ public class MergeStoreBench {
     }
 
     static int getIntB(byte[] array, int offset) {
-        return ((array[offset    ] & 0xff)  << 24)
-                | ((array[offset + 1] & 0xff) << 16)
-                | ((array[offset + 2] & 0xff) << 8)
-                |  (array[offset + 3] & 0xff);
+        return ((array[offset    ] & 0xff) << 24)
+             | ((array[offset + 1] & 0xff) << 16)
+             | ((array[offset + 2] & 0xff) <<  8)
+             | ((array[offset + 3] & 0xff)      );
     }
 
     static int getIntBU(byte[] array, int offset) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return ((UNSAFE.getByte(array,           address) & 0xff) << 24)
-                | ((UNSAFE.getByte(array, address + 1) & 0xff) << 16)
-                | ((UNSAFE.getByte(array, address + 2) & 0xff) <<  8)
-                | ((UNSAFE.getByte(array, address + 3) & 0xff)      );
+        return ((UNSAFE.getByte(array, address    ) & 0xff) << 24)
+             | ((UNSAFE.getByte(array, address + 1) & 0xff) << 16)
+             | ((UNSAFE.getByte(array, address + 2) & 0xff) <<  8)
+             | ((UNSAFE.getByte(array, address + 3) & 0xff)      );
     }
 
     static int getIntL(byte[] array, int offset) {
-        return ((array[offset    ] & 0xff)      )
+        return ((array[offset       ] & 0xff)      )
                 | ((array[offset + 1] & 0xff) <<  8)
                 | ((array[offset + 2] & 0xff) << 16)
                 | ((array[offset + 3] & 0xff) << 24);
@@ -657,7 +657,7 @@ public class MergeStoreBench {
 
     static void setIntBU(byte[] array, int offset, int value) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        UNSAFE.putByte(array, address          , (byte) (value >> 24));
+        UNSAFE.putByte(array, address    , (byte) (value >> 24));
         UNSAFE.putByte(array, address + 1, (byte) (value >>  8));
         UNSAFE.putByte(array, address + 2, (byte) (value >> 16));
         UNSAFE.putByte(array, address + 3, (byte) (value      ));
@@ -672,7 +672,7 @@ public class MergeStoreBench {
 
     public static void setIntLU(byte[] array, int offset, int value) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        UNSAFE.putByte(array, address          , (byte)  value        );
+        UNSAFE.putByte(array, address    , (byte)  value       );
         UNSAFE.putByte(array, address + 1, (byte) (value >>  8));
         UNSAFE.putByte(array, address + 2, (byte) (value >> 16));
         UNSAFE.putByte(array, address + 3, (byte) (value >> 24));
@@ -699,49 +699,49 @@ public class MergeStoreBench {
     }
 
     static long getLongB(byte[] array, int offset) {
-        return (((long) array[offset] & 0xff) << 56)
-                | (((long) array[offset + 1] & 0xff) << 48)
-                | (((long) array[offset + 2] & 0xff) << 40)
-                | (((long) array[offset + 3] & 0xff) << 32)
-                | (((long) array[offset + 4] & 0xff) << 24)
-                | (((long) array[offset + 5] & 0xff) << 16)
-                | (((long) array[offset + 6] & 0xff) << 8)
-                | ((long) array[offset + 7] & 0xff);
+        return (((long) array[offset    ] & 0xff) << 56)
+             | (((long) array[offset + 1] & 0xff) << 48)
+             | (((long) array[offset + 2] & 0xff) << 40)
+             | (((long) array[offset + 3] & 0xff) << 32)
+             | (((long) array[offset + 4] & 0xff) << 24)
+             | (((long) array[offset + 5] & 0xff) << 16)
+             | (((long) array[offset + 6] & 0xff) << 8)
+             | (((long) array[offset + 7] & 0xff)     );
     }
 
     static long getLongBU(byte[] array, int offset) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return (((long)(UNSAFE.getByte(array,           address) & 0xff)) << 56)
-                | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) << 48)
-                | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 40)
-                | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 32)
-                | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 24)
-                | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 16)
-                | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) <<  8)
-                | (((long)(UNSAFE.getByte(array, address + 7) & 0xff))      );
+        return (((long)(UNSAFE.getByte(array, address)     & 0xff)) << 56)
+             | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) << 48)
+             | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 40)
+             | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 32)
+             | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 24)
+             | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 16)
+             | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) <<  8)
+             | (((long)(UNSAFE.getByte(array, address + 7) & 0xff))      );
     }
 
     public static long getLongL(byte[] array, int offset) {
-        return (((long) array[offset       ] & 0xff)      )
-                | (((long) array[offset + 1] & 0xff) <<  8)
-                | (((long) array[offset + 2] & 0xff) << 16)
-                | (((long) array[offset + 3] & 0xff) << 24)
-                | (((long) array[offset + 4] & 0xff) << 32)
-                | (((long) array[offset + 5] & 0xff) << 40)
-                | (((long) array[offset + 6] & 0xff) << 48)
-                | (((long) array[offset + 7] & 0xff) << 56);
+        return (((long) array[offset    ] & 0xff)      )
+             | (((long) array[offset + 1] & 0xff) <<  8)
+             | (((long) array[offset + 2] & 0xff) << 16)
+             | (((long) array[offset + 3] & 0xff) << 24)
+             | (((long) array[offset + 4] & 0xff) << 32)
+             | (((long) array[offset + 5] & 0xff) << 40)
+             | (((long) array[offset + 6] & 0xff) << 48)
+             | (((long) array[offset + 7] & 0xff) << 56);
     }
 
     static long getLongLU(byte[] array, int offset) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return (((long)(UNSAFE.getByte(array,           address) & 0xff))  )
-                | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) <<  8)
-                | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 16)
-                | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 24)
-                | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 32)
-                | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 40)
-                | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) << 48)
-                | (((long)(UNSAFE.getByte(array, address + 7) & 0xff)) << 56);
+        return (((long)(UNSAFE.getByte(array, address    ) & 0xff))      )
+             | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) <<  8)
+             | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 16)
+             | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 24)
+             | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 32)
+             | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 40)
+             | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) << 48)
+             | (((long)(UNSAFE.getByte(array, address + 7) & 0xff)) << 56);
     }
 
     static long getLongRB(byte[] array, int offset) {
@@ -772,8 +772,8 @@ public class MergeStoreBench {
     }
 
     public static void setLongL(byte[] array, int offset, long value) {
-        array[offset]     = (byte)  value;
-        array[offset + 1] = (byte) (value >> 8);
+        array[offset]     = (byte)  value       ;
+        array[offset + 1] = (byte) (value >> 8 );
         array[offset + 2] = (byte) (value >> 16);
         array[offset + 3] = (byte) (value >> 24);
         array[offset + 4] = (byte) (value >> 32);
@@ -804,19 +804,19 @@ public class MergeStoreBench {
 
     public static void setLongBU(byte[] array, int offset, long value) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        UNSAFE.putByte(array, address          , (byte)  (value >> 56));
+        UNSAFE.putByte(array, address    , (byte) (value >> 56));
         UNSAFE.putByte(array, address + 1, (byte) (value >> 48));
         UNSAFE.putByte(array, address + 2, (byte) (value >> 40));
         UNSAFE.putByte(array, address + 3, (byte) (value >> 32));
         UNSAFE.putByte(array, address + 4, (byte) (value >> 24));
         UNSAFE.putByte(array, address + 5, (byte) (value >> 16));
         UNSAFE.putByte(array, address + 6, (byte) (value >>  8));
-        UNSAFE.putByte(array, address + 7, (byte) (value      ));
+        UNSAFE.putByte(array, address + 7, (byte)  value       );
     }
 
     public static void setLongLU(byte[] array, int offset, long value) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        UNSAFE.putByte(array, address          , (byte)  value        );
+        UNSAFE.putByte(array, address    , (byte)  value       );
         UNSAFE.putByte(array, address + 1, (byte) (value >>  8));
         UNSAFE.putByte(array, address + 2, (byte) (value >> 16));
         UNSAFE.putByte(array, address + 3, (byte) (value >> 24));
@@ -828,10 +828,10 @@ public class MergeStoreBench {
 
     public static int getIntLU(byte[] array, int offset) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return ((UNSAFE.getByte(array,           address) & 0xff)      )
-                | ((UNSAFE.getByte(array, address + 1) & 0xff) <<  8)
-                | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
-                | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
+        return ((UNSAFE.getByte(array, address    ) & 0xff)      )
+             | ((UNSAFE.getByte(array, address + 1) & 0xff) <<  8)
+             | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
+             | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
     }
 
     public static void putChars4(byte[] array, int offset, char c0, char c1, char c2, char c3) {
