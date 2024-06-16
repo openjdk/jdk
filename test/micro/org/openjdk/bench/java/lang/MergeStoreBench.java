@@ -272,6 +272,28 @@ public class MergeStoreBench {
     }
 
     @Benchmark
+    public void setIntRB(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < ints.length; i++) {
+            int v = ints[i];
+            setIntRB(bytes4, i * 4, ints[i]);
+            sum += v;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void setIntRBU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < ints.length; i++) {
+            int v = ints[i];
+            setIntRBU(bytes4, i * 4, v);
+            sum += v;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
     public void setIntRL(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < ints.length; i++) {
