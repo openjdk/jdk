@@ -186,6 +186,7 @@ public final class DoubleToDecimal extends ToDecimal {
      *     PLUS_INF        iff v is POSITIVE_INFINITY
      *     MINUS_INF       iff v is NEGATIVE_INFINITY
      *     NAN             iff v is NaN
+     *     otherwise NON_SPECIAL
      */
     private int toDecimal(byte[] str, int index, double v, FormattedFPDecimal fd) {
         /*
