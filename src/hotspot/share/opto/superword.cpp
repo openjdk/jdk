@@ -3027,6 +3027,27 @@ VStatus VLoopBody::construct() {
     }
   }
 
+#ifdef ASSERT
+  // TODO: remove or split out into separate method?
+  if (rpo_idx != -1) {
+    for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+      Node* n = _vloop.lpt()->_body.at(i);
+      bool found = false;
+      for (int j = 0; j < _body.length(); j++) {
+        if (n == _body.at(j)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        tty->print("Missing in VLoopBody: ");
+        n->dump();
+      }
+    }
+  }
+#endif
+  assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
+
   // Create real map of body indices for nodes
   for (int j = 0; j < _body.length(); j++) {
     Node* n = _body.at(j);
@@ -3039,7 +3060,6 @@ VStatus VLoopBody::construct() {
   }
 #endif
 
-  assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
   return VStatus::make_success();
 }
 

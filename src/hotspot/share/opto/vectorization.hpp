@@ -172,7 +172,7 @@ public:
   // We only accept any nodes which have the loop head as their ctrl.
   // TODO rename in_bb -> in_loop ???
   bool in_bb(const Node* n) const {
-    assert(n != nullptr && n->outcnt() > 0, "OK? TODO");
+    if (n == nullptr || n->outcnt() == 0) { return false; }
     const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
     return _phase->get_loop(ctrl)->head() == _cl;
     //return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
