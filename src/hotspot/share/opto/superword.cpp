@@ -772,17 +772,18 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
     return false;
   }
 
-  Node* s1_ctrl = s1->in(0);
-  Node* s2_ctrl = s2->in(0);
-  // If the control nodes are equivalent, no further checks are required to test for isomorphism.
-  if (s1_ctrl == s2_ctrl) {
-    return true;
-  } else {
-    // If the control nodes are not invariant for the loop, fail isomorphism test.
-    const bool s1_ctrl_inv = (s1_ctrl == nullptr) || lpt()->is_invariant(s1_ctrl);
-    const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
-    return s1_ctrl_inv && s2_ctrl_inv;
-  }
+  return true; // TODO do we need to do sth about ctrl? Or do it via packing strat/optimization?
+  //Node* s1_ctrl = s1->in(0);
+  //Node* s2_ctrl = s2->in(0);
+  //// If the control nodes are equivalent, no further checks are required to test for isomorphism.
+  //if (s1_ctrl == s2_ctrl) {
+  //  return true;
+  //} else {
+  //  // If the control nodes are not invariant for the loop, fail isomorphism test.
+  //  const bool s1_ctrl_inv = (s1_ctrl == nullptr) || lpt()->is_invariant(s1_ctrl);
+  //  const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
+  //  return s1_ctrl_inv && s2_ctrl_inv;
+  //}
 }
 
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
