@@ -3007,8 +3007,10 @@ VStatus VLoopBody::construct() {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
-            // Don't go around backedge
-            (!use->is_Phi() || n == _vloop.cl())) {
+            // Don't go around backedge ctrl
+            !use->is_CountedLoop() &&
+            // Don't go around backedge data (allowed: CountedLoop -> phi, non-backedge phis)
+            (!(use->is_Phi() && use->in(0)->is_CountedLoop()) || n->is_CountedLoop())) {
           stack.push(use); // Ordering edge: n -> use
         }
       }
