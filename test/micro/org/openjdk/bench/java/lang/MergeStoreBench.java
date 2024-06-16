@@ -85,6 +85,16 @@ public class MergeStoreBench {
         }
     }
 
+    /*
+     * The names of these cases have the following `B/L/V/U` suffixes, which are:
+     * ```
+     * B BigEndian
+     * L LittleEndian
+     * V VarHandle
+     * U Unsafe
+     * ```
+     */
+
     @Benchmark
     public void getIntB(Blackhole BH) {
         int sum = 0;
