@@ -485,6 +485,7 @@ class MutableBigInteger {
      * Returns true iff this MutableBigInteger has a value of one.
      */
     boolean isOne() {
+        normalize();
         return (intLen == 1) && (value[offset] == 1);
     }
 
@@ -492,6 +493,7 @@ class MutableBigInteger {
      * Returns true iff this MutableBigInteger has a value of zero.
      */
     boolean isZero() {
+        normalize();
         return (intLen == 0);
     }
 
