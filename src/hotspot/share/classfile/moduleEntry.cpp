@@ -274,7 +274,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _must_walk_reads(false),
     _is_open(is_open),
     _is_patched(false),
-    DEBUG_ONLY(_reads_is_archived(false) COMMA) {
+    DEBUG_ONLY(_reads_is_archived(false)) {
 
   // Initialize fields specific to a ModuleEntry
   if (_name == nullptr) {
