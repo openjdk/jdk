@@ -49,6 +49,10 @@ private:
   GrowableArrayCHeap<BackingElement, flag> _backing_storage;
   I _free_start;
 
+  bool is_in_bounds(I i) {
+    return i > 0 && i < _backing_storage.length();
+  }
+
 public:
   NONCOPYABLE(IndexedFreeListAllocator<E COMMA flag>);
 
@@ -59,7 +63,7 @@ public:
   template<typename... Args>
   I allocate(Args... args) {
     BackingElement* be;
-    int i;
+    I i;
     if (_free_start != nil) {
       // Must point to already existing index
       be = &_backing_storage.at(_free_start);
@@ -72,12 +76,12 @@ public:
     }
 
     ::new (be) E(args...);
-    return I{i};
+    return i;
   }
 
   void free(I i) {
-    assert(i != nil || (i > 0 && i < _backing_storage.length()), "out of bounds free");
-    if (i != nil) return;
+    assert(i == nil || is_in_bounds(i), "out of bounds free");
+    if (i == nil) return;
     BackingElement& be_freed = _backing_storage.at(i);
     be_freed.link = _free_start;
     _free_start = i;
@@ -85,7 +89,7 @@ public:
 
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
-    assert(i > 0 && i < _backing_storage.length(), "out of bounds dereference");
+    assert(is_in_bounds(i), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i).e);
   }
 
