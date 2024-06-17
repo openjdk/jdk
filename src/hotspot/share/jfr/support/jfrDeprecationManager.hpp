@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
  private:
   JfrTicks _invocation_time;
   JfrBlobHandle _stacktrace;
+  JfrBlobHandle _type_set;
   JfrDeprecatedEdge* _next;
   InstanceKlass* _deprecated_ik;
   traceid _deprecated_methodid;
@@ -58,7 +59,7 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
  public:
   JfrDeprecatedEdge(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt);
 
-  const JfrDeprecatedEdge* next() const { return _next; }
+  JfrDeprecatedEdge* next() const { return _next; }
   void set_next(JfrDeprecatedEdge* edge) { _next = edge; }
 
   bool has_event() const;
@@ -67,6 +68,10 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
   bool has_stacktrace() const;
   const JfrBlobHandle& stacktrace() const;
   void install_stacktrace_blob(JavaThread* jt);
+
+  bool has_type_set() const;
+  const JfrBlobHandle& type_set() const;
+  void install_type_set(const JfrBlobHandle& type_set);
 
   const InstanceKlass* deprecated_ik() const { return _deprecated_ik; }
   traceid deprecated_methodid() const { return _deprecated_methodid; }
@@ -89,11 +94,11 @@ class JfrDeprecationManager : AllStatic {
   static void on_safepoint_write();
   static void on_recorder_stop();
   static void prepare_type_set(JavaThread* jt);
-  static void on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread);
-  static void on_type_set_unload(JfrCheckpointWriter& writer);
+  static void on_type_set(JfrChunkWriter* cw, Thread* thread);
   static void write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error = false);
   static void on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* thread);
   static void on_level_setting_update(int64_t new_level);
+  static bool has_unresolved_entry();
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
