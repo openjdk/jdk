@@ -38,6 +38,7 @@ class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
   outputStream* const _output;  // destination
+  StreamAutoIndentor _auto_indentor;
 
  public:
 
@@ -45,7 +46,6 @@ class MemReporterBase : public StackObj {
   static const size_t default_scale = K;
 
   MemReporterBase(outputStream* out, size_t scale = default_scale);
-  ~MemReporterBase();
 
   // Helper functions
   // Calculate total reserved and committed amount

@@ -3430,6 +3430,7 @@ encode %{
     call->_in_rms            = _in_rms;
     call->_nesting           = _nesting;
     call->_override_symbolic_info = _override_symbolic_info;
+    call->_arg_escape        = _arg_escape;
 
     // New call needs all inputs of old call.
     // Req...
