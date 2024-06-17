@@ -4294,7 +4294,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     } else {
       wq.push(c->in(0));
     }
-    assert(!is_dominator(c, region) || c == region, "shouldn't go above region");
+    assert(!is_strict_dominator(c, region), "shouldn't go above region");
   }
 
   Node* region_dom = idom(region);

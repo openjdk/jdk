@@ -6081,18 +6081,25 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
   return LCA;
 }
 
-// true if CFG node d dominates CFG node n
-bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
-  if (d == n)
+// Is CFG node 'dominator' dominating node 'n'?
+bool PhaseIdealLoop::is_dominator(Node* dominator, Node* n) {
+  if (dominator == n) {
     return true;
-  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
-  uint dd = dom_depth(d);
+  }
+  assert(dominator->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  uint dd = dom_depth(dominator);
   while (dom_depth(n) >= dd) {
-    if (n == d)
+    if (n == dominator) {
       return true;
+    }
     n = idom(n);
   }
   return false;
+}
+
+// Is CFG node 'dominator' strictly dominating node 'n'?
+bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
+  return dominator != n && is_dominator(dominator, n);
 }
 
 //------------------------------dom_lca_for_get_late_ctrl_internal-------------
@@ -6382,7 +6389,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     PredicateEntryIterator predicate_iterator(least);
     while (predicate_iterator.has_next()) {
       Node* next_predicate_entry = predicate_iterator.next_entry();
-      if (is_dominator(next_predicate_entry, early) && next_predicate_entry != early) {
+      if (is_strict_dominator(next_predicate_entry, early)) {
         break;
       }
       least = next_predicate_entry;
