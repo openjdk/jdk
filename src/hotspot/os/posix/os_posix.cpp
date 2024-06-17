@@ -158,15 +158,12 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 #else
 
   int mincore_return_value;
-  const size_t stripe = 1024;  // query this many pages each time
-  mincore_vec_t* vec = (mincore_vec_t*) malloc(stripe + 1, mtInternal);
-
-  if (vec == NULL) {
-    return false;
-  }
-
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  mincore_vec_t vec [stripe + 1];
+  
   // set a guard
-  vec[stripe] = 'X';
+  DEBUG_ONLY(vec[stripe] = 'X';)
+
   size_t page_sz = os::vm_page_size();
   uintx pages = size / page_sz;
 
@@ -186,19 +183,22 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     pages -= pages_to_query;
 
     // Get stable read
-    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
+    int fail_count = 0;
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN){
+      if (++fail_count == 1000){
+        return false;
+      }
+    }
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
     // Bailout and return as not committed for now.
     if (mincore_return_value == -1 && errno == ENOMEM) {
-      os::free(vec);
       return false;
     }
 
     // If mincore is not supported.
     if (mincore_return_value == -1 && errno == ENOSYS) {
-      os::free(vec);
       return false;
     }
 
@@ -223,7 +223,6 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
     loop_base += pages_to_query * page_sz;
   }
-  os::free(vec);
 
   if (committed_start != nullptr) {
     assert(committed_pages > 0, "Must have committed region");
