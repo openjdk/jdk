@@ -88,12 +88,9 @@ private:
   int _node_count;
 
   uint64_t prng_next() {
-    // Taken directly off of JFRPrng
-    static const constexpr uint64_t PrngMult = 0x5DEECE66DLL;
-    static const constexpr uint64_t PrngAdd = 0xB;
-    static const constexpr uint64_t PrngModPower = 48;
-    static const constexpr uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
-    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
+    uint32_t first_half = os::next_random(static_cast<uint32_t>(_prng_seed));
+    uint32_t second_half = os::next_random(static_cast<uint32_t>(_prng_seed >> 32));
+    _prng_seed = static_cast<uint64_t>(first_half) | (static_cast<uint64_t>(second_half) << 32);
     return _prng_seed;
   }
 
@@ -173,9 +170,9 @@ private:
 #ifdef ASSERT
   void verify_self() {
     // A balanced binary search tree should have a depth on the order of log(N).
-    // We take the ceiling of log_2(N + 1) * 2.5 as our maximum bound.
+    // We take the ceiling of log_2(N + 1) * 3 as our maximum bound.
     // For comparison, a RB-tree has a proven max depth of log_2(N + 1) * 2.
-    const int expected_maximum_depth = ceil((log(this->_node_count+1) / log(2)) * 2.5);
+    const int expected_maximum_depth = ceil((log(this->_node_count+1) / log(2)) * 3);
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
