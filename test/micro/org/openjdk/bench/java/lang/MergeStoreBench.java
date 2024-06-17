@@ -1090,20 +1090,20 @@ public class MergeStoreBench {
 
     public void putChars4C(byte[] bytes, int offset) {
         char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        offset <<= 1;
-        UNSAFE.putChar(bytes, offset    , c0);
-        UNSAFE.putChar(bytes, offset + 2, c1);
-        UNSAFE.putChar(bytes, offset + 4, c2);
-        UNSAFE.putChar(bytes, offset + 6, c3);
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        UNSAFE.putChar(bytes, address + offset    , c0);
+        UNSAFE.putChar(bytes, address + offset + 2, c1);
+        UNSAFE.putChar(bytes, address + offset + 4, c2);
+        UNSAFE.putChar(bytes, address + offset + 6, c3);
     }
 
     public void putChars4S(byte[] bytes, int offset) {
         char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        offset <<= 1;
-        UNSAFE.putShort(bytes, offset    , (short) c0);
-        UNSAFE.putShort(bytes, offset + 2, (short) c1);
-        UNSAFE.putShort(bytes, offset + 4, (short) c2);
-        UNSAFE.putShort(bytes, offset + 6, (short) c3);
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        UNSAFE.putShort(bytes, address    , (short) c0);
+        UNSAFE.putShort(bytes, address + 2, (short) c1);
+        UNSAFE.putShort(bytes, address + 4, (short) c2);
+        UNSAFE.putShort(bytes, address + 6, (short) c3);
     }
 
     private static void putShortB(byte[] val, int index, char c) {
