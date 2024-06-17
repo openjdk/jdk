@@ -278,7 +278,6 @@ class InvokerBytecodeGenerator {
                 public void accept(ClassBuilder clb) {
                     clb.withFlags(ACC_FINAL | ACC_SUPER)
                        .withSuperclass(INVOKER_SUPER_DESC)
-                       .withVersion(CLASSFILE_VERSION, 0)
                        .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(SOURCE_PREFIX + name)));
                     config.accept(clb);
                 }
