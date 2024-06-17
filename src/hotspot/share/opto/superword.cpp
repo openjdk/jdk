@@ -2794,11 +2794,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   }
 
   if (VectorNode::is_muladds2i(use)) {
-    // MulAddS2I takes shorts and produces ints.
-    if (u_pk->size() * 2 != d_pk->size()) {
-      return false;
-    }
-    return true;
+    return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
   }
 
   if (u_pk->size() != d_pk->size()) {
@@ -2813,6 +2809,59 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     }
   }
   return true;
+}
+
+// MulAddS2I takes 4 shorts and produces an int. We can reinterpret
+// the 4 shorts as two ints: a = (a0, a1) and b = (b0, b1).
+//
+// Inputs:                 1    2    3    4
+// Offsets:                0    0    1    1
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1
+//
+// But permutations are possible, because add and mul are commutative. For
+// simplicity, the first input is always either a0 or a1. These are all
+// the possible permutations:
+//
+//   v = MulAddS2I(a, b) = a0 * b0 + a1 * b1     (case 1)
+//   v = MulAddS2I(a, b) = a0 * b0 + b1 * a1     (case 2)
+//   v = MulAddS2I(a, b) = a1 * b1 + a0 * b0     (case 3)
+//   v = MulAddS2I(a, b) = a1 * b1 + b0 * a0     (case 4)
+//
+// To vectorize, we expect (a0, a1) to be consecutive in one input pack,
+// and (b0, b1) in the other input pack. Thus, both a and b are strided,
+// with stride = 2. Further, a0 and b0 have offset 0, whereas a1 and b1
+// have offset 1.
+bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
+  assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
+
+  bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
+  Node_List* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  Node_List* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  Node_List* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
+
+  return pack1 != nullptr &&
+         pack2 != nullptr &&
+         pack3 != nullptr &&
+         pack4 != nullptr &&
+         ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
+          (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
+}
+
+Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
+  Node* def0 = pack->at(0)->in(index);
+
+  Node_List* pack_in = get_pack(def0);
+  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
+    return nullptr; // size mismatch
+  }
+
+  for (uint i = 1; i < pack->size(); i++) {
+    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
+      return nullptr; // use-def mismatch
+    }
+  }
+  return pack_in;
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
