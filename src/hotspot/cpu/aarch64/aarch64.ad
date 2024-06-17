@@ -5628,24 +5628,24 @@ operand cmpOpLtGe()
 // used for certain unsigned integral comparisons which can be
 // converted to cbxx or tbxx instructions
 
-operand cmpOpUEqNeLtGe()
+operand cmpOpUEqNeLeGt()
 %{
   match(Bool);
   op_cost(0);
 
-  predicate(n->as_Bool()->_test._test == BoolTest::eq
-            || n->as_Bool()->_test._test == BoolTest::ne
-            || n->as_Bool()->_test._test == BoolTest::lt
-            || n->as_Bool()->_test._test == BoolTest::ge);
+  predicate(n->as_Bool()->_test._test == BoolTest::eq ||
+            n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::le ||
+            n->as_Bool()->_test._test == BoolTest::gt);
 
   format %{ "" %}
   interface(COND_INTER) %{
     equal(0x0, "eq");
     not_equal(0x1, "ne");
-    less(0xb, "lt");
-    greater_equal(0xa, "ge");
-    less_equal(0xd, "le");
-    greater(0xc, "gt");
+    less(0x3, "lo");
+    greater_equal(0x2, "hs");
+    less_equal(0x9, "ls");
+    greater(0x8, "hi");
     overflow(0x6, "vs");
     no_overflow(0x7, "vc");
   %}
@@ -7780,7 +7780,7 @@ instruct membar_acquire() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_acquire\n\t"
-            "dmb ish" %}
+            "dmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -7834,11 +7834,13 @@ instruct membar_release() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_release\n\t"
-            "dmb ish" %}
+            "dmb ishst\n\tdmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_release");
-    __ membar(Assembler::LoadStore|Assembler::StoreStore);
+    // These will be merged if AlwaysMergeDMB is enabled.
+    __ membar(Assembler::StoreStore);
+    __ membar(Assembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
@@ -15685,7 +15687,7 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN oop, immP0 zero, label 
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct cmpUI_imm0_branch(cmpOpUEqNeLtGe cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsRegU cr) %{
+instruct cmpUI_imm0_branch(cmpOpUEqNeLeGt cmp, iRegIorL2I op1, immI0 op2, label labl) %{
   match(If cmp (CmpU op1 op2));
   effect(USE labl);
 
@@ -15694,15 +15696,17 @@ instruct cmpUI_imm0_branch(cmpOpUEqNeLtGe cmp, iRegIorL2I op1, immI0 op2, label 
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::EQ || cond == Assembler::LS)
+    if (cond == Assembler::EQ || cond == Assembler::LS) {
       __ cbzw($op1$$Register, *L);
-    else
+    } else {
+      assert(cond == Assembler::NE || cond == Assembler::HI, "unexpected condition");
       __ cbnzw($op1$$Register, *L);
+    }
   %}
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct cmpUL_imm0_branch(cmpOpUEqNeLtGe cmp, iRegL op1, immL0 op2, label labl, rFlagsRegU cr) %{
+instruct cmpUL_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 op2, label labl) %{
   match(If cmp (CmpUL op1 op2));
   effect(USE labl);
 
@@ -15711,10 +15715,12 @@ instruct cmpUL_imm0_branch(cmpOpUEqNeLtGe cmp, iRegL op1, immL0 op2, label labl,
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::EQ || cond == Assembler::LS)
+    if (cond == Assembler::EQ || cond == Assembler::LS) {
       __ cbz($op1$$Register, *L);
-    else
+    } else {
+      assert(cond == Assembler::NE || cond == Assembler::HI, "unexpected condition");
       __ cbnz($op1$$Register, *L);
+    }
   %}
   ins_pipe(pipe_cmp_branch);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import javax.swing.event.*;
  * @test
  * @key headful
  * @bug 4361477
- * @summary JTabbedPane throws ArrayOutOfBoundsException
- * @author Oleg Mokhovikov
+ * @summary JTabbedPane throws ArrayIndexOutOfBoundsException
  * @run main bug4361477
  */
 public class bug4361477 {

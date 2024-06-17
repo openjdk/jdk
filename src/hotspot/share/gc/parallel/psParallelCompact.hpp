@@ -44,7 +44,6 @@ class PSOldGen;
 class ParCompactionManager;
 class PSParallelCompact;
 class MoveAndUpdateClosure;
-class RefProcTaskExecutor;
 class ParallelOldTracer;
 class STWGCTimer;
 
@@ -681,7 +680,6 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 class PSParallelCompact : AllStatic {
 public:
   // Convenient access to type names.
-  typedef ParMarkBitMap::idx_t idx_t;
   typedef ParallelCompactData::RegionData RegionData;
 
   typedef enum {
@@ -696,8 +694,6 @@ public:
    public:
     virtual bool do_object_b(oop p);
   };
-
-  friend class PSParallelCompactTest;
 
 private:
   static STWGCTimer           _gc_timer;
@@ -757,13 +753,6 @@ private:
   // Add available regions to the stack and draining tasks to the task queue.
   static void prepare_region_draining_tasks(uint parallel_gc_threads);
 
-#ifndef PRODUCT
-  // Print generic summary data
-  static void print_generic_summary_data(ParallelCompactData& summary_data,
-                                         HeapWord* const beg_addr,
-                                         HeapWord* const end_addr);
-#endif  // #ifndef PRODUCT
-
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
 public:
@@ -799,11 +788,6 @@ public:
   static inline bool is_marked(oop obj);
 
   template <class T> static inline void adjust_pointer(T* p);
-
-  // Compaction support.
-  // Return true if p is in the range [beg_addr, end_addr).
-  static inline bool is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr);
-  static inline bool is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr);
 
   // Convenience wrappers for per-space data kept in _space_info.
   static inline MutableSpace*     space(SpaceId space_id);
@@ -864,16 +848,6 @@ public:
 
   static void print_on_error(outputStream* st);
 
-#ifndef PRODUCT
-  // Debugging support.
-  static const char* space_names[last_space_id];
-  static void print_region_ranges();
-  static void summary_phase_msg(SpaceId dst_space_id,
-                                HeapWord* dst_beg, HeapWord* dst_end,
-                                SpaceId src_space_id,
-                                HeapWord* src_beg, HeapWord* src_end);
-#endif  // #ifndef PRODUCT
-
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.
   static inline void check_new_location(HeapWord* old_addr, HeapWord* new_addr);
@@ -899,8 +873,6 @@ protected:
   inline void update_state(size_t words);
 
 public:
-  typedef ParMarkBitMap::idx_t idx_t;
-
   ParMarkBitMap*        bitmap() const { return _bitmap; }
 
   size_t    words_remaining()    const { return _words_remaining; }
@@ -923,8 +895,7 @@ public:
   // updated.
   void copy_partial_obj(size_t partial_obj_size);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 };
 
 inline void MoveAndUpdateClosure::decrement_words_remaining(size_t words) {
@@ -960,11 +931,9 @@ inline void MoveAndUpdateClosure::update_state(size_t words)
 class MoveAndUpdateShadowClosure: public MoveAndUpdateClosure {
   inline size_t calculate_shadow_offset(size_t region_idx, size_t shadow_idx);
 public:
-  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
-                       size_t region, size_t shadow);
+  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 
 private:
   size_t _shadow;
@@ -978,10 +947,7 @@ inline size_t MoveAndUpdateShadowClosure::calculate_shadow_offset(size_t region_
 }
 
 inline
-MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
-                                                       ParCompactionManager *cm,
-                                                       size_t region,
-                                                       size_t shadow) :
+MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow) :
   MoveAndUpdateClosure(bitmap, region),
   _shadow(shadow) {
   _offset = calculate_shadow_offset(region, shadow);

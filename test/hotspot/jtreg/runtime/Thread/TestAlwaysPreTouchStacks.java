@@ -27,6 +27,7 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.concurrent.CyclicBarrier;
@@ -89,14 +90,17 @@ public class TestAlwaysPreTouchStacks {
             // should show up with fully - or almost fully - committed thread stacks.
 
         } else {
-
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            ArrayList<String> vmArgs = new ArrayList<>();
+            Collections.addAll(vmArgs,
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-Xmx100M",
                     "-XX:+AlwaysPreTouchStacks",
-                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics",
-                    "TestAlwaysPreTouchStacks",
-                    "test");
+                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics");
+            if (System.getProperty("os.name").contains("Linux")) {
+                vmArgs.add("-XX:-UseMadvPopulateWrite");
+            }
+            Collections.addAll(vmArgs, "TestAlwaysPreTouchStacks", "test");
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmArgs);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.reportDiagnosticSummary();
 

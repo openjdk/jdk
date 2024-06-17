@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,12 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
 
 #undef fmt_stats
 
-  msg.debug("Class CP entries = %d, archived = %d (%3.1f%%)",
-            _num_klass_cp_entries, _num_klass_cp_entries_archived,
-            percent_of(_num_klass_cp_entries_archived, _num_klass_cp_entries));
-
+  msg.info("Class  CP entries = %6d, archived = %6d (%5.1f%%), reverted = %6d",
+           _num_klass_cp_entries, _num_klass_cp_entries_archived,
+           percent_of(_num_klass_cp_entries_archived, _num_klass_cp_entries),
+           _num_klass_cp_entries_reverted);
+  msg.info("Field  CP entries = %6d, archived = %6d (%5.1f%%), reverted = %6d",
+           _num_field_cp_entries, _num_field_cp_entries_archived,
+           percent_of(_num_field_cp_entries_archived, _num_field_cp_entries),
+           _num_field_cp_entries_reverted);
 }

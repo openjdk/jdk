@@ -28,7 +28,6 @@
  * @bug 8304720
  * @summary Test some examples where non-vectorized memops also need to
  *          be reordered during SuperWord::schedule.
- * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestScheduleReordersScalarMemops
@@ -55,8 +54,8 @@ public class TestScheduleReordersScalarMemops {
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::test*",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::verify",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::init",
-                                   "-XX:LoopUnrollLimit=1000",
-                                   "-XX:-TieredCompilation", "-Xbatch");
+                                   "-XX:-TieredCompilation", "-Xbatch",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     TestScheduleReordersScalarMemops() {

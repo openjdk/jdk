@@ -30,7 +30,6 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 
