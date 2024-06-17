@@ -3155,8 +3155,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
 
 // scans count pointer sized words at [r_addr] for occurrence of r_value,
 // generic (r_count must be >0)
-// iff found: CC eq, r_scratch == 0
-void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch) {
+// iff found: CC eq, r_result == 0
+void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_count, Register r_result) {
   NearLabel L_loop, L_exit;
 
   BLOCK_COMMENT("repne_scan {");
@@ -3165,7 +3165,7 @@ void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_co
   asm_assert(bcondHigh, "count must be positive", 11);
 #endif
 
-  clear_reg(r_scratch, true /* whole_reg */, false /* set_cc */);  // let's hope that search will be successful
+  clear_reg(r_result, true /* whole_reg */, false /* set_cc */);  // sets r_result=0, let's hope that search will be successful
 
   bind(L_loop);
   z_cg(r_value, Address(r_addr));
@@ -3175,7 +3175,7 @@ void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_co
 
   // z_brct above doesn't change CC.
   // If the search operation is unsuccessful, then it's a failure case.
-  z_lghi(r_scratch, 1);
+  z_lghi(r_result, 1);
 
   bind(L_exit);
   BLOCK_COMMENT("} repne_scan");
