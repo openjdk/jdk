@@ -1962,8 +1962,10 @@ class MutableBigInteger {
         }
 
         // Iterative step
-        int limit;
-        for (limit = 4; limit >> 1 < x.intLen; limit <<= 1) {
+        int limit = 2;
+        while (limit < x.intLen) {
+            limit <<= 1;
+
             final int blockLength = limit >> 2;
             MutableBigInteger dividend = x.getBlockZimmermann(1, limit, blockLength);
             dividend.addDisjoint(rem, blockLength);
@@ -1989,7 +1991,6 @@ class MutableBigInteger {
                 sqrt.subtract(ONE);
             }
         }
-        limit >>= 1;
 
         // Denormalize
         shift += (limit - x.intLen) << 5;
