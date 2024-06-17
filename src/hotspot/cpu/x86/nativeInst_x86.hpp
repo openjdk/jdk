@@ -465,7 +465,6 @@ class NativeLoadAddress: public NativeMovRegMem {
 
 // destination is rbx or rax
 // mov rbx, [rip + offset]
-//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativeLoadGot: public NativeInstruction {
 #ifdef AMD64
   static const bool has_rex = true;
@@ -571,7 +570,6 @@ inline NativeJump* nativeJump_at(address address) {
 }
 
 // far jump reg
-//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativeFarJump: public NativeInstruction {
  public:
   address jump_destination() const;
@@ -625,8 +623,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   return jump;
 }
 
-//FIXME: Register indirect jump interface, currently not being used in hotspot code base,
-// extend it to support REX2 prefix if needed.
 class NativeGotJump: public NativeInstruction {
   enum Intel_specific_constants {
     rex_prefix = 0x41,
@@ -667,7 +663,6 @@ inline NativeGotJump* nativeGotJump_at(address addr) {
   return jump;
 }
 
-//FIXME: Currently not being used in hotspot code base, extend it to support REX2 prefix.
 class NativePopReg : public NativeInstruction {
  public:
   enum Intel_specific_constants {

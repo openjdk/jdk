@@ -108,7 +108,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if defined(_LP64)
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
@@ -419,7 +419,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if defined(_LP64)
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports APX
@@ -2166,7 +2166,7 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if defined(_LP64)
 void VM_Version::clear_apx_test_state() {
   clear_apx_test_state_stub();
 }
@@ -2189,7 +2189,7 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
-#if !defined(PRODUCT) &&  defined(_LP64)
+#if defined(_LP64)
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
 #endif
@@ -3183,11 +3183,17 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
+  // Enable APX support for product builds after
+  // completion of planned features listed in JDK-8329030.
+#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
+#else
+  return false;
+#endif
 }
 
 uint VM_Version::cores_per_cpu() {

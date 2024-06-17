@@ -422,25 +422,7 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
 
   // Push CPU state in multiple of 16 bytes
 #ifdef _LP64
-  __ subq(rsp, 16 * wordSize);
-  __ movq(Address(rsp, 15 * wordSize), rax);
-  __ movq(Address(rsp, 14 * wordSize), rcx);
-  __ movq(Address(rsp, 13 * wordSize), rdx);
-  __ movq(Address(rsp, 12 * wordSize), rbx);
-  // Skip rsp as the value is normally not used. There are a few places where
-  // the original value of rsp needs to be known but that can be computed
-  // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-  __ movq(Address(rsp, 10 * wordSize), rbp);
-  __ movq(Address(rsp, 9 * wordSize), rsi);
-  __ movq(Address(rsp, 8 * wordSize), rdi);
-  __ movq(Address(rsp, 7 * wordSize), r8);
-  __ movq(Address(rsp, 6 * wordSize), r9);
-  __ movq(Address(rsp, 5 * wordSize), r10);
-  __ movq(Address(rsp, 4 * wordSize), r11);
-  __ movq(Address(rsp, 3 * wordSize), r12);
-  __ movq(Address(rsp, 2 * wordSize), r13);
-  __ movq(Address(rsp, wordSize), r14);
-  __ movq(Address(rsp, 0), r15);
+  __ save_legacy_gprs();
 #else
   __ pusha();
 #endif
@@ -584,24 +566,7 @@ void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
 
   restore_fpu(this, restore_fpu_registers);
 #ifdef _LP64
-  __ movq(r15, Address(rsp, 0));
-  __ movq(r14, Address(rsp, wordSize));
-  __ movq(r13, Address(rsp, 2 * wordSize));
-  __ movq(r12, Address(rsp, 3 * wordSize));
-  __ movq(r11, Address(rsp, 4 * wordSize));
-  __ movq(r10, Address(rsp, 5 * wordSize));
-  __ movq(r9,  Address(rsp, 6 * wordSize));
-  __ movq(r8,  Address(rsp, 7 * wordSize));
-  __ movq(rdi, Address(rsp, 8 * wordSize));
-  __ movq(rsi, Address(rsp, 9 * wordSize));
-  __ movq(rbp, Address(rsp, 10 * wordSize));
-  // Skip rsp as it is restored automatically to the value
-  // before the corresponding pusha when popa is done.
-  __ movq(rbx, Address(rsp, 12 * wordSize));
-  __ movq(rdx, Address(rsp, 13 * wordSize));
-  __ movq(rcx, Address(rsp, 14 * wordSize));
-  __ movq(rax, Address(rsp, 15 * wordSize));
-  __ addq(rsp, 16 * wordSize);
+  __ restore_legacy_gprs();
 #else
   __ popa();
 #endif

@@ -14389,6 +14389,7 @@ void Assembler::popa_uncached() { // 64bit
     addq(rsp, 16 * wordSize);
   }
 }
+
 void Assembler::vzeroupper() {
   emit_copy(code_section(), vzup_code, vzup_len);
 }
