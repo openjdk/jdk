@@ -54,12 +54,7 @@ public class TestVectorFPReduction {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
-        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
-        phase = CompilePhase.PRINT_IDEAL)
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
-        counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
-        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVF() {
         float result = 1;
@@ -74,12 +69,7 @@ public class TestVectorFPReduction {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
-        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
-        phase = CompilePhase.PRINT_IDEAL)
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
-        counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
-        failOn = {"no_strict_order"},
+        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     private static void testAddReductionVD() {
         double result = 1;
