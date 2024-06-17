@@ -163,6 +163,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_predicates() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::PREDICATES);
+  }
+
   bool is_trace_pointer_analysis() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -613,6 +617,29 @@ public:
   };
 };
 
+// Submodule of VLoopAnalyzer.
+// TODO desc
+class VLoopPredicates : public StackObj {
+private:
+  Arena*                   _arena; // TODO needed?
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  // TODO data?
+
+public:
+  VLoopPredicates(Arena* arena,
+                  const VLoop& vloop,
+                  const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body) {}
+  NONCOPYABLE(VLoopPredicates);
+
+  void compute_predicates();
+  NOT_PRODUCT( void print() const; )
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -637,6 +664,7 @@ private:
   VLoopTypes           _types;
   VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
+  VLoopPredicates      _predicates;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
@@ -648,7 +676,8 @@ public:
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
     _vpointers       (&_arena, vloop, _body),
-    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers),
+    _predicates      (&_arena, vloop, _body)
   {
     _success = setup_submodules();
   }
@@ -664,6 +693,7 @@ public:
   const VLoopTypes& types()                      const { return _types; }
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+  const VLoopPredicates& predicates()            const { return _predicates; }
 
 private:
   bool setup_submodules();

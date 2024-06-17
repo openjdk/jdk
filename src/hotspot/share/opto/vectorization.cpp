@@ -178,6 +178,8 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _dependency_graph.construct();
 
+  _predicates.compute_predicates();
+
   return VStatus::make_success();
 }
 
@@ -406,6 +408,18 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = nullptr; // done
   }
 }
+
+void VLoopPredicates::compute_predicates() {
+  // TODO
+  NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )
+}
+
+#ifndef PRODUCT
+void VLoopPredicates::print() const {
+  tty->print_cr("\nVLoopPredicates::print:");
+  // TODO
+}
+#endif
 
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
