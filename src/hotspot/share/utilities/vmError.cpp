@@ -2087,7 +2087,8 @@ typedef void (*voidfun_t)();
 // compared to one generated with raise (asynchronous vs synchronous). See JDK-8065895.
 volatile int sigfpe_int = 0;
 
-ATTRIBUTE_NO_UBSAN static void ALWAYSINLINE crash_with_sigfpe() {
+ATTRIBUTE_NO_UBSAN
+static void ALWAYSINLINE crash_with_sigfpe() {
 
   // generate a native synchronous SIGFPE where possible;
   sigfpe_int = sigfpe_int/sigfpe_int;

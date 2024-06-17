@@ -245,7 +245,8 @@ public:
 
   // we use this method at some places for writing to 0 e.g. to cause a crash;
   // ubsan does not know that this is the desired behavior
-  ATTRIBUTE_NO_UBSAN void put(T x) {
+  ATTRIBUTE_NO_UBSAN
+  void put(T x) {
     GuardUnsafeAccess guard(_thread);
     *addr() = normalize_for_write(x);
   }
