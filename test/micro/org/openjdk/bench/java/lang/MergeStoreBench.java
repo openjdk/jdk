@@ -1091,10 +1091,10 @@ public class MergeStoreBench {
     public void putChars4C(byte[] bytes, int offset) {
         char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
-        UNSAFE.putChar(bytes, address + offset    , c0);
-        UNSAFE.putChar(bytes, address + offset + 2, c1);
-        UNSAFE.putChar(bytes, address + offset + 4, c2);
-        UNSAFE.putChar(bytes, address + offset + 6, c3);
+        UNSAFE.putChar(bytes, address    , c0);
+        UNSAFE.putChar(bytes, address + 2, c1);
+        UNSAFE.putChar(bytes, address + 4, c2);
+        UNSAFE.putChar(bytes, address + 6, c3);
     }
 
     public void putChars4S(byte[] bytes, int offset) {
@@ -1106,25 +1106,25 @@ public class MergeStoreBench {
         UNSAFE.putShort(bytes, address + 6, (short) c3);
     }
 
-    private static void putShortB(byte[] val, int index, char c) {
+    private static void putShortB(byte[] val, int index, int c) {
         index <<= 1;
         val[index    ] = (byte)(c >> 8);
         val[index + 1] = (byte)(c     );
     }
 
-    public static void putShortBU(byte[] array, int offset, char c) {
+    public static void putShortBU(byte[] array, int offset, int c) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
         UNSAFE.putByte(array, address    , (byte) (c >>  8));
         UNSAFE.putByte(array, address + 1, (byte) (c      ));
     }
 
-    private static void putShortL(byte[] val, int index, char c) {
+    private static void putShortL(byte[] val, int index, int c) {
         index <<= 1;
         val[index    ] = (byte)(c     );
         val[index + 1] = (byte)(c >> 8);
     }
 
-    public static void putShortLU(byte[] array, int offset, char c) {
+    public static void putShortLU(byte[] array, int offset, int c) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
         UNSAFE.putByte(array, address    , (byte) (c     ));
         UNSAFE.putByte(array, address + 1, (byte) (c >> 8));
