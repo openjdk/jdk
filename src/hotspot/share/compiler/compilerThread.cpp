@@ -32,7 +32,7 @@
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
-                               : JavaThread(&CompilerThread::thread_entry, 0, mtCompiler) {
+  : JavaThread(&CompilerThread::thread_entry, 0, mtCompiler) {
   _env   = nullptr;
   _log   = nullptr;
   _task  = nullptr;

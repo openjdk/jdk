@@ -95,7 +95,6 @@ public:
   };
 
 private:
-
   const MEMFLAGS _flags;        // Memory tracking flags
   const Tag _tag;
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
