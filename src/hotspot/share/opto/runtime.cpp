@@ -1414,7 +1414,7 @@ const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL;
+  fields[TypeFunc::Parms + 0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1434,7 +1434,7 @@ const TypeFunc* OptoRuntime::intpoly_assign_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL; // void
+  fields[TypeFunc::Parms + 0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
