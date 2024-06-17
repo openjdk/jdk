@@ -25,7 +25,6 @@
 
 package com.sun.tools.javap;
 
-import java.lang.reflect.AccessFlag;
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.Collection;
@@ -36,9 +35,7 @@ import java.util.Set;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
@@ -420,7 +417,7 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = AccessFlags.ofField(f.flags().flagsMask());
-        writeModifiers(flagsIgnoreUnknown(flags).stream().filter(fl -> fl.sourceModifier())
+        writeModifiers(flagsReportUnknown(flags).stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
                 f.findAttribute(Attributes.signature())
@@ -449,7 +446,7 @@ public class ClassWriter extends BasicWriter {
 
         if (options.verbose)
             writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
-                    flagsIgnoreUnknown(flags).stream().map(fl -> "ACC_" + fl.name()).toList(),
+                    flagsReportUnknown(flags).stream().map(fl -> "ACC_" + fl.name()).toList(),
                     "\n");
 
         if (options.showAllAttrs) {
@@ -481,7 +478,7 @@ public class ClassWriter extends BasicWriter {
         int flags = m.flags().flagsMask();
 
         var modifiers = new ArrayList<String>();
-        for (var f : flagsIgnoreUnknown(m.flags()))
+        for (var f : flagsReportUnknown(m.flags()))
             if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
 
         String name = "???";
@@ -564,7 +561,7 @@ public class ClassWriter extends BasicWriter {
             StringBuilder sb = new StringBuilder();
             String sep = "";
             sb.append(String.format("flags: (0x%04x) ", flags));
-            for (var f : flagsIgnoreUnknown(m.flags())) {
+            for (var f : flagsReportUnknown(m.flags())) {
                 sb.append(sep).append("ACC_").append(f.name());
                 sep = ", ";
             }
@@ -797,8 +794,8 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    private static Set<String> getClassModifiers(int mask) {
-        return getModifiers(flagsIgnoreUnknown(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
+    private Set<String> getClassModifiers(int mask) {
+        return getModifiers(flagsReportUnknown(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
                 ? mask & ~ACC_ABSTRACT : mask)));
     }
 
@@ -809,16 +806,16 @@ public class ClassWriter extends BasicWriter {
         return s;
     }
 
-    private static Set<String> getClassFlags(int mask) {
-        return getFlags(mask, flagsIgnoreUnknown(AccessFlags.ofClass(mask)));
+    private Set<String> getClassFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofClass(mask)));
     }
 
-    private static Set<String> getMethodFlags(int mask) {
-        return getFlags(mask, flagsIgnoreUnknown(AccessFlags.ofMethod(mask)));
+    private Set<String> getMethodFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofMethod(mask)));
     }
 
-    private static Set<String> getFieldFlags(int mask) {
-        return getFlags(mask, flagsIgnoreUnknown(AccessFlags.ofField(mask)));
+    private Set<String> getFieldFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofField(mask)));
     }
 
     private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {
@@ -833,34 +830,6 @@ public class ClassWriter extends BasicWriter {
             mask = mask & ~bit;
         }
         return s;
-    }
-
-    static Set<AccessFlag> flagsIgnoreUnknown(AccessFlags flags) {
-        return maskToAccessFlagsIgnoreUnknown(flags.flagsMask(), flags.location());
-    }
-
-    static Set<AccessFlag> maskToAccessFlagsIgnoreUnknown(int mask, AccessFlag.Location location) {
-        return AccessFlag.maskToAccessFlags(mask & LOCATION_MASKS.get(location), location);
-    }
-
-    private static final Map<AccessFlag.Location, Integer> LOCATION_MASKS;
-
-    static {
-        var map = new EnumMap<AccessFlag.Location, Integer>(AccessFlag.Location.class);
-        for (var loc : AccessFlag.Location.values()) {
-            map.put(loc, 0);
-        }
-
-        for (var flag : AccessFlag.values()) {
-            for (var loc : flag.locations()) {
-                map.compute(loc, (_, v) -> v | flag.mask());
-            }
-        }
-
-        // Peculiarities from AccessFlag.maskToAccessFlag
-        map.compute(AccessFlag.Location.METHOD, (_, v) -> v | Modifier.STRICT);
-
-        LOCATION_MASKS = map;
     }
 
     private final Options options;
