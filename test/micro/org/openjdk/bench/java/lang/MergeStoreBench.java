@@ -45,25 +45,14 @@ import jdk.internal.misc.Unsafe;
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
 public class MergeStoreBench {
-    private static final int HI_BYTE_SHIFT;
-    private static final int LO_BYTE_SHIFT;
-    static {
-        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-            HI_BYTE_SHIFT = 8;
-            LO_BYTE_SHIFT = 0;
-        } else {
-            HI_BYTE_SHIFT = 0;
-            LO_BYTE_SHIFT = 8;
-        }
-    }
-
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     final static VarHandle INT_L  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.LITTLE_ENDIAN);
     final static VarHandle INT_B  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.BIG_ENDIAN);
     final static VarHandle LONG_L = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
     final static VarHandle LONG_B = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
-    final static VarHandle CHAR   = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.nativeOrder());
+    final static VarHandle CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN);
+    final static VarHandle CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
 
     final static int NUMBERS = 8192;
 
@@ -95,6 +84,8 @@ public class MergeStoreBench {
      * V VarHandle
      * U Unsafe
      * R ReverseBytes
+     * C Unsafe.getChar & putChar
+     * S Unsafe.getShort & putShort
      * ```
      */
 
@@ -583,17 +574,67 @@ public class MergeStoreBench {
     }
 
     @Benchmark
-    public void getChar(Blackhole BH) {
+    public void getCharB(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            char c = getChar(bytes4, i);
+            char c = getCharB(bytes4, i);
             sum += c;
         }
         BH.consume(sum);
     }
 
     @Benchmark
-    public void getCharU(Blackhole BH) {
+    public void getCharBV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = (char) CHAR_B.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharBU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = getCharBU(bytes4, i);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharL(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = getCharL(bytes4, i);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+    @Benchmark
+    public void getCharLU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = getCharLU(bytes4, i);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+
+    @Benchmark
+    public void getCharLV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = (char) CHAR_L.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharC(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
             char c = UNSAFE.getChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
@@ -603,38 +644,51 @@ public class MergeStoreBench {
     }
 
     @Benchmark
-    public void getCharUB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = getCharUB(bytes4, i);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void putChar(Blackhole BH) {
+    public void setCharBS(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];
-            putChar(bytes4, i * 2, c);
+            putShortB(bytes4, i * 2, c);
             sum += c;
         }
         BH.consume(sum);
     }
 
     @Benchmark
-    public void putCharU(Blackhole BH) {
+    public void setCharBV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            CHAR_B.set(bytes4, i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void setCharLS(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            putShortL(bytes4, i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void setCharLV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            CHAR_L.set(bytes4, i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void setCharC(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];
@@ -644,52 +698,85 @@ public class MergeStoreBench {
         BH.consume(sum);
     }
 
+    /*
+     * putChars4 Test whether four constant chars can be MergeStored
+     *
+     */
     @Benchmark
-    public void putCharV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            CHAR.set(bytes4, i * 2, c);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void putChars4(Blackhole BH) {
+    public void putChars4B(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            putChars4(bytes8, i * 4, 'n', 'u', 'l', 'l');
+            putChars4B(bytes8, i * 4);
             sum += longs[i];
         }
         BH.consume(sum);
     }
 
     @Benchmark
-    public void putChars4UB(Blackhole BH) {
+    public void putChars4BU(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            putChars4UB(bytes8, i * 4, 'n', 'u', 'l', 'l');
+            putChars4BU(bytes8, i * 4);
             sum += longs[i];
         }
         BH.consume(sum);
     }
 
     @Benchmark
-    public void putChars4UC(Blackhole BH) {
+    public void putChars4BV(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            putChars4UC(bytes8, i * 4, 'n', 'u', 'l', 'l');
+            putChars4BV(bytes8, i * 4);
             sum += longs[i];
         }
         BH.consume(sum);
     }
 
     @Benchmark
-    public void putChars4V(Blackhole BH) {
+    public void putChars4L(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            putChars4V(bytes8, i * 4, 'n', 'u', 'l', 'l');
+            putChars4L(bytes8, i * 4);
+            sum += longs[i];
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChars4LU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            putChars4LU(bytes8, i * 4);
+            sum += longs[i];
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChars4LV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            putChars4LV(bytes8, i * 4);
+            sum += longs[i];
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChars4C(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            putChars4C(bytes8, i * 4);
+            sum += longs[i];
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChars4S(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            putChars4S(bytes8, i * 4);
             sum += longs[i];
         }
         BH.consume(sum);
@@ -919,57 +1006,127 @@ public class MergeStoreBench {
              | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
     }
 
-    public static char getChar(byte[] val, int index) {
+    public static char getCharB(byte[] val, int index) {
         index <<= 1;
-        return (char)(((val[index    ] & 0xff) << HI_BYTE_SHIFT)
-                    | ((val[index + 1] & 0xff) << LO_BYTE_SHIFT));
+        return (char)(((val[index    ] & 0xff) << 8)
+                    | ((val[index + 1] & 0xff)));
     }
 
-    public static char getCharUB(byte[] array, int offset) {
+    public static char getCharBR(byte[] val, int index) {
+        return Character.reverseBytes(getCharB(val, index));
+    }
+
+    public static char getCharL(byte[] val, int index) {
+        index <<= 1;
+        return (char)(((val[index    ] & 0xff))
+                    | ((val[index + 1] & 0xff) << 8));
+    }
+
+    public static char getCharLR(byte[] val, int index) {
+        return Character.reverseBytes(getCharL(val, index));
+    }
+
+    public static char getCharBU(byte[] array, int offset) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
-        return (char) (((UNSAFE.getByte(array, address   ) & 0xff) << HI_BYTE_SHIFT)
-                    | ((UNSAFE.getByte(array, address + 1) & 0xff) << LO_BYTE_SHIFT));
+        return (char) (((UNSAFE.getByte(array, address    ) & 0xff) << 8)
+                     | ((UNSAFE.getByte(array, address + 1) & 0xff)     ));
     }
 
-    public static void putChars4(byte[] array, int offset, char c0, char c1, char c2, char c3) {
-        putChar(array, offset, c0);
-        putChar(array, offset + 1, c1);
-        putChar(array, offset + 2, c2);
-        putChar(array, offset + 3, c3);
+    public static char getCharLU(byte[] array, int offset) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        return (char) (((UNSAFE.getByte(array, address    ) & 0xff)     )
+                     | ((UNSAFE.getByte(array, address + 1) & 0xff) << 8));
     }
 
-    public static void putChars4UC(byte[] array, int offset, char c0, char c1, char c2, char c3) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        UNSAFE.putChar(array, address, c0);
-        UNSAFE.putChar(array, address + 2, c1);
-        UNSAFE.putChar(array, address + 4, c2);
-        UNSAFE.putChar(array, address + 6, c3);
+    public void putChars4B(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        putShortB(bytes, offset    , c0);
+        putShortB(bytes, offset + 1, c1);
+        putShortB(bytes, offset + 2, c2);
+        putShortB(bytes, offset + 3, c3);
     }
 
-    public static void putChars4UB(byte[] array, int offset, char c0, char c1, char c2, char c3) {
-        putCharUB(array, offset, c0);
-        putCharUB(array, offset + 1, c1);
-        putCharUB(array, offset + 2, c2);
-        putCharUB(array, offset + 3, c3);
+    public void putChars4BU(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        putShortBU(bytes, offset    , c0);
+        putShortBU(bytes, offset + 1, c1);
+        putShortBU(bytes, offset + 2, c2);
+        putShortBU(bytes, offset + 3, c3);
     }
 
-    public static void putChars4V(byte[] array, int offset, char c0, char c1, char c2, char c3) {
+    public void putChars4BV(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
         offset <<= 1;
-        CHAR.set(array, offset, c0);
-        CHAR.set(array, offset + 2, c1);
-        CHAR.set(array, offset + 4, c2);
-        CHAR.set(array, offset + 6, c3);
+        CHAR_B.set(bytes, offset    , c0);
+        CHAR_B.set(bytes, offset + 2, c1);
+        CHAR_B.set(bytes, offset + 4, c2);
+        CHAR_B.set(bytes, offset + 6, c3);
     }
 
-    private static void putChar(byte[] val, int index, char c) {
+    public void putChars4L(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        putShortL(bytes, offset    , c0);
+        putShortL(bytes, offset + 1, c1);
+        putShortL(bytes, offset + 2, c2);
+        putShortL(bytes, offset + 3, c3);
+    }
+
+    public void putChars4LV(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        offset <<= 1;
+        CHAR_L.set(bytes, offset    , c0);
+        CHAR_L.set(bytes, offset + 2, c1);
+        CHAR_L.set(bytes, offset + 4, c2);
+        CHAR_L.set(bytes, offset + 6, c3);
+    }
+
+    public void putChars4LU(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        putShortLU(bytes, offset    , c0);
+        putShortLU(bytes, offset + 1, c1);
+        putShortLU(bytes, offset + 2, c2);
+        putShortLU(bytes, offset + 3, c3);
+    }
+
+    public void putChars4C(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        offset <<= 1;
+        UNSAFE.putChar(bytes, offset    , c0);
+        UNSAFE.putChar(bytes, offset + 2, c1);
+        UNSAFE.putChar(bytes, offset + 4, c2);
+        UNSAFE.putChar(bytes, offset + 6, c3);
+    }
+
+    public void putChars4S(byte[] bytes, int offset) {
+        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+        offset <<= 1;
+        UNSAFE.putShort(bytes, offset    , (short) c0);
+        UNSAFE.putShort(bytes, offset + 2, (short) c1);
+        UNSAFE.putShort(bytes, offset + 4, (short) c2);
+        UNSAFE.putShort(bytes, offset + 6, (short) c3);
+    }
+
+    private static void putShortB(byte[] val, int index, char c) {
         index <<= 1;
-        val[index    ] = (byte)(c >> HI_BYTE_SHIFT);
-        val[index + 1] = (byte)(c >> LO_BYTE_SHIFT);
+        val[index    ] = (byte)(c >> 8);
+        val[index + 1] = (byte)(c     );
     }
 
-    public static void putCharUB(byte[] array, int offset, char c) {
+    public static void putShortBU(byte[] array, int offset, char c) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
         UNSAFE.putByte(array, address    , (byte) (c >>  8));
         UNSAFE.putByte(array, address + 1, (byte) (c      ));
+    }
+
+    private static void putShortL(byte[] val, int index, char c) {
+        index <<= 1;
+        val[index    ] = (byte)(c     );
+        val[index + 1] = (byte)(c >> 8);
+    }
+
+    public static void putShortLU(byte[] array, int offset, char c) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        UNSAFE.putByte(array, address    , (byte) (c     ));
+        UNSAFE.putByte(array, address + 1, (byte) (c >> 8));
     }
 }
