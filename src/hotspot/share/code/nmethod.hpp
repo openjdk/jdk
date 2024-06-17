@@ -218,7 +218,7 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
-  int _inline_insts_size;
+  int _skipped_instructions_size;
 
   int _stub_offset;
 
@@ -259,12 +259,6 @@ class nmethod : public CodeBlob {
   int          _compile_id;            // which compilation made this nmethod
   CompLevel    _comp_level;            // compilation level (s1)
   CompilerType _compiler_type;         // which compiler made this nmethod (u1)
-
-#if INCLUDE_RTM_OPT
-  // RTM state at compile time. Used during deoptimization to decide
-  // whether to restart collecting RTM locking abort statistic again.
-  RTMState _rtm_state;
-#endif
 
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
@@ -590,7 +584,7 @@ public:
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
 
-  int inline_insts_size() const { return _inline_insts_size; }
+  int skipped_instructions_size () const { return _skipped_instructions_size; }
   int total_size() const;
 
   // Containment
@@ -628,12 +622,6 @@ public:
   bool is_cold();
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
-
-#if INCLUDE_RTM_OPT
-  // rtm state accessing and manipulating
-  RTMState  rtm_state() const          { return _rtm_state; }
-  void set_rtm_state(RTMState state)   { _rtm_state = state; }
-#endif
 
   bool make_in_use() {
     return try_transition(in_use);

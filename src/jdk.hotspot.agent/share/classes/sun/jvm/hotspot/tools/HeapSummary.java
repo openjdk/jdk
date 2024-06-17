@@ -80,14 +80,13 @@ public class HeapSummary extends Tool {
       printValMB("MaxHeapSize              = ", getFlagValue("MaxHeapSize", flagMap));
       printValMB("NewSize                  = ", getFlagValue("NewSize", flagMap));
       printValMB("MaxNewSize               = ", getFlagValue("MaxNewSize", flagMap));
-      printValMB("OldSize                  = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio                 = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio            = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
       if (heap instanceof G1CollectedHeap) {
-        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+        printValMB("G1HeapRegionSize       = ", G1HeapRegion.grainBytes());
       }
 
       System.out.println();

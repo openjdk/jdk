@@ -49,7 +49,6 @@
   f(uint,  TypeProfileLevelConstraintFunc)              \
   f(uint,  VerifyIterativeGVNConstraintFunc)            \
   f(intx,  InitArrayShortSizeConstraintFunc)            \
-  f(int ,  RTMTotalCountIncrRateConstraintFunc)         \
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \
   f(ccstrlist, ControlIntrinsicConstraintFunc)          \
 COMPILER2_PRESENT(                                      \

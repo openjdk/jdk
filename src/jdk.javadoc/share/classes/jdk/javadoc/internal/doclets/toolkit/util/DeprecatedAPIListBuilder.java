@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
      * @param since list of releases passed via <code>--since</code> option
      */
     public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> since) {
-        super(configuration, configuration.utils::isDeprecated);
+        super(configuration);
         this.foundReleases = new HashSet<>();
         buildSummaryAPIInfo();
         // The releases list is set to the intersection of releases defined via `--since` option
@@ -71,6 +71,11 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
             forRemoval = createSummarySet();
         }
         return forRemoval;
+    }
+
+    @Override
+    protected boolean belongsToSummary(Element element) {
+        return utils.isDeprecated(element);
     }
 
     @Override
