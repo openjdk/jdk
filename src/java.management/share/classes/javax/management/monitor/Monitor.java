@@ -175,6 +175,10 @@ public abstract class Monitor
      */
     private volatile Subject subject;
     @SuppressWarnings("removal")
+    private static final AccessControlContext noPermissionsACC =
+            new AccessControlContext(
+            new ProtectionDomain[] {new ProtectionDomain(null, null)});
+    @SuppressWarnings("removal")
     private volatile AccessControlContext acc;
 
     /**
@@ -753,7 +757,7 @@ public abstract class Monitor
             // Reset the Subject and AccessControlContext.
             //
             subject = null;
-            acc = null;
+            acc = noPermissionsACC;
 
             // Reset the complex type attribute information
             // such that it is recalculated again.
