@@ -1331,8 +1331,9 @@ void Threads::print_on(outputStream* st, bool print_stacks,
         if (thread_oop != nullptr) {
           if (p->is_vthread_mounted()) {
             const oop vt = p->vthread();
+            assert(vt != nullptr, "vthread should not be null when vthread is mounted");
             if (vt != thread_oop) {
-              assert(vt != nullptr, "vthread should not be null when vthread is mounted");
+              // JavaThread._vthread can refer to the carrier thread. Print only if _vthread refers to a virtual thread.
               st->print_cr("   Mounted virtual thread \"%s\" #" INT64_FORMAT, JavaThread::name_for(vt), (int64_t)java_lang_Thread::thread_id(vt));
               p->print_vthread_stack_on(st);
             }
