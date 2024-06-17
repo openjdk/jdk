@@ -30,10 +30,11 @@
  * @run junit UndefinedAccessFlagTest
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import toolbox.JavapTask;
+import toolbox.Task;
 import toolbox.ToolBox;
-
-import org.junit.jupiter.api.Test;
 
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassModel;
@@ -45,13 +46,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static java.lang.classfile.ClassFile.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UndefinedAccessFlagTest {
 
     final ToolBox toolBox = new ToolBox();
 
-    @Test
-    void test() throws Throwable {
+    enum TestLocation {
+        CLASS, FIELD, METHOD, INNER_CLASS
+    }
+
+    @ParameterizedTest
+    @EnumSource(TestLocation.class)
+    void test(TestLocation location) throws Throwable {
         var cf = of();
         ClassModel cm;
         try (var is = UndefinedAccessFlagTest.class.getResourceAsStream(
@@ -61,36 +68,41 @@ public class UndefinedAccessFlagTest {
         }
         var bytes = cf.transform(cm, (cb, ce) -> {
             switch (ce) {
-                case AccessFlags flags -> cb.withFlags(flags.flagsMask() | ACC_PRIVATE);
-                case FieldModel f -> cb.transformField(f, (fb, fe) -> {
-                    if (fe instanceof AccessFlags flags) {
-                        fb.withFlags(flags.flagsMask() | ACC_SYNCHRONIZED);
-                    } else {
-                        fb.with(fe);
-                    }
-                });
-                case MethodModel m -> cb.transformMethod(m, (mb, me) -> {
-                    if (me instanceof AccessFlags flags) {
-                        mb.withFlags(flags.flagsMask() | ACC_INTERFACE);
-                    } else {
-                        mb.with(me);
-                    }
-                });
-                case InnerClassesAttribute attr -> {
-                    cb.with(InnerClassesAttribute.of(attr.classes().stream()
+                case AccessFlags flags when location == TestLocation.CLASS -> cb
+                    .withFlags(flags.flagsMask() | ACC_PRIVATE);
+                case FieldModel f when location == TestLocation.FIELD -> cb
+                    .transformField(f, (fb, fe) -> {
+                        if (fe instanceof AccessFlags flags) {
+                            fb.withFlags(flags.flagsMask() | ACC_SYNCHRONIZED);
+                        } else {
+                            fb.with(fe);
+                        }
+                    });
+                case MethodModel m when location == TestLocation.METHOD -> cb
+                    .transformMethod(m, (mb, me) -> {
+                        if (me instanceof AccessFlags flags) {
+                            mb.withFlags(flags.flagsMask() | ACC_INTERFACE);
+                        } else {
+                            mb.with(me);
+                        }
+                    });
+                case InnerClassesAttribute attr when location == TestLocation.INNER_CLASS -> cb
+                    .with(InnerClassesAttribute.of(attr.classes().stream()
                         .map(ic -> InnerClassInfo.of(ic.innerClass(), ic.outerClass(), ic.innerName(), ic.flagsMask() | 0x0020))
                         .toList()));
-                }
                 default -> cb.with(ce);
             }
         });
 
         Files.write(Path.of("transformed.class"), bytes);
 
-        new JavapTask(toolBox)
+        var lines = new JavapTask(toolBox)
             .classes("transformed.class")
             .options("-c", "-p", "-v")
-            .run();
+            .run(location == TestLocation.INNER_CLASS ? Task.Expect.SUCCESS : Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+        assertTrue(lines.stream().anyMatch(l -> l.contains("Unmatched bit position")), () -> String.join("\n", lines));
     }
 
     static class SampleInnerClass {
