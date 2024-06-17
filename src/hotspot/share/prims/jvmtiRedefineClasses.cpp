@@ -3700,9 +3700,9 @@ void VM_RedefineClasses::set_new_constant_pool(
 
 // Unevolving classes may point to methods of the_class directly
 // from their constant pool caches, itables, and/or vtables. We
-// use the ClassLoaderDataGraph::classes_do() facility and this helper
-// to fix up these pointers.  MethodData also points to old methods and
-// must be cleaned.
+// use the ClassLoaderDataGraph::classes_do_no_keepalive() facility and
+// this helper to fix up these pointers.  MethodData also points to old
+// methods and must be cleaned.
 
 // Adjust cpools and vtables closure
 void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
@@ -4183,10 +4183,10 @@ void VM_RedefineClasses::swap_annotations(InstanceKlass* the_class,
 //      parts of the_class
 //    - adjusting constant pool caches and vtables in other classes
 //      that refer to methods in the_class. These adjustments use the
-//      ClassLoaderDataGraph::classes_do() facility which only allows
-//      a helper method to be specified. The interesting parameters
-//      that we would like to pass to the helper method are saved in
-//      static global fields in the VM operation.
+//      ClassLoaderDataGraph::classes_do_no_keepalive() facility which
+//      only allows a helper method to be specified. The interesting
+//      parameters that we would like to pass to the helper method are
+//      saved in static global fields in the VM operation.
 void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclass,
                                                InstanceKlass* scratch_class) {
 

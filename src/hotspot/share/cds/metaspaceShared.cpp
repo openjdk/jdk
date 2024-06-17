@@ -625,7 +625,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   // Collect all loaded ClassLoaderData.
   CollectCLDClosure collect_cld(THREAD);
   {
-    // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
+    // ClassLoaderDataGraph::loaded_cld_do_no_keepalive requires ClassLoaderDataGraph_lock.
     // We cannot link the classes while holding this lock (or else we may run into deadlock).
     // Therefore, we need to first collect all the CLDs, and then link their classes after
     // releasing the lock.

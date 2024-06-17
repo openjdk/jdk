@@ -331,7 +331,7 @@ struct JvmtiCachedClassFileData {
 
 class VM_RedefineClasses: public VM_Operation {
  private:
-  // These static fields are needed by ClassLoaderDataGraph::classes_do()
+  // These static fields are needed by ClassLoaderDataGraph::classes_do_no_keepalive()
   // facility and the CheckClass and AdjustAndCleanMetadata helpers.
   static Array<Method*>* _old_methods;
   static Array<Method*>* _new_methods;
