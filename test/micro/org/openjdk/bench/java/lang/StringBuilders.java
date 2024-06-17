@@ -228,7 +228,7 @@ public class StringBuilders {
     @Benchmark
     public int appendWithBool8Latin1() {
         StringBuilder buf = sbLatin1;
-        buf.delete(0, buf.length());
+        buf.setLength(0);
         buf.append(true);
         buf.append(false);
         buf.append(true);
@@ -244,7 +244,7 @@ public class StringBuilders {
     @Benchmark
     public int appendWithBool8Utf16() {
         StringBuilder buf = sbUtf16;
-        buf.delete(0, buf.length());
+        buf.setLength(0);
         buf.append('\uFF16');
         buf.append(true);
         buf.append(false);
@@ -261,7 +261,7 @@ public class StringBuilders {
     @Benchmark
     public int appendWithNull8Latin1() {
         StringBuilder buf = sbLatin1;
-        buf.delete(0, buf.length());
+        buf.setLength(0);
         buf.append((String) null);
         buf.append((String) null);
         buf.append((String) null);
@@ -277,7 +277,7 @@ public class StringBuilders {
     @Benchmark
     public int appendWithNull8Utf16() {
         StringBuilder buf = sbUtf16;
-        buf.delete(0, buf.length());
+        buf.setLength(0);
         buf.append('\uFF16');
         buf.append((String) null);
         buf.append((String) null);
