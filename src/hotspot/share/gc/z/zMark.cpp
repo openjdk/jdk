@@ -457,8 +457,10 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
       const oop obj = to_oop(addr);
       follow_object(obj, finalizable);
 
-      // Try deduplicate
-      try_deduplicate(context, obj);
+      if (!finalizable) {
+        // Try deduplicate
+        try_deduplicate(context, obj);
+      }
     }
   }
 }

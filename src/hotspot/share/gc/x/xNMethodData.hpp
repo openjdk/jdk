@@ -56,6 +56,7 @@ public:
 class XNMethodData : public CHeapObj<mtGC> {
 private:
   XReentrantLock             _lock;
+  XReentrantLock             _ic_lock;
   XNMethodDataOops* volatile _oops;
 
 public:
@@ -63,6 +64,7 @@ public:
   ~XNMethodData();
 
   XReentrantLock* lock();
+  XReentrantLock* ic_lock();
 
   XNMethodDataOops* oops() const;
   XNMethodDataOops* swap_oops(XNMethodDataOops* oops);
