@@ -21,29 +21,35 @@
  * questions.
  */
 
-package compiler.vectorapi.reshape;
-
-import compiler.vectorapi.reshape.tests.TestVectorCast;
-import compiler.vectorapi.reshape.utils.TestCastMethods;
-import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
-
-/*
+/**
  * @test
- * @bug 8321021 8321023 8321024
- * @key randomness
- * @modules jdk.incubator.vector
- * @modules java.base/jdk.internal.misc
- * @summary Test that vector cast intrinsics work as intended on riscv (rvv).
- * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"
- * @library /test/lib /
- * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastRVV
+ * @bug 8334228
+ * @summary Test sorting of VPointer by offset, when subtraction of two offsets can overflow.
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.vectorization.TestOffsetSorting::test -Xcomp compiler.vectorization.TestOffsetSorting
+ * @run main compiler.vectorization.TestOffsetSorting
  */
-public class TestVectorCastRVV {
+
+package compiler.vectorization;
+
+public class TestOffsetSorting {
+    static int RANGE = 10_000;
+
     public static void main(String[] args) {
-        VectorReshapeHelper.runMainHelper(
-                TestVectorCast.class,
-                TestCastMethods.RVV_CAST_TESTS.stream(),
-                "-XX:+UseRVV");
+        int[] a = new int[RANGE];
+        for (int i = 0; i < 10_000; i++) {
+            try {
+                test(a, 0);
+                throw new RuntimeException("test should go out-of-bounds");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+        }
+    }
+
+    static void test(int[] a, int invar) {
+        int large = (1 << 28) + (1 << 20);
+        for (int i = 0; i < 1_000; i++) {
+            a[i + invar - large] = 42;
+            a[i + invar + large] = 42;
+        }
     }
 }
-
