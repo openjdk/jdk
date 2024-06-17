@@ -59,17 +59,19 @@ public class MergeStoreBench {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    final static VarHandle INT_L = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
-    final static VarHandle INT_B = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
-
+    final static VarHandle INT_L  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.LITTLE_ENDIAN);
+    final static VarHandle INT_B  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.BIG_ENDIAN);
     final static VarHandle LONG_L = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
     final static VarHandle LONG_B = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
+    final static VarHandle CHAR   = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.nativeOrder());
 
     final static int NUMBERS = 8192;
+
     final byte[] bytes4 = new byte[NUMBERS * 4];
     final byte[] bytes8 = new byte[NUMBERS * 8];
-    final int[] ints = new int[NUMBERS];
-    final long[] longs = new long[NUMBERS];
+    final int [] ints   = new int [NUMBERS    ];
+    final long[] longs  = new long[NUMBERS    ];
+    final char[] chars  = new char[NUMBERS    ];
 
     @Setup
     public void setup() {
@@ -581,6 +583,79 @@ public class MergeStoreBench {
     }
 
     @Benchmark
+    public void getChar(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = getChar(bytes4, i);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = UNSAFE.getChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharUB(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = getCharUB(bytes4, i);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getCharV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            char c = (char) CHAR.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChar(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            putChar(bytes4, i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putCharU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            UNSAFE.putChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putCharV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            CHAR.set(bytes4, i * 2, c);
+            sum += c;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
     public void putChars4(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
@@ -605,6 +680,16 @@ public class MergeStoreBench {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
             putChars4UC(bytes8, i * 4, 'n', 'u', 'l', 'l');
+            sum += longs[i];
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void putChars4V(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            putChars4V(bytes8, i * 4, 'n', 'u', 'l', 'l');
             sum += longs[i];
         }
         BH.consume(sum);
@@ -834,6 +919,18 @@ public class MergeStoreBench {
              | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
     }
 
+    public static char getChar(byte[] val, int index) {
+        index <<= 1;
+        return (char)(((val[index    ] & 0xff) << HI_BYTE_SHIFT)
+                    | ((val[index + 1] & 0xff) << LO_BYTE_SHIFT));
+    }
+
+    public static char getCharUB(byte[] array, int offset) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        return (char) (((UNSAFE.getByte(array, address   ) & 0xff) << HI_BYTE_SHIFT)
+                    | ((UNSAFE.getByte(array, address + 1) & 0xff) << LO_BYTE_SHIFT));
+    }
+
     public static void putChars4(byte[] array, int offset, char c0, char c1, char c2, char c3) {
         putChar(array, offset, c0);
         putChar(array, offset + 1, c1);
@@ -854,6 +951,14 @@ public class MergeStoreBench {
         putCharUB(array, offset + 1, c1);
         putCharUB(array, offset + 2, c2);
         putCharUB(array, offset + 3, c3);
+    }
+
+    public static void putChars4V(byte[] array, int offset, char c0, char c1, char c2, char c3) {
+        offset <<= 1;
+        CHAR.set(array, offset, c0);
+        CHAR.set(array, offset + 2, c1);
+        CHAR.set(array, offset + 4, c2);
+        CHAR.set(array, offset + 6, c3);
     }
 
     private static void putChar(byte[] val, int index, char c) {
