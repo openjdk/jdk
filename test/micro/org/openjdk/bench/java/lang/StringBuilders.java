@@ -245,7 +245,6 @@ public class StringBuilders {
     public int appendWithBool8Utf16() {
         StringBuilder buf = sbUtf16;
         buf.setLength(0);
-        buf.append('\uFF16');
         buf.append(true);
         buf.append(false);
         buf.append(true);
@@ -278,7 +277,6 @@ public class StringBuilders {
     public int appendWithNull8Utf16() {
         StringBuilder buf = sbUtf16;
         buf.setLength(0);
-        buf.append('\uFF16');
         buf.append((String) null);
         buf.append((String) null);
         buf.append((String) null);
