@@ -1,9 +1,22 @@
 image: alpine
 
-stages: [trigger]
+stages: [prepare, trigger]
+
+prepare:
+  stage: prepare
+  image: "486234852809.dkr.ecr.us-east-1.amazonaws.com/images/docker:24.0.4-gbi-focal"
+  tags: [ "arch:arm64" ]
+  script:
+    - echo "Preparing to trigger the build pipeline"
+    - echo "FEATURE_VERSION=$(cat make/conf/version-numbers.conf | grep 'DEFAULT_VERSION_FEATURE=' | cut -d '=' -f 2)" > build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+    expire_in: 1 day
 
 build:
   stage: trigger
+  needs: [prepare]
   variables:
     JDK_VERSION: "latest"
     DEBUG_LEVEL: "fastdebug"
@@ -17,9 +30,9 @@ build:
 
 test:
   stage: trigger
-  needs: [build]
+  needs: [prepare, build]
   variables:
-    JDK_VERSION: "23"
+    JDK_VERSION: "${FEATURE_VERSION}"
     DEBUG_LEVEL: "fastdebug"
     HASH: "${CI_COMMIT_SHORT_SHA}"
   trigger:
