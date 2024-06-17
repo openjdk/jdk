@@ -2653,7 +2653,7 @@ WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
   ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
 WB_END
 
-// Reports resident set size (RSS) in KB
+// Reports resident set size (RSS) in bytes
 WB_ENTRY(jlong, WB_Rss(JNIEnv* env, jobject o))
   return os::rss();
 WB_END
