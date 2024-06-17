@@ -743,8 +743,8 @@ public class MergeStoreBench {
     static void setIntBU(byte[] array, int offset, int value) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
         UNSAFE.putByte(array, address    , (byte) (value >> 24));
-        UNSAFE.putByte(array, address + 1, (byte) (value >>  8));
-        UNSAFE.putByte(array, address + 2, (byte) (value >> 16));
+        UNSAFE.putByte(array, address + 1, (byte) (value >> 16));
+        UNSAFE.putByte(array, address + 2, (byte) (value >>  8));
         UNSAFE.putByte(array, address + 3, (byte) (value      ));
     }
 
