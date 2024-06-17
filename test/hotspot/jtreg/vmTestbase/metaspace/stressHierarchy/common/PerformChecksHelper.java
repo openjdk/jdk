@@ -28,13 +28,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 
+import jdk.test.whitebox.WhiteBox;
+import metaspace.share.TriggerUnloadingHelper;
 import metaspace.stressHierarchy.common.classloader.tree.Node;
 import metaspace.stressHierarchy.common.classloader.tree.Tree;
 import metaspace.stressHierarchy.common.exceptions.ClassNotUnloadedException;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;
 import nsk.share.test.ExecutionController;
-import jdk.test.whitebox.WhiteBox;
-import metaspace.share.TriggerUnloadingHelper;
 
 public class PerformChecksHelper {
 

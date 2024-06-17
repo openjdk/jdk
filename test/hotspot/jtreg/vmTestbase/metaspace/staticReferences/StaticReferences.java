@@ -53,14 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import vm.share.InMemoryJavaCompiler;
+import metaspace.share.TriggerUnloadingHelper;
+import metaspace.share.TriggerUnloadingWithWhiteBox;
 import nsk.share.gc.GCTestBase;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.TestBase;
 import nsk.share.test.Tests;
-import metaspace.share.TriggerUnloadingHelper;
-import metaspace.share.TriggerUnloadingWithWhiteBox;
+import vm.share.InMemoryJavaCompiler;
 
 /**
  * Test checks that static fields will be initialized in new loaded class. Test performs in loop the following routine:

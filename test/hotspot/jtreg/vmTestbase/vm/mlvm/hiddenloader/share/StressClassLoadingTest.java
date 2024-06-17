@@ -23,23 +23,25 @@
 
 package vm.mlvm.hiddenloader.share;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
+
 
 import java.io.File;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import nsk.share.test.Stresser;
-import vm.share.options.Option;
-import vm.share.options.OptionSupport;
-import vm.share.options.IgnoreUnknownArgumentsHandler;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.CustomClassLoaders;
 import vm.mlvm.share.FileUtils;
+import vm.share.options.Option;
+import vm.share.options.OptionSupport;
+import vm.share.options.IgnoreUnknownArgumentsHandler;
 
 /**
  * Does stress-testing of class loading subsystem.

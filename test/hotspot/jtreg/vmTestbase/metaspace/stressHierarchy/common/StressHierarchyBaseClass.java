@@ -28,7 +28,6 @@ import metaspace.share.HeapOOMEException;
 import metaspace.share.TriggerUnloadingByFillingMetaspace;
 import metaspace.share.TriggerUnloadingHelper;
 import metaspace.share.TriggerUnloadingWithWhiteBox;
-
 import metaspace.stressHierarchy.common.classloader.tree.Node;
 import metaspace.stressHierarchy.common.classloader.tree.Tree;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;

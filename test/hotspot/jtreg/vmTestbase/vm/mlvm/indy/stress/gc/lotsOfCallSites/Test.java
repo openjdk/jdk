@@ -63,8 +63,8 @@ import jdk.test.whitebox.WhiteBox;
 import nsk.share.test.Stresser;
 import vm.mlvm.share.CustomClassLoaders;
 import vm.mlvm.share.Env;
-import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.FileUtils;
+import vm.mlvm.share.MlvmTest;
 import vm.share.options.Option;
 
 /**
