@@ -50,17 +50,14 @@ struct LL {
     : start(NodeAllocator::nil) {
   }
 
-  void append(E&& e) {
+  void push(E e) {
     NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
     NodePtr& current = start;
     if (current == NodeAllocator::nil) {
       current = new_element;
       return;
     }
-    while (alloc.at(current).next != NodeAllocator::nil) {
-      current = alloc.at(current).next;
-    }
-    alloc.at(current).next = new_element;
+    alloc.at(new_element).next = current;
   };
 
   E pop() {
@@ -97,17 +94,14 @@ struct LL2 {
     : start(NodeAllocator::nil) {
   }
 
-  void append(E&& e) {
+  void push(E e) {
     NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
     NodePtr& current = start;
     if (current == NodeAllocator::nil) {
       current = new_element;
       return;
     }
-    while (alloc.at(current).next != NodeAllocator::nil) {
-      current = alloc.at(current).next;
-    }
-    alloc.at(current).next = new_element;
+    alloc.at(new_element).next = current;
   };
 
   E pop() {
@@ -123,8 +117,8 @@ struct LL2 {
 
 template<typename List>
 void test_with_list(List& list) {
-  list.append(1);
-  list.append(2);
+  list.push(1);
+  list.push(2);
   EXPECT_EQ(2, list.pop());
   EXPECT_EQ(1, list.pop());
 }

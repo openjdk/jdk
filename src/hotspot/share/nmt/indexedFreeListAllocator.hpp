@@ -50,7 +50,7 @@ private:
   I _free_start;
 
   bool is_in_bounds(I i) {
-    return i > 0 && i < _backing_storage.length();
+    return i >= 0 && i < _backing_storage.length();
   }
 
 public:
