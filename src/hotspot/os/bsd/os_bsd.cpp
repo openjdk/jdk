@@ -210,8 +210,8 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
-julong os::rss() {
-  julong rss = 0;
+size_t os::rss() {
+  size_t rss = 0;
 #ifdef __APPLE__
   mach_task_basic_info info;
   mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;

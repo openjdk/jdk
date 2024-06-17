@@ -359,8 +359,8 @@ julong os::physical_memory() {
   return phys_mem;
 }
 
-julong os::rss() {
-  julong size = 0;
+size_t os::rss() {
+  size_t size = 0;
   os::Linux::meminfo_t info;
   if (os::Linux::query_process_memory_info(&info)) {
     size = info.vmrss * K;

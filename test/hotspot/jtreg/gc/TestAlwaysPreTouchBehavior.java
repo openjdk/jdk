@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,69 +26,86 @@ package gc;
 
 /**
  * @test id=ParallelCollector
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.Parallel
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx512m -Xms512m -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ */
+
+ /**
+ * @test id=SerialCollector
+ * @summary tests AlwaysPreTouch
+ * @requires vm.gc.Serial
+ * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx512m -Xms512m -XX:+UseSerialGC -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 /**
  * @test id=Shenandoah
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.Shenandoah
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx1g -Xms1g -XX:+UseShenandoahGC  -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx512m -Xms512m -XX:+UseShenandoahGC  -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 /**
  * @test id=G1
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.G1
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx1g -Xms1g -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 /**
  * @test id=ZGenerational
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.ZGenerational
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:+ZGenerational -Xmx1g -Xms1g -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:+ZGenerational -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 /**
  * @test id=ZSinglegen
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.ZSinglegen
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-ZGenerational -Xmx1g -Xms1g -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-ZGenerational -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
-
 
 /**
  * @test id=Epsilon
- * @summary Tests AlwaysPreTouch Behavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @summary tests AlwaysPreTouch
  * @requires vm.gc.Epsilon
  * @requires os.maxMemory > 2G
+ * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx1g -Xms1g -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 
@@ -105,8 +123,8 @@ public class TestAlwaysPreTouchBehavior {
         return; // Did not get available RSS, just ignore this test.
     }
     Runtime runtime = Runtime.getRuntime();
-    long committedMemory = runtime.totalMemory() / 1024; // in kb
-    Asserts.assertGreaterThanOrEqual(rss, committedMemory, "RSS of this process(" + rss + "kb) should be bigger than or equal to committed heap mem(" + committedMemory + "kb)");
+    long committedMemory = runtime.totalMemory();
+    Asserts.assertGreaterThan(rss, committedMemory, "RSS of this process(" + rss + "b) should be bigger than or equal to committed heap mem(" + committedMemory + "b)");
    }
 }
 
