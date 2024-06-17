@@ -2050,6 +2050,16 @@ bool JVMCIRuntime::is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name)
   return JVMCIENV->call_HotSpotJVMCIRuntime_isGCSupported(receiver, (int) name);
 }
 
+bool JVMCIRuntime::is_intrinsic_supported(JVMCIEnv* JVMCIENV, jint id) {
+  JVMCI_EXCEPTION_CONTEXT
+
+  JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
+  if (JVMCIENV->has_pending_exception()) {
+    fatal_exception(JVMCIENV, "Exception during HotSpotJVMCIRuntime initialization");
+  }
+  return JVMCIENV->call_HotSpotJVMCIRuntime_isIntrinsicSupported(receiver, id);
+}
+
 // ------------------------------------------------------------------
 JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        const methodHandle& method,
