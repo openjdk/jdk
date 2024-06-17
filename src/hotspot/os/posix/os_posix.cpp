@@ -160,9 +160,9 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   int mincore_return_value;
   constexpr size_t stripe = 1024;  // query this many pages each time
   mincore_vec_t vec [stripe + 1];
-  
+
   // set a guard
-  DEBUG_ONLY(vec[stripe] = 'X';)
+  DEBUG_ONLY(vec[stripe] = 'X');
 
   size_t page_sz = os::vm_page_size();
   uintx pages = size / page_sz;
