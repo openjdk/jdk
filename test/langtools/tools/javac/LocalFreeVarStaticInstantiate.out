@@ -1,0 +1,2 @@
+LocalFreeVarStaticInstantiate.java:16:17: compiler.err.non-static.cant.be.ref: kindname.variable, there
+1 error
