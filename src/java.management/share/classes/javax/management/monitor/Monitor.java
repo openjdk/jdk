@@ -1539,7 +1539,11 @@ public abstract class Monitor
             };
             if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
                 // No SecurityManager permitted:
-                Subject.doAs(s, action); // s is permitted to be null
+                if (s == null) {
+                    action.run();
+                } else {
+                    Subject.doAs(s, action);
+                }
             } else {
                 if (ac == null) {
                     throw new SecurityException("AccessControlContext cannot be null");
