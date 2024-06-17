@@ -24,7 +24,6 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8240281
  * @summary Test which needs to select the memory state of the first load in a load pack in SuperWord::co_locate_pack.
  *

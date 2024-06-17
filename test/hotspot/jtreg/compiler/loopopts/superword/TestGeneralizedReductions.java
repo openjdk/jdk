@@ -27,7 +27,6 @@
  * @summary Test reduction vectorizations that are enabled by performing SLP
  *          reduction analysis on unrolled loops.
  * @library /test/lib /
- * @requires vm.bits == 64
  * @run driver compiler.loopopts.superword.TestGeneralizedReductions
  */
 
@@ -42,7 +41,7 @@ public class TestGeneralizedReductions {
 
     public static void main(String[] args) throws Exception {
         // Fix maximum number of unrolls for test stability.
-        TestFramework.runWithFlags("-XX:LoopMaxUnroll=16");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopMaxUnroll=16");
     }
 
     @Run(test = {"testReductionOnGlobalAccumulator",
@@ -82,7 +81,9 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"}, applyIf = {"SuperWordReductions", "true"},
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        applyIf = {"SuperWordReductions", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnGlobalAccumulator(long[] array) {
         acc = 0;
@@ -93,7 +94,9 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"}, applyIf = {"SuperWordReductions", "true"},
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        applyIf = {"SuperWordReductions", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
         int sum = 0;
@@ -105,7 +108,9 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"}, applyIf = {"SuperWordReductions", "true"},
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        applyIf = {"SuperWordReductions", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnLargePartiallyUnrolledLoop(long[] array) {
         int sum = 0;
@@ -128,7 +133,9 @@ public class TestGeneralizedReductions {
     // If this limitation is overcome in the future, the test case should be
     // turned into a positive one.
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"}, applyIf = {"SuperWordReductions", "true"},
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        applyIf = {"SuperWordReductions", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         failOn = {IRNode.ADD_REDUCTION_VI})
     private static long testReductionOnPartiallyUnrolledLoopWithSwappedInputs(long[] array) {
         int sum = 0;
@@ -142,6 +149,7 @@ public class TestGeneralizedReductions {
     @Test
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
     @IR(applyIfPlatform = {"riscv64", "true"},
