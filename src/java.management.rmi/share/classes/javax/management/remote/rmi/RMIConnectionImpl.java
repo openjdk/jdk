@@ -1300,10 +1300,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             };
             if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
                 // Modern case
-                if (subject == null)
+                if (subject == null) {
                     return action.run();
-                else
+                } else {
                     return Subject.doAs(subject, action);
+                }
             } else {
                 // SM permitted
                 if (acc == null) {
