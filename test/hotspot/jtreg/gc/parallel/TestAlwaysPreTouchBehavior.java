@@ -31,7 +31,7 @@ package gc.parallel;
  * @requires os.family == "linux"
  * @requires os.maxMemory > 2G
  * @library /test/lib
- * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.parallel.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch -XX:+UnlockDiagnosticVMOptions -XX:-UseMadvPopulateWrite gc.parallel.TestAlwaysPreTouchBehavior
  */
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -77,4 +77,3 @@ public class TestAlwaysPreTouchBehavior {
     Asserts.assertGreaterThanOrEqual(rss, committedMemory, "RSS of this process(" + rss + "kb) should be bigger than or equal to committed heap mem(" + committedMemory + "kb)");
    }
 }
-
