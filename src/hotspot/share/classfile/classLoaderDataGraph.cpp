@@ -315,9 +315,11 @@ void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
   }
 }
 
-void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
+void ClassLoaderDataGraph::loaded_classes_do_keepalive(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
+    // Keep the holder alive.
+    (void)cld->holder();
     cld->loaded_classes_do(klass_closure);
   }
 }
