@@ -337,7 +337,7 @@ int MemDetailReporter::report_malloc_sites() {
       continue;
     }
     const NativeCallStack* stack = malloc_site->call_stack();
-    stack->print_on(out);
+    _stackprinter.print_stack(stack);
     MEMFLAGS flag = malloc_site->flag();
     assert(NMTUtil::flag_is_valid(flag) && flag != mtNone,
       "Must have a valid memory type");
@@ -374,7 +374,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
       continue;
     }
     const NativeCallStack* stack = virtual_memory_site->call_stack();
-    stack->print_on(out);
+    _stackprinter.print_stack(stack);
     INDENT_BY(29,
       out->print("(");
       print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
@@ -428,7 +428,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     out->cr();
   } else {
     out->print_cr(" from");
-    INDENT_BY(4, stack->print_on(out);)
+    INDENT_BY(4, _stackprinter.print_stack(stack);)
   }
 
   if (all_committed) {
@@ -869,7 +869,7 @@ void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_
       return;
   }
 
-  stack->print_on(out);
+  _stackprinter.print_stack(stack);
   INDENT_BY(28,
     out->print("(");
     print_malloc_diff(current_size, current_count, early_size, early_count, flags);
@@ -904,7 +904,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
     return;
   }
 
-  stack->print_on(out);
+  _stackprinter.print_stack(stack);
   INDENT_BY(28,
     out->print("(mmap: ");
     print_virtual_memory_diff(current_reserved, current_committed, early_reserved, early_committed);
