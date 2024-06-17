@@ -411,6 +411,12 @@ void VLoopDependencyGraph::PredsIterator::next() {
 
 void VLoopPredicates::compute_predicates() {
   // TODO
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    if (n->is_CFG()) {
+      n->dump();
+    }
+  }
   NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )
 }
 

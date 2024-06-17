@@ -617,6 +617,37 @@ public:
   };
 };
 
+// TODO desc
+// wrap (Bool literal)
+// negate
+// and
+// or
+//
+// Diamond:
+//    true
+// x   -   !x
+//  (x || !x) = true
+//
+// Nested diamond:
+//        true
+//    x          !x
+//    |   (!x && y)   (!x && !y)
+//    |        ... = !x
+//        ... = true
+// -> perfect diamonds only need "&&".
+// -> only need "||" if use goto? could forbid.
+//              true
+//         x           !x
+// (x && y) (x && !y)  !x
+//     |       ((x && !y) || !x)
+//        ... = true
+//
+// What about exits?
+// -> can be just "&&", but if inside branch, then region/phi requires "||".
+//
+// Maybe the DNF (disjunctive normal form, OR of AND) could be best?
+// But what do the papers do?
+
 // Submodule of VLoopAnalyzer.
 // TODO desc
 class VLoopPredicates : public StackObj {
