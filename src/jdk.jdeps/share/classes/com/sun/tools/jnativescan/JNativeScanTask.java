@@ -165,7 +165,7 @@ class JNativeScanTask {
                     restrictedUses.forEach(use -> {
                         switch (use) {
                             case RestrictedUse.NativeMethodDecl(MethodRef nmd) ->
-                                    out.println("    " + nmd + " is a native method declaration");
+                                out.println("    " + nmd + " is a native method declaration");
                             case RestrictedUse.RestrictedMethodRefs(MethodRef referent, Set<MethodRef> referees) -> {
                                 out.println("    " + referent + " references restricted methods:");
                                 referees.forEach(referee -> out.println("      " + referee));
