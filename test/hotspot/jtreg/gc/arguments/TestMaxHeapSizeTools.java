@@ -59,15 +59,10 @@ class TestMaxHeapSizeTools {
   }
 
   public static void checkMinInitialErgonomics(String gcflag) throws Exception {
-    // heap sizing ergonomics use the value NewSize + OldSize as default values
-    // for ergonomics calculation. Retrieve these values.
-    long[] values = new long[2];
-    getNewOldSize(gcflag, values);
-
     // we check cases with values smaller and larger than this default value.
-    long newPlusOldSize = values[0] + values[1];
-    long smallValue = newPlusOldSize / 2;
-    long largeValue = newPlusOldSize * 2;
+    long initialHeapSize = getInitialHeapSize(gcflag);
+    long smallValue = initialHeapSize / 2;
+    long largeValue = initialHeapSize * 2;
     long maxHeapSize = largeValue + (2 * 1024 * 1024);
 
     // -Xms is not set
@@ -114,14 +109,13 @@ class TestMaxHeapSizeTools {
     return (value + alignmentMinusOne) & ~alignmentMinusOne;
   }
 
-  private static void getNewOldSize(String gcflag, long[] values) throws Exception {
+  private static long getInitialHeapSize(String gcflag) throws Exception {
     OutputAnalyzer output = GCArguments.executeTestJava(gcflag,
       "-XX:+PrintFlagsFinal", "-version");
     output.shouldHaveExitValue(0);
 
     String stdout = output.getStdout();
-    values[0] = getFlagValue(" NewSize", stdout);
-    values[1] = getFlagValue(" OldSize", stdout);
+    return getFlagValue(" InitialHeapSize", stdout);
   }
 
   public static void checkGenMaxHeapErgo(String gcflag) throws Exception {

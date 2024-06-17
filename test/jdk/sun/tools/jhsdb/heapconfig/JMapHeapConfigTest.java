@@ -54,7 +54,6 @@ public class JMapHeapConfigTest {
         "MaxHeapSize",
         "NewSize",
         "MaxNewSize",
-        "OldSize",
         "NewRatio",
         "SurvivorRatio",
         "MetaspaceSize",

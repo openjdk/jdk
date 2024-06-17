@@ -63,11 +63,9 @@ class TestGenCollectorPolicy {
       AutoSaveRestore<size_t> FLAG_GUARD(MaxNewSize);
       AutoSaveRestore<size_t> FLAG_GUARD(MinHeapDeltaBytes);
       AutoSaveRestore<size_t> FLAG_GUARD(NewSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(OldSize);
 
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);
-      FLAG_SET_ERGO(OldSize, 4 * M);
       FLAG_SET_ERGO(NewSize, 1 * M);
       FLAG_SET_ERGO(MaxNewSize, 80 * M);
 
@@ -144,14 +142,6 @@ class TestGenCollectorPolicy {
     }
   };
 
-  class SetOldSizeCmd : public UnaryExecutor {
-   public:
-    SetOldSizeCmd(size_t param) : UnaryExecutor(param) { }
-    void execute() {
-      FLAG_SET_CMDLINE(OldSize, param);
-    }
-  };
-
   class SetMaxNewSizeCmd : public BinaryExecutor {
    public:
     SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
@@ -160,49 +150,6 @@ class TestGenCollectorPolicy {
       size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
       FLAG_SET_CMDLINE(MaxNewSize, new_size_value);
-    }
-  };
-
-  class CheckOldMin : public UnaryExecutor {
-   public:
-    CheckOldMin(size_t param) : UnaryExecutor(param) { }
-    void execute() {
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-      ASSERT_LE(MinOldSize, param);
-    }
-  };
-
-  class CheckOldInitial : public Executor {
-   public:
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-
-      size_t expected_old_initial = align_up(InitialHeapSize, heap_alignment)
-              - MaxNewSize;
-
-      ASSERT_EQ(expected_old_initial, OldSize);
-    }
-  };
-
-  class CheckOldInitialMaxNewSize : public BinaryExecutor {
-   public:
-    CheckOldInitialMaxNewSize(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
-              - param1 + param2;
-
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-
-      size_t expected_old_initial = align_up(MaxHeapSize, heap_alignment)
-              - new_size_value;
-
-      ASSERT_EQ(expected_old_initial, OldSize);
     }
   };
 };
@@ -243,30 +190,4 @@ TEST_OTHER_VM(CollectorPolicy, young_cmd) {
   TestGenCollectorPolicy::SetNewSizeCmd setter_large(80 * M);
   TestGenCollectorPolicy::CheckYoungInitial checker_large(80 * M);
   TestGenCollectorPolicy::TestWrapper::test(&setter_large, &checker_large);
-}
-
-// Since a flag has been set with FLAG_SET_CMDLINE it
-// will be treated as it have been set on the command line for
-// the rest of the VM lifetime. This is an irreversible change and
-// could impact other tests so we use TEST_OTHER_VM
-TEST_OTHER_VM(CollectorPolicy, old_cmd) {
-  // If OldSize is set on the command line, it should be used
-  // for both min and initial old size if less than min heap.
-  TestGenCollectorPolicy::SetOldSizeCmd setter(20 * M);
-
-  TestGenCollectorPolicy::CheckOldMin checker_min(20 * M);
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker_min);
-
-  TestGenCollectorPolicy::CheckOldInitial checker_initial;
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker_initial);
-
-  // If MaxNewSize is large, the maximum OldSize will be less than
-  // what's requested on the command line and it should be reset
-  // ergonomically.
-  // We intentionally set MaxNewSize + OldSize > MaxHeapSize
-  TestGenCollectorPolicy::SetOldSizeCmd setter_old_size(30 * M);
-  TestGenCollectorPolicy::SetMaxNewSizeCmd setter_max_new_size(30 * M, 20 * M);
-  TestGenCollectorPolicy::CheckOldInitialMaxNewSize checker_large(30 * M, 20 * M);
-
-  TestGenCollectorPolicy::TestWrapper::test(&setter_old_size, &setter_max_new_size, &checker_large);
 }
