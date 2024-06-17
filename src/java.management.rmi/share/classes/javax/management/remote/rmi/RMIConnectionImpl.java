@@ -1433,9 +1433,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     try {
                         return op.run();
                     } catch (Exception e) {
-                        if (e instanceof RuntimeException)
-                           throw (RuntimeException) e;
-                        throw new PrivilegedActionException(e);
+                        if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                        } else {
+                            throw new PrivilegedActionException(e);
+                        }
                     }
                 } else {
                     return Subject.doAs(subject, op);
@@ -1446,9 +1448,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     try {
                         return op.run();
                     } catch (Exception e) {
-                        if (e instanceof RuntimeException)
-                           throw (RuntimeException) e;
-                        throw new PrivilegedActionException(e);
+                        if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                        } else {
+                            throw new PrivilegedActionException(e);
+                        }
                     }
                 } else {
                     return AccessController.doPrivileged(op, acc);
