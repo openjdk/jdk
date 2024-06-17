@@ -179,7 +179,7 @@ public abstract class Monitor
             new AccessControlContext(
             new ProtectionDomain[] {new ProtectionDomain(null, null)});
     @SuppressWarnings("removal")
-    private volatile AccessControlContext acc;
+    private volatile AccessControlContext acc = noPermissionsACC;
 
     /**
      * Scheduler Service.
