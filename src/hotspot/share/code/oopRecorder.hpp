@@ -250,8 +250,8 @@ class ExternalsRecorder : public CHeapObj<mtCode> {
   Arena  _arena;
   ValueRecorder<address> _externals;
   static ExternalsRecorder* _recorder;
- public:
   ExternalsRecorder();
+ public:
   static void initialize();
   static int find_index(address adr);
   static address at(int index);

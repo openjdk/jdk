@@ -226,6 +226,7 @@ void ExternalsRecorder_init() {
 
 void ExternalsRecorder::initialize() {
   // After Mutex and before CodeCache are initialized
+  assert(_recorder == nullptr, "should initialize only once");
   _recorder = new ExternalsRecorder();
 }
 
