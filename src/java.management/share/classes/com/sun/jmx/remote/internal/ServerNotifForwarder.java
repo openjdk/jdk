@@ -346,7 +346,7 @@ public class ServerNotifForwarder {
     //----------------
     @SuppressWarnings("removal")
     private Subject getSubject() {
-       return Subject.current();
+        return Subject.current();
     }
 
     private void checkState() throws IOException {
