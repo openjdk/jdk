@@ -166,12 +166,6 @@ sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         return str.length >> coder;
     }
 
-    /* Using the deprecated constructor enhances performance */
-    @SuppressWarnings("deprecation")
-    static String asciiBytesToString(byte[] str, int index) {
-        return new String(str, 0, 0, index);
-    }
-
     static String special(int type) {
         return switch (type) {
             case PLUS_ZERO  -> "0.0";

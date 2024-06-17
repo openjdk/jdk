@@ -33,6 +33,8 @@ import static java.lang.Long.*;
 import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
+import sun.nio.cs.ISO_8859_1;
+
 /**
  * This class exposes a method to render a {@code double} as a string.
  */
@@ -130,7 +132,8 @@ public final class DoubleToDecimal extends ToDecimal {
         int pair = LATIN1.toDecimal(str, 0, v, null);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
-            return asciiBytesToString(str, pair & 0xFF);
+            int size = pair & 0xFF;
+            return new String(str, 0, size, ISO_8859_1.INSTANCE);
         }
         return special(type);
     }
