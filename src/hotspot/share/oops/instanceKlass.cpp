@@ -978,6 +978,8 @@ void InstanceKlass::rewrite_class(TRAPS) {
 // This is outside is_rewritten flag. In case of an exception, it can be
 // executed more than once.
 void InstanceKlass::link_methods(TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_ik_link_methods_time());
+
   int len = methods()->length();
   for (int i = len-1; i >= 0; i--) {
     methodHandle m(THREAD, methods()->at(i));
@@ -2555,7 +2557,9 @@ void InstanceKlass::remove_unshareable_info() {
     init_implementor();
   }
 
-  constants()->remove_unshareable_info();
+  // Call remove_unshareable_info() on other objects that belong to this class, except
+  // for constants()->remove_unshareable_info(), which is called in a separate pass in
+  // ArchiveBuilder::make_klasses_shareable(),
 
   for (int i = 0; i < methods()->length(); i++) {
     Method* m = methods()->at(i);

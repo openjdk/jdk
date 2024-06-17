@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,12 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -73,33 +77,52 @@ void ClassPrelinker::dispose() {
   _processed_classes = nullptr;
 }
 
-bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) {
+// Returns true if we CAN PROVE that cp_index will always resolve to
+// the same information at both dump time and run time. This is a
+// necessary (but not sufficient) condition for pre-resolving cp_index
+// during CDS archive assembly.
+bool ClassPrelinker::is_resolution_deterministic(ConstantPool* cp, int cp_index) {
   assert(!is_in_archivebuilder_buffer(cp), "sanity");
-  assert(cp->tag_at(cp_index).is_klass(), "must be resolved");
 
-  Klass* resolved_klass = cp->resolved_klass_at(cp_index);
-  assert(resolved_klass != nullptr, "must be");
+  if (cp->tag_at(cp_index).is_klass()) {
+    // We require cp_index to be already resolved. This is fine for now, are we
+    // currently archive only CP entries that are already resolved.
+    Klass* resolved_klass = cp->resolved_klass_at(cp_index);
+    return resolved_klass != nullptr && is_class_resolution_deterministic(cp->pool_holder(), resolved_klass);
+  } else if (cp->tag_at(cp_index).is_field()) {
+    int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+    if (!cp->tag_at(klass_cp_index).is_klass()) {
+      // Not yet resolved
+      return false;
+    }
+    Klass* k = cp->resolved_klass_at(klass_cp_index);
+    if (!is_class_resolution_deterministic(cp->pool_holder(), k)) {
+      return false;
+    }
 
-  return can_archive_resolved_klass(cp->pool_holder(), resolved_klass);
+    if (!k->is_instance_klass()) {
+      // TODO: support non instance klasses as well.
+      return false;
+    }
+
+    // Here, We don't check if this entry can actually be resolved to a valid Field/Method.
+    // This method should be called by the ConstantPool to check Fields/Methods that
+    // have already been successfully resolved.
+    return true;
+  } else {
+    return false;
+  }
 }
 
-bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass* resolved_klass) {
+bool ClassPrelinker::is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class) {
   assert(!is_in_archivebuilder_buffer(cp_holder), "sanity");
-  assert(!is_in_archivebuilder_buffer(resolved_klass), "sanity");
+  assert(!is_in_archivebuilder_buffer(resolved_class), "sanity");
 
-  if (resolved_klass->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(resolved_klass);
-    if (is_vm_class(ik)) { // These are safe to resolve. See is_vm_class declaration.
-      assert(ik->is_shared_boot_class(), "vmClasses must be loaded by boot loader");
-      if (cp_holder->is_shared_boot_class()) {
-        // For now, do this for boot loader only. Other loaders
-        // must go through ConstantPool::klass_at_impl at runtime
-        // to put this class in their directory.
+  if (resolved_class->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-        // TODO: we can support the platform and app loaders as well, if we
-        // preload the vmClasses into these two loaders during VM bootstrap.
-        return true;
-      }
+    if (!ik->is_shared() && SystemDictionaryShared::is_excluded_class(ik)) {
+      return false;
     }
 
     if (cp_holder->is_subtype_of(ik)) {
@@ -108,20 +131,34 @@ bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass*
       return true;
     }
 
-    // TODO -- allow objArray classes, too
+    if (is_vm_class(ik)) {
+      if (ik->class_loader() != cp_holder->class_loader()) {
+        // At runtime, cp_holder() may not be able to resolve to the same
+        // ik. For example, a different version of ik may be defined in
+        // cp->pool_holder()'s loader using MethodHandles.Lookup.defineClass().
+        return false;
+      } else {
+        return true;
+      }
+    }
+  } else if (resolved_class->is_objArray_klass()) {
+    Klass* elem = ObjArrayKlass::cast(resolved_class)->bottom_klass();
+    if (elem->is_instance_klass()) {
+      return is_class_resolution_deterministic(cp_holder, InstanceKlass::cast(elem));
+    } else if (elem->is_typeArray_klass()) {
+      return true;
+    }
+  } else if (resolved_class->is_typeArray_klass()) {
+    return true;
   }
 
   return false;
 }
 
 void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
-  constantPoolHandle cp(THREAD, ik->constants());
-  if (cp->cache() == nullptr || cp->reference_map() == nullptr) {
-    // The cache may be null if the pool_holder klass fails verification
-    // at dump time due to missing dependencies.
+  if (!ik->is_linked()) {
     return;
   }
-
   bool first_time;
   _processed_classes->put_if_absent(ik, &first_time);
   if (!first_time) {
@@ -129,12 +166,9 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
     return;
   }
 
+  constantPoolHandle cp(THREAD, ik->constants());
   for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
     switch (cp->tag_at(cp_index).value()) {
-    case JVM_CONSTANT_UnresolvedClass:
-      maybe_resolve_class(cp, cp_index, CHECK);
-      break;
-
     case JVM_CONSTANT_String:
       resolve_string(cp, cp_index, CHECK); // may throw OOM when interning strings.
       break;
@@ -142,43 +176,33 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
   }
 }
 
-Klass* ClassPrelinker::find_loaded_class(JavaThread* THREAD, oop class_loader, Symbol* name) {
-  HandleMark hm(THREAD);
-  Handle h_loader(THREAD, class_loader);
-  Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, name,
+// This works only for the boot/platform/app loaders
+Klass* ClassPrelinker::find_loaded_class(Thread* current, oop class_loader, Symbol* name) {
+  HandleMark hm(current);
+  Handle h_loader(current, class_loader);
+  Klass* k = SystemDictionary::find_instance_or_array_klass(current, name,
                                                             h_loader,
                                                             Handle());
   if (k != nullptr) {
     return k;
   }
-  if (class_loader == SystemDictionary::java_system_loader()) {
-    return find_loaded_class(THREAD, SystemDictionary::java_platform_loader(), name);
-  } else if (class_loader == SystemDictionary::java_platform_loader()) {
-    return find_loaded_class(THREAD, nullptr, name);
+  if (h_loader() == SystemDictionary::java_system_loader()) {
+    return find_loaded_class(current, SystemDictionary::java_platform_loader(), name);
+  } else if (h_loader() == SystemDictionary::java_platform_loader()) {
+    return find_loaded_class(current, nullptr, name);
+  } else {
+    assert(h_loader() == nullptr, "This function only works for boot/platform/app loaders %p %p %p",
+           cast_from_oop<address>(h_loader()),
+           cast_from_oop<address>(SystemDictionary::java_system_loader()),
+           cast_from_oop<address>(SystemDictionary::java_platform_loader()));
   }
 
   return nullptr;
 }
 
-Klass* ClassPrelinker::maybe_resolve_class(constantPoolHandle cp, int cp_index, TRAPS) {
-  assert(!is_in_archivebuilder_buffer(cp()), "sanity");
-  InstanceKlass* cp_holder = cp->pool_holder();
-  if (!cp_holder->is_shared_boot_class() &&
-      !cp_holder->is_shared_platform_class() &&
-      !cp_holder->is_shared_app_class()) {
-    // Don't trust custom loaders, as they may not be well-behaved
-    // when resolving classes.
-    return nullptr;
-  }
-
-  Symbol* name = cp->klass_name_at(cp_index);
-  Klass* resolved_klass = find_loaded_class(THREAD, cp_holder->class_loader(), name);
-  if (resolved_klass != nullptr && can_archive_resolved_klass(cp_holder, resolved_klass)) {
-    Klass* k = cp->klass_at(cp_index, CHECK_NULL); // Should fail only with OOM
-    assert(k == resolved_klass, "must be");
-  }
-
-  return resolved_klass;
+Klass* ClassPrelinker::find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index) {
+  Symbol* name = cp->klass_name_at(class_cp_index);
+  return find_loaded_class(current, cp->pool_holder()->class_loader(), name);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -189,6 +213,110 @@ void ClassPrelinker::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) 
   }
 }
 #endif
+
+void ClassPrelinker::preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+    return;
+  }
+
+  JavaThread* THREAD = current;
+  constantPoolHandle cp(THREAD, ik->constants());
+  for (int cp_index = 1; cp_index < cp->length(); cp_index++) {
+    if (cp->tag_at(cp_index).value() == JVM_CONSTANT_UnresolvedClass) {
+      if (preresolve_list != nullptr && preresolve_list->at(cp_index) == false) {
+        // This class was not resolved during trial run. Don't attempt to resolve it. Otherwise
+        // the compiler may generate less efficient code.
+        continue;
+      }
+      if (find_loaded_class(current, cp(), cp_index) == nullptr) {
+        // Do not resolve any class that has not been loaded yet
+        continue;
+      }
+      Klass* resolved_klass = cp->klass_at(cp_index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION; // just ignore
+      } else {
+        log_trace(cds, resolve)("Resolved class  [%3d] %s -> %s", cp_index, ik->external_name(),
+                                resolved_klass->external_name());
+      }
+    }
+  }
+}
+
+void ClassPrelinker::preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
+  JavaThread* THREAD = current;
+  constantPoolHandle cp(THREAD, ik->constants());
+  if (cp->cache() == nullptr) {
+    return;
+  }
+  for (int i = 0; i < ik->methods()->length(); i++) {
+    Method* m = ik->methods()->at(i);
+    BytecodeStream bcs(methodHandle(THREAD, m));
+    while (!bcs.is_last_bytecode()) {
+      bcs.next();
+      Bytecodes::Code raw_bc = bcs.raw_code();
+      switch (raw_bc) {
+      case Bytecodes::_getfield:
+      case Bytecodes::_putfield:
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
+      default:
+        break;
+      }
+    }
+  }
+}
+
+void ClassPrelinker::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
+                                           GrowableArray<bool>* preresolve_list, TRAPS) {
+  methodHandle mh(THREAD, m);
+  constantPoolHandle cp(THREAD, ik->constants());
+  HandleMark hm(THREAD);
+  int cp_index = cp->to_cp_index(raw_index, bc);
+
+  if (cp->is_resolved(raw_index, bc)) {
+    return;
+  }
+
+  if (preresolve_list != nullptr && preresolve_list->at(cp_index) == false) {
+    // This field wasn't resolved during the trial run. Don't attempt to resolve it. Otherwise
+    // the compiler may generate less efficient code.
+    return;
+  }
+
+  int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+  if (find_loaded_class(THREAD, cp(), klass_cp_index) == nullptr) {
+    // Do not resolve any field/methods from a class that has not been loaded yet.
+    return;
+  }
+
+  Klass* resolved_klass = cp->klass_ref_at(raw_index, bc, CHECK);
+
+  switch (bc) {
+  case Bytecodes::_getfield:
+  case Bytecodes::_putfield:
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    break;
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  if (log_is_enabled(Trace, cds, resolve)) {
+    ResourceMark rm(THREAD);
+    bool resolved = cp->is_resolved(raw_index, bc);
+    Symbol* name = cp->name_ref_at(raw_index, bc);
+    Symbol* signature = cp->signature_ref_at(raw_index, bc);
+    log_trace(cds, resolve)("%s %s [%3d] %s -> %s.%s:%s",
+                            (resolved ? "Resolved" : "Failed to resolve"),
+                            Bytecodes::name(bc), cp_index, ik->external_name(),
+                            resolved_klass->external_name(),
+                            name->as_C_string(), signature->as_C_string());
+  }
+}
 
 #ifdef ASSERT
 bool ClassPrelinker::is_in_archivebuilder_buffer(address p) {
