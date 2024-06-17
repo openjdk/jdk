@@ -768,8 +768,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
                     final int        TMODS = TRANSFORM_MODS.get(whichtm);
                     clb.withMethod(TNAME, methodDesc(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
-                        mb.withFlags((TMODS & ACC_PPP) | ACC_FINAL)
-                          .with(ExceptionsAttribute.ofSymbols(CD_Throwable))
+                        mb.with(ExceptionsAttribute.ofSymbols(CD_Throwable))
                           .withCode(cob -> {
                             // return a call to the corresponding "transform helper", something like this:
                             //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
@@ -781,9 +780,10 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             List<Var> tfields = new ArrayList<>(fields);
                             // mix them up and load them for the transform helper:
                             List<Var> helperArgs = speciesData.deriveTransformHelperArguments(transformMethods.get(whichtm), whichtm, targs, tfields);
-                            List<Class<?>> helperTypes = new ArrayList<>(helperArgs.size());
-                            for (Var ha : helperArgs) {
-                                helperTypes.add(ha.basicType.basicTypeClass());
+                            ClassDesc[] helperTypes = new ClassDesc[helperArgs.size()];
+                            for (int hi = 0; hi < helperTypes.length; hi++) {
+                                Var ha = helperArgs.get(hi);
+                                helperTypes[hi] = ha.basicType.basicTypeWrapper().classDescriptor();
                                 if (ha.isInHeap()) {
                                     assert(tfields.contains(ha));
                                     cob.aload(0);
@@ -796,11 +796,9 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                             // jump into the helper (which is probably a factory method)
                             final Class<?> rtype = TTYPE.returnType();
-                            final BasicType rbt = BasicType.basicType(rtype);
-                            MethodType invokeBasicType = MethodType.methodType(rbt.basicTypeClass(), helperTypes);
-                            cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(invokeBasicType));
-                            if (rbt == BasicType.L_TYPE) {
-                                cob.checkcast(classDesc(rtype))
+                            if (!rtype.isPrimitive()) {
+                                cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDescImpl.ofValidated(CD_Object, helperTypes))
+                                   .checkcast(classDesc(rtype))
                                    .areturn();
                             } else {
                                 throw newInternalError("NYI: transform of type "+rtype);

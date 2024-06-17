@@ -70,8 +70,8 @@ class InvokerBytecodeGenerator {
     private static final ClassDesc CD_MethodHandleImpl = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl;");
     private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_LambdaForm_Name = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
+    private static final ClassDesc CD_LoopClauses = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
     private static final ClassDesc CD_Object_array  = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
-    private static final ClassDesc CD_LoopClauses_array = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
     private static final ClassDesc CD_MethodHandle_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/invoke/MethodHandle;");
     private static final ClassDesc CD_MethodHandle_array2 = ReferenceClassDescImpl.ofValidated("[[Ljava/lang/invoke/MethodHandle;");
 
@@ -1325,7 +1325,7 @@ class InvokerBytecodeGenerator {
 
         // PREINIT:
         emitPushArgument(cob, MethodHandleImpl.LoopClauses.class, invoker.arguments[1]);
-        cob.getfield(CD_LoopClauses_array, "clauses", CD_MethodHandle_array2);
+        cob.getfield(CD_LoopClauses, "clauses", CD_MethodHandle_array2);
         emitStoreInsn(cob, TypeKind.ReferenceType, clauseDataIndex);
 
         // INIT:

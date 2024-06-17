@@ -48,10 +48,15 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.MethodRefEntry;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
@@ -84,7 +89,7 @@ import sun.invoke.util.Wrapper;
     private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
+    private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // Static builders to avoid lambdas
     record FieldFlags(int flags) implements Consumer<FieldBuilder> {
@@ -470,32 +475,31 @@ import sun.invoke.util.Wrapper;
                 }));
     }
 
+    private static final Consumer<MethodBuilder> NOT_SERIALIZABLE_METHOD = new Consumer<MethodBuilder>() {
+        @Override
+        public void accept(MethodBuilder mb) {
+            ConstantPoolBuilder cp = mb.constantPool();
+            ClassEntry nseCE = cp.classEntry(CD_NotSerializableException);
+            mb.with(ExceptionsAttribute.of(nseCE))
+              .withCode(new Consumer<CodeBuilder>(){
+                    @Override
+                    public void accept(CodeBuilder cob) {
+                        cob.new_(nseCE)
+                           .dup()
+                           .ldc("Non-serializable lambda")
+                           .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
+                           .athrow();
+                    }
+              });
+        }
+    };
+
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
     private void generateSerializationHostileMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_void_ObjectOutputStream, ACC_PRIVATE + ACC_FINAL,
-            new MethodBody(new Consumer<CodeBuilder>() {
-                @Override
-                public void accept(CodeBuilder cob) {
-                    cob.new_(CD_NotSerializableException)
-                       .dup()
-                       .ldc("Non-serializable lambda")
-                       .invokespecial(CD_NotSerializableException, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
-                       .athrow();
-                }
-            }));
-        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_void_ObjectInputStream, ACC_PRIVATE + ACC_FINAL,
-            new MethodBody(new Consumer<CodeBuilder>() {
-                @Override
-                public void accept(CodeBuilder cob) {
-                    cob.new_(CD_NotSerializableException)
-                       .dup()
-                       .ldc("Non-serializable lambda")
-                       .invokespecial(CD_NotSerializableException, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
-                       .athrow();
-                }
-            }));
+        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_void_ObjectOutputStream, ACC_PRIVATE + ACC_FINAL, NOT_SERIALIZABLE_METHOD);
+        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_void_ObjectInputStream, ACC_PRIVATE + ACC_FINAL, NOT_SERIALIZABLE_METHOD);
     }
 
     /**
@@ -563,8 +567,7 @@ import sun.invoke.util.Wrapper;
     }
 
     static ClassDesc implClassDesc(Class<?> cls) {
-        return cls.isHidden() ? ReferenceClassDescImpl.ofValidatedBinaryName(cls.getName())
-                              : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+        return cls.isHidden() ? null : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 
     static ClassDesc classDesc(Class<?> cls) {
