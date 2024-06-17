@@ -52,7 +52,7 @@ import java.util.function.Predicate;
  */
 
 public class TABTestONFCExit {
-    private static JTable table = null;
+    private static JTable table;
     private static JFileChooser fc;
     private static JFrame frame;
     private static Robot robot;
