@@ -203,7 +203,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     out->cr();
   }
 
-  ClassLoaderDataGraph::loaded_cld_do(&cl); // collect data and optionally print
+  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&cl); // collect data and optionally print
 
   // Print totals, broken up by space type.
   if (print_by_spacetype) {

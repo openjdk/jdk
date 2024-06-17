@@ -278,7 +278,7 @@ void VM_RedefineClasses::doit() {
   // Have to do this after all classes are redefined and all methods that
   // are redefined are marked as old.
   AdjustAndCleanMetadata adjust_and_clean_metadata(current);
-  ClassLoaderDataGraph::classes_do(&adjust_and_clean_metadata);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&adjust_and_clean_metadata);
 
   // JSR-292 support
   if (_any_class_has_resolved_methods) {
@@ -297,7 +297,7 @@ void VM_RedefineClasses::doit() {
 #endif
     log_trace(redefine, class, obsolete, metadata)("calling check_class");
     CheckClass check_class(current);
-    ClassLoaderDataGraph::classes_do(&check_class);
+    ClassLoaderDataGraph::classes_do_no_keepalive(&check_class);
 #ifdef PRODUCT
   }
 #endif

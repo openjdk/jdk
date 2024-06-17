@@ -225,7 +225,7 @@ WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
   WBIsKlassAliveClosure closure(sym);
-  ClassLoaderDataGraph::classes_do(&closure);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&closure);
 
   // Return the count of alive classes with this name.
   return closure.count();

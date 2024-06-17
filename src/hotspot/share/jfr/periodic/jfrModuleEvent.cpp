@@ -126,12 +126,12 @@ void JfrModuleEvent::generate_module_dependency_events() {
   invocation_time = JfrTicks::now();
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
-  ClassLoaderDataGraph::modules_do(&module_dependency_event_callback);
+  ClassLoaderDataGraph::modules_do_no_keepalive(&module_dependency_event_callback);
 }
 
 void JfrModuleEvent::generate_module_export_events() {
   invocation_time = JfrTicks::now();
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
-  ClassLoaderDataGraph::packages_do(&module_export_event_callback);
+  ClassLoaderDataGraph::packages_do_no_keepalive(&module_export_event_callback);
 }

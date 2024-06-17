@@ -202,7 +202,7 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
     MutexLocker lock(ClassLoaderDataGraph_lock);
     MutexLocker lock2(ClassListFile_lock, Mutex::_no_safepoint_check_flag);
     DumpClassListCLDClosure collect_classes(&stream);
-    ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
+    ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&collect_classes);
   } else {
     THROW_MSG(vmSymbols::java_io_IOException(), "Failed to open file");
   }
@@ -630,7 +630,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     // Therefore, we need to first collect all the CLDs, and then link their classes after
     // releasing the lock.
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
+    ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&collect_cld);
   }
 
   while (true) {

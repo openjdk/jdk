@@ -269,7 +269,7 @@ public:
   }
 };
 
-void ClassLoaderDataGraph::loaded_cld_do(CLDClosure* cl) {
+void ClassLoaderDataGraph::loaded_cld_do_no_keepalive(CLDClosure* cl) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
     cl->do_cld(cld);
@@ -278,21 +278,21 @@ void ClassLoaderDataGraph::loaded_cld_do(CLDClosure* cl) {
 
 // These functions assume that the caller has locked the ClassLoaderDataGraph_lock
 // if they are not calling the function from a safepoint.
-void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
+void ClassLoaderDataGraph::classes_do_no_keepalive(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
     cld->classes_do(klass_closure);
   }
 }
 
-void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
+void ClassLoaderDataGraph::classes_do_no_keepalive(void f(Klass* const)) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
     cld->classes_do(f);
   }
 }
 
-void ClassLoaderDataGraph::methods_do(void f(Method*)) {
+void ClassLoaderDataGraph::methods_do_no_keepalive(void f(Method*)) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
     cld->methods_do(f);
@@ -309,7 +309,7 @@ void ClassLoaderDataGraph::modules_do_keepalive(void f(ModuleEntry*)) {
   }
 }
 
-void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
+void ClassLoaderDataGraph::modules_do_no_keepalive(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
@@ -317,7 +317,7 @@ void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   }
 }
 
-void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
+void ClassLoaderDataGraph::packages_do_no_keepalive(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {

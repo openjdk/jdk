@@ -148,7 +148,7 @@ void ClassPrinter::print_flags_help(outputStream* os) {
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
   KlassPrintClosure closure(class_name_pattern, nullptr, nullptr, true, flags, os);
-  ClassLoaderDataGraph::classes_do(&closure);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&closure);
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
@@ -174,5 +174,5 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
 
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             false, flags | PRINT_METHOD_NAME, os);
-  ClassLoaderDataGraph::classes_do(&closure);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&closure);
 }

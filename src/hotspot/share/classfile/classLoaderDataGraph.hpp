@@ -71,18 +71,18 @@ class ClassLoaderDataGraph : public AllStatic {
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
   // Iteration through CLDG not by GC.
-  static void loaded_cld_do(CLDClosure* cl);
+  static void loaded_cld_do_no_keepalive(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes
   // for redefinition.  These classes are removed during the next class unloading.
   // Walking the ClassLoaderDataGraph also includes hidden classes.
-  static void classes_do(KlassClosure* klass_closure);
-  static void classes_do(void f(Klass* const));
-  static void methods_do(void f(Method*));
+  static void classes_do_no_keepalive(KlassClosure* klass_closure);
+  static void classes_do_no_keepalive(void f(Klass* const));
+  static void methods_do_no_keepalive(void f(Method*));
   static void modules_do_keepalive(void f(ModuleEntry*));
-  static void modules_do(void f(ModuleEntry*));
-  static void packages_do(void f(PackageEntry*));
+  static void modules_do_no_keepalive(void f(ModuleEntry*));
+  static void packages_do_no_keepalive(void f(PackageEntry*));
   static void loaded_classes_do_keepalive(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();

@@ -987,7 +987,7 @@ public:
 
   virtual void doit() {
     PrintClassClosure closure(_out, _verbose);
-    ClassLoaderDataGraph::classes_do(&closure);
+    ClassLoaderDataGraph::classes_do_no_keepalive(&closure);
   }
 };
 

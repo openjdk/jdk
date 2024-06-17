@@ -2465,7 +2465,7 @@ void VM_HeapDumper::work(uint worker_id) {
     // write HPROF_LOAD_CLASS records
     {
       LockedClassesDo locked_load_classes(&do_load_class);
-      ClassLoaderDataGraph::classes_do(&locked_load_classes);
+      ClassLoaderDataGraph::classes_do_no_keepalive(&locked_load_classes);
     }
 
     // write HPROF_FRAME and HPROF_TRACE records
@@ -2488,7 +2488,7 @@ void VM_HeapDumper::work(uint worker_id) {
       TraceTime timer("Dump non-objects (part 2)", TRACETIME_LOG(Info, heapdump));
       // Writes HPROF_GC_CLASS_DUMP records
       ClassDumper class_dumper(&segment_writer);
-      ClassLoaderDataGraph::classes_do(&class_dumper);
+      ClassLoaderDataGraph::classes_do_no_keepalive(&class_dumper);
 
       // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
       dump_threads(&segment_writer);

@@ -636,7 +636,7 @@ static void reinitialize_itables() {
 
   MutexLocker mcld(ClassLoaderDataGraph_lock);
   ReinitTableClosure cl;
-  ClassLoaderDataGraph::classes_do(&cl);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&cl);
 }
 
 bool Universe::on_page_boundary(void* addr) {

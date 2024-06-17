@@ -511,7 +511,7 @@ static void do_klass_on_clear(Klass* klass) {
 }
 
 static void do_all_klasses() {
-  ClassLoaderDataGraph::classes_do(&do_klass_on_clear);
+  ClassLoaderDataGraph::classes_do_no_keepalive(&do_klass_on_clear);
 }
 
 // KlassWriter.
@@ -638,7 +638,7 @@ static void do_package(PackageEntry* pkg) {
 }
 
 static void do_all_packages() {
-  ClassLoaderDataGraph::packages_do(&do_package);
+  ClassLoaderDataGraph::packages_do_no_keepalive(&do_package);
 }
 
 static void do_all_packages(PackageWriter& pw) {
@@ -745,7 +745,7 @@ static void do_module(ModuleEntry* mod) {
 }
 
 static void do_all_modules() {
-  ClassLoaderDataGraph::modules_do(&do_module);
+  ClassLoaderDataGraph::modules_do_no_keepalive(&do_module);
 }
 
 static void do_all_modules(ModuleWriter& mw) {
@@ -868,7 +868,7 @@ class CLDCallback : public CLDClosure {
 
 static void do_all_clds() {
   CLDCallback cld_cb;
-  ClassLoaderDataGraph::loaded_cld_do(&cld_cb);
+  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&cld_cb);
 }
 
 static void do_all_clds(CldWriter& cldw) {

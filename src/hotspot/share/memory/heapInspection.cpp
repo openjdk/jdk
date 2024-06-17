@@ -180,7 +180,7 @@ KlassInfoTable::KlassInfoTable(bool add_all_classes) {
     }
     if (add_all_classes) {
       AllClassesFinder finder(this);
-      ClassLoaderDataGraph::classes_do(&finder);
+      ClassLoaderDataGraph::classes_do_no_keepalive(&finder);
     }
   }
 }

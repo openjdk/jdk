@@ -125,7 +125,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 # undef ADD_EXCL
 
-  ClassLoaderDataGraph::classes_do(this);
+  ClassLoaderDataGraph::classes_do_no_keepalive(this);
 }
 
 CDSHeapVerifier::~CDSHeapVerifier() {

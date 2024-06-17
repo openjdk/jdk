@@ -213,7 +213,7 @@ void ClassListWriter::write_resolved_constants() {
   MutexLocker lock2(ClassListFile_lock, Mutex::_no_safepoint_check_flag);
 
   WriteResolveConstantsCLDClosure closure;
-  ClassLoaderDataGraph::loaded_cld_do(&closure);
+  ClassLoaderDataGraph::loaded_cld_do_no_keepalive(&closure);
 }
 
 void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
