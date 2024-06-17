@@ -626,6 +626,7 @@ jdk_security_manual_no_input = \
     com/sun/security/sasl/gsskerb/AuthOnly.java \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
     com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
+    security/infra/javax/net/ssl/HttpsURLConnectionTest.java \
     sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
     sun/security/provider/PolicyParser/PrincipalExpansionError.java \
     sun/security/smartcardio/TestChannel.java \
