@@ -53,7 +53,11 @@ public class UndefinedAccessFlagTest {
     final ToolBox toolBox = new ToolBox();
 
     enum TestLocation {
-        CLASS, FIELD, METHOD, INNER_CLASS
+        NONE(false), CLASS, FIELD, METHOD, INNER_CLASS(false);
+
+        final boolean fails;
+        TestLocation() { this(true); }
+        TestLocation(boolean fails) { this.fails = fails; }
     }
 
     @ParameterizedTest
@@ -99,10 +103,22 @@ public class UndefinedAccessFlagTest {
         var lines = new JavapTask(toolBox)
             .classes("transformed.class")
             .options("-c", "-p", "-v")
-            .run(location == TestLocation.INNER_CLASS ? Task.Expect.SUCCESS : Task.Expect.FAIL)
+            .run(location.fails ? Task.Expect.FAIL : Task.Expect.SUCCESS)
             .writeAll()
             .getOutputLines(Task.OutputKind.DIRECT);
-        assertTrue(lines.stream().anyMatch(l -> l.contains("Unmatched bit position")), () -> String.join("\n", lines));
+
+        // No termination when access flag error happens
+        assertTrue(lines.stream().anyMatch(l -> l.contains("java.lang.String field;")));
+        assertTrue(lines.stream().anyMatch(l -> l.contains("UndefinedAccessFlagTest$SampleInnerClass();")));
+        assertTrue(lines.stream().anyMatch(l -> l.contains("void method();")));
+        assertTrue(lines.stream().anyMatch(l -> l.contains("SampleInnerClass=class UndefinedAccessFlagTest$SampleInnerClass of class UndefinedAccessFlagTest")));
+
+        // Remove non-error lines
+        assertTrue(lines.removeIf(st -> !st.startsWith("Error:")));
+        // Desired locations has errors
+        assertTrue(location == TestLocation.NONE || !lines.isEmpty());
+        // Access Flag errors only
+        assertTrue(lines.stream().allMatch(l -> l.contains("Access Flags:")), () -> String.join("\n", lines));
     }
 
     static class SampleInnerClass {

@@ -81,7 +81,7 @@ public class BasicWriter {
             return AccessFlag.maskToAccessFlags(mask, location);
         } catch (IllegalArgumentException ex) {
             mask &= LOCATION_MASKS.get(location);
-            report(ex);
+            report("Access Flags: " + ex.getMessage());
             return AccessFlag.maskToAccessFlags(mask, location);
         }
     }
