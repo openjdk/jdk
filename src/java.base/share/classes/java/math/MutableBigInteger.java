@@ -1999,7 +1999,7 @@ class MutableBigInteger {
             if (!rem.isZero()) {
                 final int sqrtEnd = sqrt.offset + sqrt.intLen, s0Len = (halfShift + 31) >> 5;
                 int[] s0Mag = Arrays.copyOfRange(sqrt.value, sqrtEnd - s0Len, sqrtEnd);
-                if (s0Mag[0] != 0 && (halfShift & 31) != 0)
+                if ((halfShift & 31) != 0)
                     s0Mag[0] &= (1 << halfShift) - 1;
 
                 BigInteger s0 = new BigInteger(1, s0Mag);
