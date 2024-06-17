@@ -58,6 +58,7 @@ struct LL {
       return;
     }
     alloc.at(new_element).next = current;
+    current = new_element;
   };
 
   E pop() {
@@ -102,6 +103,7 @@ struct LL2 {
       return;
     }
     alloc.at(new_element).next = current;
+    current = new_element;
   };
 
   E pop() {
@@ -132,4 +134,15 @@ TEST_VM_F(IndexedFreeListAllocatorTest, TestLinkedLists) {
     LL2<int, IndexedFreeListAllocator> list;
     test_with_list(list);
   }
+}
+
+TEST_VM_F(IndexedFreeListAllocatorTest, FreeingShouldReuseMemory) {
+  using A = IndexedFreeListAllocator<int, mtTest>;
+  A alloc;
+  A::I i = alloc.allocate(1);
+  int* x = &alloc.at(i);
+  alloc.free(i);
+  i = alloc.allocate(1);
+  int* y = &alloc.at(i);
+  EXPECT_EQ(x, y);
 }
