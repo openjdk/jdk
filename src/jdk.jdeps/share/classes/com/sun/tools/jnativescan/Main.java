@@ -61,7 +61,7 @@ public class Main {
     }
 
     private void printVersion() {
-        out.println("jscan " + Runtime.version());
+        out.println("jnativescan " + Runtime.version());
     }
 
     public int run(String[] args) {
