@@ -150,8 +150,6 @@ class NativeCall: private NativeInstruction {
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
-  static void insert(address code_pos, address entry);
-  static void replace_mt_safe(address instr_addr, address code_buffer);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.

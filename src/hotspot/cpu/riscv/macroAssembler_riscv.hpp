@@ -595,7 +595,7 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
-  void load_link_jump(const address source, Register temp);
+  void load_link_jump(const address source, Register temp = t0);
   void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.

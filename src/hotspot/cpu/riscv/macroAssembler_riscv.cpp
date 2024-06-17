@@ -980,7 +980,6 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert(temp != noreg && temp != x0, "expecting a register");
-  assert(temp == x5, "expecting a register");
   assert_cond(source != nullptr);
   int64_t distance = source - pc();
   assert(is_simm32(distance), "Must be");
@@ -3784,7 +3783,7 @@ address MacroAssembler::load_call(Address entry) {
   }
 #endif
   relocate(entry.rspec(), [&] {
-    load_link_jump(target, t0);
+    load_link_jump(target);
   });
 
   postcond(pc() != badAddress);

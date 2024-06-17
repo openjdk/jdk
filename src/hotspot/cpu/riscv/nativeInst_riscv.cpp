@@ -57,14 +57,14 @@ class NativeShortCallTrampolineStub : public NativeInstruction {
     trampoline_data_offset = 3 * NativeInstruction::instruction_size // auipc + ld + jr
   };
 
-  address destination(nmethod *nm = nullptr) const;
+  address destination() const;
   void set_destination(address new_destination);
 
   static bool is_at(address addr);
   static NativeShortCallTrampolineStub* at(address addr);
 };
 
-address NativeShortCallTrampolineStub::destination(nmethod *nm) const {
+address NativeShortCallTrampolineStub::destination() const {
   return ptr_at(trampoline_data_offset);
 }
 
@@ -108,10 +108,6 @@ NativeShortCallTrampolineStub* NativeShortCallTrampolineStub::at(address addr) {
 // NativeShortCall
 class NativeShortCall: private NativeInstruction {
  public:
-  // Creation
-  friend NativeCall* nativeCall_at(address addr);
-  friend NativeCall* nativeCall_before(address return_address);
-
   enum RISCV_specific_constants {
     return_address_offset       =    1 * NativeInstruction::instruction_size // jal
   };
@@ -138,8 +134,6 @@ class NativeShortCall: private NativeInstruction {
   static NativeShortCall* at(address addr);
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
-  static void insert(address code_pos, address entry);
-  static void replace_mt_safe(address instr_addr, address code_buffer);
 };
 
 address NativeShortCall::destination() const {
@@ -224,20 +218,7 @@ bool NativeShortCall::set_destination_mt_safe(address dest, bool assert_lock) {
   address call_addr = instruction_address();
   assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
-  // Patch the constant in the call's trampoline stub.
-  address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != nullptr) {
-    assert (!NativeShortCallTrampolineStub::is_at(dest), "chained trampolines");
-    NativeShortCallTrampolineStub::at(trampoline_stub_addr)->set_destination(dest);
-  }
-
-  // Patch the call.
-  if (Assembler::reachable_from_branch_at(call_addr, dest)) {
-    set_destination(dest);
-  } else {
-    assert (trampoline_stub_addr != nullptr, "we need a trampoline");
-    set_destination(trampoline_stub_addr);
-  }
+  reloc_set_destination(dest);
 
   ICache::invalidate_range(call_addr, instruction_size);
   return true;
@@ -277,8 +258,7 @@ address NativeShortCall::get_trampoline() {
   }
 
   if (code != nullptr && code->is_nmethod()) {
-    address ret = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
-    return ret;
+    return trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
   }
 
   return nullptr;
@@ -312,22 +292,10 @@ bool NativeShortCall::is_call_before(address return_address) {
   return NativeShortCall::is_at(return_address - instruction_size);
 }
 
-void NativeShortCall::insert(address code_pos, address entry) {
-  Unimplemented();
-}
-
-void NativeShortCall::replace_mt_safe(address instr_addr, address code_buffer) {
-  Unimplemented();
-}
-
 //-----------------------------------------------------------------------------
 // NativeFarCall
 class NativeFarCall: public NativeInstruction {
  public:
-  // Creation
-  friend NativeCall* nativeCall_at(address addr);
-  friend NativeCall* nativeCall_before(address return_address);
-
   enum RISCV_specific_constants {
     return_address_offset       =    3 * NativeInstruction::instruction_size, // auipc + ld + jalr
   };
@@ -355,8 +323,6 @@ class NativeFarCall: public NativeInstruction {
   static NativeFarCall* at(address addr);
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
-  static void insert(address code_pos, address entry);
-  static void replace_mt_safe(address instr_addr, address code_buffer);
 };
 
 address NativeFarCall::destination() const {
@@ -379,7 +345,11 @@ address NativeFarCall::reloc_destination(address orig_address) {
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
-  address stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+
+  address stub_addr = nullptr;
+  if (code != nullptr && code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  }
 
   if (stub_addr != nullptr) {
     stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
@@ -428,7 +398,11 @@ bool NativeFarCall::reloc_set_destination(address dest) {
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
-  address stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+
+  address stub_addr = nullptr;
+  if (code != nullptr && code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  }
 
   if (stub_addr != nullptr) {
     MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
@@ -487,11 +461,6 @@ bool NativeFarCall::is_at(address addr) {
 
 bool NativeFarCall::is_call_before(address return_address) {
   return NativeFarCall::is_at(return_address - return_address_offset);
-}
-
-void NativeFarCall::replace_mt_safe(address instr_addr, address code_buffer) {
-  assert(NativeFarCall::is_at((address)instr_addr), "unexpected code at call site");
-  Unimplemented();
 }
 
 //-----------------------------------------------------------------------------
@@ -590,14 +559,6 @@ bool NativeCall::is_call_before(address return_address) {
     return NativeShortCall::is_call_before(return_address);
   } else {
     return NativeFarCall::is_call_before(return_address);
-  }
-}
-
-void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
-  if (UseTrampolines) {
-    NativeShortCall::replace_mt_safe(instr_addr, code_buffer);
-  } else {
-    NativeFarCall::replace_mt_safe(instr_addr, code_buffer);
   }
 }
 
