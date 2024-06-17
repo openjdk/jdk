@@ -21,13 +21,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
 
-    .hidden SafeFetch32_impl
-    .hidden _SafeFetch32_fault
-    .hidden _SafeFetch32_continuation
+#include "defs.S.inc"
 
     .text
 
@@ -36,12 +31,11 @@
     #  8(%esp) : default value
     #  4(%esp) : crash address
     #  0(%esp) : return pc
-    .type SafeFetch32_impl,@function
-SafeFetch32_impl:
+DECLARE_FUNC(SafeFetch32_impl):
     movl 4(%esp),%ecx         # load address from stack
-_SafeFetch32_fault:
+DECLARE_FUNC(_SafeFetch32_fault):
     movl (%ecx), %eax         # load target value, may fault
     ret
-_SafeFetch32_continuation:
+DECLARE_FUNC(_SafeFetch32_continuation):
     movl 8(%esp),%eax         # load default value from stack
     ret

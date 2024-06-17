@@ -27,9 +27,8 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.concurrent.CyclicBarrier;
@@ -106,22 +105,19 @@ public class TestAlwaysPreTouchStacks {
 
         } else {
             boolean noPreTouch = args.length == 1 && args[0].equals("noPreTouch");
-            List<String> options = new LinkedList<>(Arrays.asList(
+            ArrayList<String> vmArgs = new ArrayList<>();
+            Collections.addAll(vmArgs,
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-Xmx100M",
-                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics"));
+                    "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics");
             if (!noPreTouch){
-                options.add("-XX:+AlwaysPreTouchStacks");
+                vmArgs.add("-XX:+AlwaysPreTouchStacks");
             }
-
-            if (isLinux()) {
-                options.add( "-XX:-UseMadvPopulateWrite");
+            if (System.getProperty("os.name").contains("Linux")) {
+                vmArgs.add("-XX:-UseMadvPopulateWrite");
             }
-
-            options.add("TestAlwaysPreTouchStacks");
-            options.add("test");
-
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
+            Collections.addAll(vmArgs, "TestAlwaysPreTouchStacks", "test");
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmArgs);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.reportDiagnosticSummary();
 

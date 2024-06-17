@@ -387,83 +387,92 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_FAIL() \
-    do { \
-        if ((*env)->ExceptionOccurred(env)) { \
-            (*env)->ExceptionClear(env); \
-            return 0; \
-        } \
-    } while (JNI_FALSE)
-
-
-#define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
-    do { \
-        if ((*env)->ExceptionOccurred(env)) { \
-            (*env)->ExceptionClear(env); \
-            return 0; \
-        } else if (mainObject == NULL) { \
-            return 0; \
-        } \
-    } while (JNI_FALSE)
-
 /*
- * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ * Invokes static main(String[]) method if found.
+ * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
+ * a pending exception if the method threw.
  */
 int
 invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                   "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_FAIL();
+    if (mainID == NULL) {
+        // static main(String[]) not found
+        return 0;
+    }
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-    return 1;
+    return 1; // method was invoked
 }
 
 /*
- * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetMethodID and returns 0 (false).
+ * Invokes instance main(String[]) method if found.
+ * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
+ * a pending exception if the method threw.
  */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_FAIL();
+    if (constructor == NULL) {
+        // main class' no-arg constructor not found
+        return 0;
+    }
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_FAIL(mainObject);
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                 "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_FAIL();
+    if (mainObject == NULL) {
+        // main class instance couldn't be constructed
+        return 0;
+    }
+    jmethodID mainID =
+        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
+    if (mainID == NULL) {
+        // instance method main(String[]) method not found
+        return 0;
+    }
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-    return 1;
- }
+    return 1; // method was invoked
+}
 
 /*
- * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ * Invokes no-arg static main() method if found.
+ * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
+ * a pending exception if the method threw.
  */
 int
 invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "()V");
-    CHECK_EXCEPTION_FAIL();
+    if (mainID == NULL) {
+        // static main() method couldn't be located
+        return 0;
+    }
     (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-    return 1;
+    return 1; // method was invoked
 }
 
 /*
- * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetMethodID and returns 0 (false).
+ * Invokes no-arg instance main() method if found.
+ * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
+ * a pending exception if the method threw.
  */
 int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_FAIL();
+    if (constructor == NULL) {
+        // main class' no-arg constructor not found
+        return 0;
+    }
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    if (mainObject == NULL) {
+        // couldn't create instance of main class
+        return 0;
+    }
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "()V");
-    CHECK_EXCEPTION_FAIL();
+    if (mainID == NULL) {
+        // instance method main() not found
+        return 0;
+    }
     (*env)->CallVoidMethod(env, mainObject, mainID);
-    return 1;
+    return 1; // method was invoked
 }
 
 int
@@ -483,6 +492,11 @@ JavaMain(void* _args)
     jobjectArray mainArgs;
     int ret = 0;
     jlong start = 0, end = 0;
+    jclass helperClass;
+    jfieldID isStaticMainField;
+    jboolean isStaticMain;
+    jfieldID noArgMainField;
+    jboolean noArgMain;
 
     RegisterThread();
 
@@ -620,20 +634,48 @@ JavaMain(void* _args)
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
-    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeStaticMainWithoutArgs(env, mainClass) &&
-        !invokeInstanceMainWithoutArgs(env, mainClass)) {
-        ret = 1;
-        LEAVE();
+
+    helperClass = GetLauncherHelperClass(env);
+    isStaticMainField = (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
+    CHECK_EXCEPTION_NULL_LEAVE(isStaticMainField);
+    isStaticMain = (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
+
+    noArgMainField = (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
+    CHECK_EXCEPTION_NULL_LEAVE(noArgMainField);
+    noArgMain = (*env)->GetStaticBooleanField(env, helperClass, noArgMainField);
+
+    if (isStaticMain) {
+        if (noArgMain) {
+            ret = invokeStaticMainWithoutArgs(env, mainClass);
+        } else {
+            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs);
+        }
+    } else {
+        if (noArgMain) {
+            ret = invokeInstanceMainWithoutArgs(env, mainClass);
+        } else {
+            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
+        }
+    }
+    if (!ret) {
+        // An appropriate main method couldn't be located, check and report
+        // any exception and LEAVE()
+        CHECK_EXCEPTION_LEAVE(1);
     }
 
     /*
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
      */
-    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
-
+    if (ret && (*env)->ExceptionOccurred(env) == NULL) {
+        // main method was invoked and no exception was thrown from it,
+        // return success.
+        ret = 0;
+    } else {
+        // Either the main method couldn't be located or an exception occurred
+        // in the invoked main method, return failure.
+        ret = 1;
+    }
     LEAVE();
 }
 

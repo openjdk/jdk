@@ -1512,7 +1512,7 @@ else
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -lpthread
   BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 
-  BUILD_HOTSPOT_JTREG_EXCLUDE += libNativeException.c
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c
 endif
 
 ifeq ($(ASAN_ENABLED), true)

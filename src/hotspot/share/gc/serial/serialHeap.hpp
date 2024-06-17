@@ -208,11 +208,6 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Update the gc statistics for each generation.
-  void update_gc_stats(Generation* current_generation, bool full) {
-    _old_gen->update_gc_stats(current_generation, full);
-  }
-
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
@@ -293,9 +288,6 @@ private:
 
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab);
-
-  // Save the tops of the spaces in all generations
-  void record_gen_tops_before_GC() PRODUCT_RETURN;
 
 private:
   MemoryPool* _eden_pool;

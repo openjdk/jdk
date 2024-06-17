@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,5 +26,6 @@
 /**
  * Provides a pluggable service provider interface, which allows the HTTP server
  * implementation to be replaced with other implementations.
+ * @since 1.6
  */
 package com.sun.net.httpserver.spi;
