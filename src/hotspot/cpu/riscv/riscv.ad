@@ -1914,6 +1914,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       return UsePopCountInstruction;
 
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:
@@ -1921,6 +1923,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+
     case Op_FmaF:
     case Op_FmaD:
     case Op_FmaVF:
@@ -7855,34 +7858,6 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
 // ============================================================================
 // BSWAP Instructions
-
-instruct bytes_reverse_int(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesI src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 13);
-  format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int" %}
-
-  ins_encode %{
-    __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_long(iRegLNoSp dst, iRegL src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesL src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 29);
-  format %{ "revb  $dst, $src\t#@bytes_reverse_long" %}
-
-  ins_encode %{
-    __ revb(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
 
 instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesUS src));
