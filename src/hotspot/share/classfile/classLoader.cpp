@@ -78,6 +78,7 @@
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
 // Entry point in java.dll for path canonicalization
@@ -118,8 +119,39 @@ PerfCounter*    ClassLoader::_perf_define_appclass_time = nullptr;
 PerfCounter*    ClassLoader::_perf_define_appclass_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_time = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_time = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_count = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_count = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
 PerfCounter*    ClassLoader::_perf_secondary_hash_time = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_time = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_count = nullptr;
+
+void ClassLoader::print_counters(outputStream *st) {
+  // The counters are only active if the logging is enabled, but
+  // we print to the passed in outputStream as requested.
+  if (log_is_enabled(Info, perf, class, link)) {
+    st->print_cr("ClassLoader:");
+    st->print_cr("  clinit:               " JLONG_FORMAT "ms / " JLONG_FORMAT " events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
+    st->print_cr("  link methods:         " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
+    st->print_cr("  method adapters:      " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
+    st->print_cr("  resolve...");
+    st->print_cr("    invokedynamic:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
+    st->print_cr("    invokehandle:    " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
+    st->print_cr("    CP_MethodHandle: " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
+    st->print_cr("    CP_MethodType:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
+    st->cr();
+  }
+}
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = nullptr;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = nullptr;
@@ -1336,9 +1368,25 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFTICKCOUNTER(_perf_define_appclass_selftime, SUN_CLS, "defineAppClassTime.self");
     NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
-
     NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
     NEWPERFTICKCOUNTER(_perf_secondary_hash_time, SUN_CLS, "secondarySuperHashTime");
+
+    if (log_is_enabled(Info, perf, class, link)) {
+      NEWPERFTICKCOUNTER(_perf_ik_link_methods_time, SUN_CLS, "linkMethodsTime");
+      NEWPERFTICKCOUNTER(_perf_method_adapters_time, SUN_CLS, "makeAdaptersTime");
+      NEWPERFEVENTCOUNTER(_perf_ik_link_methods_count, SUN_CLS, "linkMethodsCount");
+      NEWPERFEVENTCOUNTER(_perf_method_adapters_count, SUN_CLS, "makeAdaptersCount");
+
+      NEWPERFTICKCOUNTER(_perf_resolve_indy_time, SUN_CLS, "resolve_invokedynamic_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_invokehandle_time, SUN_CLS, "resolve_invokehandle_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_mh_time, SUN_CLS, "resolve_MethodHandle_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_mt_time, SUN_CLS, "resolve_MethodType_time");
+
+      NEWPERFEVENTCOUNTER(_perf_resolve_indy_count, SUN_CLS, "resolve_invokedynamic_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_invokehandle_count, SUN_CLS, "resolve_invokehandle_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_mh_count, SUN_CLS, "resolve_MethodHandle_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_mt_count, SUN_CLS, "resolve_MethodType_count");
+    }
   }
 
   // lookup java library entry points

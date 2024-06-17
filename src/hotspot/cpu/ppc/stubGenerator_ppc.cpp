@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Save LR/CR and copy exception pc (LR) into R4_ARG2.
-    __ save_LR_CR(R4_ARG2);
+    __ save_LR(R4_ARG2);
     __ push_frame_reg_args(0, R0);
     // Find exception handler.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
@@ -479,7 +479,7 @@ class StubGenerator: public StubCodeGenerator {
     // Copy handler's address.
     __ mtctr(R3_RET);
     __ pop_frame();
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     // Set up the arguments for the exception handler:
     //  - R3_ARG1: exception oop
@@ -550,7 +550,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    __ save_LR_CR(R11_scratch1);
+    __ save_LR(R11_scratch1);
 
     // Push a frame.
     __ push_frame_reg_args(0, R11_scratch1);
@@ -604,7 +604,7 @@ class StubGenerator: public StubCodeGenerator {
     // Pop frame.
     __ pop_frame();
 
-    __ restore_LR_CR(R11_scratch1);
+    __ restore_LR(R11_scratch1);
 
     __ load_const(R11_scratch1, StubRoutines::forward_exception_entry());
     __ mtctr(R11_scratch1);
@@ -3571,14 +3571,14 @@ class StubGenerator: public StubCodeGenerator {
     // and pass that one instead.
     __ addi(R3_ARG1, R1_SP, _abi0(lr));
 
-    __ save_LR_CR(R0);
+    __ save_LR(R0);
     __ push_frame_reg_args(nbytes_save, R0);
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
     __ mr(R0, R3_RET);
 
     __ pop_frame();
-    __ restore_LR_CR(R3_RET /* used as tmp register */);
+    __ restore_LR(R3_RET /* used as tmp register */);
     __ restore_volatile_gprs(R1_SP, -nbytes_save, true);
 
     __ cmpdi(CCR0, R0, 0);
@@ -3597,7 +3597,7 @@ class StubGenerator: public StubCodeGenerator {
     // Restore link register.  Required as the 'wrong method stub' needs the caller's frame
     // to properly deoptimize this method (e.g. by re-resolving the call site for compiled methods).
     // This method's prologue is aborted.
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     __ bctr();
     return stub_address;
@@ -4531,6 +4531,46 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // VM_LITTLE_ENDIAN
 
+address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = R4_ARG2,
+      r_array_base   = R3_ARG1,
+      r_array_length = R7_ARG5,
+      r_array_index  = R6_ARG4,
+      r_sub_klass    = R5_ARG3,
+      r_bitmap       = R11_scratch1,
+      result         = R8_ARG6;
+
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, result, super_klass_index);
+    __ blr();
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = R4_ARG2,
+      r_array_base   = R3_ARG1,
+      temp1          = R7_ARG5,
+      r_array_index  = R6_ARG4,
+      r_bitmap       = R11_scratch1,
+      result         = R8_ARG6;
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, result, temp1);
+    __ blr();
+
+    return start;
+  }
+
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
     if (!Continuations::enabled()) return nullptr;
 
@@ -4806,6 +4846,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
   }

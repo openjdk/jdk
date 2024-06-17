@@ -571,7 +571,7 @@ import sun.invoke.util.Wrapper;
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
                                  : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 

@@ -199,7 +199,7 @@ class TypeConvertingMethodAdapter {
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
              : cls == Object.class ? CD_Object
              : cls == String.class ? CD_String
              : ReferenceClassDescImpl.ofValidated(cls.descriptorString());

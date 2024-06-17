@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,8 +121,7 @@ public:
                     int               entry_bci,
                     AbstractCompiler* compiler,
                     bool              has_unsafe_access,
-                    bool              has_wide_vectors,
-                    RTMState          rtm_state);
+                    bool              has_wide_vectors);
 
   void install_stub(const char* stub_name);
 

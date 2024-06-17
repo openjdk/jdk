@@ -1684,7 +1684,7 @@ class InvokerBytecodeGenerator {
 
     static ClassDesc classDesc(Class<?> cls) {
 //        assert(VerifyAccess.isTypeVisible(cls, Object.class)) : cls.getName();
-        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
              : cls == MethodHandle.class ? CD_MethodHandle
              : cls == DirectMethodHandle.class ? CD_DirectMethodHandle
              : cls == Object.class ? CD_Object

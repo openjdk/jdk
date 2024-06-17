@@ -783,7 +783,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             ClassDesc[] helperTypes = new ClassDesc[helperArgs.size()];
                             for (int hi = 0; hi < helperTypes.length; hi++) {
                                 Var ha = helperArgs.get(hi);
-                                helperTypes[hi] = ha.basicType.basicTypeWrapper().classDescriptor();
+                                helperTypes[hi] = ha.basicType.basicTypeWrapper().basicClassDescriptor();
                                 if (ha.isInHeap()) {
                                     assert(tfields.contains(ha));
                                     cob.aload(0);
@@ -946,7 +946,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).classDescriptor()
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
              : cls == Object.class ? CD_Object
              : cls == MethodType.class ? CD_MethodType
              : cls == LambdaForm.class ? CD_LambdaForm
