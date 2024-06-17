@@ -3153,8 +3153,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   BLOCK_COMMENT("} check_klass_subtype");
 }
 
-// scans count pointer sized words at [addr] for occurrence of value,
-// generic (count must be >0)
+// scans count pointer sized words at [r_addr] for occurrence of r_value,
+// generic (r_count must be >0)
 // iff found: CC eq, r_scratch == 0
 void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch) {
   NearLabel L_loop, L_exit;
