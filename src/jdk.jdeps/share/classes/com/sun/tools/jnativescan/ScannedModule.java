@@ -24,22 +24,7 @@
  */
 package com.sun.tools.jnativescan;
 
-import java.io.Serial;
+import java.nio.file.Path;
 
-// Exception used in case of fatal error that is reasonably expected and handled.
-public class JNativeScanFatalError extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    public JNativeScanFatalError(String message) {
-        super(message);
-    }
-
-    public JNativeScanFatalError(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public JNativeScanFatalError(Throwable cause) {
-        super(cause);
-    }
+record ScannedModule(Path path, String moduleName) {
 }

@@ -77,14 +77,13 @@ class JNativeScanTask {
             modulesToScan.add(new ScannedModule(path, m.name()));
         }
 
-        RestrictedMethodFinder finder = RestrictedMethodFinder.create(version);
-        Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods = new HashMap<>();
-        for (ScannedModule mod : modulesToScan) {
-            Path jar = mod.path();
-            Map<ClassDesc, List<RestrictedUse>> restrictedMethods = finder.findRestrictedMethodReferences(jar);
-            if (!restrictedMethods.isEmpty()) {
-                allRestrictedMethods.put(mod, restrictedMethods);
-            }
+        Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
+        try(ClassResolver classesToScan = ClassResolver.forScannedModules(modulesToScan, version);
+                ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
+            RestrictedMethodFinder finder = RestrictedMethodFinder.create(classesToScan, systemClassResolver);
+            allRestrictedMethods = finder.findAll();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         switch (action) {
@@ -160,8 +159,7 @@ class JNativeScanTask {
                 out.println("  <no restricted methods>");
             } else {
                 perClass.forEach((classDesc, restrictedUses) -> {
-                    String packagePrefix = classDesc.packageName().isEmpty() ? "" : classDesc.packageName() + ".";
-                    out.println("  " + packagePrefix + classDesc.displayName() + ":");
+                    out.println("  " + qualName(classDesc) + ":");
                     restrictedUses.forEach(use -> {
                         switch (use) {
                             case RestrictedUse.NativeMethodDecl(MethodRef nmd) ->
@@ -177,8 +175,6 @@ class JNativeScanTask {
         });
     }
 
-    private record ScannedModule(Path path, String moduleName) {}
-
     private static void checkRegularJar(Path path) throws JNativeScanFatalError {
         if (!(Files.exists(path) && Files.isRegularFile(path) && path.toString().endsWith(".jar"))) {
             throw new JNativeScanFatalError("File does not exist, or does not appear to be a regular jar file: " + path);
@@ -188,5 +184,10 @@ class JNativeScanTask {
     public enum Action {
         DUMP_ALL,
         PRINT
+    }
+
+    public static String qualName(ClassDesc desc) {
+        String packagePrefix = desc.packageName().isEmpty() ? "" : desc.packageName() + ".";
+        return packagePrefix + desc.displayName();
     }
 }

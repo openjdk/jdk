@@ -24,15 +24,11 @@
  */
 package com.sun.tools.jnativescan;
 
-import com.sun.tools.javac.platform.PlatformDescription;
-import com.sun.tools.javac.platform.PlatformProvider;
+import com.sun.tools.jnativescan.RestrictedUse.NativeMethodDecl;
+import com.sun.tools.jnativescan.RestrictedUse.RestrictedMethodRefs;
 
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
@@ -42,11 +38,7 @@ import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.jar.JarFile;
-import java.util.zip.ZipFile;
 
 class RestrictedMethodFinder {
 
@@ -56,37 +48,29 @@ class RestrictedMethodFinder {
     private static final List<String> RESTRICTED_MODULES = List.of("java.base");
 
     private final Map<MethodRef, Boolean> CACHE = new HashMap<>();
-    private final Runtime.Version version;
-    private final JavaFileManager platformFileManager;
+    private final ClassResolver classesToScan;
+    private final ClassResolver systemClassResolver;
 
-    private RestrictedMethodFinder(Runtime.Version version, JavaFileManager platformFileManager) {
-        this.version = version;
-        this.platformFileManager = platformFileManager;
+    private RestrictedMethodFinder(ClassResolver classesToScan, ClassResolver systemClassResolver) {
+        this.classesToScan = classesToScan;
+        this.systemClassResolver = systemClassResolver;
     }
 
-    public static RestrictedMethodFinder create(Runtime.Version version) throws JNativeScanFatalError {
-        String platformName = String.valueOf(version.feature());
-        PlatformProvider platformProvider = ServiceLoader.load(PlatformProvider.class).findFirst().orElseThrow();
-        PlatformDescription platform;
-        try {
-            platform = platformProvider.getPlatform(platformName, null);
-        } catch (PlatformProvider.PlatformNotSupported e) {
-            throw new JNativeScanFatalError("Release: " + platformName + " not supported", e);
-        }
-        JavaFileManager fm = platform.getFileManager();
-        return new RestrictedMethodFinder(version, fm);
+    public static RestrictedMethodFinder create(ClassResolver classesToScan, ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+        return new RestrictedMethodFinder(classesToScan, systemClassResolver);
     }
 
-    public Map<ClassDesc, List<RestrictedUse>> findRestrictedMethodReferences(Path jar) {
-        Map<ClassDesc, List<RestrictedUse>> restrictedMethods = new HashMap<>();
-        forEachClassFile(jar, model -> {
+    public Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
+        Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> restrictedMethods = new HashMap<>();
+        classesToScan.forEach((_, info) -> {
+            ClassModel classModel = info.model();
             List<RestrictedUse> perClass = new ArrayList<>();
-            model.methods().forEach(method -> {
-                if (method.flags().has(AccessFlag.NATIVE)) {
-                    perClass.add(new RestrictedUse.NativeMethodDecl(MethodRef.ofModel(method)));
+            classModel.methods().forEach(methodModel -> {
+                if (methodModel.flags().has(AccessFlag.NATIVE)) {
+                    perClass.add(new NativeMethodDecl(MethodRef.ofModel(methodModel)));
                 } else {
                     Set<MethodRef> perMethod = new HashSet<>();
-                    method.code()
+                    methodModel.code()
                         .ifPresent(code -> {
                             code.forEach(e -> {
                                 switch (e) {
@@ -101,18 +85,21 @@ class RestrictedMethodFinder {
                             });
                         });
                     if (!perMethod.isEmpty()) {
-                        perClass.add(new RestrictedUse.RestrictedMethodRefs(MethodRef.ofModel(method), Set.copyOf(perMethod)));
+                        perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel),
+                                Set.copyOf(perMethod)));
                     }
                 }
             });
             if (!perClass.isEmpty()) {
-                restrictedMethods.put(model.thisClass().asSymbol(), perClass);
+                ScannedModule scannedModule = new ScannedModule(info.jarPath(), info.moduleName());
+                restrictedMethods.computeIfAbsent(scannedModule, _ -> new HashMap<>())
+                        .put(classModel.thisClass().asSymbol(), perClass);
             }
         });
         return restrictedMethods;
     }
 
-    private boolean isRestrictedMethod(MemberRefEntry method) {
+    private boolean isRestrictedMethod(MemberRefEntry method) throws JNativeScanFatalError {
         return switch (method) {
             case MethodRefEntry mre ->
                     isRestrictedMethod(mre.owner().asSymbol(), mre.name().stringValue(), mre.typeSymbol());
@@ -122,38 +109,35 @@ class RestrictedMethodFinder {
         };
     }
 
-    private JavaFileObject findFileForSystemClass(String qualName) {
-        for (String moduleName : RESTRICTED_MODULES) {
-            try {
-                JavaFileManager.Location loc = platformFileManager.getLocationForModule(StandardLocation.SYSTEM_MODULES, moduleName);
-                JavaFileObject jfo = platformFileManager.getJavaFileForInput(loc, qualName, JavaFileObject.Kind.CLASS);
-                if (jfo != null) {
-                    return jfo;
+    private boolean isRestrictedMethod(ClassDesc owner, String name, MethodTypeDesc type) throws JNativeScanFatalError {
+        try {
+            return CACHE.computeIfAbsent(new MethodRef(owner, name, type), methodRef -> {
+                if (methodRef.owner().isArray()) {
+                    // no restricted methods in arrays atm, and we can't look them up since they have no class file
+                    return false;
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+                Optional<ClassResolver.Info> info = systemClassResolver.lookup(methodRef.owner());
+                if (!info.isPresent()) {
+                    return false;
+                }
+                ClassModel classModel = info.get().model();
+                Optional<MethodModel> methodModel = findMethod(classModel, methodRef.name(), methodRef.type());
+                if (!methodModel.isPresent()) {
+                    // If we are here, the method was referenced through a subclass of the class containing the actual
+                    // method declaration. We could implement a method resolver (that needs to be version aware
+                    // as well) to find the method model of the declaration, but it's not really worth it.
+                    // None of the restricted methods (atm) are exposed through more than 1 public type, so it's not
+                    // possible for user code to reference them through a subclass. The only exception is if the user
+                    // implements SymbolLookup and then did something like 'MySymbolLookup.libraryLookup(...)'.
+                    // But we don't care, so for now just return false here
+                    return false;
+                }
+
+                return hasRestrictedAnnotation(methodModel.get());
+            });
+        } catch (IllegalStateException e) {
+            throw ((JNativeScanFatalError) e.getCause());
         }
-        return null; // not found
-    }
-
-    private boolean isRestrictedMethod(ClassDesc owner, String name, MethodTypeDesc type) {
-        return CACHE.computeIfAbsent(new MethodRef(owner, name, type), methodRef -> {
-            String qualName = methodRef.owner().packageName() + '.' + methodRef.owner().displayName();
-            JavaFileObject jfo = findFileForSystemClass(qualName);
-            if (jfo == null) {
-                return false;
-            }
-
-            ClassModel classModel;
-            try {
-                classModel = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            MethodModel method = findMethod(classModel, methodRef.name(), methodRef.type());
-            return hasRestrictedAnnotation(method);
-        });
     }
 
     private static boolean hasRestrictedAnnotation(MethodModel method) {
@@ -163,28 +147,10 @@ class RestrictedMethodFinder {
                 .orElse(false);
     }
 
-    private static MethodModel findMethod(ClassModel classModel, String name, MethodTypeDesc type) {
+    private static Optional<MethodModel> findMethod(ClassModel classModel, String name, MethodTypeDesc type) {
         return classModel.methods().stream()
                 .filter(m -> m.methodName().stringValue().equals(name)
                         && m.methodType().stringValue().equals(type.descriptorString()))
-                .findFirst()
-                .orElseThrow();
-    }
-
-    private void forEachClassFile(Path jarFile, Consumer<ClassModel> action) {
-        try (JarFile jf = new JarFile(jarFile.toFile(), false, ZipFile.OPEN_READ, version)) {
-            jf.versionedStream().forEach(je -> {
-                if (je.getName().endsWith(".class")) {
-                    try {
-                        ClassModel model = ClassFile.of().parse(jf.getInputStream(je).readAllBytes());
-                        action.accept(model);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+                .findFirst();
     }
 }

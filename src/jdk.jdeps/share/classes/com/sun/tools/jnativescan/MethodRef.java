@@ -25,6 +25,8 @@
 package com.sun.tools.jnativescan;
 
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -42,7 +44,6 @@ record MethodRef(ClassDesc owner, String name, MethodTypeDesc type) {
 
     @Override
     public String toString() {
-        String packagePrefix = owner.packageName().isEmpty() ? "" : owner.packageName() + ".";
-        return packagePrefix + owner.displayName() + "::" + name + type.displayDescriptor();
+        return JNativeScanTask.qualName(owner) + "::" + name + type.displayDescriptor();
     }
 }
