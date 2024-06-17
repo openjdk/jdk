@@ -110,7 +110,8 @@ public class Main {
                 .withRequiredArg();
         OptionSpec<Void> printNativeAccessOpt = parser.accepts(
                 "print-native-access",
-                "print a comma separated list of modules that can be passed directly to --enable-native-access");
+                "print a comma separated list of modules that may perform native access operations." +
+                        "ALL-UNNAMED is used to indicate unnamed modules.");
 
         OptionSet optionSet;
         try {
@@ -120,6 +121,10 @@ public class Main {
         }
 
         if (optionSet.has(helpOpt)) {
+            out.println("""
+                The jnativescan tool can be used to find methods that may access native functionality when
+                run. This includes methods that call restricted methods, and 'native' method declarations.
+                """);
             try {
                 parser.printHelpOn(out);
                 return;
