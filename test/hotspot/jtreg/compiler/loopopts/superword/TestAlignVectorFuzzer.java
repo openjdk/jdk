@@ -27,7 +27,6 @@
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires vm.compiler2.enabled
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:LoopUnrollLimit=250
@@ -41,7 +40,6 @@
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires vm.compiler2.enabled
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
@@ -56,8 +54,6 @@
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires vm.compiler2.enabled
- * @requires vm.bits == 64
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
@@ -73,7 +69,6 @@
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires vm.compiler2.enabled
  * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "code/compressedStream.hpp"
 #include "oops/method.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -37,6 +38,7 @@ bool ResolvedIndyEntry::check_no_old_or_obsolete_entry() {
   }
 }
 
+#if INCLUDE_CDS
 void ResolvedIndyEntry::remove_unshareable_info() {
   u2 saved_resolved_references_index = _resolved_references_index;
   u2 saved_cpool_index = _cpool_index;
@@ -44,6 +46,12 @@ void ResolvedIndyEntry::remove_unshareable_info() {
   _resolved_references_index = saved_resolved_references_index;
   _cpool_index = saved_cpool_index;
 }
+
+void ResolvedIndyEntry::mark_and_relocate() {
+  assert(is_resolved(), "must be");
+  ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_method);
+}
+#endif
 
 void ResolvedIndyEntry::print_on(outputStream* st) const {
   st->print_cr("Resolved InvokeDynamic Info:");
