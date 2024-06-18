@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164130
+ * @bug 8164130 8334332
  * @summary test IOException handling
  * @library ../../lib /test/lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
