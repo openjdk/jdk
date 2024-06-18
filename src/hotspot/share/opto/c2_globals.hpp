@@ -68,7 +68,7 @@
           "Stress inlining through method handle linkers")                  \
                                                                             \
   product(bool, StressBailout, false, DIAGNOSTIC,                           \
-         "Perform bailouts randomly at C2 failing() checks")                \
+          "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
   product(uint, StressBailoutProbability, 100000, DIAGNOSTIC,               \
           "Stress bailout every n:th time on average")                      \
