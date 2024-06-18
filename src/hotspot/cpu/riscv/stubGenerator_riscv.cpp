@@ -5042,7 +5042,7 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void adler32_process_bytes(Register buff, Register s1, Register s2, Register count,
+  void adler32_process_bytes(Register buff, Register s1, Register s2, Register temp3,
     VectorRegister vtable, VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister *vs2acc,
     Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2,
     int step, Assembler::LMUL LMUL) {
@@ -5066,9 +5066,9 @@ class StubGenerator: public StubCodeGenerator {
     //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
     //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
 
-    __ mv(count, step);
+    __ mv(temp3, step);
     // Load data
-    __ vsetvli(temp0, count, Assembler::e8, LMUL);
+    __ vsetvli(temp0, temp3, Assembler::e8, LMUL);
     __ vle8_v(vbytes, buff);
     __ addi(buff, buff, step);
 
@@ -5092,7 +5092,7 @@ class StubGenerator: public StubCodeGenerator {
       vs2acc_successor = vs2acc[0]->successor();
 
     // Summing up calculated results for s2_new
-    __ vsetvli(temp0, count, Assembler::e16, LMUL);
+    __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
     // Upper bound for reduction sum:
     // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
     // 1. Need to do vector-widening reduction sum
@@ -5108,7 +5108,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vmv_x_s(temp0, vs1acc);
     __ add(s1, s1, temp0);
     // s2_new
-    __ vsetvli(temp0, count, Assembler::e32, Assembler::m1);
+    __ vsetvli(temp0, temp3, Assembler::e32, Assembler::m1);
     __ vmv_x_s(temp1, vtemp1);
     __ add(s2, s2, temp1);
     if (MaxVectorSize == 16) {
@@ -5150,7 +5150,7 @@ class StubGenerator: public StubCodeGenerator {
     Register temp0 = c_rarg4;
     Register temp1 = c_rarg5;
     Register temp2 = c_rarg6;
-    Register step = x28; // t3
+    Register temp3 = x28; // t3
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
@@ -5247,17 +5247,17 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
-    adler32_process_bytes(buff, s1, s2, step, vtable_64, vzero,
+    adler32_process_bytes(buff, s1, s2, temp3, vtable_64, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
       step_64, Assembler::m4);
     __ sub(count, count, step_64);
     __ bgtz(count, L_nmax_loop);
 
     // There are three iterations left to do
-    adler32_process_bytes(buff, s1, s2, step, vtable_32, vzero,
+    adler32_process_bytes(buff, s1, s2, temp3, vtable_32, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
       step_32, Assembler::m2);
-    adler32_process_bytes(buff, s1, s2, step, vtable_16, vzero,
+    adler32_process_bytes(buff, s1, s2, temp3, vtable_16, vzero,
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
       step_16, Assembler::m1);
 
