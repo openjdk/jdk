@@ -5042,10 +5042,10 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void adler32_process_bytes(Register buff, Register s1, Register s2, Register temp3,
-    VectorRegister vtable, VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister *vs2acc,
-    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2,
-    int step, Assembler::LMUL LMUL) {
+  void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
+    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister *vs2acc,
+    Register temp0, Register temp1, Register temp2,  Register temp3,
+    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL LMUL) {
 
     assert((LMUL == Assembler::m4 && step == 64) ||
            (LMUL == Assembler::m2 && step == 32) ||
@@ -5249,19 +5249,19 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(count, count, 32);
 
   __ bind(L_nmax_loop);
-    adler32_process_bytes(buff, s1, s2, temp3, vtable_64, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
-      step_64, Assembler::m4);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
     __ sub(count, count, step_64);
     __ bgtz(count, L_nmax_loop);
 
     // There are three iterations left to do
-    adler32_process_bytes(buff, s1, s2, temp3, vtable_32, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
-      step_32, Assembler::m2);
-    adler32_process_bytes(buff, s1, s2, temp3, vtable_16, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
-      step_16, Assembler::m1);
+    adler32_process_bytes(buff, s1, s2, vtable_32, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_32, Assembler::m2);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3, 
+      vtemp1, vtemp2, step_16, Assembler::m1);
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
@@ -5280,9 +5280,9 @@ class StubGenerator: public StubCodeGenerator {
     __ blt(len, count, L_by16_loop);
 
   __ bind(L_by16_loop_unroll);
-    adler32_process_bytes(buff, s1, s2, count, vtable_64, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
-      step_64, Assembler::m4);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, count,
+      vtemp1, vtemp2, step_64, Assembler::m4);
     __ sub(len, len, step_64);
     // By now the count should still be 64
     __ bge(len, count, L_by16_loop_unroll);
@@ -5290,9 +5290,9 @@ class StubGenerator: public StubCodeGenerator {
     __ blt(len, count, L_by1);
 
   __ bind(L_by16_loop);
-    adler32_process_bytes(buff, s1, s2, count, vtable_16, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, vtemp1, vtemp2,
-      step_16, Assembler::m1);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, count,
+      vtemp1, vtemp2, step_16, Assembler::m1);
     __ sub(len, len, step_16);
     __ bgez(len, L_by16_loop);
 
