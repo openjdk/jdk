@@ -661,7 +661,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
     char after_key = line[key_len];
     if (strncmp(line, key, key_len) == 0
-          && isspace(after_key) != 0
+          && isspace((unsigned char) after_key) != 0
           && after_key != '\n') {
       // Skip key, skip space
       const char* value_substr = line + key_len + 1;
