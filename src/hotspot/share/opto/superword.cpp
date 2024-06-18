@@ -2755,11 +2755,11 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 
   // Reduction: first input is internal connection.
   if (is_marked_reduction(use) && u_idx == 1) {
-#ifdef ASSERT
-      for (uint i = 1; i < u_pk->size(); i++) {
-        assert(u_pk->at(i - 1) == u_pk->at(i)->in(1), "internal connection");
+    for (uint i = 1; i < u_pk->size(); i++) {
+      if (u_pk->at(i - 1) != u_pk->at(i)->in(1)) {
+        return false; // not internally connected
       }
-#endif
+    }
     return true;
   }
 
