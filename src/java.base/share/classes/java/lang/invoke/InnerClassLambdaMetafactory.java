@@ -475,7 +475,12 @@ import sun.invoke.util.Wrapper;
                 }));
     }
 
-    private static final Consumer<MethodBuilder> NOT_SERIALIZABLE_METHOD = new Consumer<MethodBuilder>() {
+    private static class SerializationHostileMethod implements Consumer<MethodBuilder> {
+
+        static final SerializationHostileMethod INSTANCE = new SerializationHostileMethod();
+
+        private SerializationHostileMethod() {}
+
         @Override
         public void accept(MethodBuilder mb) {
             ConstantPoolBuilder cp = mb.constantPool();
@@ -492,14 +497,14 @@ import sun.invoke.util.Wrapper;
                     }
               });
         }
-    };
+    }
 
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
     private void generateSerializationHostileMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_void_ObjectOutputStream, ACC_PRIVATE + ACC_FINAL, NOT_SERIALIZABLE_METHOD);
-        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_void_ObjectInputStream, ACC_PRIVATE + ACC_FINAL, NOT_SERIALIZABLE_METHOD);
+        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_void_ObjectOutputStream, ACC_PRIVATE + ACC_FINAL, SerializationHostileMethod.INSTANCE);
+        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_void_ObjectInputStream, ACC_PRIVATE + ACC_FINAL, SerializationHostileMethod.INSTANCE);
     }
 
     /**
