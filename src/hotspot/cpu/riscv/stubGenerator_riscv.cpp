@@ -5043,7 +5043,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
-    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister *vs2acc,
+    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
     Register temp0, Register temp1, Register temp2,  Register temp3,
     VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL LMUL) {
 
@@ -5080,7 +5080,7 @@ class StubGenerator: public StubCodeGenerator {
     // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
     __ vwredsumu_vs(vs1acc, vbytes, vzero);
     // Multiplication for s2_new
-    __ vwmulu_vv(vs2acc[0], vtable, vbytes);
+    __ vwmulu_vv(vs2acc, vtable, vbytes);
 
     // s2 = s2 + s1 * log2(step)
     __ slli(temp1, s1, exact_log2(step));
@@ -5090,7 +5090,7 @@ class StubGenerator: public StubCodeGenerator {
     if (MaxVectorSize > 16) {
       __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
     } else {
-      // Half of vector-widening multiplication result is in successor of vs2acc[0]
+      // Half of vector-widening multiplication result is in successor of vs2acc
       // group for vlen == 16, in which case we need to double vector register
       // group width in order to reduction sum all of them
       Assembler::LMUL LMULx2 = (LMUL == Assembler::m1) ? Assembler::m2 :
@@ -5101,7 +5101,7 @@ class StubGenerator: public StubCodeGenerator {
     // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
     // 1. Need to do vector-widening reduction sum
     // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
-    __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
+    __ vwredsumu_vs(vtemp1, vs2acc, vzero);
 
     // Extracting results for:
     // s1_new
@@ -5151,9 +5151,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
     VectorRegister vs1acc = v12; // group: v12, v13, v14, v15
-    VectorRegister vs2acc[] = {
-      v16, v18, v20, v22
-    };
+    VectorRegister vs2acc = v16; // group: v16, v17, v18, v19, v20, v21, v22, v23
     VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
     VectorRegister vtable_32 = v4; // group: v4, v5
     VectorRegister vtable_16 = v30;
