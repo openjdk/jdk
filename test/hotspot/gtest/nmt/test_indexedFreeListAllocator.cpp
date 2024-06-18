@@ -26,6 +26,8 @@
 #include "unittest.hpp"
 #include "nmt/indexedFreeListAllocator.hpp"
 
+using A = IndexedFreeListAllocator<int, mtTest>;
+
 class IndexedFreeListAllocatorTest  : public testing::Test {
 };
 
@@ -137,7 +139,6 @@ TEST_VM_F(IndexedFreeListAllocatorTest, TestLinkedLists) {
 }
 
 TEST_VM_F(IndexedFreeListAllocatorTest, FreeingShouldReuseMemory) {
-  using A = IndexedFreeListAllocator<int, mtTest>;
   A alloc;
   A::I i = alloc.allocate(1);
   int* x = &alloc.at(i);
@@ -145,4 +146,15 @@ TEST_VM_F(IndexedFreeListAllocatorTest, FreeingShouldReuseMemory) {
   i = alloc.allocate(1);
   int* y = &alloc.at(i);
   EXPECT_EQ(x, y);
+}
+
+TEST_VM_F(IndexedFreeListAllocatorTest, FreeingInTheMiddleWorks) {
+  A alloc;
+  A::I i0 = alloc.allocate(0);
+  A::I i1 = alloc.allocate(0);
+  A::I i2 = alloc.allocate(0);
+  int* p1 = &alloc.at(i1);
+  alloc.free(i1);
+  A::I i3 = alloc.allocate(0);
+  EXPECT_EQ(p1, &alloc.at(i3));
 }
