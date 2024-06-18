@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
         attributedStrings = new ArrayList<>();
     }
 
-    public void formatted(Format.Field attr, Object value, int start, int end,
-                          StringBuffer buffer) {
+    public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start, int end,
+                          T buffer) {
         if (start != end) {
             if (start < size) {
                 // Adjust attributes of existing runs
@@ -76,14 +76,14 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
             if (size < start) {
                 // Pad attributes
                 attributedStrings.add(new AttributedString(
-                                          buffer.substring(size, start)));
+                                          buffer.subSequence(size, start).toString()));
                 size = start;
             }
             if (size < end) {
                 // Add new string
                 int aStart = Math.max(start, size);
                 AttributedString string = new AttributedString(
-                                   buffer.substring(aStart, end));
+                                   buffer.subSequence(aStart, end).toString());
 
                 string.addAttribute(attr, value);
                 attributedStrings.add(string);
@@ -92,8 +92,8 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
         }
     }
 
-    public void formatted(int fieldID, Format.Field attr, Object value,
-                          int start, int end, StringBuffer buffer) {
+    public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
+                          int start, int end, T buffer) {
         formatted(attr, value, start, end, buffer);
     }
 

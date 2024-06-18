@@ -41,6 +41,7 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -588,6 +589,12 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
+        return formatWithGeneric(number, result, fieldPosition);
+    }
+
+    @Override
+    <T extends Appendable & CharSequence> T formatWithGeneric(double number, T result,
+                                                   FieldPosition fieldPosition) {
         // If fieldPosition is a DontCareFieldPosition instance we can
         // try to go to fast-path code.
         boolean tryFastPath = false;
@@ -601,13 +608,22 @@ public class DecimalFormat extends NumberFormat {
         if (tryFastPath) {
             String tempResult = fastFormat(number);
             if (tempResult != null) {
-                result.append(tempResult);
+                try {
+                    result.append(tempResult);
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe.getMessage(), ioe);
+                }
                 return result;
             }
         }
 
         // if fast-path could not work, we fallback to standard code.
         return format(number, result, fieldPosition.getFieldDelegate());
+    }
+
+    @Override
+    boolean isInternalSubclass() {
+        return true;
     }
 
     /**
@@ -619,8 +635,8 @@ public class DecimalFormat extends NumberFormat {
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    StringBuffer format(double number, StringBuffer result,
-                                FieldDelegate delegate) {
+    <T extends Appendable & CharSequence> T format(double number, T result,
+                     FieldDelegate delegate) {
 
         boolean nanOrInfinity = handleNaN(number, result, delegate);
         if (nanOrInfinity) {
@@ -666,12 +682,16 @@ public class DecimalFormat extends NumberFormat {
      * @param delegate notified of locations of sub fields
      * @return true, if number is a NaN; false otherwise
      */
-    boolean handleNaN(double number, StringBuffer result,
+    <T extends Appendable & CharSequence> boolean handleNaN(double number, T result,
             FieldDelegate delegate) {
         if (Double.isNaN(number)
                 || (Double.isInfinite(number) && multiplier == 0)) {
             int iFieldStart = result.length();
-            result.append(symbols.getNaN());
+            try {
+                result.append(symbols.getNaN());
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe.getMessage(), ioe);
+            }
             delegate.formatted(INTEGER_FIELD, Field.INTEGER, Field.INTEGER,
                     iFieldStart, result.length(), result);
             return true;
@@ -691,7 +711,7 @@ public class DecimalFormat extends NumberFormat {
      * @return true, if number is a {@code Double.NEGATIVE_INFINITY} or
      *         {@code Double.POSITIVE_INFINITY}; false otherwise
      */
-    boolean handleInfinity(double number, StringBuffer result,
+    <T extends Appendable & CharSequence> boolean handleInfinity(double number, T result,
             FieldDelegate delegate, boolean isNegative) {
         if (Double.isInfinite(number)) {
             if (isNegative) {
@@ -703,7 +723,11 @@ public class DecimalFormat extends NumberFormat {
             }
 
             int iFieldStart = result.length();
-            result.append(symbols.getInfinity());
+            try {
+                result.append(symbols.getInfinity());
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe.getMessage(), ioe);
+            }
             delegate.formatted(INTEGER_FIELD, Field.INTEGER, Field.INTEGER,
                                iFieldStart, result.length(), result);
 
@@ -720,7 +744,7 @@ public class DecimalFormat extends NumberFormat {
         return false;
     }
 
-    StringBuffer doubleSubformat(double number, StringBuffer result,
+    <T extends Appendable & CharSequence> T doubleSubformat(double number, T result,
             FieldDelegate delegate, boolean isNegative) {
         synchronized (digitList) {
             int maxIntDigits = super.getMaximumIntegerDigits();
@@ -764,6 +788,15 @@ public class DecimalFormat extends NumberFormat {
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
+    @Override
+    <T extends Appendable & CharSequence> T formatWithGeneric(long number, T result,
+                                                   FieldPosition fieldPosition) {
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+
+        return format(number, result, fieldPosition.getFieldDelegate());
+    }
+
     /**
      * Format a long to produce a string.
      * @param number    The long to format
@@ -774,8 +807,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    StringBuffer format(long number, StringBuffer result,
-                               FieldDelegate delegate) {
+    <T extends Appendable & CharSequence> T format(long number, T result,
+                     FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
             number = -number;
@@ -865,8 +898,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    StringBuffer format(BigDecimal number, StringBuffer result,
-                                FieldDelegate delegate) {
+    <T extends Appendable & CharSequence> T format(BigDecimal number, T result,
+                     FieldDelegate delegate) {
         if (multiplier != 1) {
             number = number.multiply(getBigDecimalMultiplier());
         }
@@ -926,8 +959,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    StringBuffer format(BigInteger number, StringBuffer result,
-                               FieldDelegate delegate, boolean formatLong) {
+    <T extends Appendable & CharSequence> T format(BigInteger number, T result,
+                     FieldDelegate delegate, boolean formatLong) {
         if (multiplier != 1) {
             number = number.multiply(getBigIntegerMultiplier());
         }
@@ -1779,7 +1812,7 @@ public class DecimalFormat extends NumberFormat {
      * Complete the formatting of a finite number.  On entry, the digitList must
      * be filled in with the correct digits.
      */
-    private StringBuffer subformat(StringBuffer result, FieldDelegate delegate,
+    private <T extends Appendable & CharSequence> T subformat(T result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
             int maxFraDigits, int minFraDigits) {
@@ -1809,6 +1842,17 @@ public class DecimalFormat extends NumberFormat {
         return result;
     }
 
+    <T extends Appendable & CharSequence> void subformatNumber(T result, FieldDelegate delegate,
+                         boolean isNegative, boolean isInteger,
+                         int maxIntDigits, int minIntDigits,
+                         int maxFraDigits, int minFraDigits) {
+        try {
+            subformatNumberWithException(result, delegate, isNegative, isInteger, maxIntDigits, minIntDigits, maxFraDigits, minFraDigits);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+    }
+
     /**
      * Subformats number part using the {@code DigitList} of this
      * {@code DecimalFormat} instance.
@@ -1821,10 +1865,10 @@ public class DecimalFormat extends NumberFormat {
      * @param maxFraDigits maximum fraction digits
      * @param minFraDigits minimum fraction digits
      */
-    void subformatNumber(StringBuffer result, FieldDelegate delegate,
+    <T extends Appendable & CharSequence> void subformatNumberWithException(T result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
-            int maxFraDigits, int minFraDigits) {
+            int maxFraDigits, int minFraDigits) throws IOException{
 
         char grouping = isCurrencyFormat ?
                 symbols.getMonetaryGroupingSeparator() :
@@ -2108,14 +2152,18 @@ public class DecimalFormat extends NumberFormat {
      * <p>
      * This is used by {@code subformat} to add the prefix/suffix.
      */
-    private void append(StringBuffer result, String string,
+    private <T extends Appendable & CharSequence> void append(T result, String string,
                         FieldDelegate delegate,
                         FieldPosition[] positions,
                         Format.Field signAttribute) {
         int start = result.length();
 
         if (!string.isEmpty()) {
-            result.append(string);
+            try {
+                result.append(string);
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe.getMessage(), ioe);
+            }
             for (int counter = 0, max = positions.length; counter < max;
                  counter++) {
                 FieldPosition fp = positions[counter];

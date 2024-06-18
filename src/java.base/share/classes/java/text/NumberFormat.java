@@ -347,8 +347,13 @@ public abstract class NumberFormat extends Format  {
         if (result != null)
             return result;
 
-        return format(number, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if (isInternalSubclass()) {
+            return formatWithGeneric(number, new StringBuilder(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(number, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /*
@@ -367,8 +372,13 @@ public abstract class NumberFormat extends Format  {
      * @see java.text.Format#format
      */
     public final String format(long number) {
-        return format(number, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if (isInternalSubclass()) {
+            return formatWithGeneric(number, new StringBuilder(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(number, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /**
@@ -394,6 +404,12 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
+    <T extends Appendable & CharSequence> T formatWithGeneric(double number,
+                                                   T toAppendTo,
+                                                   FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Specialization of format.
      *
@@ -416,6 +432,12 @@ public abstract class NumberFormat extends Format  {
     public abstract StringBuffer format(long number,
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
+
+    <T extends Appendable & CharSequence> T formatWithGeneric(long number,
+                                                   T toAppendTo,
+                                                   FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
 
     /**
      * Parses text from the beginning of the given string to produce a {@code Number}.

@@ -41,6 +41,7 @@ package java.text;
 import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -514,7 +515,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double)number, toAppendTo, status);
+        return formatWithGeneric((double)number, toAppendTo, status);
+    }
+
+    @Override
+    <T extends Appendable & CharSequence> T formatWithGeneric(long number, T toAppendTo,
+                                                   FieldPosition status) {
+        return formatWithGeneric((double) number, toAppendTo, status);
     }
 
     /**
@@ -531,6 +538,12 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
+        return formatWithGeneric(number, toAppendTo, status);
+    }
+
+    @Override
+    <T extends Appendable & CharSequence> T formatWithGeneric(double number, T toAppendTo,
+                         FieldPosition status) {
         // find the number
         int i;
         for (i = 0; i < choiceLimits.length; ++i) {
@@ -541,8 +554,18 @@ public class ChoiceFormat extends NumberFormat {
         }
         --i;
         if (i < 0) i = 0;
-        // return either a formatted number, or a string
-        return toAppendTo.append(choiceFormats[i]);
+        try {
+            // return either a formatted number, or a string
+            toAppendTo.append(choiceFormats[i]);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+        return toAppendTo;
+    }
+
+    @Override
+    boolean isInternalSubclass() {
+        return true;
     }
 
     /**

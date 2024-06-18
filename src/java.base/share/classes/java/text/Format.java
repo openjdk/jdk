@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,6 +268,17 @@ public abstract class Format implements Serializable, Cloneable {
         }
     }
 
+    /**
+     * Used to distinguish JDK internal subclass and user-defined subclass
+     * of {code Format}.
+     *
+     * @return {@code true}  if current class is a JDK internal subclass of {code Format};
+     *         {@code false} otherwise
+     */
+    boolean isInternalSubclass() {
+        return false;
+    }
+
     //
     // Convenience methods for creating AttributedCharacterIterators from
     // different parameters.
@@ -393,8 +404,8 @@ public abstract class Format implements Serializable, Cloneable {
          * @param buffer Contains current formatted value, receiver should
          *        NOT modify it.
          */
-        public void formatted(Format.Field attr, Object value, int start,
-                              int end, StringBuffer buffer);
+        public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start,
+                              int end, T buffer);
 
         /**
          * Notified when a particular region of the String is formatted.
@@ -407,7 +418,7 @@ public abstract class Format implements Serializable, Cloneable {
          * @param buffer Contains current formatted value, receiver should
          *        NOT modify it.
          */
-        public void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, StringBuffer buffer);
+        public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
+                              int start, int end, T buffer);
     }
 }
