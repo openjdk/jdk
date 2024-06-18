@@ -444,7 +444,7 @@ import sun.invoke.util.Wrapper;
     /**
      * Generate a writeReplace method that supports serialization
      */
-    void generateSerializationFriendlyMethods(ClassBuilder clb) {
+    private void generateSerializationFriendlyMethods(ClassBuilder clb) {
         clb.withMethod(SerializationSupport.NAME_METHOD_WRITE_REPLACE, SerializationSupport.MTD_Object, ACC_PRIVATE | ACC_FINAL,
                 new MethodBody(new Consumer<CodeBuilder>() {
                     @Override
@@ -480,7 +480,7 @@ import sun.invoke.util.Wrapper;
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
-    private static void generateSerializationHostileMethods(ClassBuilder clb) {
+    private void generateSerializationHostileMethods(ClassBuilder clb) {
         var hostileMethod = new Consumer<MethodBuilder>() {
             @Override
             public void accept(MethodBuilder mb) {
