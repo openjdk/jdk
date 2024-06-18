@@ -526,9 +526,7 @@ final class ProxyGenerator {
      * @param pm an existing ProxyMethod
      */
     private void addProxyMethod(ProxyMethod pm) {
-        String sig = pm.shortSignature;
-        List<ProxyMethod> sigmethods = proxyMethodsFor(sig);
-        sigmethods.add(pm);
+        proxyMethodsFor(pm.shortSignature).add(pm);
     }
 
     /**
