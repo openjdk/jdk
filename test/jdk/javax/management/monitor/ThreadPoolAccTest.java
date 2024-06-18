@@ -34,6 +34,8 @@
  * @run main/othervm ThreadPoolAccTest
  * @run main/othervm -Djava.security.manager=allow ThreadPoolAccTest
  * @run main/othervm -Djava.security.manager=allow -DThreadPoolAccTest.useGetSubjectACC=true ThreadPoolAccTest
+ * @run main/othervm/policy=all.policy ThreadPoolAccTest
+ * @run main/othervm/policy=all.policy -DThreadPoolAccTest.useGetSubjectACC=true ThreadPoolAccTest
  */
 
 import java.security.AccessController;
