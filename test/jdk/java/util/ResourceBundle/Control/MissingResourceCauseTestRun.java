@@ -57,7 +57,7 @@ import jtreg.SkippedException;
 public class MissingResourceCauseTestRun {
     public static void main(String[] args) throws Throwable {
         if(Platform.isRoot() && !Platform.isWindows()) {
-            throw new SkippedException("root user has privileged will make this test fail.");
+            throw new SkippedException("Unable to create an unreadable properties file.");
         }
         Path path = Paths.get("UnreadableRB.properties");
         Files.deleteIfExists(path);
