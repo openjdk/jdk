@@ -126,9 +126,7 @@ class RestrictedMethodFinder {
                 // method declaration. We could implement a method resolver (that needs to be version aware
                 // as well) to find the method model of the declaration, but it's not really worth it.
                 // None of the restricted methods (atm) are exposed through more than 1 public type, so it's not
-                // possible for user code to reference them through a subclass. The only exception is if the user
-                // implements SymbolLookup and then did something like 'MySymbolLookup.libraryLookup(...)'.
-                // But we don't care, so for now just return false here
+                // possible for user code to reference them through a subclass.
                 return false;
             }
 
