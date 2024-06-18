@@ -258,6 +258,10 @@ julong os::available_memory() {
   return Aix::available_memory();
 }
 
+julong os::used_memory() {
+  return os::physical_memory() - os::available_memory();
+}
+
 julong os::Aix::available_memory() {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {

@@ -271,6 +271,16 @@ julong os::Linux::available_memory() {
   return avail_mem;
 }
 
+julong os::used_memory() {
+  if (OSContainer::is_containerized()) {
+    jlong mem_usage = OSContainer::memory_usage_in_bytes();
+    if (mem_usage > 0) {
+      return mem_usage;
+    }
+  }
+  return os::physical_memory() - os::available_memory();
+}
+
 julong os::free_memory() {
   return Linux::free_memory();
 }

@@ -826,6 +826,10 @@ julong os::available_memory() {
   return win32::available_memory();
 }
 
+julong os::used_memory() {
+  return os::physical_memory() - os::available_memory();
+}
+
 julong os::free_memory() {
   return win32::available_memory();
 }
