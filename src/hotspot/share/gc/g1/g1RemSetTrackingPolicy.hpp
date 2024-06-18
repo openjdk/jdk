@@ -34,9 +34,6 @@
 // set is complete.
 class G1RemSetTrackingPolicy : public CHeapObj<mtGC> {
 public:
-  // Do we need to scan the given region to get all outgoing references for remembered
-  // set rebuild?
-  bool needs_scan_for_rebuild(G1HeapRegion* r) const;
   // Update remembered set tracking state at allocation of the region. May be
   // called at any time. The caller makes sure that the changes to the remembered
   // set state are visible to other threads.

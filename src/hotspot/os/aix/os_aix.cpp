@@ -287,6 +287,8 @@ julong os::physical_memory() {
   return Aix::physical_memory();
 }
 
+size_t os::rss() { return (size_t)0; }
+
 // Cpu architecture string
 #if defined(PPC32)
 static char cpu_arch[] = "ppc";

@@ -1057,16 +1057,6 @@ void Parse::do_exits() {
       // loading.  It could also be due to an error, so mark this method as not compilable because
       // otherwise this could lead to an infinite compile loop.
       // In any case, this code path is rarely (and never in my testing) reached.
-#ifdef ASSERT
-      tty->print_cr("# Can't determine return type.");
-      tty->print_cr("# exit control");
-      _exits.control()->dump(2);
-      tty->print_cr("# ret phi type");
-      _gvn.type(ret_phi)->dump();
-      tty->print_cr("# ret phi");
-      ret_phi->dump(2);
-#endif // ASSERT
-      assert(false, "Can't determine return type.");
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
