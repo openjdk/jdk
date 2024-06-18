@@ -90,7 +90,7 @@ void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
 }
 
 static inline
-void do_trace_log(julong read_mem_limit, julong host_mem) {
+void verbose_log(julong read_mem_limit, julong host_mem) {
   if (log_is_enabled(Debug, os, container)) {
     jlong mem_limit = (jlong)read_mem_limit; // account for negative values
     if (mem_limit < 0 || read_mem_limit >= host_mem) {
@@ -124,15 +124,15 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
       }
       log_trace(os, container)("Hierarchical Memory Limit is: " JULONG_FORMAT, hier_memlimit);
       if (hier_memlimit < phys_mem) {
-        do_trace_log(hier_memlimit, phys_mem);
+        verbose_log(hier_memlimit, phys_mem);
         return (jlong)hier_memlimit;
       }
       log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
     }
-    do_trace_log(memlimit, phys_mem);
+    verbose_log(memlimit, phys_mem);
     return (jlong)-1;
   } else {
-    do_trace_log(memlimit, phys_mem);
+    verbose_log(memlimit, phys_mem);
     return (jlong)memlimit;
   }
 }
