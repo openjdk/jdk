@@ -2127,8 +2127,9 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  BLOCK_COMMENT("pop_frame:");
+  BLOCK_COMMENT("pop_frame {");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+  BLOCK_COMMENT("} pop_frame");
 }
 
 // Pop current C frame and restore return PC register (Z_R14).
