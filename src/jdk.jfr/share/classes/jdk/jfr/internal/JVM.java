@@ -174,7 +174,7 @@ public final class JVM {
      * Returns the same clock that sets the start time of a chunk (in nanos).
      */
     public static native long nanosNow();
-    
+
     /**
      * Write message to log. Should swallow null or empty message, and be able
      * to handle any Java character and not crash with very large message

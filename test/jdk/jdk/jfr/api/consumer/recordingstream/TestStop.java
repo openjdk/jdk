@@ -163,24 +163,24 @@ public class TestStop {
     }
 
     private static void log(List<String> outerStream, List<String> innerStream, List<RecordedEvent> dumpOuter,
-    		List<RecordedEvent> dumpInner) {
-    	System.out.println("Outer dump:");
-    	for (RecordedEvent e : dumpOuter) {
-    	    System.out.println(eventToText(e));
-    	}
-    	System.out.println("Inner dump:");
-    	for (RecordedEvent e : dumpInner) {
-    	    System.out.println(eventToText(e));
-    	}
-    	System.out.println();
-    	System.out.println("Outer stream:");
-    	for (String s : outerStream) {
-    	    System.out.println(s);
-    	}
-    	System.out.println("Inner stream:");
-    	for (String s : innerStream) {
-    	    System.out.println(s);
-    	}
+            List<RecordedEvent> dumpInner) {
+        System.out.println("Outer dump:");
+        for (RecordedEvent e : dumpOuter) {
+            System.out.println(eventToText(e));
+        }
+        System.out.println("Inner dump:");
+        for (RecordedEvent e : dumpInner) {
+            System.out.println(eventToText(e));
+        }
+        System.out.println();
+        System.out.println("Outer stream:");
+        for (String s : outerStream) {
+            System.out.println(s);
+        }
+        System.out.println("Inner stream:");
+        for (String s : innerStream) {
+            System.out.println(s);
+        }
     }
 
     private static String eventToText(RecordedEvent event) {
