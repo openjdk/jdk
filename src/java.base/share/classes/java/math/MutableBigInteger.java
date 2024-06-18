@@ -1931,7 +1931,7 @@ class MutableBigInteger {
 
         MutableBigInteger[] sqrtRem = x.sqrtRemZimmermann(x.intLen);
 
-        // Denormalize
+        // Unnormalize
         if (shift != 0) {
             final int halfShift = shift >> 1;
             if (!sqrtRem[1].isZero()) {
@@ -2015,7 +2015,7 @@ class MutableBigInteger {
             sqrt.subtract(ONE);
         }
 
-        // Denormalize
+        // Unnormalize
         if (excessInts != 0) {
             final int halfShift = excessInts << 4;
             if (!rem.isZero()) {
