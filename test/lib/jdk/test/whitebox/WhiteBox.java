@@ -798,4 +798,5 @@ public class WhiteBox {
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 
   public native void preTouchMemory(long addr, long size);
+  public native long rss();
 }

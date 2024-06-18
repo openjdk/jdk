@@ -21,29 +21,39 @@
  * questions.
  */
 
-package compiler.vectorapi.reshape;
-
-import compiler.vectorapi.reshape.tests.TestVectorCast;
-import compiler.vectorapi.reshape.utils.TestCastMethods;
-import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
-
 /*
  * @test
- * @bug 8321021 8321023 8321024
- * @key randomness
- * @modules jdk.incubator.vector
- * @modules java.base/jdk.internal.misc
- * @summary Test that vector cast intrinsics work as intended on riscv (rvv).
- * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"
- * @library /test/lib /
- * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastRVV
+ * @bug 8333854
+ * @summary Test invoking a method in a proxy interface with package-private
+ *          classes or interfaces in its method type
+ * @run junit NonPublicMethodTypeTest
  */
-public class TestVectorCastRVV {
-    public static void main(String[] args) {
-        VectorReshapeHelper.runMainHelper(
-                TestVectorCast.class,
-                TestCastMethods.RVV_CAST_TESTS.stream(),
-                "-XX:+UseRVV");
+
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Proxy;
+
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+
+public final class NonPublicMethodTypeTest {
+    interface NonPublicWorker {
+        void work();
+    }
+
+    public interface PublicWorkable {
+        void accept(NonPublicWorker worker);
+    }
+
+    @Test
+    public void test() {
+        PublicWorkable proxy = (PublicWorkable) Proxy.newProxyInstance(
+               NonPublicMethodTypeTest.class.getClassLoader(),
+               new Class[] {PublicWorkable.class},
+               (_, _, _) -> null);
+        assertNotSame(NonPublicWorker.class.getPackage(),
+                proxy.getClass().getPackage(),
+                "Proxy class should not be able to access method parameter " +
+                        "NonPublic type's package");
+        proxy.accept(() -> {}); // Call should not fail
     }
 }
-
