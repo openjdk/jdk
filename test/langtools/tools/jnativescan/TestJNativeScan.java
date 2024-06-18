@@ -167,6 +167,16 @@ class TestJNativeScan extends JNativeScanTestBase {
     }
 
     @Test
+    public void testPrintNativeAccess() {
+        assertSuccess(jnativescan("--module-path", MODULE_PATH,
+                                  "-add-modules", "org.singlejar,org.myapp",
+                                  "--print-native-access"))
+                .stdoutShouldContain("org.singlejar")
+                .stdoutShouldContain("org.lib")
+                .stdoutShouldContain("org.service");
+    }
+
+    @Test
     public void testNoDuplicateNames() {
         String classPath = singleJarClassPath + File.pathSeparator + classPathApp;
         OutputAnalyzer output = assertSuccess(jnativescan("--class-path", classPath, "--print-native-access"));
