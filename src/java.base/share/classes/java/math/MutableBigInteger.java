@@ -1921,26 +1921,41 @@ class MutableBigInteger {
         if (bitLength != (int) bitLength)
             throw new ArithmeticException("bitLength() integer overflow");
 
-        return sqrtRemZimmermann(this);
+        // Normalize
+        MutableBigInteger x = this;
+        int shift = Integer.numberOfLeadingZeros(x.value[x.offset]) & ~1; // shift must be even
+        if (shift != 0) {
+            x = new MutableBigInteger(x);
+            x.primitiveLeftShift(shift);
+        }
+
+        MutableBigInteger[] sqrtRem = sqrtRemZimmermann(x, x.intLen);
+
+        // Denormalize
+        if (shift != 0) {
+            final int halfShift = shift >> 1;
+            if (!sqrtRem[1].isZero()) {
+                final int sqrtEnd = sqrtRem[0].offset + sqrtRem[0].intLen;
+                // s0 is at most 15 bit long
+                final int s0 = sqrtRem[0].value[sqrtEnd - 1] & ((1 << halfShift) - 1);
+                sqrtRem[1].add(new MutableBigInteger(sqrtRem[0].toBigInteger().multiply(s0 << 1).mag));
+                sqrtRem[1].subtract(new MutableBigInteger(s0 * s0));
+
+                sqrtRem[1].primitiveRightShift(shift);
+            }
+            sqrtRem[0].primitiveRightShift(halfShift);
+        }
+        return sqrtRem;
     }
 
     /**
-     * Assume {@code x.intLen >= 2}
+     * Assume {@code 2 <= limit <= x.intLen && Integer.numberOfLeadingZeros(x.value[x.offset]) <= 1}
      * @implNote The implementation is based on Zimmermann's works available
      * <a href="https://inria.hal.science/inria-00072854/en/">  here</a> and
      * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a>
      */
-    private static MutableBigInteger[] sqrtRemZimmermann(MutableBigInteger x) {
-        // Normalize leading int
-        int shift = Integer.numberOfLeadingZeros(x.value[x.offset]) & ~1; // shift must be even
-        if (shift != 0) {
-            x = new MutableBigInteger(Arrays.copyOfRange(x.value, x.offset, x.intLen));
-            x.primitiveLeftShift(shift);
-        }
-
-        MutableBigInteger sqrt, rem;
-        {
-            // Base case
+    private static MutableBigInteger[] sqrtRemZimmermann(MutableBigInteger x, int limit) {
+        if (limit == 2) { // Base case
             long hi = x.value[x.offset] & LONG_MASK, lo = x.value[x.offset + 1] & LONG_MASK;
             long s = (long) Math.sqrt(hi); // Math.sqrt is exact
             long r = hi - s * s;
@@ -1956,46 +1971,55 @@ class MutableBigInteger {
                 s--;
             }
 
-            sqrt = new MutableBigInteger((int) s);
-            rem = r <= LONG_MASK ? new MutableBigInteger((int) r)
-                    : new MutableBigInteger(new int[] { 1, (int) r });
+            return new MutableBigInteger[] { new MutableBigInteger((int) s),
+                    (r & LONG_MASK) == r ? new MutableBigInteger((int) r)
+                            : new MutableBigInteger(new int[] { 1, (int) r }) };
         }
 
-        // Iterative step
-        int limit = 2;
-        while (limit < x.intLen) {
-            limit <<= 1;
+        // Recursive step (limit >= 3)
 
-            final int blockLength = limit >> 2;
-            MutableBigInteger dividend = x.getBlockZimmermann(1, limit, blockLength);
-            dividend.addDisjoint(rem, blockLength);
-            MutableBigInteger twiceSqrt = new MutableBigInteger(sqrt);
+        // Normalize
+        int excessInts;
+        if ((limit & 3) != 0) { // limit must be a multiple of 4
+            excessInts = 4 - (limit & 3);
+            int[] xVal = new int[limit + excessInts];
+            System.arraycopy(x.value, x.offset, xVal, 0, limit);
+            x = new MutableBigInteger(xVal);
+            limit += excessInts;
+        } else {
+            excessInts = 0;
+        }
+
+        MutableBigInteger[] sr = sqrtRemZimmermann(x, limit >> 1); // Recursive invocation
+
+        final int blockLength = limit >> 2;
+        MutableBigInteger dividend = x.getBlockZimmermann(1, limit, blockLength);
+        dividend.addDisjoint(sr[1], blockLength);
+        MutableBigInteger twiceSqrt = new MutableBigInteger(sr[0]);
+        twiceSqrt.leftShift(1);
+        MutableBigInteger q = new MutableBigInteger();
+        MutableBigInteger u = dividend.divide(twiceSqrt, q);
+
+        MutableBigInteger rem = x.getBlockZimmermann(0, limit, blockLength);
+        rem.addDisjoint(u, blockLength);
+        BigInteger qBig = q.toBigInteger();
+        int rSign = rem.subtract(new MutableBigInteger(qBig.multiply(qBig).mag));
+
+        q.addShifted(sr[0], blockLength);
+        MutableBigInteger sqrt = q;
+
+        if (rSign == -1) {
+            twiceSqrt = new MutableBigInteger(sqrt);
             twiceSqrt.leftShift(1);
-            MutableBigInteger q = new MutableBigInteger();
-            MutableBigInteger u = dividend.divide(twiceSqrt, q);
 
-            rem = x.getBlockZimmermann(0, limit, blockLength);
-            rem.addDisjoint(u, blockLength);
-            BigInteger qBig = q.toBigInteger();
-            int rSign = rem.subtract(new MutableBigInteger(qBig.multiply(qBig).mag));
-
-            q.addShifted(sqrt, blockLength);
-            sqrt = q;
-
-            if (rSign == -1) {
-                twiceSqrt = new MutableBigInteger(sqrt);
-                twiceSqrt.leftShift(1);
-
-                rem.add(ONE);
-                rem.subtract(twiceSqrt);
-                sqrt.subtract(ONE);
-            }
+            rem.add(ONE);
+            rem.subtract(twiceSqrt);
+            sqrt.subtract(ONE);
         }
 
         // Denormalize
-        shift += (limit - x.intLen) << 5;
-        if (shift != 0) {
-            final int halfShift = shift >> 1;
+        if (excessInts != 0) {
+            final int halfShift = excessInts << 4;
             if (!rem.isZero()) {
                 final int sqrtEnd = sqrt.offset + sqrt.intLen, s0Len = (halfShift + 31) >> 5;
                 int[] s0Mag = Arrays.copyOfRange(sqrt.value, sqrtEnd - s0Len, sqrtEnd);
@@ -2003,9 +2027,10 @@ class MutableBigInteger {
                     s0Mag[0] &= (1 << halfShift) - 1;
 
                 BigInteger s0 = new BigInteger(1, s0Mag);
-                rem.add(new MutableBigInteger(s0.multiply(sqrt.toBigInteger()).shiftLeft(1).mag));
+                rem.add(new MutableBigInteger(s0.shiftLeft(1).multiply(sqrt.toBigInteger()).mag));
                 rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
-                rem.rightShift(shift);
+
+                rem.intLen -= excessInts;
             }
             sqrt.rightShift(halfShift);
         }
@@ -2013,14 +2038,8 @@ class MutableBigInteger {
     }
 
     private MutableBigInteger getBlockZimmermann(int blockIndex, int limit, int blockLength) {
-        int from = offset + limit - (blockIndex + 1) * blockLength;
-        int intEnd = offset + intLen;
-        if (from >= intEnd)
-            return new MutableBigInteger();
-
-        int[] block = new int[blockLength];
-        System.arraycopy(value, from, block, 0, Math.min(intEnd - from, blockLength));
-        return new MutableBigInteger(block);
+        int to = offset + limit - blockIndex * blockLength;
+        return new MutableBigInteger(Arrays.copyOfRange(value, to - blockLength, to));
     }
 
     /**
