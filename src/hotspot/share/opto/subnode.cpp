@@ -1809,7 +1809,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
-
 //------------------------------Value------------------------------------------
 // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
 // Same with ((x & m) u< m+1) and ((m & x) u< m+1)

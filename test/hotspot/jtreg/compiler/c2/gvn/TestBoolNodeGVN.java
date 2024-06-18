@@ -25,12 +25,14 @@ package compiler.c2.gvn;
 
 import compiler.lib.ir_framework.*;
 
+import java.util.Random;
+
 /**
  * @test
  * @bug 8327381
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
- * @run main compiler.c2.gvn.TestBoolNodeGVN
+ * @run driver compiler.c2.gvn.TestBoolNodeGVN
  */
 public class TestBoolNodeGVN {
     public static void main(String[] args) {
@@ -68,7 +70,9 @@ public class TestBoolNodeGVN {
     }
 
     private static void testCorrectness() {
-        int[] values = { 0, 1, 5, 8, 16, 42, 100, Integer.MAX_VALUE };
+        int[] values = {
+                0, 1, 5, 8, 16, 42, 100, new Random().nextInt(0, Integer.MAX_VALUE), Integer.MAX_VALUE
+        };
 
         for (int x : values) {
             for (int m : values) {
