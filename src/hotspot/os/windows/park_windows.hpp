@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   private:
     double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line
     volatile int _Event ;
-    HANDLE _ParkHandle ;
 
   public:       // TODO-FIXME: make dtor private
     ~PlatformEvent() { guarantee (0, "invariant") ; }
@@ -41,8 +40,6 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   public:
     PlatformEvent() {
       _Event   = 0 ;
-      _ParkHandle = CreateEvent (nullptr, false, false, nullptr) ;
-      guarantee (_ParkHandle != nullptr, "invariant") ;
     }
 
     // Exercise caution using reset() and fired() - they may require MEMBARs
