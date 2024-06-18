@@ -223,7 +223,7 @@ final class FindOps {
             static final TerminalOp<Integer, OptionalInt> OP_FIND_FIRST, OP_FIND_ANY;
             static {
                 Predicate<OptionalInt> isPresent = OptionalInt::isPresent;
-                Supplier<TerminalSink<Integer, OptionalInt> newSink
+                Supplier<TerminalSink<Integer, OptionalInt>> newSink
                         = FindSink.OfInt::new;
                 OP_FIND_FIRST = new FindOp<>(true, StreamShape.INT_VALUE,
                         OptionalInt.empty(), isPresent, newSink);
@@ -249,7 +249,7 @@ final class FindOps {
             static final TerminalOp<Long, OptionalLong> OP_FIND_FIRST, OP_FIND_ANY;
             static {
                 Predicate<OptionalLong> isPresent = OptionalLong::isPresent;
-                Supplier<TerminalSink<Long, OptionalLong> newSink
+                Supplier<TerminalSink<Long, OptionalLong>> newSink
                         = FindSink.OfLong::new;
                 OP_FIND_FIRST = new FindOp<>(true, StreamShape.LONG_VALUE,
                         OptionalLong.empty(), isPresent, newSink);
