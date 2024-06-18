@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Basic test for the standard BodySubscribers default behavior
- * @bug 8225583
+ * @bug 8225583 8334028
  * @run testng BodySubscribersTest
  */
 

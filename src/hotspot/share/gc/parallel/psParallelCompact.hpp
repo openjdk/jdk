@@ -895,8 +895,7 @@ public:
   // updated.
   void copy_partial_obj(size_t partial_obj_size);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 };
 
 inline void MoveAndUpdateClosure::decrement_words_remaining(size_t words) {
@@ -932,11 +931,9 @@ inline void MoveAndUpdateClosure::update_state(size_t words)
 class MoveAndUpdateShadowClosure: public MoveAndUpdateClosure {
   inline size_t calculate_shadow_offset(size_t region_idx, size_t shadow_idx);
 public:
-  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
-                       size_t region, size_t shadow);
+  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 
 private:
   size_t _shadow;
@@ -950,10 +947,7 @@ inline size_t MoveAndUpdateShadowClosure::calculate_shadow_offset(size_t region_
 }
 
 inline
-MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
-                                                       ParCompactionManager *cm,
-                                                       size_t region,
-                                                       size_t shadow) :
+MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow) :
   MoveAndUpdateClosure(bitmap, region),
   _shadow(shadow) {
   _offset = calculate_shadow_offset(region, shadow);

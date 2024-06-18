@@ -242,6 +242,11 @@ public:
     return normalize_for_read(*addr());
   }
 
+  // we use this method at some places for writing to 0 e.g. to cause a crash;
+  // ubsan does not know that this is the desired behavior
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("undefined")))
+#endif
   void put(T x) {
     GuardUnsafeAccess guard(_thread);
     *addr() = normalize_for_write(x);

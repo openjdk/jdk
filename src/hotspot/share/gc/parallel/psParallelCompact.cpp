@@ -837,8 +837,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
   assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
   const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval
-                              || total_invocations == HeapFirstMaximumCompactionCount;
+  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
 
   // If all regions in old-gen are full
   const bool is_region_full =
@@ -2228,7 +2227,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      closure.complete_region(cm, dest_addr, region_ptr);
+      closure.complete_region(dest_addr, region_ptr);
       return;
     }
 
@@ -2271,7 +2270,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      closure.complete_region(cm, dest_addr, region_ptr);
+      closure.complete_region(dest_addr, region_ptr);
       return;
     }
 
@@ -2304,7 +2303,7 @@ void PSParallelCompact::fill_and_update_shadow_region(ParCompactionManager* cm, 
     region_ptr->shadow_to_normal();
     return fill_region(cm, cl, region_idx);
   } else {
-    MoveAndUpdateShadowClosure cl(mark_bitmap(), cm, region_idx, shadow_region);
+    MoveAndUpdateShadowClosure cl(mark_bitmap(), region_idx, shadow_region);
     return fill_region(cm, cl, region_idx);
   }
 }
@@ -2381,8 +2380,7 @@ void MoveAndUpdateClosure::copy_partial_obj(size_t partial_obj_size)
   update_state(words);
 }
 
-void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
-                                           PSParallelCompact::RegionData *region_ptr) {
+void MoveAndUpdateClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
   assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::NormalRegion, "Region should be finished");
   region_ptr->set_completed();
 }
@@ -2412,8 +2410,7 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   update_state(words);
 }
 
-void MoveAndUpdateShadowClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
-                                                 PSParallelCompact::RegionData *region_ptr) {
+void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
   assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::ShadowRegion, "Region should be shadow");
   // Record the shadow region index
   region_ptr->set_shadow_region(_shadow);

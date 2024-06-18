@@ -320,11 +320,11 @@ public class DebugeeBinder extends Log.Logger {
             }
         }
 
-/*
-        String classPath = System.getProperty("java.class.path");
-        args.add("-classpath")
+
+        String classPath = System.getProperty("test.class.path");
+        args.add("-classpath");
         args.add(classPath);
- */
+
 
         String server;
         if (argumentHandler.isAttachingConnector()) {
