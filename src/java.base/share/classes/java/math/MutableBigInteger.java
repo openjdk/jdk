@@ -1972,23 +1972,16 @@ class MutableBigInteger {
                 s--;
             }
 
-            // Allocate sufficient space to hold the final results
+            // Allocate sufficient space to hold the final result
             MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + 1) >> 1]);
-            MutableBigInteger rem = new MutableBigInteger(new int[sqrt.value.length + 1]);
 
-            // Place the partial results
+            // Place the partial result
             sqrt.intLen = 1;
             sqrt.value[0] = (int) s;
 
-            if ((r & LONG_MASK) == r) {
-                rem.intLen = 1;
-                rem.value[0] = (int) r;
-            } else {
-                rem.intLen = 2;
-                rem.value[0] = 1;
-                rem.value[1] = (int) r;
-            }
-            return new MutableBigInteger[] { sqrt, rem };
+            return new MutableBigInteger[] { sqrt, (r & LONG_MASK) == r
+                    ? new MutableBigInteger((int) r)
+                    : new MutableBigInteger(new int[] { 1,  (int) r}) };
         }
 
         // Recursive step (len >= 3)
