@@ -69,25 +69,6 @@ import sun.invoke.util.Wrapper;
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
-
-    // Serialization support
-    private static final ClassDesc CD_SerializedLambda = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/SerializedLambda;");
-    private static final ClassDesc CD_NotSerializableException = ReferenceClassDescImpl.ofValidated("Ljava/io/NotSerializableException;");
-    private static final ClassDesc CD_ObjectOutputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectOutputStream;");
-    private static final ClassDesc CD_ObjectInputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectInputStream;");
-    private static final MethodTypeDesc MTD_Object = MethodTypeDescImpl.ofValidated(CD_Object);
-    private static final MethodTypeDesc MTD_void_ObjectOutputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectOutputStream);
-    private static final MethodTypeDesc MTD_void_ObjectInputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectInputStream);
-
-    private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
-    private static final String NAME_METHOD_READ_OBJECT = "readObject";
-    private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
-
-    private static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDescImpl.ofValidated(CD_void,
-            CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"));
-
-    private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
-
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
@@ -440,15 +421,35 @@ import sun.invoke.util.Wrapper;
                 }));
     }
 
+    private static class SerializationSupport {
+        // Serialization support
+        private static final ClassDesc CD_SerializedLambda = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/SerializedLambda;");
+        private static final ClassDesc CD_ObjectOutputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectOutputStream;");
+        private static final ClassDesc CD_ObjectInputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectInputStream;");
+        private static final MethodTypeDesc MTD_Object = MethodTypeDescImpl.ofValidated(CD_Object);
+        private static final MethodTypeDesc MTD_void_ObjectOutputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectOutputStream);
+        private static final MethodTypeDesc MTD_void_ObjectInputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectInputStream);
+
+        private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
+        private static final String NAME_METHOD_READ_OBJECT = "readObject";
+        private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
+
+        static final ClassDesc CD_NotSerializableException = ReferenceClassDescImpl.ofValidated("Ljava/io/NotSerializableException;");
+        static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
+        static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDescImpl.ofValidated(CD_void,
+                CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"));
+
+    }
+
     /**
      * Generate a writeReplace method that supports serialization
      */
-    private void generateSerializationFriendlyMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_REPLACE, MTD_Object, ACC_PRIVATE | ACC_FINAL,
+    void generateSerializationFriendlyMethods(ClassBuilder clb) {
+        clb.withMethod(SerializationSupport.NAME_METHOD_WRITE_REPLACE, SerializationSupport.MTD_Object, ACC_PRIVATE | ACC_FINAL,
                 new MethodBody(new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
-                        cob.new_(CD_SerializedLambda)
+                        cob.new_(SerializationSupport.CD_SerializedLambda)
                            .dup()
                            .ldc(classDesc(targetClass))
                            .ldc(factoryType.returnType().getName().replace('.', '/'))
@@ -469,43 +470,42 @@ import sun.invoke.util.Wrapper;
                             TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.from(argDescs[i]));
                             cob.aastore();
                         }
-                        cob.invokespecial(CD_SerializedLambda, INIT_NAME, MTD_CTOR_SERIALIZED_LAMBDA)
+                        cob.invokespecial(SerializationSupport.CD_SerializedLambda, INIT_NAME,
+                                          SerializationSupport.MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
                     }
                 }));
     }
 
-    private static class SerializationHostileMethod implements Consumer<MethodBuilder> {
-
-        static final SerializationHostileMethod INSTANCE = new SerializationHostileMethod();
-
-        private SerializationHostileMethod() {}
-
-        @Override
-        public void accept(MethodBuilder mb) {
-            ConstantPoolBuilder cp = mb.constantPool();
-            ClassEntry nseCE = cp.classEntry(CD_NotSerializableException);
-            mb.with(ExceptionsAttribute.of(nseCE))
-              .withCode(new Consumer<CodeBuilder>(){
-                    @Override
-                    public void accept(CodeBuilder cob) {
-                        cob.new_(nseCE)
-                           .dup()
-                           .ldc("Non-serializable lambda")
-                           .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
-                           .athrow();
-                    }
-              });
-        }
-    }
-
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
-    private void generateSerializationHostileMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_void_ObjectOutputStream, ACC_PRIVATE + ACC_FINAL, SerializationHostileMethod.INSTANCE);
-        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_void_ObjectInputStream, ACC_PRIVATE + ACC_FINAL, SerializationHostileMethod.INSTANCE);
+    private static void generateSerializationHostileMethods(ClassBuilder clb) {
+        var hostileMethod = new Consumer<MethodBuilder>() {
+            @Override
+            public void accept(MethodBuilder mb) {
+                ConstantPoolBuilder cp = mb.constantPool();
+                ClassEntry nseCE = cp.classEntry(SerializationSupport.CD_NotSerializableException);
+                mb.with(ExceptionsAttribute.of(nseCE))
+                        .withCode(new Consumer<CodeBuilder>() {
+                            @Override
+                            public void accept(CodeBuilder cob) {
+                                cob.new_(nseCE)
+                                        .dup()
+                                        .ldc("Non-serializable lambda")
+                                        .invokespecial(cp.methodRefEntry(nseCE, cp.nameAndTypeEntry(INIT_NAME,
+                                                SerializationSupport.MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)))
+                                        .athrow();
+                            }
+                        });
+            }
+        };
+        clb.withMethod(SerializationSupport.NAME_METHOD_WRITE_OBJECT, SerializationSupport.MTD_void_ObjectOutputStream,
+                ACC_PRIVATE + ACC_FINAL, hostileMethod);
+        clb.withMethod(SerializationSupport.NAME_METHOD_READ_OBJECT, SerializationSupport.MTD_void_ObjectInputStream,
+                ACC_PRIVATE + ACC_FINAL, hostileMethod);
     }
+
 
     /**
      * This method generates a method body which calls the lambda implementation
