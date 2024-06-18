@@ -53,7 +53,7 @@ $(eval $(call SetupBuildLauncher, jdeprscan, \
 ))
 
 ################################################################################
-## Build jscan
+## Build jnativescan
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, jnativescan, \
