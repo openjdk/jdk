@@ -89,7 +89,7 @@ public final class HotSpotVMConfigStore {
         if (intrinsicID >= 1 && intrinsicID <= vmIntrinsics.size()) {
             // valid intrinsicID starts from 1
             VMIntrinsicMethod intrinsic = vmIntrinsics.get(intrinsicID - 1);
-            // We assume vmIntrinsics are sorted by ID
+            // We speculate that vmIntrinsics are sorted by ID
             if (intrinsic.id == intrinsicID) {
                 return intrinsic;
             }
