@@ -127,7 +127,7 @@ public final class StrikeCache {
         ADDRESS.withName("cellInfo"),    // 24+8=32
         ADDRESS.withName("image")        // 32+8=40
      );
- 
+
    private static final long GLYPHIMAGESIZE = GlyphImageLayout.byteSize();
 
    private static VarHandle getVarHandle(StructLayout struct, String name) {
@@ -146,7 +146,7 @@ public final class StrikeCache {
     private static final VarHandle topLeftYHandle = getVarHandle(GlyphImageLayout, "topLeftY");
     private static final VarHandle cellInfoHandle  = getVarHandle(GlyphImageLayout, "cellInfo");
     private static final VarHandle imageHandle    = getVarHandle(GlyphImageLayout, "image");
-         
+
     @SuppressWarnings("restricted")
     static final float getGlyphXAdvance(long ptr) {
         MemorySegment seg = MemorySegment.ofAddress(ptr);

@@ -84,7 +84,7 @@ public class XRGlyphCacheEntry {
         // 'void*' (see field 'cellInfo' of struct 'GlyphInfo'
         // in src/share/native/sun/font/fontscalerdefs.h).
         // On 64-bit Big-endian architectures it would be wrong to access this
-        // field as an int 
+        // field as an int
         // See Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative()
         // in src/unix/native/sun/java2d/x11/XRBackendNative.c
         StrikeCache.setGlyphCellInfo(glyphInfoPtr, (long)id);
