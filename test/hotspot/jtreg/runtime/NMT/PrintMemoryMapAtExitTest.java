@@ -39,10 +39,11 @@ public class PrintMemoryMapAtExitTest {
     public static void main(String args[]) throws Exception {
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-      "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintMemoryMapAtExit",
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintMemoryMapAtExit",
                 "-XX:NativeMemoryTracking=summary", "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.shouldContain("Memory mappings");
         output.shouldContain("JAVAHEAP");
         output.shouldHaveExitValue(0);
