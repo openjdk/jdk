@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -903,8 +903,8 @@ final class ClientHello {
             throw context.conContext.fatal(Alert.PROTOCOL_VERSION,
                 "The client supported protocol versions " + Arrays.toString(
                     ProtocolVersion.toStringArray(clientSupportedVersions)) +
-                " are not accepted by server preferences " +
-                context.activeProtocols);
+                " are not accepted by server preferences " + Arrays.toString(
+                ProtocolVersion.toStringArray(context.activeProtocols)));
         }
     }
 

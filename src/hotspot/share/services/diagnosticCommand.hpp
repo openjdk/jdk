@@ -983,10 +983,8 @@ public:
 
 #ifdef LINUX
 
-class SystemMapDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _only_summary;
+class SystemMapDCmd : public DCmd {
 public:
-  static int num_arguments() { return 1; }
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
@@ -1002,10 +1000,9 @@ public:
 };
 
 class SystemDumpMapDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _only_summary;
   DCmdArgument<char*> _filename;
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 1; }
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {

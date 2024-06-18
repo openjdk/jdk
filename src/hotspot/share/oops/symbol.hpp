@@ -122,7 +122,7 @@ class Symbol : public MetaspaceObj {
   };
 
   static int byte_size(int length) {
-    // minimum number of natural words needed to hold these bits (no non-heap version)
+    // minimum number of bytes needed to hold these bits (no non-heap version)
     return (int)(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
   }
   static int size(int length) {
@@ -146,8 +146,6 @@ class Symbol : public MetaspaceObj {
 
   int size()      const     { return size(utf8_length()); }
   int byte_size() const     { return byte_size(utf8_length()); };
-  // length without the _body
-  size_t effective_length() const { return (size_t)byte_size() - sizeof(Symbol); }
 
   // Symbols should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }

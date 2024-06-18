@@ -1180,28 +1180,29 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 #ifdef LINUX
 
-SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
-  DCmdWithParser(output, heap),
-  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_only_summary);
-}
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MemMapPrinter::print_all_mappings(output());
 }
 
+static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false"),
-  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
-  _dcmdparser.add_dcmd_option(&_only_summary);
+  _filename("-F", "file path", "STRING", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream default_name;
-  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
-  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  stringStream defaultname;
+  const char* name = nullptr;
+  if (::strcmp(default_filename, _filename.value()) == 0) {
+    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
+    name = defaultname.base();
+  } else {
+    name = _filename.value();
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

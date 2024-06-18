@@ -358,7 +358,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   };
   // Page (4KiB) granular array
-  static constexpr const size_t num_pages = 1024 * 512;
+  static constexpr const size_t num_pages = 1024 * 4;
   Info pages[num_pages];
 
   SimpleVMATracker()
@@ -434,8 +434,6 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
   const MEMFLAGS candidate_flags[candidates_len_flags] = {
     mtNMT,
     mtTest,
-    mtGC,
-    mtCompiler
   };
 
   const int operation_count = 100000; // One hundred thousand
