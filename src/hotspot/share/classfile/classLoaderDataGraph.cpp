@@ -299,6 +299,16 @@ void ClassLoaderDataGraph::methods_do(void f(Method*)) {
   }
 }
 
+void ClassLoaderDataGraph::modules_do_keepalive(void f(ModuleEntry*)) {
+  assert_locked_or_safepoint(Module_lock);
+  ClassLoaderDataGraphIterator iter;
+  while (ClassLoaderData* cld = iter.get_next()) {
+    // Keep the holder alive.
+    (void)cld->holder();
+    cld->modules_do(f);
+  }
+}
+
 void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
