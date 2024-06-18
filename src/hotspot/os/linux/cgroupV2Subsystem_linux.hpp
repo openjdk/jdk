@@ -39,31 +39,42 @@ class CgroupV2Controller: public CgroupController {
     static char* construct_path(char* mount_path, char *cgroup_path);
 
   public:
-    CgroupV2Controller(char * mount_path, char *cgroup_path) {
-      _mount_path = mount_path;
-      _cgroup_path = os::strdup(cgroup_path);
-      _path = construct_path(mount_path, cgroup_path);
+    CgroupV2Controller(char * mount_path, char *cgroup_path) :
+                                            _mount_path(os::strdup(mount_path)),
+                                            _cgroup_path(os::strdup(cgroup_path)),
+                                            _path(construct_path(mount_path, cgroup_path)) {
+    }
+    // Shallow copy constructor
+    CgroupV2Controller(const CgroupV2Controller& o) :
+                                            _mount_path(o._mount_path),
+                                            _cgroup_path(o._cgroup_path),
+                                            _path(o._path) {
+    }
+    ~CgroupV2Controller() {
+      // At least one controller exists with references to the paths
     }
 
-    char *subsystem_path() { return _path; }
+    char *subsystem_path() override { return _path; }
 };
 
 class CgroupV2CpuController: public CgroupCpuController {
   private:
-    CgroupV2Controller* _reader;
+    CgroupV2Controller _reader;
+    CgroupV2Controller* reader() { return &_reader; }
   public:
-    CgroupV2CpuController(CgroupV2Controller* reader) : _reader(reader) {
+    CgroupV2CpuController(CgroupV2Controller reader) : _reader(reader) {
     }
     int cpu_quota();
     int cpu_period();
     int cpu_shares();
 };
 
-class CgroupV2MemoryController: public CgroupMemoryController {
+class CgroupV2MemoryController final: public CgroupMemoryController {
   private:
-    CgroupV2Controller* _reader;
+    CgroupV2Controller _reader;
+    CgroupV2Controller* reader() { return &_reader; }
   public:
-    CgroupV2MemoryController(CgroupV2Controller* reader) : _reader(reader) {
+    CgroupV2MemoryController(CgroupV2Controller reader) : _reader(reader) {
     }
 
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
@@ -80,15 +91,17 @@ class CgroupV2MemoryController: public CgroupMemoryController {
 class CgroupV2Subsystem: public CgroupSubsystem {
   private:
     /* One unified controller */
-    CgroupV2Controller* _unified = nullptr;
+    CgroupV2Controller _unified;
     /* Caching wrappers for cpu/memory metrics */
     CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
     CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
 
+    CgroupV2Controller* unified() { return &_unified; }
+
   public:
     CgroupV2Subsystem(CgroupV2MemoryController* memory,
                       CgroupV2CpuController* cpu,
-                      CgroupV2Controller* unified) :
+                      CgroupV2Controller unified) :
         _unified(unified),
         _memory(new CachingCgroupController<CgroupMemoryController>(memory)),
         _cpu(new CachingCgroupController<CgroupCpuController>(cpu)) {

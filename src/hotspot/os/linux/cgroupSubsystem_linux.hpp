@@ -214,7 +214,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
-    virtual void print_version_specific_info(outputStream* st, julong host_mem);
+    virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {

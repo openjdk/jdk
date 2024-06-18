@@ -34,26 +34,35 @@
 class CgroupV1Controller: public CgroupController {
   private:
     /* mountinfo contents */
-    char *_root;
-    char *_mount_point;
+    char* _root;
+    char* _mount_point;
     /* Constructed subsystem directory */
-    char *_path;
+    char* _path;
 
   public:
-    CgroupV1Controller(char *root, char *mountpoint) {
-      _root = os::strdup(root);
-      _mount_point = os::strdup(mountpoint);
-      _path = nullptr;
+    CgroupV1Controller(char *root, char *mountpoint) : _root(os::strdup(root)),
+                                                       _mount_point(os::strdup(mountpoint)),
+                                                       _path(nullptr) {
+    }
+    // Shallow copy constructor
+    CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
+                                                      _mount_point(o._mount_point),
+                                                      _path(o._path) {
+    }
+    ~CgroupV1Controller() {
+      // At least one subsystem controller exists with paths to malloc'd path
+      // names
     }
 
-    virtual void set_subsystem_path(char *cgroup_path);
-    char *subsystem_path() { return _path; }
+    void set_subsystem_path(char *cgroup_path);
+    char *subsystem_path() override { return _path; }
 };
 
-class CgroupV1MemoryController : public CgroupMemoryController {
+class CgroupV1MemoryController final : public CgroupMemoryController {
 
   private:
-    CgroupV1Controller* _reader;
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
   public:
     bool is_hierarchical() { return _uses_mem_hierarchy; }
     void set_subsystem_path(char *cgroup_path);
@@ -80,24 +89,28 @@ class CgroupV1MemoryController : public CgroupMemoryController {
     jlong read_mem_swap(julong host_total_memsw);
 
   public:
-    CgroupV1MemoryController(CgroupV1Controller* reader)
+    CgroupV1MemoryController(CgroupV1Controller reader)
       : _reader(reader),
         _uses_mem_hierarchy(false) {
     }
 
 };
 
-class CgroupV1CpuController: public CgroupCpuController {
+class CgroupV1CpuController final : public CgroupCpuController {
 
   private:
-    CgroupV1Controller* _reader;
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
   public:
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
+    void set_subsystem_path(char *cgroup_path) {
+      reader()->set_subsystem_path(cgroup_path);
+    }
 
   public:
-    CgroupV1CpuController(CgroupV1Controller* reader) : _reader(reader) {
+    CgroupV1CpuController(CgroupV1Controller reader) : _reader(reader) {
     }
 };
 
