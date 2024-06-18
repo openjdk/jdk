@@ -1972,8 +1972,8 @@ class MutableBigInteger {
                 s--;
             }
 
-            // Allocate sufficient space to hold the final result
-            MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + 1) >> 1]);
+            // Allocate sufficient space to hold the normalized final result
+            MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3) + 1) >> 1]);
 
             // Place the partial result
             sqrt.intLen = 1;
