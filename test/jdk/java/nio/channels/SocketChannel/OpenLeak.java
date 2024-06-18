@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -105,16 +104,15 @@ public class OpenLeak {
 
         final List<Object[]> cases = new ArrayList<>();
         cases.add(new Object[]{sa, UnresolvedAddressException.class});
-        cases.add(new Object[]{isa, ConnectException.class});
+        if (isa != null) {
+            cases.add(new Object[]{isa, ConnectException.class});
+        }
         return cases;
     }
 
     @ParameterizedTest
     @MethodSource("testCases")
     public void test(SocketAddress sa, Class<? extends Throwable> expectedException) throws Exception {
-        if (sa == null) {
-            Assumptions.abort("No suitable port could be found for " + expectedException);
-        }
         System.err.printf("%nExpecting %s for %s%n", expectedException, sa);
 
         int i = 0;
