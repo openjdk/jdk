@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4354216 8213127
+ * @bug 4354216 8213127 8334333
  * @summary Test for the cause support when throwing a
  *          MissingResourceBundle. (This test exists under
  *          ResourceBundle/Control because bad resource bundle data can be
