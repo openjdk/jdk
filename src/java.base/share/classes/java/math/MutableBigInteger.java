@@ -1936,11 +1936,12 @@ class MutableBigInteger {
             final int halfShift = shift >> 1;
             if (!sqrtRem[1].isZero()) {
                 final int sqrtEnd = sqrtRem[0].offset + sqrtRem[0].intLen;
-                // s0 is at most 15 bit long
                 final int s0 = sqrtRem[0].value[sqrtEnd - 1] & ((1 << halfShift) - 1);
-                sqrtRem[1].add(new MutableBigInteger(sqrtRem[0].toBigInteger().multiply(s0 << 1).mag));
-                sqrtRem[1].subtract(new MutableBigInteger(s0 * s0));
-
+                if (s0 != 0) { // An optimization
+                    // s0 is at most 15 bit long
+                    sqrtRem[1].add(new MutableBigInteger(sqrtRem[0].toBigInteger().multiply(s0 << 1).mag));
+                    sqrtRem[1].subtract(new MutableBigInteger(s0 * s0));
+                }
                 sqrtRem[1].primitiveRightShift(shift);
             }
             sqrtRem[0].primitiveRightShift(halfShift);
@@ -2025,9 +2026,10 @@ class MutableBigInteger {
                     s0Mag[0] &= (1 << halfShift) - 1;
 
                 BigInteger s0 = new BigInteger(1, s0Mag);
-                rem.add(new MutableBigInteger(s0.shiftLeft(1).multiply(sqrt.toBigInteger()).mag));
-                rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
-
+                if (s0.signum != 0) { // An optimization
+                    rem.add(new MutableBigInteger(s0.shiftLeft(1).multiply(sqrt.toBigInteger()).mag));
+                    rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
+                }
                 rem.intLen -= excessInts;
             }
             sqrt.rightShift(halfShift);
