@@ -72,7 +72,7 @@ class JNativeScanTask {
                 ModuleFinder.of(), rootModules);
         for (ResolvedModule m : config.modules()) {
             URI location = m.reference().location().orElseThrow();
-            Path path = Path.of(location.getPath());
+            Path path = Path.of(location);
             checkRegularJar(path);
             modulesToScan.add(new ScannedModule(path, m.name()));
         }
