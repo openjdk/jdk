@@ -136,6 +136,8 @@ protected:
   }
 
  public:
+  static bool use_pool;
+  static void report_usage();
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
   Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
