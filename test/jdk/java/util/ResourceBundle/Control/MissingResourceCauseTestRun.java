@@ -56,7 +56,7 @@ import jtreg.SkippedException;
 
 public class MissingResourceCauseTestRun {
     public static void main(String[] args) throws Throwable {
-        if(Platform.isRoot() && !Platform.isWindows()) {
+        if (Platform.isRoot() && !Platform.isWindows()) {
             throw new SkippedException("Unable to create an unreadable properties file.");
         }
         Path path = Paths.get("UnreadableRB.properties");
@@ -104,7 +104,7 @@ public class MissingResourceCauseTestRun {
     }
 
     private static void deleteFile(Path path) throws Throwable {
-        if(path.toFile().exists()) {
+        if (path.toFile().exists()) {
             ProcessTools.executeCommand("chmod", "666", path.toString())
                         .outputTo(System.out)
                         .errorTo(System.out)
