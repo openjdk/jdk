@@ -194,14 +194,16 @@ final class FindOps {
                 return hasValue ? Optional.of(value) : null;
             }
 
-            private static final Predicate<Optional<Object>> IS_PRESENT = Optional::isPresent;
-            private static final Supplier<TerminalSink<Object, Optional<Object>>> NEW
-                    = FindOps.FindSink.OfRef::new;
-            static final FindOp<?, ?> OP_FIND_FIRST = new FindOp<>(true,
-                    StreamShape.REFERENCE, Optional.empty(), IS_PRESENT, NEW);
-
-            static final FindOp<?, ?> OP_FIND_ANY = new FindOp<>(false,
-                    StreamShape.REFERENCE, Optional.empty(), IS_PRESENT, NEW);
+            static final TerminalOp<?, ?> OP_FIND_FIRST, OP_FIND_ANY;
+            static {
+                Predicate<Optional<Object>> isPresent = Optional::isPresent;
+                Supplier<TerminalSink<Object, Optional<Object>>> newSink
+                        = FindSink.OfRef::new;
+                OP_FIND_FIRST = new FindOp<>(true, StreamShape.REFERENCE,
+                        Optional.empty(), isPresent, newSink);
+                OP_FIND_ANY = new FindOp<>(false, StreamShape.REFERENCE,
+                        Optional.empty(), isPresent, newSink);
+            }
         }
 
         /** Specialization of {@code FindSink} for int streams */
@@ -218,13 +220,16 @@ final class FindOps {
                 return hasValue ? OptionalInt.of(value) : null;
             }
 
-            private static final Predicate<OptionalInt> IS_PRESENT = OptionalInt::isPresent;
-            private static final Supplier<TerminalSink<Integer, OptionalInt>> NEW
-                    = FindOps.FindSink.OfInt::new;
-            static final TerminalOp<Integer, OptionalInt> OP_FIND_FIRST = new FindOp<>(true,
-                    StreamShape.INT_VALUE, OptionalInt.empty(), IS_PRESENT, NEW);
-            static final TerminalOp<Integer, OptionalInt> OP_FIND_ANY = new FindOp<>(false,
-                    StreamShape.INT_VALUE, OptionalInt.empty(), IS_PRESENT, NEW);
+            static final TerminalOp<Integer, OptionalInt> OP_FIND_FIRST, OP_FIND_ANY;
+            static {
+                Predicate<OptionalInt> isPresent = OptionalInt::isPresent;
+                Supplier<TerminalSink<Integer, OptionalInt> newSink
+                        = FindSink.OfInt::new;
+                OP_FIND_FIRST = new FindOp<>(true, StreamShape.INT_VALUE,
+                        OptionalInt.empty(), isPresent, newSink);
+                OP_FIND_ANY = new FindOp<>(false, StreamShape.INT_VALUE,
+                        OptionalInt.empty(), isPresent, newSink);
+            }
         }
 
         /** Specialization of {@code FindSink} for long streams */
@@ -241,13 +246,16 @@ final class FindOps {
                 return hasValue ? OptionalLong.of(value) : null;
             }
 
-            private static final Predicate<OptionalLong> IS_PRESENT = OptionalLong::isPresent;
-            private static final Supplier<TerminalSink<Long, OptionalLong>> NEW
-                    = FindOps.FindSink.OfLong::new;
-            static final TerminalOp<Long, OptionalLong> OP_FIND_FIRST = new FindOp<>(true,
-                    StreamShape.LONG_VALUE, OptionalLong.empty(), IS_PRESENT, NEW);
-            static final TerminalOp<Long, OptionalLong> OP_FIND_ANY = new FindOp<>(false,
-                    StreamShape.LONG_VALUE, OptionalLong.empty(), IS_PRESENT, NEW);
+            static final TerminalOp<Long, OptionalLong> OP_FIND_FIRST, OP_FIND_ANY;
+            static {
+                Predicate<OptionalLong> isPresent = OptionalLong::isPresent;
+                Supplier<TerminalSink<Long, OptionalLong> newSink
+                        = FindSink.OfLong::new;
+                OP_FIND_FIRST = new FindOp<>(true, StreamShape.LONG_VALUE,
+                        OptionalLong.empty(), isPresent, newSink);
+                OP_FIND_ANY = new FindOp<>(false, StreamShape.LONG_VALUE,
+                        OptionalLong.empty(), isPresent, newSink);
+            }
         }
 
         /** Specialization of {@code FindSink} for double streams */
@@ -264,13 +272,16 @@ final class FindOps {
                 return hasValue ? OptionalDouble.of(value) : null;
             }
 
-            private static final Predicate<OptionalDouble> IS_PRESENT = OptionalDouble::isPresent;
-            private static final Supplier<TerminalSink<Double, OptionalDouble>> NEW
-                    = FindOps.FindSink.OfDouble::new;
-            static final TerminalOp<Double, OptionalDouble> OP_FIND_FIRST = new FindOp<>(true,
-                    StreamShape.DOUBLE_VALUE, OptionalDouble.empty(), IS_PRESENT, NEW);
-            static final TerminalOp<Double, OptionalDouble> OP_FIND_ANY = new FindOp<>(false,
-                    StreamShape.DOUBLE_VALUE, OptionalDouble.empty(), IS_PRESENT, NEW);
+            static final TerminalOp<Double, OptionalDouble> OP_FIND_FIRST, OP_FIND_ANY;
+            static {
+                Predicate<OptionalDouble> isPresent = OptionalDouble::isPresent;
+                Supplier<TerminalSink<Double, OptionalDouble>> newSink
+                        = FindSink.OfDouble::new;
+                OP_FIND_FIRST = new FindOp<>(true, StreamShape.DOUBLE_VALUE,
+                        OptionalDouble.empty(), isPresent, newSink);
+                OP_FIND_ANY = new FindOp<>(false, StreamShape.DOUBLE_VALUE,
+                        OptionalDouble.empty(), isPresent, newSink);
+            }
         }
     }
 
