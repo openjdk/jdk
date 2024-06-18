@@ -44,6 +44,7 @@ STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
+bool Arena::use_pool = false;
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
@@ -87,8 +88,11 @@ class ChunkPool {
 
   // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
   static ChunkPool* get_pool_for_size(size_t size) {
+    if (!Arena::use_pool)
+      return nullptr;
     for (int i = 0; i < _num_pools; i++) {
       if (_pools[i]._size == size) {
+        Atomic::inc(&usage[i]);
         return _pools + i;
       }
     }
@@ -96,6 +100,13 @@ class ChunkPool {
   }
 
 public:
+  static int usage[_num_pools];
+  static void report_usage() {
+    for (size_t i = 0; i < _num_pools; i++) {
+      tty->print_cr("pool %lu, used count: %d", i, usage[i]);
+      usage[i] = 0;
+    }
+  }
   ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   static void clean() {
@@ -168,6 +179,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 }
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
+int ChunkPool::usage[] = { 0, 0, 0, 0};
 
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
@@ -208,6 +220,8 @@ void Chunk::next_chop(Chunk* k) {
   Chunk::chop(k->_next);
   k->_next = nullptr;
 }
+
+void Arena::report_usage() { ChunkPool::report_usage(); }
 
 Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
