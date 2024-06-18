@@ -1050,9 +1050,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  develop(bool, UseHeavyMonitors, false,                                    \
-          "(Deprecated) Use heavyweight instead of lightweight Java "       \
-          "monitors")                                                       \
+  product(bool, UseHeavyMonitors, false, DIAGNOSTIC,                        \
+          "Use heavyweight instead of lightweight Java monitors")           \
                                                                             \
   develop(bool, VerifyHeavyMonitors, false,                                 \
           "Checks that no stack locking happens when using "                \
@@ -1965,9 +1964,9 @@ const int ObjectAlignmentInBytes = 8;
              "fence. Add cleanliness checks.")                              \
                                                                             \
   product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
-          "Select locking mode: "                                           \
-          "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
+          "(Deprecated) Select locking mode: "                              \
+          "0: (Deprecated) monitors only (LM_MONITOR), "                    \
+          "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
