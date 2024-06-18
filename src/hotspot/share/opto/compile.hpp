@@ -358,6 +358,7 @@ class Compile : public Phase {
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
+  bool                  _stress_seed_is_initialized; // True if _stress_seed has been set
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -855,7 +856,7 @@ private:
 
   bool fail_randomly(uint invprob) {
     assert(0 < invprob, "domain error");
-    if (!_stress_seed || (random() % invprob)) {
+    if (!_stress_seed_is_initialized || (random() % invprob)) {
       return false;
     }
     record_failure("StressBailout");
