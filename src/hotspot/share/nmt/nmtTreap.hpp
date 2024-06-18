@@ -84,7 +84,8 @@ private:
   ALLOCATOR _allocator;
   TreapNode* _root;
 
-  static constexpr const uint64_t _initial_seed = 0x123456789ABCDEF;
+  // A random number
+  static constexpr const uint64_t _initial_seed = 0xC8DD2114AE0543A3;
   uint64_t _prng_seed;
   int _node_count;
 
