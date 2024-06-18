@@ -5155,8 +5155,8 @@ class StubGenerator: public StubCodeGenerator {
       v16, v18, v20, v22
     };
     VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
-    VectorRegister vtable_32 = (MaxVectorSize == 16) ? v26 : v4;
-    VectorRegister vtable_16 = (MaxVectorSize == 16) ? v27 : v30;
+    VectorRegister vtable_32 = v4; // group: v4, v5
+    VectorRegister vtable_16 = v30;
     VectorRegister vtemp1 = v28;
     VectorRegister vtemp2 = v29;
 
@@ -5176,25 +5176,25 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
 
     // Generating accumulation coefficients for further calculations
+    // vtable_64:
     __ vid_v(vtemp1);
     __ vrsub_vx(vtable_64, vtemp1, temp1);
     // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
-    if (MaxVectorSize > 16) {
-      // Need to generate vtable_32 explicitly
-      __ mv(temp1, 32);
-      __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
-      __ vid_v(vtemp1);
-      __ vrsub_vx(vtable_32, vtemp1, temp1);
-      // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
-    }
+
+    // vtable_32:
+    __ mv(temp1, 32);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_32, vtemp1, temp1);
+    // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
+
+    // vtable_16:
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    if (MaxVectorSize > 16) {
-      // Need to generate vtable_16 explicitly
-      __ mv(temp1, 16);
-      __ vid_v(vtemp1);
-      __ vrsub_vx(vtable_16, vtemp1, temp1);
-      // vtable_32 group now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
-    }
+    __ mv(temp1, 16);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_16, vtemp1, temp1);
+    // vtable_16 group now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+
     __ vmv_v_i(vzero, 0);
 
     __ mv(base, BASE);
