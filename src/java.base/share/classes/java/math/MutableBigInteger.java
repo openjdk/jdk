@@ -1949,7 +1949,7 @@ class MutableBigInteger {
     }
 
     /**
-     * Assume {@code 2 <= len <= x.intLen && Integer.numberOfLeadingZeros(x.value[x.offset]) <= 1}
+     * Assume {@code 2 <= len <= intLen && Integer.numberOfLeadingZeros(value[offset]) <= 1}
      * @implNote The implementation is based on Zimmermann's works available
      * <a href="https://inria.hal.science/inria-00072854/en/">  here</a> and
      * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a>
