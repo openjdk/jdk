@@ -91,9 +91,6 @@ import sun.invoke.util.Wrapper;
 
     private static final boolean disableEagerInitialization;
 
-    // condy to load implMethod from class data
-    private static final DynamicConstantDesc<?> implMethodCondy;
-
     static {
         // To dump the lambda proxy classes, set this system property:
         //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles
@@ -103,9 +100,6 @@ import sun.invoke.util.Wrapper;
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
-
-        // condy to load implMethod from class data
-        implMethodCondy = DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, CD_MethodHandle);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -520,7 +514,9 @@ import sun.invoke.util.Wrapper;
                        .dup();
                 }
                 if (useImplMethodHandle) {
-                    cob.ldc(implMethodCondy);
+                    ConstantPoolBuilder cp = cob.constantPool();
+                    cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_INVOKE), List.of()),
+                                                    cp.nameAndTypeEntry(DEFAULT_NAME, CD_MethodHandle)));
                 }
                 for (int i = 0; i < argNames.length; i++) {
                     cob.aload(0)
