@@ -5206,17 +5206,10 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
 
-    __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
-    if (!UseZbb) {
-      __ mv(temp0, right_n_bits(16));
-      __ andr(s2, s2, temp0);
-      __ andr(s1, adler, temp0); // s1 = (adler & 0xffff)
-    } else {
-      __ zext_h(s2, s2);
-      __ zext_h(s1, adler);
-    }
+    __ zero_extend(s1, s1, 16); // s1 = (adler & 0xffff)
+    __ srliw(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
 
     // The pipelined loop needs at least 16 elements for 1 iteration
     // It does check this, but it is more effective to skip to the cleanup loop
