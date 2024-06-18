@@ -33,6 +33,8 @@ extern size_t MinNewSize;
 extern size_t MinOldSize;
 extern size_t MaxOldSize;
 
+extern size_t OldSize;
+
 extern size_t GenAlignment;
 
 class GenArguments : public GCArguments {

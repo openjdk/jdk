@@ -29,6 +29,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/classPrinter.hpp"
@@ -2115,7 +2116,10 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
-  return true;
+  // An exploded build inhibits use of CDS. Therefore, for the
+  // purpose of testing, the JVM can be treated as not having CDS
+  // built in at all.
+  return ClassLoader::has_jrt_entry();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -2653,6 +2657,11 @@ WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
   ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
 WB_END
 
+// Reports resident set size (RSS) in bytes
+WB_ENTRY(jlong, WB_Rss(JNIEnv* env, jobject o))
+  return os::rss();
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2940,6 +2949,7 @@ static JNINativeMethod methods[] = {
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
+  {CC"rss", CC"()J",                                  (void*)&WB_Rss},
 };
 
 

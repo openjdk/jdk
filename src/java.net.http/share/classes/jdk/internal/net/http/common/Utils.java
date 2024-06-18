@@ -746,6 +746,7 @@ public final class Utils {
     }
 
     public static long remaining(ByteBuffer[] bufs) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -754,6 +755,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -762,6 +764,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(ByteBuffer[] bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -770,6 +773,7 @@ public final class Utils {
     }
 
     public static long remaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -778,12 +782,14 @@ public final class Utils {
     }
 
     public static long synchronizedRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         synchronized (bufs) {
             return remaining(bufs);
         }
     }
 
-    public static int remaining(List<ByteBuffer> bufs, int max) {
+    public static long remaining(List<ByteBuffer> bufs, long max) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -794,7 +800,13 @@ public final class Utils {
         return (int) remain;
     }
 
-    public static int remaining(ByteBuffer[] refs, int max) {
+    public static int remaining(List<ByteBuffer> bufs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(bufs, (long) max);
+    }
+
+    public static long remaining(ByteBuffer[] refs, long max) {
+        if (refs == null) return 0;
         long remain = 0;
         for (ByteBuffer b : refs) {
             remain += b.remaining();
@@ -803,6 +815,11 @@ public final class Utils {
             }
         }
         return (int) remain;
+    }
+
+    public static int remaining(ByteBuffer[] refs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(refs, (long) max);
     }
 
     public static void close(Closeable... closeables) {
