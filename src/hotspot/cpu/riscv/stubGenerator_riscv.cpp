@@ -5087,16 +5087,13 @@ class StubGenerator: public StubCodeGenerator {
     __ add(s2, s2, temp1);
 
     // Summing up calculated results for s2_new
-    if (MaxVectorSize > 16) {
-      __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
-    } else {
-      // Half of vector-widening multiplication result is in successor of vs2acc
-      // group for vlen == 16, in which case we need to double vector register
-      // group width in order to reduction sum all of them
-      Assembler::LMUL LMULx2 = (LMUL == Assembler::m1) ? Assembler::m2 :
-                               (LMUL == Assembler::m2) ? Assembler::m4 : Assembler::m8;
-      __ vsetvli(temp0, temp3, Assembler::e16, LMULx2);
-    }
+    //
+    // Half of vector-widening multiplication result is in successor of vs2acc
+    // group for vlen == 16, in which case we need to double vector register
+    // group width in order to reduction sum all of them
+    Assembler::LMUL LMULx2 = (LMUL == Assembler::m1) ? Assembler::m2 :
+                             (LMUL == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+    __ vsetvli(temp0, temp3, Assembler::e16, LMULx2);
     // Upper bound for reduction sum:
     // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
     // 1. Need to do vector-widening reduction sum
