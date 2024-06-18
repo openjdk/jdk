@@ -28,7 +28,6 @@
  * @library ../../lib /test/lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @build jdk.test.lib.Platform
  * @run main TestIOException
  */
 
@@ -40,7 +39,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import javadoc.tester.JavadocTester;
-import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
@@ -53,9 +51,6 @@ public class TestIOException extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         var tester = new TestIOException();
-        if(Platform.isRoot() && !tester.isWindows()) {
-            throw new SkippedException("root user has privileged will make this test fail.");
-        }
         tester.runTests();
     }
 
@@ -67,16 +62,13 @@ public class TestIOException extends JavadocTester {
     public void testReadOnlyDirectory() {
         File outDir = new File("out1");
         if (!outDir.mkdir()) {
-            throw error(outDir, "Cannot create directory");
+            throw skip(outDir, "Cannot create directory");
         }
         if (!outDir.setReadOnly()) {
-            if (skip(outDir)) {
-                return;
-            }
-            throw error(outDir, "could not set directory read-only");
+            throw skip(outDir, "could not set directory read-only");
         }
         if (outDir.canWrite()) {
-            throw error(outDir, "directory is writable");
+            throw skip(outDir, "directory is writable");
         }
 
         try {
@@ -99,15 +91,15 @@ public class TestIOException extends JavadocTester {
     public void testReadOnlyFile() throws Exception {
         File outDir = new File("out2");
         if (!outDir.mkdir()) {
-            throw error(outDir, "Cannot create directory");
+            throw skip(outDir, "Cannot create directory");
         }
         File index = new File(outDir, "index.html");
         try (FileWriter fw = new FileWriter(index)) { }
         if (!index.setReadOnly()) {
-            throw error(index, "could not set index read-only");
+            throw skip(index, "could not set index read-only");
         }
         if (index.canWrite()) {
-            throw error(index, "index is writable");
+            throw skip(index, "index is writable");
         }
 
         try {
@@ -145,16 +137,13 @@ public class TestIOException extends JavadocTester {
         File outDir = new File("out3");
         File pkgOutDir = new File(outDir, "p");
         if (!pkgOutDir.mkdirs()) {
-            throw error(pkgOutDir, "Cannot create directory");
+            throw skip(pkgOutDir, "Cannot create directory");
         }
         if (!pkgOutDir.setReadOnly()) {
-            if (skip(pkgOutDir)) {
-                return;
-            }
-            throw error(pkgOutDir, "could not set directory read-only");
+            throw skip(pkgOutDir, "could not set directory read-only");
         }
         if (pkgOutDir.canWrite()) {
-            throw error(pkgOutDir, "directory is writable");
+            throw skip(pkgOutDir, "directory is writable");
         }
 
         // run javadoc and check results
@@ -198,16 +187,13 @@ public class TestIOException extends JavadocTester {
         File pkgOutDir = new File(outDir, "p");
         File docFilesOutDir = new File(pkgOutDir, "doc-files");
         if (!docFilesOutDir.mkdirs()) {
-            throw error(docFilesOutDir, "Cannot create directory");
+            throw skip(docFilesOutDir, "Cannot create directory");
         }
         if (!docFilesOutDir.setReadOnly()) {
-            if (skip(docFilesOutDir)) {
-                return;
-            }
-            throw error(docFilesOutDir, "could not set directory read-only");
+            throw skip(docFilesOutDir, "could not set directory read-only");
         }
         if (docFilesOutDir.canWrite()) {
-            throw error(docFilesOutDir, "directory is writable");
+            throw skip(docFilesOutDir, "directory is writable");
         }
 
         try {
@@ -225,10 +211,11 @@ public class TestIOException extends JavadocTester {
         }
     }
 
-    private Error error(File f, String message) {
+    private Error skip(File f, String message) {
+        out.print(System.getProperty("user.name"));
         out.println(f + ": " + message);
         showAllAttributes(f.toPath());
-        throw new Error(f + ": " + message);
+        throw new SkippedException(f + ": " + message);
     }
 
     private void showAllAttributes(Path p) {
@@ -247,21 +234,6 @@ public class TestIOException extends JavadocTester {
         } catch (Throwable t) {
             out.println("Error accessing attributes " + attributes + ": " + t);
         }
-    }
-
-    private boolean skip(File dir) {
-        if (isWindows()) {
-            showAllAttributes(dir.toPath());
-            out.println("Windows: cannot set directory read only:" + dir);
-            out.println("TEST CASE SKIPPED");
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
     }
 }
 
