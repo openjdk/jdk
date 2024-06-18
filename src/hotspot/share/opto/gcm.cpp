@@ -1421,7 +1421,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       } else {
         // Bailout without retry when (early->_dom_depth > LCA->_dom_depth)
         assert(false, "graph should be schedulable");
-        C->record_method_not_compilable("late schedule failed: incorrect graph", true);
+        C->record_method_not_compilable("late schedule failed: incorrect graph" DEBUG_ONLY(COMMA true));
       }
       return;
     }
@@ -1602,7 +1602,7 @@ void PhaseCFG::global_code_motion() {
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
         assert(C->failure_is_artificial(), "local schedule failed");
-        C->record_method_not_compilable("local schedule failed", true);
+        C->record_method_not_compilable("local schedule failed" DEBUG_ONLY(COMMA true));
       }
       _regalloc = nullptr;
       return;

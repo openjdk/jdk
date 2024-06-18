@@ -795,7 +795,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string(), true);
+      record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
       return;
     }
     GraphKit kit(jvms);
@@ -4390,7 +4390,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // to backtrack and retry without subsuming loads.  Other than this backtracking
 // behavior, the Compile's failure reason is quietly copied up to the ciEnv
 // by the logic in C2Compiler.
-void Compile::record_failure(const char* reason, bool skip) {
+void Compile::record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures)) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
@@ -4401,7 +4401,7 @@ void Compile::record_failure(const char* reason, bool skip) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
   } else {
-    assert(!StressBailout || skip, "should have handled previous failure.");
+    assert(!StressBailout || allow_multiple_failures, "should have handled previous failure.");
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

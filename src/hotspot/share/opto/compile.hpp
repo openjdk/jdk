@@ -838,7 +838,7 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  bool failing(bool skip=false) {
+  bool failing(bool no_stress_bailout=false) {
     if (failing_internal()) {
       return true;
     }
@@ -848,7 +848,7 @@ private:
       return false;
     }
 #endif
-    if (StressBailout && !skip) {
+    if (StressBailout && !no_stress_bailout) {
       return fail_randomly(StressBailoutProbability);
     }
     return false;
@@ -875,11 +875,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason, bool skip=false);
-  void record_method_not_compilable(const char* reason, bool skip=false) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures=false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures=false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason, skip);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {

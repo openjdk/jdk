@@ -413,7 +413,7 @@ void Matcher::match( ) {
       assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
       ss.print("graph lost: reason unknown");
     }
-    C->record_method_not_compilable(ss.as_string(), true);
+    C->record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
   }
   if (C->failing()) {
     // delete old;
