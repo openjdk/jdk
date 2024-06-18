@@ -5086,24 +5086,22 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(temp1, s1, exact_log2(step));
     __ add(s2, s2, temp1);
 
-    // MaxVectorSize == 16: Remainder for vwmulu.vv is in successor of vs2acc[0] group
-    VectorRegister vs2acc_successor = vs2acc[2];
-    if (step == 32)
-      vs2acc_successor = vs2acc[1];
-    else if (step == 16)
-      vs2acc_successor = vs2acc[0]->successor();
-
     // Summing up calculated results for s2_new
-    __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
+    if (MaxVectorSize > 16) {
+      __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
+    } else {
+      // Half of vector-widening multiplication result is in successor of vs2acc[0]
+      // group for vlen == 16, in which case we need to double vector register
+      // group width in order to reduction sum all of them
+      Assembler::LMUL LMULx2 = (LMUL == Assembler::m1) ? Assembler::m2 :
+                               (LMUL == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+      __ vsetvli(temp0, temp3, Assembler::e16, LMULx2);
+    }
     // Upper bound for reduction sum:
     // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
     // 1. Need to do vector-widening reduction sum
     // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
     __ vwredsumu_vs(vtemp1, vs2acc[0], vzero);
-    if (MaxVectorSize == 16)
-      // For small vector length, the rest of multiplied data
-      // is in successor of vs2acc[0] group, so summing it up, too
-      __ vwredsumu_vs(vtemp2, vs2acc_successor, vzero);
 
     // Extracting results for:
     // s1_new
@@ -5113,10 +5111,6 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetvli(temp0, temp3, Assembler::e32, Assembler::m1);
     __ vmv_x_s(temp1, vtemp1);
     __ add(s2, s2, temp1);
-    if (MaxVectorSize == 16) {
-      __ vmv_x_s(temp2, vtemp2);
-      __ add(s2, s2, temp2);
-    }
   }
 
   /***
