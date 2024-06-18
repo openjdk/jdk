@@ -25,8 +25,8 @@
 package jdk.jfr.internal;
 
 /**
- * The ChunkRotationMonitor class is used to exclude jdk.JavaMonitorWait events
+ * The HiddenWait class is used to exclude jdk.JavaMonitorWait events
  * from being generated when Object.wait() is called on an object of this type.
  */
-final class ChunkRotationMonitor {
+public final class HiddenWait {
 }

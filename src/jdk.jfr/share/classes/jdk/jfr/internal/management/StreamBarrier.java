@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.io.IOException;
 public final class StreamBarrier implements Closeable {
 
     private boolean activated = false;
+    private boolean used = false;
     private long end = Long.MAX_VALUE;
 
     // Blocks thread until barrier is deactivated
@@ -62,17 +63,21 @@ public final class StreamBarrier implements Closeable {
         return end;
     }
 
-    public synchronized boolean hasStreamEnd() {
-        return end != Long.MAX_VALUE;
-    }
-
     public synchronized void activate() {
         activated = true;
+        used = true;
     }
 
     @Override
     public synchronized void close() throws IOException {
         activated = false;
         this.notifyAll();
+    }
+
+    /**
+     * Returns {@code true) if barrier is, or has been, in active state, {@code false) otherwise.
+     */
+    public synchronized boolean used() {
+        return used;
     }
 }

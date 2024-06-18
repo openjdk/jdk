@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public final class JVM {
     /*
      * The JVM uses the chunk rotation monitor to notify Java that a rotation is warranted.
      */
-    public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
+    public static final Object CHUNK_ROTATION_MONITOR = new HiddenWait();
 
     private static volatile boolean nativeOK;
 
@@ -170,6 +170,11 @@ public final class JVM {
      */
     public static native long getTicksFrequency();
 
+    /**
+     * Returns the same clock that sets the start time of a chunk (in nanos).
+     */
+    public static native long nanosNow();
+    
     /**
      * Write message to log. Should swallow null or empty message, and be able
      * to handle any Java character and not crash with very large message
