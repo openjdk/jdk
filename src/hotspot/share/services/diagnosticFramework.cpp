@@ -45,7 +45,7 @@ CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
   line_end = &line[len];
 
   // Skip whitespace in the beginning of the line.
-  while (_cmd < line_end && isspace((int) _cmd[0])) {
+  while (_cmd < line_end && isspace((unsigned char) _cmd[0])) {
     _cmd++;
   }
   cmd_end = _cmd;
@@ -55,7 +55,7 @@ CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
     _cmd_len = 0;
   } else {
     // Look for end of the command name
-    while (cmd_end < line_end && !isspace((int) cmd_end[0])) {
+    while (cmd_end < line_end && !isspace((unsigned char) cmd_end[0])) {
       cmd_end++;
     }
     _cmd_len = cmd_end - _cmd;
