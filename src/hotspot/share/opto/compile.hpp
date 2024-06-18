@@ -841,16 +841,16 @@ private:
     if (failing_internal()) {
       return true;
     }
-    if (!StressBailout || skip) {
-      return false;
-    }
 #ifdef ASSERT
     // Disable for PhaseIdealLoop verification
     if (phase_verify_ideal_loop()) {
       return false;
     }
 #endif
-    return fail_randomly(StressBailoutProbability);
+    if (StressBailout && !skip) {
+      return fail_randomly(StressBailoutProbability);
+    }
+    return false;
   }
 
   bool fail_randomly(uint invprob) {
