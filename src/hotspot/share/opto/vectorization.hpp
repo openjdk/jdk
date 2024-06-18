@@ -647,6 +647,14 @@ public:
 //
 // Maybe the DNF (disjunctive normal form, OR of AND) could be best?
 // But what do the papers do?
+//
+// One paper just creates normal and predicate nodes, and SLP's those.
+// A graph is perhaps the easiest - though I'm not sure how we can combine
+// both C2 and special predicate nodes.
+//
+// It would be nice to future-proof the design, and allow reduction/prefix sum
+// on predicates.
+// Wrapping everything in an extra graph has overheads, but unifies the design.
 
 // Submodule of VLoopAnalyzer.
 // TODO desc
