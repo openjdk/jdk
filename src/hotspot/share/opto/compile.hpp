@@ -850,7 +850,7 @@ private:
       return false;
     }
 #endif
-    return fail_randomly(StressBailoutInterval);
+    return fail_randomly(StressBailoutProbability);
   }
 
   bool fail_randomly(uint invprob) {

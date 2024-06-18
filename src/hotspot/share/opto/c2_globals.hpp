@@ -70,7 +70,7 @@
   product(bool, StressBailout, false, DIAGNOSTIC,                           \
          "Perform bailouts randomly at C2 failing() checks")                \
                                                                             \
-  product(uint, StressBailoutInterval, 100000, DIAGNOSTIC,                  \
+  product(uint, StressBailoutProbability, 100000, DIAGNOSTIC,               \
           "Stress bailout every n:th time on average")                      \
           range(1, max_juint)                                               \
                                                                             \

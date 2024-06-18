@@ -41,10 +41,10 @@ import jdk.test.lib.Utils;
 
 public class TestStressBailout {
 
-    static void runTest(int interval) throws Exception {
+    static void runTest(int invprob) throws Exception {
         String[] procArgs = {"-Xcomp", "-XX:-TieredCompilation",
                              "-XX:+UnlockDiagnosticVMOptions", "-XX:+StressBailout",
-                             "-XX:StressBailoutInterval=" + interval, "-version"};
+                             "-XX:StressBailoutProbability=" + invprob, "-version"};
         ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
