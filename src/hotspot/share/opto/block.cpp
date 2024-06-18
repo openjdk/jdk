@@ -394,7 +394,7 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != nullptr, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
   if (C->failing()) {
     return;
   }

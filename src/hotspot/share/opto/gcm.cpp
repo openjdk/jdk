@@ -1601,7 +1601,7 @@ void PhaseCFG::global_code_motion() {
     Block* block = get_block(i);
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-        assert(false, "local schedule failed");
+        assert(C->failure_is_artificial(), "local schedule failed");
         C->record_method_not_compilable("local schedule failed", true);
       }
       _regalloc = nullptr;

@@ -391,6 +391,8 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
+
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
   // The lifetime of the old-space nodes is during xform.
@@ -788,6 +790,12 @@ private:
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
+
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
@@ -836,19 +844,27 @@ private:
     if (!StressBailout || skip) {
       return false;
     }
+#ifdef ASSERT
+    // Disable for PhaseIdealLoop verification
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+#endif
     return fail_randomly(StressBailoutInterval);
   }
 
   bool fail_randomly(uint invprob) {
-    guarantee(0 < invprob, "domain error");
-#ifdef ASSERT
-    return false; // debug builds assert on bailouts.
-#endif
+    assert(0 < invprob, "domain error");
     if (!_stress_seed || (random() % invprob)) {
       return false;
     }
     record_failure("StressBailout");
     return true;
+  }
+
+  bool failure_is_artificial() {
+    assert(failing_internal(), "not failing.");
+    return C->failure_reason_is("StressBailout");
   }
 
   bool failure_reason_is(const char* r) const {

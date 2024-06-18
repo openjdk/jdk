@@ -1136,7 +1136,7 @@ void Compile::init_start(StartNode* s) {
  * the ideal graph.
  */
 StartNode* Compile::start() const {
-  assert (!failing_internal(), "Must not have pending failure. Reason is: %s", failure_reason());
+  assert (!failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", failure_reason());
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
     if (start->is_Start()) {
@@ -2130,7 +2130,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing(true) || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2173,7 +2173,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing(true) || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -4399,7 +4399,7 @@ void Compile::record_failure(const char* reason, bool skip) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
   } else {
-    guarantee(!StressBailout || skip, "should have handled previous failure.");
+    assert(!StressBailout || skip, "should have handled previous failure.");
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

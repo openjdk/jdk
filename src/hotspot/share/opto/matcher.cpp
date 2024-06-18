@@ -395,7 +395,7 @@ void Matcher::match( ) {
       // Don't set control, it will confuse GCM since there are no uses.
       // The control will be set when this node is used first time
       // in find_base_for_derived().
-      assert(_mach_null != nullptr, "");
+      assert(_mach_null != nullptr || C->failure_is_artificial(), ""); // bailouts are handled below.
 
       C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
 
@@ -2673,7 +2673,7 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
 
 // Compute RegMask for an ideal register.
 const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
-  assert(!C->failing(), "already failing.");
+  assert(!C->failing(true) || C->failure_is_artificial(), "already failing.");
   if (C->failing()) {
     return nullptr;
   }
@@ -2707,7 +2707,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     default: ShouldNotReachHere();
   }
   MachNode* mspill = match_tree(spill);
-  assert(mspill != nullptr, "matching failed: %d", ideal_reg);
+  assert(mspill != nullptr || C->failure_is_artificial(), "matching failed: %d", ideal_reg);
   if (C->failing()) {
     return nullptr;
   }
@@ -2844,7 +2844,7 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
-  assert(!C->failing(), "sanity");
+  assert(!C->failing(true) || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
     Unique_Node_List useful;
     C->identify_useful_nodes(useful);
