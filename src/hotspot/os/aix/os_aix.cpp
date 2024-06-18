@@ -96,6 +96,10 @@
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
+// sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
+#ifndef MAP_ANON_64K
+#define MAP_ANON_64K  0x400
+#endif
 #include <sys/resource.h>
 #include <sys/select.h>
 #include <sys/shm.h>
@@ -224,6 +228,7 @@ static struct {
   size_t textpsize;           // default text page size (LDR_CNTRL STACKPSIZE)
   bool can_use_64K_pages;     // True if we can alloc 64K pages dynamically with Sys V shm.
   bool can_use_16M_pages;     // True if we can alloc 16M pages dynamically with Sys V shm.
+  bool can_use_64K_mmap_pages;// True if we can alloc 64K pages dynamically with mmap.
   int error;                  // Error describing if something went wrong at multipage init.
 } g_multipage_support = {
   (size_t) -1,
@@ -231,7 +236,7 @@ static struct {
   (size_t) -1,
   (size_t) -1,
   (size_t) -1,
-  false, false,
+  false, false, false,
   0
 };
 
@@ -448,6 +453,14 @@ static void query_multipage_support() {
       }
     }
 
+    // Can we use mmap with 64K pages? (Should be available with AIX7.3 TL1)
+    {
+      void* p = mmap(NULL, 1000000, PROT_READ | PROT_WRITE, MAP_ANON_64K | MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+      guarantee0(p != (void*) -1); // Should always work.
+      g_multipage_support.can_use_64K_mmap_pages = (64*K == os::Aix::query_pagesize(p));
+      munmap(p, 1000000);
+    }
+
   } // end: check which pages can be used for shared memory
 
 query_multipage_support_end:
@@ -460,6 +473,8 @@ query_multipage_support_end:
       describe_pagesize(g_multipage_support.textpsize));
   trcVerbose("Thread stack page size (pthread): %s",
       describe_pagesize(g_multipage_support.pthr_stack_pagesize));
+  trcVerbose("Can use 64K pages with mmap memory: %s",
+      (g_multipage_support.can_use_64K_mmap_pages ? "yes" :"no"));
   trcVerbose("Default shared memory page size: %s",
       describe_pagesize(g_multipage_support.shmpsize));
   trcVerbose("Can use 64K pages dynamically with shared memory: %s",
@@ -1131,6 +1146,8 @@ void os::print_memory_info(outputStream* st) {
     describe_pagesize(g_multipage_support.textpsize));
   st->print_cr("  Thread stack page size (pthread):       %s",
     describe_pagesize(g_multipage_support.pthr_stack_pagesize));
+  st->print_cr("  Can use 64K pages with mmap memory:     %s",
+    (g_multipage_support.can_use_64K_mmap_pages ? "yes" :"no"));
   st->print_cr("  Default shared memory page size:        %s",
     describe_pagesize(g_multipage_support.shmpsize));
   st->print_cr("  Can use 64K pages dynamically with shared memory:  %s",
@@ -1610,6 +1627,10 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // later use msync(MS_INVALIDATE) (see os::uncommit_memory).
   int flags = MAP_ANONYMOUS | MAP_SHARED;
 
+  if (os::vm_page_size() == 64*K && g_multipage_support.can_use_64K_mmap_pages) {
+    flags |= MAP_ANON_64K;
+  }
+
   // MAP_FIXED is needed to enforce requested_addr - manpage is vague about what
   // it means if wishaddress is given but MAP_FIXED is not set.
   //
@@ -1659,7 +1680,11 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
     p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
-  vmembk_add(addr, size, 4*K, VMEM_MAPPED);
+  if (os::vm_page_size() == 64*K && g_multipage_support.can_use_64K_mmap_pages) {
+    vmembk_add(addr, size, 64*K, VMEM_MAPPED);
+  } else {
+    vmembk_add(addr, size, 4*K, VMEM_MAPPED);
+  }
 
   // Test alignment, see above.
   assert0(is_aligned_to(addr, os::vm_page_size()));
@@ -1852,8 +1877,8 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   bytes = align_up(bytes, os::vm_page_size());
 
   // In 4K mode always use mmap.
-  // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
-  if (os::vm_page_size() == 4*K) {
+  // In 64K mode allocate with mmap if it supports 64K pages, otherwise use 64K shmatted.
+  if (os::vm_page_size() == 4*K || g_multipage_support.can_use_64K_mmap_pages) {
     return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
   } else {
     return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
@@ -2040,8 +2065,8 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   bytes = align_up(bytes, os::vm_page_size());
 
   // In 4K mode always use mmap.
-  // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
-  if (os::vm_page_size() == 4*K) {
+  // In 64K mode allocate with mmap if it supports 64K pages, otherwise use 64K shmatted.
+  if (os::vm_page_size() == 4*K || g_multipage_support.can_use_64K_mmap_pages) {
     return reserve_mmaped_memory(bytes, requested_addr);
   } else {
     return reserve_shmated_memory(bytes, requested_addr);
@@ -2181,18 +2206,18 @@ void os::init(void) {
   //    and should be allocated with 64k pages.
   //
   // So, we do the following:
-  // LDR_CNTRL    can_use_64K_pages_dynamically       what we do                      remarks
-  // 4K           no                                  4K                              old systems (aix 5.2) or new systems with AME activated
-  // 4k           yes                                 64k (treat 4k stacks as 64k)    different loader than java and standard settings
+  // LDR_CNTRL    can_use_64K_pages_dynamically(mmap or shm)       what we do                      remarks
+  // 4K           no                                               4K                              old systems (aix 5.2) or new systems with AME activated
+  // 4k           yes                                              64k (treat 4k stacks as 64k)    different loader than java and standardsettings
   // 64k          no              --- AIX 5.2 ? ---
-  // 64k          yes                                 64k                             new systems and standard java loader (we set datapsize=64k when linking)
+  // 64k          yes                                              64k                             new systems and standard java loader (we set datapsize=64k when linking)
 
   // We explicitly leave no option to change page size, because only upgrading would work,
   // not downgrading (if stack page size is 64k you cannot pretend its 4k).
 
   if (g_multipage_support.datapsize == 4*K) {
     // datapsize = 4K. Data segment, thread stacks are 4K paged.
-    if (g_multipage_support.can_use_64K_pages) {
+    if (g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages) {
       // .. but we are able to use 64K pages dynamically.
       // This would be typical for java launchers which are not linked
       // with datapsize=64K (like, any other launcher but our own).
@@ -2222,7 +2247,7 @@ void os::init(void) {
     // This normally means that we can allocate 64k pages dynamically.
     // (There is one special case where this may be false: EXTSHM=on.
     // but we decided to not support that mode).
-    assert0(g_multipage_support.can_use_64K_pages);
+    assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
     set_page_size(64*K);
     trcVerbose("64K page mode");
     FLAG_SET_ERGO(Use64KPages, true);
