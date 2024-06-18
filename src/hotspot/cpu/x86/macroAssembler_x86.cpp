@@ -10385,6 +10385,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
   bind(unlocked);
 }
 
+#ifdef _LP64
 // Saves legacy GPRs state on stack.
 void MacroAssembler::save_legacy_gprs() {
   subq(rsp, 16 * wordSize);
@@ -10405,7 +10406,6 @@ void MacroAssembler::save_legacy_gprs() {
   movq(Address(rsp, 0), r15);
 }
 
-
 // Resotres back legacy GPRs state from stack.
 void MacroAssembler::restore_legacy_gprs() {
   movq(r15, Address(rsp, 0));
@@ -10425,3 +10425,4 @@ void MacroAssembler::restore_legacy_gprs() {
   movq(rax, Address(rsp, 15 * wordSize));
   addq(rsp, 16 * wordSize);
 }
+#endif
