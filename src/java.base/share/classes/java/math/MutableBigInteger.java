@@ -823,7 +823,7 @@ class MutableBigInteger {
         // Add common parts of both numbers
         while (x > 0 && y > 0) {
             x--; y--;
-            int bval = y < addend.intLen ? addend.value[y+addend.offset] : 0;
+            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
             sum = (value[x+offset] & LONG_MASK) +
                 (bval & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
@@ -842,7 +842,7 @@ class MutableBigInteger {
         }
         while (y > 0) {
             y--;
-            int bval = y < addend.intLen ? addend.value[y+addend.offset] : 0;
+            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
             sum = (bval & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
             carry = sum >>> 32;
@@ -894,7 +894,7 @@ class MutableBigInteger {
         y -= x;
         rstart -= x;
 
-        int len = Math.min(y, addend.intLen);
+        int len = Math.min(y, addend.value.length-addend.offset);
         System.arraycopy(addend.value, addend.offset, result, rstart+1-y, len);
 
         // zero the gap
@@ -1972,9 +1972,23 @@ class MutableBigInteger {
                 s--;
             }
 
-            return new MutableBigInteger[] { new MutableBigInteger((int) s),
-                    (r & LONG_MASK) == r ? new MutableBigInteger((int) r)
-                            : new MutableBigInteger(new int[] { 1, (int) r }) };
+            // Allocate sufficient space to hold the final results
+            MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + 1) >> 1]);
+            MutableBigInteger rem = new MutableBigInteger(new int[sqrt.value.length + 1]);
+
+            // Place the partial results
+            sqrt.intLen = 1;
+            sqrt.value[0] = (int) s;
+
+            if ((r & LONG_MASK) == r) {
+                rem.intLen = 1;
+                rem.value[0] = (int) r;
+            } else {
+                rem.intLen = 2;
+                rem.value[0] = 1;
+                rem.value[1] = (int) r;
+            }
+            return new MutableBigInteger[] { sqrt, rem };
         }
 
         // Recursive step (len >= 3)
@@ -1991,21 +2005,24 @@ class MutableBigInteger {
 
         MutableBigInteger[] sr = sqrtRemZimmermann(len >> 1); // Recursive invocation
 
-        final int blockLen = len >> 2;
-        MutableBigInteger dividend = getBlockZimmermann(1, len, limit, blockLen);
-        dividend.addDisjoint(sr[1], blockLen);
+        final int blockLen = len >> 2, blockBitLen = blockLen << 5;
+        MutableBigInteger dividend = sr[1];
+        dividend.leftShift(blockBitLen);
+        dividend.add(getBlockZimmermann(1, len, limit, blockLen));
         MutableBigInteger twiceSqrt = new MutableBigInteger(sr[0]);
         twiceSqrt.leftShift(1);
         MutableBigInteger q = new MutableBigInteger();
         MutableBigInteger u = dividend.divide(twiceSqrt, q);
 
-        MutableBigInteger rem = getBlockZimmermann(0, len, limit, blockLen);
-        rem.addDisjoint(u, blockLen);
+        MutableBigInteger sqrt = sr[0];
+        sqrt.leftShift(blockBitLen);
+        sqrt.add(q);
+
+        MutableBigInteger rem = u;
+        rem.leftShift(blockBitLen);
+        rem.add(getBlockZimmermann(0, len, limit, blockLen));
         BigInteger qBig = q.toBigInteger();
         int rSign = rem.subtract(new MutableBigInteger(qBig.multiply(qBig).mag));
-
-        q.addShifted(sr[0], blockLen);
-        MutableBigInteger sqrt = q;
 
         if (rSign == -1) {
             twiceSqrt = new MutableBigInteger(sqrt);
