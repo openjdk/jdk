@@ -85,28 +85,6 @@ abstract class ClassResolver implements AutoCloseable {
     @Override
     public abstract void close() throws IOException;
 
-    public ClassResolver or(ClassResolver other) {
-        ClassResolver outer = this;
-        return new ClassResolver() {
-            @Override
-            public void forEach(BiConsumer<ClassDesc, Info> action) {
-                outer.forEach(action);
-                other.forEach(action);
-            }
-
-            @Override
-            public Optional<Info> lookup(ClassDesc desc) {
-                return outer.lookup(desc).or(() -> other.lookup(desc));
-            }
-
-            @Override
-            public void close() throws IOException {
-                outer.close();
-                other.close();
-            }
-        };
-    }
-
     private static class ScannedModuleClassResolver extends ClassResolver {
 
         private final List<JarFile> jars;
@@ -175,10 +153,8 @@ abstract class ClassResolver implements AutoCloseable {
                     try {
                         JavaFileManager.Location loc = platformFileManager.getLocationForModule(StandardLocation.SYSTEM_MODULES, moduleName);
                         JavaFileObject jfo = platformFileManager.getJavaFileForInput(loc, qualName, JavaFileObject.Kind.CLASS);
-                        if (jfo != null) {
-                            ClassModel model = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
-                            return new Info(moduleName, null, model);
-                        }
+                        ClassModel model = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
+                        return new Info(moduleName, null, model);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

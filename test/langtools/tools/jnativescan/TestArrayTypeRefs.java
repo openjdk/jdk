@@ -51,6 +51,6 @@ public class TestArrayTypeRefs extends JNativeScanTestBase {
     public void testSingleJarClassPath() {
         assertSuccess(jnativescan("--class-path", arrayRef.toString()))
                 .stderrShouldBeEmpty()
-                .stdoutShouldBeEmpty();
+                .stdoutShouldContain("<no restricted methods>");
     }
 }

@@ -44,16 +44,13 @@ public class TestSubclassRefs extends JNativeScanTestBase {
     public void before() throws IOException {
         subclassRef = Path.of("subclassref.jar");
         Path testClasses = Path.of(System.getProperty("test.classes", ""));
-        JarUtils.createJarFile(subclassRef, testClasses,
-                Path.of("subclassref", "A.class"),
-                Path.of("subclassref", "B.class"),
-                Path.of("subclassref", "App.class"));
+        JarUtils.createJarFile(subclassRef, testClasses, Path.of("subclassref", "App.class"));
     }
 
     @Test
     public void testSingleJarClassPath() {
         assertSuccess(jnativescan("--class-path", subclassRef.toString()))
                 .stderrShouldBeEmpty()
-                .stdoutShouldBeEmpty();
+                .stdoutShouldContain("<no restricted methods>");
     }
 }

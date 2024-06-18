@@ -110,34 +110,30 @@ class RestrictedMethodFinder {
     }
 
     private boolean isRestrictedMethod(ClassDesc owner, String name, MethodTypeDesc type) throws JNativeScanFatalError {
-        try {
-            return CACHE.computeIfAbsent(new MethodRef(owner, name, type), methodRef -> {
-                if (methodRef.owner().isArray()) {
-                    // no restricted methods in arrays atm, and we can't look them up since they have no class file
-                    return false;
-                }
-                Optional<ClassResolver.Info> info = systemClassResolver.lookup(methodRef.owner());
-                if (!info.isPresent()) {
-                    return false;
-                }
-                ClassModel classModel = info.get().model();
-                Optional<MethodModel> methodModel = findMethod(classModel, methodRef.name(), methodRef.type());
-                if (!methodModel.isPresent()) {
-                    // If we are here, the method was referenced through a subclass of the class containing the actual
-                    // method declaration. We could implement a method resolver (that needs to be version aware
-                    // as well) to find the method model of the declaration, but it's not really worth it.
-                    // None of the restricted methods (atm) are exposed through more than 1 public type, so it's not
-                    // possible for user code to reference them through a subclass. The only exception is if the user
-                    // implements SymbolLookup and then did something like 'MySymbolLookup.libraryLookup(...)'.
-                    // But we don't care, so for now just return false here
-                    return false;
-                }
+        return CACHE.computeIfAbsent(new MethodRef(owner, name, type), methodRef -> {
+            if (methodRef.owner().isArray()) {
+                // no restricted methods in arrays atm, and we can't look them up since they have no class file
+                return false;
+            }
+            Optional<ClassResolver.Info> info = systemClassResolver.lookup(methodRef.owner());
+            if (!info.isPresent()) {
+                return false;
+            }
+            ClassModel classModel = info.get().model();
+            Optional<MethodModel> methodModel = findMethod(classModel, methodRef.name(), methodRef.type());
+            if (!methodModel.isPresent()) {
+                // If we are here, the method was referenced through a subclass of the class containing the actual
+                // method declaration. We could implement a method resolver (that needs to be version aware
+                // as well) to find the method model of the declaration, but it's not really worth it.
+                // None of the restricted methods (atm) are exposed through more than 1 public type, so it's not
+                // possible for user code to reference them through a subclass. The only exception is if the user
+                // implements SymbolLookup and then did something like 'MySymbolLookup.libraryLookup(...)'.
+                // But we don't care, so for now just return false here
+                return false;
+            }
 
-                return hasRestrictedAnnotation(methodModel.get());
-            });
-        } catch (IllegalStateException e) {
-            throw ((JNativeScanFatalError) e.getCause());
-        }
+            return hasRestrictedAnnotation(methodModel.get());
+        });
     }
 
     private static boolean hasRestrictedAnnotation(MethodModel method) {

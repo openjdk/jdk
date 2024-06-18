@@ -153,11 +153,11 @@ class JNativeScanTask {
     }
 
     private void dumpAll(Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
-        allRestrictedMethods.forEach((module, perClass) -> {
-            out.println(module.path() + " (" + module.moduleName() + "):");
-            if (perClass.isEmpty()) {
-                out.println("  <no restricted methods>");
-            } else {
+        if (allRestrictedMethods.isEmpty()) {
+            out.println("  <no restricted methods>");
+        } else {
+            allRestrictedMethods.forEach((module, perClass) -> {
+                out.println(module.path() + " (" + module.moduleName() + "):");
                 perClass.forEach((classDesc, restrictedUses) -> {
                     out.println("  " + qualName(classDesc) + ":");
                     restrictedUses.forEach(use -> {
@@ -171,8 +171,8 @@ class JNativeScanTask {
                         }
                     });
                 });
-            }
-        });
+            });
+        }
     }
 
     private static void checkRegularJar(Path path) throws JNativeScanFatalError {
