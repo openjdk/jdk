@@ -1291,7 +1291,7 @@ void InstanceKlass::add_to_hierarchy_impl(JavaThread* current) {
 
 void InstanceKlass::add_to_hierarchy(JavaThread* current) {
 
-  if (UseVtableBasedCHA) {
+  if (UseVtableBasedCHA || !Universe::is_fully_initialized()) {
     add_to_hierarchy_impl(current);
   } else {
     // In case we are not using CHA based vtables we need to make sure the loaded
