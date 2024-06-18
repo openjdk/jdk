@@ -51,7 +51,7 @@ public class PrintMountedVirtualThread {
             OutputAnalyzer output = executor.execute("Thread.print");
             output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
             output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
-            output.shouldMatch("Mounted virtual thread " + "\"Dummy Vthread\"" + " #" + vthread.threadId());
+            output.shouldMatch("Mounted virtual thread " + "#" + vthread.threadId());
 
         } finally {
             shouldFinish.set(true);
