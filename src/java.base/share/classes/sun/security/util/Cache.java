@@ -28,7 +28,6 @@ package sun.security.util;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -137,7 +136,7 @@ public abstract class Cache<K,V> {
      * lifetime for entries, with the values held by SoftReferences.
      */
     public static <K,V> Cache<K,V> newSoftMemoryCache(int size) {
-        return new MemoryCache<>(CacheType.SOFT, size);
+        return new MemoryCache<>(true, size);
     }
 
     /**
@@ -146,11 +145,12 @@ public abstract class Cache<K,V> {
      * by SoftReferences.
      */
     public static <K,V> Cache<K,V> newSoftMemoryCache(int size, int timeout) {
-        return new MemoryCache<>(CacheType.SOFT, size, timeout);
+        return new MemoryCache<>(true, size, timeout);
     }
 
-    public static <K,V> Cache<K,V> newSoftMemoryQueue(int size, int timeout) {
-        return new MemoryCache<>(CacheType.CACHE, size, timeout);
+    public static <K,V> Cache<K,V> newSoftMemoryQueue(int size, int timeout,
+        int maxQueueSize) {
+        return new MemoryCache<>(true, size, timeout, maxQueueSize);
     }
 
     /**
@@ -158,7 +158,7 @@ public abstract class Cache<K,V> {
      * lifetime for entries, with the values held by standard references.
      */
     public static <K,V> Cache<K,V> newHardMemoryCache(int size) {
-        return new MemoryCache<>(CacheType.HARD, size);
+        return new MemoryCache<>(false, size);
     }
 
     /**
@@ -175,7 +175,7 @@ public abstract class Cache<K,V> {
      * by standard references.
      */
     public static <K,V> Cache<K,V> newHardMemoryCache(int size, int timeout) {
-        return new MemoryCache<>(CacheType.HARD, size, timeout);
+        return new MemoryCache<>(false, size, timeout);
     }
 
     /**
@@ -262,12 +262,6 @@ class NullCache<K,V> extends Cache<K,V> {
 
 }
 
-/**
- * There are three types of cache.  SoftCacheEntry, HardCacheEntry, and
- * QueueCacheEntry.  This enum is used to identify the cache's configuration.
- */
-enum CacheType { SOFT, HARD, CACHE }
-
 class MemoryCache<K,V> extends Cache<K,V> {
 
     // Debugging
@@ -275,29 +269,34 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
     private final Map<K, CacheEntry<K,V>> cacheMap;
     private int maxSize;
+    final private int maxQueueSize;
     private long lifetime;
     private long nextExpirationTime = Long.MAX_VALUE;
-    private final CacheType cacheType;
 
     // ReferenceQueue is of type V instead of Cache<K,V>
     // to allow SoftCacheEntry to extend SoftReference<V>
     private final ReferenceQueue<V> queue;
 
-    public MemoryCache(CacheType type, int maxSize) {
-        this(type, maxSize, 0);
+    public MemoryCache(boolean soft, int maxSize) {
+        this(soft, maxSize, 0, 0);
     }
 
-    public MemoryCache(CacheType type, int maxSize, int lifetime) {
-        this.maxSize = maxSize;
-        this.lifetime = lifetime * 1000L;
-        cacheType = type;
-        if (cacheType == CacheType.HARD) {
-            this.queue = null;
-        } else {
-            this.queue = new ReferenceQueue<>();
-        }
+    public MemoryCache(boolean soft, int maxSize, int lifetime) {
+        this(soft, maxSize, lifetime, 0);
+    }
 
-        cacheMap = new ConcurrentHashMap<>();
+    public MemoryCache(boolean soft, int maxSize, int lifetime, int qSize) {
+        this.maxSize = maxSize;
+        this.maxQueueSize = qSize;
+        this.lifetime = lifetime * 1000L;
+        if (soft) {
+            this.queue = new ReferenceQueue<>();
+        } else {
+            this.queue = null;
+        }
+        // LinkedHashMap is needed for its access order.  0.75f load factor is
+        // default.
+        cacheMap = new LinkedHashMap<>(1, 0.75f, true);
     }
 
     /**
@@ -307,7 +306,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
      * This method should be called at the beginning of each public
      * method.
      */
-
     private void emptyQueue() {
         if (queue == null) {
             return;
@@ -315,7 +313,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         int startSize = cacheMap.size();
         while (true) {
             @SuppressWarnings("unchecked")
-            CacheEntry<K, V> entry = (CacheEntry<K, V>) queue.poll();
+            CacheEntry<K,V> entry = (CacheEntry<K,V>)queue.poll();
             if (entry == null) {
                 break;
             }
@@ -324,20 +322,17 @@ class MemoryCache<K,V> extends Cache<K,V> {
                 // key is null, entry has already been removed
                 continue;
             }
-
-            CacheEntry<K, V> currentEntry = cacheMap.remove(key);
+            CacheEntry<K,V> currentEntry = cacheMap.remove(key);
             // check if the entry in the map corresponds to the expired
             // entry. If not, re-add the entry
             if ((currentEntry != null) && (entry != currentEntry)) {
                 cacheMap.put(key, currentEntry);
                 continue;
             }
-
             if (currentEntry instanceof QueueCacheEntry<K,V> qe) {
                 qe.clear();
             }
         }
-
         if (DEBUG) {
             int endSize = cacheMap.size();
             if (startSize != endSize) {
@@ -350,7 +345,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
     /**
      * Scan all entries and remove all expired ones.
      */
-
     private void expungeExpiredEntries() {
         emptyQueue();
         if (lifetime == 0) {
@@ -392,7 +386,9 @@ class MemoryCache<K,V> extends Cache<K,V> {
             for (CacheEntry<K,V> entry : cacheMap.values()) {
                 entry.invalidate();
             }
-            while (queue.poll() != null);
+            while (queue.poll() != null) {
+                // empty
+            }
         }
         cacheMap.clear();
     }
@@ -404,8 +400,10 @@ class MemoryCache<K,V> extends Cache<K,V> {
     /**
      * This puts an entry into the cacheMap.
      *
-     * If useQueue is true, V will be added using a QueueCacheEntry which
+     * If canQueue is true, V will be added using a QueueCacheEntry which
      * is added to cacheMap.  If false, V is added to the cacheMap directly.
+     * The caller must keep a consistent canQueue value, mixing them can
+     * result in a queue being replaced with a single entry.
      *
      * This method is synchronized to avoid multiple QueueCacheEntry
      * overwriting the same key.
@@ -421,20 +419,23 @@ class MemoryCache<K,V> extends Cache<K,V> {
         if (expirationTime < nextExpirationTime) {
             nextExpirationTime = expirationTime;
         }
-
         CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
-        if (cacheType != CacheType.CACHE) {
-            // No matter canQueue's value, enter the value directly
-            cacheMap.put(key, newEntry);
+        if (maxQueueSize == 0) {
+            CacheEntry<K,V> oldEntry = cacheMap.put(key, newEntry);
+            if (oldEntry != null) {
+                oldEntry.invalidate();
+            }
         } else {
             CacheEntry<K, V> entry = cacheMap.get(key);
             switch (entry) {
                 case QueueCacheEntry<K, V> qe -> qe.putValue(newEntry);
                 case null,
                     default -> {
+                    // If `canQueue` create a queue and put in entry.  If
+                    // canQueue == false, replace or put this CacheEntry only.
                     if (canQueue) {
                         var q = new QueueCacheEntry<>(key, value,
-                            expirationTime, queue);
+                            expirationTime, maxQueueSize, queue);
                         q.putValue(newEntry);
                         cacheMap.put(key, q);
                     } else {
@@ -449,7 +450,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     (entry != null ? entry.getClass().getName() : null));
             }
         }
-
         if (maxSize > 0 && cacheMap.size() > maxSize) {
             expungeExpiredEntries();
             if (cacheMap.size() > maxSize) { // still too large?
@@ -472,34 +472,36 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return null;
         }
         if (lifetime > 0 && !entry.isValid(System.currentTimeMillis())) {
-            cacheMap.remove(key);
+            removeImpl(key);
             if (DEBUG) {
                 System.out.println("Ignoring expired entry");
             }
             return null;
         }
-
         // If the value is a queue, return a queue entry.
         if (entry instanceof QueueCacheEntry<K,V> qe) {
             V result = qe.getValue(lifetime);
             if (qe.isEmpty()) {
-                cacheMap.remove(key);
+                removeImpl(key);
             }
             return result;
         }
-
         return entry.getValue();
     }
 
     public void remove(Object key) {
         emptyQueue();
+        removeImpl(key);
+    }
+
+    // removeImpl is thread-safe entry removal from the cacheMap.
+    private synchronized void removeImpl(Object key) {
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry != null) {
             entry.invalidate();
         }
     }
-
-    public V pull(Object key) {
+    public synchronized V pull(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry == null) {
@@ -680,18 +682,19 @@ class MemoryCache<K,V> extends Cache<K,V> {
         implements CacheEntry<K,V> {
 
         // Limit the number of queue entries.
-        private static final int MAXQUEUESIZE = 10;
+        private final int MAXQUEUESIZE;
 
         final boolean DEBUG = false;
         private K key;
         private long expirationTime;
         final Queue<CacheEntry<K,V>> queue = new ConcurrentLinkedQueue<>();
 
-        QueueCacheEntry(K key, V value, long expirationTime,
+        QueueCacheEntry(K key, V value, long expirationTime, int maxSize,
             ReferenceQueue<V> queue) {
             super(value, queue);
             this.key = key;
             this.expirationTime = expirationTime;
+            this.MAXQUEUESIZE = maxSize;
         }
 
         public K getKey() {
@@ -704,14 +707,14 @@ class MemoryCache<K,V> extends Cache<K,V> {
 
         public V getValue(long lifetime) {
             long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
-
             do {
                 var entry = queue.poll();
                 if (entry == null) {
                     return null;
                 }
                 if (entry.isValid(time)) {
-                    return entry.getValue();
+                    // SoftReference get() returns the same as entry.getValue()
+                    return get();
                 }
                 entry.invalidate();
             } while (!queue.isEmpty());
@@ -733,12 +736,10 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     "): " + entry.getKey().toString() + ",  " + entry);
             }
             // Update the cache entry's expiration time to the latest entry.
-            // the get() will remove expired tickets
+            // The getValue() calls will remove expired tickets.
             expirationTime = entry.getExpirationTime();
-            // Limit the number of queue entries, removing the oldest.  As this
-            // is a one for one entry swap, locking isn't necessary and plus or
-            // minus a few entries is not critical.
-            if (queue.size() > MAXQUEUESIZE) {
+            // Limit the number of queue entries, removing the oldest.
+            if (queue.size() >= MAXQUEUESIZE) {
                 queue.remove();
             }
             queue.add(entry);

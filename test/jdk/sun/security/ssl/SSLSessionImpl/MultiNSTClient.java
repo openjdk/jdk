@@ -26,20 +26,23 @@
  * @library /test/lib
  * @library /javax/net/ssl/templates
  * @bug 8242008
+ * @summary Verifies multiple session tickets are PSKs are used by JSSE
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=1
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=3
+ * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=10
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=true
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
- * @summary Verifies multiple session tickets are PSKs are used by JSSE
  */
-
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import javax.net.ssl.SSLSession;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -56,7 +59,12 @@ public class MultiNSTClient {
     public static void main(String[] args) throws Exception {
 
         if (!args[0].equalsIgnoreCase("p")) {
-            String params = args[0] + " " + args[1] + " " + args[2];
+            StringBuilder sb = new StringBuilder();
+            Arrays.stream(args).forEach(a -> {
+                sb.append(a);
+                sb.append(" ");
+            });
+            String params = sb.toString();
             System.setProperty("test.java.opts",
                 "-Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +

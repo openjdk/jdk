@@ -291,7 +291,7 @@ final class NewSessionTicket {
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
             return hkdf.expand(resumptionMasterSecret, hkdfInfo,
                     hashAlg.hashLength, "TlsPreSharedKey");
-        } catch  (GeneralSecurityException gse) {
+        } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not derive PSK", gse);
         }
     }
@@ -304,7 +304,7 @@ final class NewSessionTicket {
         }
 
         @Override
-        public byte[] produce(ConnectionContext context) {
+        public byte[] produce(ConnectionContext context) throws IOException {
             HandshakeContext hc = (HandshakeContext)context;
 
             // See note on TransportContext.needHandshakeFinishedStatus.
@@ -366,59 +366,44 @@ final class NewSessionTicket {
             if (sessionTimeoutSeconds > MAX_TICKET_LIFETIME) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("No session ticket produced: " +
-                            "session timeout");
+                            "session timeout is too long");
                 }
 
                 return null;
             }
 
-            SecretKey resumptionMasterSecret =
-                hc.handshakeSession.getResumptionMasterSecret();
-            if (resumptionMasterSecret == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("No session ticket produced: " +
-                        "no resumption secret");
+            // Send NewSessionTickets to the client based
+            if (SSLConfiguration.serverNewSessionTicketCount > 0) {
+                int i = 0;
+                NewSessionTicketMessage nstm;
+                while (i < SSLConfiguration.serverNewSessionTicketCount) {
+                    nstm = generateNST(hc, sessionCache);
+                    if (nstm == null) {
+                        break;
+                    }
+                    nstm.write(hc.handshakeOutput);
+                    i++;
                 }
 
-                return null;
+                hc.handshakeOutput.flush();
             }
-
             /*
-             * This thread addresses a Windows only networking issue found with
-             * SSLSocketBruteForceClose. A client that quickly closes after
-             * TLS Finished completed would cause the server read-side to
-             * get a SocketException: "An established connection was aborted
-             * by the software in your host machine", which relates to WinSock
-             * error WSAECONNABORTED.  This situation was observed with
-             * multiple NST messages when the client and server threads on the
-             * same machine.  This is very unlikely to be seen where client
-             * and server are on different machines.
+             * With large NST counts, a client that quickly closes after
+             * TLS Finished completes can cause SocketExceptions such as:
+             * Windows servers read-side throwing SocketException:
+             *   "An established connection was aborted by the software in
+             *    your host machine", which relates to error WSAECONNABORTED.
+             * A SocketException caused by a "broken pipe" has been observed on
+             * other systems.
+             * These are very unlikely situations when client and server are on
+             * different machines.
+             *
+             * RFC 8446 does not put requirements when an NST needs to be
+             * sent, but it should be sent very soon after TLS Finished for
+             * clients that will quickly resume to create more sessions.
+             * TLS 1.3 is different from TLS 1.2, there is more data the client
+             * should be aware of
              */
-            Thread nstThread = Thread.ofVirtual().name("NST").start(() -> {
-                // Output the handshake message.
-                try {
-                    int i = 0;
-                    while (i < SSLConfiguration.serverNewSessionTicketCount) {
-                        SessionId newId = new SessionId(true,
-                            hc.sslContext.getSecureRandom());
-                        NewSessionTicketMessage nstm = generateNST(hc,
-                            sessionTimeoutSeconds, newId, sessionCache);
-                        if (nstm != null) {
-                            // should never be null
-                            nstm.write(hc.handshakeOutput);
-                        }
-                        i++;
-                    }
-                    hc.handshakeOutput.flush();
-                } catch (IOException e) {
-                    // Low exception likelihood this is data requires not
-                    // reply an IO errors will be handled by other messages.
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine("NST thread exception:");
-                        e.printStackTrace();
-                    }
-                }
-            });
 
             // See note on TransportContext.needHandshakeFinishedStatus.
             //
@@ -430,15 +415,6 @@ final class NewSessionTicket {
                 hc.conContext.needHandshakeFinishedStatus = false;
             }
 
-            // Rejoin NST thread
-            try {
-                nstThread.join(1000);
-            } catch (InterruptedException e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("NST thread interrupted: ");
-                    e.printStackTrace();
-                }
-            }
             // clean the post handshake context
             hc.conContext.finishPostHandshake();
 
@@ -447,29 +423,29 @@ final class NewSessionTicket {
         }
 
         private NewSessionTicketMessage generateNST(HandshakeContext hc,
-            int sessionTimeoutSeconds, SessionId newId,
             SSLSessionContextImpl sessionCache) throws IOException {
+
             NewSessionTicketMessage nstm;
+            SessionId newId = new SessionId(true,
+                hc.sslContext.getSecureRandom());
 
             // construct the PSK and handshake message
-            byte[] nonceArr = hc.handshakeSession.incrTicketNonceCounter().
-                toByteArray();
-            SecretKey psk = derivePreSharedKey(
-                hc.negotiatedCipherSuite.hashAlg,
-                hc.handshakeSession.getResumptionMasterSecret(), nonceArr);
+            byte[] nonce = hc.handshakeSession.incrTicketNonceCounter();
 
             SSLSessionImpl sessionCopy =
                 new SSLSessionImpl(hc.handshakeSession, newId);
-            sessionCopy.setPreSharedKey(psk);
+            sessionCopy.setPreSharedKey(derivePreSharedKey(
+                hc.negotiatedCipherSuite.hashAlg,
+                hc.handshakeSession.getResumptionMasterSecret(), nonce));
             sessionCopy.setPskIdentity(newId.getId());
 
             // If a stateless ticket is allowed, attempt to make one
             if (hc.statelessResumption &&
                     hc.handshakeSession.isStatelessable()) {
                 nstm = new T13NewSessionTicketMessage(hc,
-                        sessionTimeoutSeconds,
+                        sessionCache.getSessionTimeout(),
                         hc.sslContext.getSecureRandom(),
-                        nonceArr,
+                        nonce,
                         new SessionTicketSpec().encrypt(hc, sessionCopy));
                 // If ticket construction failed, switch to session cache
                 if (!nstm.isValid()) {
@@ -486,12 +462,13 @@ final class NewSessionTicket {
             // If a session cache ticket is being used, make one
             if (!hc.statelessResumption ||
                     !hc.handshakeSession.isStatelessable()) {
-                nstm = new T13NewSessionTicketMessage(hc, sessionTimeoutSeconds,
-                        hc.sslContext.getSecureRandom(), nonceArr,
-                        newId.getId());
+                nstm = new T13NewSessionTicketMessage(hc,
+                    sessionCache.getSessionTimeout(),
+                    hc.sslContext.getSecureRandom(), nonce,
+                    newId.getId());
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Produced NewSessionTicket " +
-                            "post-handshake message", nstm);
+                        "post-handshake message", nstm);
                 }
 
                 // create and cache the new session
@@ -501,6 +478,10 @@ final class NewSessionTicket {
                 sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
                 sessionCache.put(sessionCopy);
                 return nstm;
+            }
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("No NewSessionTicket created");
             }
 
             return null;

@@ -124,7 +124,7 @@ final class SSLConfiguration implements Cloneable {
     // Number of NewSessionTickets that will be sent by the server.
     static final int serverNewSessionTicketCount;
     // Default for NewSessionTickets
-    static final int SERVER_NST_DEFAULT = 3;
+    static final int SERVER_NST_DEFAULT = 1;
 
     // Is the extended_master_secret extension supported?
     static {
@@ -200,19 +200,19 @@ final class SSLConfiguration implements Cloneable {
         /*
          * jdk.tls.server.newSessionTicketCount system property
          * Sets the number of NewSessionTickets sent to a TLS 1.3 resumption
-         * client.  The value must be between 1 and 10.  Default is defined by
+         * client.  The value must be between 0 and 10.  Default is defined by
          * SERVER_NST_DEFAULT.
          */
         Integer nstServerCount = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.server.newSessionTicketCount");
-        if (nstServerCount == null || nstServerCount < 1 ||
+        if (nstServerCount == null || nstServerCount < 0 ||
             nstServerCount > 10) {
             serverNewSessionTicketCount = SERVER_NST_DEFAULT;
             if (nstServerCount != null && SSLLogger.isOn &&
                 SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount defaults to 3 as " +
-                        "the property was not between 1 and 10");
+                        "the property was not between 0 and 10");
             }
         } else {
             serverNewSessionTicketCount = nstServerCount;

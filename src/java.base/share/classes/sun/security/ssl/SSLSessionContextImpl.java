@@ -63,6 +63,7 @@ import sun.security.util.Cache;
 
 final class SSLSessionContextImpl implements SSLSessionContext {
     private static final int DEFAULT_MAX_CACHE_SIZE = 20480;
+    private static final int DEFAULT_MAX_QUEUE_SIZE = 10;
     // Default lifetime of a session. 24 hours
     static final int DEFAULT_SESSION_TIMEOUT = 86400;
 
@@ -96,7 +97,8 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             currentKeyID = new Random(System.nanoTime()).nextInt();
         } else {
             sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
-            sessionHostPortCache = Cache.newSoftMemoryQueue(cacheLimit, timeout);
+            sessionHostPortCache = Cache.newSoftMemoryQueue(cacheLimit, timeout,
+                DEFAULT_MAX_QUEUE_SIZE);
             keyHashMap = Map.of();
         }
     }

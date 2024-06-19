@@ -72,7 +72,7 @@ import javax.net.ssl.SSLSessionContext;
  *
  * @author David Brownell
  */
-final public class SSLSessionImpl extends ExtendedSSLSession {
+final class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
      * The state of a single session, as described in section 7.1
@@ -131,7 +131,11 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
     private final List<SNIServerName>    requestedServerNames;
 
     // Counter used to create unique nonces in NewSessionTicket
-    private BigInteger ticketNonceCounter = BigInteger.ONE;
+    private byte ticketNonceCounter = 1;
+
+    // This boolean is true when a new set of NewSessionTickets are needed after
+    // the initial ones sent after the handshake.
+    boolean updateNST = false;
 
     // The endpoint identification algorithm used to check certificates
     // in this session.
@@ -719,19 +723,12 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
         this.pskIdentity = pskIdentity;
     }
 
-    BigInteger incrTicketNonceCounter() {
-        sessionLock.lock();
-        try {
-            BigInteger result = ticketNonceCounter;
-            ticketNonceCounter = ticketNonceCounter.add(BigInteger.ONE);
-            return result;
-        } finally {
-            sessionLock.unlock();
-        }
+    byte[] incrTicketNonceCounter() {
+        return new byte[] {ticketNonceCounter++};
     }
 
     boolean isPSKable() {
-        return (ticketNonceCounter.compareTo(BigInteger.ZERO) > 0);
+        return (ticketNonceCounter > 0);
     }
 
     /**
@@ -1243,7 +1240,6 @@ final public class SSLSessionImpl extends ExtendedSSLSession {
      * sessions can be shared across different protection domains.
      */
     private final ConcurrentHashMap<SecureKey, Object> boundValues;
-    boolean updateNST;
 
     /**
      * Assigns a session value.  Session change events are given if
