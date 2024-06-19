@@ -73,6 +73,13 @@ define CreateStaticLibrary
     $1_ENABLE_PARTIAL_LINKING := true
   endif
 
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    # If we are building a static library for internal consumption,
+    # do not use partial linking. (This is due to a bug in gcc which fails
+    # with the gtest library.)
+    $1_ENABLE_PARTIAL_LINKING := false
+  endif
+
   $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_LIBS) \
       $$($1_EXTRA_LIBS)
   ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
