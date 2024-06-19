@@ -774,7 +774,7 @@ class VLoopTruePredicate : public VLoopPredicate {
 public:
   VLoopTruePredicate() {}
 
-  NOT_PRODUCT( virtual void print() const override { tty->print_cr("True"); }; )
+  NOT_PRODUCT( virtual void print() const override { tty->print("True"); }; )
 };
 
 class VLoopLiteralPredicate : public VLoopPredicate {
@@ -784,7 +784,65 @@ private:
 public:
   VLoopLiteralPredicate(BoolNode* bol) : _bol(bol) {}
 
-  NOT_PRODUCT( virtual void print() const override { tty->print("Literal "); _bol->dump(); }; )
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Literal(%s %d)", _bol->Name(), _bol->_idx);
+  };
+#endif
+};
+
+class VLoopNegatePredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _predicate;
+
+public:
+  VLoopNegatePredicate(VLoopPredicate* predicate) : _predicate(predicate) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Not(");
+    _predicate->print();
+    tty->print(")");
+  };
+#endif
+};
+
+class VLoopAndPredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _in1;
+  VLoopPredicate* _in2;
+
+public:
+  VLoopAndPredicate(VLoopPredicate* in1, VLoopPredicate* in2) : _in1(in1), _in2(in2) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("And(");
+    _in1->print();
+    tty->print(", ");
+    _in2->print();
+    tty->print(")");
+  };
+#endif
+};
+
+class VLoopOrPredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _in1;
+  VLoopPredicate* _in2;
+
+public:
+  VLoopOrPredicate(VLoopPredicate* in1, VLoopPredicate* in2) : _in1(in1), _in2(in2) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Or(");
+    _in1->print();
+    tty->print(", ");
+    _in2->print();
+    tty->print(")");
+  };
+#endif
 };
 
 // Submodule of VLoopAnalyzer.

@@ -423,25 +423,35 @@ void VLoopPredicates::compute_predicates() {
       } else if (n->is_IfTrue()) {
         BoolNode* bol = n->in(0)->in(1)->as_Bool();
         p = new (_arena) VLoopLiteralPredicate(bol);
+        VLoopPredicate* p_ctrl = _predicates.at(_body.bb_idx(n->in(0)));
+        p = new (_arena) VLoopAndPredicate(p_ctrl, p);
       } else if (n->is_IfFalse()) {
         BoolNode* bol = n->in(0)->in(1)->as_Bool();
         p = new (_arena) VLoopLiteralPredicate(bol);
-        // TODO negate
+        p = new (_arena) VLoopNegatePredicate(p);
+        VLoopPredicate* p_ctrl = _predicates.at(_body.bb_idx(n->in(0)));
+        p = new (_arena) VLoopAndPredicate(p_ctrl, p);
       } else if (n->is_Region()) {
-        // TODO derive predicate
-        Node* lca = nullptr;
-        for (uint i = 1; i < n->req(); i++) {
-          lca = _vloop.phase()->dom_lca_internal(lca, n->in(i));
+        // Node* idom = _vloop.phase()->idom(n);
+        p = _predicates.at(_body.bb_idx(n->in(1)));
+        for (uint j = 2; j < n->req(); j++) {
+          VLoopPredicate* p_path =  _predicates.at(_body.bb_idx(n->in(j)));
+          p = new (_arena) VLoopOrPredicate(p, p_path);
         }
-        tty->print("lca: ");
-        lca->dump();
+      } else {
+        n->dump();
+        ShouldNotReachHere();
       }
     } else {
       // All non CFG nodes take the predicate of their ctrl.
       // TODO consider removing predicate if "safe".
       Node* ctrl = _vloop.phase()->get_ctrl(n);
+      tty->print("ctrl: "); ctrl->dump();
       p = _predicates.at(_body.bb_idx(ctrl));
     }
+    n->dump();
+    p->print(); tty->cr();
+    assert(p != nullptr, "must all have predicates");
     _predicates.at_put(i, p);
   }
   NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )
@@ -454,7 +464,7 @@ void VLoopPredicates::print() const {
     Node* n = _body.body().at(i);
     VLoopPredicate* p = _predicates.at(i);
     n->dump();
-    if (p != nullptr) { p->print(); }
+    if (p != nullptr) { p->print(); tty->cr(); }
   }
 }
 #endif
