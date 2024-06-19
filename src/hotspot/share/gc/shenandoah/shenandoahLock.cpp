@@ -64,7 +64,7 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       SpinPause();
       ctr--;
     } else {
-      if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing())) {
+      if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
         // We know SP is synchronizing and block is allowed, block the thread in VM for faster SP synchronization.
         // Need to wait on STS_lock ( suspendible thread set)
         ThreadBlockInVM block(JavaThread::cast(thread), true);
