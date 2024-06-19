@@ -230,7 +230,7 @@ void JVMCIGlobals::check_jvmci_supported_gc() {
   if (EnableJVMCI) {
     // Check if selected GC is supported by JVMCI and Java compiler
     if (!gc_supports_jvmci()) {
-      fatal("JVMIC does not support the selected GC");
+      fatal("JVMCI does not support the selected GC");
     }
   }
 }
