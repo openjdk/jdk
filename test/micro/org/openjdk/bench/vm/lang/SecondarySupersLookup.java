@@ -158,6 +158,17 @@ public class SecondarySupersLookup {
         new I64() {}
     };
 
+    interface WI01 extends K {}
+    interface WI02 extends WI01 {}
+    interface WI03 extends WI02 {}
+    interface WI04 extends WI03 {}
+    interface WI05 extends WI04 {}
+    interface WI06 extends WI05 {}
+    interface WI07 extends WI06 {}
+    interface WI08 extends WI07 {}
+    interface WI09 extends WI08 {}
+    interface WI10 extends WI09 {}
+
     final Object[] smallObjArray = new Object[]
     {
         new I02() {},
@@ -172,41 +183,53 @@ public class SecondarySupersLookup {
         new I16() {},
     };
 
-    final K[] interfaceArrayK = new K[objArray.length];
-    final I01[] interfaceArray0 = new I01[objArray.length];
-    final I01[] interfaceArray1 = new I02[objArray.length];
+    final Object wObj00 = new Object();
+    final Object wObj01 = new I01() {};
+    final Object wObj02 = new I02() {};
+    final Object wObj03 = new I03() {};
+    final Object wObj04 = new I04() {};
+    final Object wObj05 = new I05() {};
+    final Object wObj06 = new I06() {};
+    final Object wObj07 = new I07() {};
+    final Object wObj08 = new I08() {};
+    final Object wObj09 = new I09() {};
+    final Object wObj10 = new I10() {};
 
     static Class<?> getSuper(int idx) {
         int i = Math.abs(idx) % 10;
         switch (i) {
-            case 0: return I01.class;
-            case 1: return I02.class;
-            case 2: return I03.class;
-            case 3: return I04.class;
-            case 4: return I05.class;
-            case 5: return I06.class;
-            case 6: return I07.class;
-            case 7: return I08.class;
-            case 8: return I09.class;
-            case 9: return I10.class;
+            case 0: return WI01.class;
+            case 1: return WI02.class;
+            case 2: return WI03.class;
+            case 3: return WI04.class;
+            case 4: return WI05.class;
+            case 5: return WI06.class;
+            case 6: return WI07.class;
+            case 7: return WI08.class;
+            case 8: return WI09.class;
+            case 9: return WI10.class;
         }
         throw new InternalError("" + i);
     }
 
+    final K[] interfaceArrayK = new K[objArray.length];
+    final I01[] interfaceArray0 = new I01[objArray.length];
+    final I01[] interfaceArray1 = new I02[objArray.length];
+
     @Setup
     public void warmup() {
-        for (int i = 0; i < 20_000; i++) {
+        for (int i = 0; i < 2_000; i++) {
             Class<?> s = getSuper(i);
-            test(obj01, s, s.isInstance(obj01));
-            test(obj02, s, s.isInstance(obj02));
-            test(obj03, s, s.isInstance(obj03));
-            test(obj04, s, s.isInstance(obj04));
-            test(obj05, s, s.isInstance(obj05));
-            test(obj06, s, s.isInstance(obj06));
-            test(obj07, s, s.isInstance(obj07));
-            test(obj08, s, s.isInstance(obj08));
-            test(obj09, s, s.isInstance(obj09));
-            System.arraycopy(objArray, 0, interfaceArrayK, 0, objArray.length);
+            test(wObj01, s, s.isInstance(wObj01));
+            test(wObj02, s, s.isInstance(wObj02));
+            test(wObj03, s, s.isInstance(wObj03));
+            test(wObj04, s, s.isInstance(wObj04));
+            test(wObj05, s, s.isInstance(wObj05));
+            test(wObj06, s, s.isInstance(wObj06));
+            test(wObj07, s, s.isInstance(wObj07));
+            test(wObj08, s, s.isInstance(wObj08));
+            test(wObj09, s, s.isInstance(wObj09));
+            // System.arraycopy(objArray, 0, interfaceArrayK, 0, objArray.length);
         }
     }
 
