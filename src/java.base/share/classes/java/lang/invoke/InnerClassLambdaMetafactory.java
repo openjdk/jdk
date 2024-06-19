@@ -500,7 +500,6 @@ import sun.invoke.util.Wrapper;
                 ACC_PRIVATE + ACC_FINAL, hostileMethod);
     }
 
-
     /**
      * This method generates a method body which calls the lambda implementation
      * method, converting arguments, as needed.
