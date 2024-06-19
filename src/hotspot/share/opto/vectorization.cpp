@@ -415,6 +415,16 @@ void VLoopPredicates::compute_predicates() {
     Node* n = _body.body().at(i);
     if (n->is_CFG()) {
       n->dump();
+      tty->print("idom: ");
+      _vloop.phase()->idom(n)->dump();
+      if (n->is_Region()) {
+        Node* lca = nullptr;
+        for (uint i = 1; i < n->req(); i++) {
+          lca = _vloop.phase()->dom_lca_internal(lca, n->in(i));
+        }
+        tty->print("lca: ");
+        lca->dump();
+      }
     }
   }
   NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )

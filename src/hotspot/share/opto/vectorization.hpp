@@ -750,6 +750,11 @@ public:
 //  -> Load/Store do have side effects. Maybe not Load if we know it is range-checked.
 //  -> But we have to be careful that we do not remove the RC inside the loop - we may need a new annotation?
 //
+//  -> Merge points need to find "OR" of all paths.
+//     IDOM may be helpful here: take condition of IDOM, and find all paths to it.
+//     Without that, the number of paths explodes exponentially with the parallelism.
+//     Ah, I probably need the LCA of the merged paths.
+//
 
 // Submodule of VLoopAnalyzer.
 // TODO desc
