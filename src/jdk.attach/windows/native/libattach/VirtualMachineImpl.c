@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ typedef jint (WINAPI* EnqueueOperationFunc)
 static HANDLE
 doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
+/* Convert jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
 
 
 /*
@@ -377,7 +377,6 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
     return (jint)nread;
 }
 
-
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    enqueue
@@ -423,7 +422,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
             if (obj == NULL) {
                 data.arg[i][0] = '\0';
             } else {
-                jstring_to_cstring(env, obj, data.arg[i], MAX_ARG_LENGTH);
+                if (!jstring_to_cstring(env, obj, data.arg[i], MAX_ARG_LENGTH)) {
+                    JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                                    "argument is too long");
+                    return;
+                }
             }
             if ((*env)->ExceptionOccurred(env)) return;
         }
@@ -615,16 +618,22 @@ doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProc
     return hProcess;
 }
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
+/* Convert jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
     jboolean isCopy;
     const char* str;
+    jboolean result = JNI_TRUE;
 
     if (jstr == NULL) {
         cstr[0] = '\0';
     } else {
         str = JNU_GetStringPlatformChars(env, jstr, &isCopy);
-        if ((*env)->ExceptionOccurred(env)) return;
+        if ((*env)->ExceptionOccurred(env)) {
+            return result;
+        }
+        if (strlen(str) >= len) {
+            result = JNI_FALSE;
+        }
 
         strncpy(cstr, str, len);
         cstr[len-1] = '\0';
@@ -632,4 +641,5 @@ static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
             JNU_ReleaseStringPlatformChars(env, jstr, str);
         }
     }
+    return result;
 }
