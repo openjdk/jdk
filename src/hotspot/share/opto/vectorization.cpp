@@ -415,16 +415,20 @@ void VLoopPredicates::compute_predicates() {
     Node* n = _body.body().at(i);
     VLoopPredicate* p = nullptr;
     if (n->is_CFG()) {
-      n->dump();
-      tty->print("idom: ");
-      _vloop.phase()->idom(n)->dump();
+      // Node* idom = _vloop.phase()->idom(n); // TODO needed?
       if (n->is_CountedLoop()) {
         p = new (_arena) VLoopTruePredicate();
       } else if (n->is_If() || n->is_RangeCheck()) {
-        // TODO true / false
-        BoolNode* bol = n->in(1)->as_Bool();
+        p = _predicates.at(_body.bb_idx(n->in(0)));
+      } else if (n->is_IfTrue()) {
+        BoolNode* bol = n->in(0)->in(1)->as_Bool();
         p = new (_arena) VLoopLiteralPredicate(bol);
+      } else if (n->is_IfFalse()) {
+        BoolNode* bol = n->in(0)->in(1)->as_Bool();
+        p = new (_arena) VLoopLiteralPredicate(bol);
+        // TODO negate
       } else if (n->is_Region()) {
+        // TODO derive predicate
         Node* lca = nullptr;
         for (uint i = 1; i < n->req(); i++) {
           lca = _vloop.phase()->dom_lca_internal(lca, n->in(i));
@@ -432,6 +436,11 @@ void VLoopPredicates::compute_predicates() {
         tty->print("lca: ");
         lca->dump();
       }
+    } else {
+      // All non CFG nodes take the predicate of their ctrl.
+      // TODO consider removing predicate if "safe".
+      Node* ctrl = _vloop.phase()->get_ctrl(n);
+      p = _predicates.at(_body.bb_idx(ctrl));
     }
     _predicates.at_put(i, p);
   }
