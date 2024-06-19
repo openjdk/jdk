@@ -525,6 +525,12 @@ JavaThread::JavaThread(MEMFLAGS flags) :
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
+JavaThread* JavaThread::create_attaching_thread() {
+  JavaThread* jt = new JavaThread();
+  jt->_jni_attach_state = _attaching_via_jni;
+  return jt;
+}
+
 // interrupt support
 
 void JavaThread::interrupt() {

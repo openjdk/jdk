@@ -482,6 +482,9 @@ private:
   JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MEMFLAGS flags = mtThread);
   ~JavaThread();
 
+  // Factory method to create a new JavaThread whose attach state is "is attaching"
+  static JavaThread* create_attaching_thread();
+
 #ifdef ASSERT
   // verify this JavaThread hasn't be published in the Threads::list yet
   void verify_not_published();
@@ -1135,7 +1138,6 @@ private:
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
-  inline void set_is_attaching_via_jni();
   inline void set_done_attaching_via_jni();
 
   // Stack dump assistance:
