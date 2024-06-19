@@ -193,14 +193,12 @@ class ConstantPoolCache: public MetaspaceObj {
 
 #if INCLUDE_CDS
   void remove_unshareable_info();
-  void save_for_archive(TRAPS);
 #endif
 
  public:
   static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
 
  private:
-
   // Helpers
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
 
@@ -223,6 +221,10 @@ class ConstantPoolCache: public MetaspaceObj {
   bool check_no_old_or_obsolete_entries();
   void dump_cache();
 #endif // INCLUDE_JVMTI
+
+#if INCLUDE_CDS
+  void remove_resolved_field_entries_if_non_deterministic();
+#endif
 
   // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })

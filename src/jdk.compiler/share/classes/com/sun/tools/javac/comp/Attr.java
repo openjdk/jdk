@@ -4222,6 +4222,10 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        if (tree.var.isImplicitlyTyped()) {
+            setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
+                                                                   : type);
+        }
         annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
         if (!tree.var.isImplicitlyTyped()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
@@ -5237,7 +5241,14 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType = attribType(tree.underlyingType, env);
+        Type underlyingType =
+                attribTree(tree.underlyingType, env, new ResultInfo(KindSelector.TYP_PCK, Type.noType));
+        if (underlyingType.hasTag(PACKAGE)) {
+            // Type annotations are not admissible on packages, but we handle packages here to
+            // report better diagnostics later in validateAnnotatedType.
+            result = tree.type = underlyingType;
+            return;
+        }
         Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
@@ -5275,6 +5286,8 @@ public class Attr extends JCTree.Visitor {
             default:
                 attribClass(env.tree.pos(), env.enclClass.sym);
         }
+
+        annotate.flush();
     }
 
     public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {
@@ -5844,14 +5857,21 @@ public class Attr extends JCTree.Visitor {
                 } else if (enclTr.hasTag(ANNOTATED_TYPE)) {
                     JCAnnotatedType at = (JCTree.JCAnnotatedType) enclTr;
                     if (enclTy == null || enclTy.hasTag(NONE)) {
-                        if (at.getAnnotations().size() == 1) {
-                            log.error(at.underlyingType.pos(), Errors.CantTypeAnnotateScoping1(at.getAnnotations().head.attribute));
-                        } else {
-                            ListBuffer<Attribute.Compound> comps = new ListBuffer<>();
-                            for (JCAnnotation an : at.getAnnotations()) {
-                                comps.add(an.attribute);
+                        ListBuffer<Attribute.TypeCompound> onlyTypeAnnotationsBuf = new ListBuffer<>();
+                        for (JCAnnotation an : at.getAnnotations()) {
+                            if (chk.isTypeAnnotation(an, false)) {
+                                onlyTypeAnnotationsBuf.add((Attribute.TypeCompound) an.attribute);
                             }
-                            log.error(at.underlyingType.pos(), Errors.CantTypeAnnotateScoping(comps.toList()));
+                        }
+                        List<Attribute.TypeCompound> onlyTypeAnnotations = onlyTypeAnnotationsBuf.toList();
+                        if (!onlyTypeAnnotations.isEmpty()) {
+                            Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
+                                    Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
+                                    Fragments.TypeAnnotation(onlyTypeAnnotations);
+                            JCDiagnostic.AnnotatedType annotatedType = new JCDiagnostic.AnnotatedType(
+                                    type.stripMetadata().annotatedType(onlyTypeAnnotations));
+                            log.error(at.underlyingType.pos(), Errors.TypeAnnotationInadmissible(annotationFragment,
+                                    type.tsym.owner, annotatedType));
                         }
                         repeat = false;
                     }
@@ -6017,6 +6037,19 @@ public class Attr extends JCTree.Visitor {
                 that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);
+        }
+
+        @Override
+        public void visitRecordPattern(JCRecordPattern that) {
+            initTypeIfNeeded(that);
+            if (that.record == null) {
+                that.record = new ClassSymbol(0, TreeInfo.name(that.deconstructor),
+                                              that.type, syms.noSymbol);
+            }
+            if (that.fullComponentTypes == null) {
+                that.fullComponentTypes = List.nil();
+            }
+            super.visitRecordPattern(that);
         }
 
         @Override

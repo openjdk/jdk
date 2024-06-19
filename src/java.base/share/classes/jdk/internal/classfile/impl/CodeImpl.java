@@ -121,7 +121,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
+            if (classReader.context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -170,7 +170,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (((ClassReaderImpl)classReader).context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
+        if (classReader.context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
@@ -199,7 +199,7 @@ public final class CodeImpl
                 public void accept(int s, int e, int h, int c) {
                     ClassEntry catchTypeEntry = c == 0
                                                              ? null
-                                                             : (ClassEntry) constantPool().entryByIndex(c);
+                                                             : constantPool().entryByIndex(c, ClassEntry.class);
                     exceptionTable.add(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
                 }
             });
@@ -337,7 +337,7 @@ public final class CodeImpl
             public void accept(int s, int e, int h, int c) {
                 ClassEntry catchType = c == 0
                                                     ? null
-                                                    : (ClassEntry) classReader.entryByIndex(c);
+                                                    : classReader.entryByIndex(c, ClassEntry.class);
                 consumer.accept(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
             }
         });

@@ -2259,7 +2259,6 @@
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
   declare_constant(Deoptimization::Reason_speculate_null_assert)          \
-  declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \

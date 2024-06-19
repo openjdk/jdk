@@ -36,7 +36,7 @@
 bool
 ParMarkBitMap::initialize(MemRegion covered_region)
 {
-  const idx_t bits = bits_required(covered_region);
+  const idx_t bits = words_to_bits(covered_region.word_size());
 
   const size_t words = bits / BitsPerWord;
   const size_t raw_bytes = words * sizeof(idx_t);
@@ -55,15 +55,15 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
   if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
-    _region_start = covered_region.start();
-    _region_size = covered_region.word_size();
+    _heap_start = covered_region.start();
+    _heap_size = covered_region.word_size();
     BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
     _beg_bits = BitMapView(map, bits);
     return true;
   }
 
-  _region_start = 0;
-  _region_size = 0;
+  _heap_start = 0;
+  _heap_size = 0;
   if (_virtual_space != nullptr) {
     delete _virtual_space;
     _virtual_space = nullptr;

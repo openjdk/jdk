@@ -641,11 +641,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   JDK_PICFLAG="$PICFLAG"
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # Linking is different on MacOSX
-    JDK_PICFLAG=''
-    if test "x$STATIC_BUILD" = xtrue; then
-      JVM_PICFLAG=""
-    fi
+    # Linking is different on macOS
+    JVM_PICFLAG=""
   fi
 
   # Extra flags needed when building optional static versions of certain

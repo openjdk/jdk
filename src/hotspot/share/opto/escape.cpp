@@ -2197,6 +2197,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerRightShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerLeftShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "stringIndexOf") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "array_partition_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0 ||
@@ -4793,6 +4794,20 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         nmm->set_memory_at(ni, result);
       }
     }
+
+    // If we have crossed the 3/4 point of max node limit it's too risky
+    // to continue with EA/SR because we might hit the max node limit.
+    if (_compile->live_nodes() >= _compile->max_node_limit() * 0.75) {
+      if (_compile->do_reduce_allocation_merges()) {
+        _compile->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+      } else if (_invocation > 0) {
+        _compile->record_failure(C2Compiler::retry_no_iterative_escape_analysis());
+      } else {
+        _compile->record_failure(C2Compiler::retry_no_escape_analysis());
+      }
+      return;
+    }
+
     igvn->hash_insert(nmm);
     record_for_optimizer(nmm);
   }

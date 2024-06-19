@@ -2162,7 +2162,19 @@ static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-    case Op_XorV: {
+    case Op_XorV:
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL: {
       return true;
     }
     default:

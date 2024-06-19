@@ -204,7 +204,7 @@ public final class MetadataRepository {
         // and assign the result to a long field is not enough to always get a proper
         // stack trace. Purpose of the mechanism is to transfer metadata, such as
         // native type IDs, without specialized Java logic for each type.
-        if (eventClass.getClassLoader() == null) {
+        if (Utils.isJDKClass(eventClass)) {
             Name name = eventClass.getAnnotation(Name.class);
             if (name != null) {
                 String n = name.value();

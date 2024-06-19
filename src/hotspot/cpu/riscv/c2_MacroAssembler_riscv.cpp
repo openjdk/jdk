@@ -2791,6 +2791,21 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   }
 }
 
+// In Matcher::scalable_predicate_reg_slots,
+// we assume each predicate register is one-eighth of the size of
+// scalable vector register, one mask bit per vector byte.
+void C2_MacroAssembler::spill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vse8_v(v, t0);
+}
+
+void C2_MacroAssembler::unspill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vle8_v(v, t0);
+}
+
 void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                                          VectorRegister src, BasicType src_bt, bool is_signed) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");

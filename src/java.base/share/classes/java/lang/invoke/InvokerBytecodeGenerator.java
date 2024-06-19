@@ -632,7 +632,7 @@ class InvokerBytecodeGenerator {
         else if (c == Object[].class)      return OBJARY;
         else if (c == Class.class)         return CLS;
         else if (c == MethodHandle.class)  return MH;
-        assert(VerifyAccess.isTypeVisible(c, Object.class)) : c.getName();
+        assert(VerifyAccess.ensureTypeVisible(c, Object.class)) : c.getName();
 
         if (c == lastClass) {
             return lastInternalName;
