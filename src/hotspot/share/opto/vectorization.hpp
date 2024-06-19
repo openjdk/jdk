@@ -761,6 +761,32 @@ public:
 //     we should move to C2 nodes for it. Because we would also have to add the C2 nodes to the
 //     body etc, and that is also tricky.
 
+
+// TODO desc
+class VLoopPredicate : public ArenaObj {
+public:
+  VLoopPredicate() {}
+
+  NOT_PRODUCT( virtual void print() const = 0; )
+};
+
+class VLoopTruePredicate : public VLoopPredicate {
+public:
+  VLoopTruePredicate() {}
+
+  NOT_PRODUCT( virtual void print() const override { tty->print_cr("True"); }; )
+};
+
+class VLoopLiteralPredicate : public VLoopPredicate {
+private:
+  BoolNode* _bol;
+
+public:
+  VLoopLiteralPredicate(BoolNode* bol) : _bol(bol) {}
+
+  NOT_PRODUCT( virtual void print() const override { tty->print("Literal "); _bol->dump(); }; )
+};
+
 // Submodule of VLoopAnalyzer.
 // TODO desc
 class VLoopPredicates : public StackObj {
@@ -769,7 +795,7 @@ private:
   const VLoop&             _vloop;
   const VLoopBody&         _body;
 
-  // TODO data?
+  GrowableArray<VLoopPredicate*> _predicates;
 
 public:
   VLoopPredicates(Arena* arena,
@@ -777,7 +803,11 @@ public:
                   const VLoopBody& body) :
     _arena(arena),
     _vloop(vloop),
-    _body(body) {}
+    _body(body),
+    _predicates(_arena,
+                vloop.estimated_body_length(),
+                vloop.estimated_body_length(),
+                nullptr) {}
   NONCOPYABLE(VLoopPredicates);
 
   void compute_predicates();

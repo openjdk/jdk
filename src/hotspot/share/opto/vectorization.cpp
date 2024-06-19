@@ -410,14 +410,21 @@ void VLoopDependencyGraph::PredsIterator::next() {
 }
 
 void VLoopPredicates::compute_predicates() {
-  // TODO
+  // TODO hash and cmp -> no duplicates!
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
+    VLoopPredicate* p = nullptr;
     if (n->is_CFG()) {
       n->dump();
       tty->print("idom: ");
       _vloop.phase()->idom(n)->dump();
-      if (n->is_Region()) {
+      if (n->is_CountedLoop()) {
+        p = new (_arena) VLoopTruePredicate();
+      } else if (n->is_If() || n->is_RangeCheck()) {
+        // TODO true / false
+        BoolNode* bol = n->in(1)->as_Bool();
+        p = new (_arena) VLoopLiteralPredicate(bol);
+      } else if (n->is_Region()) {
         Node* lca = nullptr;
         for (uint i = 1; i < n->req(); i++) {
           lca = _vloop.phase()->dom_lca_internal(lca, n->in(i));
@@ -426,6 +433,7 @@ void VLoopPredicates::compute_predicates() {
         lca->dump();
       }
     }
+    _predicates.at_put(i, p);
   }
   NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )
 }
@@ -433,7 +441,12 @@ void VLoopPredicates::compute_predicates() {
 #ifndef PRODUCT
 void VLoopPredicates::print() const {
   tty->print_cr("\nVLoopPredicates::print:");
-  // TODO
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    VLoopPredicate* p = _predicates.at(i);
+    n->dump();
+    if (p != nullptr) { p->print(); }
+  }
 }
 #endif
 
