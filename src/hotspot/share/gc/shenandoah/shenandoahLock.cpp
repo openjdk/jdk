@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
@@ -63,13 +64,12 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       SpinPause();
       ctr--;
     } else {
-      if (ALLOW_BLOCK && SafepointMechanism::local_poll_armed(JavaThread::cast(thread))) {
-        //We know SP is synchronizing and block is allowed,
-        //yield to safepoint call to so VM will reach safepoint faster.
+      if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing())) {
+        // We know SP is synchronizing and block is allowed, block the thread in VM for faster SP synchronization.
+        // Need to wait on STS_lock ( suspendible thread set)
         ThreadBlockInVM block(JavaThread::cast(thread), true);
-        while (SafepointSynchronize::is_synchronizing()) {
-          os::naked_yield();
-        }
+        MonitorLocker ml(STS_lock, Mutex::_safepoint_check_flag);
+        ml.wait();
       } else {
         os::naked_yield();
       }
