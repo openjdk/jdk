@@ -465,35 +465,41 @@ void* G1BarrierSetC2::create_barrier_state(Arena* comp_arena) const {
 }
 
 int G1BarrierSetC2::get_store_barrier(C2Access& access, C2AccessValue& val) const {
-  int barriers = G1C2BarrierPre | G1C2BarrierPost;
   if (!access.is_parse_access()) {
     // Only support for eliding barriers at parse time for now.
-    return barriers;
+    return G1C2BarrierPre | G1C2BarrierPost;
   }
   GraphKit* kit = (static_cast<C2ParseAccess&>(access)).kit();
   Node* adr = access.addr().node();
   uint adr_idx = kit->C->get_alias_index(access.addr().type());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
 
-  if (g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx)) {
-    barriers ^= G1C2BarrierPre;
-  }
+  bool can_remove_pre_barrier = g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx);
 
+  bool can_remove_post_barrier = false;
   if (val.node() != nullptr && val.node()->is_Con() && val.node()->bottom_type() == TypePtr::NULL_PTR) {
     // Must be null.
     const Type* t = val.node()->bottom_type();
     assert(t == Type::TOP || t == TypePtr::NULL_PTR, "must be NULL");
     // No post barrier if writing null.
-    barriers ^= G1C2BarrierPost;
+    can_remove_post_barrier = true;
   } else if (use_ReduceInitialCardMarks() && access.base() == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden. Keep this code
     // in sync with CardTableBarrierSet::on_slowpath_allocation_exit. That
     // routine informs GC to take appropriate compensating steps, upon a
     // slow-path allocation, so as to make this card-mark elision safe.
-    barriers ^= G1C2BarrierPost;
+    can_remove_post_barrier = true;
   } else if (use_ReduceInitialCardMarks()
              && g1_can_remove_post_barrier(kit, &kit->gvn(), kit->control(), adr)) {
-    barriers ^= G1C2BarrierPost;
+    can_remove_post_barrier = true;
+  }
+
+  int barriers = 0;
+  if (!can_remove_pre_barrier) {
+    barriers |= G1C2BarrierPre;
+  }
+  if (!can_remove_post_barrier) {
+    barriers |= G1C2BarrierPost;
   }
 
   return barriers;
