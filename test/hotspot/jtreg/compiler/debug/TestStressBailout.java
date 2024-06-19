@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @test
  * @key stress randomness
  * @bug 8330157
- * @requires vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Basic tests for bailout stress flag.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressBailout
@@ -42,8 +42,7 @@ import jdk.test.lib.Utils;
 public class TestStressBailout {
 
     static void runTest(int invprob) throws Exception {
-        String[] procArgs = {"-Xcomp", "-XX:-TieredCompilation",
-                             "-XX:+UnlockDiagnosticVMOptions", "-XX:+StressBailout",
+        String[] procArgs = {"-Xcomp", "-XX:-TieredCompilation", "-XX:+StressBailout",
                              "-XX:StressBailoutProbability=" + invprob, "-version"};
         ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());

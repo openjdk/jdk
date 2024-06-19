@@ -1128,7 +1128,7 @@ void Compile::Init(bool aliasing) {
 //---------------------------init_start----------------------------------------
 // Install the StartNode on this compile object.
 void Compile::init_start(StartNode* s) {
-  if (failing(true))
+  if (failing(DEBUG_ONLY(true)))
     return; // already failing
   assert(s == start(), "");
 }
@@ -4430,7 +4430,7 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
-  if (_compile->failing(true)) return; // timing code, not stressing bailouts.
+  if (_compile->failing(DEBUG_ONLY(true))) return; // timing code, not stressing bailouts.
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",

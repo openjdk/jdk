@@ -838,22 +838,23 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  bool failing(bool no_stress_bailout=false) {
+  bool failing(DEBUG_ONLY(bool no_stress_bailout=false)) {
     if (failing_internal()) {
       return true;
     }
 #ifdef ASSERT
-    // Disable for PhaseIdealLoop verification
+    // Disable stress code for PhaseIdealLoop verification
     if (phase_verify_ideal_loop()) {
       return false;
     }
-#endif
     if (StressBailout && !no_stress_bailout) {
       return fail_randomly(StressBailoutProbability);
     }
+#endif
     return false;
   }
 
+#ifdef ASSERT
   bool fail_randomly(uint invprob) {
     if (!_stress_seed_is_initialized || (random() % invprob)) {
       return false;
@@ -866,6 +867,7 @@ private:
     assert(failing_internal(), "not failing.");
     return C->failure_reason_is("StressBailout");
   }
+#endif
 
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||

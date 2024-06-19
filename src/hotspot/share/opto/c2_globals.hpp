@@ -67,10 +67,10 @@
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
-  product(bool, StressBailout, false, DIAGNOSTIC,                           \
+  develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
-  product(uint, StressBailoutProbability, 100000, DIAGNOSTIC,               \
+  develop(uint, StressBailoutProbability, 100000,                           \
           "Stress bailout every n:th time on average")                      \
           range(1, max_juint)                                               \
                                                                             \
