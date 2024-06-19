@@ -807,24 +807,26 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
+// We use two comparisons, because a subtraction could underflow.
+#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
+  if (a < b) { return -1; }                 \
+  if (a > b) { return  1; }
+
 // To be in the same group, two VPointers must be the same,
 // except for the offset.
 int VPointer::cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2) {
   const VPointer* a = *p1;
   const VPointer* b = *p2;
 
-  int cmp_base = a->base()->_idx - b->base()->_idx;
-  if (cmp_base != 0) { return cmp_base; }
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->base()->_idx,     b->base()->_idx);
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->scale_in_bytes(), b->scale_in_bytes());
 
-  int cmp_opcode = a->mem()->Opcode() - b->mem()->Opcode();
-  if (cmp_opcode != 0) { return cmp_opcode; }
+  int a_inva_idx = a->invar() == nullptr ? 0 : a->invar()->_idx;
+  int b_inva_idx = b->invar() == nullptr ? 0 : b->invar()->_idx;
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_inva_idx,          b_inva_idx);
 
-  int cmp_scale = a->scale_in_bytes() - b->scale_in_bytes();
-  if (cmp_scale != 0) { return cmp_scale; }
-
-  int cmp_invar = (a->invar() == nullptr ? 0 : a->invar()->_idx) -
-                  (b->invar() == nullptr ? 0 : b->invar()->_idx);
-  return cmp_invar;
+  return 0; // equal
 }
 
 // We compare by group, then by offset, and finally by node idx.
@@ -835,10 +837,9 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
   const VPointer* a = *p1;
   const VPointer* b = *p2;
 
-  int cmp_offset = a->offset_in_bytes() - b->offset_in_bytes();
-  if (cmp_offset != 0) { return cmp_offset; }
-
-  return a->mem()->_idx - b->mem()->_idx;
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->offset_in_bytes(), b->offset_in_bytes());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->_idx,       b->mem()->_idx);
+  return 0; // equal
 }
 
 #ifndef PRODUCT
