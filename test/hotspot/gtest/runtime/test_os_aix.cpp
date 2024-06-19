@@ -25,18 +25,9 @@
 
 #ifdef AIX
 
-#include "memory/allocation.hpp"
-#include "memory/resourceArea.hpp"
-#include "nmt/memTracker.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/threads.hpp"
-#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
-#include "utilities/ostream.hpp"
 #include "unittest.hpp"
 # include <sys/mman.h>
 // sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
