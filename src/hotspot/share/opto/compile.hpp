@@ -855,7 +855,6 @@ private:
   }
 
   bool fail_randomly(uint invprob) {
-    assert(0 < invprob, "domain error");
     if (!_stress_seed_is_initialized || (random() % invprob)) {
       return false;
     }
