@@ -276,26 +276,26 @@ public class Indify {
                     classpath = maybeExpandProperties(av.remove(1)).split("["+File.pathSeparatorChar+"]");
                     break;
                 case "-k": case "--keepgoing": case "--keepgoing=":
-                    keepgoing = booleanOption(a2);
+                    keepgoing = booleanOption(a2);  // print errors but keep going
                     break;
                 case "--expand-properties": case "--expand-properties=":
-                    expandProperties = booleanOption(a2);
+                    expandProperties = booleanOption(a2);  // expand property references in subsequent arguments
                     break;
                 case "--verify-specifier-count": case "--verify-specifier-count=":
                         assert a2 != null;
                         verifySpecifierCount = Integer.parseInt(a2);
                     break;
                 case "--overwrite": case "--overwrite=":
-                    overwrite = booleanOption(a2);
+                    overwrite = booleanOption(a2);  // overwrite output files
                     break;
                 case "--all": case "--all=":
-                    all = booleanOption(a2);
+                    all = booleanOption(a2);  // copy all classes, even if no patterns
                     break;
                 case "-q": case "--quiet": case "--quiet=":
-                    quiet = booleanOption(a2);
+                    quiet = booleanOption(a2);   // less output
                     break;
                 case "-v": case "--verbose": case "--verbose=":
-                    verbose = booleanOption(a2);
+                    verbose = booleanOption(a2); // more output
                     break;
                 default:
                     throw new IllegalArgumentException("unrecognized flag: "+a);
