@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -213,9 +213,7 @@ public:
   //
   // Used in the runtime linkage of calls; see class CompiledIC.
   // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
-
-  // The parameter assert_lock disables the assertion during code generation.
-  void set_destination_mt_safe(address dest, bool assert_lock = true);
+  void set_destination_mt_safe(address dest);
 
   address get_trampoline();
 #if INCLUDE_JVMCI
