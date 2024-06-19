@@ -192,8 +192,9 @@ abstract class Poller {
         assert previous == null;
         try {
             implRegister(fdVal);
-        } catch (IOException io) {
+        } catch (Throwable t) {
             map.remove(fdVal);
+            throw t;
         }
     }
 
