@@ -5549,8 +5549,8 @@ int PlatformEvent::park(jlong Millis) {
 
   // Do this the hard way by blocking ...
   // We decompose long timeouts into series of shorter timed waits.
-  // Evidently large timo values passed in WaitForSingleObject() are problematic on some
-  // versions of Windows.  See EventWait() for details.  This may be superstition.  Or not.
+  // Evidently timeout values larger than 0xffff0000 were problematic on some
+  // versions of Windows. The below timeout (~3 days) was found to work well.
 
   const int MAXTIMEOUT = 0x10000000;
   jlong waitStart = os::javaTimeNanos();
