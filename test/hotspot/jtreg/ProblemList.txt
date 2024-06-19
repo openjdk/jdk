@@ -51,18 +51,6 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
-compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-i586
-compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
-
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
@@ -78,8 +66,6 @@ compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
 compiler/startup/StartupOutput.java 8326615 generic-x64
-
-compiler/rangechecks/TestArrayAccessAboveRCAfterRCCastIIEliminated.java 8332369 generic-all
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
@@ -118,11 +104,6 @@ runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/Thread/TestAlwaysPreTouchStacks.java 8324781 linux-all
 
-applications/jcstress/accessAtomic.java 8325984 generic-all
-applications/jcstress/acqrel.java 8325984 generic-all
-applications/jcstress/atomicity.java 8325984 generic-all
-applications/jcstress/coherence.java 8325984 generic-all
-
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
@@ -139,6 +120,7 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
+serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
 serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
@@ -185,7 +167,7 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8325905 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8324756 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 

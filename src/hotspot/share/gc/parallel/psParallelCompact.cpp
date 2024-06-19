@@ -200,188 +200,6 @@ void PSParallelCompact::print_on_error(outputStream* st) {
   _mark_bitmap.print_on_error(st);
 }
 
-#ifndef PRODUCT
-const char* PSParallelCompact::space_names[] = {
-  "old ", "eden", "from", "to  "
-};
-
-void PSParallelCompact::print_region_ranges() {
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
-    return;
-  }
-  Log(gc, compaction) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-  Universe::print_on(&ls);
-  log.trace("space  bottom     top        end        new_top");
-  log.trace("------ ---------- ---------- ---------- ----------");
-
-  for (unsigned int id = 0; id < last_space_id; ++id) {
-    const MutableSpace* space = _space_info[id].space();
-    log.trace("%u %s "
-              SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " "
-              SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " ",
-              id, space_names[id],
-              summary_data().addr_to_region_idx(space->bottom()),
-              summary_data().addr_to_region_idx(space->top()),
-              summary_data().addr_to_region_idx(space->end()),
-              summary_data().addr_to_region_idx(_space_info[id].new_top()));
-  }
-}
-
-static void
-print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
-{
-#define REGION_IDX_FORMAT        SIZE_FORMAT_W(7)
-#define REGION_DATA_FORMAT       SIZE_FORMAT_W(5)
-
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-  size_t dci = c->destination() ? sd.addr_to_region_idx(c->destination()) : 0;
-  log_develop_trace(gc, compaction)(
-      REGION_IDX_FORMAT " "
-      REGION_IDX_FORMAT " " PTR_FORMAT " "
-      REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
-      REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
-      i, dci, p2i(c->destination()),
-      c->partial_obj_size(), c->live_obj_size(),
-      c->data_size(), c->source_region(), c->destination_count());
-
-#undef  REGION_IDX_FORMAT
-#undef  REGION_DATA_FORMAT
-}
-
-void
-print_generic_summary_data(ParallelCompactData& summary_data,
-                           HeapWord* const beg_addr,
-                           HeapWord* const end_addr)
-{
-  size_t total_words = 0;
-  size_t i = summary_data.addr_to_region_idx(beg_addr);
-  const size_t last = summary_data.addr_to_region_idx(end_addr);
-  HeapWord* pdest = 0;
-
-  while (i < last) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
-    if (c->data_size() != 0 || c->destination() != pdest) {
-      print_generic_summary_region(i, c);
-      total_words += c->data_size();
-      pdest = c->destination();
-    }
-    ++i;
-  }
-
-  log_develop_trace(gc, compaction)("summary_data_bytes=" SIZE_FORMAT, total_words * HeapWordSize);
-}
-
-void
-PSParallelCompact::print_generic_summary_data(ParallelCompactData& summary_data,
-                                              HeapWord* const beg_addr,
-                                              HeapWord* const end_addr) {
-  ::print_generic_summary_data(summary_data,beg_addr, end_addr);
-}
-
-static void
-print_initial_summary_data(ParallelCompactData& summary_data,
-                           const MutableSpace* space) {
-  if (space->top() == space->bottom()) {
-    return;
-  }
-
-  const size_t region_size = ParallelCompactData::RegionSize;
-  typedef ParallelCompactData::RegionData RegionData;
-  HeapWord* const top_aligned_up = summary_data.region_align_up(space->top());
-  const size_t end_region = summary_data.addr_to_region_idx(top_aligned_up);
-  const RegionData* c = summary_data.region(end_region - 1);
-  HeapWord* end_addr = c->destination() + c->data_size();
-  const size_t live_in_space = pointer_delta(end_addr, space->bottom());
-
-  // Print (and count) the full regions at the beginning of the space.
-  size_t full_region_count = 0;
-  size_t i = summary_data.addr_to_region_idx(space->bottom());
-  while (i < end_region && summary_data.region(i)->data_size() == region_size) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
-    log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
-        i, p2i(c->destination()),
-        c->partial_obj_size(), c->live_obj_size(),
-        c->data_size(), c->source_region(), c->destination_count());
-    ++full_region_count;
-    ++i;
-  }
-
-  size_t live_to_right = live_in_space - full_region_count * region_size;
-
-  double max_reclaimed_ratio = 0.0;
-  size_t max_reclaimed_ratio_region = 0;
-  size_t max_dead_to_right = 0;
-  size_t max_live_to_right = 0;
-
-  // Print the 'reclaimed ratio' for regions while there is something live in
-  // the region or to the right of it.  The remaining regions are empty (and
-  // uninteresting), and computing the ratio will result in division by 0.
-  while (i < end_region && live_to_right > 0) {
-    c = summary_data.region(i);
-    HeapWord* const region_addr = summary_data.region_to_addr(i);
-    const size_t used_to_right = pointer_delta(space->top(), region_addr);
-    const size_t dead_to_right = used_to_right - live_to_right;
-    const double reclaimed_ratio = double(dead_to_right) / live_to_right;
-
-    if (reclaimed_ratio > max_reclaimed_ratio) {
-            max_reclaimed_ratio = reclaimed_ratio;
-            max_reclaimed_ratio_region = i;
-            max_dead_to_right = dead_to_right;
-            max_live_to_right = live_to_right;
-    }
-
-    ParallelCompactData::RegionData* c = summary_data.region(i);
-    log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d"
-        "%12.10f " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10),
-        i, p2i(c->destination()),
-        c->partial_obj_size(), c->live_obj_size(),
-        c->data_size(), c->source_region(), c->destination_count(),
-        reclaimed_ratio, dead_to_right, live_to_right);
-
-
-    live_to_right -= c->data_size();
-    ++i;
-  }
-
-  // Any remaining regions are empty.  Print one more if there is one.
-  if (i < end_region) {
-    ParallelCompactData::RegionData* c = summary_data.region(i);
-    log_develop_trace(gc, compaction)(
-        SIZE_FORMAT_W(5) " " PTR_FORMAT " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
-         i, p2i(c->destination()),
-         c->partial_obj_size(), c->live_obj_size(),
-         c->data_size(), c->source_region(), c->destination_count());
-  }
-
-  log_develop_trace(gc, compaction)("max:  " SIZE_FORMAT_W(4) " d2r=" SIZE_FORMAT_W(10) " l2r=" SIZE_FORMAT_W(10) " max_ratio=%14.12f",
-                                    max_reclaimed_ratio_region, max_dead_to_right, max_live_to_right, max_reclaimed_ratio);
-}
-
-static void
-print_initial_summary_data(ParallelCompactData& summary_data,
-                           SpaceInfo* space_info) {
-  if (!log_develop_is_enabled(Trace, gc, compaction)) {
-    return;
-  }
-
-  unsigned int id = PSParallelCompact::old_space_id;
-  const MutableSpace* space;
-  do {
-    space = space_info[id].space();
-    print_initial_summary_data(summary_data, space);
-  } while (++id < PSParallelCompact::eden_space_id);
-
-  do {
-    space = space_info[id].space();
-    print_generic_summary_data(summary_data, space->bottom(), space->top());
-  } while (++id < PSParallelCompact::last_space_id);
-}
-#endif  // #ifndef PRODUCT
-
 ParallelCompactData::ParallelCompactData() :
   _heap_start(nullptr),
   DEBUG_ONLY(_heap_end(nullptr) COMMA)
@@ -1008,29 +826,6 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-#ifndef PRODUCT
-void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
-                                          HeapWord* dst_beg, HeapWord* dst_end,
-                                          SpaceId src_space_id,
-                                          HeapWord* src_beg, HeapWord* src_end)
-{
-  log_develop_trace(gc, compaction)(
-      "Summarizing %d [%s] into %d [%s]:  "
-      "src=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-" SIZE_FORMAT " "
-      "dst=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-" SIZE_FORMAT,
-      src_space_id, space_names[src_space_id],
-      dst_space_id, space_names[dst_space_id],
-      p2i(src_beg), p2i(src_end),
-      _summary_data.addr_to_region_idx(src_beg),
-      _summary_data.addr_to_region_idx(src_end),
-      p2i(dst_beg), p2i(dst_end),
-      _summary_data.addr_to_region_idx(dst_beg),
-      _summary_data.addr_to_region_idx(dst_end));
-}
-#endif  // #ifndef PRODUCT
-
 bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
                                                     size_t total_live_words,
                                                     MutableSpace* const old_space,
@@ -1114,8 +909,6 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
                                       space->bottom());
     const size_t available = pointer_delta(dst_space_end, *new_top_addr);
 
-    NOT_PRODUCT(summary_phase_msg(dst_space_id, *new_top_addr, dst_space_end,
-                                  SpaceId(id), space->bottom(), space->top());)
     if (live > 0 && live <= available) {
       // All the live data will fit.
       bool done = _summary_data.summarize(_space_info[id].split_info(),
@@ -1143,9 +936,6 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       dst_space_id = SpaceId(id);
       dst_space_end = space->end();
       new_top_addr = _space_info[id].new_top_addr();
-      NOT_PRODUCT(summary_phase_msg(dst_space_id,
-                                    space->bottom(), dst_space_end,
-                                    SpaceId(id), next_src_addr, space->top());)
       done = _summary_data.summarize(_space_info[id].split_info(),
                                      next_src_addr, space->top(),
                                      nullptr,
@@ -1155,10 +945,6 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       assert(*new_top_addr <= space->top(), "usage should not grow");
     }
   }
-
-  log_develop_trace(gc, compaction)("Summary_phase:  after final summarization");
-  NOT_PRODUCT(print_region_ranges());
-  NOT_PRODUCT(print_initial_summary_data(_summary_data, _space_info));
 }
 
 // This method should contain all heap-specific policy for invoking a full
@@ -2126,15 +1912,12 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   const size_t new_top_region = sd.addr_to_region_idx(new_top_addr);
   const size_t old_top_region = sd.addr_to_region_idx(old_top_addr);
 
-  bool issued_a_warning = false;
-
   size_t cur_region;
   for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->completed()) {
       log_warning(gc)("region " SIZE_FORMAT " not filled: destination_count=%u",
                       cur_region, c->destination_count());
-      issued_a_warning = true;
     }
   }
 
@@ -2143,12 +1926,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
     if (!c->available()) {
       log_warning(gc)("region " SIZE_FORMAT " not empty: destination_count=%u",
                       cur_region, c->destination_count());
-      issued_a_warning = true;
     }
-  }
-
-  if (issued_a_warning) {
-    print_region_ranges();
   }
 }
 #endif  // #ifdef ASSERT
@@ -2450,7 +2228,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      closure.complete_region(cm, dest_addr, region_ptr);
+      closure.complete_region(dest_addr, region_ptr);
       return;
     }
 
@@ -2493,7 +2271,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      closure.complete_region(cm, dest_addr, region_ptr);
+      closure.complete_region(dest_addr, region_ptr);
       return;
     }
 
@@ -2526,7 +2304,7 @@ void PSParallelCompact::fill_and_update_shadow_region(ParCompactionManager* cm, 
     region_ptr->shadow_to_normal();
     return fill_region(cm, cl, region_idx);
   } else {
-    MoveAndUpdateShadowClosure cl(mark_bitmap(), cm, region_idx, shadow_region);
+    MoveAndUpdateShadowClosure cl(mark_bitmap(), region_idx, shadow_region);
     return fill_region(cm, cl, region_idx);
   }
 }
@@ -2603,8 +2381,7 @@ void MoveAndUpdateClosure::copy_partial_obj(size_t partial_obj_size)
   update_state(words);
 }
 
-void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
-                                           PSParallelCompact::RegionData *region_ptr) {
+void MoveAndUpdateClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
   assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::NormalRegion, "Region should be finished");
   region_ptr->set_completed();
 }
@@ -2634,8 +2411,7 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   update_state(words);
 }
 
-void MoveAndUpdateShadowClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
-                                                 PSParallelCompact::RegionData *region_ptr) {
+void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr) {
   assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::ShadowRegion, "Region should be shadow");
   // Record the shadow region index
   region_ptr->set_shadow_region(_shadow);

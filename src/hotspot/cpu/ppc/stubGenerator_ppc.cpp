@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Save LR/CR and copy exception pc (LR) into R4_ARG2.
-    __ save_LR_CR(R4_ARG2);
+    __ save_LR(R4_ARG2);
     __ push_frame_reg_args(0, R0);
     // Find exception handler.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
@@ -479,7 +479,7 @@ class StubGenerator: public StubCodeGenerator {
     // Copy handler's address.
     __ mtctr(R3_RET);
     __ pop_frame();
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     // Set up the arguments for the exception handler:
     //  - R3_ARG1: exception oop
@@ -550,7 +550,7 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    __ save_LR_CR(R11_scratch1);
+    __ save_LR(R11_scratch1);
 
     // Push a frame.
     __ push_frame_reg_args(0, R11_scratch1);
@@ -604,7 +604,7 @@ class StubGenerator: public StubCodeGenerator {
     // Pop frame.
     __ pop_frame();
 
-    __ restore_LR_CR(R11_scratch1);
+    __ restore_LR(R11_scratch1);
 
     __ load_const(R11_scratch1, StubRoutines::forward_exception_entry());
     __ mtctr(R11_scratch1);
@@ -3571,14 +3571,14 @@ class StubGenerator: public StubCodeGenerator {
     // and pass that one instead.
     __ addi(R3_ARG1, R1_SP, _abi0(lr));
 
-    __ save_LR_CR(R0);
+    __ save_LR(R0);
     __ push_frame_reg_args(nbytes_save, R0);
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
     __ mr(R0, R3_RET);
 
     __ pop_frame();
-    __ restore_LR_CR(R3_RET /* used as tmp register */);
+    __ restore_LR(R3_RET /* used as tmp register */);
     __ restore_volatile_gprs(R1_SP, -nbytes_save, true);
 
     __ cmpdi(CCR0, R0, 0);
@@ -3597,7 +3597,7 @@ class StubGenerator: public StubCodeGenerator {
     // Restore link register.  Required as the 'wrong method stub' needs the caller's frame
     // to properly deoptimize this method (e.g. by re-resolving the call site for compiled methods).
     // This method's prologue is aborted.
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     __ bctr();
     return stub_address;

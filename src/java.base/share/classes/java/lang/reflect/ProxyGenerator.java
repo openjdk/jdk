@@ -49,6 +49,8 @@ import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.constant.ConstantUtils.*;
+
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
 
@@ -134,7 +136,7 @@ final class ProxyGenerator {
     /**
      * Name of proxy class
      */
-    private ClassEntry classEntry;
+    private final ClassEntry classEntry;
 
     /**
      * Proxy interfaces
@@ -160,10 +162,10 @@ final class ProxyGenerator {
      * A ProxyGenerator object contains the state for the ongoing
      * generation of a particular proxy class.
      */
-    private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
+    private ProxyGenerator(String className, List<Class<?>> interfaces,
                            int accessFlags) {
         this.cp = ConstantPoolBuilder.of();
-        this.classEntry = cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(className));
+        this.classEntry = cp.classEntry(ConstantUtils.binaryNameToDesc(className));
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
         this.throwableStack = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(cp.classEntry(CD_Throwable)));
@@ -190,7 +192,7 @@ final class ProxyGenerator {
                                      List<Class<?>> interfaces,
                                      int accessFlags) {
         Objects.requireNonNull(interfaces);
-        ProxyGenerator gen = new ProxyGenerator(loader, name, interfaces, accessFlags);
+        ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
         final byte[] classFile = gen.generateClassFile();
 
         if (SAVE_GENERATED_FILES) {
@@ -227,16 +229,8 @@ final class ProxyGenerator {
     private static List<ClassEntry> toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ArrayList<ClassEntry>(types.size());
         for (var t : types)
-            ces.add(cp.classEntry(ReferenceClassDescImpl.ofValidatedBinaryName(t.getName())));
+            ces.add(cp.classEntry(ConstantUtils.binaryNameToDesc(t.getName())));
         return ces;
-    }
-
-    /**
-     * {@return the {@code ClassDesc} of the given type}
-     * @param type the {@code Class} object
-     */
-    private static ClassDesc toClassDesc(Class<?> type) {
-        return ClassDesc.ofDescriptor(type.descriptorString());
     }
 
     /**
@@ -325,7 +319,7 @@ final class ProxyGenerator {
          * not assignable from any of the others.
          */
         if (uncoveredReturnTypes.size() > 1) {
-            ProxyMethod pm = methods.get(0);
+            ProxyMethod pm = methods.getFirst();
             throw new IllegalArgumentException(
                     "methods with same signature " +
                             pm.shortSignature +
@@ -501,7 +495,7 @@ final class ProxyGenerator {
 
         String sig = m.toShortSignature();
         List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                (f) -> new ArrayList<>(3));
+                _ -> new ArrayList<>(3));
         for (ProxyMethod pm : sigmethods) {
             if (returnType == pm.returnType) {
                 /*
@@ -531,7 +525,7 @@ final class ProxyGenerator {
     private void addProxyMethod(ProxyMethod pm) {
         String sig = pm.shortSignature;
         List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                (f) -> new ArrayList<>(3));
+                _ -> new ArrayList<>(3));
         sigmethods.add(pm);
     }
 
@@ -637,7 +631,6 @@ final class ProxyGenerator {
          * Create a new specific ProxyMethod with a specific field name
          *
          * @param method          The method for which to create a proxy
-         * @param methodFieldName the fieldName to generate
          */
         private ProxyMethod(Method method) {
             this(method, method.toShortSignature(),
@@ -650,11 +643,7 @@ final class ProxyGenerator {
          */
         private void generateMethod(ProxyGenerator pg, ClassBuilder clb) {
             var cp = pg.cp;
-            var pTypes = new ClassDesc[parameterTypes.length];
-            for (int i = 0; i < pTypes.length; i++) {
-                pTypes[i] = toClassDesc(parameterTypes[i]);
-            }
-            MethodTypeDesc desc = MethodTypeDescImpl.ofTrusted(toClassDesc(returnType), pTypes);
+            var desc = methodTypeDesc(returnType, parameterTypes);
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
@@ -665,7 +654,7 @@ final class ProxyGenerator {
                            .getfield(pg.handlerField)
                            .aload(0)
                            .ldc(DynamicConstantDesc.of(pg.bsm,
-                                toClassDesc(fromClass),
+                                referenceClassDesc(fromClass),
                                 method.getName(),
                                 desc));
                         if (parameterTypes.length > 0) {
@@ -693,7 +682,7 @@ final class ProxyGenerator {
                         if (!catchList.isEmpty()) {
                             var c1 = cob.newBoundLabel();
                             for (var exc : catchList) {
-                                cob.exceptionCatch(cob.startLabel(), c1, c1, toClassDesc(exc));
+                                cob.exceptionCatch(cob.startLabel(), c1, c1, referenceClassDesc(exc));
                             }
                             cob.athrow();   // just rethrow the exception
                             var c2 = cob.newBoundLabel();
@@ -739,7 +728,7 @@ final class ProxyGenerator {
                    .invokevirtual(prim.unwrapMethodRef(cob.constantPool()))
                    .return_(TypeKind.from(type).asLoadable());
             } else {
-                cob.checkcast(toClassDesc(type))
+                cob.checkcast(referenceClassDesc(type))
                    .areturn();
             }
         }

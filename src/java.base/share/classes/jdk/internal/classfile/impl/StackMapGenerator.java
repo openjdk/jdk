@@ -26,14 +26,12 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.nio.ByteBuffer;
@@ -46,6 +44,8 @@ import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 
 import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.constant.ConstantUtils.binaryNameToDesc;
+
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
@@ -1321,8 +1321,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
-        private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
+        private static final ClassDesc CD_Cloneable = binaryNameToDesc("java.lang.Cloneable");
+        private static final ClassDesc CD_Serializable = binaryNameToDesc("java.io.Serializable");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {

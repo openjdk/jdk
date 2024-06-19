@@ -213,15 +213,6 @@ class TestGenCollectorPolicy {
 // verify that there are some basic rules for NewSize honored by the policies.
 
 // If NewSize has been ergonomically set, the collector policy
-// should use it for min
-TEST_VM(CollectorPolicy, young_min_ergo) {
-  TestGenCollectorPolicy::SetNewSizeErgo setter(20 * M);
-  TestGenCollectorPolicy::CheckYoungMin checker(20 * M);
-
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker);
-}
-
-// If NewSize has been ergonomically set, the collector policy
 // should use it for min but calculate the initial young size
 // using NewRatio.
 TEST_VM(CollectorPolicy, young_scaled_initial_ergo) {
