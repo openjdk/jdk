@@ -122,7 +122,7 @@ public class Main {
 
         if (optionSet.has(helpOpt)) {
             out.println("""
-                The jnativescan tool can be used to find methods that may access native functionality when
+                The jnativescan tool can be used to find methods that may access native functionalities when
                 run. This includes methods that call restricted methods, and 'native' method declarations.
                 """);
             try {
