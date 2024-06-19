@@ -57,21 +57,24 @@ template<bool ALLOW_BLOCK, uint32_t MAX_SPINS>
 void ShenandoahLock::contended_lock_internal(Thread* thread) {
   assert(!ALLOW_BLOCK || thread->is_Java_thread(), "Must be a Java thread when allow block.");
   uint32_t ctr = os::is_MP() ? MAX_SPINS : 0; //Do not spin on single processor.
-  while (Atomic::load(&_state) == locked ||
-      Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+  do {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if SP it NOT synchronizing.
       SpinPause();
       ctr--;
-    } else if (ALLOW_BLOCK) {
-      //We know SP is synchronizing and block is allosed,
-      //yield to safepoint call to so VM will reach safepoint faster.
-      ThreadBlockInVM block(JavaThread::cast(thread), true);
-      os::naked_yield();
     } else {
-      os::naked_yield();
+      if (ALLOW_BLOCK && SafepointMechanism::local_poll_armed(JavaThread::cast(thread))) {
+        //We know SP is synchronizing and block is allowed,
+        //yield to safepoint call to so VM will reach safepoint faster.
+        ThreadBlockInVM block(JavaThread::cast(thread), true);
+        while (SafepointSynchronize::is_synchronizing()) {
+          os::naked_yield();
+        }
+      } else {
+        os::naked_yield();
+      }
     }
-  }
+  } while (!try_lock(ALLOW_BLOCK));
 }
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
