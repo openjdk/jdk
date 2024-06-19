@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,143 +40,6 @@
 void NativeInstruction::wrote(int offset) {
   ICache::invalidate_word(addr_at(offset));
 }
-
-#ifdef ASSERT
-void NativeLoadGot::report_and_fail() const {
-  tty->print_cr("Addr: " INTPTR_FORMAT " Code: %x %x %x", p2i(instruction_address()),
-                  (has_rex ? ubyte_at(0) : 0), ubyte_at(rex_size), ubyte_at(rex_size + 1));
-  fatal("not a indirect rip mov to rbx");
-}
-
-void NativeLoadGot::verify() const {
-  if (has_rex) {
-    int rex = ubyte_at(0);
-    if (rex != rex_prefix && rex != rex_b_prefix) {
-      report_and_fail();
-    }
-  }
-
-  int inst = ubyte_at(rex_size);
-  if (inst != instruction_code) {
-    report_and_fail();
-  }
-  int modrm = ubyte_at(rex_size + 1);
-  if (modrm != modrm_rbx_code && modrm != modrm_rax_code) {
-    report_and_fail();
-  }
-}
-#endif
-
-intptr_t NativeLoadGot::data() const {
-  return *(intptr_t *) got_address();
-}
-
-address NativePltCall::destination() const {
-  NativeGotJump* jump = nativeGotJump_at(plt_jump());
-  return jump->destination();
-}
-
-address NativePltCall::plt_entry() const {
-  return return_address() + displacement();
-}
-
-address NativePltCall::plt_jump() const {
-  address entry = plt_entry();
-  // Virtual PLT code has move instruction first
-  if (((NativeGotJump*)entry)->is_GotJump()) {
-    return entry;
-  } else {
-    return nativeLoadGot_at(entry)->next_instruction_address();
-  }
-}
-
-address NativePltCall::plt_load_got() const {
-  address entry = plt_entry();
-  if (!((NativeGotJump*)entry)->is_GotJump()) {
-    // Virtual PLT code has move instruction first
-    return entry;
-  } else {
-    // Static PLT code has move instruction second (from c2i stub)
-    return nativeGotJump_at(entry)->next_instruction_address();
-  }
-}
-
-address NativePltCall::plt_c2i_stub() const {
-  address entry = plt_load_got();
-  // This method should be called only for static calls which has C2I stub.
-  NativeLoadGot* load = nativeLoadGot_at(entry);
-  return entry;
-}
-
-address NativePltCall::plt_resolve_call() const {
-  NativeGotJump* jump = nativeGotJump_at(plt_jump());
-  address entry = jump->next_instruction_address();
-  if (((NativeGotJump*)entry)->is_GotJump()) {
-    return entry;
-  } else {
-    // c2i stub 2 instructions
-    entry = nativeLoadGot_at(entry)->next_instruction_address();
-    return nativeGotJump_at(entry)->next_instruction_address();
-  }
-}
-
-void NativePltCall::reset_to_plt_resolve_call() {
-  set_destination_mt_safe(plt_resolve_call());
-}
-
-void NativePltCall::set_destination_mt_safe(address dest) {
-  // rewriting the value in the GOT, it should always be aligned
-  NativeGotJump* jump = nativeGotJump_at(plt_jump());
-  address* got = (address *) jump->got_address();
-  *got = dest;
-}
-
-void NativePltCall::set_stub_to_clean() {
-  NativeLoadGot* method_loader = nativeLoadGot_at(plt_c2i_stub());
-  NativeGotJump* jump          = nativeGotJump_at(method_loader->next_instruction_address());
-  method_loader->set_data(0);
-  jump->set_jump_destination((address)-1);
-}
-
-void NativePltCall::verify() const {
-  // Make sure code pattern is actually a call rip+off32 instruction.
-  int inst = ubyte_at(0);
-  if (inst != instruction_code) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
-                                                        inst);
-    fatal("not a call rip+off32");
-  }
-}
-
-address NativeGotJump::destination() const {
-  address *got_entry = (address *) got_address();
-  return *got_entry;
-}
-
-#ifdef ASSERT
-void NativeGotJump::report_and_fail() const {
-  tty->print_cr("Addr: " INTPTR_FORMAT " Code: %x %x %x", p2i(instruction_address()),
-                 (has_rex() ? ubyte_at(0) : 0), ubyte_at(rex_size()), ubyte_at(rex_size() + 1));
-  fatal("not a indirect rip jump");
-}
-
-void NativeGotJump::verify() const {
-  if (has_rex()) {
-    int rex = ubyte_at(0);
-    if (rex != rex_prefix) {
-      report_and_fail();
-    }
-  }
-  int inst = ubyte_at(rex_size());
-  if (inst != instruction_code) {
-    report_and_fail();
-  }
-  int modrm = ubyte_at(rex_size() + 1);
-  if (modrm != modrm_code) {
-    report_and_fail();
-  }
-}
-#endif
 
 void NativeCall::verify() {
   // Make sure code pattern is actually a call imm32 instruction.
@@ -564,28 +427,6 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 #endif // _LP64
 
 }
-
-address NativeFarJump::jump_destination() const          {
-  NativeMovConstReg* mov = nativeMovConstReg_at(addr_at(0));
-  return (address)mov->data();
-}
-
-void NativeFarJump::verify() {
-  if (is_far_jump()) {
-    NativeMovConstReg* mov = nativeMovConstReg_at(addr_at(0));
-    NativeInstruction* jmp = nativeInstruction_at(mov->next_instruction_address());
-    if (jmp->is_jump_reg()) return;
-  }
-  fatal("not a jump instruction");
-}
-
-void NativePopReg::insert(address code_pos, Register reg) {
-  assert(reg->encoding() < 8, "no space for REX");
-  assert(NativePopReg::instruction_size == sizeof(char), "right address unit for update");
-  *code_pos = (u_char)(instruction_code | reg->encoding());
-  ICache::invalidate_range(code_pos, instruction_size);
-}
-
 
 void NativeIllegalInstruction::insert(address code_pos) {
   assert(NativeIllegalInstruction::instruction_size == sizeof(short), "right address unit for update");

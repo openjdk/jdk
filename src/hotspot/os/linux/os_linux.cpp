@@ -359,6 +359,15 @@ julong os::physical_memory() {
   return phys_mem;
 }
 
+size_t os::rss() {
+  size_t size = 0;
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    size = info.vmrss * K;
+  }
+  return size;
+}
+
 static uint64_t initial_total_ticks = 0;
 static uint64_t initial_steal_ticks = 0;
 static bool     has_initial_tick_info = false;
@@ -1356,7 +1365,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do { s++; } while (s && isspace(*s));
+        do { s++; } while (s && isspace((unsigned char) *s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -5222,7 +5231,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == nullptr) return -1;
 
   // Skip blank chars
-  do { s++; } while (s && isspace(*s));
+  do { s++; } while (s && isspace((unsigned char) *s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
