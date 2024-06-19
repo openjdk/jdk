@@ -39,4 +39,5 @@
 #ifndef ATTRIBUTE_NO_UBSAN
 #define ATTRIBUTE_NO_UBSAN
 #endif
+
 #endif // SHARE_SANITIZERS_UB_HPP
