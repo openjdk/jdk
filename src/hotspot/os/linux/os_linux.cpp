@@ -359,6 +359,15 @@ julong os::physical_memory() {
   return phys_mem;
 }
 
+size_t os::rss() {
+  size_t size = 0;
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    size = info.vmrss * K;
+  }
+  return size;
+}
+
 static uint64_t initial_total_ticks = 0;
 static uint64_t initial_steal_ticks = 0;
 static bool     has_initial_tick_info = false;

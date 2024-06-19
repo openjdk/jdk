@@ -210,6 +210,22 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                                (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    rss = info.resident_size;
+  }
+#endif // __APPLE__
+
+  return rss;
+}
+
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
