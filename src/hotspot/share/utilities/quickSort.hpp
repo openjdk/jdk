@@ -38,11 +38,11 @@ class QuickSort : AllStatic {
   }
 
   // As pivot we use the median of the first, last and middle elements.
-  // We swap these three values into the right place in the array. This
-  // means that this method not only returns the index of the pivot
-  // element. It also alters the array so that:
+  // We swap these three values as needed so that
   //     array[first] <= array[middle] <= array[last]
-  // A side effect of this is that arrays of length <= 3 are sorted.
+  // As a result, the first and last elements are placed in the proper
+  // partition, and arrays of length <= 3 are sorted.
+  // The middle index is returned, designating that element as the pivot.
   template<class T, class C>
   static size_t find_pivot(T* array, size_t length, C comparator) {
     assert(length > 1, "length of array must be > 0");
