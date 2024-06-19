@@ -40,4 +40,4 @@
 #endif
 
 
-#endif // SHARE_SANITIZERS_UBSAN_HPP
+#endif // SHARE_SANITIZERS_UB_HPP
