@@ -522,6 +522,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
+    jboolean doIt = JNI_FALSE;
     PAGESETUPDLG setup;
     memset(&setup, 0, sizeof(setup));
 
@@ -690,6 +691,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
             }
             ::GlobalUnlock(setup.hDevMode);
         }
+        doIt = JNI_TRUE;
     }
 
     AwtDialog::CheckUninstallModalHook();
@@ -708,7 +710,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
     CLEANUP_SHOW;
 
-    return JNI_TRUE;
+    return doIt;
 
     CATCH_BAD_ALLOC_RET(0);
 }
