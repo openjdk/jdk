@@ -45,6 +45,10 @@ STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
 bool Arena::use_pool = false;
+size_t Arena::total_request = 0;
+size_t Arena::total_malloc = 0;
+size_t Arena::total_malloc_overhead = 0;
+size_t Arena::total_pool = 0;
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
@@ -144,6 +148,7 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
          SIZE_FORMAT ".", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
+  Atomic::add(&Arena::total_request, length);
   Chunk* chunk = nullptr;
   if (pool != nullptr) {
     Chunk* c = pool->take_from_pool();
@@ -151,10 +156,13 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
       assert(c->length() == length, "wrong length?");
       chunk = c;
     }
+    Atomic::add(&Arena::total_pool, length);
   }
   if (chunk == nullptr) {
     // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
     size_t bytes = ARENA_ALIGN(sizeof(Chunk)) + length;
+    Atomic::add(&Arena::total_malloc, bytes + sizeof(MallocHeader));
+    Atomic::add(&Arena::total_malloc_overhead, bytes - length + sizeof(MallocHeader));
     void* p = os::malloc(bytes, mtChunk, CALLER_PC);
     if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
@@ -221,7 +229,16 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-void Arena::report_usage() { ChunkPool::report_usage(); }
+void Arena::report_usage() {
+  ChunkPool::report_usage();
+  const size_t M = 1024 * 1024;
+  tty->print_cr("Total request: " SIZE_FORMAT " MB, total provided by pool: " SIZE_FORMAT " MB, total malloc: " SIZE_FORMAT " MB, malloc overhead: " SIZE_FORMAT " MB, malloc part: %%" SIZE_FORMAT,
+                Arena::total_request / M, Arena::total_pool / M, Arena::total_malloc / M, Arena::total_malloc_overhead / M, (Arena::total_malloc * 100 ) / Arena::total_request);
+  Arena::total_request = 0;
+  Arena::total_pool = 0;
+  Arena::total_malloc = 0;
+  Arena::total_malloc_overhead = 0;
+}
 
 Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
