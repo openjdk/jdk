@@ -655,6 +655,101 @@ public:
 // It would be nice to future-proof the design, and allow reduction/prefix sum
 // on predicates.
 // Wrapping everything in an extra graph has overheads, but unifies the design.
+//
+// Let's have some examples to play with.
+//
+// 1. Diamond
+//
+//   for () {
+//     x[i+0] = c0 ? a0 : b0;
+//     x[i+1] = c1 ? a1 : b1;
+//   }
+//
+//   CountedLoop
+//   if(c0) (true)
+//    |         |
+//   (c0)     (!c0)
+//   a0       b0
+//    |         |
+//   Region / Phi (c0, !c0) (true)
+//   ... (repeats)
+//
+//   C = [c0, c1]
+//   A = [a0, a1]
+//   B = [b0, b1]
+//   S = select(C, A, B)
+//   X = [x[i+0], x[i+1]]
+//
+// 2. Simple search loop
+//
+//  for () {
+//    if (c0) { break; }
+//    if (c1) { break; }
+//  }
+//
+//  CountedLoop
+//  if (c0) (true)
+//   |          |
+//  (c0)      (!c0)
+//   |        break
+//   |
+//  if (c1) (c0 && ...)
+//   |          |
+//  (c1)      (!c1)
+//   |        break
+//   |
+//  exit-check (c0 && c1 && ...)
+//
+//  C = [c0, c1]
+//  if (any(C)) { special-break; }
+//
+//  -> tricky here: all of C must be executable in parallel -> RC?
+//  -> Later C have dependency on earlier C! How can we break the dependencies?
+//
+//  3. Exit in nested Diamonds
+//
+//  for () {
+//    if (c0) {
+//      if (d0) {
+//        break;
+//      } else {
+//        x0 = a0;
+//      }
+//    } else {
+//      x0 = b0;
+//    }
+//  }
+//
+//  CountedLoop
+//  ...
+//  if (ci) (!(c0 && d0) && !(c1 && d1) && ...)
+//   |             |
+//  (!ci)         (ci)
+//   |             |
+//   |            if (di) (ci && !(c0 && d0) && ...)
+//   |             |            |
+//   |            (!di)        (di)
+//   |             |            |
+//   bi            ai          break;
+//   |             |
+//  Region / Phi (ci) (!(c0 && d0) && ... && !(ci && di))
+//
+//  A = [a0, a1]
+//  B = [b0, b1]
+//  C = [c0, c1]
+//  D = [d0, d1]
+//  Y = AND(C, D)
+//  if (any(Y)) { special-break; }
+//  S = select(C, A, B)
+//  X = [x0, x1]
+//
+//  -> Must be able to execute A, B, C, D in parallel.
+//  -> But later indices have dependency on earlier C and D values.
+//  -> Maybe we can remove some predicates / condition edges for some "safe" ops.
+//  -> We could define as "safe" anything that does not have side-effects.
+//  -> Load/Store do have side effects. Maybe not Load if we know it is range-checked.
+//  -> But we have to be careful that we do not remove the RC inside the loop - we may need a new annotation?
+//
 
 // Submodule of VLoopAnalyzer.
 // TODO desc
