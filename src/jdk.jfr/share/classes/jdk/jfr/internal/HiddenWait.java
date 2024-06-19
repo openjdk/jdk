@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,48 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal;
 
-#import <jawt.h>
-#import "jni_util.h"
-
-#import <jawt_md.h>
-
-#import "awt_DrawingSurface.h"
-
-/*
- * Declare library specific JNI_Onload entry if static build
+/**
+ * The HiddenWait class is used to exclude jdk.JavaMonitorWait events
+ * from being generated when Object.wait() is called on an object of this type.
  */
-DEF_STATIC_JNI_OnLoad
-
-/*
- * Get the AWT native structure.
- * This function returns JNI_FALSE if an error occurs.
- */
-_JNI_IMPORT_OR_EXPORT_ jboolean JNICALL JAWT_GetAWT
-(JNIEnv* env, JAWT* awt)
-{
-    if (awt == NULL) {
-        return JNI_FALSE;
-    }
-
-    if (awt->version != (JAWT_VERSION_1_4 | JAWT_MACOSX_USE_CALAYER)
-        && awt->version != JAWT_VERSION_1_7
-        && awt->version != JAWT_VERSION_9)
-    {
-        return JNI_FALSE;
-    }
-
-    awt->GetDrawingSurface = awt_GetDrawingSurface;
-    awt->FreeDrawingSurface = awt_FreeDrawingSurface;
-
-    awt->Lock = awt_Lock;
-    awt->Unlock = awt_Unlock;
-    awt->GetComponent = awt_GetComponent;
-    if (awt->version >= JAWT_VERSION_9) {
-        awt->CreateEmbeddedFrame = awt_CreateEmbeddedFrame;
-        awt->SetBounds = awt_SetBounds;
-        awt->SynthesizeWindowActivation = awt_SynthesizeWindowActivation;
-    }
-
-    return JNI_TRUE;
+public final class HiddenWait {
 }
