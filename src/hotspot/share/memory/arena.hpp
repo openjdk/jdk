@@ -136,6 +136,7 @@ protected:
   }
 
  public:
+  static size_t total_request, total_malloc, total_pool, total_malloc_overhead;
   static bool use_pool;
   static void report_usage();
   // Start the chunk_pool cleaner task

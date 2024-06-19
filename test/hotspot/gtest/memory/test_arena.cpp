@@ -392,7 +392,7 @@ struct X : public TestRunnable {
   static size_t total_alloc_dur;
   static size_t total_free_dur;
 
-  const size_t N = 1024;
+  const size_t N = 1000;
   const size_t K = 1024;
   size_t chunks[10] = {32 * K, 16 * K, 8 * K, 4 * K, 2 * K, 1 * K, 512, 256, 128, 64};
   typedef struct {
