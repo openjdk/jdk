@@ -39,7 +39,7 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class VMStructs;
  private:
-  class ClassLoaderDataGraphIterator;
+  class ClassLoaderDataGraphNoKeepAliveIterator;
 
   // All CLDs (except unlinked CLDs) can be reached by walking _head->_next->...
   static ClassLoaderData* volatile _head;
@@ -71,6 +71,12 @@ class ClassLoaderDataGraph : public AllStatic {
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
   // Iteration through CLDG not by GC.
+  // All the do_no_keepalive suffixed functions do not keep the CLD alive. Any
+  // CLD OopHandles (modules, mirrors, resolved refs) resolved must be treated
+  // as no keepalive. And requires that its CLD's holder is kept alive if they
+  // escape the caller's safepoint or ClassLoaderDataGraph_lock critical
+  // section.
+  // The do_keepalive suffixed functions will keep all CLDs alive.
   static void loaded_cld_do_no_keepalive(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
