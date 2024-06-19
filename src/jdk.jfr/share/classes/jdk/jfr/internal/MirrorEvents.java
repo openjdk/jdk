@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,16 @@
  */
 package jdk.jfr.internal;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.jfr.Event;
 import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
 import jdk.jfr.events.ExceptionThrownEvent;
+import jdk.jfr.events.FileForceEvent;
+import jdk.jfr.events.FileReadEvent;
+import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -46,53 +48,51 @@ import jdk.jfr.events.VirtualThreadStartEvent;
 import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
+import jdk.jfr.internal.util.Utils;
 
-public final class MirrorEvents {
-    private static final Class<?>[] mirrorEventClasses = {
-        DeserializationEvent.class,
-        ProcessStartEvent.class,
-        SecurityPropertyModificationEvent.class,
-        SecurityProviderServiceEvent.class,
-        SerializationMisdeclarationEvent.class,
-        SocketReadEvent.class,
-        SocketWriteEvent.class,
-        ThreadSleepEvent.class,
-        TLSHandshakeEvent.class,
-        VirtualThreadStartEvent.class,
-        VirtualThreadEndEvent.class,
-        VirtualThreadPinnedEvent.class,
-        VirtualThreadSubmitFailedEvent.class,
-        X509CertificateEvent.class,
-        X509ValidationEvent.class,
-        ErrorThrownEvent.class,
-        ExceptionStatisticsEvent.class,
-        ExceptionThrownEvent.class,
+/**
+ * This class registers all mirror events.
+ */
+final class MirrorEvents {
+    private static final Map<String, Class<? extends MirrorEvent>> mirrorLookup = new ConcurrentHashMap<>();
+
+    // Add mirror event mapping here. See MirrorEvent class for details.
+    static {
+        register("jdk.internal.event.DeserializationEvent", DeserializationEvent.class);
+        register("jdk.internal.event.FileForceEvent", FileForceEvent.class);
+        register("jdk.internal.event.FileReadEvent", FileReadEvent.class);
+        register("jdk.internal.event.FileWriteEvent", FileWriteEvent.class);
+        register("jdk.internal.event.ProcessStartEvent", ProcessStartEvent.class);
+        register("jdk.internal.event.SecurityPropertyModificationEvent", SecurityPropertyModificationEvent.class);
+        register("jdk.internal.event.SecurityProviderServiceEvent", SecurityProviderServiceEvent.class);
+        register("jdk.internal.event.SerializationMisdeclarationEvent", SerializationMisdeclarationEvent.class);
+        register("jdk.internal.event.SocketReadEvent", SocketReadEvent.class);
+        register("jdk.internal.event.SocketWriteEvent", SocketWriteEvent.class);
+        register("jdk.internal.event.ThreadSleepEvent", ThreadSleepEvent.class);
+        register("jdk.internal.event.TLSHandshakeEvent", TLSHandshakeEvent.class);
+        register("jdk.internal.event.VirtualThreadStartEvent", VirtualThreadStartEvent.class);
+        register("jdk.internal.event.VirtualThreadEndEvent", VirtualThreadEndEvent.class);
+        register("jdk.internal.event.VirtualThreadPinnedEvent", VirtualThreadPinnedEvent.class);
+        register("jdk.internal.event.VirtualThreadSubmitFailedEvent", VirtualThreadSubmitFailedEvent.class);
+        register("jdk.internal.event.X509CertificateEvent", X509CertificateEvent.class);
+        register("jdk.internal.event.X509ValidationEvent", X509ValidationEvent.class);
+        register("jdk.internal.event.ErrorThrownEvent", ErrorThrownEvent.class);
+        register("jdk.internal.event.ExceptionStatisticsEvent", ExceptionStatisticsEvent.class);
+        register("jdk.internal.event.ExceptionThrownEvent", ExceptionThrownEvent.class);
     };
 
-    private static final Map<String, Class<? extends Event>> mirrorLookup = createLookup();
+    private static void register(String eventClassName, Class<? extends MirrorEvent> mirrorClass) {
+        mirrorLookup.put(eventClassName, mirrorClass);
+    }
 
-    public static Class<? extends Event> find(String name) {
-        // When <clinit> of this class is executed it may lead
-        // to a JVM up call and invocation of this method before
-        // the mirrorLookup field has been set. This is fine,
-        // mirrors should not be instrumented.
-        if (mirrorLookup != null) {
+    static Class<? extends MirrorEvent> find(Class<? extends jdk.internal.event.Event> eventClass) {
+        return find(Utils.isJDKClass(eventClass), eventClass.getName());
+    }
+
+    static Class<? extends MirrorEvent> find(boolean bootClassLoader, String name) {
+        if (bootClassLoader) {
             return mirrorLookup.get(name);
         }
         return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Class<? extends Event>> createLookup() {
-        Map<String, Class<? extends Event>> mirrors = new HashMap<>();
-        for (Class<?> eventClass : mirrorEventClasses) {
-            MirrorEvent me = eventClass.getAnnotation(MirrorEvent.class);
-            if (me == null) {
-                throw new InternalError("Mirror class must have annotation " + MirrorEvent.class.getName());
-            }
-            String fullName = me.module() + ":" + me.className();
-            mirrors.put(fullName, (Class<? extends Event>) eventClass);
-        }
-        return mirrors;
     }
 }

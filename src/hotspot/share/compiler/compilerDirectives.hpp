@@ -30,7 +30,6 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -115,7 +114,6 @@ private:
 public:
   static void init();
   static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
-  static bool hasMatchingDirectives(const methodHandle& method, bool top_only = false);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);

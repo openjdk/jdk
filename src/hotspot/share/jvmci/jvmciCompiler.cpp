@@ -229,9 +229,12 @@ void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_stat
     if (err > 10 && err * 10 > ok && !_disabled) {
       _disabled = true;
       int total = err + ok;
-      const char* disable_msg = err_msg("JVMCI compiler disabled "
-      "after %d of %d upcalls had errors (Last error: \"%s\"). "
-      "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      // Using stringStream instead of err_msg to avoid truncation
+      stringStream st;
+      st.print("JVMCI compiler disabled "
+               "after %d of %d upcalls had errors (Last error: \"%s\"). "
+               "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      const char* disable_msg = st.freeze();
       log_warning(jit,compilation)("%s", disable_msg);
       if (compile_state != nullptr) {
         const char* disable_error = os::strdup(disable_msg);

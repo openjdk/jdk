@@ -29,8 +29,8 @@
 
 #include "logging/logAsyncWriter.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memflags.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ abstract class AbstractDCmd {
     private String source;
 
     // Called by native
-    public abstract String[] printHelp();
+    public abstract String[] getHelp();
 
     // Called by native. The number of arguments for each command is
     // reported to the DCmdFramework as a hardcoded number in native.
@@ -233,7 +233,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void printHelpText() {
-        for (String line : printHelp()) {
+        for (String line : getHelp()) {
             println(line);
         }
     }

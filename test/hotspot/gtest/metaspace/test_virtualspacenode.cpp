@@ -34,6 +34,7 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "sanitizers/address.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -155,6 +156,11 @@ class VirtualSpaceNodeTest {
 
       // The chunk should be as far committed as was requested
       EXPECT_GE(c->committed_words(), request_commit_words);
+
+      // At the VirtualSpaceNode level, all memory is still poisoned.
+      // Since we bypass the normal way of allocating chunks (ChunkManager::get_chunk), we
+      // need to unpoison this chunk.
+      ASAN_UNPOISON_MEMORY_REGION(c->base(), c->committed_words() * BytesPerWord);
 
       // Zap committed portion.
       DEBUG_ONLY(zap_range(c->base(), c->committed_words());)

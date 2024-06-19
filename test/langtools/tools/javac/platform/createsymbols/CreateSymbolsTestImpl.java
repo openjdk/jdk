@@ -26,6 +26,11 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.constant.PackageDesc;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -58,14 +63,11 @@ import build.tools.symbolgenerator.CreateSymbols.ClassDescription;
 import build.tools.symbolgenerator.CreateSymbols.ClassList;
 import build.tools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
 import build.tools.symbolgenerator.CreateSymbols.VersionDescription;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import com.sun.tools.classfile.ModulePackages_attribute;
+import java.io.UncheckedIOException;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.constant.ClassDesc;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 public class CreateSymbolsTestImpl {
 
@@ -981,14 +983,19 @@ public class CreateSymbolsTestImpl {
     }
 
     Path prepareVersionedCTSym(String[] code7, String[] code8) throws Exception {
+        return prepareVersionedCTSym(code7, code8, _ -> {});
+    }
+
+    Path prepareVersionedCTSym(String[] code7, String[] code8,
+                               Consumer<Path> adjustClassFiles) throws Exception {
         String testClasses = System.getProperty("test.classes");
         Path output = Paths.get(testClasses, "test-data" + i++);
         deleteRecursively(output);
         Files.createDirectories(output);
         Path ver7Jar = output.resolve("7.jar");
-        compileAndPack(output, ver7Jar, code7);
+        compileAndPack(output, ver7Jar, adjustClassFiles, code7);
         Path ver8Jar = output.resolve("8.jar");
-        compileAndPack(output, ver8Jar, code8);
+        compileAndPack(output, ver8Jar, adjustClassFiles, code8);
 
         Path classes = output.resolve("classes.zip");
 
@@ -1048,7 +1055,112 @@ public class CreateSymbolsTestImpl {
         new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", "", modules.toString(), modulesList.toString());
     }
 
+    @Test
+    void testModuleMainClass() throws Exception {
+        ClassFile cf = ClassFile.of();
+        ToolBox tb = new ToolBox();
+        String testClasses = System.getProperty("test.classes");
+        Path output = Paths.get(testClasses, "test-data" + i++);
+        deleteRecursively(output);
+        Files.createDirectories(output);
+        Path ver9Jar = output.resolve("9.jar");
+        compileAndPack(output,
+                       ver9Jar,
+                       classesDir -> {
+                           try {
+                               Path moduleInfo = classesDir.resolve("module-info.class");
+                               byte[] newClassData =
+                                       cf.transform(cf.parse(moduleInfo),
+                                                    (builder, element) -> {
+                                                        builder.with(element);
+                                                        if (element instanceof ModuleAttribute) {
+                                                            builder.with(ModuleMainClassAttribute.of(ClassDesc.of("main.Main")));
+                                                        }
+                                                    });
+                               try (OutputStream out = Files.newOutputStream(moduleInfo)) {
+                                   out.write(newClassData);
+                               }
+                           } catch (IOException ex) {
+                               throw new UncheckedIOException(ex);
+                           }
+                       },
+                       """
+                       module m {
+                       }
+                       """,
+                       """
+                       package main;
+                       public class Main {}
+                       """);
+
+
+        Path ctSym = output.resolve("ct.sym");
+
+        deleteRecursively(ctSym);
+
+        CreateSymbols.ALLOW_NON_EXISTING_CLASSES = true;
+        CreateSymbols.EXTENSION = ".class";
+
+        List<VersionDescription> versions =
+                Arrays.asList(new VersionDescription(ver9Jar.toAbsolutePath().toString(), "9", null));
+
+        ExcludeIncludeList acceptAll = new ExcludeIncludeList(null, null) {
+            @Override public boolean accepts(String className, boolean includePrivateClasses) {
+                return true;
+            }
+        };
+        new CreateSymbols().createBaseLine(versions, acceptAll, ctSym, new String[0]);
+        Path symbolsDesc = ctSym.resolve("symbols");
+        Path modules = ctSym.resolve("modules");
+        Path modulesList = ctSym.resolve("modules-list");
+
+        Files.createDirectories(modules);
+        try (Writer w = Files.newBufferedWriter(modulesList)) {}
+
+        Path classesZip = output.resolve("classes.zip");
+        Path classesDir = output.resolve("classes");
+
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classesZip.toAbsolutePath().toString(), 0, "9", "", modules.toString(), modulesList.toString());
+
+        try (JarFile jf = new JarFile(classesZip.toFile())) {
+            Enumeration<JarEntry> en = jf.entries();
+
+            while (en.hasMoreElements()) {
+                JarEntry je = en.nextElement();
+                if (je.isDirectory()) continue;
+                Path target = classesDir.resolve(je.getName());
+                Files.createDirectories(target.getParent());
+                Files.copy(jf.getInputStream(je), target);
+            }
+        }
+
+        Path moduleInfo = classesDir.resolve("9")
+                                    .resolve("m")
+                                    .resolve("module-info.class");
+
+        cf.parse(moduleInfo)
+          .attributes()
+          .stream()
+          .filter(attr -> attr instanceof ModuleMainClassAttribute)
+          .forEach(attr -> {
+              String expectedMain = "Lmain/Main;";
+              String mainClass =
+                      ((ModuleMainClassAttribute) attr).mainClass()
+                                                       .asSymbol()
+                                                       .descriptorString();
+              if (!Objects.equals(expectedMain, mainClass)) {
+                  throw new AssertionError("Expected " + expectedMain + " as a main class, " +
+                                           "but got: " + mainClass);
+              }
+          });
+    }
+
     void compileAndPack(Path output, Path outputFile, String... code) throws Exception {
+        compileAndPack(output, outputFile, _ -> {}, code);
+    }
+
+    void compileAndPack(Path output, Path outputFile,
+                        Consumer<Path> adjustClassFiles, String... code) throws Exception {
         ToolBox tb = new ToolBox();
         Path scratch = output.resolve("temp");
         deleteRecursively(scratch);
@@ -1065,27 +1177,21 @@ public class CreateSymbolsTestImpl {
                     packages.add(cf.substring(0, sep));
                 }
             }
-            ClassFile cf = ClassFile.read(moduleInfo);
-            List<CPInfo> cp = new ArrayList<>();
-            cp.add(null);
-            cf.constant_pool.entries().forEach(cp::add);
-            Map<String, Attribute> attrs = new HashMap<>(cf.attributes.map);
-            int[] encodedPackages = new int[packages.size()];
-            int i = 0;
-            for (String p : packages) {
-                int nameIndex = cp.size();
-                cp.add(new CONSTANT_Utf8_info(p));
-                encodedPackages[i++] = cp.size();
-                cp.add(new ConstantPool.CONSTANT_Package_info(null, nameIndex));
-            }
-            int attrName = cp.size();
-            cp.add(new CONSTANT_Utf8_info(Attribute.ModulePackages));
-            attrs.put(Attribute.ModulePackages, new ModulePackages_attribute(attrName, encodedPackages));
-            ClassFile newFile = new ClassFile(cf.magic, cf.minor_version, cf.major_version, new ConstantPool(cp.toArray(new CPInfo[0])), cf.access_flags, cf.this_class, cf.super_class, cf.interfaces, cf.fields, cf.methods, new Attributes(attrs));
+            ClassFile cf = ClassFile.of();
+            ClassModel cm = cf.parse(moduleInfo);
+            byte[] newData = cf.transform(cm, (builder, element) -> {
+                builder.with(element);
+                if (element instanceof ModuleAttribute) {
+                    builder.with(ModulePackagesAttribute.ofNames(packages.stream()
+                                                                         .map(pack -> PackageDesc.of(pack))
+                                                                         .toList()));
+                }
+            });
             try (OutputStream out = Files.newOutputStream(moduleInfo)) {
-                new ClassWriter().write(newFile, out);
+                out.write(newData);
             }
         }
+        adjustClassFiles.accept(scratch);
         try (Writer out = Files.newBufferedWriter(outputFile)) {
             for (String classFile : classFiles) {
                 try (InputStream in = Files.newInputStream(scratch.resolve(classFile))) {

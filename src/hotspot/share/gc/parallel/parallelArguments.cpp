@@ -133,10 +133,6 @@ size_t ParallelArguments::heap_reserved_size_bytes() {
   return MaxHeapSize;
 }
 
-size_t ParallelArguments::heap_max_size_bytes() {
-  return MaxHeapSize;
-}
-
 CollectedHeap* ParallelArguments::create_heap() {
   return new ParallelScavengeHeap();
 }

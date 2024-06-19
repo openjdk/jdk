@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -460,7 +460,7 @@ void NativeDeoptInstruction::verify() {
 bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   if (!Assembler::is_illtrap(code_pos)) return false;
   CodeBlob* cb = CodeCache::find_blob(code_pos);
-  if (cb == nullptr || !cb->is_compiled()) return false;
+  if (cb == nullptr || !cb->is_nmethod()) return false;
   nmethod *nm = (nmethod *)cb;
   // see NativeInstruction::is_sigill_not_entrant_at()
   return nm->verified_entry_point() != code_pos;

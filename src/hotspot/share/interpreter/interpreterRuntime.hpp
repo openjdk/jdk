@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,12 @@ class InterpreterRuntime: AllStatic {
   static void    throw_pending_exception(JavaThread* current);
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);
- private:
+
+  // Used by ClassListParser.
+  static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
+                              methodHandle& m, constantPoolHandle& pool, bool initialize_holder, TRAPS);
+
+private:
   // Statics & fields
   static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);
 

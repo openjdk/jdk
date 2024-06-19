@@ -571,6 +571,10 @@ public sealed interface MemoryLayout
      * derived from the size of the element layout of a sequence, and
      * {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset
      * constants (such as field offsets) which are derived from the layout path.
+     * <p>
+     * For any given dynamic argument {@code x_i}, it must be that {@code 0 <= x_i < size_i},
+     * where {@code size_i} is the size of the open path element associated with {@code x_i}.
+     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
@@ -609,7 +613,7 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(B, I1, I2, ... In);
      * }
      * <p>
      * Accessing a memory segment using the var handle returned by this method is subject
@@ -621,12 +625,15 @@ public sealed interface MemoryLayout
      *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected value layout.</li>
-     *     <li>The offset of the access operation (computed as above) must fall inside
-     *     the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
-     *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
-     *     {@code A} is the size of the selected layout and {@code S} is the size of the
-     *     accessed memory segment.</li>
+     *     <li>The access operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
@@ -728,14 +735,43 @@ public sealed interface MemoryLayout
      * offset {@code O} of the access operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * O = this.offsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
+     * O = this.byteOffsetHandle(P).invokeExact(this.scale(B, I0), I1, I2, ... In);
      * }
      * <p>
-     * More formally, this method can be obtained from the {@link #varHandle(PathElement...)},
+     * More formally, the method handle returned by this method is obtained from {@link #varHandle(PathElement...)},
      * as follows:
      * {@snippet lang = "java":
      * MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle())
      * }
+     * <p>
+     * Accessing a memory segment using the var handle returned by this method is subject
+     * to the following checks:
+     * <ul>
+     *     <li>The physical address of the accessed memory segment must be
+     *     <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
+     *     {@linkplain #byteAlignment() alignment constraint} of the root layout
+     *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
+     *     that the alignment constraint of the root layout can be more strict
+     *     (but not less) than the alignment constraint of the selected value layout.</li>
+     *     <li>The access operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
+     *     <li>The accessed memory segment must be
+     *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
+     *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>For write operations, the accessed memory segment must not be
+     *     {@link MemorySegment#isReadOnly() read only}, or an
+     *     {@link IllegalArgumentException} is thrown.</li>
+     *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed
+     *     segment must be {@linkplain MemorySegment.Scope#isAlive() alive}, or an
+     *     {@link IllegalStateException} is thrown.</li>
+     * </ul>
      *
      * @apiNote
      * As the leading index coordinate {@code I0} is not bound by any sequence layout, it
@@ -786,12 +822,15 @@ public sealed interface MemoryLayout
      *     (this layout), or an {@link IllegalArgumentException} will be issued. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected layout.</li>
-     *     <li>The start offset of the slicing operation (computed as above) must fall
-     *     inside the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
-     *     {@code O + A <= S}, where {@code O} is the start offset of
-     *     the slicing operation (computed as above), {@code A} is the size of the
-     *     selected layout and {@code S} is the size of the accessed memory segment.</li>
+     *     <li>The slicing operation must fall inside the spatial bounds of the accessed
+     *     memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case
+     *     when {@code B + A <= S}, where {@code B} is the base offset (defined above),
+     *     {@code A} is the size of this layout and {@code S} is the size of the
+     *     accessed memory segment. Note that the size of this layout might be <em>bigger</em>
+     *     than the size of the accessed layout (e.g. when accessing a struct member).</li>
+     *     <li>If the provided layout path has an open path element whose size is {@code S},
+     *     its corresponding trailing {@code long} coordinate value {@code I} must be
+     *     {@code 0 <= I < S}, or an {@link IndexOutOfBoundsException} is thrown.</li>
      * </ul>
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice,
@@ -838,7 +877,8 @@ public sealed interface MemoryLayout
      *     layout as its target layout.</li>
      * </ul>
      * Sequence path elements selecting more than one sequence element layout are called
-     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
+     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>. The <em>size</em>
+     * of an open path element determines the number of element layouts that can be selected by it.
      *
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and
@@ -906,6 +946,7 @@ public sealed interface MemoryLayout
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
          *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
          * </ul>
+         * That is, the size of the returned open path element is {@code B}.
          *
          * @param start the index of the first sequence element to be selected
          * @param step the step factor at which subsequence sequence elements are to be
@@ -924,7 +965,7 @@ public sealed interface MemoryLayout
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
          * {@code I}. If {@code C} is the sequence element count, it follows that
-         * {@code 0 <= I < C}.
+         * {@code 0 <= I < C}. That is, {@code C} is the size of the returned open path element.
          */
         static PathElement sequenceElement() {
             return LayoutPath.SequenceElement.instance();

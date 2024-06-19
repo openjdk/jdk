@@ -115,6 +115,15 @@ void VM_Version::setup_cpu_available_features() {
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->enabled()) {
+      // Change flag default
+      _feature_list[i]->update_flag();
+
+      // Feature will be disabled by update_flag() if flag
+      // is set to false by the user on the command line.
+      if (!_feature_list[i]->enabled()) {
+        continue;
+      }
+
       log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
              _feature_list[i]->pretty(),
              _feature_list[i]->value());
@@ -122,7 +131,10 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
-          strcat(buf, " ");
+          // Feature string is expected to be in multi-character form
+          // like rvc, rvv, etc so that it will be easier to specify
+          // target feature string in tests.
+          strcat(buf, " rv");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
@@ -139,8 +151,6 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_bit() != 0) {
         _features |= _feature_list[i]->feature_bit();
       }
-      // Change flag default
-      _feature_list[i]->update_flag();
     }
     i++;
   }

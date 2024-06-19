@@ -122,6 +122,9 @@ public class waitingthreads002 {
                     if (thread.name().indexOf(waitingthreads002a.threadNamePrefix) >= 0 &&
                            thread.status() == ThreadReference.THREAD_STATUS_MONITOR ) {
                         waitingCount++;
+                        // Virtual threads are not present in result returned by objRef.waitingThreads().
+                        if (!thread.isVirtual()) {
+                        }
                     }
                 }
             }
@@ -159,7 +162,9 @@ public class waitingthreads002 {
                     objRef = (ObjectReference) debuggeeClass.getValue(debuggeeClass.fieldByName(fieldName));
                     try {
                         List waitingThreads = objRef.waitingThreads();
-                        if (waitingThreads.size() != waitingthreads002a.threadCount) {
+                        final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+                        final int expWaitingCount = vthreadMode ? 0 : waitingthreads002a.threadCount;
+                        if (waitingThreads.size() != expWaitingCount) {
                             exitStatus = Consts.TEST_FAILED;
                             complain("waitingThreads method returned list with unexpected size for " + fieldName +
                                 "\n\t expected value : " + waitingthreads002a.threadCount + "; got one : " + waitingThreads.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
                 if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(htmlIds.forMember((ExecutableElement) element).name());
+                    String url = HtmlTree.encodeURL(htmlIds.forMember((ExecutableElement) element).getFirst().name());
                     if (!url.equals(item.getLabel())) {
                         item.setUrl(url);
                     }

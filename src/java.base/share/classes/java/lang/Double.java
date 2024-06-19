@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,41 +411,43 @@ public final class Double extends Number
     public static final double MIN_VALUE = 0x0.0000000000001P-1022; // 4.9e-324
 
     /**
-     * The number of bits used to represent a {@code double} value.
+     * The number of bits used to represent a {@code double} value,
+     * {@value}.
      *
      * @since 1.5
      */
     public static final int SIZE = 64;
 
     /**
-     * The number of bits in the significand of a {@code double} value.
-     * This is the parameter N in section {@jls 4.2.3} of
-     * <cite>The Java Language Specification</cite>.
+     * The number of bits in the significand of a {@code double}
+     * value, {@value}.  This is the parameter N in section {@jls
+     * 4.2.3} of <cite>The Java Language Specification</cite>.
      *
      * @since 19
      */
     public static final int PRECISION = 53;
 
     /**
-     * Maximum exponent a finite {@code double} variable may have.
-     * It is equal to the value returned by
-     * {@code Math.getExponent(Double.MAX_VALUE)}.
+     * Maximum exponent a finite {@code double} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
+     * Math.getExponent(Double.MAX_VALUE)}.
      *
      * @since 1.6
      */
     public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 1023
 
     /**
-     * Minimum exponent a normalized {@code double} variable may
-     * have.  It is equal to the value returned by
-     * {@code Math.getExponent(Double.MIN_NORMAL)}.
+     * Minimum exponent a normalized {@code double} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
+     * Math.getExponent(Double.MIN_NORMAL)}.
      *
      * @since 1.6
      */
     public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -1022
 
     /**
-     * The number of bytes used to represent a {@code double} value.
+     * The number of bytes used to represent a {@code double} value,
+     * {@value}.
      *
      * @since 1.8
      */
@@ -815,10 +817,6 @@ public final class Double extends Number
      * Finally, after rounding a {@code Double} object representing
      * this {@code double} value is returned.
      *
-     * <p> To interpret localized string representations of a
-     * floating-point value, use subclasses of {@link
-     * java.text.NumberFormat}.
-     *
      * <p>Note that trailing format specifiers, specifiers that
      * determine the type of a floating-point literal
      * ({@code 1.0f} is a {@code float} value;
@@ -888,6 +886,16 @@ public final class Double extends Number
      *      // Perform suitable alternative action
      *  }
      * }
+     *
+     * @apiNote To interpret localized string representations of a
+     * floating-point value, or string representations that have
+     * non-ASCII digits, use {@link java.text.NumberFormat}. For
+     * example,
+     * {@snippet lang="java" :
+     *     NumberFormat.getInstance(l).parse(s).doubleValue();
+     * }
+     * where {@code l} is the desired locale, or
+     * {@link java.util.Locale#ROOT} if locale insensitive.
      *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value

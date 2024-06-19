@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ public class CipherInputStream extends FilterInputStream {
 
     /* the buffer holding data that have been read in from the
        underlying stream, but have not been processed by the cipher
-       engine. the size 512 bytes is somewhat randomly chosen */
-    private final byte[] ibuffer = new byte[512];
+       engine. */
+    private final byte[] ibuffer = new byte[8192];
 
     // having reached the end of the underlying input stream
     private boolean done = false;

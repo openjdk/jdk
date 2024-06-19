@@ -91,7 +91,6 @@ public class SharedSecrets {
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     private static JavaxSecurityAccess javaxSecurityAccess;
-    private static JavaTemplateAccess javaTemplateAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -528,21 +527,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(X500Principal.class);
             access = javaxSecurityAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaTemplateAccess(JavaTemplateAccess jta) {
-        javaTemplateAccess = jta;
-    }
-
-    public static JavaTemplateAccess getJavaTemplateAccess() {
-        var access = javaTemplateAccess;
-        if (access == null) {
-            try {
-                Class.forName("java.lang.runtime.TemplateSupport", true, null);
-                access = javaTemplateAccess;
-            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

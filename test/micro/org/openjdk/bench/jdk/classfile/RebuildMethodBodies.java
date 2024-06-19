@@ -91,11 +91,11 @@ public class RebuildMethodBodies {
         cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
-                    cob.fieldInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                    cob.fieldAccess(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
                 case InvokeDynamicInstruction i ->
                     cob.invokedynamic(i.invokedynamic().asSymbol());
                 case InvokeInstruction i ->
-                    cob.invokeInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                    cob.invoke(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
                 case NewMultiArrayInstruction i ->
                     cob.multianewarray(i.arrayType().asSymbol(), i.dimensions());
                 case NewObjectInstruction i ->
@@ -103,7 +103,7 @@ public class RebuildMethodBodies {
                 case NewReferenceArrayInstruction i ->
                     cob.anewarray(i.componentType().asSymbol());
                 case TypeCheckInstruction i ->
-                    cob.typeCheckInstruction(i.opcode(), i.type().asSymbol());
+                    cob.with(TypeCheckInstruction.of(i.opcode(), i.type().asSymbol()));
                 default -> cob.with(coe);
             }
         }));

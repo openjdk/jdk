@@ -35,22 +35,18 @@
 
 // ----------------------------------------------------------------------------
 
-#define __ _masm.
-address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
-  precond(cbuf.stubs()->start() != badAddress);
-  precond(cbuf.stubs()->end() != badAddress);
+#define __ masm->
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
+  precond(__ code()->stubs()->start() != badAddress);
+  precond(__ code()->stubs()->end() != badAddress);
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // mv xmethod, 0
   // jalr -4 # to self
 
   if (mark == nullptr) {
-    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+    mark = __ inst_mark();  // Get mark within main instrs section.
   }
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(to_interp_stub_size());
   int offset = __ offset();

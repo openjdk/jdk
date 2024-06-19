@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,19 +81,6 @@ if (rasline) \
     (*env)->ReleasePrimitiveArrayCritical(env, raslineh, rasline, 0); \
 if (block) \
     (*env)->ReleasePrimitiveArrayCritical(env, blockh, block, 0)
-
-/* Place holders for the old native interface. */
-
-long
-sun_awt_image_GifImageDecoder_parseImage()
-{
-  return 0;
-}
-
-void
-sun_awt_image_GifImageDecoder_initIDs()
-{
-}
 
 static jmethodID readID;
 static jmethodID sendID;

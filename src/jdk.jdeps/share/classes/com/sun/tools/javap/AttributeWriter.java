@@ -478,7 +478,7 @@ public class AttributeWriter extends BasicWriter {
                 println("Record:");
                 indent(+1);
                 for (var componentInfo : attr.components()) {
-                    var sigAttr = componentInfo.findAttribute(Attributes.SIGNATURE);
+                    var sigAttr = componentInfo.findAttribute(Attributes.signature());
                     print(getJavaName(
                             new ClassWriter.SignaturePrinter(options.verbose).print(
                                     sigAttr.map(SignatureAttribute::asTypeSignature)

@@ -23,6 +23,9 @@
  * questions.
  */
 
+package sun.security.util;
+
+import java.util.Comparator;
 
 /**
  * ByteArrayTagOrder: a class for comparing two DER encodings by the
@@ -30,10 +33,6 @@
  *
  * @author D. N. Hoover
  */
-
-package sun.security.util;
-
-import java.util.Comparator;
 
 public class ByteArrayTagOrder implements Comparator<byte[]> {
 

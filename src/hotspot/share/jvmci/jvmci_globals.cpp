@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 
 #ifndef PRODUCT
 #define APPLY_JVMCI_FLAGS(params3, params4) \
-  JVMCI_FLAGS(params4, params3, params4, params3, params4, IGNORE_RANGE, IGNORE_CONSTRAINT)
+  JVMCI_FLAGS(params4, params3, params4, params3, IGNORE_RANGE, IGNORE_CONSTRAINT)
 #define JVMCI_DECLARE_CHECK4(type, name, value, ...) bool name##checked = false;
 #define JVMCI_DECLARE_CHECK3(type, name, ...)        bool name##checked = false;
 #define JVMCI_FLAG_CHECKED(name)                          name##checked = true;

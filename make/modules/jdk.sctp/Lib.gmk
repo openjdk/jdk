@@ -25,23 +25,22 @@
 
 include LibCommon.gmk
 
-################################################################################
-## Build libsctp
-################################################################################
-
 ifeq ($(call isTargetOs, linux), true)
+  ##############################################################################
+  ## Build libsctp
+  ##############################################################################
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBSCTP, \
       NAME := sctp, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := \
           $(call GetJavaHeaderDir, java.base) \
-          java.base:libnet \
+          java.base:libjvm \
+          java.base:libnio \
           java.base:libnio/ch, \
-      JDK_LIBS_unix := -ljava -ljvm -lnet -lnio, \
+      JDK_LIBS := java.base:libjava java.base:libnet, \
       LIBS_linux := $(LIBDL) -lpthread, \
   ))
 
   TARGETS += $(BUILD_LIBSCTP)
-
-  $(BUILD_LIBSCTP): $(call FindLib, java.base, nio)
 endif

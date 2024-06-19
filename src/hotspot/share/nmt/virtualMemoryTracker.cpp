@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,8 @@ void VirtualMemory::update_peak(size_t size) {
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
-  // Only if thread stack is backed by virtual memory
-  if (ThreadStackTracker::track_as_vm()) {
-    // Snapshot current thread stacks
-    VirtualMemoryTracker::snapshot_thread_stacks();
-  }
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::snapshot_thread_stacks();
   as_snapshot()->copy_to(s);
 }
 

@@ -48,6 +48,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
@@ -433,6 +434,9 @@ void VirtualSpaceNode::verify_locked() const {
   _commit_mask.verify();
 
   // Verify memory against commit mask.
+  // Down here, from ASAN's view, this memory may be poisoned, since we only unpoison
+  // way up at the ChunkManager level.
+#if !INCLUDE_ASAN
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
@@ -440,6 +444,7 @@ void VirtualSpaceNode::verify_locked() const {
       }
     }
   )
+#endif // !INCLUDE_ASAN
 
   assert(committed_words() <= word_size(), "Sanity");
   assert_is_aligned(committed_words(), Settings::commit_granule_words());

@@ -144,8 +144,8 @@ public class CompilerToVMHelper {
     }
 
     public static Object lookupAppendixInPool(
-            ConstantPool constantPool, int cpi) {
-        return CTVM.lookupAppendixInPool((HotSpotConstantPool) constantPool, cpi);
+            ConstantPool constantPool, int cpi, int opcode) {
+        return CTVM.lookupAppendixInPool((HotSpotConstantPool) constantPool, cpi, opcode);
     }
 
     public static int installCode(TargetDescription target,

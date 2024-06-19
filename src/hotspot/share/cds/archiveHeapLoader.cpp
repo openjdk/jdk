@@ -61,6 +61,9 @@ ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("undefined")))
+#endif
 void ArchiveHeapLoader::init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift) {
   assert(!_mapped_heap_relocation_initialized, "only once");
   if (!UseCompressedOops) {
@@ -442,7 +445,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(cds, heap)("Patching native pointers in heap region");
-    BitMapView bm = r->ptrmap_view();
+    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
   }

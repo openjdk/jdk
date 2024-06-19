@@ -31,7 +31,6 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -376,28 +375,3 @@ void PSOldGen::update_counters() {
 void PSOldGen::verify() {
   object_space()->verify();
 }
-
-class VerifyObjectStartArrayClosure : public ObjectClosure {
-  ObjectStartArray* _start_array;
-
-public:
-  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
-    _start_array(start_array) { }
-
-  virtual void do_object(oop obj) {
-    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
-    guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
-  }
-};
-
-void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check(&_start_array);
-  object_iterate(&check);
-}
-
-#ifndef PRODUCT
-void PSOldGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  object_space()->set_top_for_allocations();
-}
-#endif

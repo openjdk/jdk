@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -78,6 +80,7 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -154,7 +157,6 @@ static void print_method_profiling_data() {
     }
   }
 }
-
 
 #ifndef PRODUCT
 
@@ -264,7 +266,7 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
-  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -355,6 +357,8 @@ void print_statistics() {
   }
 
   ThreadsSMRSupport::log_statistics();
+
+  ClassLoader::print_counters(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads
@@ -365,6 +369,8 @@ void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
+
+  Events::log(thread, "Before exit entered");
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
@@ -426,6 +432,10 @@ void before_exit(JavaThread* thread, bool halt) {
   if (EnableJVMCI) {
     JVMCI::shutdown(thread);
   }
+#endif
+
+#if INCLUDE_CDS
+  ClassListWriter::write_resolved_constants();
 #endif
 
   // Hang forever on exit if we're reporting an error.

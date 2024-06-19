@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,9 +290,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ std(R30, frame_size_in_bytes - 2*reg_size - vsregstosave_num * vs_reg_size, R1_SP);
 
   // save the flags
-  // Do the save_LR_CR by hand and adjust the return pc if requested.
-  __ mfcr(R30);
-  __ std(R30, frame_size_in_bytes + _abi0(cr), R1_SP);
+  // Do the save_LR by hand and adjust the return pc if requested.
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
     case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
@@ -435,9 +433,6 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   // restore link and the flags
   __ ld(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   __ mtlr(R31);
-
-  __ ld(R31, frame_size_in_bytes + _abi0(cr), R1_SP);
-  __ mtcr(R31);
 
   // restore scratch register's value
   __ ld(R31, frame_size_in_bytes - reg_size - vsregstosave_num * vs_reg_size, R1_SP);
@@ -1637,7 +1632,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 //   None.
 //
 // Kills:
-//   R8_ARG6, R9_ARG7, R10_ARG8
+//   R8_ARG6, R9_ARG7, R10_ARG8, R15_esp
 //
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
@@ -1652,9 +1647,56 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ cmpdi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // Save return value potentially containing the exception oop
+    Register ex_oop = R15_esp;   // nonvolatile register
+    __ mr(ex_oop, R3_RET);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    // Restore potental return value
+    __ mr(R3_RET, ex_oop);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
   __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
   __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
@@ -1760,8 +1802,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(L_exit);
 
     // static stub for the call above
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, c2i_call_pc);
+    stub = CompiledDirectCall::emit_to_interp_stub(masm, c2i_call_pc);
     guarantee(stub != nullptr, "no space for static stub");
   }
 
@@ -1853,8 +1894,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ blr();
 
   // static stub for the call above
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, call_pc);
+  stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
   guarantee(stub != nullptr, "no space for static stub");
 }
 
@@ -2196,7 +2236,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(L_skip_barrier);
   }
 
-  __ save_LR_CR(r_temp_1);
+  __ save_LR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
@@ -2649,7 +2689,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ blr();
 
 
@@ -2661,7 +2701,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ bind(handle_pending_exception);
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 
@@ -3019,7 +3059,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop the unpack frame.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
@@ -3066,7 +3106,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // vframe array and return the `UnrollBlock' information.
 
   // Save LR to compiled frame.
-  __ save_LR_CR(R11_scratch1);
+  __ save_LR(R11_scratch1);
 
   // Push an "uncommon_trap" frame.
   __ push_frame_reg_args(0, R11_scratch1);
@@ -3156,7 +3196,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pop the `unpack frame'.
   __ pop_frame();
   // Restore LR from top interpreter frame.
-  __ restore_LR_CR(R11_scratch1);
+  __ restore_LR(R11_scratch1);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
