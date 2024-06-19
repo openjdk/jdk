@@ -25,7 +25,7 @@
  * @test
  * @bug 8334366
  * @key printer
- * @summary Verifies oriignal pageobject is returned unmodified
+ * @summary Verifies original pageobject is returned unmodified
  *          on cancelling pagedialog
  * @requires (os.family == "windows")
  * @run main PageDialogCancelTest
@@ -57,10 +57,7 @@ public class PageDialogCancelTest {
         });
         t1.start();
         PageFormat newFormat = pj.pageDialog(oldFormat);
-        boolean result = newFormat.equals(oldFormat);
-        if (result) {
-            System.out.println("Test Passed");
-        } else {
+        if (!newFormat.equals(oldFormat)) {
             throw new RuntimeException("Original PageFormat not returned on cancelling PageDialog");
         }
     }
