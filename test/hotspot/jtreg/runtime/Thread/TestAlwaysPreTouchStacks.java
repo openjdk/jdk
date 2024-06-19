@@ -27,7 +27,6 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
