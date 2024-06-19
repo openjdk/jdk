@@ -308,8 +308,13 @@ public final class Float extends Number
      * value, use subclasses of {@link java.text.NumberFormat}.
      *
      * @apiNote
-     * This method corresponds to the convertToDecimalCharacter
-     * operation defined in IEEE 754.
+     * This method corresponds to the general functionality of
+     * convertToDecimalCharacter operation defined in IEEE 754;
+     * however, that operation is defined in terms of specifying the
+     * number of significand digits used in the conversion, a
+     * configuration parameter offered by the precision flag of
+     * several numeric floating-point conversions of {@link
+     * java.util.Formatter}.
      *
      * @param   f   the {@code float} to be converted.
      * @return a string representation of the argument.
@@ -765,6 +770,10 @@ public final class Float extends Number
      * Returns the value of this {@code Float} as an {@code int} after
      * a narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code int}
      * @jls 5.1.3 Narrowing Primitive Conversion
@@ -777,6 +786,10 @@ public final class Float extends Number
     /**
      * Returns value of this {@code Float} as a {@code long} after a
      * narrowing primitive conversion.
+     *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code long}
