@@ -1985,16 +1985,11 @@ class MutableBigInteger {
         }
 
         // Recursive step (len >= 3)
-        final int limit = len;
 
         // Normalize
-        int excessInts;
-        if ((len & 3) != 0) { // len must be a multiple of 4
-            excessInts = 4 - (len & 3);
-            len += excessInts;
-        } else {
-            excessInts = 0;
-        }
+        final int limit = len;
+        final int excessInts = (-len) & 3;
+        len += excessInts; // len must be a multiple of 4
 
         MutableBigInteger[] sr = sqrtRemZimmermann(len >> 1); // Recursive invocation
 
