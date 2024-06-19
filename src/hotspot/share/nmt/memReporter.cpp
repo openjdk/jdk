@@ -51,13 +51,7 @@ static ssize_t counter_diff(size_t c1, size_t c2) {
 }
 
 MemReporterBase::MemReporterBase(outputStream* out, size_t scale) :
-  _scale(scale), _output(out) {
-  _output->set_autoindent(true);
-}
-
-MemReporterBase::~MemReporterBase() {
-  _output->set_autoindent(false);
-}
+  _scale(scale), _output(out), _auto_indentor(out) {}
 
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
