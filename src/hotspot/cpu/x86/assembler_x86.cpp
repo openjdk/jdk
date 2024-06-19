@@ -1676,7 +1676,6 @@ void Assembler::andnl(Register dst, Register src1, Register src2) {
 
 void Assembler::andnl(Register dst, Register src1, Address src2) {
   assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
-  assert((!needs_eevex(dst, src1) && !needs_eevex(src2.base(), src2.index())) || UseAPX, "extended gpr use requires UseAPX and UseAVX > 2");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -4499,7 +4498,7 @@ void Assembler::ud2() {
 
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
-  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs");
+  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs as BASE or INDEX of address operand");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   simd_prefix(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
@@ -7273,6 +7272,7 @@ void Assembler::vroundpd(XMMRegister dst, XMMRegister src, int32_t rmode, int ve
 
 void Assembler::vroundpd(XMMRegister dst, Address src, int32_t rmode,  int vector_len) {
   assert(VM_Version::supports_avx(), "");
+  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs as BASE or INDEX of address operand");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
@@ -11077,6 +11077,7 @@ void Assembler::evpbroadcastq(XMMRegister dst, Register src, int vector_len) {
 
 void Assembler::vpgatherdd(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
+  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs as BASE or INDEX of address operand");
   assert(vector_len == Assembler::AVX_128bit || vector_len == Assembler::AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   assert(src.isxmmindex(),"expected to be xmm index");
