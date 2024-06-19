@@ -369,12 +369,16 @@ static void query_multipage_support() {
   // our own page size after allocated.
   {
     const int shmid = ::shmget(IPC_PRIVATE, 1, IPC_CREAT | S_IRUSR | S_IWUSR);
-    guarantee(shmid != -1, "shmget failed");
-    void* p = ::shmat(shmid, nullptr, 0);
-    ::shmctl(shmid, IPC_RMID, nullptr);
-    guarantee(p != (void*) -1, "shmat failed");
-    g_multipage_support.shmpsize = os::Aix::query_pagesize(p);
-    ::shmdt(p);
+    assert(shmid != -1, "shmget failed");
+    if (shmid != -1) {
+      void* p = ::shmat(shmid, nullptr, 0);
+      ::shmctl(shmid, IPC_RMID, nullptr);
+      assert(p != (void*) -1, "shmat failed");
+      if (p != (void*) -1) {
+        g_multipage_support.shmpsize = os::Aix::query_pagesize(p);
+        ::shmdt(p);
+      }
+    }
   }
 
   // Before querying the stack page size, make sure we are not running as primordial
@@ -424,26 +428,30 @@ static void query_multipage_support() {
       trcVerbose("Probing support for %s pages...", describe_pagesize(pagesize));
       const int shmid = ::shmget(IPC_PRIVATE, pagesize,
         IPC_CREAT | S_IRUSR | S_IWUSR);
-      guarantee0(shmid != -1); // Should always work.
-      // Try to set pagesize.
-      struct shmid_ds shm_buf = { };
-      shm_buf.shm_pagesize = pagesize;
-      if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
-        const int en = errno;
-        ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-        log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
-      } else {
-        // Attach and double check pageisze.
-        void* p = ::shmat(shmid, nullptr, 0);
-        ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-        guarantee0(p != (void*) -1); // Should always work.
-        const size_t real_pagesize = os::Aix::query_pagesize(p);
-        if (real_pagesize != pagesize) {
-          log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+      assert(shmid != -1, "shmget failed");
+      if (shmid != -1) {
+        // Try to set pagesize.
+        struct shmid_ds shm_buf = { };
+        shm_buf.shm_pagesize = pagesize;
+        if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
+          const int en = errno;
+          ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
+          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
         } else {
-          can_use = true;
+          // Attach and double check pageisze.
+          void* p = ::shmat(shmid, nullptr, 0);
+          ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
+          assert(p != (void*) -1, "shmat failed");
+          if (p != (void*) -1) {
+            const size_t real_pagesize = os::Aix::query_pagesize(p);
+            if (real_pagesize != pagesize) {
+              log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+            } else {
+              can_use = true;
+            }
+            ::shmdt(p);
+          }
         }
-        ::shmdt(p);
       }
       trcVerbose("Can use: %s", (can_use ? "yes" : "no"));
       if (pagesize == 64*K) {
@@ -455,10 +463,12 @@ static void query_multipage_support() {
 
     // Can we use mmap with 64K pages? (Should be available with AIX7.3 TL1)
     {
-      void* p = mmap(NULL, 1000000, PROT_READ | PROT_WRITE, MAP_ANON_64K | MAP_ANONYMOUS | MAP_SHARED, -1, 0);
-      guarantee0(p != (void*) -1); // Should always work.
-      g_multipage_support.can_use_64K_mmap_pages = (64*K == os::Aix::query_pagesize(p));
-      munmap(p, 1000000);
+      void* p = mmap(NULL, 64*K, PROT_READ | PROT_WRITE, MAP_ANON_64K | MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+      assert(p != (void*) -1, "mmap failed");
+      if (p != (void*) -1) {
+        g_multipage_support.can_use_64K_mmap_pages = (64*K == os::Aix::query_pagesize(p));
+        munmap(p, 64*K);
+      }
     }
 
   } // end: check which pages can be used for shared memory
