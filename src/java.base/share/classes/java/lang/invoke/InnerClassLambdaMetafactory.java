@@ -514,7 +514,7 @@ import sun.invoke.util.Wrapper;
                 }
                 if (useImplMethodHandle) {
                     ConstantPoolBuilder cp = cob.constantPool();
-                    cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_INVOKE), List.of()),
+                    cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_CLASS_DATA), List.of()),
                                                     cp.nameAndTypeEntry(DEFAULT_NAME, CD_MethodHandle)));
                 }
                 for (int i = 0; i < argNames.length; i++) {
