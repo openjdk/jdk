@@ -125,7 +125,7 @@ static void print_method_profiling_data() {
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
-    SystemDictionary::methods_do(collect_profiled_methods);
+    SystemDictionary::methods_do_no_keepalive(collect_profiled_methods);
     collected_profiled_methods->sort(&compare_methods);
 
     int count = collected_profiled_methods->length();
@@ -177,7 +177,7 @@ static void collect_invoked_methods(Method* m) {
 static void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
-  SystemDictionary::methods_do(collect_invoked_methods);
+  SystemDictionary::methods_do_no_keepalive(collect_invoked_methods);
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();

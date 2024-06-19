@@ -176,9 +176,10 @@ class SystemDictionary : AllStatic {
                                                          Handle class_loader);
 
   static void classes_do(MetaspaceClosure* it);
-  // Iterate over all methods in all klasses
 
-  static void methods_do(void f(Method*));
+  // Iterate over all methods in all klasses
+  // Will not keep metadata alive. See ClassLoaderDataGraph::methods_do_no_keepalive.
+  static void methods_do_no_keepalive(void f(Method*));
 
   // Garbage collection support
 
