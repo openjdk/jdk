@@ -3018,6 +3018,18 @@ VStatus VLoopBody::construct() {
         }
       }
 
+      // Add the ctrl -> data edges, i.e. every data should come after their get_ctrl(data).
+      GrowableArray<Node*>** ptr = data_nodes_for_ctrl.get(n);
+      if (ptr != nullptr) {
+        GrowableArray<Node*>& arr = **ptr;
+        for (int i = 0; i < arr.length(); i++) {
+          Node* use = arr.at(i);
+          if (!visited.test(bb_idx(use))) {
+            stack.push(use); // Ordering edge: n -> use
+          }
+        }
+      }
+
       if (stack.length() == old_length) {
         // There were no additional uses, post visit node now
         stack.pop(); // Remove node from stack
