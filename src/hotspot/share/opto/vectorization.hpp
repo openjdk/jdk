@@ -755,6 +755,11 @@ public:
 //     Without that, the number of paths explodes exponentially with the parallelism.
 //     Ah, I probably need the LCA of the merged paths.
 //
+//  -> We do need to do a reduction / prefix sum of conditions. But the pattern looks different
+//     to that of C2 nodes (e.g. we do not have an init condition/predicate).
+//  -> I think we need to try having predicates separately, and only if it is too complicated
+//     we should move to C2 nodes for it. Because we would also have to add the C2 nodes to the
+//     body etc, and that is also tricky.
 
 // Submodule of VLoopAnalyzer.
 // TODO desc
