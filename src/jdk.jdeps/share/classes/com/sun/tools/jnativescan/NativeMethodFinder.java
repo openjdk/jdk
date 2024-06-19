@@ -40,24 +40,23 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.*;
 
-class RestrictedMethodFinder {
+class NativeMethodFinder {
 
     // ct.sym uses this fake name for the restricted annotation instead
     // see make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
-    private static final List<String> RESTRICTED_MODULES = List.of("java.base");
 
     private final Map<MethodRef, Boolean> CACHE = new HashMap<>();
     private final ClassResolver classesToScan;
     private final ClassResolver systemClassResolver;
 
-    private RestrictedMethodFinder(ClassResolver classesToScan, ClassResolver systemClassResolver) {
+    private NativeMethodFinder(ClassResolver classesToScan, ClassResolver systemClassResolver) {
         this.classesToScan = classesToScan;
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static RestrictedMethodFinder create(ClassResolver classesToScan, ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
-        return new RestrictedMethodFinder(classesToScan, systemClassResolver);
+    public static NativeMethodFinder create(ClassResolver classesToScan, ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+        return new NativeMethodFinder(classesToScan, systemClassResolver);
     }
 
     public Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
@@ -70,20 +69,25 @@ class RestrictedMethodFinder {
                     perClass.add(new NativeMethodDecl(MethodRef.ofModel(methodModel)));
                 } else {
                     Set<MethodRef> perMethod = new HashSet<>();
-                    methodModel.code()
-                        .ifPresent(code -> {
-                            code.forEach(e -> {
-                                switch (e) {
-                                    case InvokeInstruction invoke -> {
-                                        if (isRestrictedMethod(invoke.method())) {
-                                            perMethod.add(MethodRef.ofMethodRefEntry(invoke.method()));
-                                        }
-                                    }
-                                    default -> {
-                                    }
-                                }
-                            });
-                        });
+                    methodModel.code().ifPresent(code -> {
+                         try {
+                             code.forEach(e -> {
+                                 switch (e) {
+                                     case InvokeInstruction invoke -> {
+                                         MethodRef ref = MethodRef.ofMemberRefEntry(invoke.method());
+                                         if (isRestrictedMethod(ref)) {
+                                             perMethod.add(ref);
+                                         }
+                                     }
+                                     default -> {
+                                     }
+                                 }
+                             });
+                         } catch (JNativeScanFatalError e) {
+                             throw new JNativeScanFatalError("Error while processing method: " +
+                                     MethodRef.ofModel(methodModel), e);
+                         }
+                    });
                     if (!perMethod.isEmpty()) {
                         perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel),
                                 Set.copyOf(perMethod)));
@@ -99,18 +103,8 @@ class RestrictedMethodFinder {
         return restrictedMethods;
     }
 
-    private boolean isRestrictedMethod(MemberRefEntry method) throws JNativeScanFatalError {
-        return switch (method) {
-            case MethodRefEntry mre ->
-                    isRestrictedMethod(mre.owner().asSymbol(), mre.name().stringValue(), mre.typeSymbol());
-            case InterfaceMethodRefEntry mre ->
-                    isRestrictedMethod(mre.owner().asSymbol(), mre.name().stringValue(), mre.typeSymbol());
-            default -> throw new IllegalStateException("Unexpected type: " + method);
-        };
-    }
-
-    private boolean isRestrictedMethod(ClassDesc owner, String name, MethodTypeDesc type) throws JNativeScanFatalError {
-        return CACHE.computeIfAbsent(new MethodRef(owner, name, type), methodRef -> {
+    private boolean isRestrictedMethod(MethodRef ref) throws JNativeScanFatalError {
+        return CACHE.computeIfAbsent(ref, methodRef -> {
             if (methodRef.owner().isArray()) {
                 // no restricted methods in arrays atm, and we can't look them up since they have no class file
                 return false;

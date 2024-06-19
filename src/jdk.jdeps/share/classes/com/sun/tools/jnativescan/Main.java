@@ -75,6 +75,11 @@ public class Main {
             parseOptionsAndRun(expandedArgs);
         } catch (JNativeScanFatalError fatalError) {
             printError(fatalError.getMessage());
+            for (Throwable cause = fatalError.getCause();
+                     cause instanceof JNativeScanFatalError jNativeScanFatalError;
+                     cause = jNativeScanFatalError.getCause()) {
+                err.println("CAUSED BY: " + jNativeScanFatalError.getMessage());
+            }
             if (DEBUG) {
                 fatalError.printStackTrace(err);
             }
@@ -122,8 +127,8 @@ public class Main {
 
         if (optionSet.has(helpOpt)) {
             out.println("""
-                The jnativescan tool can be used to find methods that may access native functionalities when
-                run. This includes methods that call restricted methods, and 'native' method declarations.
+                The jnativescan tool can be used to find methods that may access native functionality when
+                run. This includes restricted method calls and 'native' method declarations.
                 """);
             try {
                 parser.printHelpOn(out);

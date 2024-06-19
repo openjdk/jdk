@@ -25,8 +25,6 @@
 package com.sun.tools.jnativescan;
 
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -37,7 +35,7 @@ record MethodRef(ClassDesc owner, String name, MethodTypeDesc type) {
                 model.methodName().stringValue(), model.methodTypeSymbol());
     }
 
-    public static MethodRef ofMethodRefEntry(MemberRefEntry method) {
+    public static MethodRef ofMemberRefEntry(MemberRefEntry method) {
         return new MethodRef(method.owner().asSymbol(),
                 method.name().stringValue(), MethodTypeDesc.ofDescriptor(method.type().stringValue()));
     }

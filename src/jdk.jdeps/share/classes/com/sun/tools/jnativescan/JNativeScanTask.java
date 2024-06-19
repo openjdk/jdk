@@ -80,9 +80,9 @@ class JNativeScanTask {
         Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
         try(ClassResolver classesToScan = ClassResolver.forScannedModules(modulesToScan, version);
                 ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
-            RestrictedMethodFinder finder = RestrictedMethodFinder.create(classesToScan, systemClassResolver);
+            NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
             allRestrictedMethods = finder.findAll();
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 

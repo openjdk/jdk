@@ -35,8 +35,6 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -119,24 +117,28 @@ abstract class ClassResolver implements AutoCloseable {
 
         public SystemModuleClassResolver(JavaFileManager platformFileManager) {
             this.platformFileManager = platformFileManager;
-            this.packageToSystemModule = packageToSystemModule();
+            this.packageToSystemModule = packageToSystemModule(platformFileManager);
         }
 
-        private static Map<String, String> packageToSystemModule() {
-            List<ModuleDescriptor> descriptors = ModuleFinder.ofSystem()
-                    .findAll()
-                    .stream()
-                    .map(ModuleReference::descriptor)
-                    .toList();
-            Map<String, String> result = new HashMap<>();
-            for (ModuleDescriptor descriptor : descriptors) {
-                for (ModuleDescriptor.Exports export : descriptor.exports()) {
-                    if (!export.isQualified()) {
-                        result.put(export.source(), descriptor.name());
+        private static Map<String, String> packageToSystemModule(JavaFileManager platformFileManager) {
+            try {
+                Set<JavaFileManager.Location> locations = platformFileManager.listLocationsForModules(
+                        StandardLocation.SYSTEM_MODULES).iterator().next();
+
+                Map<String, String> result = new HashMap<>();
+                for (JavaFileManager.Location loc : locations) {
+                    JavaFileObject jfo = platformFileManager.getJavaFileForInput(loc, "module-info", JavaFileObject.Kind.CLASS);
+                    ModuleDescriptor descriptor = ModuleDescriptor.read(jfo.openInputStream());
+                    for (ModuleDescriptor.Exports export : descriptor.exports()) {
+                        if (!export.isQualified()) {
+                            result.put(export.source(), descriptor.name());
+                        }
                     }
                 }
+                return result;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            return result;
         }
 
         @Override
@@ -153,6 +155,9 @@ abstract class ClassResolver implements AutoCloseable {
                     try {
                         JavaFileManager.Location loc = platformFileManager.getLocationForModule(StandardLocation.SYSTEM_MODULES, moduleName);
                         JavaFileObject jfo = platformFileManager.getJavaFileForInput(loc, qualName, JavaFileObject.Kind.CLASS);
+                        if (jfo == null) {
+                            throw new JNativeScanFatalError("System class can not be found: " + qualName);
+                        }
                         ClassModel model = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
                         return new Info(moduleName, null, model);
                     } catch (IOException e) {
