@@ -409,6 +409,21 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
+void VLoopBody::construct_data_ctrl_mapping(ResourceHashtable<Node*,GrowableArray<Node*>*>& data_nodes_for_ctrl) const {
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
+    Node* ctrl = _vloop.phase()->get_ctrl(n);
+    GrowableArray<Node*>** ptr = data_nodes_for_ctrl.get(ctrl);
+    if (ptr != nullptr) {
+      (*ptr)->append(n);
+    } else {
+      GrowableArray<Node*>* arr = new GrowableArray<Node*>();
+      data_nodes_for_ctrl.put_when_absent(ctrl, arr);
+      arr->append(n);
+    }
+  }
+}
+
 void VLoopPredicates::compute_predicates() {
   // TODO hash and cmp -> no duplicates!
   for (int i = 0; i < _body.body().length(); i++) {

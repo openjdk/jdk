@@ -359,7 +359,8 @@ public:
   VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
     _vloop(vloop),
     _body(arena, vloop.estimated_body_length(), 0, nullptr),
-    _body_idx(vshared.node_idx_to_loop_body_idx()) {}
+    _body_idx(vshared.node_idx_to_loop_body_idx())
+    {}
 
   NONCOPYABLE(VLoopBody);
 
@@ -386,6 +387,8 @@ private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
   }
+
+  void construct_data_ctrl_mapping(ResourceHashtable<Node*,GrowableArray<Node*>*>& data_nodes_for_ctrl) const;
 };
 
 // Submodule of VLoopAnalyzer.

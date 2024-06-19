@@ -2964,8 +2964,11 @@ VStatus VLoopBody::construct() {
     }
   }
 
-  // Create a reverse-post-order list of nodes in body
   ResourceMark rm;
+  ResourceHashtable<Node*,GrowableArray<Node*>*> data_nodes_for_ctrl;
+  construct_data_ctrl_mapping(data_nodes_for_ctrl);
+
+  // Create a reverse-post-order list of nodes in body
   GrowableArray<Node*> stack;
   VectorSet visited;
   VectorSet post_visited;
