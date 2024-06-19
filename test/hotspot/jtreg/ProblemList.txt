@@ -88,7 +88,6 @@ gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 
 # :hotspot_runtime
 
-
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
