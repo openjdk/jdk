@@ -271,6 +271,11 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
   if (!alloc_in_codecache) {
     char* ptr = (char*)aligned_alloc(K, size);
+
+    intptr_t offset = ((intptr_t)ptr < (intptr_t)CodeCache::low_bound()) ?
+                      ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) : ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
+    tty->print_cr("- BufferBlob malloc. offset to CodeCache: %iMB", (int)offset/1024/1024);
+
     // this is to avoid "copy must preserve alignment" assert in CodeBuffer::compute_final_layout:
     // usual BufferBlob start position is ~ segment alignment + 16 due to HeapBlock header size
     BufferBlob* blob = (BufferBlob*) ((char*)ptr + 16);

@@ -51,6 +51,8 @@ AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   _code_section = cs;
   _oop_recorder= code->oop_recorder();
   DEBUG_ONLY( _short_branch_delta = 0; )
+
+  //zz tty->print_cr("-- asm %i --", CodeCache::contains(code->insts()));
 }
 
 void AbstractAssembler::set_code_section(CodeSection* cs) {

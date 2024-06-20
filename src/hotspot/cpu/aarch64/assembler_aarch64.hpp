@@ -929,17 +929,12 @@ public:
     return uabs(target - branch) < branch_range;
   }
 
-#define branch_offset_mask right_n_bits(log2i(ReservedCodeCacheSize))
-
-#define mask_cross_CodeHeap_branch(offset) \
-  (offset > 0) ? (offset & branch_offset_mask) : (-((-offset) & branch_offset_mask));
-
   // Unconditional branch (immediate)
 #define INSN(NAME, opcode)                                              \
   void NAME(address dest) {                                             \
     starti;                                                             \
     int64_t offset = dest - pc();                                       \
-    offset = mask_cross_CodeHeap_branch(offset);                        \
+    if (offset > 128*1024*1024 || offset < -128*1024*1024) { tty->print_cr("BL"); }     \
     DEBUG_ONLY(assert(reachable_from_branch_at(pc(), dest), "debug only")); \
     f(opcode, 31), f(0b00101, 30, 26), sf(offset>>2, 25, 0);            \
   }                                                                     \

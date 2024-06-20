@@ -273,14 +273,8 @@ class Patcher : public RelocActions {
 public:
   Patcher(address insn_addr) : RelocActions(insn_addr) {}
 
-#define branch_offset_mask right_n_bits(log2i(ReservedCodeCacheSize))
-
-#define mask_cross_CodeHeap_branch(offset) \
-  (offset > 0) ? (offset & branch_offset_mask) : (-((-offset) & branch_offset_mask));
-
   virtual int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr);
-offset = mask_cross_CodeHeap_branch(offset);
     Instruction_aarch64::spatch(insn_addr, 25, 0, offset>>2);
     return 1;
   }
@@ -700,7 +694,18 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   assert(entry.rspec().type() == relocInfo::external_word_type
          || entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
-  if (target_needs_far_branch(entry.target())) {
+
+  bool target_needs_far_br = target_needs_far_branch(entry.target());
+
+  if (!CodeCache::contains(pc())) {
+    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+    const char* is_int1 = (code_section()->contains(entry.target())) ? "(int)" : "(ext)";
+    const char* is_int2 = (code_section()->contains(entry.target() - delta)) ? "(int)" : "(ext)";
+    // tty->print_cr("call: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    entry = RuntimeAddress(entry.target() - delta);
+  } // else tty->print_cr("call");
+
+  if (target_needs_far_br) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
@@ -720,7 +725,16 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
          || entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   address start = pc();
-  if (target_needs_far_branch(entry.target())) {
+
+  bool target_needs_far_br = target_needs_far_branch(entry.target());
+
+  if (!CodeCache::contains(pc())) {
+    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+    //tty->print_cr("jump: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    entry = RuntimeAddress(entry.target() - delta);
+  }
+
+  if (target_needs_far_br) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
@@ -894,6 +908,14 @@ address MacroAssembler::trampoline_call(Address entry) {
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
   address target = entry.target();
+
+  if (!CodeCache::contains(pc())) {
+    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+    const char* is_int1 = (code_section()->contains(entry.target())) ? "(int)" : "(ext)";
+    const char* is_int2 = (code_section()->contains(entry.target() - delta)) ? "(int)" : "(ext)";
+    //zz tty->print_cr("trmp: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    target = entry.target() - delta;
+  };
 
   if (!is_always_within_branch_range(entry)) {
     if (!in_scratch_emit_size()) {

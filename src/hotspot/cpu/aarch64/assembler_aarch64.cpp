@@ -138,6 +138,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
     break;
   }
   case literal: {
+    //tty->print_cr("lea");
     as->code_section()->relocate(as->inst_mark(), rspec());
     if (rspec().type() == relocInfo::none)
       __ mov(r, target());
@@ -173,16 +174,17 @@ void Address::lea(MacroAssembler *as, Register r) const {
   }
 
   void Assembler::_adrp(Register Rd, address adr) {
+
+    if (!CodeCache::contains(pc())) {
+      uintptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+      delta = delta>>12<<12;
+      //tty->print_cr("adrp: %p->%p", (void*)((uintptr_t)adr>>12<<12), (void*)((uintptr_t)(adr - delta)>>12<<12));
+      adr = adr - delta;
+    };
+
     uint64_t pc_page = (uint64_t)pc() >> 12;
     uint64_t adr_page = (uint64_t)adr >> 12;
     intptr_t offset = adr_page - pc_page;
-    {
-      intptr_t offset_max_mask = right_n_bits(20);
-      intptr_t offset_min_mask = ~right_n_bits(20);
-      // adrp limits: [+-4GB ][+-1M of 4KB pages][20 bits for page offset]
-      // Clean upper bits if CodeBuffer is more than 4 GB away from CodeCache. After relocation it would be OK.
-      offset = (offset > 0) ? (offset & offset_max_mask) : (offset | offset_min_mask);
-    }
     int offset_lo = offset & 3;
     offset >>= 2;
     starti;
