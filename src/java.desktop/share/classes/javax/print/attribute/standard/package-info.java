@@ -335,6 +335,13 @@
  *     <td>&nbsp;
  *     <td>&nbsp;
  *   <tr>
+ *     <th scope="row"><a href="OutputBin.html">OutputBin</a>
+ *     <td>&nbsp;
+ *     <td>X
+ *     <td>X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
  *     <th scope="row"><a href="DateTimeAtCompleted.html">
  *     DateTimeAtCompleted</a>
  *     <td>&nbsp;

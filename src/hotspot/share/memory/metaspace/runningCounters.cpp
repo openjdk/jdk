@@ -45,6 +45,7 @@ size_t RunningCounters::reserved_words_class() {
 }
 
 size_t RunningCounters::reserved_words_nonclass() {
+  assert(VirtualSpaceList::vslist_nonclass() != nullptr, "Metaspace not yet initialized");
   return VirtualSpaceList::vslist_nonclass()->reserved_words();
 }
 
@@ -59,6 +60,7 @@ size_t RunningCounters::committed_words_class() {
 }
 
 size_t RunningCounters::committed_words_nonclass() {
+  assert(VirtualSpaceList::vslist_nonclass() != nullptr, "Metaspace not yet initialized");
   return VirtualSpaceList::vslist_nonclass()->committed_words();
 }
 
@@ -90,6 +92,7 @@ size_t RunningCounters::free_chunks_words_class() {
 }
 
 size_t RunningCounters::free_chunks_words_nonclass() {
+  assert(ChunkManager::chunkmanager_nonclass() != nullptr, "Metaspace not yet initialized");
   return ChunkManager::chunkmanager_nonclass()->total_word_size();
 }
 

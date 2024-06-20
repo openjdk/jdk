@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -747,12 +747,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.TOOL_TIP ||
               region == Region.TREE ||
               region == Region.VIEWPORT ||
-              region == Region.TEXT_PANE) {
+              region == Region.TEXT_PANE ||
+              region == Region.EDITOR_PANE) {
             return true;
         }
         if (!GTKLookAndFeel.is3()) {
-            if (region == Region.EDITOR_PANE ||
-                  region == Region.FORMATTED_TEXT_FIELD ||
+            if (region == Region.FORMATTED_TEXT_FIELD ||
                   region == Region.PASSWORD_FIELD ||
                   region == Region.SPINNER ||
                   region == Region.TEXT_FIELD) {

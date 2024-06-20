@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640
+ * @bug 8327640 8331485 8333456
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -34,6 +34,7 @@
  * @run junit/othervm -Duser.language=ar -Duser.country=AR LenientParseTest
  */
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -127,6 +128,18 @@ public class LenientParseTest {
         dFmt.setParseIntegerOnly(false);
     }
 
+    @Test // Non-localized, only run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void badExponentParseNumberFormatTest() {
+        // Some fmt, with an "E" exponent string
+        DecimalFormat fmt = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
+        // Upon non-numeric in exponent, parse will still successfully complete
+        // but index should end on the last valid char in exponent
+        assertEquals(1.23E45, successParse(fmt, "1.23E45.123", 7));
+        assertEquals(1.23E45, successParse(fmt, "1.23E45.", 7));
+        assertEquals(1.23E45, successParse(fmt, "1.23E45FOO3222", 7));
+    }
+
     // ---- CurrencyFormat tests ----
     // All input Strings should pass and return expected value.
     @ParameterizedTest
@@ -194,6 +207,18 @@ public class LenientParseTest {
     @EnabledIfSystemProperty(named = "user.language", matches = "en")
     public void compactFmtSuccessParseTest(String toParse, double expectedValue) {
         assertEquals(expectedValue, successParse(cmpctFmt, toParse, toParse.length()));
+    }
+
+    // 8333456: Parse values with no compact suffix -> which allows parsing to iterate
+    // position to the same value as string length which throws
+    // StringIndexOutOfBoundsException upon charAt invocation
+    @ParameterizedTest
+    @MethodSource("compactValidNoSuffixParseStrings")
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void compactFmtSuccessParseIntOnlyTest(String toParse, double expectedValue) {
+        cmpctFmt.setParseIntegerOnly(true);
+        assertEquals(expectedValue, successParse(cmpctFmt, toParse, toParse.length()));
+        cmpctFmt.setParseIntegerOnly(false);
     }
 
     // ---- Helper test methods ----
@@ -391,6 +416,18 @@ public class LenientParseTest {
         return Stream.concat(validFullParseStrings().map(args -> Arguments.of(args.get()[0],
                 args.get()[1])), validFullParseStrings().map(args -> Arguments.of(args.get()[0] + "K",
                 (double)args.get()[1] * 1000.0))
+        );
+    }
+
+    // No compact suffixes
+    private static Stream<Arguments> compactValidNoSuffixParseStrings() {
+        return Stream.of(
+                Arguments.of("5", 5),
+                Arguments.of("50", 50),
+                Arguments.of("50.", 50),
+                Arguments.of("5,000", 5000),
+                Arguments.of("5,000.", 5000),
+                Arguments.of("5,000.00", 5000)
         );
     }
 

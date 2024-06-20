@@ -29,7 +29,6 @@ import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 import sun.security.util.math.SmallValue;
 import sun.security.util.math.IntegerFieldModuloP;
-import java.lang.Math;
 import java.math.BigInteger;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -110,7 +109,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
 
     @Override
     public SmallValue getSmallValue(int value) {
-        // Explicitely here as reminder that SmallValue stays in residue domain
+        // Explicitly here as reminder that SmallValue stays in residue domain
         // See multByInt below for how this is used
         return super.getSmallValue(value);
     }

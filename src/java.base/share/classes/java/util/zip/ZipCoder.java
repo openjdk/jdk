@@ -290,8 +290,7 @@ class ZipCoder {
                 // exceptions eagerly when opening ZipFiles
                 return hash(JLA.newStringUTF8NoRepl(a, off, len));
             }
-            // T_BOOLEAN to treat the array as unsigned bytes, in line with StringLatin1.hashCode
-            int h = ArraysSupport.vectorizedHashCode(a, off, len, 0, ArraysSupport.T_BOOLEAN);
+            int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
             if (a[end - 1] != '/') {
                 h = 31 * h + '/';
             }

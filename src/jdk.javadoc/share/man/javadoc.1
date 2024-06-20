@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVADOC" "1" "2024" "JDK 23-ea" "JDK Commands"
+.TH "JAVADOC" "1" "2025" "JDK 24-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -218,7 +218,7 @@ summary is required.
 For more explicit control in any individual documentation comment,
 enclose the contents of the first sentence in a
 \f[V]{\[at]summary ...}\f[R] tag, or when applicable, in a
-\[ga]{\[at]return ...} tag.
+\f[V]{\[at]return ...}\f[R] tag.
 .RE
 .TP
 \f[V]-doclet\f[R] \f[I]class\f[R]
@@ -522,7 +522,8 @@ Allow JavaScript in documentation comments, and options whose value is
 \f[I]html-code\f[R].
 .TP
 \f[V]-author\f[R]
-Includes the \f[V]\[at]author\f[R] text in the generated docs.
+Includes the text of any \f[V]author\f[R] tags in the generated
+documentation.
 .TP
 \f[V]-bottom\f[R] \f[I]html-code\f[R]
 Specifies the text to be placed at the bottom of each generated page.
@@ -986,8 +987,8 @@ is used.
 .RE
 .TP
 \f[V]-nosince\f[R]
-Omits from the generated documents the \f[V]Since\f[R] sections
-associated with the \f[V]\[at]since\f[R] tags.
+Omits from the generated documentation the \f[V]Since\f[R] sections
+derived from any \f[V]since\f[R] tags.
 .TP
 \f[V]-notimestamp\f[R]
 Suppresses the time stamp, which is hidden in an HTML comment in the
@@ -1020,9 +1021,6 @@ to the current working directory.
 .PP
 The file may be an HTML file, with a filename ending in \f[V].html\f[R],
 or a Markdown file, with a filename ending in \f[V].md\f[R].
-.PD 0
-.P
-.PD
 If the file is an HTML file, the content for the overview documentation
 is taken from the \f[V]<main>\f[R] element in the file, if one is
 present, or from the \f[V]<body>\f[R] element is there is no
@@ -1213,10 +1211,11 @@ To access the generated Use page, go to the class or package and click
 the \f[B]USE\f[R] link in the navigation bar.
 .TP
 \f[V]-version\f[R]
-Includes the version text in the generated docs.
+Includes the text of any \f[V]version\f[R] tags in the generated
+documentation.
 This text is omitted by default.
-To find out what version of the \f[V]javadoc\f[R] tool you are using,
-use the \f[V]--version\f[R] option (with two hyphens).
+Note: To find out what version of the \f[V]javadoc\f[R] tool you are
+using, use the \f[V]--version\f[R] option (with two hyphens).
 .TP
 \f[V]-windowtitle\f[R] \f[I]title\f[R]
 Specifies the title to be placed in the HTML \f[V]<title>\f[R] tag.
