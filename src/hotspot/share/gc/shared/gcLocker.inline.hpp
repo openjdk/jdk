@@ -29,29 +29,35 @@
 
 #include "runtime/javaThread.inline.hpp"
 
-void GCLocker::lock_critical(JavaThread* thread) {
+void GCLocker::enter(JavaThread* thread) {
+  assert(thread == JavaThread::current(), "Must be this thread");
+
   if (!thread->in_critical()) {
-    if (needs_gc()) {
-      // jni_lock call calls enter_critical under the lock so that the
-      // global lock count and per thread count are in agreement.
-      jni_lock(thread);
-      return;
+    thread->enter_critical();
+    OrderAccess::storeload();
+    if (Atomic::load(&_is_gc_request_pending)) {
+      thread->exit_critical();
+      // slow-path
+      enter_slow(thread);
     }
-    increment_debug_jni_lock_count();
+
+    DEBUG_ONLY(Atomic::add(&_debug_count, (uint64_t)1);)
+  } else {
+    thread->enter_critical();
   }
-  thread->enter_critical();
 }
 
-void GCLocker::unlock_critical(JavaThread* thread) {
+void GCLocker::exit(JavaThread* thread) {
+  assert(thread == JavaThread::current(), "Must be this thread");
+
+#ifdef ASSERT
   if (thread->in_last_critical()) {
-    if (needs_gc()) {
-      // jni_unlock call calls exit_critical under the lock so that
-      // the global lock count and per thread count are in agreement.
-      jni_unlock(thread);
-      return;
-    }
-    decrement_debug_jni_lock_count();
+    Atomic::add(&_debug_count, (uint64_t)-1);
+    // Matching the loadload in GCLocker::block
+    OrderAccess::storestore();
   }
+#endif
+
   thread->exit_critical();
 }
 

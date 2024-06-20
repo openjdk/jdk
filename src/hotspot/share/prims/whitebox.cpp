@@ -45,7 +45,7 @@
 #include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -2644,14 +2644,6 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
-WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
-  GCLocker::lock_critical(thread);
-WB_END
-
-WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
-  GCLocker::unlock_critical(thread);
-WB_END
-
 WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
 #if INCLUDE_G1GC
   if (!UseG1GC) {
@@ -2992,8 +2984,6 @@ static JNINativeMethod methods[] = {
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
-  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
-  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
   {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},

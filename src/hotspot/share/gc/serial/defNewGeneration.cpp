@@ -367,18 +367,6 @@ bool DefNewGeneration::expand(size_t bytes) {
     SpaceMangler::mangle_region(mangle_region);
   }
 
-  // Do not attempt an expand-to-the reserve size.  The
-  // request should properly observe the maximum size of
-  // the generation so an expand-to-reserve should be
-  // unnecessary.  Also a second call to expand-to-reserve
-  // value potentially can cause an undue expansion.
-  // For example if the first expand fail for unknown reasons,
-  // but the second succeeds and expands the heap to its maximum
-  // value.
-  if (GCLocker::is_active()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
-  }
-
   return success;
 }
 

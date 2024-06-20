@@ -100,9 +100,6 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (!success) {
     success = grow_to_reserved();
   }
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_trace(gc, heap)("Garbage collection disabled, expanded heap instead");
-  }
 
   return success;
 }

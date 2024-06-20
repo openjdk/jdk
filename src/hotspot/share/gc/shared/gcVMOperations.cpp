@@ -93,10 +93,8 @@ bool VM_GC_Operation::skip_operation() const {
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
   }
-  if (!skip && GCLocker::is_active_and_needs_gc()) {
+  if (!skip && GCLocker::is_active()) {
     skip = Universe::heap()->is_maximal_no_gc();
-    assert(!(skip && (_gc_cause == GCCause::_gc_locker)),
-           "GCLocker cannot be active when initiating GC");
   }
   return skip;
 }
@@ -122,6 +120,9 @@ bool VM_GC_Operation::doit_prologue() {
     Heap_lock->unlock();
     _prologue_succeeded = false;
   } else {
+    if (UseSerialGC || UseParallelGC) {
+      GCLocker::block();
+    }
     _prologue_succeeded = true;
   }
   return _prologue_succeeded;
@@ -129,6 +130,9 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
+  if (UseSerialGC || UseParallelGC) {
+    GCLocker::unblock();
+  }
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
   OopMapCache::try_trigger_cleanup();
@@ -259,10 +263,6 @@ void VM_CollectForMetadataAllocation::doit() {
   }
 
   log_debug(gc)("After Metaspace GC failed to allocate size %zu", _size);
-
-  if (GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
