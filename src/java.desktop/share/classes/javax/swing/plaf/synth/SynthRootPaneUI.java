@@ -42,6 +42,7 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
 public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
     private SynthStyle style;
     static final AltProcessor altProcessor = new AltProcessor();
+    static boolean altProcessorInstalledFlag;
 
     /**
      *
@@ -76,9 +77,10 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
 
         style.uninstallDefaults(context);
         style = null;
-        if (UIManager.getBoolean("RootPane.altPress")) {
+        if (altProcessorInstalledFlag || UIManager.getBoolean("RootPane.altPress")) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                     removeKeyEventPostProcessor(altProcessor);
+            altProcessorInstalledFlag = false;
         }
     }
 
@@ -109,9 +111,10 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
             }
         }
 
-        if (UIManager.getBoolean("RootPane.altPress")) {
+        if (!altProcessorInstalledFlag && UIManager.getBoolean("RootPane.altPress")) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                     addKeyEventPostProcessor(altProcessor);
+            altProcessorInstalledFlag = true;
         }
     }
 

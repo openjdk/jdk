@@ -26,13 +26,20 @@
  * @bug 8326458
  * @key headful
  * @requires (os.family == "linux")
+ * @library /javax/swing/regtesthelpers
+ * @build Util
  * @summary Verifies if menu mnemonic toggle on Alt press in GTK LAF
  * @run main TestMenuMnemonicOnAltPress
  */
 
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -44,11 +51,10 @@ import javax.swing.plaf.synth.SynthLookAndFeel;
 public class TestMenuMnemonicOnAltPress {
 
     private static JFrame frame;
-
-    private static final AtomicInteger mnemonicHideCount = new AtomicInteger(0);
-    private static final AtomicInteger mnemonicShowCount = new AtomicInteger(0);
-
-    private static final int EXPECTED = 5;
+    private static JMenu fileMenu;
+    private static volatile Point pt;
+    private static volatile int fileMenuWidth;
+    private static volatile int fileMenuHeight;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
@@ -60,17 +66,29 @@ public class TestMenuMnemonicOnAltPress {
             robot.waitForIdle();
             robot.delay(1000);
 
-            for (int i = 0; i < EXPECTED; i++) {
-                robot.keyPress(KeyEvent.VK_ALT);
-                robot.waitForIdle();
-                SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::verifyMnemonicsState);
-                robot.keyRelease(KeyEvent.VK_ALT);
-                robot.waitForIdle();
-                SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::verifyMnemonicsState);
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                pt = fileMenu.getLocationOnScreen();
+                fileMenuWidth = fileMenu.getWidth();
+                fileMenuHeight = fileMenu.getHeight();
+            });
 
-            if (mnemonicShowCount.get() != EXPECTED
-                && mnemonicHideCount.get() != EXPECTED) {
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.waitForIdle();
+
+            BufferedImage img1 = robot.createScreenCapture(new Rectangle(pt.x, pt.y,
+                    fileMenuWidth, fileMenuHeight));
+
+            robot.keyRelease(KeyEvent.VK_ALT);
+            robot.waitForIdle();
+
+            BufferedImage img2 = robot.createScreenCapture(new Rectangle(pt.x, pt.y,
+                    fileMenuWidth, fileMenuHeight));
+
+            if (Util.compareBufferedImages(img1, img2)) {
+                try {
+                    ImageIO.write(img1, "png", new File("img1.png"));
+                    ImageIO.write(img2, "png", new File("img2.png"));
+                } catch (IOException ignored) {}
                 throw new RuntimeException("Mismatch in mnemonic show/hide on Alt press");
             }
         } finally {
@@ -82,18 +100,10 @@ public class TestMenuMnemonicOnAltPress {
         }
     }
 
-    private static void verifyMnemonicsState() {
-        if (SynthLookAndFeel.isMnemonicHidden()) {
-            mnemonicHideCount.getAndIncrement();
-        } else {
-            mnemonicShowCount.getAndIncrement();
-        }
-    }
-
     private static void createAndShowUI() {
         frame = new JFrame("Test Menu Mnemonic Show/Hide");
         JMenuBar menuBar  = new JMenuBar();
-        JMenu fileMenu = new JMenu("File");
+        fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem item1 = new JMenuItem("Item-1");
         JMenuItem item2 = new JMenuItem("Item-2");

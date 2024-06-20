@@ -770,19 +770,13 @@ public class SynthGraphicsUtils {
         for (final Component c : elements) {
             if (c == null || !c.isVisible()) {
                 continue;
-            }
-
-            if (c instanceof AbstractButton && ((AbstractButton) c).getMnemonic() != '\0') {
+            } else if (c instanceof AbstractButton && ((AbstractButton) c).getMnemonic() != '\0') {
                 c.repaint();
                 continue;
-            }
-
-            if (c instanceof JLabel && ((JLabel) c).getDisplayedMnemonic() != '\0') {
+            } else if (c instanceof JLabel && ((JLabel) c).getDisplayedMnemonic() != '\0') {
                 c.repaint();
                 continue;
-            }
-
-            if (c instanceof Container) {
+            } else if (c instanceof Container){
                 repaintMnemonicsInContainer((Container) c);
             }
         }

@@ -1052,9 +1052,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * does not support the mnemonic hiding feature.
      *
      * @param hide true if mnemonics should be hidden
-     * @since 23
      */
-    public static void setMnemonicHidden(boolean hide) {
+    protected static void setMnemonicHidden(boolean hide) {
         if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
@@ -1068,10 +1067,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * if this feature is supported by the underlying OS.
      *
      * @return true if mnemonics are hidden, otherwise, false
-     * @see #setMnemonicHidden
-     * @since 23
      */
-    public static boolean isMnemonicHidden() {
+    protected static boolean isMnemonicHidden() {
         if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
