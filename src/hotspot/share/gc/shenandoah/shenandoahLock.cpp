@@ -35,46 +35,33 @@
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
-  if (thread->is_Java_thread()) {
-    //Java threads spin a little before yielding and potentially blocking.
-    constexpr uint32_t SPINS = 0x1F;
-    if (allow_block_for_safepoint) {
-      contended_lock_internal<true, SPINS>(thread);
-    } else {
-      contended_lock_internal<false, SPINS>(thread);
-    }
+  if (thread->is_Java_thread() && allow_block_for_safepoint) {
+    contended_lock_internal<true>(thread);
   } else {
-    // Non-Java threads are not allowed to block, and they spin hard
-    // to progress quickly. The normal number of GC threads is low enough
-    // for this not to have detrimental effect. This favors GC threads
-    // a little over Java threads, which is good for GC progress under
-    // extreme contention.
-    contended_lock_internal<false, UINT32_MAX>(thread);
+    contended_lock_internal<false>(thread);
   }
 }
 
-
-template<bool ALLOW_BLOCK, uint32_t MAX_SPINS>
+template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(Thread* thread) {
   assert(!ALLOW_BLOCK || thread->is_Java_thread(), "Must be a Java thread when allow block.");
-  uint32_t ctr = os::is_MP() ? MAX_SPINS : 0; //Do not spin on single processor.
-  do {
+  uint32_t ctr = os::is_MP() ? 0x1F : 0; //Do not spin on single processor.
+  while (Atomic::load(&_state) == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if SP it NOT synchronizing.
       SpinPause();
       ctr--;
     } else {
       if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
-        // We know SP is synchronizing and block is allowed, block the thread in VM for faster SP synchronization.
-        // Need to wait on STS_lock ( suspendible thread set)
-        ThreadBlockInVM block(JavaThread::cast(thread), true);
-        MonitorLocker ml(STS_lock, Mutex::_safepoint_check_flag);
-        ml.wait();
+        // We know SP is synchronizing and block is allowed, 
+        // block the thread in VM for faster SP synchronization.
+        // simply leverage a semaphore.
+        wait_with_safepoint_check();
       } else {
         os::naked_yield();
       }
     }
-  } while (!try_lock(ALLOW_BLOCK));
+  }
 }
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {

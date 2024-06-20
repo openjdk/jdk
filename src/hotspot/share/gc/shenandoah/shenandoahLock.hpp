@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/semaphore.hpp"
 
 class ShenandoahLock  {
 private:
@@ -39,18 +40,23 @@ private:
   shenandoah_padding(1);
   Thread* volatile _owner;
   shenandoah_padding(2);
+  Semaphore _sp_semaphore;
+  shenandoah_padding(3);
+  volatile uint _threads_at_sp;
 
-  template<bool ALLOW_BLOC, uint32_t MAX_SPINS>
+  template<bool ALLOW_BLOC>
   void contended_lock_internal(Thread* thread);
 
-  inline bool try_lock(bool allow_lock) {
-    if (Atomic::load(&_state) == locked) return false;
-    if (SafepointSynchronize::is_synchronizing() && allow_lock) return false;
-    return Atomic::cmpxchg(&_state, unlocked, locked) == unlocked; 
+  inline wait_with_safepoint_check() {
+    Thread* thread = Thread::current();
+    assert(thread->is_Java_thread(), "Must be Java thread.");
+    assert(SafepointSynchronize::is_synchronizing(), "SP must be synchronizing.");
+    Atomic::inc(&_threads_at_sp, 1);
+    _sp_semaphore.wait_with_safepoint_check(JavaThread::cast(thread));
   }
 
 public:
-  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
+  ShenandoahLock() : _state(unlocked), _owner(nullptr), _sp_semaphore(0) {};
 
   void lock(bool allow_block_for_safepoint) {
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
@@ -85,6 +91,14 @@ public:
     ShouldNotReachHere();
     return false;
 #endif
+  }
+
+  void safepoint_synchronize_end() {
+    assert(!SafepointSynchronize::is_synchronizing() && !SafepointSynchronize::is_at_safepoint(), "Safepoint synchronization must have ended.");
+    const uint threads_at_sp = Atomic::xchg(&_threads_at_sp, 0);
+    if(threads_at_sp > 0) {
+      _sp_semaphore.signal(threads_at_sp);
+    }
   }
 };
 
