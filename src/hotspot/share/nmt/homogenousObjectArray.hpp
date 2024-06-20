@@ -77,7 +77,7 @@ public:
     return i;
   }
 
-  void free(I i) {
+  void deallocate(I i) {
     assert(i == nil || is_in_bounds(i), "out of bounds free");
     if (i == nil) return;
     BackingElement& be_freed = _backing_storage.at(i);

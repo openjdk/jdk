@@ -68,7 +68,7 @@ struct LL {
     Node& n = alloc.at(start);
     E e = n.e;
     NodePtr next_start = n.next;
-    alloc.free(start);
+    alloc.deallocate(start);
     start = next_start;
     return e;
   }
@@ -142,7 +142,7 @@ TEST_VM_F(HomogenousObjectArrayTest, FreeingShouldReuseMemory) {
   A alloc;
   A::I i = alloc.allocate(1);
   int* x = &alloc.at(i);
-  alloc.free(i);
+  alloc.deallocate(i);
   i = alloc.allocate(1);
   int* y = &alloc.at(i);
   EXPECT_EQ(x, y);
@@ -154,7 +154,7 @@ TEST_VM_F(HomogenousObjectArrayTest, FreeingInTheMiddleWorks) {
   A::I i1 = alloc.allocate(0);
   A::I i2 = alloc.allocate(0);
   int* p1 = &alloc.at(i1);
-  alloc.free(i1);
+  alloc.deallocate(i1);
   A::I i3 = alloc.allocate(0);
   EXPECT_EQ(p1, &alloc.at(i3));
 }
