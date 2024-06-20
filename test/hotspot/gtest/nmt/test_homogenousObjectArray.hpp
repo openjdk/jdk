@@ -24,18 +24,18 @@
 
 #include "precompiled.hpp"
 #include "unittest.hpp"
-#include "nmt/indexedFreeListAllocator.hpp"
+#include "nmt/homogenousObjectArray.hpp"
 
-using A = IndexedFreeListAllocator<int, mtTest>;
+using A = HomogenousObjectArray<int, mtTest>;
 
-class IndexedFreeListAllocatorTest  : public testing::Test {
+class HomogenousObjectArrayTest  : public testing::Test {
 };
 
 // A linked list which sets the allocator itself
 template<typename E>
 struct LL {
   struct Node;
-  using NodeAllocator = IndexedFreeListAllocator<Node, mtTest>;
+  using NodeAllocator = HomogenousObjectArray<Node, mtTest>;
   using NodePtr = typename NodeAllocator::I;
   NodeAllocator alloc;
   struct Node {
@@ -127,18 +127,18 @@ void test_with_list(List& list) {
   EXPECT_EQ(1, list.pop());
 }
 
-TEST_VM_F(IndexedFreeListAllocatorTest, TestLinkedLists) {
+TEST_VM_F(HomogenousObjectArrayTest, TestLinkedLists) {
   {
     LL<int> list;
     test_with_list(list);
   }
   {
-    LL2<int, IndexedFreeListAllocator> list;
+    LL2<int, HomogenousObjectArray> list;
     test_with_list(list);
   }
 }
 
-TEST_VM_F(IndexedFreeListAllocatorTest, FreeingShouldReuseMemory) {
+TEST_VM_F(HomogenousObjectArrayTest, FreeingShouldReuseMemory) {
   A alloc;
   A::I i = alloc.allocate(1);
   int* x = &alloc.at(i);
@@ -148,7 +148,7 @@ TEST_VM_F(IndexedFreeListAllocatorTest, FreeingShouldReuseMemory) {
   EXPECT_EQ(x, y);
 }
 
-TEST_VM_F(IndexedFreeListAllocatorTest, FreeingInTheMiddleWorks) {
+TEST_VM_F(HomogenousObjectArrayTest, FreeingInTheMiddleWorks) {
   A alloc;
   A::I i0 = alloc.allocate(0);
   A::I i1 = alloc.allocate(0);

@@ -40,11 +40,10 @@
 // - Have fast comparisons
 // - Have constant time access
 // We achieve this by using a closed hashtable for finding previously existing NCS:s and referring to them by an index that's smaller than a pointer.
-template<template<typename, MEMFLAGS> class ALLOCATOR>
-class NativeCallStackStorageWithAllocator : public CHeapObj<mtNMT> {
+class NativeCallStackStorage : public CHeapObjBase {
 public:
   struct StackIndex {
-    friend NativeCallStackStorageWithAllocator;
+    friend NativeCallStackStorage;
 
   private:
     static constexpr const int32_t _invalid = -1;
@@ -70,7 +69,7 @@ public:
 
 private:
   struct Link;
-  using Allocator = ALLOCATOR<Link, mtNMT>;
+  using Allocator = HomogenousObjectArray<Link, mtNMT>;
   using LinkPtr = typename Allocator::I;
   LinkPtr nil() { return Allocator::nil; }
 
@@ -130,7 +129,7 @@ public:
     return _stacks.at(si._stack_index);
   }
 
-  NativeCallStackStorageWithAllocator(bool is_detailed_mode, int table_size = default_table_size)
+  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
   : _table_size(table_size), _table(nullptr), _stacks(),
     _is_detailed_mode(is_detailed_mode), _fake_stack() {
     if (_is_detailed_mode) {
@@ -141,11 +140,9 @@ public:
     }
   }
 
-  ~NativeCallStackStorageWithAllocator() {
+  ~NativeCallStackStorage() {
     FREE_C_HEAP_ARRAY(LinkPtr, _table);
   }
 };
-
-using NativeCallStackStorage = NativeCallStackStorageWithAllocator<IndexedFreeListAllocator>;
 
 #endif // SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP

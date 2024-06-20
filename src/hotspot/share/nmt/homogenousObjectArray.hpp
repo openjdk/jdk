@@ -24,16 +24,14 @@
 
 #include "utilities/growableArray.hpp"
 
-#ifndef SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
-#define SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
+#ifndef SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
+#define SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
 
-// A free list, growth only, allocator for a specific type E.
-// The allocator returns 'pointers' of 4-bytes in size, allowing for
-// memory savings if a pointer-heavy self-referential structure is used.
-// It is "indexed" as a reference is base + index * sizeof(E).
-// It never returns any memory to the system.
+// A flat array of elements E, backed by C-heap, growing on-demand. It allows for
+// returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
+// identified via array index.
 template<typename E, MEMFLAGS flag>
-class IndexedFreeListAllocator {
+class HomogenousObjectArray {
 public:
   using I = int32_t;
   static constexpr const I nil = -1;
@@ -54,9 +52,9 @@ private:
   }
 
 public:
-  NONCOPYABLE(IndexedFreeListAllocator<E COMMA flag>);
+  NONCOPYABLE(HomogenousObjectArray<E COMMA flag>);
 
-  IndexedFreeListAllocator(int initial_capacity = 8)
+  HomogenousObjectArray(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
     _free_start(nil) {}
 
@@ -92,11 +90,6 @@ public:
     assert(is_in_bounds(i), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i).e);
   }
-
-  const E& at(I i) const {
-    assert(i != nil, "null pointer dereference");
-    return reinterpret_cast<const E&>(_backing_storage.at(i).e);
-  }
 };
 
-#endif // SHARE_NMT_INDEXEDFREELISTALLOCATOR_HPP
+#endif // SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
