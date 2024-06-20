@@ -198,4 +198,11 @@ class TestJNativeScan extends JNativeScanTestBase {
                 .stdoutShouldContain("UnnamedPackage::main(String[])void references restricted methods")
                 .stdoutShouldContain("java.lang.foreign.MemorySegment::reinterpret(long)MemorySegment");
     }
+
+    @Test
+    public void testPositionalArguments() {
+        assertFailure(jnativescan("foo"))
+                .stdoutShouldBeEmpty()
+                .stderrShouldContain("jnativescan does not accept positional arguments");
+    }
 }

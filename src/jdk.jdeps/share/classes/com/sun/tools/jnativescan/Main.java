@@ -31,8 +31,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.spi.ToolProvider;
 
 public class Main {
@@ -61,7 +62,7 @@ public class Main {
     }
 
     private void printVersion() {
-        out.println("jnativescan " + Runtime.version());
+        out.println(System.getProperty("java.version"));
     }
 
     public int run(String[] args) {
@@ -97,32 +98,43 @@ public class Main {
         OptionParser parser = new OptionParser(false);
         OptionSpec<Void> helpOpt = parser.acceptsAll(List.of("?", "h", "help"), "help").forHelp();
         OptionSpec<Void> versionOpt = parser.accepts("version", "Print version information and exit");
-        OptionSpec<String> classPathOpt = parser.accepts(
+        OptionSpec<Path> classPathOpt = parser.accepts(
                 "class-path",
                 "The class path as used at runtime")
-                .withRequiredArg();
-        OptionSpec<String> modulePathOpt = parser.accepts(
+                .withRequiredArg()
+                .withValuesSeparatedBy(File.pathSeparatorChar)
+                .withValuesConvertedBy(PARSE_PATH);
+        OptionSpec<Path> modulePathOpt = parser.accepts(
                 "module-path",
                 "The module path as used at runtime")
-                .withRequiredArg();
-        OptionSpec<String> releaseOpt = parser.accepts(
+                .withRequiredArg()
+                .withValuesSeparatedBy(File.pathSeparatorChar)
+                .withValuesConvertedBy(PARSE_PATH);
+        OptionSpec<Runtime.Version> releaseOpt = parser.accepts(
                 "release",
                 "The runtime version that will run the application")
-                .withRequiredArg();
+                .withRequiredArg()
+                .withValuesConvertedBy(PARSE_VERSION);
         OptionSpec<String> addModulesOpt = parser.accepts(
                 "add-modules",
                 "List of root modules to scan")
-                .withRequiredArg();
+                .requiredIf(modulePathOpt)
+                .withRequiredArg()
+                .withValuesSeparatedBy(',');
         OptionSpec<Void> printNativeAccessOpt = parser.accepts(
                 "print-native-access",
                 "print a comma separated list of modules that may perform native access operations." +
-                        "ALL-UNNAMED is used to indicate unnamed modules.");
+                        " ALL-UNNAMED is used to indicate unnamed modules.");
 
         OptionSet optionSet;
         try {
             optionSet = parser.parse(expandedArgs);
         } catch (OptionException oe) {
             throw new JNativeScanFatalError("Parsing options failed: " + oe.getMessage(), oe);
+        }
+
+        if (optionSet.nonOptionArguments().size() != 0) {
+            throw new JNativeScanFatalError("jnativescan does not accept positional arguments");
         }
 
         if (optionSet.has(helpOpt)) {
@@ -143,42 +155,17 @@ public class Main {
             return;
         }
 
-        List<Path> classPathJars = parsePath(optionSet, classPathOpt);
-        List<Path> modulePaths = parsePath(optionSet, modulePathOpt);
-
-        Runtime.Version version = Runtime.version();
-        if (optionSet.has(releaseOpt)) {
-            String release = optionSet.valueOf(releaseOpt);
-            try {
-                version = Runtime.Version.parse(release);
-            } catch (IllegalArgumentException e) {
-                throw new JNativeScanFatalError("Invalid release: " + release + ": " + e.getMessage());
-            }
-        }
+        List<Path> classPathJars = optionSet.valuesOf(classPathOpt);
+        List<Path> modulePaths = optionSet.valuesOf(modulePathOpt);
+        List<String> rootModules = optionSet.valuesOf(addModulesOpt);
+        Runtime.Version version = Optional.ofNullable(optionSet.valueOf(releaseOpt)).orElse(Runtime.version());
 
         JNativeScanTask.Action action = JNativeScanTask.Action.DUMP_ALL;
         if (optionSet.has(printNativeAccessOpt)) {
             action = JNativeScanTask.Action.PRINT;
         }
 
-        List<String> rootModules = List.of();
-        if (optionSet.has(addModulesOpt)) {
-            rootModules = List.of(optionSet.valueOf(addModulesOpt).split(","));
-        }
-
         new JNativeScanTask(out, classPathJars, modulePaths, rootModules, version, action).run();
-    }
-
-    private static List<Path> parsePath(OptionSet optionSet, OptionSpec<String> opt) throws JNativeScanFatalError {
-        List<Path> paths = new ArrayList<>();
-        if (optionSet.has(opt)) {
-            String[] parts = optionSet.valueOf(opt).split(File.pathSeparator);
-            for (String part : parts) {
-                Path path = Path.of(part);
-                paths.add(path);
-            }
-        }
-        return paths;
     }
 
     private static String[] expandArgFiles(String[] args) throws JNativeScanFatalError {
@@ -205,4 +192,43 @@ public class Main {
             return new Main(out, err).run(args);
         }
     }
+
+    // where
+    private static final ValueConverter<Path> PARSE_PATH = new ValueConverter<>() {
+        @Override
+        public Path convert(String value) {
+            return Path.of(value);
+        }
+
+        @Override
+        public Class<? extends Path> valueType() {
+            return Path.class;
+        }
+
+        @Override
+        public String valuePattern() {
+            return "Path";
+        }
+    };
+
+    private static final ValueConverter<Runtime.Version> PARSE_VERSION = new ValueConverter<>() {
+        @Override
+        public Runtime.Version convert(String value) {
+            try {
+                return Runtime.Version.parse(value);
+            } catch (IllegalArgumentException e) {
+                throw new JNativeScanFatalError("Invalid release: " + value + ": " + e.getMessage());
+            }
+        }
+
+        @Override
+        public Class<? extends Runtime.Version> valueType() {
+            return Runtime.Version.class;
+        }
+
+        @Override
+        public String valuePattern() {
+            return "Version";
+        }
+    };
 }
