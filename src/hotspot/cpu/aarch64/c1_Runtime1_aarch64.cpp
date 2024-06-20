@@ -1035,4 +1035,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
 #undef __
 
-const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); return 0; }
+const char *Runtime1::pd_name_for_address(address entry) {
+  if (entry == StubRoutines::aarch64::_is_instance_of) {
+    return "is_instance_of";
+  }
+  Unimplemented(); return 0;
+}

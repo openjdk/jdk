@@ -395,6 +395,11 @@ protected:
   static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
   static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
 
+  bool search_secondary_supers(Klass* k) const;
+  bool lookup_secondary_supers_table(Klass *k) const;
+  bool linear_search_secondary_supers(Klass* k) const;
+  bool fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const;
+
  public:
   // Secondary supers table support
   static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
@@ -531,19 +536,16 @@ protected:
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
   bool is_subtype_of(Klass* k) const {
     juint    off = k->super_check_offset();
-    Klass* sup = *(Klass**)( (address)this + off );
     const juint secondary_offset = in_bytes(secondary_super_cache_offset());
-    if (sup == k) {
-      return true;
-    } else if (off != secondary_offset) {
-      return false;
-    } else {
+    if (off == secondary_offset) {
       return search_secondary_supers(k);
+    } else {
+      Klass* sup = *(Klass**)( (address)this + off );
+      return (sup == k);
     }
   }
 
-  bool search_secondary_supers(Klass* k) const;
-
+public:
   // Find LCA in class hierarchy
   Klass *LCA( Klass *k );
 

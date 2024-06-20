@@ -30,6 +30,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
+#include "utilities/rotate_bits.hpp"
 
 // This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
@@ -74,6 +75,63 @@ inline vtableEntry* Klass::start_of_vtable() const {
 
 inline ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
+}
+
+inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
+  uintx bitmap = _bitmap;
+
+  if (bitmap == SECONDARY_SUPERS_BITMAP_FULL ||
+      bitmap == SECONDARY_SUPERS_BITMAP_EMPTY) {
+    return linear_search_secondary_supers(k);
+  }
+
+  constexpr int highest_bit_number = SECONDARY_SUPERS_TABLE_SIZE - 1;
+  uint8_t slot = k->_hash_slot;
+  uintx shifted_bitmap = bitmap << (highest_bit_number - slot);
+
+  // First check the bitmap to see if super_klass might be present. If
+  // the bit is zero, we are certain that super_klass is not one of
+  // the secondary supers.
+  if ((shifted_bitmap >> highest_bit_number) == 0) {
+    return false;
+  }
+
+  // Calculate the initial hash probe
+  int index = population_count(shifted_bitmap) - 1;
+  if (secondary_supers()->at(index) == k) {
+    // Yes! It worked the first time.
+    return true;
+  }
+
+  // Is there another entry to check? Consult the bitmap. If Bit 1,
+  // the next bit to test, is zero, we are certain that super_klass is
+  // not one of the secondary supers.
+  bitmap = rotate_right(bitmap, slot);
+  if ((bitmap & 2) == 0) {
+    return false;
+  }
+
+  // Continue probing the hash table
+  return fallback_search_secondary_supers(k, index, bitmap);
+}
+
+inline bool Klass::search_secondary_supers(Klass *k) const {
+  // This is necessary because I am never in my own secondary_super list.
+  if (this == k)
+    return true;
+
+  bool result = lookup_secondary_supers_table(k);
+
+#ifndef PRODUCT
+  if (VerifySecondarySupers) {
+    bool linear_result = linear_search_secondary_supers(k);
+    if (linear_result != result) {
+      on_secondary_supers_verification_failure((Klass*)this, k, linear_result, result, "mismatch");
+    }
+  }
+#endif // PRODUCT
+
+  return result;
 }
 
 #endif // SHARE_OOPS_KLASS_INLINE_HPP

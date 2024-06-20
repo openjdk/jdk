@@ -16218,7 +16218,7 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
   predicate(!UseSecondarySupersTable);
   effect(KILL cr, KILL temp);
 
-  ins_cost(1100);  // slightly larger than the next version
+  ins_cost(20 * INSN_COST);  // slightly larger than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
   ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
@@ -16236,7 +16236,7 @@ instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, 
   predicate(UseSecondarySupersTable);
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
-  ins_cost(600);  // slightly larger than the next version
+  ins_cost(10 * INSN_COST);  // slightly larger than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
   ins_encode %{
@@ -16258,7 +16258,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
   predicate(UseSecondarySupersTable);
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
-  ins_cost(500);  // smaller than the next version
+  ins_cost(5 * INSN_COST);  // smaller than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{

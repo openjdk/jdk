@@ -58,6 +58,10 @@
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
 
+// Used to just annotatate cold/hot branches
+#define LIKELY(condition)   (condition)
+#define UNLIKELY(condition) (condition)
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -163,20 +167,41 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::search_secondary_supers(Klass* k) const {
-  // Put some extra logic here out-of-line, before the search proper.
-  // This cuts down the size of the inline method.
-
-  // This is necessary, since I am never in my own secondary_super list.
-  if (this == k)
-    return true;
+bool Klass::linear_search_secondary_supers(Klass* k) const {
   // Scan the array-of-objects for a match
+  // FIXME: We could do something smarter here, maybe a vectorized
+  // comparison or a binary search, but is that worth any added
+  // complexity?
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      ((Klass*)this)->set_secondary_super_cache(k);
+      if (UseSecondarySupersCache) {
+        ((Klass*)this)->set_secondary_super_cache(k);
+      }
       return true;
     }
+  }
+  return false;
+}
+
+// Given a secondary superklass k, an initial array index, and an
+// occupancy bitmap rotated such that Bit 1 is the next bit to test,
+// search for k.
+bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
+  // This is conventional linear probing, but instead of terminating
+  // when a null entry is found in the table, we maintain a bitmap
+  // in which a 0 indicates missing entries.
+
+  // The check in search_secondary_supers guarantees there are 0s in
+  // the bitmap, so this loop eventually terminates.
+  while ((rotated_bitmap & 2) != 0) {
+    if (++index == secondary_supers()->length()) {
+      index = 0;
+    }
+    if (secondary_supers()->at(index) == k) {
+      return true;
+    }
+    rotated_bitmap = rotate_right(rotated_bitmap, 1);
   }
   return false;
 }
@@ -1271,7 +1296,6 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   ResourceMark rm;
   super->print();
   sub->print();
-  fatal("%s: %s implements %s: is_subtype_of: %d; linear_search: %d; table_lookup: %d",
-        msg, sub->external_name(), super->external_name(),
-        sub->is_subtype_of(super), linear_result, table_result);
+  fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
+        msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }

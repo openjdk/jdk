@@ -1624,6 +1624,7 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
                                                      Register temp_reg,
                                                      Register temp2_reg,
                                                      Register temp3_reg,
+                                                     Register result_reg,
                                                      FloatRegister vtemp,
                                                      Label* L_success,
                                                      Label* L_failure,
@@ -1652,15 +1653,15 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
   temp_reg = allocate_if_noreg(temp_reg, available_regs, pushed_regs);
   temp2_reg = allocate_if_noreg(temp2_reg, available_regs, pushed_regs);
   temp3_reg = allocate_if_noreg(temp3_reg, available_regs, pushed_regs);
-  Register result = allocate_if_noreg(noreg, available_regs, pushed_regs);
+  result_reg = allocate_if_noreg(result_reg, available_regs, pushed_regs);
 
   push(pushed_regs, sp);
 
   lookup_secondary_supers_table(sub_klass,
                                 super_klass,
-                                temp_reg, temp2_reg, temp3_reg, fnoreg, result,
+                                temp_reg, temp2_reg, temp3_reg, vtemp, result_reg,
                                 nullptr);
-  cmp(result, zr);
+  cmp(result_reg, zr);
 
   // Unspill the temp. registers:
   pop(pushed_regs, sp);
@@ -1690,7 +1691,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
       (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
   } else {
     check_klass_subtype_slow_path_2
-      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*vtemp*/fnoreg,
+      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
+       /*vtemp*/fnoreg,
        L_success, L_failure, set_cond_codes);
   }
 }

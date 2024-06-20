@@ -1850,6 +1850,58 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_miss);
   }
 
+  // int Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj)
+
+  address generate_isInstance() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "isInstance");
+    address start = __ pc();
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    //  Input:
+    //    c_rarg0   - java_lang_Class
+    //    c_rarg1   - oop
+
+    Register a_java_lang_Class = c_rarg0;
+    Register obj = c_rarg1;
+    Register super_klass = c_rarg2;
+    Register obj_klass = c_rarg3;
+    Register sco = c_rarg4;
+
+    Label L_success, L_failure;
+
+    __ load_klass(obj_klass, obj);
+    __ ldr(super_klass, Address(a_java_lang_Class, java_lang_Class::klass_offset()));
+    // int sco_offset = in_bytes(Klass::super_check_offset_offset());
+    // __ ldrw(rscratch1, super_klass, sco_offset);
+    // __ ldrw(sco, obj_klass, sco_offset);
+    // __ cmp(rscratch1, sco);
+    // __ br(__ NE, fail);
+
+    {
+      // __ check_klass_subtype(obj_klass, super_klass, c_rarg5, L_success);
+      __ check_klass_subtype_fast_path(obj_klass, super_klass, c_rarg5,        &L_success, &L_failure, nullptr);
+
+      // __ check_klass_subtype_slow_path(obj_klass, super_klass, c_rarg5, c_rarg6, &L_success, nullptr);
+      __ check_klass_subtype_slow_path_2(obj_klass, super_klass,
+                                         c_rarg5, c_rarg6, c_rarg7, r10, v0,
+                                         &L_success, &L_failure);
+    }
+
+    __ bind(L_failure);
+    __ mov(r0, 0);
+    __ leave();
+    __ ret(lr);
+
+    __ bind(L_success);
+    __ mov(r0, 1);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   //
   //  Generate checkcasting array copy stub
   //
@@ -8519,6 +8571,8 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 #endif
+
+    StubRoutines::aarch64::_is_instance_of = generate_isInstance();
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 

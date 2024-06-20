@@ -1023,6 +1023,7 @@ public:
                                        Register temp_reg,
                                        Register temp2_reg,
                                        Register temp3_reg,
+                                       Register result_reg,
                                        FloatRegister vtemp_reg,
                                        Label* L_success,
                                        Label* L_failure,
