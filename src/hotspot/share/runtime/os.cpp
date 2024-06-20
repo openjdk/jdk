@@ -78,6 +78,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
+
 #ifndef _WINDOWS
 # include <poll.h>
 #endif
@@ -2065,7 +2069,7 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 }
 
 julong os::used_memory() {
-#ifndef LINUX
+#ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
