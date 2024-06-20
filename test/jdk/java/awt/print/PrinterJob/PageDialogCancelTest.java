@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8334366
- * @key printer
+ * @key headful printer
  * @summary Verifies original pageobject is returned unmodified
  *          on cancelling pagedialog
  * @requires (os.family == "windows")
