@@ -540,6 +540,8 @@ public class CopyOnWriteArrayList<E>
             Object[] newElements;
             if (numMoved == 0)
                 newElements = Arrays.copyOf(es, len - 1);
+            else if (len == 1)
+                newElements = EMPTY_ELEMENTDATA;
             else {
                 newElements = new Object[len - 1];
                 System.arraycopy(es, 0, newElements, 0, index);

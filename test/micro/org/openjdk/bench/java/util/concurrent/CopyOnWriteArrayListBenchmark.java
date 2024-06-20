@@ -130,4 +130,37 @@ public class CopyOnWriteArrayListBenchmark {
             return (CopyOnWriteArrayList<?>) objIn.readObject();
         }
     }
+
+    @Benchmark
+    public CopyOnWriteArrayList<?> removeObjectLastRemaining() {
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        list.add("");
+        list.remove("");
+        return list;
+    }
+
+    @Benchmark
+    public CopyOnWriteArrayList<?> removeIndexLastRemaining() {
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        list.add("");
+        list.remove(0);
+        return list;
+    }
+    @Benchmark
+    public CopyOnWriteArrayList<?> removeObject() {
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        list.add("");
+        list.add("a");
+        list.remove("");
+        return list;
+    }
+
+    @Benchmark
+    public CopyOnWriteArrayList<?> remove() {
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        list.add("");
+        list.add("a");
+        list.remove(0);
+        return list;
+    }
 }
