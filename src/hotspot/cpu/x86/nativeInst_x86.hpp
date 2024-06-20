@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 // - - NativeMovRegMem
 // - - NativeMovRegMemPatching
 // - - NativeJump
-// - - NativeFarJump
 // - - NativeIllegalOpCode
 // - - NativeGeneralJump
 // - - NativeReturn
@@ -64,7 +63,6 @@ class NativeInstruction {
   inline bool is_return();
   inline bool is_jump();
   inline bool is_jump_reg();
-  inline bool is_far_jump();
   inline bool is_cond_jump();
   inline bool is_safepoint_poll();
   inline bool is_mov_literal64();
@@ -102,47 +100,6 @@ inline NativeInstruction* nativeInstruction_at(address address) {
   //inst->verify();
 #endif
   return inst;
-}
-
-class NativePltCall: public NativeInstruction {
-public:
-  enum Intel_specific_constants {
-    instruction_code           = 0xE8,
-    instruction_size           =    5,
-    instruction_offset         =    0,
-    displacement_offset        =    1,
-    return_address_offset      =    5
-  };
-  address instruction_address() const { return addr_at(instruction_offset); }
-  address next_instruction_address() const { return addr_at(return_address_offset); }
-  address displacement_address() const { return addr_at(displacement_offset); }
-  int displacement() const { return (jint) int_at(displacement_offset); }
-  address return_address() const { return addr_at(return_address_offset); }
-  address destination() const;
-  address plt_entry() const;
-  address plt_jump() const;
-  address plt_load_got() const;
-  address plt_resolve_call() const;
-  address plt_c2i_stub() const;
-  void set_stub_to_clean();
-
-  void  reset_to_plt_resolve_call();
-  void  set_destination_mt_safe(address dest);
-
-  void verify() const;
-};
-
-inline NativePltCall* nativePltCall_at(address address) {
-  NativePltCall* call = (NativePltCall*) address;
-#ifdef ASSERT
-  call->verify();
-#endif
-  return call;
-}
-
-inline NativePltCall* nativePltCall_before(address addr) {
-  address at = addr - NativePltCall::instruction_size;
-  return nativePltCall_at(at);
 }
 
 class NativeCall;
@@ -426,57 +383,6 @@ class NativeLoadAddress: public NativeMovRegMem {
   }
 };
 
-// destination is rbx or rax
-// mov rbx, [rip + offset]
-class NativeLoadGot: public NativeInstruction {
-#ifdef AMD64
-  static const bool has_rex = true;
-  static const int rex_size = 1;
-#else
-  static const bool has_rex = false;
-  static const int rex_size = 0;
-#endif
-
-  enum Intel_specific_constants {
-    rex_prefix = 0x48,
-    rex_b_prefix = 0x49,
-    instruction_code = 0x8b,
-    modrm_rbx_code = 0x1d,
-    modrm_rax_code = 0x05,
-    instruction_length = 6 + rex_size,
-    offset_offset = 2 + rex_size
-  };
-
-  int rip_offset() const { return int_at(offset_offset); }
-  address return_address() const { return addr_at(instruction_length); }
-  address got_address() const { return return_address() + rip_offset(); }
-
-#ifdef ASSERT
-  void report_and_fail() const;
-  address instruction_address() const { return addr_at(0); }
-#endif
-
-public:
-  address next_instruction_address() const { return return_address(); }
-  intptr_t data() const;
-  void set_data(intptr_t data) {
-    intptr_t *addr = (intptr_t *) got_address();
-    *addr = data;
-  }
-
-  DEBUG_ONLY( void verify() const );
-};
-
-inline NativeLoadGot* nativeLoadGot_at(address addr) {
-  NativeLoadGot* load = (NativeLoadGot*) addr;
-#ifdef ASSERT
-  load->verify();
-#endif
-  return load;
-}
-
-// jump rel32off
-
 class NativeJump: public NativeInstruction {
  public:
   enum Intel_specific_constants {
@@ -532,26 +438,6 @@ inline NativeJump* nativeJump_at(address address) {
   return jump;
 }
 
-// far jump reg
-class NativeFarJump: public NativeInstruction {
- public:
-  address jump_destination() const;
-
-  // Creation
-  inline friend NativeFarJump* nativeFarJump_at(address address);
-
-  void verify();
-
-};
-
-inline NativeFarJump* nativeFarJump_at(address address) {
-  NativeFarJump* jump = (NativeFarJump*)(address);
-#ifdef ASSERT
-  jump->verify();
-#endif
-  return jump;
-}
-
 // Handles all kinds of jump on Intel. Long/far, conditional/unconditional
 class NativeGeneralJump: public NativeInstruction {
  public:
@@ -584,61 +470,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   debug_only(jump->verify();)
   return jump;
 }
-
-class NativeGotJump: public NativeInstruction {
-  enum Intel_specific_constants {
-    rex_prefix = 0x41,
-    instruction_code = 0xff,
-    modrm_code = 0x25,
-    instruction_size = 6,
-    rip_offset = 2
-  };
-
-  bool has_rex() const { return ubyte_at(0) == rex_prefix; }
-  int rex_size() const { return has_rex() ? 1 : 0; }
-
-  address return_address() const { return addr_at(instruction_size + rex_size()); }
-  int got_offset() const { return (jint) int_at(rip_offset + rex_size()); }
-
-#ifdef ASSERT
-  void report_and_fail() const;
-  address instruction_address() const { return addr_at(0); }
-#endif
-
-public:
-  address got_address() const { return return_address() + got_offset(); }
-  address next_instruction_address() const { return return_address(); }
-  bool is_GotJump() const { return ubyte_at(rex_size()) == instruction_code; }
-
-  address destination() const;
-  void set_jump_destination(address dest)  {
-    address *got_entry = (address *) got_address();
-    *got_entry = dest;
-  }
-
-  DEBUG_ONLY( void verify() const; )
-};
-
-inline NativeGotJump* nativeGotJump_at(address addr) {
-  NativeGotJump* jump = (NativeGotJump*)(addr);
-  debug_only(jump->verify());
-  return jump;
-}
-
-class NativePopReg : public NativeInstruction {
- public:
-  enum Intel_specific_constants {
-    instruction_code            = 0x58,
-    instruction_size            =    1,
-    instruction_offset          =    0,
-    data_offset                 =    1,
-    next_instruction_offset     =    1
-  };
-
-  // Insert a pop instruction
-  static void insert(address code_pos, Register reg);
-};
-
 
 class NativeIllegalInstruction: public NativeInstruction {
  public:
@@ -702,7 +533,6 @@ inline bool NativeInstruction::is_jump_reg()     {
   if (ubyte_at(0) == Assembler::REX_B) pos = 1;
   return ubyte_at(pos) == 0xFF && (ubyte_at(pos + 1) & 0xF0) == 0xE0;
 }
-inline bool NativeInstruction::is_far_jump()     { return is_mov_literal64(); }
 inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) == 0x800F /* long jump */ ||
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {

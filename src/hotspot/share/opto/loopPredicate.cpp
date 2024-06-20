@@ -373,7 +373,7 @@ IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNod
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
   TemplateAssertionPredicateExpression template_assertion_predicate_expression(
       template_assertion_predicate->in(1)->as_Opaque4());
-  Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(parse_predicate_proj, this);
+  Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(parse_predicate_proj->in(0)->in(0), this);
   IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, template_assertion_predicate->Opcode(), false);
   _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque4_node);
   _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
