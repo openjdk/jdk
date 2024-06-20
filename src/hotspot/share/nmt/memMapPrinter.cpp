@@ -31,6 +31,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "memory/resourceArea.hpp"
 #include "nmt/memflags.hpp"
 #include "nmt/memFlagBitmap.hpp"
 #include "nmt/memMapPrinter.hpp"
@@ -204,6 +205,8 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
 
 // Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
 static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
+
+  ResourceMark rm;
 
 #define HANDLE_THREAD(T)                                                        \
   if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \
