@@ -29,11 +29,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
-# include <sys/mman.h>
+#include <sys/mman.h>
 // sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
-# ifndef MAP_ANON_64K
-# define MAP_ANON_64K  0x400
-# endif
+#ifndef MAP_ANON_64K
+  #define MAP_ANON_64K  0x400
+#else
+  STATIC_ASSERT(MAP_ANON_64K == 0x400);
+#endif
 
 // On Aix, when using shmget() in os::attempt_reserve_memory_at() we should fail with attach
 // attempts not aligned to shmget() segment boundaries (256m)

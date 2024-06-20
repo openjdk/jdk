@@ -67,6 +67,7 @@
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
@@ -98,7 +99,9 @@
 #include <sys/mman.h>
 // sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
 #ifndef MAP_ANON_64K
-#define MAP_ANON_64K  0x400
+  #define MAP_ANON_64K  0x400
+#else
+  STATIC_ASSERT(MAP_ANON_64K == 0x400);
 #endif
 #include <sys/resource.h>
 #include <sys/select.h>
@@ -221,15 +224,15 @@ static address g_brk_at_startup = nullptr;
 //   http://publib.boulder.ibm.com/infocenter/aix/v6r1/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/multiple_page_size_app_support.htm
 //
 static struct {
-  size_t pagesize;            // sysconf _SC_PAGESIZE (4K)
-  size_t datapsize;           // default data page size (LDR_CNTRL DATAPSIZE)
-  size_t shmpsize;            // default shared memory page size (LDR_CNTRL SHMPSIZE)
-  size_t pthr_stack_pagesize; // stack page size of pthread threads
-  size_t textpsize;           // default text page size (LDR_CNTRL STACKPSIZE)
-  bool can_use_64K_pages;     // True if we can alloc 64K pages dynamically with Sys V shm.
-  bool can_use_16M_pages;     // True if we can alloc 16M pages dynamically with Sys V shm.
-  bool can_use_64K_mmap_pages;// True if we can alloc 64K pages dynamically with mmap.
-  int error;                  // Error describing if something went wrong at multipage init.
+  size_t pagesize;             // sysconf _SC_PAGESIZE (4K)
+  size_t datapsize;            // default data page size (LDR_CNTRL DATAPSIZE)
+  size_t shmpsize;             // default shared memory page size (LDR_CNTRL SHMPSIZE)
+  size_t pthr_stack_pagesize;  // stack page size of pthread threads
+  size_t textpsize;            // default text page size (LDR_CNTRL STACKPSIZE)
+  bool can_use_64K_pages;      // True if we can alloc 64K pages dynamically with Sys V shm.
+  bool can_use_16M_pages;      // True if we can alloc 16M pages dynamically with Sys V shm.
+  bool can_use_64K_mmap_pages; // True if we can alloc 64K pages dynamically with mmap.
+  int error;                   // Error describing if something went wrong at multipage init.
 } g_multipage_support = {
   (size_t) -1,
   (size_t) -1,
@@ -2218,7 +2221,7 @@ void os::init(void) {
   // So, we do the following:
   // LDR_CNTRL    can_use_64K_pages_dynamically(mmap or shm)       what we do                      remarks
   // 4K           no                                               4K                              old systems (aix 5.2) or new systems with AME activated
-  // 4k           yes                                              64k (treat 4k stacks as 64k)    different loader than java and standardsettings
+  // 4k           yes                                              64k (treat 4k stacks as 64k)    different loader than java and standard settings
   // 64k          no              --- AIX 5.2 ? ---
   // 64k          yes                                              64k                             new systems and standard java loader (we set datapsize=64k when linking)
 
