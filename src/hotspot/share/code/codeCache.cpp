@@ -231,7 +231,7 @@ void CodeCache::initialize_heaps() {
     // aligned down to the next lower multiple of min_size. For large page
     // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
     // Therefore, force non_nmethod.size to at least min_size.
-    non_nmethod.size  = MAX2(non_nmethod.size, min_size);
+    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
