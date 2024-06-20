@@ -322,6 +322,8 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void population_count(Register dst, Register src, Register tmp1, Register tmp2);
+
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
   bool lookup_secondary_supers_table(Register r_sub_klass,

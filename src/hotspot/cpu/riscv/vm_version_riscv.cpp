@@ -203,15 +203,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (!UsePopCountInstruction) {
-    if (UseSecondarySupersTable) {
-      if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
-        warning("UseSecondarySupersTable is not supported on this CPU");
-      }
-      FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
-    }
-  }
-
   if (UseZicboz) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);

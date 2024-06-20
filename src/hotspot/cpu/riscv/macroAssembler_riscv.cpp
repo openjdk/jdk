@@ -3611,6 +3611,35 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+void MacroAssembler::population_count(Register dst, Register src,
+                                      Register tmp1, Register tmp2) {
+  if (UsePopCountInstruction) {
+    cpop(dst, src);
+  } else {
+    assert_different_registers(src, tmp1, tmp2);
+    assert_different_registers(dst, tmp1, tmp2);
+    Label loop, done;
+
+    mv(tmp1, src);
+    // dst = 0;
+    // while(tmp1 != 0) {
+    //   dst++;
+    //   tmp1 &= (tmp1 - 1);
+    // }
+    mv(dst, zr);
+    beqz(tmp1, done);
+    {
+      bind(loop);
+      addi(dst, dst, 1);
+      mv(tmp2, tmp1);
+      addi(tmp2, tmp2, -1);
+      andr(tmp1, tmp1, tmp2);
+      bnez(tmp1, loop);
+    }
+    bind(done);
+  }
+}
+
 // Ensure that the inline code and the stub are using the same registers
 // as we need to call the stub from inline code when there is a collision
 // in the hashed lookup in the secondary supers array.
@@ -3667,7 +3696,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
     slli(r_array_index, r_bitmap, (Klass::SECONDARY_SUPERS_TABLE_MASK - bit));
-    cpop(r_array_index, r_array_index);
+    population_count(r_array_index, r_array_index, t0, tmp1);
   } else {
     mv(r_array_index, (u1)1);
   }
