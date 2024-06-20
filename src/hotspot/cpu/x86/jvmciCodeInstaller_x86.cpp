@@ -49,12 +49,17 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
     return (pc_offset + NativeCall::instruction_size);
   } else if (inst->is_mov_literal64()) {
     // mov+call instruction pair
-    jint offset = pc_offset + NativeMovConstReg::instruction_size;
+    jint offset = pc_offset + ((NativeMovConstReg*)inst)->instruction_size();
     u_char* call = (u_char*) (_instructions->start() + offset);
     if (call[0] == Assembler::REX_B) {
       offset += 1; /* prefix byte for extended register R8-R15 */
       call++;
     }
+    if (call[0] == Assembler::REX2) {
+      offset += 2; /* prefix byte for APX extended GPR register R16-R31 */
+      call+=2;
+    }
+    // Register indirect call.
     assert(call[0] == 0xFF, "expected call");
     offset += 2; /* opcode byte + modrm byte */
     return (offset);

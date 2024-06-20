@@ -4088,6 +4088,11 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #else
   regs += RegSet::of(rax, rcx, rdx);
 #endif
+#ifdef _LP64
+  if (UseAPX) {
+    regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+  }
+#endif
   return regs;
 }
 
@@ -10379,3 +10384,45 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
 
   bind(unlocked);
 }
+
+#ifdef _LP64
+// Saves legacy GPRs state on stack.
+void MacroAssembler::save_legacy_gprs() {
+  subq(rsp, 16 * wordSize);
+  movq(Address(rsp, 15 * wordSize), rax);
+  movq(Address(rsp, 14 * wordSize), rcx);
+  movq(Address(rsp, 13 * wordSize), rdx);
+  movq(Address(rsp, 12 * wordSize), rbx);
+  movq(Address(rsp, 10 * wordSize), rbp);
+  movq(Address(rsp, 9 * wordSize), rsi);
+  movq(Address(rsp, 8 * wordSize), rdi);
+  movq(Address(rsp, 7 * wordSize), r8);
+  movq(Address(rsp, 6 * wordSize), r9);
+  movq(Address(rsp, 5 * wordSize), r10);
+  movq(Address(rsp, 4 * wordSize), r11);
+  movq(Address(rsp, 3 * wordSize), r12);
+  movq(Address(rsp, 2 * wordSize), r13);
+  movq(Address(rsp, wordSize), r14);
+  movq(Address(rsp, 0), r15);
+}
+
+// Resotres back legacy GPRs state from stack.
+void MacroAssembler::restore_legacy_gprs() {
+  movq(r15, Address(rsp, 0));
+  movq(r14, Address(rsp, wordSize));
+  movq(r13, Address(rsp, 2 * wordSize));
+  movq(r12, Address(rsp, 3 * wordSize));
+  movq(r11, Address(rsp, 4 * wordSize));
+  movq(r10, Address(rsp, 5 * wordSize));
+  movq(r9,  Address(rsp, 6 * wordSize));
+  movq(r8,  Address(rsp, 7 * wordSize));
+  movq(rdi, Address(rsp, 8 * wordSize));
+  movq(rsi, Address(rsp, 9 * wordSize));
+  movq(rbp, Address(rsp, 10 * wordSize));
+  movq(rbx, Address(rsp, 12 * wordSize));
+  movq(rdx, Address(rsp, 13 * wordSize));
+  movq(rcx, Address(rsp, 14 * wordSize));
+  movq(rax, Address(rsp, 15 * wordSize));
+  addq(rsp, 16 * wordSize);
+}
+#endif
