@@ -251,7 +251,8 @@ jdk_security = \
     :jdk_security3 \
     :jdk_security4
 
-# Tests in this group should be manual as they depend on external infra and are unstable
+# Tests in this group are manual as they depend on external infra
+# and may fail with external reasons, for instance - change in CA test portal.
 jdk_security_infra = \
     security/infra
 

@@ -536,7 +536,7 @@
 /**
  * Collection of certificate validation tests for interoperability with external CAs.
  * These tests are marked as manual as they depend on external infrastructure and may fail
- * with external reasons, for instance - changes in CA test portals.
+ * with external reasons, for instance - change in CA test portal.
  */
 public class CAInterop {
 
