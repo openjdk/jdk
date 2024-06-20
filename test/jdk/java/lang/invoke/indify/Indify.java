@@ -292,10 +292,10 @@ public class Indify {
                     all = booleanOption(a2);  // copy all classes, even if no patterns
                     break;
                 case "-q": case "--quiet": case "--quiet=":
-                    quiet = booleanOption(a2);   // less output
+                    quiet = booleanOption(a2);  // less output
                     break;
                 case "-v": case "--verbose": case "--verbose=":
-                    verbose = booleanOption(a2); // more output
+                    verbose = booleanOption(a2);  // more output
                     break;
                 default:
                     throw new IllegalArgumentException("unrecognized flag: "+a);
@@ -548,8 +548,8 @@ public class Indify {
                                     invokeInstruction.method().name().stringValue().equals("invokeExact"))
                             {
                                 System.err.println(">> Removing instruction invokevirtual for Method: " + invokeInstruction.method());
-                                System.err.println(">> Adding invokedynamic instruction and nop instead of invoke virtual: " + ((InvokeDynamicEntry) newConstant).name());
-                                b.invokeDynamicInstruction((InvokeDynamicEntry) newConstant).nop();
+                                System.err.println(">> Adding invokedynamic instruction of invoke virtual: " + ((InvokeDynamicEntry) newConstant).name());
+                                b.invokeDynamicInstruction((InvokeDynamicEntry) newConstant);
 
                                 shouldProceedAfterIndyAdded.pop();
                                 shouldProceedAfterIndyAdded.push(false);
@@ -772,7 +772,7 @@ public class Indify {
             int branchCount = 0;
             Object arg;
             List<Object> args;
-            List<Object> bsmArgs = null;  // args for invokeGeneric
+            List<Object> bsmArgs = null;  // args to invokeGeneric
         decode:
             for(Instruction instruction : instructions){
 
