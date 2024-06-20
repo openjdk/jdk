@@ -60,7 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This class tests the latest ISO 4217 data and Java's currency data which is
- * based on ISO 4217. The golden-data file (ISO 4217 data) 'tablea1.txt' has the following
+ * based on ISO 4217. The golden-data file, 'ISO4217-codes.txt', based on the ISO 4217
+ * “List one: Currency, fund and precious metal codes” has the following
  * format: <Country code>\t<Currency code>\t<Numeric code>\t<Minor unit>[\t<Cutover Date>\t<new Currency code>\t<new Numeric code>\t<new Minor unit>]
  * The Cutover Date is given in SimpleDateFormat's 'yyyy-MM-dd-HH-mm-ss' format in the GMT time zone.
  */
@@ -68,7 +69,7 @@ public class ValidateISO4217 {
 
     // Input golden-data file
     private static final File dataFile = new File(System.getProperty(
-            "test.src", "."), "tablea1.txt");
+            "test.src", "."), "ISO4217-codes.txt");
     // Code statuses
     private static final byte UNDEFINED = 0;
     private static final byte DEFINED = 1;
@@ -89,7 +90,7 @@ public class ValidateISO4217 {
                     + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-HRK-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
                     + "PTE-ROL-RUR-SDD-SIT-SLL-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-VED-"
                     + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
-                    + "YUM-ZMK-ZWD-ZWN-ZWR";
+                    + "YUM-ZMK-ZWD-ZWL-ZWN-ZWR";
     private static final String[][] extraCodes = {
             /* Defined in ISO 4217 list, but don't have code and minor unit info. */
             {"AQ", "", "", "0"},    // Antarctica
