@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 
 #include "nmt/memMapPrinter.hpp"
-#include "procMapsParser.inline.hpp"
+#include "procMapsParser.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -38,7 +38,7 @@ class ProcSmapsSummary {
   unsigned _num_mappings;
   size_t _vsize;        // combined virtual size
   size_t _rss;          // combined resident set size
-  size_t _committed;    // combined committed space
+  size_t _committed;    // combined committed size
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
   size_t _hugetlb;      // combined amount of memory backed by explicit huge pages

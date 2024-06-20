@@ -55,8 +55,16 @@ struct ProcSmapsInfo {
   bool hg; // thp-advised
   bool ht; // uses hugetlb pages
   bool nh; // thp forbidden
-  inline size_t vsize() const;
-  inline void reset();
+
+  size_t vsize() const {
+    return from < to ? pointer_delta(to, from, 1) : 0;
+  }
+
+  void reset() {
+    from = to = nullptr;
+    prot[0] = filename[0] = '\0';
+    kernelpagesize = rss = private_hugetlb = anonhugepages = swap = 0;
+  }
 };
 
 class ProcSmapsParser {

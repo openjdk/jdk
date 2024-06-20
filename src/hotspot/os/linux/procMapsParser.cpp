@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 
-#include "procMapsParser.inline.hpp"
+#include "procMapsParser.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,7 +35,7 @@ static bool is_lowercase_hex(char c) {
 
 static size_t max_mapping_line_len() {
   return 100 + // everything but the file name
-         os::vm_page_size() // the file name (kernel limits /proc/pid/cmdline to 1 page
+         os::vm_page_size() // the file name (kernel limits /proc/pid/cmdline to one page
          ;
 }
 
@@ -92,7 +92,6 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
     SCAN(ht);
     SCAN(nh);
 #undef SCAN
-    return;
   }
 }
 
