@@ -112,10 +112,6 @@ void NativeCallStack::print_frame(outputStream* out, address pc) const {
 
 void NativeCallStack::print_on(outputStream* out) const {
   DEBUG_ONLY(assert_not_fake();)
-  address pc;
-  char    buf[1024];
-  int     offset;
-  int     line;
   for (int i = 0; i < NMT_TrackingStackDepth && _stack[i] != nullptr; i++) {
     print_frame(out, _stack[i]);
   }
