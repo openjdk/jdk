@@ -873,6 +873,10 @@ public:
 
   void compute_predicates();
   NOT_PRODUCT( void print() const; )
+
+private:
+  // We want to simplify the predicates as far as possible, and keep them unique.
+  // TODO
 };
 
 // Analyze the loop in preparation for auto-vectorization. This class is
