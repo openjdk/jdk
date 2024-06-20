@@ -762,6 +762,7 @@ public class WhiteBox {
   public native void printOsInfo();
   public native long hostPhysicalMemory();
   public native long hostPhysicalSwap();
+  public native long hostAvailableMemory();
 
   // Decoder
   public native void disableElfSectionCache();
