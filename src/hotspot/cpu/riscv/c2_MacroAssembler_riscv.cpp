@@ -2326,12 +2326,13 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
+                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
+                                        bool is_m2) {
   Label loop;
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
   bind(loop);
-  vsetvli(tmp1, cnt, sew, Assembler::m2);
+  vsetvli(tmp1, cnt, sew, is_m2 ? Assembler::m2 : Assembler::m4);
   vlex_v(vr1, a1, sew);
   vlex_v(vr2, a2, sew);
   vmsne_vv(vrs, vr1, vr2);
@@ -2446,7 +2447,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   bind(L);
 
   if (str1_isL == str2_isL) { // LL or UU
-    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE);
+    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, false);
     j(DONE);
   } else { // LU or UL
     Register strL = encLU ? str1 : str2;
