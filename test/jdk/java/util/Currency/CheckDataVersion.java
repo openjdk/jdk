@@ -38,7 +38,7 @@ import java.security.PrivilegedAction;
 import java.util.Currency;
 
 class CheckDataVersion {
-    static final String datafile = "ISO4217-codes.txt";
+    static final String datafile = "ISO4217-list-one.txt";
     static final String FILEVERSIONKEY = "FILEVERSION=";
     static final String DATAVERSIONKEY = "DATAVERSION=";
     static String fileVersion;

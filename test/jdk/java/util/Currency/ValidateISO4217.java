@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This class tests the latest ISO 4217 data and Java's currency data which is
- * based on ISO 4217. The golden-data file, 'ISO4217-codes.txt', based on the ISO 4217
+ * based on ISO 4217. The golden-data file, 'ISO4217-list-one.txt', based on the
  * “List one: Currency, fund and precious metal codes” has the following
  * format: <Country code>\t<Currency code>\t<Numeric code>\t<Minor unit>[\t<Cutover Date>\t<new Currency code>\t<new Numeric code>\t<new Minor unit>]
  * The Cutover Date is given in SimpleDateFormat's 'yyyy-MM-dd-HH-mm-ss' format in the GMT time zone.
@@ -69,7 +69,7 @@ public class ValidateISO4217 {
 
     // Input golden-data file
     private static final File dataFile = new File(System.getProperty(
-            "test.src", "."), "ISO4217-codes.txt");
+            "test.src", "."), "ISO4217-list-one.txt");
     // Code statuses
     private static final byte UNDEFINED = 0;
     private static final byte DEFINED = 1;

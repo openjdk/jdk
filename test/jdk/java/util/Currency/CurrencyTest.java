@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CurrencyTest {
 
-    // 'ISO4217-codes' should be up-to-date before testing
+    // 'ISO4217-list-one.txt' should be up-to-date before testing
     @Test
     public void dataVersionTest() {
         CheckDataVersion.check();
