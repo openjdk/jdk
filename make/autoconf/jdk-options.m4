@@ -582,10 +582,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   # produced from the product image. If set to 'true, changes the *default*
   # of packaged modules to 'false'.
   #
-  UTIL_ARG_ENABLE(NAME: runtime-link-image, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: linkable-runtime, DEFAULT: false,
       RESULT: JLINK_PRODUCE_LINKABLE_RUNTIME,
-      DESC: [enable producing an image suitable for runtime linking],
-      CHECKING_MSG: [whether or not an image suitable for runtime linking should be produced])
+      DESC: [enable JDK linkable runtime],
+      CHECKING_MSG: [whether or not JDK linkable runtime should be produced])
   AC_SUBST(JLINK_PRODUCE_LINKABLE_RUNTIME)
 
   if test "x$JLINK_PRODUCE_LINKABLE_RUNTIME" = xtrue; then
