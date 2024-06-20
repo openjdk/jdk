@@ -3928,7 +3928,7 @@ int MacroAssembler::max_patchable_far_call_stub_size() {
   if (UseTrampolines) {
     return instruction_size + MacroAssembler::NativeShortCall::trampoline_size;
   }
-  return 2 * wordSize;
+  return instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {
