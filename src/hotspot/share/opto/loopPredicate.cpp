@@ -1303,7 +1303,6 @@ void PhaseIdealLoop::eliminate_hoisted_range_check(IfTrueNode* hoisted_check_pro
   rewire_safe_outputs_to_dominator(hoisted_check_proj, template_assertion_predicate_proj, true);
 }
 
-
 // Each newly created Hoisted Check Predicate is accompanied by two Template Assertion Predicates. Later, we initialize
 // them by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub
 // loops are removed properly.
