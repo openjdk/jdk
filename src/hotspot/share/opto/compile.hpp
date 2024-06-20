@@ -848,15 +848,15 @@ private:
       return false;
     }
     if (StressBailout && !no_stress_bailout) {
-      return fail_randomly(StressBailoutProbability);
+      return fail_randomly();
     }
 #endif
     return false;
   }
 
 #ifdef ASSERT
-  bool fail_randomly(uint invprob) {
-    if (!_stress_seed_is_initialized || (random() % invprob)) {
+  bool fail_randomly() {
+    if (!_stress_seed_is_initialized || (random() % StressBailoutProbability)) {
       return false;
     }
     record_failure("StressBailout");
