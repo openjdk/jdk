@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,6 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
-// Do NOT remove the opaque node until no more loop opts can happen.
-Node* Opaque3Node::Identity(PhaseGVN* phase) {
-  if (phase->C->post_loop_opts_phase()) {
-    return in(1);
-  } else {
-    phase->C->record_for_post_loop_opts_igvn(this);
-  }
-  return this;
-}
-
 #ifdef ASSERT
 CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   Node* iff = if_node();
@@ -90,12 +80,6 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   assert(bol->Opcode() == Op_Bool, "");
   Node* iff = bol->unique_out();
   return iff->as_If();
-}
-
-// Do not allow value-numbering
-uint Opaque3Node::hash() const { return NO_HASH; }
-bool Opaque3Node::cmp(const Node &n) const {
-  return (&n == this);          // Always fail except on self
 }
 
 const Type* Opaque4Node::Value(PhaseGVN* phase) const {

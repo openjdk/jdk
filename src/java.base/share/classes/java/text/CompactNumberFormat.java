@@ -1736,7 +1736,7 @@ public final class CompactNumberFormat extends NumberFormat {
         // If parse integer only is true and the parsing is broken at
         // decimal point, then pass/ignore all digits and move pointer
         // at the start of suffix, to process the suffix part
-        if (isParseIntegerOnly()
+        if (isParseIntegerOnly() && position < text.length()
                 && text.charAt(position) == symbols.getDecimalSeparator()) {
             position++; // Pass decimal character
             for (; position < text.length(); ++position) {
