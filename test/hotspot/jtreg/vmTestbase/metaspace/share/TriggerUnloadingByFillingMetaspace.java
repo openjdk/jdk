@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.gc;
+package metaspace.share;
 
 import nsk.share.test.ExecutionController;
 import nsk.share.gc.gp.classload.GeneratedClassProducer;
