@@ -314,15 +314,18 @@ ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment)
   return result;
 }
 
-
-ReservedSpace
-ReservedSpace::last_part(size_t partition_size, size_t alignment) {
+ReservedSpace ReservedSpace::last_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
   ReservedSpace result(base() + partition_size, size() - partition_size,
                        alignment, page_size(), special(), executable());
   return result;
 }
 
+ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, size_t alignment) {
+  assert(offset + partition_size <= size(), "partition failed");
+  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable());
+  return result;
+}
 
 size_t ReservedSpace::page_align_size_up(size_t size) {
   return align_up(size, os::vm_page_size());

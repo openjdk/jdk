@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -268,14 +268,16 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
        test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a); then
+       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
 
-      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib or $BINUTILS_INSTALL_DIR/lib64
-      # depending on system setup
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib, $BINUTILS_INSTALL_DIR/lib32
+      # or $BINUTILS_INSTALL_DIR/lib64, depending on system setup
       LIBIBERTY_LIB=""
       if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
         LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
+      elif test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a; then
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib32/libiberty.a"
       else
         LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib64/libiberty.a"
       fi

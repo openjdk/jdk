@@ -34,6 +34,9 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -349,36 +352,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
   __ verify_tlab();
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register thread,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register t1) {
-  if (!thread->is_valid()) {
-#ifdef _LP64
-    thread = r15_thread;
-#else
-    assert(t1->is_valid(), "need temp reg");
-    thread = t1;
-    __ get_thread(thread);
-#endif
-  }
-
-#ifdef _LP64
-  if (var_size_in_bytes->is_valid()) {
-    __ addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    __ addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-#else
-  if (var_size_in_bytes->is_valid()) {
-    __ addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    __ addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-  __ adcl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())+4), 0);
-#endif
-}
-
 #ifdef _LP64
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -488,3 +461,273 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ testptr(obj, obj);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
 }
+
+#ifdef COMPILER2
+
+#ifdef _LP64
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_XMMRegister()) {
+    opto_reg &= ~15;
+    switch (node->ideal_reg()) {
+    case Op_VecX:
+      opto_reg |= 2;
+      break;
+    case Op_VecY:
+      opto_reg |= 4;
+      break;
+    case Op_VecZ:
+      opto_reg |= 8;
+      break;
+    default:
+      opto_reg |= 1;
+      break;
+    }
+  }
+
+  return opto_reg;
+}
+
+// We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
+extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
+                            int stack_offset, int reg, uint ireg, outputStream* st);
+
+#undef __
+#define __ _masm->
+
+int SaveLiveRegisters::xmm_compare_register_size(XMMRegisterData* left, XMMRegisterData* right) {
+  if (left->_size == right->_size) {
+    return 0;
+  }
+
+  return (left->_size < right->_size) ? -1 : 1;
+}
+
+int SaveLiveRegisters::xmm_slot_size(OptoReg::Name opto_reg) {
+  // The low order 4 bytes denote what size of the XMM register is live
+  return (opto_reg & 15) << 3;
+}
+
+uint SaveLiveRegisters::xmm_ideal_reg_for_size(int reg_size) {
+  switch (reg_size) {
+  case 8:
+    return Op_VecD;
+  case 16:
+    return Op_VecX;
+  case 32:
+    return Op_VecY;
+  case 64:
+    return Op_VecZ;
+  default:
+    fatal("Invalid register size %d", reg_size);
+    return 0;
+  }
+}
+
+bool SaveLiveRegisters::xmm_needs_vzeroupper() const {
+  return _xmm_registers.is_nonempty() && _xmm_registers.at(0)._size > 16;
+}
+
+void SaveLiveRegisters::xmm_register_save(const XMMRegisterData& reg_data) {
+  const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
+  const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
+  _spill_offset -= reg_data._size;
+  C2_MacroAssembler c2_masm(__ code());
+  vec_spill_helper(&c2_masm, false /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+}
+
+void SaveLiveRegisters::xmm_register_restore(const XMMRegisterData& reg_data) {
+  const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
+  const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
+  C2_MacroAssembler c2_masm(__ code());
+  vec_spill_helper(&c2_masm, true /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+  _spill_offset += reg_data._size;
+}
+
+void SaveLiveRegisters::gp_register_save(Register reg) {
+  _spill_offset -= 8;
+  __ movq(Address(rsp, _spill_offset), reg);
+}
+
+void SaveLiveRegisters::opmask_register_save(KRegister reg) {
+  _spill_offset -= 8;
+  __ kmov(Address(rsp, _spill_offset), reg);
+}
+
+void SaveLiveRegisters::gp_register_restore(Register reg) {
+  __ movq(reg, Address(rsp, _spill_offset));
+  _spill_offset += 8;
+}
+
+void SaveLiveRegisters::opmask_register_restore(KRegister reg) {
+  __ kmov(reg, Address(rsp, _spill_offset));
+  _spill_offset += 8;
+}
+
+void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
+  // Create mask of caller saved registers that need to
+  // be saved/restored if live
+  RegMask caller_saved;
+  caller_saved.Insert(OptoReg::as_OptoReg(rax->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(r8->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
+  caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+
+  int gp_spill_size = 0;
+  int opmask_spill_size = 0;
+  int xmm_spill_size = 0;
+
+  // Record registers that needs to be saved/restored
+  RegMaskIterator rmi(stub->preserve_set());
+  while (rmi.has_next()) {
+    const OptoReg::Name opto_reg = rmi.next();
+    const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+
+    if (vm_reg->is_Register()) {
+      if (caller_saved.Member(opto_reg)) {
+        _gp_registers.append(vm_reg->as_Register());
+        gp_spill_size += 8;
+      }
+    } else if (vm_reg->is_KRegister()) {
+      // All opmask registers are caller saved, thus spill the ones
+      // which are live.
+      if (_opmask_registers.find(vm_reg->as_KRegister()) == -1) {
+        _opmask_registers.append(vm_reg->as_KRegister());
+        opmask_spill_size += 8;
+      }
+    } else if (vm_reg->is_XMMRegister()) {
+      // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
+      const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~15);
+      const int reg_size = xmm_slot_size(opto_reg);
+      const XMMRegisterData reg_data = { vm_reg_base->as_XMMRegister(), reg_size };
+      const int reg_index = _xmm_registers.find(reg_data);
+      if (reg_index == -1) {
+        // Not previously appended
+        _xmm_registers.append(reg_data);
+        xmm_spill_size += reg_size;
+      } else {
+        // Previously appended, update size
+        const int reg_size_prev = _xmm_registers.at(reg_index)._size;
+        if (reg_size > reg_size_prev) {
+          _xmm_registers.at_put(reg_index, reg_data);
+          xmm_spill_size += reg_size - reg_size_prev;
+        }
+      }
+    } else {
+      fatal("Unexpected register type");
+    }
+  }
+
+  // Sort by size, largest first
+  _xmm_registers.sort(xmm_compare_register_size);
+
+  // On Windows, the caller reserves stack space for spilling register arguments
+  const int arg_spill_size = frame::arg_reg_save_area_bytes;
+
+  // Stack pointer must be 16 bytes aligned for the call
+  _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
+}
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
+  : _masm(masm),
+    _gp_registers(),
+    _opmask_registers(),
+    _xmm_registers(),
+    _spill_size(0),
+    _spill_offset(0) {
+
+  //
+  // Stack layout after registers have been spilled:
+  //
+  // | ...            | original rsp, 16 bytes aligned
+  // ------------------
+  // | zmm0 high      |
+  // | ...            |
+  // | zmm0 low       | 16 bytes aligned
+  // | ...            |
+  // | ymm1 high      |
+  // | ...            |
+  // | ymm1 low       | 16 bytes aligned
+  // | ...            |
+  // | xmmN high      |
+  // | ...            |
+  // | xmmN low       | 8 bytes aligned
+  // | reg0           | 8 bytes aligned
+  // | reg1           |
+  // | ...            |
+  // | regN           | new rsp, if 16 bytes aligned
+  // | <padding>      | else new rsp, 16 bytes aligned
+  // ------------------
+  //
+
+  // Figure out what registers to save/restore
+  initialize(stub);
+
+  // Allocate stack space
+  if (_spill_size > 0) {
+    __ subptr(rsp, _spill_size);
+  }
+
+  // Save XMM/YMM/ZMM registers
+  for (int i = 0; i < _xmm_registers.length(); i++) {
+    xmm_register_save(_xmm_registers.at(i));
+  }
+
+  if (xmm_needs_vzeroupper()) {
+    __ vzeroupper();
+  }
+
+  // Save general purpose registers
+  for (int i = 0; i < _gp_registers.length(); i++) {
+    gp_register_save(_gp_registers.at(i));
+  }
+
+  // Save opmask registers
+  for (int i = 0; i < _opmask_registers.length(); i++) {
+    opmask_register_save(_opmask_registers.at(i));
+  }
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  // Restore opmask registers
+  for (int i = _opmask_registers.length() - 1; i >= 0; i--) {
+    opmask_register_restore(_opmask_registers.at(i));
+  }
+
+  // Restore general purpose registers
+  for (int i = _gp_registers.length() - 1; i >= 0; i--) {
+    gp_register_restore(_gp_registers.at(i));
+  }
+
+  __ vzeroupper();
+
+  // Restore XMM/YMM/ZMM registers
+  for (int i = _xmm_registers.length() - 1; i >= 0; i--) {
+    xmm_register_restore(_xmm_registers.at(i));
+  }
+
+  // Free stack space
+  if (_spill_size > 0) {
+    __ addptr(rsp, _spill_size);
+  }
+}
+
+#else // !_LP64
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  Unimplemented(); // This must be implemented to support late barrier expansion.
+}
+
+#endif // _LP64
+
+#endif // COMPILER2

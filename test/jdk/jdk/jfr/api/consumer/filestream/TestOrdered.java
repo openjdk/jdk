@@ -88,44 +88,58 @@ public class TestOrdered {
 
     private static void testSetOrderedTrue(Path p) throws Exception {
         for (boolean reuse : BOOLEAN_STATES) {
+            System.out.println();
+            System.out.println("Testing: testSetOrderedTrue reuse = " + reuse);
             AtomicReference<Instant> timestamp = new AtomicReference<>(Instant.MIN);
+            AtomicBoolean unordered = new AtomicBoolean(false);
             try (EventStream es = EventStream.openFile(p)) {
                 es.setReuse(reuse);
                 es.setOrdered(true);
                 es.onEvent(e -> {
                     Instant endTime = e.getEndTime();
+                    printTimestamp(endTime);
                     if (endTime.isBefore(timestamp.get())) {
-                        throw new Error("Events are not ordered! Reuse = " + reuse);
+                        unordered.set(true);
                     }
                     timestamp.set(endTime);
                 });
                 es.start();
+            }
+            if (unordered.get()) {
+                throw new Exception("Events are not ordered! Reuse = " + reuse);
             }
         }
     }
 
     private static void testSetOrderedFalse(Path p) throws Exception {
         for (boolean reuse : BOOLEAN_STATES) {
+            System.out.println();
+            System.out.println("Testing: testSetOrderedFalse reuse = " + reuse);
             AtomicReference<Instant> timestamp = new AtomicReference<>(Instant.MIN);
-            AtomicBoolean unoreded = new AtomicBoolean(false);
+            AtomicBoolean unordered = new AtomicBoolean(false);
             try (EventStream es = EventStream.openFile(p)) {
                 es.setReuse(reuse);
                 es.setOrdered(false);
                 es.onEvent(e -> {
                     Instant endTime = e.getEndTime();
-                    System.out.println("testSetOrderedFalse: endTime: " + endTime);
+                    printTimestamp(endTime);
                     if (endTime.isBefore(timestamp.get())) {
-                        unoreded.set(true);
-                        es.close();
+                        unordered.set(true);
                     }
                     timestamp.set(endTime);
                 });
                 es.start();
-                if (!unoreded.get()) {
+                if (!unordered.get()) {
                     throw new Exception("Expected at least some events to be out of order! Reuse = " + reuse);
                 }
             }
         }
+    }
+
+    private static void printTimestamp(Instant timestamp) {
+        long seconds = timestamp.getEpochSecond();
+        long nanos = timestamp.getNano();
+        System.out.println(timestamp + " seconds = " + seconds + " nanos = " + nanos);
     }
 
     private static Path makeUnorderedRecording() throws Exception {

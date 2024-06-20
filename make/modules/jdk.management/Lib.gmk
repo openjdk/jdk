@@ -46,12 +46,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
     CFLAGS := $(LIBMANAGEMENT_EXT_CFLAGS), \
-    JDK_LIBS := $(JDKLIB_LIBS), \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat,\
     LIBS_windows := advapi32.lib psapi.lib, \
 ))
-
-$(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)

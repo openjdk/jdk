@@ -56,7 +56,7 @@
 
 #define COMPLAIN LOG
 
-
+void sleep_ms(int millis);
 const char* TranslateState(jint flags);
 const char* TranslateError(jvmtiError err);
 
@@ -378,6 +378,24 @@ find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
   }
   deallocate(jvmti, jni, (void*)methods);
   return method;
+}
+
+// Wait for target thread to reach the required JVMTI thread state.
+// The state jint bitmask is returned by the JVMTI GetThreadState.
+// Some examples are:
+// - JVMTI_THREAD_STATE_WAITING
+// - JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER
+// - JVMTI_THREAD_STATE_SLEEPING
+static void
+wait_for_state(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jint exp_state) {
+  while (true) {
+    // Allow a bitmask to designate expected thread state. E.g., if two bits are expected
+    // than check they both are present in the state mask returned by JVMTI GetThreadState.
+    if ((get_thread_state(jvmti, jni, thread) & exp_state) == exp_state) {
+      break;
+    }
+    sleep_ms(100);
+  }
 }
 
 #define MAX_FRAME_COUNT_PRINT_STACK_TRACE 200

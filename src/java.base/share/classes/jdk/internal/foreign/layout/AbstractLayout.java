@@ -188,6 +188,10 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         if (this instanceof ValueLayout vl && elements.length == 0) {
             return vl.varHandle(); // fast path
         }
+        return varHandleInternal(elements);
+    }
+
+    public VarHandle varHandleInternal(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }

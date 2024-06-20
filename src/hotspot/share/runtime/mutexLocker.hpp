@@ -32,7 +32,7 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
-extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
+extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;
@@ -96,7 +96,6 @@ extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
-extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets

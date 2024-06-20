@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
   // Compiled frame
   CodeBlob* cb = f->cb();
   if (cb != nullptr) {
-    if (cb->is_compiled()) {
-      CompiledMethod* nm = (CompiledMethod*)cb;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
       return new compiledVFrame(f, reg_map, thread, nm);
     }
 

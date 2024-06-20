@@ -308,7 +308,8 @@ GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slo
   int num_secondaries = num_extra_slots + 2 + num_elem_supers;
   if (num_secondaries == 2) {
     // Must share this for correct bootstrapping!
-    set_secondary_supers(Universe::the_array_interfaces_array());
+    set_secondary_supers(Universe::the_array_interfaces_array(),
+                         Universe::the_array_interfaces_bitmap());
     return nullptr;
   } else {
     GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(num_elem_supers+2);

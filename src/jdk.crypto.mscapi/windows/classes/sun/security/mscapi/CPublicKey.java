@@ -114,9 +114,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
-            sb.append(algorithm).append("PublicKey [size=").append(keyLength)
-                    .append("]\n  ECPoint: ").append(getW())
+            StringBuffer sb = new StringBuffer(super.toString());
+            sb.append("\n ECPoint: ").append(getW())
                     .append("\n  params: ").append(getParams());
             return sb.toString();
         }
@@ -135,16 +134,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
-            sb.append(algorithm).append("PublicKey [size=").append(keyLength)
-                    .append(" bits, type=");
-            if (handles.hCryptKey != 0) {
-                sb.append(getKeyType(handles.hCryptKey))
-                        .append(", container=").append(getContainerName(handles.hCryptProv));
-            } else {
-                sb.append("CNG");
-            }
-            sb.append("]\n  modulus: ").append(getModulus())
+            StringBuffer sb = new StringBuffer(super.toString());
+            sb.append("\n  modulus: ").append(getModulus())
                     .append("\n  public exponent: ").append(getPublicExponent());
             return sb.toString();
         }
@@ -215,7 +206,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
 
     protected CPublicKey(
             String alg, NativeHandles handles, int keyLength) {
-        super(alg, handles, keyLength);
+        super(alg, handles, keyLength, true);
     }
 
     @Override

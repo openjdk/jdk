@@ -233,7 +233,7 @@ public class OpenModulesTest extends ModuleTestBase {
 
         Path miClass = m1Classes.resolve("module-info.class");
         ClassModel cm = ClassFile.of().parse(miClass);
-        ModuleAttribute module = cm.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute module = cm.findAttribute(Attributes.module()).orElseThrow();
         ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
                                                           module.moduleFlagsMask() | ClassFile.ACC_OPEN,
                                                           module.moduleVersion().orElse(null),

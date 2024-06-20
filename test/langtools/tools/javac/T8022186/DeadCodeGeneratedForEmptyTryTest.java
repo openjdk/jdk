@@ -64,7 +64,7 @@ public class DeadCodeGeneratedForEmptyTryTest {
         constantPool = classFile.constantPool();
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().equalsString("methodToLookFor")) {
-                CodeAttribute codeAtt = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAtt = method.findAttribute(Attributes.code()).orElseThrow();
                 codeAtt.elementList().stream()
                         .filter(ce -> ce instanceof Instruction)
                         .forEach(ins -> checkIndirectRefToString((Instruction) ins));

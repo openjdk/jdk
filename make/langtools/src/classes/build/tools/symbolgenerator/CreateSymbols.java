@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,6 +340,10 @@ public class CreateSymbols {
             "Ljdk/internal/javac/PreviewFeature;";
     private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
             "Ljdk/internal/PreviewFeature+Annotation;";
+    private static final String RESTRICTED_ANNOTATION =
+            "Ljdk/internal/javac/Restricted;";
+    private static final String RESTRICTED_ANNOTATION_INTERNAL =
+            "Ljdk/internal/javac/Restricted+Annotation;";
     private static final String VALUE_BASED_ANNOTATION =
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
@@ -349,7 +353,8 @@ public class CreateSymbols {
                     "Lsun/Proprietary+Annotation;",
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
-                    VALUE_BASED_ANNOTATION));
+                    VALUE_BASED_ANNOTATION,
+                    RESTRICTED_ANNOTATION));
 
     private void stripNonExistentAnnotations(LoadDescriptions data) {
         Set<String> allClasses = data.classes.name2Class.keySet();
@@ -970,7 +975,7 @@ public class CreateSymbols {
         }
         if (header.moduleMainClass != null) {
             int attrIdx = addString(cp, Attribute.ModuleMainClass);
-            int targetIdx = addString(cp, header.moduleMainClass);
+            int targetIdx = addClassName(cp, header.moduleMainClass);
             attributes.put(Attribute.ModuleMainClass,
                            new ModuleMainClass_attribute(attrIdx, targetIdx));
         }
@@ -1245,6 +1250,12 @@ public class CreateSymbols {
             //the non-public ValueBased annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
+        if (RESTRICTED_ANNOTATION.equals(annotationType)) {
+            //the non-public Restricted annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = RESTRICTED_ANNOTATION_INTERNAL;
         }
 
         return new Annotation(null,

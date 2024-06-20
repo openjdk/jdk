@@ -819,7 +819,7 @@ public class Log extends AbstractLog {
         // backdoor hook for testing, should transition to use -XDrawDiagnostics
         private static boolean useRawMessages = false;
 
-/***************************************************************************
+/* *************************************************************************
  * raw error messages without internationalization; used for experimentation
  * and quick prototyping
  ***************************************************************************/

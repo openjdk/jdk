@@ -306,6 +306,7 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
@@ -334,6 +335,7 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {

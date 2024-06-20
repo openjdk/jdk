@@ -68,9 +68,9 @@ class OneToOneTest {
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
 
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                                  .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                                          .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                                          .returnInstruction(TypeKind.VoidType)
+                                  .withCode(codeb -> codeb.aload(0)
+                                                          .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                                          .return_()
                                   )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
@@ -80,25 +80,25 @@ class OneToOneTest {
                                                 Label loopEnd = c0.newLabel();
                                                 int fac = 1;
                                                 int i = 2;
-                                                c0.constantInstruction(ICONST_1, 1)         // 0
-                                                  .storeInstruction(TypeKind.IntType, fac)        // 1
-                                                  .constantInstruction(ICONST_1, 1)         // 2
-                                                  .storeInstruction(TypeKind.IntType, i)          // 3
+                                                c0.iconst_1()         // 0
+                                                  .istore(fac)        // 1
+                                                  .iconst_1()         // 2
+                                                  .istore(i)          // 3
                                                   .labelBinding(loopTop)
-                                                  .loadInstruction(TypeKind.IntType, i)           // 4
-                                                  .constantInstruction(BIPUSH, 10)         // 5
-                                                  .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                                  .loadInstruction(TypeKind.IntType, fac)         // 7
-                                                  .loadInstruction(TypeKind.IntType, i)           // 8
-                                                  .operatorInstruction(IMUL)             // 9
-                                                  .storeInstruction(TypeKind.IntType, fac)        // 10
-                                                  .incrementInstruction(i, 1)    // 11
-                                                  .branchInstruction(GOTO, loopTop)     // 12
+                                                  .iload(i)           // 4
+                                                  .bipush(10)         // 5
+                                                  .if_icmpge(loopEnd) // 6
+                                                  .iload(fac)         // 7
+                                                  .iload(i)           // 8
+                                                  .imul()             // 9
+                                                  .istore(fac)        // 10
+                                                  .iinc(i, 1)         // 11
+                                                  .goto_(loopTop)     // 12
                                                   .labelBinding(loopEnd)
-                                                  .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                                  .loadInstruction(TypeKind.IntType, fac)
-                                                  .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_INT_VOID, false)  // 15
-                                                  .returnInstruction(TypeKind.VoidType);
+                                                  .getstatic(CD_System, "out", CD_PrintStream)   // 13
+                                                  .iload(fac)
+                                                  .invokevirtual(CD_PrintStream, "println", MTD_INT_VOID)  // 15
+                                                  .return_();
                                             }
                           )
               );

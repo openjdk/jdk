@@ -98,8 +98,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
   product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
-  product(bool, UseRVC, false, "Use RVC instructions")                           \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
+  product(bool, UseRVA23U64, false, EXPERIMENTAL, "Use RVA23U64 profile")        \
+  product(bool, UseRVC, false, "Use RVC instructions")                           \
   product(bool, UseRVV, false, "Use RVV instructions")                           \
   product(bool, UseZba, false, "Use Zba instructions")                           \
   product(bool, UseZbb, false, "Use Zbb instructions")                           \
@@ -114,6 +115,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
+  product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
   product(bool, UseZvfh, false, EXPERIMENTAL, "Use Zvfh instructions")           \
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \

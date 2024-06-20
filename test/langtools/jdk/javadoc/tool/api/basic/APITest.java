@@ -235,7 +235,7 @@ class APITest {
             "resource-files/fonts/DejaVuLGCSerif-Italic.woff2",
             "resource-files/fonts/DejaVuLGCSerif.woff",
             "resource-files/fonts/DejaVuLGCSerif.woff2",
-            "script-files/jquery-3.6.1.min.js",
+            "script-files/jquery-3.7.1.min.js",
             "script-files/jquery-ui.min.js",
             "script-files/script.js",
             "script-files/search.js",

@@ -85,8 +85,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
                                                                         \
   product(bool, NearCpool, true,                                        \
          "constant pool is close to instructions")                      \
-  product(bool, UseNeon, false,                                         \
-          "Use Neon for CRC32 computation")                             \
   product(bool, UseCRC32, false,                                        \
           "Use CRC32 instructions for CRC32 computation")               \
   product(bool, UseCryptoPmullForCRC32, false,                          \
@@ -126,6 +124,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
+  product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
+          "Always merge DMB instructions in code emission")             \
 
 // end of ARCH_FLAGS
 

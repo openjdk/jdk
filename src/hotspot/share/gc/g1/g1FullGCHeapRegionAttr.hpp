@@ -34,7 +34,7 @@
 // the table specifies whether a Full GC cycle should be compacting or skip
 // compacting a region.
 // Reasons for not compacting a region:
-// (1) the HeapRegion itself can not be moved during this phase of the full gc
+// (1) the G1HeapRegion itself can not be moved during this phase of the full gc
 //     (e.g. Humongous regions).
 // (2) the occupancy of the region is too high to be considered eligible for compaction.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {

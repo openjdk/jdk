@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 /*
  * @test
  * @key headful
- * @bug 8210807
+ * @bug 8210807 8322140 8322135
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if JTable can be printed when JScrollPane added to it.
@@ -50,32 +49,27 @@ import javax.swing.table.DefaultTableModel;
  */
 
 public class JTableScrollPrintTest {
-    public static JFrame frame;
-    public static PassFailJFrame passFailJFrame;
-
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                initialize();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        passFailJFrame.awaitAndCheck();
-    }
-
-    public static void initialize() throws Exception {
-        final String INSTRUCTIONS = """
+        String INSTRUCTIONS = """
                 Instructions to Test:
                 1. Print table onto Paper/PDF, using the Print Dialog.
                 2. If entire table is printed, then the Test is PASS.
                 3. If table is partially printed without table cells,
                 then the Test is FAIL.
                 """;
-        TestTable testTable = new TestTable(true);
-        frame = new JFrame("JTable Print Test");
-        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 6, 35);
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(6)
+                .columns(35)
+                .testUI(JTableScrollPrintTest::initialize)
+                .build()
+                .awaitAndCheck();
+    }
 
+    public static JFrame initialize() {
+        TestTable testTable = new TestTable(true);
+        JFrame frame = new JFrame("JTable Print Test");
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.VERTICAL);
         frame.add(testTable);
@@ -83,6 +77,7 @@ public class JTableScrollPrintTest {
         frame.setVisible(true);
         PrintUtilities printerJob = new PrintUtilities(testTable);
         printerJob.print("Test BackingStore Image Print");
+        return frame;
     }
 
     public static class TestTable extends JPanel {
@@ -103,7 +98,7 @@ public class JTableScrollPrintTest {
 
             JTable table = new JTable(model);
 
-            if (useScrollPane == true) {
+            if (useScrollPane) {
                 JScrollPane sp = new JScrollPane(table,
                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -117,7 +112,7 @@ public class JTableScrollPrintTest {
     }
 
     static class PrintUtilities implements Printable {
-        private Component componentToBePrinted;
+        private final Component componentToBePrinted;
 
         public void printComponent(Component c, String jobname) {
             new PrintUtilities(c).print(jobname);

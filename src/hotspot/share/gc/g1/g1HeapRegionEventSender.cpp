@@ -32,7 +32,7 @@
 
 class DumpEventInfoClosure : public HeapRegionClosure {
 public:
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     EventG1HeapRegionInformation evt;
     evt.set_index(r->hrm_index());
     evt.set_type(r->get_trace_type());

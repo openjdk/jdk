@@ -49,6 +49,40 @@ public class AMD64TestAssembler extends TestAssembler {
     private static final Register scratchRegister = AMD64.r12;
     private static final Register doubleScratch = AMD64.xmm15;
 
+    /**
+     * The x86 condition codes used for conditional jumps/moves.
+     */
+    public enum ConditionFlag {
+        Zero(0x4, "|zero|"),
+        NotZero(0x5, "|nzero|"),
+        Equal(0x4, "="),
+        NotEqual(0x5, "!="),
+        Less(0xc, "<"),
+        LessEqual(0xe, "<="),
+        Greater(0xf, ">"),
+        GreaterEqual(0xd, ">="),
+        Below(0x2, "|<|"),
+        BelowEqual(0x6, "|<=|"),
+        Above(0x7, "|>|"),
+        AboveEqual(0x3, "|>=|"),
+        Overflow(0x0, "|of|"),
+        NoOverflow(0x1, "|nof|"),
+        CarrySet(0x2, "|carry|"),
+        CarryClear(0x3, "|ncarry|"),
+        Negative(0x8, "|neg|"),
+        Positive(0x9, "|pos|"),
+        Parity(0xa, "|par|"),
+        NoParity(0xb, "|npar|");
+
+        public final int value;
+        public final String operator;
+
+        ConditionFlag(int value, String operator) {
+            this.value = value;
+            this.operator = operator;
+        }
+    }
+
     public AMD64TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
         super(codeCache, config, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
     }
@@ -63,6 +97,62 @@ public class AMD64TestAssembler extends TestAssembler {
         code.emitByte(0x00);
     }
 
+    /**
+     * Emit the expected patchable code sequence for the nmethod entry barrier. The int sized
+     * payload must be naturally aligned so it can be patched atomically.
+     */
+    private void emitNMethodEntryCompare(int displacement) {
+        // cmp dword ptr [r15 + <displacement>], 0x00000000
+        // 41 81 7f <db> 00 00 00 00
+        code.emitByte(0x41);
+        code.emitByte(0x81);
+        code.emitByte(0x7f);
+        check(isByte(displacement), "expected byte sized displacement: 0x%x", displacement);
+        code.emitByte(displacement & 0xff);
+        check(code.position() % 4 == 0, "must be aligned");
+        code.emitInt(0);
+    }
+
+    /**
+     * Emits a long (i.e. 6 byte) format conditional branch.
+     *
+     * @param offset the offset of the branch target wrt the start of the branch instruction
+     */
+    private void emitBranch(ConditionFlag condition, int offset) {
+        final int longSize = 6;
+        int disp32 = offset - longSize;
+
+        // 0000 1111 1000 tttn #32-bit disp
+        check(isInt(disp32), "must be 32bit disp: %d", disp32);
+        code.emitByte(0x0F);
+        code.emitByte(0x80 | condition.value);
+        code.emitInt(disp32);
+    }
+
+    public void emitAlign(int modulus) {
+        while (code.position() % modulus != 0) {
+            code.emitByte(0x90);
+        }
+    }
+
+    private void emitNMethodEntryBarrier() {
+        // The following code sequence must be emitted in exactly this fashion as HotSpot
+        // will check that the barrier is the expected code sequence.
+        emitAlign(4);
+        recordMark(config.MARKID_FRAME_COMPLETE);
+        recordMark(config.MARKID_ENTRY_BARRIER_PATCH);
+        emitNMethodEntryCompare(config.threadDisarmedOffset);
+        int branchOffset;
+        try (Bookmark bm = bookmark()) {
+            int pos = code.position();
+            emitBranch(ConditionFlag.Equal, 0);
+            emitCall(config.nmethodEntryBarrier);
+            branchOffset = code.position() - pos;
+        }
+        emitBranch(ConditionFlag.Equal, branchOffset);
+        emitCall(config.nmethodEntryBarrier);
+    }
+
     @Override
     public void emitPrologue() {
         // WARNING: Initial instruction MUST be 5 bytes or longer so that
@@ -71,6 +161,7 @@ public class AMD64TestAssembler extends TestAssembler {
         emitFatNop();
         code.emitByte(0x50 | AMD64.rbp.encoding);  // PUSH rbp
         emitMove(true, AMD64.rbp, AMD64.rsp);      // MOV rbp, rsp
+        emitNMethodEntryBarrier();
         setDeoptRescueSlot(newStackSlot(AMD64Kind.QWORD));
     }
 
@@ -414,7 +505,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public void emitCall(long addr) {
-        Register target = emitLoadLong(addr);
+        Register target = emitLoadLong(AMD64.rax, addr);
         code.emitByte(0xFF); // CALL r/m64
         int enc = target.encoding;
         if (enc >= 8) {

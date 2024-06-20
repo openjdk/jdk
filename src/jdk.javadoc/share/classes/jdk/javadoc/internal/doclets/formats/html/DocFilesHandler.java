@@ -158,8 +158,9 @@ public class DocFilesHandler {
                     configuration.messages.warning("doclet.Copy_Overwrite_warning",
                             srcfile.getPath(), dstdir.getPath());
                 } else {
-                    if (Utils.toLowerCase(srcfile.getPath()).endsWith(".html")) {
-                        handleHtmlFile(srcfile, dstDocPath);
+                    var path = Utils.toLowerCase(srcfile.getPath());
+                    if (path.endsWith(".html") || path.endsWith(".md")) {
+                        handleDocFile(srcfile, dstDocPath);
                     } else {
                         configuration.messages.notice("doclet.Copying_File_0_To_Dir_1",
                                 srcfile.getPath(), dstdir.getPath());
@@ -186,10 +187,10 @@ public class DocFilesHandler {
         }
     }
 
-    private void handleHtmlFile(DocFile srcFile, DocPath dstPath) throws DocletException {
+    private void handleDocFile(DocFile srcFile, DocPath dstPath) throws DocletException {
         var fileObject = srcFile.getFileObject();
         var dfElement = new DocFileElement(utils, element, fileObject);
-        var path = dstPath.resolve(srcFile.getName());
+        var path = dstPath.resolve(srcFile.getName().replaceAll("\\.[a-z]+$", ".html"));
 
         writerFactory.newDocFileWriter(path, dfElement).buildPage();
     }
@@ -214,19 +215,6 @@ public class DocFilesHandler {
         }
 
         @Override
-        protected Navigation getNavBar(PageMode pageMode, Element element) {
-            List<Content> subnavLinks = new ArrayList<>();
-            var pkg = dfElement.getPackageElement();
-            if (configuration.showModules) {
-                subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(element), pkg.isUnnamed()));
-            }
-            if (!pkg.isUnnamed()) {
-                subnavLinks.add(getBreadcrumbLink(pkg, true));
-            }
-            return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
-        }
-
-        @Override
         public void buildPage() throws DocFileIOException {
 
             List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
@@ -246,8 +234,8 @@ public class DocFilesHandler {
             printHtmlDocument(List.of(), null, localTagsContent, List.of(), htmlContent);
         }
 
-        private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {
-            String t = configuration.utils.getHTMLTitle(element);
+        private String getWindowTitle(HtmlDocletWriter docletWriter, DocFileElement element) {
+            var t = docletWriter.getFileTitle(element);
             return docletWriter.getWindowTitle(t);
         }
 

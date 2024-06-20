@@ -131,6 +131,8 @@ public sealed interface ConstantInstruction extends Instruction {
      *
      * @param op the opcode for the specific type of intrinsic constant instruction,
      *           which must be of kind {@link Opcode.Kind#CONSTANT}
+     * @throws IllegalArgumentException if the opcode does not represent a constant
+     *                                  with implicit value
      */
     static IntrinsicConstantInstruction ofIntrinsic(Opcode op) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
@@ -145,6 +147,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * @param op the opcode for the specific type of intrinsic constant instruction,
      *           which must be of kind {@link Opcode.Kind#CONSTANT}
      * @param value the constant value
+     * @throws IllegalArgumentException if the opcode is not {@link Opcode#BIPUSH}
+     *                                  or {@link Opcode#SIPUSH}
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
@@ -159,6 +163,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * @param op the opcode for the specific type of load constant instruction,
      *           which must be of kind {@link Opcode.Kind#CONSTANT}
      * @param constant the constant value
+     * @throws IllegalArgumentException if the opcode is not {@link Opcode#LDC},
+     *                                  {@link Opcode#LDC_W}, or {@link Opcode#LDC2_W}
      */
     static LoadConstantInstruction ofLoad(Opcode op, LoadableConstantEntry constant) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);

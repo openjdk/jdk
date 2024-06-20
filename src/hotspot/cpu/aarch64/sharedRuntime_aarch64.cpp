@@ -1038,9 +1038,49 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   __ stop("incorrect sp1");
   __ bind(OK);
 #endif
-
   __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ str(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ ldrw(rscratch1, Address(sp, ContinuationEntry::flags_offset()));
+    __ cbzw(rscratch1, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ ldr(rscratch1, Address(rthread, JavaThread::jni_monitor_count_offset()));
+    __ cbz(rscratch1, L_skip_vthread_code);
+
+    // Save return value potentially containing the exception oop in callee-saved R19.
+    __ mov(r19, r0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    // Restore potential return value.
+    __ mov(r0, r19);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ ldrw(rscratch1, Address(sp, ContinuationEntry::flags_offset()));
+    __ cbzw(rscratch1, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ str(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
 
@@ -1108,8 +1148,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ b(exit);
 
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1173,8 +1212,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
       __ br(r1); // the exception handler
   }
 
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }

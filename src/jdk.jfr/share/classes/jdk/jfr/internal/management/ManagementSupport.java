@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.EventStream;
+import jdk.jfr.internal.JDKEvents;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -57,7 +58,6 @@ import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.consumer.AbstractEventStream;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.FileAccess;
-import jdk.jfr.internal.instrument.JDKEvents;
 
 /**
  * The management API in module jdk.management.jfr should be built on top of the

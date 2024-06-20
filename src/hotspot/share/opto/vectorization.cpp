@@ -202,7 +202,7 @@ void VLoopVPointers::allocate_vpointers_array() {
 
 void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
-  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+  _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
@@ -292,23 +292,40 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
+int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
+  int max_pred_depth = 0;
+  if (!n->is_Phi()) { // ignore backedge
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      if (_vloop.in_bb(pred)) {
+        max_pred_depth = MAX2(max_pred_depth, depth(pred));
+      }
+    }
+  }
+  return max_pred_depth;
+}
+
 // We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
 // before use. With a single pass, we can compute the depth of every node, since we can
 // assume that the depth of all preds is already computed when we compute the depth of use.
 void VLoopDependencyGraph::compute_depth() {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    int max_pred_depth = 0;
-    if (n->is_Phi()) {
-      for (PredsIterator it(*this, n); !it.done(); it.next()) {
-        Node* pred = it.current();
-        if (_vloop.in_bb(pred)) {
-          max_pred_depth = MAX2(max_pred_depth, depth(pred));
-        }
-      }
-    }
-    set_depth(n, max_pred_depth + 1);
+    set_depth(n, find_max_pred_depth(n) + 1);
   }
+
+#ifdef ASSERT
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = find_max_pred_depth(n);
+    if (depth(n) != max_pred_depth + 1) {
+      print();
+      tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
+      n->dump();
+    }
+    assert(depth(n) == max_pred_depth + 1, "must have correct depth");
+  }
+#endif
 }
 
 #ifndef PRODUCT
@@ -393,7 +410,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
+VPointer::VPointer(MemNode* const mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
   _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
@@ -444,7 +461,10 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
       break; // stop looking at addp's
     }
   }
-  if (is_loop_member(adr)) {
+  if (!invariant(adr)) {
+    // The address must be invariant for the current loop. But if we are in a main-loop,
+    // it must also be invariant of the pre-loop, otherwise we cannot use this address
+    // for the pre-loop limit adjustment required for main-loop alignment.
     assert(!valid(), "adr is loop variant");
     return;
   }
@@ -787,10 +807,51 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
+// We use two comparisons, because a subtraction could underflow.
+#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
+  if (a < b) { return -1; }                 \
+  if (a > b) { return  1; }
+
+// To be in the same group, two VPointers must be the same,
+// except for the offset.
+int VPointer::cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2) {
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->base()->_idx,     b->base()->_idx);
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->scale_in_bytes(), b->scale_in_bytes());
+
+  int a_inva_idx = a->invar() == nullptr ? 0 : a->invar()->_idx;
+  int b_inva_idx = b->invar() == nullptr ? 0 : b->invar()->_idx;
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_inva_idx,          b_inva_idx);
+
+  return 0; // equal
+}
+
+// We compare by group, then by offset, and finally by node idx.
+int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
+  int cmp_group = cmp_for_sort_by_group(p1, p2);
+  if (cmp_group != 0) { return cmp_group; }
+
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->offset_in_bytes(), b->offset_in_bytes());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->_idx,       b->mem()->_idx);
+  return 0; // equal
+}
+
 #ifndef PRODUCT
 // Function for printing the fields of a VPointer
 void VPointer::print() const {
   tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
+
+  if (!valid()) {
+    tty->print_cr("invalid]");
+    return;
+  }
+
   tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
   tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
 
