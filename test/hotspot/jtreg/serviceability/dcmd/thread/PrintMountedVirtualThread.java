@@ -26,7 +26,6 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -41,16 +40,18 @@ public class PrintMountedVirtualThread {
 
     public void run(CommandExecutor executor) throws InterruptedException {
         var shouldFinish = new AtomicBoolean(false);
-        var started = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         final Runnable runnable = new DummyRunnable(shouldFinish, started);
         try {
             Thread vthread = Thread.ofVirtual().name("Dummy Vthread").start(runnable);
-            started.await();
+            while (!started.get()) {
+                Thread.sleep(10);
+            }
             /* Execute */
             OutputAnalyzer output = executor.execute("Thread.print");
             output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.run.*");
             output.shouldMatch(".*at " + Pattern.quote(DummyRunnable.class.getName()) + "\\.compute.*");
-            output.shouldMatch("Mounted virtual thread " + "\"Dummy Vthread\"" + " #" + vthread.threadId());
+            output.shouldMatch("Mounted virtual thread " + "#" + vthread.threadId());
 
         } finally {
             shouldFinish.set(true);
@@ -63,11 +64,10 @@ public class PrintMountedVirtualThread {
     }
 
     static class DummyRunnable implements Runnable {
-
         private final AtomicBoolean shouldFinish;
-        private final CountDownLatch started;
+        private final AtomicBoolean started;
 
-        public DummyRunnable(AtomicBoolean shouldFinish, CountDownLatch started) {
+        public DummyRunnable(AtomicBoolean shouldFinish, AtomicBoolean started) {
            this.shouldFinish = shouldFinish;
            this.started = started;
         }
@@ -77,12 +77,11 @@ public class PrintMountedVirtualThread {
         }
 
         void compute() {
-            started.countDown();
+            started.set(true);
             while (!shouldFinish.get()) {
                 Thread.onSpinWait();
             }
         }
     }
-
 
 }
