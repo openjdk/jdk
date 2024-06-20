@@ -205,4 +205,11 @@ class TestJNativeScan extends JNativeScanTestBase {
                 .stdoutShouldBeEmpty()
                 .stderrShouldContain("jnativescan does not accept positional arguments");
     }
+
+    @Test
+    public void testMissingRootModules() {
+        assertFailure(jnativescan("--module-path", MODULE_PATH))
+                .stdoutShouldBeEmpty()
+                .stderrShouldContain("Missing required option(s) [add-modules]");
+    }
 }
