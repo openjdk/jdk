@@ -26,6 +26,7 @@
 #define SHARE_OPTO_PREDICATES_HPP
 
 #include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
 #include "opto/opaquenode.hpp"
 
 /*
@@ -199,9 +200,6 @@ class AssertionPredicatesWithHalt : public StackObj {
   Node* _entry;
 
   static Node* find_entry(Node* start_proj);
-  static bool has_assertion_predicate_opaque(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
-  static bool is_assertion_predicate_success_proj(const Node* predicate_proj);
 
  public:
   AssertionPredicatesWithHalt(Node* assertion_predicate_proj) : _entry(find_entry(assertion_predicate_proj)) {}
@@ -213,13 +211,37 @@ class AssertionPredicatesWithHalt : public StackObj {
   }
 };
 
+// Class to represent a single Assertion Predicate with a HaltNode. This could either be:
+// - A Template Assertion Predicate.
+// - An Initialized Assertion Predicate.
+// Note that all other Regular Predicates have an UCT node.
+class AssertionPredicateWithHalt : public StackObj {
+  static bool has_assertion_predicate_opaque(const Node* predicate_proj);
+  static bool has_halt(const Node* success_proj);
+ public:
+  static bool is_predicate(const Node* maybe_success_proj);
+};
+
+// Class to represent a single Regular Predicate with an UCT. This could either be:
+// - A Runtime Predicate
+// - A Template Assertion Predicate
+// Note that all other Regular Predicates have a Halt node.
+class RegularPredicateWithUCT : public StackObj {
+  static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
+  static bool may_be_predicate_if(Node* node);
+
+ public:
+  static bool is_predicate(Node* maybe_success_proj);
+  static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
+};
+
 // Class to represent a Parse Predicate.
 class ParsePredicate : public StackObj {
   ParsePredicateSuccessProj* _success_proj;
   ParsePredicateNode* _parse_predicate_node;
   Node* _entry;
 
-  IfTrueNode* init_success_proj(const Node* parse_predicate_proj) const {
+  static IfTrueNode* init_success_proj(const Node* parse_predicate_proj) {
     assert(parse_predicate_proj != nullptr, "must not be null");
     return parse_predicate_proj->isa_IfTrue();
   }
@@ -253,13 +275,12 @@ class ParsePredicate : public StackObj {
     assert(is_valid(), "must be valid");
     return _success_proj;
   }
+
+  static bool is_predicate(Node* maybe_success_proj);
 };
 
 // Utility class for queries on Runtime Predicates.
 class RuntimePredicate : public StackObj {
-  static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
-  static bool may_be_runtime_predicate_if(Node* node);
-
  public:
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
 };
@@ -472,5 +493,18 @@ class ParsePredicateIterator : public StackObj {
   }
 
   ParsePredicateNode* next();
+};
+
+// Special predicate iterator that can be used to walk through predicate entries, regardless of whether the predicate
+// belongs to the same loop or not (i.e. leftovers from already folded nodes). The iterator returns the next entry
+// to a predicate.
+class PredicateEntryIterator : public StackObj {
+  Node* _current;
+
+ public:
+  explicit PredicateEntryIterator(Node* start) : _current(start) {};
+
+  bool has_next() const;
+  Node* next_entry();
 };
 #endif // SHARE_OPTO_PREDICATES_HPP

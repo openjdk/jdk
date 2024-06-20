@@ -260,12 +260,6 @@ class nmethod : public CodeBlob {
   CompLevel    _comp_level;            // compilation level (s1)
   CompilerType _compiler_type;         // which compiler made this nmethod (u1)
 
-#if INCLUDE_RTM_OPT
-  // RTM state at compile time. Used during deoptimization to decide
-  // whether to restart collecting RTM locking abort statistic again.
-  RTMState _rtm_state;
-#endif
-
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
 
@@ -628,12 +622,6 @@ public:
   bool is_cold();
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
-
-#if INCLUDE_RTM_OPT
-  // rtm state accessing and manipulating
-  RTMState  rtm_state() const          { return _rtm_state; }
-  void set_rtm_state(RTMState state)   { _rtm_state = state; }
-#endif
 
   bool make_in_use() {
     return try_transition(in_use);

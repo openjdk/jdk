@@ -34,6 +34,7 @@ class name java/io/ByteArrayOutputStream
 method name writeTo descriptor (Ljava/io/OutputStream;)V thrownTypes java/io/IOException flags 1
 
 class name java/io/Console
+header extends java/lang/Object implements java/io/Flushable sealed true permittedSubclasses java/io/ProxyingConsole flags 21
 method name format descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/Console; flags 81
 method name printf descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/Console; flags 81
 method name readLine descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String; flags 81
@@ -62,6 +63,27 @@ method name readPassword descriptor (Ljava/util/Locale;Ljava/lang/String;[Ljava/
 method name println descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1
 method name print descriptor (Ljava/lang/Object;)Ljava/io/Console; flags 1
 method name readln descriptor (Ljava/lang/String;)Ljava/lang/String; flags 1
+
+class name java/lang/ScopedValue
+header extends java/lang/Object nestMembers java/lang/ScopedValue$CallableOp,java/lang/ScopedValue$Carrier flags 31 signature <T:Ljava/lang/Object;>Ljava/lang/Object; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SCOPED_VALUES;)
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+-method name callWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+-method name getWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;
+method name callWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/ScopedValue$CallableOp;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 9 signature <T:Ljava/lang/Object;R:Ljava/lang/Object;X:Ljava/lang/Throwable;>(Ljava/lang/ScopedValue<TT;>;TT;Ljava/lang/ScopedValue$CallableOp<+TR;TX;>;)TR;^TX;
+
+class name java/lang/ScopedValue$CallableOp
+header extends java/lang/Object nestHost java/lang/ScopedValue flags 601 signature <T:Ljava/lang/Object;X:Ljava/lang/Throwable;>Ljava/lang/Object; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SCOPED_VALUES;) runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+method name call descriptor ()Ljava/lang/Object; thrownTypes java/lang/Throwable flags 401 signature ()TT;^TX;
+
+class name java/lang/ScopedValue$Carrier
+header extends java/lang/Object nestHost java/lang/ScopedValue flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SCOPED_VALUES;)
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+-method name call descriptor (Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+-method name get descriptor (Ljava/util/function/Supplier;)Ljava/lang/Object;
+method name call descriptor (Ljava/lang/ScopedValue$CallableOp;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 1 signature <R:Ljava/lang/Object;X:Ljava/lang/Throwable;>(Ljava/lang/ScopedValue$CallableOp<+TR;TX;>;)TR;^TX;
 
 -class name java/lang/StringTemplate
 
@@ -174,6 +196,12 @@ innerclass innerClass java/lang/classfile/ClassFile$LineNumbersOption outerClass
 innerclass innerClass java/lang/classfile/ClassFile$ShortJumpsOption outerClass java/lang/classfile/ClassFile innerClassName ShortJumpsOption flags 4019
 innerclass innerClass java/lang/classfile/ClassFile$StackMapsOption outerClass java/lang/classfile/ClassFile innerClassName StackMapsOption flags 4019
 innerclass innerClass java/lang/classfile/ClassFile$AttributesProcessingOption outerClass java/lang/classfile/ClassFile innerClassName AttributesProcessingOption flags 4019
+
+class name java/lang/classfile/ClassReader
+-method name thisClassPos descriptor ()I
+-method name skipAttributeHolder descriptor (I)I
+-method name utf8EntryByIndex descriptor (I)Ljava/lang/classfile/constantpool/Utf8Entry;
+method name readEntryOrNull descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 401 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
 
 class name java/lang/classfile/ClassSignature
 header extends java/lang/Object sealed true permittedSubclasses jdk/internal/classfile/impl/SignaturesImpl$ClassSignatureImpl flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;CLASSFILE_API;)
@@ -311,12 +339,21 @@ class name java/lang/classfile/TypeKind
 method name newarrayCode descriptor ()I flags 1
 method name fromNewarrayCode descriptor (I)Ljava/lang/classfile/TypeKind; flags 9
 
+class name java/lang/classfile/components/ClassPrinter$ListNode
+header extends java/lang/Object implements java/lang/classfile/components/ClassPrinter$Node,java/util/List nestHost java/lang/classfile/components/ClassPrinter sealed true permittedSubclasses jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl flags 601 signature Ljava/lang/Object;Ljava/lang/classfile/components/ClassPrinter$Node;Ljava/util/List<Ljava/lang/classfile/components/ClassPrinter$Node;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;CLASSFILE_API;)
+innerclass innerClass java/lang/classfile/components/ClassPrinter$ListNode outerClass java/lang/classfile/components/ClassPrinter innerClassName ListNode flags 609
+innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName ListNodeImpl flags 9
+
 class name java/lang/classfile/components/ClassPrinter$Node
 header extends java/lang/Object nestHost java/lang/classfile/components/ClassPrinter sealed true permittedSubclasses java/lang/classfile/components/ClassPrinter$LeafNode,java/lang/classfile/components/ClassPrinter$ListNode,java/lang/classfile/components/ClassPrinter$MapNode flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;CLASSFILE_API;)
 innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
 innerclass innerClass java/lang/classfile/components/ClassPrinter$LeafNode outerClass java/lang/classfile/components/ClassPrinter innerClassName LeafNode flags 609
 innerclass innerClass java/lang/classfile/components/ClassPrinter$ListNode outerClass java/lang/classfile/components/ClassPrinter innerClassName ListNode flags 609
 innerclass innerClass java/lang/classfile/components/ClassPrinter$MapNode outerClass java/lang/classfile/components/ClassPrinter innerClassName MapNode flags 609
+
+class name java/lang/classfile/constantpool/ConstantPool
+method name entryByIndex descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 401 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
 
 class name java/lang/constant/ClassDesc
 header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true permittedSubclasses jdk/internal/constant/PrimitiveClassDescImpl,jdk/internal/constant/ReferenceClassDescImpl flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
@@ -419,6 +456,12 @@ method name setTTL descriptor (B)V thrownTypes java/io/IOException flags 1 depre
 method name getTTL descriptor ()B thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 method name send descriptor (Ljava/net/DatagramPacket;B)V thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.4")
 
+class name java/net/Socket
+-method name <init> descriptor (Ljava/lang/String;IZ)V
+-method name <init> descriptor (Ljava/net/InetAddress;IZ)V
+method name <init> descriptor (Ljava/lang/String;IZ)V thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.1")
+method name <init> descriptor (Ljava/net/InetAddress;IZ)V thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.1")
+
 class name java/nio/HeapByteBuffer
 method name hashCode descriptor ()I flags 1
 
@@ -460,6 +503,10 @@ class name java/text/DecimalFormat
 method name isStrict descriptor ()Z flags 1
 method name setStrict descriptor (Z)V flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
+
+class name java/text/DecimalFormatSymbols
+header extends java/lang/Object implements java/lang/Cloneable,java/io/Serializable flags 21
+innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 
 class name java/text/MessageFormat
 header extends java/text/Format nestMembers java/text/MessageFormat$Field flags 21
@@ -520,6 +567,12 @@ method name getTotalOut descriptor ()I flags 1 deprecated true runtimeAnnotation
 
 class name java/util/zip/ZipFile
 method name toString descriptor ()Ljava/lang/String; flags 1
+
+class name javax/security/auth/Subject
+header extends java/lang/Object implements java/io/Serializable flags 31
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name jdk/internal/classfile/impl/AbstractInstruction
 header extends jdk/internal/classfile/impl/AbstractElement implements java/lang/classfile/Instruction nestMembers jdk/internal/classfile/impl/AbstractInstruction$UnboundRetInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundJsrInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundNopInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundMonitorInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundLoadConstantInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundArgumentConstantInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundIntrinsicConstantInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundOperatorInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundConvertInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundStackInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundTypeCheckInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundArrayStoreInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundArrayLoadInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundNewMultidimensionalArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundNewReferenceArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundNewPrimitiveArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundNewObjectInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundInvokeDynamicInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundInvokeInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundFieldInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundThrowInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundReturnInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundTableSwitchInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundLookupSwitchInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundBranchInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundIncrementInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundStoreInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundLoadInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundRetInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundJsrInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundLoadConstantInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundArgumentConstantInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundTypeCheckInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundNewMultidimensionalArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundNewReferenceArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundNewPrimitiveArrayInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundNewObjectInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundInvokeDynamicInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundInvokeInterfaceInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundInvokeInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundFieldInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundTableSwitchInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundLookupSwitchInstruction,jdk/internal/classfile/impl/AbstractInstruction$SwitchCaseImpl,jdk/internal/classfile/impl/AbstractInstruction$BoundBranchInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundIncrementInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundStoreInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundLoadInstruction,jdk/internal/classfile/impl/AbstractInstruction$BoundInstruction sealed true permittedSubclasses jdk/internal/classfile/impl/AbstractInstruction$BoundInstruction,jdk/internal/classfile/impl/AbstractInstruction$UnboundInstruction flags 421
@@ -747,10 +800,10 @@ innerclass innerClass jdk/internal/classfile/impl/BoundAttribute$BoundStackMapTa
 method name standardAttribute descriptor (Ljava/lang/classfile/constantpool/Utf8Entry;)Ljava/lang/classfile/AttributeMapper; flags 9 signature (Ljava/lang/classfile/constantpool/Utf8Entry;)Ljava/lang/classfile/AttributeMapper<*>;
 
 class name jdk/internal/classfile/impl/ClassPrinterImpl
-header extends java/lang/Object nestMembers jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$LeafNodeImpl flags 31
+header extends java/lang/Object nestMembers jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl,jdk/internal/classfile/impl/ClassPrinterImpl$LeafNodeImpl flags 31
 innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$LeafNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName LeafNodeImpl flags 19
 innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
-innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName ListNodeImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName ListNodeImpl flags 9
 innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName MapNodeImpl flags 19
 innerclass innerClass java/lang/classfile/components/ClassPrinter$LeafNode outerClass java/lang/classfile/components/ClassPrinter innerClassName LeafNode flags 609
 innerclass innerClass java/lang/classfile/AnnotationValue$OfString outerClass java/lang/classfile/AnnotationValue innerClassName OfString flags 609
@@ -781,7 +834,62 @@ innerclass innerClass java/lang/classfile/attribute/StackMapFrameInfo$Verificati
 innerclass innerClass java/lang/classfile/attribute/StackMapFrameInfo$SimpleVerificationTypeInfo outerClass java/lang/classfile/attribute/StackMapFrameInfo innerClassName SimpleVerificationTypeInfo flags 4019
 innerclass innerClass java/lang/classfile/attribute/StackMapFrameInfo$ObjectVerificationTypeInfo outerClass java/lang/classfile/attribute/StackMapFrameInfo innerClassName ObjectVerificationTypeInfo flags 609
 innerclass innerClass java/lang/classfile/attribute/StackMapFrameInfo$UninitializedVerificationTypeInfo outerClass java/lang/classfile/attribute/StackMapFrameInfo innerClassName UninitializedVerificationTypeInfo flags 609
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl innerClassName PrivateListNodeImpl flags 1a
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl
+header extends java/util/AbstractList implements java/lang/classfile/components/ClassPrinter$ListNode nestHost jdk/internal/classfile/impl/ClassPrinterImpl sealed true permittedSubclasses jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl flags 21 signature Ljava/util/AbstractList<Ljava/lang/classfile/components/ClassPrinter$Node;>;Ljava/lang/classfile/components/ClassPrinter$ListNode;
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName ListNodeImpl flags 9
+innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
+innerclass innerClass java/lang/classfile/components/ClassPrinter$ListNode outerClass java/lang/classfile/components/ClassPrinter innerClassName ListNode flags 609
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName MapNodeImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl innerClassName PrivateListNodeImpl flags 1a
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+field name nodes descriptor Ljava/util/List; flags 14 signature Ljava/util/List<Ljava/lang/classfile/components/ClassPrinter$Node;>;
+method name <init> descriptor (Ljdk/internal/classfile/impl/ClassPrinterImpl$Style;Ljava/lang/constant/ConstantDesc;Ljava/util/List;)V flags 4 signature (Ljdk/internal/classfile/impl/ClassPrinterImpl$Style;Ljava/lang/constant/ConstantDesc;Ljava/util/List<Ljava/lang/classfile/components/ClassPrinter$Node;>;)V
+
+class name jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl
+header extends java/lang/Object implements java/lang/classfile/components/ClassPrinter$MapNode nestHost jdk/internal/classfile/impl/ClassPrinterImpl flags 31
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName MapNodeImpl flags 19
+innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl innerClassName PrivateListNodeImpl flags 1a
+innerclass innerClass java/lang/classfile/components/ClassPrinter$MapNode outerClass java/lang/classfile/components/ClassPrinter innerClassName MapNode flags 609
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl
+header extends jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl nestHost jdk/internal/classfile/impl/ClassPrinterImpl flags 30
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$ListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName ListNodeImpl flags 9
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl innerClassName MapNodeImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl$PrivateListNodeImpl outerClass jdk/internal/classfile/impl/ClassPrinterImpl$MapNodeImpl innerClassName PrivateListNodeImpl flags 1a
+innerclass innerClass java/lang/classfile/components/ClassPrinter$Node outerClass java/lang/classfile/components/ClassPrinter innerClassName Node flags 609
+
+class name jdk/internal/classfile/impl/ClassReaderImpl
+header extends java/lang/Object implements java/lang/classfile/ClassReader flags 31
+innerclass innerClass java/lang/classfile/ClassFile$AttributeMapperOption outerClass java/lang/classfile/ClassFile innerClassName AttributeMapperOption flags 609
+innerclass innerClass jdk/internal/classfile/impl/UnboundAttribute$EmptyBootstrapAttribute outerClass jdk/internal/classfile/impl/UnboundAttribute innerClassName EmptyBootstrapAttribute flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$MethodHandleEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName MethodHandleEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$Utf8EntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName Utf8EntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$IntegerEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName IntegerEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$FloatEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName FloatEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$LongEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName LongEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$DoubleEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName DoubleEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$ClassEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName ClassEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$StringEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName StringEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$FieldRefEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName FieldRefEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$MethodRefEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName MethodRefEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$InterfaceMethodRefEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName InterfaceMethodRefEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$NameAndTypeEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName NameAndTypeEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$MethodTypeEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName MethodTypeEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$ConstantDynamicEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName ConstantDynamicEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$InvokeDynamicEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName InvokeDynamicEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$ModuleEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName ModuleEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$PackageEntryImpl outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName PackageEntryImpl flags 19
+innerclass innerClass jdk/internal/classfile/impl/AbstractPoolEntry$AbstractMemberRefEntry outerClass jdk/internal/classfile/impl/AbstractPoolEntry innerClassName AbstractMemberRefEntry flags 409
+-method name utf8EntryByIndex descriptor (I)Ljdk/internal/classfile/impl/AbstractPoolEntry$Utf8EntryImpl;
+-method name utf8EntryByIndex descriptor (I)Ljava/lang/classfile/constantpool/Utf8Entry;
+method name entryByIndex descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 1 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
+method name readEntryOrNull descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 1 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
 
 class name jdk/internal/classfile/impl/ClassRemapperImpl
 header extends java/lang/Record implements java/lang/classfile/components/ClassRemapper record true flags 31
@@ -893,6 +1001,22 @@ field name INSTANCE descriptor Ljdk/internal/classfile/impl/SignaturesImpl$Unbou
 method name values descriptor ()[Ljdk/internal/classfile/impl/SignaturesImpl$UnboundedTypeArgImpl; flags 9
 method name valueOf descriptor (Ljava/lang/String;)Ljdk/internal/classfile/impl/SignaturesImpl$UnboundedTypeArgImpl; flags 9 methodParameters 8000:null
 
+class name jdk/internal/classfile/impl/SplitConstantPool
+method name entryByIndex descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 1 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
+
+class name jdk/internal/classfile/impl/StackMapDecoder$ObjectVerificationTypeInfoImpl
+header extends java/lang/Record implements java/lang/classfile/attribute/StackMapFrameInfo$ObjectVerificationTypeInfo nestHost jdk/internal/classfile/impl/StackMapDecoder record true flags 31
+recordcomponent name className descriptor Ljava/lang/classfile/constantpool/ClassEntry;
+innerclass innerClass jdk/internal/classfile/impl/StackMapDecoder$ObjectVerificationTypeInfoImpl outerClass jdk/internal/classfile/impl/StackMapDecoder innerClassName ObjectVerificationTypeInfoImpl flags 19
+innerclass innerClass java/lang/classfile/attribute/StackMapFrameInfo$ObjectVerificationTypeInfo outerClass java/lang/classfile/attribute/StackMapFrameInfo innerClassName ObjectVerificationTypeInfo flags 609
+-method name hashCode descriptor ()I
+-method name equals descriptor (Ljava/lang/Object;)Z
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+
+class name jdk/internal/classfile/impl/TemporaryConstantPool
+method name entryByIndex descriptor (ILjava/lang/Class;)Ljava/lang/classfile/constantpool/PoolEntry; flags 1 signature <T::Ljava/lang/classfile/constantpool/PoolEntry;>(ILjava/lang/Class<TT;>;)TT;
+
 class name jdk/internal/classfile/impl/UnboundAttribute
 header extends jdk/internal/classfile/impl/AbstractElement implements java/lang/classfile/Attribute nestMembers jdk/internal/classfile/impl/UnboundAttribute$EmptyBootstrapAttribute,jdk/internal/classfile/impl/UnboundAttribute$AdHocAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleAttribute,jdk/internal/classfile/impl/UnboundAttribute$TypePathComponentImpl,jdk/internal/classfile/impl/UnboundAttribute$UnboundTypeAnnotation,jdk/internal/classfile/impl/UnboundAttribute$UnboundRecordComponentInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleRequiresInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleProvideInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleOpenInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleHashInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleExportInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundMethodParameterInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableTypeInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundLineNumberInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundInnerClassInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundCharacterRangeInfo,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleTypeAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleTypeAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleParameterAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleParameterAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableTypeTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLineNumberTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundCharacterRangeTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceDebugExtensionAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceIDAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundCompilationIDAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundNestHostAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundNestMembersAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundPermittedSubclassesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleResolutionAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModulePackagesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleHashesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleMainClassAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleTargetAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundMethodParametersAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundEnclosingMethodAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRecordAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundInnerClassesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundStackMapTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceFileAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundAnnotationDefaultAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundExceptionsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSignatureAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSyntheticAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundDeprecatedAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundConstantValueAttribute sealed true permittedSubclasses jdk/internal/classfile/impl/UnboundAttribute$UnboundConstantValueAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundDeprecatedAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSyntheticAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSignatureAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundExceptionsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundAnnotationDefaultAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceFileAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundStackMapTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundInnerClassesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRecordAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundEnclosingMethodAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundMethodParametersAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleTargetAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleMainClassAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleHashesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModulePackagesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleResolutionAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundPermittedSubclassesAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundNestMembersAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundNestHostAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundCompilationIDAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceIDAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundSourceDebugExtensionAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundCharacterRangeTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLineNumberTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundLocalVariableTypeTableAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleParameterAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleParameterAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeVisibleTypeAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundRuntimeInvisibleTypeAnnotationsAttribute,jdk/internal/classfile/impl/UnboundAttribute$UnboundModuleAttribute,jdk/internal/classfile/impl/UnboundAttribute$AdHocAttribute,jdk/internal/classfile/impl/UnboundAttribute$EmptyBootstrapAttribute flags 421 signature <T::Ljava/lang/classfile/Attribute<TT;>;>Ljdk/internal/classfile/impl/AbstractElement;Ljava/lang/classfile/Attribute<TT;>;
 innerclass innerClass jdk/internal/classfile/impl/UnboundAttribute$EmptyBootstrapAttribute outerClass jdk/internal/classfile/impl/UnboundAttribute innerClassName EmptyBootstrapAttribute flags 19
@@ -970,7 +1094,6 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
 method name ofTrusted descriptor (Ljava/lang/constant/ClassDesc;[Ljava/lang/constant/ClassDesc;)Ljdk/internal/constant/MethodTypeDescImpl; flags 9
-method name ofValidated descriptor (Ljava/lang/constant/ClassDesc;[Ljava/lang/constant/ClassDesc;)Ljdk/internal/constant/MethodTypeDescImpl; flags 9
 method name ofDescriptor descriptor (Ljava/lang/String;)Ljdk/internal/constant/MethodTypeDescImpl; flags 9
 method name returnType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
 method name parameterCount descriptor ()I flags 1
@@ -994,6 +1117,7 @@ method name changeReturnType descriptor (Ljava/lang/invoke/TypeDescriptor$OfFiel
 method name parameterArray descriptor ()[Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
 method name returnType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
 method name parameterType descriptor (I)Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041 methodParameters 1000:null
+method name ofValidated descriptor (Ljava/lang/constant/ClassDesc;[Ljava/lang/constant/ClassDesc;)Ljdk/internal/constant/MethodTypeDescImpl; flags 89
 
 class name jdk/internal/constant/ModuleDescImpl
 header extends java/lang/Record implements java/lang/constant/ModuleDesc record true flags 31
