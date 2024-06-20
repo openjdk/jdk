@@ -5803,3 +5803,87 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp
   z_alsi(in_bytes(JavaThread::lock_stack_top_offset()), Z_thread, -oopSize);  // pop object
   z_cr(tmp, tmp); // set CC to EQ
 }
+
+void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_int {");
+
+  assert(r_tmp != noreg, "temp register required for pop_count_int, as code may run on machine older than z15");
+  assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+
+  if (VM_Version::has_MiscInstrExt3()) {
+    pop_count_int_with_ext3(r_dst, r_src);
+  } else {
+    pop_count_int_without_ext3(r_dst, r_src, r_tmp);
+  }
+
+  BLOCK_COMMENT("} pop_count_int");
+}
+
+void MacroAssembler::pop_count_long(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_long {");
+
+  assert(r_tmp != noreg, "temp register required for pop_count_long, as code may run on machine older than z15");
+  assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+
+  if (VM_Version::has_MiscInstrExt3()) {
+    pop_count_long_with_ext3(r_dst, r_src);
+  } else {
+    pop_count_long_without_ext3(r_dst, r_src, r_tmp);
+  }
+
+  BLOCK_COMMENT("} pop_count_long");
+}
+
+void MacroAssembler::pop_count_int_without_ext3(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_int_without_ext3 {");
+
+  assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
+  assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+
+  z_popcnt(r_dst, r_src, 0);
+  z_srlg(r_tmp, r_dst, 16);
+  z_alr(r_dst, r_tmp);
+  z_srlg(r_tmp, r_dst, 8);
+  z_alr(r_dst, r_tmp);
+  z_llgcr(r_dst, r_dst);
+
+  BLOCK_COMMENT("} pop_count_int_without_ext3");
+}
+
+void MacroAssembler::pop_count_long_without_ext3(Register r_dst, Register r_src, Register r_tmp) {
+  BLOCK_COMMENT("pop_count_long_without_ext3 {");
+
+  assert(r_tmp != noreg, "temp register required for popcnt, for machines < z15");
+  assert_different_registers(r_dst, r_tmp); // if r_src is same as r_tmp, it should be fine
+
+  z_popcnt(r_dst, r_src, 0);
+  z_ahhlr(r_dst, r_dst, r_dst);
+  z_sllg(r_tmp, r_dst, 16);
+  z_algr(r_dst, r_tmp);
+  z_sllg(r_tmp, r_dst, 8);
+  z_algr(r_dst, r_tmp);
+  z_srlg(r_dst, r_dst, 56);
+
+  BLOCK_COMMENT("} pop_count_long_without_ext3");
+}
+
+void MacroAssembler::pop_count_long_with_ext3(Register r_dst, Register r_src) {
+  BLOCK_COMMENT("pop_count_long_with_ext3 {");
+
+  guarantee(VM_Version::has_MiscInstrExt3(),
+      "this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_long_with_ext3 is used");
+  z_popcnt(r_dst, r_src, 8);
+
+  BLOCK_COMMENT("} pop_count_long_with_ext3");
+}
+
+void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
+  BLOCK_COMMENT("pop_count_int_with_ext3 {");
+
+  guarantee(VM_Version::has_MiscInstrExt3(),
+      "this hardware doesn't support miscellaneous-instruction-extensions facility 3, still pop_count_long_with_ext3 is used");
+  z_llgfr(r_dst, r_src);
+  z_popcnt(r_dst, r_dst, 8);
+
+  BLOCK_COMMENT("} pop_count_int_with_ext3");
+}

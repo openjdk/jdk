@@ -950,7 +950,6 @@ public class Attr extends JCTree.Visitor {
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
         try {
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
@@ -995,7 +994,7 @@ public class Attr extends JCTree.Visitor {
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
+        Assert.check(!env.info.ctorPrologue);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             deferredLintHandler.flush(tree.pos(), lint);
@@ -5868,8 +5867,10 @@ public class Attr extends JCTree.Visitor {
                             Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
                                     Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
                                     Fragments.TypeAnnotation(onlyTypeAnnotations);
+                            JCDiagnostic.AnnotatedType annotatedType = new JCDiagnostic.AnnotatedType(
+                                    type.stripMetadata().annotatedType(onlyTypeAnnotations));
                             log.error(at.underlyingType.pos(), Errors.TypeAnnotationInadmissible(annotationFragment,
-                                    type.tsym.owner, type.stripMetadata().annotatedType(onlyTypeAnnotations)));
+                                    type.tsym.owner, annotatedType));
                         }
                         repeat = false;
                     }

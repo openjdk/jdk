@@ -29,7 +29,6 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
 
@@ -61,8 +60,7 @@ public:
     enum CounterTag {
     NoTag,
     LockCounter,
-    EliminatedLockCounter,
-    RTMLockingCounter
+    EliminatedLockCounter
   };
 
 private:
@@ -96,17 +94,6 @@ private:
     _next = next;
   }
 
-};
-
-class RTMLockingNamedCounter : public NamedCounter {
- private:
- RTMLockingCounters _counters;
-
- public:
-  RTMLockingNamedCounter(const char *n) :
-    NamedCounter(n, RTMLockingCounter), _counters() {}
-
-  RTMLockingCounters* counters() { return &_counters; }
 };
 
 typedef const TypeFunc*(*TypeFunc_generator)();
@@ -297,6 +284,7 @@ private:
   static const TypeFunc* chacha20Block_Type();
   static const TypeFunc* base64_encodeBlock_Type();
   static const TypeFunc* base64_decodeBlock_Type();
+  static const TypeFunc* string_IndexOf_Type();
   static const TypeFunc* poly1305_processBlocks_Type();
   static const TypeFunc* intpoly_montgomeryMult_P256_Type();
   static const TypeFunc* intpoly_assign_Type();

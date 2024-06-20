@@ -38,15 +38,14 @@ class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
   outputStream* const _output;  // destination
+  StreamAutoIndentor _auto_indentor;
 
  public:
 
   // Default scale to use if no scale given.
   static const size_t default_scale = K;
 
-  MemReporterBase(outputStream* out, size_t scale = default_scale) :
-    _scale(scale), _output(out)
-  {}
+  MemReporterBase(outputStream* out, size_t scale = default_scale);
 
   // Helper functions
   // Calculate total reserved and committed amount
@@ -109,10 +108,7 @@ class MemReporterBase : public StackObj {
   void print_total(size_t reserved, size_t committed, size_t peak = 0) const;
   void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
-
-  void print_malloc_line(const MemoryCounter* c) const;
-  void print_virtual_memory_line(size_t reserved, size_t committed, size_t peak) const;
-  void print_arena_line(const MemoryCounter* c) const;
+  void print_arena(const MemoryCounter* c) const;
 
   void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
