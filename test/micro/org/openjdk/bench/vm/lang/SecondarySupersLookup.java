@@ -218,7 +218,7 @@ public class SecondarySupersLookup {
 
     @Setup
     public void warmup() {
-        for (int i = 0; i < 2_000; i++) {
+        for (int i = 0; i < 2_000_000; i++) {
             Class<?> s = getSuper(i);
             test(wObj01, s, s.isInstance(wObj01));
             test(wObj02, s, s.isInstance(wObj02));
