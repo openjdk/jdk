@@ -1162,9 +1162,8 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   if (invar.is_invariant(bol)) {
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_IC, 4, iff);
     // Invariant test
-    IfProjNode* hoisted_check_predicate_proj  = create_new_if_for_predicate(parse_predicate_proj, nullptr,
-                                                     reason,
-                                                     iff->Opcode());
+    IfProjNode* hoisted_check_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
+                                                                           iff->Opcode());
     Node* ctrl = hoisted_check_predicate_proj->in(0)->as_If()->in(0);
     BoolNode* hoisted_check_predicate_bool = invar.clone(bol, ctrl)->as_Bool();
 
