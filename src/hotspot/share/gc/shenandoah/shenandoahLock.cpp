@@ -32,6 +32,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/semaphore.inline.hpp"
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
@@ -62,6 +63,14 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       }
     }
   }
+}
+
+void ShenandoahLock::wait_with_safepoint_check() {
+  Thread* thread = Thread::current();
+  assert(thread->is_Java_thread(), "Must be Java thread.");
+  assert(SafepointSynchronize::is_synchronizing(), "SP must be synchronizing.");
+  Atomic::inc(&_threads_at_sp);
+  _sp_end_sem.wait_with_safepoint_check(JavaThread::cast(thread));
 }
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
