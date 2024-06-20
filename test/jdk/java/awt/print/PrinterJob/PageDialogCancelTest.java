@@ -44,16 +44,9 @@ public class PageDialogCancelTest {
         Robot robot = new Robot();
         Thread t1 = new Thread(() -> {
             robot.delay(2000);
-            for (int i = 0; i < 8; i++) {
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.waitForIdle();
-                robot.delay(500);
-            }
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
             robot.waitForIdle();
-            robot.delay(500);
         });
         t1.start();
         PageFormat newFormat = pj.pageDialog(oldFormat);
