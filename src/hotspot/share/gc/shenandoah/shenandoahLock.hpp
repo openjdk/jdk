@@ -43,6 +43,7 @@ private:
   Semaphore _sp_semaphore;
   shenandoah_padding(3);
   volatile uint _threads_at_sp;
+  shenandoah_padding(4);
 
   template<bool ALLOW_BLOC>
   void contended_lock_internal(Thread* thread);
@@ -51,12 +52,12 @@ private:
     Thread* thread = Thread::current();
     assert(thread->is_Java_thread(), "Must be Java thread.");
     assert(SafepointSynchronize::is_synchronizing(), "SP must be synchronizing.");
-    Atomic::inc(&_threads_at_sp, 1);
+    Atomic::inc(&_threads_at_sp);
     _sp_semaphore.wait_with_safepoint_check(JavaThread::cast(thread));
   }
 
 public:
-  ShenandoahLock() : _state(unlocked), _owner(nullptr), _sp_semaphore(0) {};
+  ShenandoahLock() : _state(unlocked), _owner(nullptr), _sp_semaphore(0), _threads_at_sp(0) {};
 
   void lock(bool allow_block_for_safepoint) {
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
@@ -95,7 +96,7 @@ public:
 
   void safepoint_synchronize_end() {
     assert(!SafepointSynchronize::is_synchronizing() && !SafepointSynchronize::is_at_safepoint(), "Safepoint synchronization must have ended.");
-    const uint threads_at_sp = Atomic::xchg(&_threads_at_sp, 0);
+    const uint threads_at_sp = Atomic::xchg(&_threads_at_sp, (uint) 0);
     if(threads_at_sp > 0) {
       _sp_semaphore.signal(threads_at_sp);
     }
