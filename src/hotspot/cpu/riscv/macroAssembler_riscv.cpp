@@ -3611,6 +3611,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+// population_count variant for running without the CPOP
+// instruction, which was introduced with Zbb extension.
 void MacroAssembler::population_count(Register dst, Register src,
                                       Register tmp1, Register tmp2) {
   if (UsePopCountInstruction) {
@@ -3631,8 +3633,7 @@ void MacroAssembler::population_count(Register dst, Register src,
     {
       bind(loop);
       addi(dst, dst, 1);
-      mv(tmp2, tmp1);
-      addi(tmp2, tmp2, -1);
+      addi(tmp2, tmp1, -1);
       andr(tmp1, tmp1, tmp2);
       bnez(tmp1, loop);
     }
@@ -3696,7 +3697,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
     slli(r_array_index, r_bitmap, (Klass::SECONDARY_SUPERS_TABLE_MASK - bit));
-    population_count(r_array_index, r_array_index, t0, tmp1);
+    population_count(r_array_index, r_array_index, tmp1, tmp2);
   } else {
     mv(r_array_index, (u1)1);
   }
