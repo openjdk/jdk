@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ bool JfrDeprecatedStackTraceWriter::process(const JfrDeprecatedEdge* edge) {
   return true;
 }
 
-JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, bool stacktrace) :
-  _now(JfrTicks::now()),_cw(cw), _for_removal(only_for_removal()), _stacktrace(stacktrace), _did_write(false) {}
+JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, JfrCheckpointWriter& tsw, bool stacktrace) :
+  _now(JfrTicks::now()),_cw(cw), _tsw(tsw), _for_removal(only_for_removal()), _stacktrace(stacktrace) {}
 
 static size_t calculate_event_size(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const JfrTicks& now, bool stacktrace) {
   assert(edge != nullptr, "invariant");
@@ -141,14 +141,31 @@ static void write_event(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const
   cw.write(edge->for_removal());
 }
 
+static void write_type_set(const JfrDeprecatedEdge* edge, JfrCheckpointWriter& tsw) {
+  if (!edge->has_type_set()) {
+    return;
+  }
+  edge->type_set()->exclusive_write(tsw);
+}
+
 bool JfrDeprecatedEventWriter::process(const JfrDeprecatedEdge* edge) {
   assert(edge != nullptr, "invariant");
   if (_for_removal && !edge->for_removal()) {
     return true;
   }
-  write_event(edge, _cw,_now, _stacktrace);
-  if (!_did_write) {
-    _did_write = true;
-  }
+  write_event(edge, _cw, _now, _stacktrace);
+  write_type_set(edge, _tsw);
   return true;
 }
+
+JfrDeprecatedEventClear::JfrDeprecatedEventClear() {}
+
+bool JfrDeprecatedEventClear::process(const JfrDeprecatedEdge* edge) {
+  assert(edge != nullptr, "invariant");
+  if (!edge->has_type_set()) {
+    return true;
+  }
+  edge->type_set()->reset_write_state();
+  return true;
+}
+

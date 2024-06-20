@@ -108,7 +108,7 @@ public class IREncodingPrinter {
         "asimd",
         "sve",
         // Riscv64
-        "v",
+        "rvv",
         "zvbb"
     ));
 
