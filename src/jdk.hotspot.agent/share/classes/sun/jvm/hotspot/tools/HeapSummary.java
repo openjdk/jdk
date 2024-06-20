@@ -80,7 +80,6 @@ public class HeapSummary extends Tool {
       printValMB("MaxHeapSize              = ", getFlagValue("MaxHeapSize", flagMap));
       printValMB("NewSize                  = ", getFlagValue("NewSize", flagMap));
       printValMB("MaxNewSize               = ", getFlagValue("MaxNewSize", flagMap));
-      printValMB("OldSize                  = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio                 = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio            = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
