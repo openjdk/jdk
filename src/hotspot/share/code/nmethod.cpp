@@ -3996,6 +3996,7 @@ void nmethod::print_statistics() {
   DebugInformationRecorder::print_statistics();
   pc_nmethod_stats.print_pc_stats();
   Dependencies::print_statistics();
+  ExternalsRecorder::print_statistics();
   if (xtty != nullptr)  xtty->tail("statistics");
 }
 
