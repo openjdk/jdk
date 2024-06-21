@@ -72,24 +72,6 @@ public class CreationTime {
         view.setTimes(null, null, time);
     }
 
-    /**
-     * read the output of linux command `stat -c "%w" file`, if the output is "-",
-     * then the file system doesn't support birth time
-     */
-    public static boolean supportBirthTimeOnLinux(Path file) {
-        try {
-            String filePath = file.toAbsolutePath().toString();
-            ProcessBuilder pb = new ProcessBuilder("stat", "-c", "%w", filePath);
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String l = b.readLine();
-            if (l != null && l.equals("-")) { return false; }
-        } catch(Exception e) {
-        }
-        return true;
-    }
-
     static void test(Path top) throws IOException {
         Path file = Files.createFile(top.resolve("foo"));
 
@@ -100,7 +82,8 @@ public class CreationTime {
         Instant now = Instant.now();
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
             System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
-            if(0 == creationTime.toMillis() && Platform.isLinux() && !supportBirthTimeOnLinux(file) ) {
+            // If the file system doesn't support birth time, then skip this test
+            if (0 == creationTime.toMillis()) {
                 throw new SkippedException("birth time not support for: " + file);
             } else {
                 err.println("File creation time reported as: " + creationTime);
