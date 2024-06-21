@@ -46,12 +46,12 @@ public final class BoundRecordComponentInfo
 
     @Override
     public Utf8Entry name() {
-        return reader.readUtf8Entry(startPos);
+        return reader.readEntry(startPos, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry descriptor() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override

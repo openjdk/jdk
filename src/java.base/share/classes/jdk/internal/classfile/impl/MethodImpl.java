@@ -64,12 +64,12 @@ public final class MethodImpl
 
     @Override
     public Utf8Entry methodName() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry methodType() {
-        return reader.readUtf8Entry(startPos + 4);
+        return reader.readEntry(startPos + 4, Utf8Entry.class);
     }
 
     @Override
