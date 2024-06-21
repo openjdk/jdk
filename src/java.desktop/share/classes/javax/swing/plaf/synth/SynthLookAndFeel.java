@@ -1045,15 +1045,13 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     // Toggle flag for drawing the mnemonic state
     private static boolean isMnemonicHidden = true;
 
-    /**
+    /*
      * Sets the state of the hide mnemonic flag. This flag is used by the
      * component UI delegates to determine if the mnemonic should be rendered.
      * This method is a non operation if the underlying operating system
      * does not support the mnemonic hiding feature.
-     *
-     * @param hide true if mnemonics should be hidden
      */
-    protected static void setMnemonicHidden(boolean hide) {
+    static void setMnemonicHidden(boolean hide) {
         if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
@@ -1062,13 +1060,11 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         }
     }
 
-    /**
+    /*
      * Gets the state of the hide mnemonic flag. This only has meaning
      * if this feature is supported by the underlying OS.
-     *
-     * @return true if mnemonics are hidden, otherwise, false
      */
-    protected static boolean isMnemonicHidden() {
+    static boolean isMnemonicHidden() {
         if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
