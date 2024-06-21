@@ -73,14 +73,6 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
   }
 }
 
-void ShenandoahLock::wait_with_safepoint_check() {
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be Java thread.");
-  assert(SafepointSynchronize::is_synchronizing(), "SP must be synchronizing.");
-  Atomic::add(&_threads_at_sp, (uint) 1, memory_order_relaxed);
-  _sp_end_sem.wait_with_safepoint_check(JavaThread::cast(thread));
-}
-
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");
 }

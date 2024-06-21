@@ -40,16 +40,9 @@ private:
   shenandoah_padding(1);
   Thread* volatile _owner;
   shenandoah_padding(2);
-  Semaphore _sp_end_sem;
-  shenandoah_padding(3);
-  volatile uint _threads_at_sp;
-  shenandoah_padding(4);
 
   template<bool ALLOW_BLOC>
   void contended_lock_internal(Thread* thread);
-
-  void wait_with_safepoint_check();
-
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr), _threads_at_sp(0) {};
 
@@ -86,14 +79,6 @@ public:
     ShouldNotReachHere();
     return false;
 #endif
-  }
-
-  void safepoint_synchronize_end() {
-    assert(!SafepointSynchronize::is_synchronizing() && !SafepointSynchronize::is_at_safepoint(), "Safepoint synchronization must have ended.");
-    const uint threads_at_sp = Atomic::xchg(&_threads_at_sp, (uint) 0);
-    if(threads_at_sp > 0) {
-      _sp_end_sem.signal(threads_at_sp);
-    }
   }
 };
 
