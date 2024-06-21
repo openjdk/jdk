@@ -568,6 +568,11 @@ public final class ListFormat extends Format {
         }
     }
 
+    @Override
+    boolean isInternalSubclass() {
+        return true;
+    }
+
     /**
      * A ListFormat type - {@link #STANDARD STANDARD}, {@link #OR OR}, and
      * {@link #UNIT UNIT}.

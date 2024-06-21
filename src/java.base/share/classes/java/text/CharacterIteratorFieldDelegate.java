@@ -53,8 +53,8 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
         attributedStrings = new ArrayList<>();
     }
 
-    public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start, int end,
-                          T buffer) {
+    public void formatted(Format.Field attr, Object value, int start, int end,
+                          Format.StringBuf buffer) {
         if (start != end) {
             if (start < size) {
                 // Adjust attributes of existing runs
@@ -76,14 +76,14 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
             if (size < start) {
                 // Pad attributes
                 attributedStrings.add(new AttributedString(
-                                          buffer.subSequence(size, start).toString()));
+                                          buffer.substring(size, start)));
                 size = start;
             }
             if (size < end) {
                 // Add new string
                 int aStart = Math.max(start, size);
                 AttributedString string = new AttributedString(
-                                   buffer.subSequence(aStart, end).toString());
+                                   buffer.substring(aStart, end));
 
                 string.addAttribute(attr, value);
                 attributedStrings.add(string);
@@ -92,8 +92,8 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
         }
     }
 
-    public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
-                          int start, int end, T buffer) {
+    public void formatted(int fieldID, Format.Field attr, Object value,
+                          int start, int end, Format.StringBuf buffer) {
         formatted(attr, value, start, end, buffer);
     }
 

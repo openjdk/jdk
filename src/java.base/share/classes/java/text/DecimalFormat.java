@@ -41,7 +41,6 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -589,12 +588,17 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
-        return formatWithGeneric(number, result, fieldPosition);
+        return format(number, StringBuf.of(result), fieldPosition).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(double number, T result,
-                                                   FieldPosition fieldPosition) {
+    StringBuilder format(double number, StringBuilder result,
+                         FieldPosition fieldPosition) {
+        return format(number, StringBuf.of(result), fieldPosition).asStringBuilder();
+    }
+
+    private StringBuf format(double number, StringBuf result,
+                             FieldPosition fieldPosition) {
         // If fieldPosition is a DontCareFieldPosition instance we can
         // try to go to fast-path code.
         boolean tryFastPath = false;
@@ -608,22 +612,13 @@ public class DecimalFormat extends NumberFormat {
         if (tryFastPath) {
             String tempResult = fastFormat(number);
             if (tempResult != null) {
-                try {
-                    result.append(tempResult);
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe.getMessage(), ioe);
-                }
+                result.append(tempResult);
                 return result;
             }
         }
 
         // if fast-path could not work, we fallback to standard code.
         return format(number, result, fieldPosition.getFieldDelegate());
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
     }
 
     /**
@@ -635,7 +630,7 @@ public class DecimalFormat extends NumberFormat {
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    <T extends Appendable & CharSequence> T format(double number, T result,
+    StringBuf format(double number, StringBuf result,
                      FieldDelegate delegate) {
 
         boolean nanOrInfinity = handleNaN(number, result, delegate);
@@ -682,16 +677,12 @@ public class DecimalFormat extends NumberFormat {
      * @param delegate notified of locations of sub fields
      * @return true, if number is a NaN; false otherwise
      */
-    <T extends Appendable & CharSequence> boolean handleNaN(double number, T result,
+    boolean handleNaN(double number, StringBuf result,
             FieldDelegate delegate) {
         if (Double.isNaN(number)
                 || (Double.isInfinite(number) && multiplier == 0)) {
             int iFieldStart = result.length();
-            try {
-                result.append(symbols.getNaN());
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe.getMessage(), ioe);
-            }
+            result.append(symbols.getNaN());
             delegate.formatted(INTEGER_FIELD, Field.INTEGER, Field.INTEGER,
                     iFieldStart, result.length(), result);
             return true;
@@ -711,7 +702,7 @@ public class DecimalFormat extends NumberFormat {
      * @return true, if number is a {@code Double.NEGATIVE_INFINITY} or
      *         {@code Double.POSITIVE_INFINITY}; false otherwise
      */
-    <T extends Appendable & CharSequence> boolean handleInfinity(double number, T result,
+    boolean handleInfinity(double number, StringBuf result,
             FieldDelegate delegate, boolean isNegative) {
         if (Double.isInfinite(number)) {
             if (isNegative) {
@@ -723,11 +714,7 @@ public class DecimalFormat extends NumberFormat {
             }
 
             int iFieldStart = result.length();
-            try {
-                result.append(symbols.getInfinity());
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe.getMessage(), ioe);
-            }
+            result.append(symbols.getInfinity());
             delegate.formatted(INTEGER_FIELD, Field.INTEGER, Field.INTEGER,
                                iFieldStart, result.length(), result);
 
@@ -744,7 +731,7 @@ public class DecimalFormat extends NumberFormat {
         return false;
     }
 
-    <T extends Appendable & CharSequence> T doubleSubformat(double number, T result,
+    StringBuf doubleSubformat(double number, StringBuf result,
             FieldDelegate delegate, boolean isNegative) {
         synchronized (digitList) {
             int maxIntDigits = super.getMaximumIntegerDigits();
@@ -785,16 +772,16 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(long number, T result,
-                                                   FieldPosition fieldPosition) {
+    StringBuilder format(long number, StringBuilder result,
+                         FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
     /**
@@ -807,7 +794,7 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    <T extends Appendable & CharSequence> T format(long number, T result,
+    StringBuf format(long number, StringBuf result,
                      FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
@@ -886,7 +873,7 @@ public class DecimalFormat extends NumberFormat {
                                 FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     /**
@@ -898,7 +885,7 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    <T extends Appendable & CharSequence> T format(BigDecimal number, T result,
+    StringBuf format(BigDecimal number, StringBuf result,
                      FieldDelegate delegate) {
         if (multiplier != 1) {
             number = number.multiply(getBigDecimalMultiplier());
@@ -946,7 +933,7 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, result, fieldPosition.getFieldDelegate(), false);
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
     }
 
     /**
@@ -959,7 +946,7 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    <T extends Appendable & CharSequence> T format(BigInteger number, T result,
+    StringBuf format(BigInteger number, StringBuf result,
                      FieldDelegate delegate, boolean formatLong) {
         if (multiplier != 1) {
             number = number.multiply(getBigIntegerMultiplier());
@@ -1022,15 +1009,15 @@ public class DecimalFormat extends NumberFormat {
         StringBuffer sb = new StringBuffer();
 
         if (obj instanceof Double || obj instanceof Float) {
-            format(((Number)obj).doubleValue(), sb, delegate);
+            format(((Number)obj).doubleValue(), StringBuf.of(sb), delegate);
         } else if (obj instanceof Long || obj instanceof Integer ||
                    obj instanceof Short || obj instanceof Byte ||
                    obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number)obj).longValue(), sb, delegate);
+            format(((Number)obj).longValue(), StringBuf.of(sb), delegate);
         } else if (obj instanceof BigDecimal) {
-            format((BigDecimal)obj, sb, delegate);
+            format((BigDecimal)obj, StringBuf.of(sb), delegate);
         } else if (obj instanceof BigInteger) {
-            format((BigInteger)obj, sb, delegate, false);
+            format((BigInteger)obj, StringBuf.of(sb), delegate, false);
         } else if (obj == null) {
             throw new NullPointerException(
                 "formatToCharacterIterator must be passed non-null object");
@@ -1812,7 +1799,7 @@ public class DecimalFormat extends NumberFormat {
      * Complete the formatting of a finite number.  On entry, the digitList must
      * be filled in with the correct digits.
      */
-    private <T extends Appendable & CharSequence> T subformat(T result, FieldDelegate delegate,
+    private StringBuf subformat(StringBuf result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
             int maxFraDigits, int minFraDigits) {
@@ -1842,17 +1829,6 @@ public class DecimalFormat extends NumberFormat {
         return result;
     }
 
-    <T extends Appendable & CharSequence> void subformatNumber(T result, FieldDelegate delegate,
-                         boolean isNegative, boolean isInteger,
-                         int maxIntDigits, int minIntDigits,
-                         int maxFraDigits, int minFraDigits) {
-        try {
-            subformatNumberWithException(result, delegate, isNegative, isInteger, maxIntDigits, minIntDigits, maxFraDigits, minFraDigits);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe.getMessage(), ioe);
-        }
-    }
-
     /**
      * Subformats number part using the {@code DigitList} of this
      * {@code DecimalFormat} instance.
@@ -1865,10 +1841,10 @@ public class DecimalFormat extends NumberFormat {
      * @param maxFraDigits maximum fraction digits
      * @param minFraDigits minimum fraction digits
      */
-    <T extends Appendable & CharSequence> void subformatNumberWithException(T result, FieldDelegate delegate,
+    void subformatNumber(StringBuf result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
-            int maxFraDigits, int minFraDigits) throws IOException{
+            int maxFraDigits, int minFraDigits) {
 
         char grouping = isCurrencyFormat ?
                 symbols.getMonetaryGroupingSeparator() :
@@ -2152,18 +2128,14 @@ public class DecimalFormat extends NumberFormat {
      * <p>
      * This is used by {@code subformat} to add the prefix/suffix.
      */
-    private <T extends Appendable & CharSequence> void append(T result, String string,
+    private void append(StringBuf result, String string,
                         FieldDelegate delegate,
                         FieldPosition[] positions,
                         Format.Field signAttribute) {
         int start = result.length();
 
         if (!string.isEmpty()) {
-            try {
-                result.append(string);
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe.getMessage(), ioe);
-            }
+            result.append(string);
             for (int counter = 0, max = positions.length; counter < max;
                  counter++) {
                 FieldPosition fp = positions[counter];
@@ -4213,6 +4185,11 @@ public class DecimalFormat extends NumberFormat {
         }
 
         serialVersionOnStream = currentSerialVersion;
+    }
+
+    @Override
+    boolean isInternalSubclass() {
+        return true;
     }
 
     //----------------------------------------------------------------------

@@ -41,7 +41,6 @@ package java.text;
 import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -515,13 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return formatWithGeneric((double)number, toAppendTo, status);
+        return format((double) number, StringBuf.of(toAppendTo), status).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(long number, T toAppendTo,
-                                                   FieldPosition status) {
-        return formatWithGeneric((double) number, toAppendTo, status);
+    StringBuilder format(long number, StringBuilder toAppendTo,
+                         FieldPosition status) {
+        return format((double) number, StringBuf.of(toAppendTo), status).asStringBuilder();
     }
 
     /**
@@ -538,11 +537,17 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return formatWithGeneric(number, toAppendTo, status);
+        return format(number, StringBuf.of(toAppendTo), status).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(double number, T toAppendTo,
+    StringBuilder format(double number,
+                         StringBuilder toAppendTo,
+                         FieldPosition status) {
+        return format(number, StringBuf.of(toAppendTo), status).asStringBuilder();
+    }
+
+    private StringBuf format(double number, StringBuf toAppendTo,
                          FieldPosition status) {
         // find the number
         int i;
@@ -554,18 +559,8 @@ public class ChoiceFormat extends NumberFormat {
         }
         --i;
         if (i < 0) i = 0;
-        try {
-            // return either a formatted number, or a string
-            toAppendTo.append(choiceFormats[i]);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe.getMessage(), ioe);
-        }
-        return toAppendTo;
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
+        // return either a formatted number, or a string
+        return toAppendTo.append(choiceFormats[i]);
     }
 
     /**
@@ -746,6 +741,12 @@ public class ChoiceFormat extends NumberFormat {
             throw new InvalidObjectException(
                     "limits and format arrays of different length.");
         }
+    }
+	
+	
+    @Override
+    boolean isInternalSubclass() {
+        return true;
     }
 
     // ===============privates===========================

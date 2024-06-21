@@ -289,8 +289,8 @@ public class FieldPosition {
          */
         private boolean encounteredField;
 
-        public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start,
-                              int end, T buffer) {
+        public void formatted(Format.Field attr, Object value, int start,
+                              int end, Format.StringBuf buffer) {
             if (!encounteredField && matchesField(attr)) {
                 setBeginIndex(start);
                 setEndIndex(end);
@@ -298,8 +298,8 @@ public class FieldPosition {
             }
         }
 
-        public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, T buffer) {
+        public void formatted(int fieldID, Format.Field attr, Object value,
+                              int start, int end, Format.StringBuf buffer) {
             if (!encounteredField && matchesField(attr, fieldID)) {
                 setBeginIndex(start);
                 setEndIndex(end);

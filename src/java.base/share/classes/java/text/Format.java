@@ -268,17 +268,6 @@ public abstract class Format implements Serializable, Cloneable {
         }
     }
 
-    /**
-     * Used to distinguish JDK internal subclass and user-defined subclass
-     * of {code Format}.
-     *
-     * @return {@code true}  if current class is a JDK internal subclass of {code Format};
-     *         {@code false} otherwise
-     */
-    boolean isInternalSubclass() {
-        return false;
-    }
-
     //
     // Convenience methods for creating AttributedCharacterIterators from
     // different parameters.
@@ -404,8 +393,8 @@ public abstract class Format implements Serializable, Cloneable {
          * @param buffer Contains current formatted value, receiver should
          *        NOT modify it.
          */
-        public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start,
-                              int end, T buffer);
+        public void formatted(Format.Field attr, Object value, int start,
+                              int end, StringBuf buffer);
 
         /**
          * Notified when a particular region of the String is formatted.
@@ -418,7 +407,164 @@ public abstract class Format implements Serializable, Cloneable {
          * @param buffer Contains current formatted value, receiver should
          *        NOT modify it.
          */
-        public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, T buffer);
+        public void formatted(int fieldID, Format.Field attr, Object value,
+                              int start, int end, StringBuf buffer);
+    }
+
+
+    /**
+     * Used to distinguish JDK internal subclass and user-defined subclass
+     * of {code Format}.
+     *
+     * @return {@code true}  if current class is a JDK internal subclass of {code Format};
+     *         {@code false} otherwise
+     */
+    boolean isInternalSubclass() {
+        return false;
+    }
+
+    /**
+     * StringBuf is the minimal common interface of {code StringBuffer} and {code StringBuilder}.
+     * It used by the various {code Format} implementations as the internal string buffer.
+     */
+    interface StringBuf {
+
+        int length();
+
+        String substring(int start, int end);
+
+        StringBuf append(char c);
+
+        StringBuf append(String str);
+
+        StringBuf append(int i);
+
+        StringBuf append(char[] str, int offset, int len);
+
+        StringBuffer asStringBuffer();
+
+        StringBuilder asStringBuilder();
+
+        static StringBuf of(StringBuffer sb) {
+            return new StringBufferImpl(sb);
+        }
+
+        static StringBuf of(StringBuilder sb) {
+            return new StringBuilderImpl(sb);
+        }
+
+        final class StringBufferImpl implements StringBuf {
+            private final StringBuffer sb;
+
+            StringBufferImpl(StringBuffer sb) {
+                this.sb = sb;
+            }
+
+            @Override
+            public int length() {
+                return sb.length();
+            }
+
+            @Override
+            public String substring(int start, int end) {
+                return sb.substring(start, end);
+            }
+
+            @Override
+            public StringBuf append(char c) {
+                sb.append(c);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(String str) {
+                sb.append(str);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(int i) {
+                sb.append(i);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(char[] str, int offset, int len) {
+                sb.append(str, offset, len);
+                return this;
+            }
+
+            @Override
+            public StringBuffer asStringBuffer() {
+                return sb;
+            }
+
+            @Override
+            public StringBuilder asStringBuilder() {
+                throw new AssertionError("Can't cast StringBuffer to StringBuilder");
+            }
+
+            @Override
+            public String toString() {
+                return sb.toString();
+            }
+        }
+
+        final class StringBuilderImpl implements StringBuf {
+            private final StringBuilder sb;
+
+            StringBuilderImpl(StringBuilder sb) {
+                this.sb = sb;
+            }
+
+            @Override
+            public int length() {
+                return sb.length();
+            }
+
+            @Override
+            public String substring(int start, int end) {
+                return sb.substring(start, end);
+            }
+
+            @Override
+            public StringBuf append(char c) {
+                sb.append(c);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(String str) {
+                sb.append(str);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(int i) {
+                sb.append(i);
+                return this;
+            }
+
+            @Override
+            public StringBuf append(char[] str, int offset, int len) {
+                sb.append(str, offset, len);
+                return this;
+            }
+
+            @Override
+            public StringBuffer asStringBuffer() {
+                throw new AssertionError("Can't cast StringBuilder to StringBuffer");
+            }
+
+            @Override
+            public StringBuilder asStringBuilder() {
+                return sb;
+            }
+
+            @Override
+            public String toString() {
+                return sb.toString();
+            }
+        }
     }
 }

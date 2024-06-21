@@ -2017,4 +2017,9 @@ public class MessageFormat extends Format {
             throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
         }
     }
+
+    @Override
+    boolean isInternalSubclass() {
+        return true;
+    }
 }

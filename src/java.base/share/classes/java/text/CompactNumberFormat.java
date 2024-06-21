@@ -27,7 +27,6 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -594,23 +593,18 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(double number, T result,
-                                                   FieldPosition fieldPosition) {
+    StringBuilder format(double number, StringBuilder result,
+                         FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
-    @Override
-    boolean isInternalSubclass() {
-        return true;
-    }
-
-    private <T extends Appendable & CharSequence> T format(double number, T result,
+    private StringBuf format(double number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean nanOrInfinity = decimalFormat.handleNaN(number, result, delegate);
@@ -697,18 +691,18 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
-    <T extends Appendable & CharSequence> T formatWithGeneric(long number, T result,
-                                                   FieldPosition fieldPosition) {
+    StringBuilder format(long number, StringBuilder result,
+                         FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
-    private <T extends Appendable & CharSequence> T format(long number, T result, FieldDelegate delegate) {
+    private StringBuf format(long number, StringBuf result, FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
             number = -number;
@@ -792,10 +786,10 @@ public final class CompactNumberFormat extends NumberFormat {
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate());
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
-    private <T extends Appendable & CharSequence> T format(BigDecimal number, T result,
+    private StringBuf format(BigDecimal number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean isNegative = number.signum() == -1;
@@ -878,10 +872,10 @@ public final class CompactNumberFormat extends NumberFormat {
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, result, fieldPosition.getFieldDelegate(), false);
+        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
     }
 
-    private <T extends Appendable & CharSequence> T format(BigInteger number, T result,
+    private StringBuf format(BigInteger number, StringBuf result,
             FieldDelegate delegate, boolean formatLong) {
 
         boolean isNegative = number.signum() == -1;
@@ -958,7 +952,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.PREFIX} fields
      */
-    private <T extends Appendable & CharSequence> void appendPrefix(T result, String prefix,
+    private void appendPrefix(StringBuf result, String prefix,
             FieldDelegate delegate) {
         append(result, expandAffix(prefix), delegate,
                 getFieldPositions(prefix, NumberFormat.Field.PREFIX));
@@ -974,7 +968,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.SUFFIX} fields
      */
-    private <T extends Appendable & CharSequence> void appendSuffix(T result, String suffix,
+    private void appendSuffix(StringBuf result, String suffix,
             FieldDelegate delegate) {
         append(result, expandAffix(suffix), delegate,
                 getFieldPositions(suffix, NumberFormat.Field.SUFFIX));
@@ -990,15 +984,11 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param positions a list of {@code FieldPosition} in the given
      *                  string
      */
-    private <T extends Appendable & CharSequence> void append(T result, String string,
+    private void append(StringBuf result, String string,
             FieldDelegate delegate, List<FieldPosition> positions) {
         if (!string.isEmpty()) {
             int start = result.length();
-            try {
-                result.append(string);
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe.getMessage(), ioe);
-            }
+            result.append(string);
             for (FieldPosition fp : positions) {
                 Format.Field attribute = fp.getFieldAttribute();
                 delegate.formatted(attribute, attribute,
@@ -1163,15 +1153,15 @@ public final class CompactNumberFormat extends NumberFormat {
         StringBuffer sb = new StringBuffer();
 
         if (obj instanceof Double || obj instanceof Float) {
-            format(((Number) obj).doubleValue(), sb, delegate);
+            format(((Number) obj).doubleValue(), StringBuf.of(sb), delegate);
         } else if (obj instanceof Long || obj instanceof Integer
                 || obj instanceof Short || obj instanceof Byte
                 || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number) obj).longValue(), sb, delegate);
+            format(((Number) obj).longValue(), StringBuf.of(sb), delegate);
         } else if (obj instanceof BigDecimal) {
-            format((BigDecimal) obj, sb, delegate);
+            format((BigDecimal) obj, StringBuf.of(sb), delegate);
         } else if (obj instanceof BigInteger) {
-            format((BigInteger) obj, sb, delegate, false);
+            format((BigInteger) obj, StringBuf.of(sb), delegate, false);
         } else if (obj == null) {
             throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");
@@ -2545,6 +2535,11 @@ public final class CompactNumberFormat extends NumberFormat {
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
         return other;
+    }
+
+    @Override
+    boolean isInternalSubclass() {
+        return true;
     }
 
     /**

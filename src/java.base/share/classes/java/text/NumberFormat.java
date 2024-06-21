@@ -348,7 +348,7 @@ public abstract class NumberFormat extends Format  {
             return result;
 
         if (isInternalSubclass()) {
-            return formatWithGeneric(number, new StringBuilder(),
+            return format(number, new StringBuilder(),
                     DontCareFieldPosition.INSTANCE).toString();
         } else {
             return format(number, new StringBuffer(),
@@ -373,7 +373,7 @@ public abstract class NumberFormat extends Format  {
      */
     public final String format(long number) {
         if (isInternalSubclass()) {
-            return formatWithGeneric(number, new StringBuilder(),
+            return format(number, new StringBuilder(),
                     DontCareFieldPosition.INSTANCE).toString();
         } else {
             return format(number, new StringBuffer(),
@@ -404,9 +404,9 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-    <T extends Appendable & CharSequence> T formatWithGeneric(double number,
-                                                   T toAppendTo,
-                                                   FieldPosition pos) {
+    StringBuilder format(double number,
+                         StringBuilder toAppendTo,
+                         FieldPosition pos) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
@@ -433,9 +433,9 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-    <T extends Appendable & CharSequence> T formatWithGeneric(long number,
-                                                   T toAppendTo,
-                                                   FieldPosition pos) {
+    StringBuilder format(long number,
+                         StringBuilder toAppendTo,
+                         FieldPosition pos) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 

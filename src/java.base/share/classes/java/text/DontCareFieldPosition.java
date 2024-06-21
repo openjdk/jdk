@@ -35,11 +35,11 @@ class DontCareFieldPosition extends FieldPosition {
     static final FieldPosition INSTANCE = new DontCareFieldPosition();
 
     private final Format.FieldDelegate noDelegate = new Format.FieldDelegate() {
-        public <T extends Appendable & CharSequence> void formatted(Format.Field attr, Object value, int start,
-                              int end, T buffer) {
+        public void formatted(Format.Field attr, Object value, int start,
+                              int end, Format.StringBuf buffer) {
         }
-        public <T extends Appendable & CharSequence> void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, T buffer) {
+        public void formatted(int fieldID, Format.Field attr, Object value,
+                              int start, int end, Format.StringBuf buffer) {
         }
     };
 
