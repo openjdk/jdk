@@ -665,6 +665,18 @@ public:
                                      Register result,
                                      u1 super_klass_slot);
 
+  using Assembler::salq;
+  void salq(Register dest, Register count);
+  using Assembler::rorq;
+  void rorq(Register dest, Register count);
+  void lookup_secondary_supers_table(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     Register result);
+
   void lookup_secondary_supers_table_slow_path(Register r_super_klass,
                                                Register r_array_base,
                                                Register r_array_index,

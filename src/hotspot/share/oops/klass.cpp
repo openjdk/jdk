@@ -285,7 +285,8 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
-                           _shared_class_path_index(-1) {
+                               _bitmap(SECONDARY_SUPERS_BITMAP_FULL),
+                               _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
