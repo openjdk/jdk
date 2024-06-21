@@ -747,7 +747,7 @@ oop InstanceKlass::init_lock() const {
   oop lock = java_lang_Class::init_lock(java_mirror());
   // Prevent reordering with any access of initialization state
   OrderAccess::loadload();
-  assert(lock != NULL || !is_not_initialized(), // initialized or in_error state
+  assert(lock != nullptr || !is_not_initialized(), // initialized or in_error state
          "only fully initialized state can have a null lock");
   return lock;
 }
@@ -1099,7 +1099,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       wait = true;
       jt->set_class_to_be_initialized(this);
       ol.wait_uninterruptibly(jt);
-      jt->set_class_to_be_initialized(NULL);
+      jt->set_class_to_be_initialized(nullptr);
     }
 
     // Step 3
@@ -1249,15 +1249,15 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
   Handle h_init_lock(THREAD, init_lock());
-  if (h_init_lock() != NULL) {
+  if (h_init_lock() != nullptr) {
     ObjectLocker ol(h_init_lock, THREAD);
-    set_init_thread(NULL); // reset _init_thread before changing _init_state
+    set_init_thread(nullptr); // reset _init_thread before changing _init_state
     set_init_state(state);
     fence_and_clear_init_lock();
     ol.notify_all(CHECK);
   } else {
-    assert(h_init_lock() != NULL, "The initialization state should never be set twice");
-    set_init_thread(NULL); // reset _init_thread before changing _init_state
+    assert(h_init_lock() != nullptr, "The initialization state should never be set twice");
+    set_init_thread(nullptr); // reset _init_thread before changing _init_state
     set_init_state(state);
   }
 }

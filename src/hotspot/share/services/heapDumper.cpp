@@ -1092,7 +1092,7 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
   // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
   // arrays.
   oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
+  if (init_lock != nullptr) {
     field_count++;
     size += sizeof(address);
   }
@@ -1137,7 +1137,7 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
 
   // Add init lock to the end if the class is not yet initialized
   oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
+  if (init_lock != nullptr) {
     writer->write_symbolID(vmSymbols::init_lock_name());         // name
     writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
     writer->write_objectID(init_lock);
