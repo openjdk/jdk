@@ -66,7 +66,6 @@ import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
-import jdk.internal.opt.CommandLine;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
@@ -190,6 +189,7 @@ public class JlinkTask {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreModifiedRuntime = true;
         }, true, "--ignore-modified-runtime"),
+        // option for generating linkable JDK runtimes (at JDK build time)
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.generateLinkableRuntime = true;
         }, true, "--generate-linkable-runtime")
@@ -239,8 +239,9 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
+    // meta-data files per module for linkable JDK runtimes
     public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
-    // The diff files per module (for runtime-based links)
+    // The diff files per module for linkable JDK runtimes
     public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     int run(String[] args) {
@@ -381,12 +382,6 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
-        // run-time image based linking and an empty module path in conjunction
-        // with --keep-packaged-modules doesn't make sense as we are not linking
-        // from packaged modules to begin with.
-        if (options.modulePath.isEmpty() && options.packagedModulesPath != null) {
-            throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
-        }
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH) && options.modulePath.size() > 0) {
@@ -410,26 +405,72 @@ public class JlinkTask {
             }
             finder = newModuleFinder(options.modulePath, options.limitMods, roots);
         }
+        // Setup and init actions for JDK linkable runtimes
+        LinkableRuntimesResult result = linkableJDKRuntimesInit(finder, roots);
+
+        return new JlinkConfiguration(options.output,
+                                      roots,
+                                      result.finder,
+                                      result.isLinkFromRuntime,
+                                      options.ignoreModifiedRuntime,
+                                      options.generateLinkableRuntime);
+    }
+
+    record LinkableRuntimesResult(boolean isLinkFromRuntime, ModuleFinder finder) {
+    }
+
+    /**
+     * Perform sanity checks and setup actions for JDK linkable runtime links
+     *
+     * @param finder The module finder from packaged modules
+     * @param roots The roots (if any) of the modules.
+     * @return A module finder possibly adding the system modules for JDK
+     *         linkable runtimes if and only if java.base wasn't in the provided
+     *         module finder already. Otherwise returns the provided finder.
+     *         In both cases finders get the set of limited modules applied if
+     *         so requested with --limit-modules.
+     *
+     * @throws BadArgs if the jlink input options contain an invalid
+     *                 combination.
+     */
+    private LinkableRuntimesResult linkableJDKRuntimesInit(ModuleFinder finder,
+                                                           Set<String> roots)
+        throws BadArgs {
+        // Linkable JDK runtimes and an empty module path in conjunction
+        // with --keep-packaged-modules doesn't make sense as we are not linking
+        // from packaged modules to begin with.
+        if (options.modulePath.isEmpty() && options.packagedModulesPath != null) {
+            throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
+        }
         boolean isLinkFromRuntime = options.modulePath.isEmpty();
         // In case of custom modules outside the JDK we may
-        // have a non-empty module path, which doesn't include
-        // java.base. In that case take the JDK modules from the
-        // current run-time image.
+        // have a non-empty module path, which must not include
+        // java.base. If it did, we link using packaged modules from that
+        // module path. If the module path does not include java.base, we must
+        // have a linkable JDK runtime. In that case we take the JDK modules
+        // from the run-time image.
         if (finder.find("java.base").isEmpty()) {
             isLinkFromRuntime = true;
             ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
             finder = combinedFinders(finder, runtimeImageFinder, options.limitMods, roots);
         }
-
-
-        return new JlinkConfiguration(options.output,
-                                      roots,
-                                      finder,
-                                      isLinkFromRuntime,
-                                      options.ignoreModifiedRuntime,
-                                      options.generateLinkableRuntime);
+        return new LinkableRuntimesResult(isLinkFromRuntime, finder);
     }
 
+    /**
+     * Creates a combined module finder of {@code finder} and
+     * {@code runtimeImageFinder} that first looks-up modules in the
+     * {@code runtimeImageFinder} and if not present in {@code finder}.
+     *
+     * @param finder A module finder based on packaged modules.
+     * @param runtimeImageFinder A system modules finder.
+     * @param limitMods The set of limited modules for the resulting
+     *                  finder (if any).
+     * @param roots All module roots.
+     *
+     * @return A combined finder, or the input finder, potentially applying
+     *         module limits.
+     */
     private ModuleFinder combinedFinders(ModuleFinder finder,
             ModuleFinder runtimeImageFinder, Set<String> limitMods,
             Set<String> roots) {
