@@ -53,14 +53,19 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       SpinPause();
       ctr--;
     } else {
-      if (ALLOW_BLOCK && SafepointSynchronize::is_synchronizing()) {
-        // We know SP is synchronizing and block is allowed, 
-        // block the thread in VM for faster SP synchronization.
-        // simply leverage a semaphore.
-        wait_with_safepoint_check();
-      } if (ALLOW_BLOCK) {
-        ThreadBlockInVM tbivm(thread);
-        os::naked_yield();
+      if (ALLOW_BLOCK) {
+         JavaThread* jthread = JavaThread::cast(thread);
+         if (SafepointMechanism::local_poll_armed(jthread)) {
+           //When local_poll_armed is true, TBIVM should block always the thread at SP WaitBarrier,
+           //Hence there is no need to call os::naked_yield() to waste resource on context switch.
+           ThreadBlockInVM block(jthread);
+         } else {
+           // No garentee to block immediately,
+           // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one,
+           // There is high chance under extemely contended situation, it take mutples attmpts to block the thread.
+           ThreadBlockInVM block(jthread);
+           os::naked_yield();
+         }
       } else {
         os::naked_yield();
       }
