@@ -1916,6 +1916,8 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:
@@ -7864,35 +7866,6 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
   %}
 
   ins_pipe(ialu_reg_imm);
-%}
-
-// ============================================================================
-// BSWAP Instructions
-
-instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesUS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short" %}
-
-  ins_encode %{
-    __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short" %}
-
-  ins_encode %{
-    __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
 %}
 
 // ============================================================================
