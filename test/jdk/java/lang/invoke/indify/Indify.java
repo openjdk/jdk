@@ -509,6 +509,7 @@ public class Indify {
                 final Stack<Boolean> shouldProceedAfterIndyAdded = new Stack<>();
 
                 for (Instruction i : getInstructions(m)){
+                    shouldProceedAfterIndyAdded.clear();
                     shouldProceedAfterIndyAdded.push(true);
 
                     if(i.opcode().bytecode() != INVOKESTATIC) continue;  //this is not an invokestatic instruction
@@ -533,26 +534,24 @@ public class Indify {
                         if (!quiet) System.err.println(":::Transforming the Method: "+ m.methodName() +" instruction: " + i + " invokedynamic: " + newConstant.index() );
                         MethodModel finalPatternMethod = patternMethod;
 
-                        codeTransform = (b, e) ->{
-                            String a1 = null, a2 = null;
-                            if(e instanceof InvokeInstruction){
-                                a1 = ((InvokeInstruction) e).method().name().stringValue();
-                                a2 = finalPatternMethod.methodName().stringValue();
-                            }
-                            if (e instanceof InvokeInstruction invokeInstruction && Objects.equals(a1, a2)) {
-                                System.err.println(">> Removing instruction invokestatic for Method: " + invokeInstruction.name());
-                            }
-                            else if (
-                                    shouldProceedAfterIndyAdded.peek() &&
-                                    e instanceof InvokeInstruction invokeInstruction &&
-                                    invokeInstruction.method().name().stringValue().equals("invokeExact"))
-                            {
-                                System.err.println(">> Removing instruction invokevirtual for Method: " + invokeInstruction.method());
-                                System.err.println(">> Adding invokedynamic instruction of invoke virtual: " + ((InvokeDynamicEntry) newConstant).name());
-                                b.invokeDynamicInstruction((InvokeDynamicEntry) newConstant);
+                        codeTransform = (b, e) -> {
+                            if (e instanceof InvokeInstruction invokeInstruction) {
+                                String methodName = invokeInstruction.method().name().stringValue();
+                                String patternMethodName = finalPatternMethod.methodName().stringValue();
 
-                                shouldProceedAfterIndyAdded.pop();
-                                shouldProceedAfterIndyAdded.push(false);
+                                if (methodName.equals(patternMethodName)) {
+                                    System.err.println(">> Removing instruction invokestatic for Method: " + invokeInstruction.name());
+
+                                } else if (shouldProceedAfterIndyAdded.peek() && methodName.equals("invokeExact")) {
+                                    b.invokeDynamicInstruction((InvokeDynamicEntry) newConstant);
+                                    shouldProceedAfterIndyAdded.push(false);
+                                    System.err.println("--> I removed the instruction invokeExact for Method: " + invokeInstruction.name());
+                                    return;
+
+                                } else {
+                                    b.with(e);
+                                }
+
                             } else {
                                 b.with(e);
                             }
@@ -572,7 +571,7 @@ public class Indify {
                                 a2 = finalConm.methodName().stringValue();
                             }
                             if(e instanceof InvokeInstruction invokeInstruction && Objects.equals(a1, a2)){
-                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" instruction: invokestatic " + invokeInstruction.type() + " to ldc: " +  newConstant.index() );
+                                System.err.println(":::Transfmoring the Method: "+ m.methodName() +" | instruction: invokestatic " + invokeInstruction.type() + " to => ldc: " +  newConstant.index() );
                                 b.ldc((LoadableConstantEntry) newConstant);
                             } else b.with(e);
                         };
@@ -580,7 +579,6 @@ public class Indify {
                         classModel = of().parse(
                              of().transform(classModel, classTransform));
                     }
-                    shouldProceedAfterIndyAdded.clear();
                 }
             }
             this.classModel = removePatternMethodsAndVerify(classModel);
