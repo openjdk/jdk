@@ -81,7 +81,7 @@ public class CreationTime {
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
             System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
             // If the file system doesn't support birth time, then skip this test
-            if (0 == creationTime.toMillis()) {
+            if (creationTime.toMillis() == 0) {
                 throw new SkippedException("birth time not support for: " + file);
             } else {
                 err.println("File creation time reported as: " + creationTime);
@@ -145,7 +145,7 @@ public class CreationTime {
     public static void main(String[] args) throws IOException {
         // create temporary directory to run tests
         Path dir;
-        if(0 == args.length) {
+        if(args.length == 0) {
             dir = TestUtil.createTemporaryDirectory();
         } else {
             dir = TestUtil.createTemporaryDirectory(args[0]);
