@@ -171,9 +171,7 @@ class TestJNativeScan extends JNativeScanTestBase {
         assertSuccess(jnativescan("--module-path", MODULE_PATH,
                                   "-add-modules", "org.singlejar,org.myapp",
                                   "--print-native-access"))
-                .stdoutShouldContain("org.singlejar")
-                .stdoutShouldContain("org.lib")
-                .stdoutShouldContain("org.service");
+                .stdoutShouldMatch("org.singlejar,org.service,org.lib");
     }
 
     @Test
