@@ -42,8 +42,7 @@ import tests.JImageGenerator;
  * @requires (jlink.packagedModules & jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.jimage
+ * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
