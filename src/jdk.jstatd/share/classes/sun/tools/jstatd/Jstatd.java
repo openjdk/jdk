@@ -80,7 +80,7 @@ public class Jstatd {
         int rmiPort = 0;
         int argc = 0;
 
-        System.err.println("Warning: jstatd is deprecated and will be removed in a future release.");
+        System.err.println("WARNING: jstatd is deprecated and will be removed in a future release.");
 
         for ( ; (argc < args.length) && (args[argc].startsWith("-")); argc++) {
             String arg = args[argc];
