@@ -27,12 +27,12 @@
  * @summary Interoperability tests with Actalis CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual/manual -Djava.security.debug=certpath,ocsp
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
  *  CAInterop actalisauthenticationrootca OCSP
- * @run main/othervm/manual/manual/timeout=180 -Djava.security.debug=certpath,ocsp
+ * @run main/othervm/manual/timeout=180 -Djava.security.debug=certpath,ocsp
  *  -Dcom.sun.security.ocsp.useget=false
  *  CAInterop actalisauthenticationrootca OCSP
- * @run main/othervm/manual/manual/timeout=180 -Djava.security.debug=certpath,ocsp
+ * @run main/othervm/manual/timeout=180 -Djava.security.debug=certpath,ocsp
  *  CAInterop actalisauthenticationrootca CRL
  */
 
@@ -42,9 +42,9 @@
  * @summary Interoperability tests with Amazon's CA1
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual/manual -Djava.security.debug=certpath,ocsp CAInterop amazonrootca1 OCSP
- * @run main/othervm/manual/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop amazonrootca1 OCSP
- * @run main/othervm/manual/manual -Djava.security.debug=certpath CAInterop amazonrootca1 CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop amazonrootca1 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop amazonrootca1 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop amazonrootca1 CRL
  */
 
 /*
