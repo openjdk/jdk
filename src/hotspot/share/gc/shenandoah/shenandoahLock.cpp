@@ -58,6 +58,9 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
         // block the thread in VM for faster SP synchronization.
         // simply leverage a semaphore.
         wait_with_safepoint_check();
+      } if (ALLOW_BLOCK) {
+        ThreadBlockInVM tbivm(thread);
+        os::naked_yield();
       } else {
         os::naked_yield();
       }
@@ -69,7 +72,7 @@ void ShenandoahLock::wait_with_safepoint_check() {
   Thread* thread = Thread::current();
   assert(thread->is_Java_thread(), "Must be Java thread.");
   assert(SafepointSynchronize::is_synchronizing(), "SP must be synchronizing.");
-  Atomic::inc(&_threads_at_sp);
+  Atomic::add(&_threads_at_sp, (uint) 1, memory_order_relaxed);
   _sp_end_sem.wait_with_safepoint_check(JavaThread::cast(thread));
 }
 
