@@ -43,7 +43,6 @@ import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Module} attribute {@jvms 4.7.25}, which can
@@ -59,7 +58,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleAttribute
         extends Attribute<ModuleAttribute>, ClassElement
         permits BoundAttribute.BoundModuleAttribute, UnboundAttribute.UnboundModuleAttribute {
@@ -174,7 +172,6 @@ public sealed interface ModuleAttribute
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {
 

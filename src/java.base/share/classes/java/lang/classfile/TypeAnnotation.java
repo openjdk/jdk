@@ -57,7 +57,6 @@ import static java.lang.classfile.ClassFile.TAT_NEW;
 import static java.lang.classfile.ClassFile.TAT_RESOURCE_VARIABLE;
 import static java.lang.classfile.ClassFile.TAT_THROWS;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an annotation on a type use, as defined in {@jvms 4.7.19} and {@jvms 4.7.20}.
@@ -67,7 +66,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface TypeAnnotation
         extends Annotation
         permits UnboundAttribute.UnboundTypeAnnotation {
@@ -77,7 +75,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum TargetType {
         /** For annotations on a class type parameter declaration. */
         CLASS_TYPE_PARAMETER(TAT_CLASS_TYPE_PARAMETER, 1),
@@ -239,7 +236,6 @@ public sealed interface TypeAnnotation
      * @sealedGraph
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TargetInfo {
 
         /**
@@ -517,7 +513,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeParameterTarget extends TargetInfo
             permits TargetInfoImpl.TypeParameterTargetImpl {
 
@@ -536,7 +531,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface SupertypeTarget extends TargetInfo
             permits TargetInfoImpl.SupertypeTargetImpl {
 
@@ -560,7 +554,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeParameterBoundTarget extends TargetInfo
             permits TargetInfoImpl.TypeParameterBoundTargetImpl {
 
@@ -586,7 +579,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface EmptyTarget extends TargetInfo
             permits TargetInfoImpl.EmptyTargetImpl {
     }
@@ -597,7 +589,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface FormalParameterTarget extends TargetInfo
             permits TargetInfoImpl.FormalParameterTargetImpl {
 
@@ -616,7 +607,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ThrowsTarget extends TargetInfo
             permits TargetInfoImpl.ThrowsTargetImpl {
 
@@ -636,7 +626,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LocalVarTarget extends TargetInfo
             permits TargetInfoImpl.LocalVarTargetImpl {
 
@@ -653,7 +642,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LocalVarTargetInfo
             permits TargetInfoImpl.LocalVarTargetInfoImpl {
 
@@ -700,7 +688,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface CatchTarget extends TargetInfo
             permits TargetInfoImpl.CatchTargetImpl {
 
@@ -719,7 +706,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OffsetTarget extends TargetInfo
             permits TargetInfoImpl.OffsetTargetImpl {
 
@@ -741,7 +727,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypeArgumentTarget extends TargetInfo
             permits TargetInfoImpl.TypeArgumentTargetImpl {
 
@@ -777,7 +762,6 @@ public sealed interface TypeAnnotation
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TypePathComponent
             permits UnboundAttribute.TypePathComponentImpl {
 
@@ -786,7 +770,6 @@ public sealed interface TypeAnnotation
          *
          * @since 22
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public enum Kind {
 
             /** Annotation is deeper in an array type */

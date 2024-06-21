@@ -34,7 +34,6 @@ import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Exceptions} attribute {@jvms 4.7.5}, which can appear on
@@ -48,7 +47,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ExceptionsAttribute
         extends Attribute<ExceptionsAttribute>, MethodElement
         permits BoundAttribute.BoundExceptionsAttribute,

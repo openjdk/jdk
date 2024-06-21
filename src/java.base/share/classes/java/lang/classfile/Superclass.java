@@ -26,7 +26,6 @@ package java.lang.classfile;
 
 import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.SuperclassImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the superclass of a class.  Delivered as a {@link
@@ -34,7 +33,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Superclass
         extends ClassElement
         permits SuperclassImpl {

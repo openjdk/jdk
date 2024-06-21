@@ -25,7 +25,6 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.BootstrapMethodEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a dynamic constant pool entry, which is either {@link ConstantDynamicEntry}
@@ -35,7 +34,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DynamicConstantPoolEntry extends PoolEntry
         permits ConstantDynamicEntry, InvokeDynamicEntry {
 

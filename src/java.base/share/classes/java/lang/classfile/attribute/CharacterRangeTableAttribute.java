@@ -30,7 +30,6 @@ import java.util.List;
 import java.lang.classfile.Attribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * The CharacterRangeTable attribute is an optional variable-length attribute in
@@ -60,7 +59,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CharacterRangeTableAttribute
         extends Attribute<CharacterRangeTableAttribute>
         permits BoundAttribute.BoundCharacterRangeTableAttribute,

@@ -31,7 +31,6 @@ import java.lang.classfile.FieldElement;
 import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Synthetic} attribute {@jvms 4.7.8}, which can appear on
@@ -43,7 +42,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface SyntheticAttribute
         extends Attribute<SyntheticAttribute>,
                 ClassElement, MethodElement, FieldElement

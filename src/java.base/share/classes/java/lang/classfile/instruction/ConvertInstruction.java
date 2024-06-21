@@ -32,7 +32,6 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a primitive conversion instruction in the {@code code} array of a
@@ -42,7 +41,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConvertInstruction extends Instruction
         permits AbstractInstruction.UnboundConvertInstruction {
     /**

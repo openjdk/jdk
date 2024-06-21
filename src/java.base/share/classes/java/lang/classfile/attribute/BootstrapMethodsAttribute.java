@@ -32,7 +32,6 @@ import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code BootstrapMethods} attribute {@jvms 4.7.23}, which serves as
@@ -47,7 +46,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodsAttribute
         extends Attribute<BootstrapMethodsAttribute>
         permits BoundAttribute.BoundBootstrapMethodsAttribute,

@@ -31,7 +31,6 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an entry in the bootstrap method table.  The bootstrap method table
@@ -41,7 +40,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodEntry
         extends WritableElement<BootstrapMethodEntry>
         permits BootstrapMethodEntryImpl {

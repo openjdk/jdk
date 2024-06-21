@@ -27,14 +27,12 @@ package java.lang.classfile;
 import java.util.List;
 import jdk.internal.classfile.impl.SignaturesImpl;
 import static java.util.Objects.requireNonNull;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the generic signature of a class file, as defined by {@jvms 4.7.9}.
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassSignature
         permits SignaturesImpl.ClassSignatureImpl {
 

@@ -31,7 +31,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code CompilationID} attribute (@@@ need reference), which can
@@ -45,7 +44,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CompilationIDAttribute
         extends Attribute<CompilationIDAttribute>, ClassElement
         permits BoundAttribute.BoundCompilationIDAttribute,

@@ -29,7 +29,6 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code new} instruction in the {@code code} array of a {@code Code}
@@ -38,7 +37,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NewObjectInstruction extends Instruction
         permits AbstractInstruction.BoundNewObjectInstruction, AbstractInstruction.UnboundNewObjectInstruction {
 

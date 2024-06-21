@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Bidirectional mapper between the classfile representation of an attribute and
  * how that attribute is modeled in the API.  The attribute mapper is used
@@ -39,7 +37,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public interface AttributeMapper<A> {
 
     /**
@@ -47,7 +44,6 @@ public interface AttributeMapper<A> {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributeStability {
 
         /**

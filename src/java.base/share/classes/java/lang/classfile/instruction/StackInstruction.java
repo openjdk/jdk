@@ -30,7 +30,6 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a stack manipulation instruction in the {@code code} array of a
@@ -40,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackInstruction extends Instruction
         permits AbstractInstruction.UnboundStackInstruction {
 

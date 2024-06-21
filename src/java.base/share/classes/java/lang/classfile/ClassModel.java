@@ -27,13 +27,10 @@ package java.lang.classfile;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.impl.ClassImpl;
-import jdk.internal.classfile.impl.verifier.VerifierImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a classfile.  The contents of the classfile can be traversed via
@@ -42,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassModel
         extends CompoundElement<ClassElement>, AttributedElement
         permits ClassImpl {

@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Models a non-standard attribute of a classfile.  Clients should extend
  * this class to provide an implementation class for non-standard attributes,
@@ -35,7 +33,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {
 

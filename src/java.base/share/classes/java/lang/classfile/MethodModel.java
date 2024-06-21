@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedMethodBuilder;
 import jdk.internal.classfile.impl.MethodImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method.  The contents of the method can be traversed via
@@ -40,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
         extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {

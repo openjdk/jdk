@@ -25,14 +25,12 @@
 package java.lang.classfile.attribute;
 
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single line number in the {@link LineNumberTableAttribute}.
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LineNumberInfo
         permits UnboundAttribute.UnboundLineNumberInfo {
 

@@ -37,7 +37,6 @@ import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.classfile.attribute.SyntheticAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A marker interface for elements that can appear when traversing
@@ -46,7 +45,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodElement
         extends ClassFileElement
         permits AccessFlags, CodeModel, CustomAttribute,

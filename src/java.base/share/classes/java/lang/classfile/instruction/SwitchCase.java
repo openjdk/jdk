@@ -26,7 +26,6 @@ package java.lang.classfile.instruction;
 
 import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single case in a {@code lookupswitch} or {@code tableswitch}
@@ -37,7 +36,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface SwitchCase
         permits AbstractInstruction.SwitchCaseImpl {
 

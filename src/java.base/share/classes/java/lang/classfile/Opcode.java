@@ -26,7 +26,6 @@ package java.lang.classfile;
 
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Describes the opcodes of the JVM instruction set, as described in {@jvms 6.5}.
@@ -38,7 +37,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public enum Opcode {
 
     /** Do nothing */
@@ -700,7 +698,6 @@ public enum Opcode {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public static enum Kind {
 
         /**

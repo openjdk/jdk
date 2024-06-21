@@ -36,7 +36,6 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A printer of classfiles and its elements.
@@ -62,7 +61,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public final class ClassPrinter {
 
     private ClassPrinter() {
@@ -73,7 +71,6 @@ public final class ClassPrinter {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum Verbosity {
 
         /**
@@ -108,7 +105,6 @@ public final class ClassPrinter {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface Node {
 
         /**
@@ -153,7 +149,6 @@ public final class ClassPrinter {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface LeafNode extends Node
             permits ClassPrinterImpl.LeafNodeImpl {
 
@@ -169,7 +164,6 @@ public final class ClassPrinter {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ListNode extends Node, List<Node>
             permits ClassPrinterImpl.ListNodeImpl {
     }
@@ -181,7 +175,6 @@ public final class ClassPrinter {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface MapNode extends Node, Map<ConstantDesc, Node>
             permits ClassPrinterImpl.MapNodeImpl {
     }

@@ -34,7 +34,6 @@ import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an {@code instanceof} or {@code checkcast} instruction in the {@code
@@ -43,7 +42,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface TypeCheckInstruction extends Instruction
         permits AbstractInstruction.BoundTypeCheckInstruction,
                 AbstractInstruction.UnboundTypeCheckInstruction {

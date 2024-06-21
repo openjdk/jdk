@@ -29,7 +29,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.BoundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Code} attribute {@jvms 4.7.3}, appears on non-native,
@@ -43,7 +42,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeModel
         permits BoundAttribute.BoundCodeAttribute {
 

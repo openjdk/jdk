@@ -24,7 +24,6 @@
  */
 package java.lang.classfile.constantpool;
 
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Thrown to indicate that requested entry cannot be obtained from the constant
@@ -32,7 +31,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public class ConstantPoolException extends IllegalArgumentException {
 
     @java.io.Serial

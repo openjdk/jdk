@@ -45,7 +45,6 @@ import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -59,7 +58,6 @@ import static java.util.Objects.requireNonNull;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
         extends ConstantPool, WritableElement<ConstantPool>
         permits SplitConstantPool, TemporaryConstantPool {

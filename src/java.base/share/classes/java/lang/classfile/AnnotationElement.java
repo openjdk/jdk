@@ -29,7 +29,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a key-value pair of an annotation.
@@ -39,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationElement
         extends WritableElement<AnnotationElement>
         permits AnnotationImpl.AnnotationElementImpl {

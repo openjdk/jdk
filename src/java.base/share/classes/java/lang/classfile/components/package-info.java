@@ -113,7 +113,5 @@
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile.components;
 
-import jdk.internal.javac.PreviewFeature;

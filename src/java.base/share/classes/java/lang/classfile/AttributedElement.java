@@ -30,7 +30,6 @@ import java.util.Optional;
 
 import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A {@link ClassFileElement} describing an entity that has attributes, such
@@ -39,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AttributedElement extends ClassFileElement
         permits ClassModel, CodeModel, FieldModel, MethodModel,
                 RecordComponentInfo, AbstractUnboundModel {

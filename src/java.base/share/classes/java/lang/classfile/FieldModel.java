@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedFieldBuilder;
 import jdk.internal.classfile.impl.FieldImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a field.  The contents of the field can be traversed via
@@ -40,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldModel
         extends WritableElement<FieldModel>, CompoundElement<FieldElement>, AttributedElement, ClassElement
         permits BufferedFieldBuilder.Model, FieldImpl {

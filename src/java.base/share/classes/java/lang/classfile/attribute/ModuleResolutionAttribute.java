@@ -29,7 +29,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code ModuleResolution} attribute, which can
@@ -64,7 +63,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleResolutionAttribute
         extends Attribute<ModuleResolutionAttribute>, ClassElement
         permits BoundAttribute.BoundModuleResolutionAttribute, UnboundAttribute.UnboundModuleResolutionAttribute {

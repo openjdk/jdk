@@ -30,7 +30,6 @@ import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant pool entry for a dynamic call site.
@@ -38,7 +37,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
         permits AbstractPoolEntry.InvokeDynamicEntryImpl {

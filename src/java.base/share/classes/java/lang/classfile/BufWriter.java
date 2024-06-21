@@ -30,7 +30,6 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.impl.BufWriterImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Supports writing portions of a classfile to a growable buffer.   Methods
@@ -39,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BufWriter
         permits BufWriterImpl {
 

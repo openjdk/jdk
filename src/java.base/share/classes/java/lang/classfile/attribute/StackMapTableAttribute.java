@@ -31,7 +31,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.CodeElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code StackMapTable} attribute {@jvms 4.7.4}, which can appear
@@ -45,7 +44,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapTableAttribute
         extends Attribute<StackMapTableAttribute>, CodeElement
         permits BoundAttribute.BoundStackMapTableAttribute, UnboundAttribute.UnboundStackMapTableAttribute {

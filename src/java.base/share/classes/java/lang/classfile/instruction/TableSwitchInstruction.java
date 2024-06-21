@@ -31,7 +31,6 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code tableswitch} instruction in the {@code code} array of a
@@ -40,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface TableSwitchInstruction extends Instruction
         permits AbstractInstruction.BoundTableSwitchInstruction, AbstractInstruction.UnboundTableSwitchInstruction {
     /**

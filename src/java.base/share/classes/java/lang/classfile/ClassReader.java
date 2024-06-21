@@ -37,7 +37,6 @@ import jdk.internal.classfile.impl.ClassReaderImpl;
 
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Supports reading from a classfile.  Methods are provided to read data of
@@ -48,7 +47,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassReader extends ConstantPool
         permits ClassReaderImpl {
 

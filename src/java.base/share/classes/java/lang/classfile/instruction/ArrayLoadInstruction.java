@@ -31,7 +31,6 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an array load instruction in the {@code code} array of a {@code Code}
@@ -41,7 +40,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ArrayLoadInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayLoadInstruction {
     /**

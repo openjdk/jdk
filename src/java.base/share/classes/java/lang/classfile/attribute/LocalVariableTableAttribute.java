@@ -29,7 +29,6 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code LocalVariableTable} attribute {@jvms 4.7.13}, which can appear
@@ -43,7 +42,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariableTableAttribute
         extends Attribute<LocalVariableTableAttribute>
         permits BoundAttribute.BoundLocalVariableTableAttribute, UnboundAttribute.UnboundLocalVariableTableAttribute {

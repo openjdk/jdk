@@ -38,7 +38,6 @@ import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an {@code invokedynamic} instruction in the {@code code} array of a
@@ -47,7 +46,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeDynamicInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeDynamicInstruction, AbstractInstruction.UnboundInvokeDynamicInstruction {
     /**

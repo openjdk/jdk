@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A transformation on streams of elements. Transforms are used during
@@ -76,7 +75,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
         E extends ClassFileElement,
@@ -133,7 +131,6 @@ public sealed interface ClassFileTransform<
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     interface ResolvedTransform<E extends ClassFileElement> {
         /**
          * {@return a {@link Consumer} to receive elements}

@@ -29,7 +29,6 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code newarray} invocation instruction in the {@code code}
@@ -38,7 +37,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NewPrimitiveArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewPrimitiveArrayInstruction,
                 AbstractInstruction.UnboundNewPrimitiveArrayInstruction {

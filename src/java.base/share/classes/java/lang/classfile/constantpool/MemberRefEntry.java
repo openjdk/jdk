@@ -25,7 +25,6 @@
 package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a member reference constant in the constant pool of a classfile,
@@ -34,7 +33,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MemberRefEntry extends PoolEntry
         permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {
     /**

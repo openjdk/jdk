@@ -26,7 +26,6 @@ package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 import java.lang.constant.ClassDesc;
 
 /**
@@ -36,7 +35,6 @@ import java.lang.constant.ClassDesc;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldRefEntry extends MemberRefEntry
         permits AbstractPoolEntry.FieldRefEntryImpl {
 

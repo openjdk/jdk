@@ -39,7 +39,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method invocation instruction in the {@code code} array of a {@code
@@ -49,7 +48,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeInterfaceInstruction, AbstractInstruction.BoundInvokeInstruction, AbstractInstruction.UnboundInvokeInstruction {
     /**

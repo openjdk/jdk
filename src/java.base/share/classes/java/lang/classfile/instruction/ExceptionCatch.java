@@ -32,7 +32,6 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction modeling an entry in the exception table of a code
@@ -44,7 +43,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ExceptionCatch extends PseudoInstruction
         permits AbstractPseudoInstruction.ExceptionCatchImpl {
     /**

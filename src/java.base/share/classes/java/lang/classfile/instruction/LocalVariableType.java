@@ -36,7 +36,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the {@link
@@ -46,7 +45,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
     /**

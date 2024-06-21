@@ -33,14 +33,12 @@ import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static java.lang.classfile.ClassFile.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models stack map frame of {@code StackMapTable} attribute {@jvms 4.7.4}.
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
@@ -82,7 +80,6 @@ public sealed interface StackMapFrameInfo
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface VerificationTypeInfo {
 
         /**
@@ -96,7 +93,6 @@ public sealed interface StackMapFrameInfo
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
         /** verification type top */
@@ -138,7 +134,6 @@ public sealed interface StackMapFrameInfo
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ObjectVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.ObjectVerificationTypeInfoImpl {
 
@@ -177,7 +172,6 @@ public sealed interface StackMapFrameInfo
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface UninitializedVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
 

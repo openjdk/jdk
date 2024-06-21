@@ -30,7 +30,6 @@ import java.lang.classfile.AccessFlags;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeLocalsShifter} is a {@link CodeTransform} shifting locals to
@@ -40,7 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeLocalsShifter extends CodeTransform permits CodeLocalsShifterImpl {
 
     /**

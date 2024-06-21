@@ -34,7 +34,6 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
@@ -46,7 +45,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantInstruction extends Instruction {
 
     /**
@@ -65,7 +63,6 @@ public sealed interface ConstantInstruction extends Instruction {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
@@ -84,7 +81,6 @@ public sealed interface ConstantInstruction extends Instruction {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ArgumentConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundArgumentConstantInstruction,
                     AbstractInstruction.UnboundArgumentConstantInstruction {
@@ -107,7 +103,6 @@ public sealed interface ConstantInstruction extends Instruction {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LoadConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundLoadConstantInstruction,
                     AbstractInstruction.UnboundLoadConstantInstruction {

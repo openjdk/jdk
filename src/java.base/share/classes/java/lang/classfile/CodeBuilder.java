@@ -87,7 +87,6 @@ import java.lang.classfile.instruction.TypeCheckInstruction;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
 import jdk.internal.classfile.impl.TransformingCodeBuilder;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for code attributes (method bodies).  Builders are not created
@@ -101,7 +100,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeBuilder
         extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
@@ -181,7 +179,6 @@ public sealed interface CodeBuilder
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface BlockCodeBuilder extends CodeBuilder
             permits BlockCodeBuilderImpl {
         /**
@@ -322,7 +319,6 @@ public sealed interface CodeBuilder
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface CatchBuilder permits CatchBuilderImpl {
         /**
          * Adds a catch block that catches an exception of the given type.

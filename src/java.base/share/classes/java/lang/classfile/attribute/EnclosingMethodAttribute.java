@@ -37,7 +37,6 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code EnclosingMethod} attribute {@jvms 4.7.7}, which can appear
@@ -53,7 +52,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface EnclosingMethodAttribute
         extends Attribute<EnclosingMethodAttribute>, ClassElement
         permits BoundAttribute.BoundEnclosingMethodAttribute,

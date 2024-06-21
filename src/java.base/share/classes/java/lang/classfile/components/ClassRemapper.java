@@ -34,7 +34,6 @@ import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodTransform;
 import jdk.internal.classfile.impl.ClassRemapperImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
@@ -54,7 +53,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 
     /**

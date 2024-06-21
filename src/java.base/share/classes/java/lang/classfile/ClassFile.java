@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import java.lang.classfile.attribute.ModuleAttribute;
-import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -46,7 +45,6 @@ import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.CD_module_info;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Represents a context for parsing, transforming, and generating classfiles.
@@ -55,7 +53,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFile
         permits ClassFileImpl {
 
@@ -86,7 +83,6 @@ public sealed interface ClassFile
      * @sealedGraph
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface Option {
     }
 
@@ -96,7 +92,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
             permits ClassFileImpl.AttributeMapperOptionImpl {
 
@@ -121,7 +116,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassFileImpl.ClassHierarchyResolverOptionImpl {
 
@@ -152,7 +146,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ConstantPoolSharingOption implements Option {
 
         /** Preserves the original constant pool when transforming classfile */
@@ -169,7 +162,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadCodeOption implements Option {
 
         /** Patch unreachable code */
@@ -190,7 +182,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadLabelsOption implements Option {
 
         /** Fail on unresolved labels */
@@ -209,7 +200,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DebugElementsOption implements Option {
 
         /** Process debug elements */
@@ -227,7 +217,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum LineNumbersOption implements Option {
 
         /** Process line numbers */
@@ -245,7 +234,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ShortJumpsOption implements Option {
 
         /** Automatically convert short jumps to long when necessary */
@@ -264,7 +252,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum StackMapsOption implements Option {
 
         /** Generate stack maps when required */
@@ -286,7 +273,6 @@ public sealed interface ClassFile
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributesProcessingOption implements Option {
 
         /** Process all original attributes during transformation */

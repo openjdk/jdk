@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 
 import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A transformation on streams of {@link ClassElement}.
@@ -39,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface ClassTransform
         extends ClassFileTransform<ClassTransform, ClassElement, ClassBuilder> {

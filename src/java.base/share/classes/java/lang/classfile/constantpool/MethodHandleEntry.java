@@ -28,7 +28,6 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_MethodHandle_info} constant in the constant pool of a
@@ -37,7 +36,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodHandleEntryImpl {

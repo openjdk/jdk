@@ -27,7 +27,6 @@ package java.lang.classfile;
 import java.lang.classfile.AttributeMapper.AttributeStability;
 import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Attribute mappers for standard classfile attributes.
@@ -90,7 +89,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public final class Attributes {
 
     /** AnnotationDefault */

@@ -31,7 +31,6 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
@@ -39,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
  * @sealedGraph
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Signature {
 
     /** {@return the raw signature string} */
@@ -72,7 +70,6 @@ public sealed interface Signature {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface BaseTypeSig extends Signature
             permits SignaturesImpl.BaseTypeSigImpl {
 
@@ -109,7 +106,6 @@ public sealed interface Signature {
      * @sealedGraph
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface RefTypeSig
             extends Signature
             permits ArrayTypeSig, ClassTypeSig, TypeVarSig {
@@ -120,7 +116,6 @@ public sealed interface Signature {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ClassTypeSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.ClassTypeSigImpl {
@@ -188,14 +183,12 @@ public sealed interface Signature {
      * @sealedGraph
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeArg {
 
         /**
          * Models an unbounded type argument {@code *}.
          * @since 23
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public sealed interface Unbounded extends TypeArg permits SignaturesImpl.UnboundedTypeArgImpl {
         }
 
@@ -203,14 +196,12 @@ public sealed interface Signature {
          * Models a type argument with an explicit bound type.
          * @since 23
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public sealed interface Bounded extends TypeArg permits SignaturesImpl.TypeArgImpl {
 
             /**
              * Models a type argument's wildcard indicator.
              * @since 23
              */
-            @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
             public enum WildcardIndicator {
 
                 /**
@@ -295,7 +286,6 @@ public sealed interface Signature {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeVarSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.TypeVarSigImpl {
@@ -317,7 +307,6 @@ public sealed interface Signature {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ArrayTypeSig
             extends RefTypeSig
             permits SignaturesImpl.ArrayTypeSigImpl {
@@ -353,7 +342,6 @@ public sealed interface Signature {
      *
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeParam
             permits SignaturesImpl.TypeParamImpl {
 
@@ -399,7 +387,6 @@ public sealed interface Signature {
      * @sealedGraph
      * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ThrowableSig extends Signature {
     }
 }
