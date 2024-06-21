@@ -328,7 +328,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
   } else {
     if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
-      warning("MaxVectorSize is set to %i on this platform", _initial_vector_length);
+      warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d", (int)MaxVectorSize, _initial_vector_length);
     }
     MaxVectorSize = _initial_vector_length;
     if (MaxVectorSize < 16) {
