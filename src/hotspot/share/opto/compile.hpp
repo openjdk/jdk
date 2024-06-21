@@ -1194,6 +1194,9 @@ private:
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
 
+  void save_graph(PhaseIterGVN* igvn, const char* label);
+  int _graph_counter = 0;
+
   // Management of the AliasType table.
   void grow_alias_types();
   AliasCacheEntry* probe_alias_cache(const TypePtr* adr_type);

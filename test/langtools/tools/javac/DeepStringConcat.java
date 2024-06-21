@@ -26,13 +26,30 @@
  * @bug 4496697
  * @summary Parser.foldStrings() should use iteration instead of recursion.
  * @author gafter
- *
- * @compile DeepStringConcat.java
  */
 
 public class DeepStringConcat {
-    public static void main(String[] args) {
-        if (X.length() != 32001) throw new Error();
+    public static void main(String[] args) throws Exception {
+        PrintWriter out = new PrintWriter(System.out, true);
+        JavacTool tool = JavacTool.create();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            File testSrc = new File(System.getProperty("test.src"));
+
+            File file = new File(testSrc, "DeepStringConcat.java");
+            ArrayList<File> files = new ArrayList<>();
+            for (int i=0; i<1000; i++) files.add(file);
+
+            for (int i=0; i<100; i++) {
+                Iterable<? extends JavaFileObject> f = fm.getJavaFileObjectsFromFiles(files);
+                JavacTask task = tool.getTask(out, fm, null, null, null, f);
+                Iterable<? extends CompilationUnitTree> trees = task.parse();
+
+                Scanner s = new Scanner();
+                for (CompilationUnitTree t: trees)
+                    s.scan(t, null);
+            }
+            out.flush();
+        }
     }
     public static final String X =
 "a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+"a"+

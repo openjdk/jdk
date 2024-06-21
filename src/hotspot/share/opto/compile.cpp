@@ -2219,6 +2219,85 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
   }
 }
 
+void Compile::save_graph(PhaseIterGVN* igvn, const char* label) {
+  // If we are compiling any of our interesting methods, then save to file
+  if (strcmp(method()->name()->as_utf8(), "foldStrings") == 0) {
+    Unique_Node_List wq;
+    wq.push(root());
+    stringStream graph;
+
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* n = wq.at(i);
+
+      graph.print("%d   %s === ", n->_idx, NodeClassNames[n->Opcode()]);
+
+      for (uint j = 0; j < n->req(); j++) {
+        Node* u = n->in(j);
+        if (u != nullptr) {
+          graph.print(" %d", u->_idx);
+          wq.push(u);
+        }
+      }
+
+      graph.print(" [[ ");
+      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+        Node* u = n->fast_out(j);
+        if (u != nullptr) {
+          if (u->is_Call() && !u->as_Call()->has_non_debug_use(n)) {
+            // skip if this call is only using the node because of debug info
+            // this should also cover cases where 'u' is a trap
+            continue;
+          }
+          graph.print(" %d", u->_idx);
+          wq.push(u);
+        }
+      }
+      graph.print(" ]] ");
+
+      if (n->is_SafePoint()) {
+        graph.print(" ## ");
+
+        if (n->is_Call()) {
+          graph.print("%s <= ", n->as_Call()->_name);
+        } else {
+          graph.print("SafePoint <= ");
+        }
+
+        JVMState* p = n->as_SafePoint()->jvms();
+        while (p != nullptr) {
+          graph.print("jvms bci='%d' line='%d' method='%s' <= ", p->bci(), p->method()->line_number_from_bci(p->bci()), p->method()->name()->as_utf8());
+          p = p->caller();
+        }
+      } else if (n->is_Con()) {
+        const Type* t = n->as_Type()->type();
+
+        if (t->base() == Type::Int) {
+          const TypeInt* ti = t->is_int();
+          graph.print(" ## %d", ti->get_con());
+        } else if (t->base() == Type::Long) {
+          const TypeLong* tl = t->is_long();
+          graph.print(" ## %ld", tl->get_con());
+        }
+      }
+
+      if (igvn != nullptr && igvn->type(n) != nullptr) {
+        const Type* t = igvn->type(n);
+        t->dump_on(&graph);
+      }
+
+      graph.cr();
+    }
+
+    stringStream filename;
+    filename.print("/tmp/graph_%d_%s_%d.ir", compile_id(), label, _graph_counter++);
+
+    fileStream fs(filename.freeze());
+    fs.print("%s", graph.freeze());
+    fs.flush();
+    fs.close();
+  }
+}
+
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
 void Compile::Optimize() {
@@ -2328,6 +2407,7 @@ void Compile::Optimize() {
   if (failing())  return;
 
   // Perform escape analysis
+  save_graph(&igvn, "before_do_ea");
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
@@ -2338,7 +2418,9 @@ void Compile::Optimize() {
     bool progress;
     print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
     do {
+      save_graph(&igvn, "before_do_analysis");
       ConnectionGraph::do_analysis(this, &igvn);
+      save_graph(&igvn, "after_do_analysis");
 
       if (failing())  return;
 
@@ -2346,6 +2428,7 @@ void Compile::Optimize() {
 
       // Optimize out fields loads from scalar replaceable allocations.
       igvn.optimize();
+      save_graph(&igvn, "after_first_igvn_optimize");
       print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (failing()) return;
@@ -2354,10 +2437,12 @@ void Compile::Optimize() {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
+        save_graph(&igvn, "after_eliminate_macro");
         if (failing()) return;
 
         igvn.set_delay_transform(false);
         igvn.optimize();
+        save_graph(&igvn, "after_second_igvn_optimize");
         if (failing()) return;
 
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
@@ -2373,6 +2458,7 @@ void Compile::Optimize() {
       // by removing some allocations and/or locks.
     } while (progress);
   }
+  save_graph(&igvn, "after_do_ea");
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.

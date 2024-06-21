@@ -361,7 +361,6 @@ public:
   static const Type *mreg2type[];
 
   // Printing, statistics
-#ifndef PRODUCT
   void         dump_on(outputStream *st) const;
   void         dump() const {
     dump_on(tty);
@@ -383,7 +382,6 @@ public:
   bool has_category(Category cat) const;
 
   static const char* str(const Type* t);
-#endif // !PRODUCT
   void typerr(const Type *t) const; // Mixing types error
 
   // Create basic type
@@ -513,9 +511,7 @@ public:
   static const TypeF *ONE;
   static const TypeF *POS_INF;
   static const TypeF *NEG_INF;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 //------------------------------TypeD------------------------------------------
@@ -544,9 +540,7 @@ public:
   static const TypeD *ONE;
   static const TypeD *POS_INF;
   static const TypeD *NEG_INF;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 class TypeInteger : public Type {
@@ -632,9 +626,7 @@ public:
   static const TypeInt *TYPE_DOMAIN; // alias for TypeInt::INT
 
   static const TypeInt *as_self(const Type *t) { return t->is_int(); }
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 
@@ -691,9 +683,7 @@ public:
   // static convenience methods.
   static const TypeLong *as_self(const Type *t) { return t->is_long(); }
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const;// Specialized per-Type dumping
-#endif
 };
 
 //------------------------------TypeTuple--------------------------------------
@@ -746,9 +736,7 @@ public:
   static const TypeTuple *LONG_PAIR;
   static const TypeTuple *INT_CC_PAIR;
   static const TypeTuple *LONG_CC_PAIR;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
-#endif
 };
 
 //------------------------------TypeAry----------------------------------------
@@ -776,9 +764,7 @@ public:
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
   virtual const TypeAry* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
-#endif
 };
 
 //------------------------------TypeVect---------------------------------------
@@ -829,9 +815,7 @@ public:
   static const TypeVect *VECTZ;
   static const TypeVect *VECTMASK;
 
-#ifndef PRODUCT
   virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
-#endif
 };
 
 class TypeVectA : public TypeVect {
@@ -962,16 +946,12 @@ protected:
   int hash_speculative() const;
   const TypePtr* add_offset_speculative(intptr_t offset) const;
   const TypePtr* with_offset_speculative(intptr_t offset) const;
-#ifndef PRODUCT
   void dump_speculative(outputStream *st) const;
-#endif
 
   // utility methods to work on the inline depth of the type
   int dual_inline_depth() const;
   int meet_inline_depth(int depth) const;
-#ifndef PRODUCT
   void dump_inline_depth(outputStream *st) const;
-#endif
 
   // TypeInstPtr (TypeAryPtr resp.) and TypeInstKlassPtr (TypeAryKlassPtr resp.) implement very similar meet logic.
   // The logic for meeting 2 instances (2 arrays resp.) is shared in the 2 utility methods below. However the logic for
@@ -1061,9 +1041,7 @@ public:
   static const TypePtr *NULL_PTR;
   static const TypePtr *NOTNULL;
   static const TypePtr *BOTTOM;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st  ) const;
-#endif
 };
 
 //------------------------------TypeRawPtr-------------------------------------
@@ -1094,9 +1072,7 @@ public:
   // Convenience common pre-built types.
   static const TypeRawPtr *BOTTOM;
   static const TypeRawPtr *NOTNULL;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st  ) const;
-#endif
 };
 
 //------------------------------TypeOopPtr-------------------------------------
@@ -1244,9 +1220,7 @@ public:
 
   // Convenience common pre-built type.
   static const TypeOopPtr *BOTTOM;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 private:
   virtual bool is_meet_subtype_of(const TypePtr* other) const {
     return is_meet_subtype_of_helper(other->is_oopptr(), klass_is_exact(), other->is_oopptr()->klass_is_exact());
@@ -1373,9 +1347,7 @@ public:
   static const TypeInstPtr *MIRROR;
   static const TypeInstPtr *MARK;
   static const TypeInstPtr *KLASS;
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
 
 private:
   virtual bool is_meet_subtype_of_helper(const TypeOopPtr* other, bool this_xk, bool other_xk) const;
@@ -1502,9 +1474,7 @@ public:
   }
   static const TypeAryPtr *_array_body_type[T_CONFLICT+1];
   // sharpen the type of an int which is used as an array size
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
 private:
   virtual bool is_meet_subtype_of_helper(const TypeOopPtr* other, bool this_xk, bool other_xk) const;
 };
@@ -1544,9 +1514,7 @@ public:
   // Convenience common pre-built types.
   static const TypeMetadataPtr *BOTTOM;
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 //------------------------------TypeKlassPtr-----------------------------------
@@ -1616,9 +1584,7 @@ public:
 
   virtual const TypeKlassPtr* try_improve() const { return this; }
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
 private:
   virtual bool is_meet_subtype_of(const TypePtr* other) const {
     return is_meet_subtype_of_helper(other->is_klassptr(), klass_is_exact(), other->is_klassptr()->klass_is_exact());
@@ -1758,9 +1724,7 @@ public:
     return TypeKlassPtr::empty() || _elem->empty();
   }
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
 private:
   virtual bool is_meet_subtype_of_helper(const TypeKlassPtr* other, bool this_xk, bool other_xk) const;
 };
@@ -1803,9 +1767,7 @@ public:
     return _ptrtype->is_known_instance();
   }
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 //------------------------------TypeNarrowOop----------------------------------
@@ -1849,9 +1811,7 @@ public:
   virtual const TypeNarrowOop* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 //------------------------------TypeNarrowKlass----------------------------------
@@ -1885,9 +1845,7 @@ public:
   // static const TypeNarrowKlass *BOTTOM;
   static const TypeNarrowKlass *NULL_PTR;
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
-#endif
 };
 
 //------------------------------TypeFunc---------------------------------------
@@ -1926,9 +1884,7 @@ public:
 
   BasicType return_type() const;
 
-#ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
   // Convenience common pre-built types.
 };
 

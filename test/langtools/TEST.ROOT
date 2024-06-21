@@ -9,6 +9,8 @@
 # should be taken to handle test failures of intermittent or
 # randomness tests.
 
+maxOutputSize=30000000
+
 keys=intermittent randomness needs-src needs-src-jdk_javadoc
 
 # Group definitions

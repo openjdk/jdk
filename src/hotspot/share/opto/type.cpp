@@ -1128,7 +1128,6 @@ bool Type::has_memory() const {
   return false;
 }
 
-#ifndef PRODUCT
 //------------------------------dump2------------------------------------------
 void Type::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("%s", _type_info[_base].msg);
@@ -1152,7 +1151,6 @@ const char* Type::str(const Type* t) {
   t->dump_on(&ss);
   return ss.as_string();
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -1386,12 +1384,10 @@ bool TypeF::is_nan()    const {
 
 //------------------------------dump2------------------------------------------
 // Dump float constant Type
-#ifndef PRODUCT
 void TypeF::dump2( Dict &d, uint depth, outputStream *st ) const {
   Type::dump2(d,depth, st);
   st->print("%f", _f);
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -1496,12 +1492,10 @@ bool TypeD::is_nan()    const {
 
 //------------------------------dump2------------------------------------------
 // Dump double constant Type
-#ifndef PRODUCT
 void TypeD::dump2( Dict &d, uint depth, outputStream *st ) const {
   Type::dump2(d,depth,st);
   st->print("%f", _d);
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -1784,7 +1778,6 @@ bool TypeInt::is_finite() const {
 
 //------------------------------dump2------------------------------------------
 // Dump TypeInt
-#ifndef PRODUCT
 static const char* intname(char* buf, size_t buf_size, jint n) {
   if (n == min_jint)
     return "min";
@@ -1823,7 +1816,6 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_widen != 0 && this != TypeInt::INT)
     st->print(":%.*s", _widen, "wwww");
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -2050,7 +2042,6 @@ bool TypeLong::is_finite() const {
 
 //------------------------------dump2------------------------------------------
 // Dump TypeLong
-#ifndef PRODUCT
 static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
   if (n > x) {
     if (n >= x + 10000)  return nullptr;
@@ -2101,7 +2092,6 @@ void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_widen != 0 && this != TypeLong::LONG)
     st->print(":%.*s", _widen, "wwww");
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -2289,7 +2279,6 @@ uint TypeTuple::hash(void) const {
 
 //------------------------------dump2------------------------------------------
 // Dump signature Type
-#ifndef PRODUCT
 void TypeTuple::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("{");
   if( !depth || d[this] ) {     // Check for recursive print
@@ -2309,7 +2298,6 @@ void TypeTuple::dump2( Dict &d, uint depth, outputStream *st ) const {
   }
   st->print("}");
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -2426,7 +2414,6 @@ const TypePtr* TypePtr::with_inline_depth(int depth) const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeAry::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_stable)  st->print("stable:");
   _elem->dump2(d, depth, st);
@@ -2434,7 +2421,6 @@ void TypeAry::dump2( Dict &d, uint depth, outputStream *st ) const {
   _size->dump2(d, depth, st);
   st->print("]");
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -2602,7 +2588,6 @@ bool TypeVect::empty(void) const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   switch (base()) {
   case VectorA:
@@ -2626,7 +2611,6 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   _elem->dump2(d, depth, st);
   st->print("}");
 }
-#endif
 
 bool TypeVectMask::eq(const Type *t) const {
   const TypeVectMask *v = t->is_vectmask();
@@ -3072,7 +3056,6 @@ const char *const TypePtr::ptr_msg[TypePtr::lastPTR] = {
   "TopPTR","AnyNull","Constant","null","NotNull","BotPTR"
 };
 
-#ifndef PRODUCT
 void TypePtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _ptr == Null ) st->print("null");
   else st->print("%s *", ptr_msg[_ptr]);
@@ -3106,7 +3089,6 @@ void TypePtr::dump_inline_depth(outputStream *st) const {
     }
   }
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -3247,14 +3229,12 @@ uint TypeRawPtr::hash(void) const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _ptr == Constant )
     st->print(INTPTR_FORMAT, p2i(_bits));
   else
     st->print("rawptr:%s", ptr_msg[_ptr]);
 }
-#endif
 
 //=============================================================================
 // Convenience common pre-built type.
@@ -3878,7 +3858,6 @@ uint TypeOopPtr::hash(void) const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("oopptr:%s", ptr_msg[_ptr]);
   if( _klass_is_exact ) st->print(":exact");
@@ -3897,7 +3876,6 @@ void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   dump_inline_depth(st);
   dump_speculative(st);
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -4528,7 +4506,6 @@ bool TypeInstPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool thi
 
 //------------------------------dump2------------------------------------------
 // Dump oop Type
-#ifndef PRODUCT
 void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
   klass()->print_name_on(st);
@@ -4578,7 +4555,6 @@ void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   dump_inline_depth(st);
   dump_speculative(st);
 }
-#endif
 
 //------------------------------add_offset-------------------------------------
 const TypePtr* TypeInstPtr::add_offset(intptr_t offset) const {
@@ -5154,7 +5130,6 @@ const Type *TypeAryPtr::xdual() const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   _ary->dump2(d,depth,st);
   _interfaces->dump(st);
@@ -5202,7 +5177,6 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   dump_inline_depth(st);
   dump_speculative(st);
 }
-#endif
 
 bool TypeAryPtr::empty(void) const {
   if (_ary->empty())       return true;
@@ -5348,11 +5322,9 @@ const Type *TypeNarrowPtr::xmeet( const Type *t ) const {
   return this;
 }
 
-#ifndef PRODUCT
 void TypeNarrowPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   _ptrtype->dump2(d, depth, st);
 }
-#endif
 
 const TypeNarrowOop *TypeNarrowOop::BOTTOM;
 const TypeNarrowOop *TypeNarrowOop::NULL_PTR;
@@ -5370,12 +5342,10 @@ const Type* TypeNarrowOop::cleanup_speculative() const {
   return make(_ptrtype->cleanup_speculative()->is_ptr());
 }
 
-#ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
   st->print("narrowoop: ");
   TypeNarrowPtr::dump2(d, depth, st);
 }
-#endif
 
 const TypeNarrowKlass *TypeNarrowKlass::NULL_PTR;
 
@@ -5383,12 +5353,10 @@ const TypeNarrowKlass* TypeNarrowKlass::make(const TypePtr* type) {
   return (const TypeNarrowKlass*)(new TypeNarrowKlass(type))->hashcons();
 }
 
-#ifndef PRODUCT
 void TypeNarrowKlass::dump2( Dict & d, uint depth, outputStream *st ) const {
   st->print("narrowklass: ");
   TypeNarrowPtr::dump2(d, depth, st);
 }
-#endif
 
 
 //------------------------------eq---------------------------------------------
@@ -5548,7 +5516,6 @@ const Type *TypeMetadataPtr::xdual() const {
 }
 
 //------------------------------dump2------------------------------------------
-#ifndef PRODUCT
 void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("metadataptr:%s", ptr_msg[_ptr]);
   if( metadata() ) st->print(INTPTR_FORMAT, p2i(metadata()));
@@ -5559,7 +5526,6 @@ void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   default:        st->print("+%d",_offset); break;
   }
 }
-#endif
 
 
 //=============================================================================
@@ -5709,7 +5675,6 @@ intptr_t TypeKlassPtr::get_con() const {
 
 //------------------------------dump2------------------------------------------
 // Dump Klass Type
-#ifndef PRODUCT
 void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
   switch(_ptr) {
   case Constant:
@@ -5743,7 +5708,6 @@ void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
 
   st->print(" *");
 }
-#endif
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -6549,7 +6513,6 @@ ciKlass* TypeAryKlassPtr::klass() const {
 
 //------------------------------dump2------------------------------------------
 // Dump Klass Type
-#ifndef PRODUCT
 void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   switch( _ptr ) {
   case Constant:
@@ -6580,7 +6543,6 @@ void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
 
   st->print(" *");
 }
-#endif
 
 const Type* TypeAryKlassPtr::base_element_type(int& dims) const {
   const Type* elem = this->elem();
@@ -6660,7 +6622,6 @@ uint TypeFunc::hash(void) const {
 
 //------------------------------dump2------------------------------------------
 // Dump Function Type
-#ifndef PRODUCT
 void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _range->cnt() <= Parms )
     st->print("void");
@@ -6687,7 +6648,6 @@ void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
   }
   st->print(" )");
 }
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
