@@ -34,7 +34,6 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8214230
  * @summary Test that jlinks generates reproducible modules files
  * @library /test/lib
- * @requires jlink.packagedModules
  * @run driver JLinkReproducibleTest
  */
 public class JLinkReproducibleTest {
