@@ -22,25 +22,28 @@
  */
 /*
  * @test
- * @bug 8334252
- * @summary Test lambda declared in early construction context
+ * @bug 8333313
+ * @summary Verify references to local classes declared in early construction contexts
  * @enablePreview
  */
+import java.util.concurrent.atomic.AtomicReference;
 
-public class LambdaOuterCapture {
+public class EarlyLocalTest5 {
 
-    public class Inner {
+    int y;
 
-        public Inner() {
-            Runnable r = () -> System.out.println(LambdaOuterCapture.this);
-            this(r);
-        }
-
-        public Inner(Runnable r) {
+    class Test extends AtomicReference<Runnable> {
+        Test(int x) {
+            class Foo implements Runnable {
+                public void run() {
+                    System.out.println(x + y);
+                }
+            }
+            super(new Foo());
         }
     }
 
     public static void main(String[] args) {
-        new LambdaOuterCapture().new Inner();
+        new EarlyLocalTest5().new Test(42);
     }
 }
