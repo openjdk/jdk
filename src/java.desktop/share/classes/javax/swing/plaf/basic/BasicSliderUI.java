@@ -150,8 +150,9 @@ public class BasicSliderUI extends SliderUI{
 
     /**
      * Constructs a {@code BasicSliderUI}.
+     * @deprecated This constructor will be removed in future release
      */
-    @Deprecated(since = "23")
+    @Deprecated(since = "23", forRemoval = true)
     public BasicSliderUI() {}
 
     /**
