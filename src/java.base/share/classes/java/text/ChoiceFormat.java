@@ -742,8 +742,7 @@ public class ChoiceFormat extends NumberFormat {
                     "limits and format arrays of different length.");
         }
     }
-	
-	
+
     @Override
     boolean isInternalSubclass() {
         return true;
