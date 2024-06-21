@@ -40,7 +40,25 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/istream.hpp"
 #include "utilities/parseInteger.hpp"
+
+// Default compile commands, if defined, are parsed before any of the
+// explicitly defined compile commands. Thus, explicitly defined compile
+// commands take precedence over default compile commands. The effect is
+// as if the default compile commands had been specified at the start of
+// the command line.
+static const char* const default_compile_commands[] = {
+#ifdef ASSERT
+    // In debug builds, impose a (generous) per-compilation memory limit
+    // to catch pathological compilations during testing. The suboption
+    // "crash" will cause the JVM to assert.
+    //
+    // Note: to disable the default limit at the command line,
+    // set a limit of 0 (e.g. -XX:CompileCommand=MemLimit,*.*,0).
+    "MemLimit,*.*,1G~crash",
+#endif
+    nullptr };
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -905,6 +923,14 @@ public:
     }
 };
 
+bool CompilerOracle::parse_from_line_quietly(char* line) {
+  const bool quiet0 = _quiet;
+  _quiet = true;
+  const bool result = parse_from_line(line);
+  _quiet = quiet0;
+  return result;
+}
+
 bool CompilerOracle::parse_from_line(char* line) {
   if ((line[0] == '\0') || (line[0] == '#')) {
     return true;
@@ -1056,57 +1082,39 @@ bool CompilerOracle::parse_from_file() {
     return true;
   }
 
-  char token[1024];
-  int  pos = 0;
-  int  c = getc(stream);
+  FileInput input(stream, /*need_close=*/ true);
+  return parse_from_input(&input, parse_from_line);
+}
+
+bool CompilerOracle::parse_from_input(inputStream::Input* input,
+                                      CompilerOracle::
+                                      parse_from_line_fn_t* parse_from_line) {
   bool success = true;
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_from_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
+  for (inputStream in(input); !in.done(); in.next()) {
+    if (!parse_from_line(in.current_line())) {
+      success = false;
     }
-    c = getc(stream);
   }
-  token[pos++] = '\0';
-  if (!parse_from_line(token)) {
-    success = false;
-  }
-  fclose(stream);
   return success;
 }
 
-bool CompilerOracle::parse_from_string(const char* str, bool (*parse_line)(char*)) {
-  char token[1024];
-  int  pos = 0;
-  const char* sp = str;
-  int  c = *sp++;
-  bool success = true;
-  while (c != '\0' && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
-    }
-    c = *sp++;
-  }
-  token[pos++] = '\0';
-  if (!parse_line(token)) {
-    success = false;
-  }
-  return success;
+bool CompilerOracle::parse_from_string(const char* str,
+                                       CompilerOracle::
+                                       parse_from_line_fn_t* parse_from_line) {
+  MemoryInput input(str, strlen(str));
+  return parse_from_input(&input, parse_from_line);
 }
 
 bool compilerOracle_init() {
   bool success = true;
+  // Register default compile commands first - any commands specified via CompileCommand will
+  // supersede these default commands.
+  for (int i = 0; default_compile_commands[i] != nullptr; i ++) {
+    char* s = os::strdup(default_compile_commands[i]);
+    success = CompilerOracle::parse_from_line_quietly(s);
+    os::free(s);
+    assert(success, "default compile command \"%s\" failed to parse", default_compile_commands[i]);
+  }
   if (!CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line)) {
     success = false;
   }

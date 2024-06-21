@@ -71,24 +71,18 @@ int NativeCallStack::frames() const {
   return index;
 }
 
-void NativeCallStack::print_on(outputStream* out) const {
-  print_on(out, 0);
-}
-
 // Decode and print this call path
-void NativeCallStack::print_on(outputStream* out, int indent) const {
+void NativeCallStack::print_on(outputStream* out) const {
   DEBUG_ONLY(assert_not_fake();)
   address pc;
   char    buf[1024];
   int     offset;
   if (is_empty()) {
-    out->fill_to(indent);
     out->print("[BOOTSTRAP]");
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
       if (pc == nullptr) break;
-      out->fill_to(indent);
       out->print("[" PTR_FORMAT "]", p2i(pc));
       // Print function and library; shorten library name to just its last component
       // for brevity, and omit it completely for libjvm.so

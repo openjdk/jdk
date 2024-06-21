@@ -181,10 +181,16 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   int _num_recomp;
   // Compiling thread. Only for diagnostic purposes. Thread may not be alive anymore.
   const Thread* _thread;
+  // active limit for this compilation, if any
+  size_t _limit;
 
+  // peak usage, bytes, over all arenas
   size_t _total;
+  // usage in node arena when total peaked
   size_t _na_at_peak;
+  // usage in resource area when total peaked
   size_t _ra_at_peak;
+  // number of nodes (c2 only) when total peaked
   unsigned _live_nodes_at_peak;
   const char* _result;
 
@@ -192,7 +198,7 @@ public:
 
   MemStatEntry(FullMethodName method)
     : _method(method), _comptype(compiler_c1),
-      _time(0), _num_recomp(0), _thread(nullptr),
+      _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _total(0), _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0),
       _result(nullptr) {
   }
@@ -200,6 +206,7 @@ public:
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
   void set_current_time() { _time = os::elapsedTime(); }
   void set_current_thread() { _thread = Thread::current(); }
+  void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
   void set_total(size_t n) { _total = n; }
@@ -218,6 +225,7 @@ public:
     st->print_cr("  RA     : ...how much in resource areas");
     st->print_cr("  result : Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
     st->print_cr("  #nodes : ...how many nodes (c2 only)");
+    st->print_cr("  limit  : memory limit, if set");
     st->print_cr("  time   : time of last compilation (sec)");
     st->print_cr("  type   : compiler type");
     st->print_cr("  #rc    : how often recompiled");
@@ -225,7 +233,7 @@ public:
   }
 
   static void print_header(outputStream* st) {
-    st->print_cr("total     NA        RA        result  #nodes  time    type  #rc thread              method");
+    st->print_cr("total     NA        RA        result  #nodes  limit   time    type  #rc thread              method");
   }
 
   void print_on(outputStream* st, bool human_readable) const {
@@ -260,7 +268,19 @@ public:
     col += 8; st->fill_to(col);
 
     // Number of Nodes when memory peaked
-    st->print("%u ", _live_nodes_at_peak);
+    if (_live_nodes_at_peak > 0) {
+      st->print("%u ", _live_nodes_at_peak);
+    } else {
+      st->print("-");
+    }
+    col += 8; st->fill_to(col);
+
+    // Limit
+    if (_limit > 0) {
+      st->print(PROPERFMT " ", PROPERFMTARGS(_limit));
+    } else {
+      st->print("-");
+    }
     col += 8; st->fill_to(col);
 
     // TimeStamp
@@ -322,7 +342,7 @@ public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
            size_t total, size_t na_at_peak, size_t ra_at_peak,
-           unsigned live_nodes_at_peak, const char* result) {
+           unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatTableKey key(fmn, comptype);
     MemStatEntry** pe = get(key);
@@ -343,6 +363,7 @@ public:
     e->set_na_at_peak(na_at_peak);
     e->set_ra_at_peak(ra_at_peak);
     e->set_live_nodes_at_peak(live_nodes_at_peak);
+    e->set_limit(limit);
     e->set_result(result);
   }
 
@@ -430,6 +451,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->na_at_peak(),
                     arena_stat->ra_at_peak(),
                     arena_stat->live_nodes_at_peak(),
+                    arena_stat->limit(),
                     result);
   }
   if (print) {
@@ -521,8 +543,8 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
         if (ct != compiler_none && name[0] != '\0') {
           ss.print("%s %s: ", compilertype2name(ct), name);
         }
-        ss.print("Hit MemLimit %s (limit: %zu now: %zu)",
-                 (hit_limit_before ? "again" : ""),
+        ss.print("Hit MemLimit %s(limit: %zu now: %zu)",
+                 (hit_limit_before ? "again " : ""),
                  arena_stat->limit(), arena_stat->peak_since_start());
       }
 

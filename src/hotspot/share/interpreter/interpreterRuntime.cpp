@@ -223,20 +223,6 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   // Make sure klass is initialized
   klass->initialize(CHECK);
 
-  // At this point the class may not be fully initialized
-  // because of recursive initialization. If it is fully
-  // initialized & has_finalized is not set, we rewrite
-  // it into its fast version (Note: no locking is needed
-  // here since this is an atomic byte write and can be
-  // done more than once).
-  //
-  // Note: In case of classes with has_finalized we don't
-  //       rewrite since that saves us an extra check in
-  //       the fast version which then would call the
-  //       slow version anyway (and do a call back into
-  //       Java).
-  //       If we have a breakpoint, then we don't rewrite
-  //       because the _breakpoint bytecode would be lost.
   oop obj = klass->allocate_instance(CHECK);
   current->set_vm_result(obj);
 JRT_END
@@ -659,26 +645,30 @@ JRT_END
 //
 
 void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code bytecode) {
-  // resolve field
-  fieldDescriptor info;
   LastFrameAccessor last_frame(current);
   constantPoolHandle pool(current, last_frame.method()->constants());
   methodHandle m(current, last_frame.method());
+
+  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, true /*initialize_holder*/, current);
+}
+
+void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_index,
+                                         methodHandle& m,
+                                         constantPoolHandle& pool,
+                                         bool initialize_holder, TRAPS) {
+  fieldDescriptor info;
   bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_nofast_putfield ||
                     bytecode == Bytecodes::_putstatic);
   bool is_static = (bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic);
 
-  int field_index = last_frame.get_index_u2(bytecode);
   {
-    JvmtiHideSingleStepping jhss(current);
-    JavaThread* THREAD = current; // For exception macros.
+    JvmtiHideSingleStepping jhss(THREAD);
     LinkResolver::resolve_field_access(info, pool, field_index,
-                                       m, bytecode, CHECK);
+                                       m, bytecode, initialize_holder, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
   if (pool->resolved_field_entry_at(field_index)->is_resolved(bytecode)) return;
-
 
   // compute auxiliary field attributes
   TosState state  = as_TosState(info.field_type());

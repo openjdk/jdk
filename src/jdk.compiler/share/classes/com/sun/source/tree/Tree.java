@@ -284,7 +284,7 @@ public interface Tree {
         /**
          * Used for instances of {@link SwitchExpressionTree}.
          *
-         * @since 12
+         * @since 14
          */
         SWITCH_EXPRESSION(SwitchExpressionTree.class),
 
@@ -702,7 +702,7 @@ public interface Tree {
         /**
          * Used for instances of {@link YieldTree}.
          *
-         * @since 13
+         * @since 14
          */
         YIELD(YieldTree.class);
 

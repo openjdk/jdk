@@ -114,7 +114,7 @@
           "to learn application and GC performance.")                       \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahImmediateThreshold, 90, EXPERIMENTAL,            \
+  product(uintx, ShenandoahImmediateThreshold, 70, EXPERIMENTAL,            \
           "The cycle may shortcut when enough garbage can be reclaimed "    \
           "from the immediate garbage (completely garbage regions). "       \
           "In percents of total garbage found. Setting this threshold "     \

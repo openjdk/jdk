@@ -52,6 +52,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -452,6 +453,10 @@ public:
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+
+    // GC thread root traversal likely used OopMapCache a lot, which
+    // might have created lots of old entries. Trigger the cleanup now.
+    OopMapCache::trigger_cleanup();
   }
 
   bool success() const {

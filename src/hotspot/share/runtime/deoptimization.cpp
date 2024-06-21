@@ -35,6 +35,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
@@ -535,7 +536,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #if COMPILER2_OR_JVMCI
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
       && !EscapeBarrier::objs_are_deoptimized(current, deoptee.id())) {
-    bool unused;
+    bool unused = false;
     restore_eliminated_locks(current, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
@@ -1237,23 +1238,22 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == nullptr && !cache_init_error) {
-#if COMPILER2_OR_JVMCI
+        InternalOOMEMark iom(THREAD);
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
         } else {
           obj = ik->allocate_instance(THREAD);
         }
-#else
-        obj = ik->allocate_instance(THREAD);
-#endif // COMPILER2_OR_JVMCI
       }
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
+      InternalOOMEMark iom(THREAD);
       obj = ak->allocate(sv->field_size(), THREAD);
     }
 
@@ -1573,7 +1573,6 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       continue;
     }
 #endif // INCLUDE_JVMCI
-#if COMPILER2_OR_JVMCI
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
       ScopeValue* payload = sv->field_at(0);
@@ -1593,7 +1592,6 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       // Else fall-through to do assignment for scalar-replaced boxed vector representation
       // which could be restored after vector object allocation.
     }
-#endif /* !COMPILER2_OR_JVMCI */
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
@@ -1732,7 +1730,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
           ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
         }
       }
-      array->element(i)->free_monitors(thread);
+      array->element(i)->free_monitors();
 #ifdef ASSERT
       array->element(i)->set_removed_monitors();
 #endif
@@ -2078,8 +2076,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     gather_statistics(reason, action, trap_bc);
 
     // Ensure that we can record deopt. history:
-    // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps;
 
     methodHandle profiled_method;
 #if INCLUDE_JVMCI
@@ -2427,16 +2424,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
           pdata->set_trap_state(tstate1);
       }
 
-#if INCLUDE_RTM_OPT
-      // Restart collecting RTM locking abort statistic if the method
-      // is recompiled for a reason other than RTM state change.
-      // Assume that in new recompiled code the statistic could be different,
-      // for example, due to different inlining.
-      if ((reason != Reason_rtm_state_change) && (trap_mdo != nullptr) &&
-          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
-        trap_mdo->atomic_set_rtm_state(ProfileRTM);
-      }
-#endif
       // For code aging we count traps separately here, using make_not_entrant()
       // as a guard against simultaneous deopts in multiple threads.
       if (reason == Reason_tenured && trap_mdo != nullptr) {
@@ -2726,7 +2713,6 @@ const char* Deoptimization::_trap_reason_name[] = {
   "speculate_class_check",
   "speculate_null_check",
   "speculate_null_assert",
-  "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",

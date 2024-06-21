@@ -62,6 +62,15 @@ ifeq ($(EXTERNAL_BUILDJDK), true)
   INTERIM_IMAGE_DIR := $(BUILD_JDK)
 endif
 
+# These are needed for deterministic classlist:
+# - The classlist can be influenced by locale. Always set it to en/US.
+# - Run with -Xint, as the compiler can speculatively resolve constant pool entries.
+# - ForkJoinPool parallelism can cause constant pool resolution to be non-deterministic.
+CLASSLIST_FILE_VM_OPTS = \
+    -Duser.language=en -Duser.country=US \
+    -Xint \
+    -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
+
 # Save the stderr output of the command and print it along with stdout in case
 # something goes wrong.
 $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR)
@@ -69,7 +78,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
-	    -Duser.language=en -Duser.country=US \
+	    $(CLASSLIST_FILE_VM_OPTS) \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist $(LOG_DEBUG)
 	$(GREP) -v HelloClasslist $@.raw > $@.interim
@@ -79,7 +88,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw.2 \
 	    -XX:SharedClassListFile=$@.interim -XX:SharedArchiveFile=$@.jsa \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
-	    -Duser.language=en -Duser.country=US \
+	    $(CLASSLIST_FILE_VM_OPTS) \
 	    --module-path $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist \

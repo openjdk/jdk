@@ -89,14 +89,14 @@ void G1Allocator::release_mutator_alloc_regions() {
   }
 }
 
-bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
+bool G1Allocator::is_retained_old_region(G1HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
 void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             OldGCAllocRegion* old,
-                                            HeapRegion** retained_old) {
-  HeapRegion* retained_region = *retained_old;
+                                            G1HeapRegion** retained_old) {
+  G1HeapRegion* retained_region = *retained_old;
   *retained_old = nullptr;
 
   // We will discard the current GC alloc region if:
@@ -190,7 +190,7 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   // humongous objects.
 
   uint node_index = current_node_index();
-  HeapRegion* hr = mutator_alloc_region(node_index)->get();
+  G1HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
 
   if (hr == nullptr || hr->free() < MinTLABSize) {

@@ -4118,7 +4118,7 @@ public class JavacParser implements Parser {
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
                 log.error(def.pos(), Errors.ImplicitClassShouldNotHavePackageDeclaration);
-            } else if (def.hasTag(Tag.IMPORT)) {
+            } else if (def.hasTag(Tag.IMPORT) || def.hasTag(Tag.MODULEIMPORT)) {
                 topDefs.append(def);
             } else if (!def.hasTag(Tag.SKIP)) {
                 defs.append(def);

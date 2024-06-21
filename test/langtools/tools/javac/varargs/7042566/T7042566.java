@@ -282,7 +282,7 @@ public class T7042566 extends ComboInstance<T7042566> {
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
