@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,9 @@ int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
 int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
+#if INCLUDE_ZGC
 int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
+#endif
 
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
