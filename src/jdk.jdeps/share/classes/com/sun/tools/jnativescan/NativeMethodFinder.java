@@ -31,9 +31,6 @@ import java.io.IOException;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -46,7 +43,7 @@ class NativeMethodFinder {
     // see make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
-    private final Map<MethodRef, Boolean> CACHE = new HashMap<>();
+    private final Map<MethodRef, Boolean> cache = new HashMap<>();
     private final ClassResolver classesToScan;
     private final ClassResolver systemClassResolver;
 
@@ -59,8 +56,9 @@ class NativeMethodFinder {
         return new NativeMethodFinder(classesToScan, systemClassResolver);
     }
 
-    public Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
-        Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> restrictedMethods = new HashMap<>();
+    public SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
+        SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> restrictedMethods
+                = new TreeMap<>(Comparator.comparing(ScannedModule::moduleName));
         classesToScan.forEach((_, info) -> {
             ClassModel classModel = info.model();
             List<RestrictedUse> perClass = new ArrayList<>();
@@ -68,7 +66,7 @@ class NativeMethodFinder {
                 if (methodModel.flags().has(AccessFlag.NATIVE)) {
                     perClass.add(new NativeMethodDecl(MethodRef.ofModel(methodModel)));
                 } else {
-                    Set<MethodRef> perMethod = new HashSet<>();
+                    SortedSet<MethodRef> perMethod = new TreeSet<>(Comparator.comparing(MethodRef::toString));
                     methodModel.code().ifPresent(code -> {
                          try {
                              code.forEach(e -> {
@@ -89,14 +87,14 @@ class NativeMethodFinder {
                          }
                     });
                     if (!perMethod.isEmpty()) {
-                        perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel),
-                                Set.copyOf(perMethod)));
+                        perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel), perMethod));
                     }
                 }
             });
             if (!perClass.isEmpty()) {
                 ScannedModule scannedModule = new ScannedModule(info.jarPath(), info.moduleName());
-                restrictedMethods.computeIfAbsent(scannedModule, _ -> new HashMap<>())
+                restrictedMethods.computeIfAbsent(scannedModule,
+                                _ -> new TreeMap<>(Comparator.comparing(JNativeScanTask::qualName)))
                         .put(classModel.thisClass().asSymbol(), perClass);
             }
         });
@@ -104,7 +102,7 @@ class NativeMethodFinder {
     }
 
     private boolean isRestrictedMethod(MethodRef ref) throws JNativeScanFatalError {
-        return CACHE.computeIfAbsent(ref, methodRef -> {
+        return cache.computeIfAbsent(ref, methodRef -> {
             if (methodRef.owner().isArray()) {
                 // no restricted methods in arrays atm, and we can't look them up since they have no class file
                 return false;

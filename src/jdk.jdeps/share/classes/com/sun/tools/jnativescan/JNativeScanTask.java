@@ -77,7 +77,7 @@ class JNativeScanTask {
             modulesToScan.add(new ScannedModule(path, m.name()));
         }
 
-        Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
+        SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
         try(ClassResolver classesToScan = ClassResolver.forScannedModules(modulesToScan, version);
                 ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
             NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
@@ -144,7 +144,7 @@ class JNativeScanTask {
         return finder.findAll().stream().map(mr -> mr.descriptor().name()).toList();
     }
 
-    private void printNativeAccess(Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void printNativeAccess(SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
         String nativeAccess = allRestrictedMethods.keySet().stream()
                 .map(ScannedModule::moduleName)
                 .distinct()
@@ -152,7 +152,7 @@ class JNativeScanTask {
         out.println(nativeAccess);
     }
 
-    private void dumpAll(Map<ScannedModule, Map<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void dumpAll(SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
         if (allRestrictedMethods.isEmpty()) {
             out.println("  <no restricted methods>");
         } else {

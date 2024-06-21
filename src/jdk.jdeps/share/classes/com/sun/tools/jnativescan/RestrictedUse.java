@@ -24,9 +24,9 @@
  */
 package com.sun.tools.jnativescan;
 
-import java.util.Set;
+import java.util.SortedSet;
 
 sealed interface RestrictedUse {
-    record RestrictedMethodRefs(MethodRef referent, Set<MethodRef> referees) implements RestrictedUse {}
+    record RestrictedMethodRefs(MethodRef referent, SortedSet<MethodRef> referees) implements RestrictedUse {}
     record NativeMethodDecl(MethodRef decl) implements RestrictedUse {}
 }
