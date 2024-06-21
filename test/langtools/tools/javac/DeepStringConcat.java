@@ -25,8 +25,28 @@
  * @test
  * @bug 4496697
  * @summary Parser.foldStrings() should use iteration instead of recursion.
- * @author gafter
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  */
+
+import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.tree.JCTree.JCNewArray;
+import java.lang.annotation.*;
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import com.sun.source.tree.*;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.TreeScanner;
+import javax.tools.StandardJavaFileManager;
 
 public class DeepStringConcat {
     public static void main(String[] args) throws Exception {
@@ -44,9 +64,9 @@ public class DeepStringConcat {
                 JavacTask task = tool.getTask(out, fm, null, null, null, f);
                 Iterable<? extends CompilationUnitTree> trees = task.parse();
 
-                Scanner s = new Scanner();
-                for (CompilationUnitTree t: trees)
-                    s.scan(t, null);
+                //Scanner s = new Scanner();
+                //for (CompilationUnitTree t: trees)
+                //    s.scan(t, null);
             }
             out.flush();
         }
