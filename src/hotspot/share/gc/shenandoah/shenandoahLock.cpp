@@ -63,9 +63,13 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
            // No garentee to block immediately when there is SP global poll,
            // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one; 
            // Before ~ThreadBlockInVM block the thread at barrier, it test local_poll_armed for the thread.
-           // Hence it a typical race condition, there is high chance under extemely contended situation, 
-           // it take multiple attmpts to block the thread, espcially when after VM VMThread called global poll
+           // Hence it a typical race condition, there is high chance under extemely contended situation,
+           // it take multiple attmpts to block the thread, espcially when VM VMThread called global poll
            // and then CPU swiches to next thread before VM VMThread arms Java threads.
+           //
+           // Constructor of ThreadBlockInVM set the state of thread to blocked, and mark the frame anchor walkable;
+           // so even the ~ThreadBlockInVM has not been executed to block thread at barrier(yield to others), Safepoint
+           // still treat the thread safe for safepoint because the status is _thread_blocked and it has walkable frames.
            ThreadBlockInVM block(jthread);
            os::naked_yield();
          }
