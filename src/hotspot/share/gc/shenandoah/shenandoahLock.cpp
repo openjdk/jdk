@@ -62,7 +62,7 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
          } else {
            // No garentee to block immediately,
            // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one,
-           // There is high chance under extemely contended situation, it take mutples attmpts to block the thread.
+           // There is high chance under extemely contended situation, it take multiple attmpts to block the thread.
            ThreadBlockInVM block(jthread);
            os::naked_yield();
          }
