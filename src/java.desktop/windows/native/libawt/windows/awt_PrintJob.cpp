@@ -578,7 +578,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          */
         if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
             CLEANUP_SHOW;
-            return JNI_FALSE;
+            return doIt;
         }
     } else {
         int measure = PSD_INTHOUSANDTHSOFINCHES;
@@ -606,7 +606,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
     if (env->ExceptionCheck()) {
         CLEANUP_SHOW;
-        return JNI_FALSE;
+        return doIt;
     }
 
     setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
@@ -620,7 +620,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         jobject paper = getPaper(env, page);
         if (paper == NULL) {
             CLEANUP_SHOW;
-            return JNI_FALSE;
+            return doIt;
         }
         int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
                                                 MM_HIENGLISH :
@@ -662,7 +662,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         setPaperValues(env, paper, &paperSize, &margins, units);
         if (env->ExceptionCheck()) {
             CLEANUP_SHOW;
-            return JNI_FALSE;
+            return doIt;
          }
         /*
          * Put the updated Paper instance and the orientation into
@@ -671,7 +671,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         setPaper(env, page, paper);
         if (env->ExceptionCheck()) {
             CLEANUP_SHOW;
-            return JNI_FALSE;
+            return doIt;
         }
         setPageFormatOrientation(env, page, orientation);
         if (env->ExceptionCheck()) {
@@ -685,7 +685,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                     jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
                     if (err) {
                         CLEANUP_SHOW;
-                        return JNI_FALSE;
+                        return doIt;
                     }
                 }
             }
