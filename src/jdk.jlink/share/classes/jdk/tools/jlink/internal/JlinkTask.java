@@ -417,8 +417,8 @@ public class JlinkTask {
                                       options.generateLinkableRuntime);
     }
 
-    record LinkableRuntimesResult(boolean isLinkFromRuntime, ModuleFinder finder) {
-    }
+    private static record LinkableRuntimesResult(boolean isLinkFromRuntime,
+                                                 ModuleFinder finder) {}
 
     /**
      * Perform sanity checks and setup actions for JDK linkable runtime links
@@ -636,27 +636,9 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
-        // Perform some setup for run-time image based links
+        // Perform some sanity checks for linkable JDK runtimes
         if (config.linkFromRuntimeImage()) {
-            // Catch the case where we don't have a linkable runtime. In that
-            // case, we don't have the per module resource diffs in the jimage
-            String resourceName = String.format(DIFF_PATTERN, "java.base");
-            InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
-            if (inStream == null) {
-                // Only linkable runtimes have those resources. Abort otherwise.
-                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
-                throw new IllegalArgumentException(msg);
-            }
-            // Disallow a runtime-image-based-link with jdk.jlink included
-            if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
-                String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
-                throw new IllegalArgumentException(msg);
-            }
-
-            // Print info message when a run-image link is being performed
-            if (log != null) {
-                log.println(taskHelper.getMessage("runtime.link.info"));
-            }
+            sanityChecksLinkableJDKRuntime(log, cf);
         }
 
         if (verbose && log != null) {
@@ -666,8 +648,10 @@ public class JlinkTask {
               .forEach(rm -> log.format("%s %s%s%n",
                                         rm.name(),
                                         rm.reference().location().get(),
-                                        "jrt".equals(rm.reference().location().get().getScheme()) && config.linkFromRuntimeImage() ?
-                                                " " + taskHelper.getMessage("runtime.link.jprt.path.extra") : ""));
+                                        "jrt".equals(rm.reference().location().get().getScheme())
+                                            && config.linkFromRuntimeImage() ?
+                                                " " + taskHelper.getMessage("runtime.link.jprt.path.extra")
+                                                : ""));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
@@ -720,10 +704,50 @@ public class JlinkTask {
                         .orElse(Runtime.version());
 
         Set<Archive> archives = mods.entrySet().stream()
-                .map(e -> newArchive(e.getKey(), e.getValue(), version, ignoreSigning, config))
+                .map(e -> newArchive(e.getKey(),
+                                     e.getValue(),
+                                     version,
+                                     ignoreSigning,
+                                     config))
                 .collect(Collectors.toSet());
 
-        return new ImageHelper(archives, targetPlatform, retainModulesPath, config.isGenerateRuntimeImage());
+        return new ImageHelper(archives,
+                               targetPlatform,
+                               retainModulesPath,
+                               config.isGenerateRuntimeImage());
+    }
+
+    /**
+     * Linkable JDK runtimes support. Perform some sanity checks if we run
+     * jlink from the current run-time JDK image.
+     *
+     * @param log The log to write messages to.
+     * @param cf The current configuration
+     *
+     * @throws IOException
+     */
+    private static void sanityChecksLinkableJDKRuntime(PrintWriter log,
+                                                       Configuration cf) throws IOException {
+        // Catch the case where we don't have a linkable JDK runtime. If so,
+        // we don't have the per module resource diffs in the modules image
+        String resourceName = String.format(DIFF_PATTERN, "java.base");
+        InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
+        if (inStream == null) {
+            // Only linkable JDK runtimes have those resources. Abort otherwise.
+            String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
+            throw new IllegalArgumentException(msg);
+        }
+        // Disallow jlink runs for linkable JDK runtimes with jdk.jlink included
+        if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
+            String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
+            throw new IllegalArgumentException(msg);
+        }
+
+        // Print info message indicating jlink is performed on a linkable JDK
+        // runtime
+        if (log != null) {
+            log.println(taskHelper.getMessage("runtime.link.info"));
+        }
     }
 
     private static Archive newArchive(String module,
@@ -1056,7 +1080,10 @@ public class JlinkTask {
         return sb.toString();
     }
 
-    private static record ImageHelper(Set<Archive> archives, Platform targetPlatform, Path packagedModulesPath, boolean generateRuntimeImage) implements ImageProvider {
+    private static record ImageHelper(Set<Archive> archives,
+                                      Platform targetPlatform,
+                                      Path packagedModulesPath,
+                                      boolean generateRuntimeImage) implements ImageProvider {
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
             ExecutableImage image = ImageFileCreator.create(archives,
