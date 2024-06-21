@@ -47,9 +47,10 @@ public abstract class AbstractLinkableRuntimeTest {
     protected static final boolean DEBUG = true;
 
     public void run() throws Exception {
-        Helper helper = Helper.newHelper();
+        Helper helper = Helper.newHelper(true /* JDK linkable runtime tests */);
         if (helper == null) {
-            System.err.println("Test not run");
+            System.err.println(AbstractLinkableRuntimeTest.class.getSimpleName() +
+                               ": Test not run");
             return;
         }
         runTest(helper);

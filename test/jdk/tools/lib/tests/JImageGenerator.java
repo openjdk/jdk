@@ -159,7 +159,11 @@ public class JImageGenerator {
     }
 
     public static JModTask getJModTask() {
-        return new JModTask();
+        return getJModTask(false);
+    }
+
+    public static JModTask getJModTask(boolean linkableRuntime) {
+        return new JModTask(linkableRuntime);
     }
 
     public static JLinkTask getJLinkTask() {
@@ -350,10 +354,15 @@ public class JImageGenerator {
         private final List<Path> jars = new ArrayList<>();
         private final List<Path> jmods = new ArrayList<>();
         private final List<String> options = new ArrayList<>();
+        private final boolean linkableRuntime;
         private Path output;
         private String hashModules;
         private String mainClass;
         private String moduleVersion;
+
+        private JModTask(boolean linkableRuntime) {
+            this.linkableRuntime = linkableRuntime;
+        }
 
         public JModTask addNativeLibraries(Path cp) {
             this.libs.add(cp);
@@ -414,7 +423,7 @@ public class JImageGenerator {
             // This is expect FIRST jmods THEN jars, if you change this, some tests could fail
             String jmods = toPath(this.jmods);
             String jars = toPath(this.jars);
-            return jmods + File.pathSeparator + jars;
+            return linkableRuntime ? jars : jmods + File.pathSeparator + jars;
         }
 
         private String toPath(List<Path> paths) {
