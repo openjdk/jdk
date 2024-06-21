@@ -60,9 +60,12 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
            //Hence there is no need to call os::naked_yield() to waste resource on context switch.
            ThreadBlockInVM block(jthread);
          } else {
-           // No garentee to block immediately,
-           // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one,
-           // There is high chance under extemely contended situation, it take multiple attmpts to block the thread.
+           // No garentee to block immediately when there is SP global poll,
+           // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one; 
+           // Before ~ThreadBlockInVM block the thread at barrier, it test local_poll_armed for the thread.
+           // Hence it a typical race condition, there is high chance under extemely contended situation, 
+           // it take multiple attmpts to block the thread, espcially when after VM VMThread called global poll
+           // and then CPU swiches to next thread before VM VMThread arms Java threads.
            ThreadBlockInVM block(jthread);
            os::naked_yield();
          }
