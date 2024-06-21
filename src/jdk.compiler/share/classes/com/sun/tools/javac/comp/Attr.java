@@ -950,6 +950,7 @@ public class Attr extends JCTree.Visitor {
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
         boolean ctorProloguePrev = env.info.ctorPrologue;
+        env.info.ctorPrologue = false;
         try {
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
@@ -994,7 +995,7 @@ public class Attr extends JCTree.Visitor {
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        Assert.check(!env.info.ctorPrologue);
+        env.info.ctorPrologue = false;
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             deferredLintHandler.flush(tree.pos(), lint);

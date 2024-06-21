@@ -209,7 +209,6 @@ public class Enter extends JCTree.Visitor {
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         localEnv.info.isAnonymousDiamond = TreeInfo.isDiamond(env.tree);
-        localEnv.info.ctorPrologue = false;
         return localEnv;
     }
 
