@@ -225,7 +225,7 @@ public final class ImageFileCreator {
         try {
             plugins.storeFiles(allContent.resourcePool(), result, writer);
         } catch (RuntimeImageLinkException e) {
-            // Propagate reason for run-time image based links
+            // Propagate reason for jlink runs based on linkable JDK runtimes
             throw e.getReason();
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
@@ -259,12 +259,13 @@ public final class ImageFileCreator {
         try {
             resultResources = pluginSupport.visitResources(allContent);
             if (generateRuntimeImage) {
-                // Keep track of resources for runtime image based linking
+                // Keep track of non-modules image resources for
+                // linkable JDK runtimes
                 resultResources = addNonClassResourcesTrackFiles(resultResources,
                                                                  writer);
-                // Generate the diff between the input resources, coming from jmods
-                // in 'allContent' to the plugin- or otherwise-generated-content in
-                // 'resultResources'
+                // Generate the diff between the input resources from packaged
+                // modules in 'allContent' to the plugin- or otherwise
+                // generated-content in 'resultResources'
                 resultResources = addRessourceDiffFiles(allContent.resourcePool(),
                                                         resultResources,
                                                         writer);
