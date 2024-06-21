@@ -49,8 +49,6 @@ ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_q
 
 ObjectStartArray*    ParCompactionManager::_start_array = nullptr;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
-GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = nullptr;
-Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 
 PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
@@ -93,10 +91,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   assert(ParallelScavengeHeap::heap()->workers().max_workers() != 0,
     "Not initialized?");
-
-  _shadow_region_array = new (mtGC) GrowableArray<size_t >(10, mtGC);
-
-  _shadow_region_monitor = new Monitor(Mutex::nosafepoint, "CompactionManager_lock");
 
 }
 
@@ -164,36 +158,6 @@ void ParCompactionManager::drain_region_stacks() {
       PSParallelCompact::fill_and_update_region(this, region_index);
     }
   } while (!region_stack()->is_empty());
-}
-
-size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
-  MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
-  while (true) {
-    if (!_shadow_region_array->is_empty()) {
-      return _shadow_region_array->pop();
-    }
-    // Check if the corresponding heap region is available now.
-    // If so, we don't need to get a shadow region anymore, and
-    // we return InvalidShadow to indicate such a case.
-    if (region_ptr->claimed()) {
-      return InvalidShadow;
-    }
-    ml.wait(1);
-  }
-}
-
-void ParCompactionManager::push_shadow_region_mt_safe(size_t shadow_region) {
-  MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
-  _shadow_region_array->push(shadow_region);
-  ml.notify();
-}
-
-void ParCompactionManager::push_shadow_region(size_t shadow_region) {
-  _shadow_region_array->push(shadow_region);
-}
-
-void ParCompactionManager::remove_all_shadow_regions() {
-  _shadow_region_array->clear();
 }
 
 #ifdef ASSERT

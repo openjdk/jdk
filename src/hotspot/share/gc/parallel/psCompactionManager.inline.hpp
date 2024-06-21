@@ -88,17 +88,6 @@ void ParCompactionManager::push_objarray(oop obj, size_t index)
   _objarray_stack.push(task);
 }
 
-void ParCompactionManager::push_region(size_t index)
-{
-#ifdef ASSERT
-  const ParallelCompactData& sd = PSParallelCompact::summary_data();
-  ParallelCompactData::RegionData* const region_ptr = sd.region(index);
-  assert(region_ptr->claimed(), "must be claimed");
-  assert(region_ptr->_pushed++ == 0, "should only be pushed once");
-#endif
-  region_stack()->push(index);
-}
-
 template <typename T>
 inline void ParCompactionManager::mark_and_push(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
@@ -205,13 +194,13 @@ inline void ParCompactionManager::MarkingStatsCache::push(oop obj, size_t live_w
   // Middle regions; bypass cache
   for (size_t i = start_region_id + 1; i < end_region_id; ++i) {
     data.region(i)->set_partial_obj_size(region_size);
-    data.region(i)->set_partial_obj_addr(addr);
+    // data.region(i)->set_partial_obj_addr(addr);
   }
 
   // Last region; bypass cache
   const size_t end_offset = data.region_offset(addr + live_words - 1);
   data.region(end_region_id)->set_partial_obj_size(end_offset + 1);
-  data.region(end_region_id)->set_partial_obj_addr(addr);
+  // data.region(end_region_id)->set_partial_obj_addr(addr);
 }
 
 inline void ParCompactionManager::MarkingStatsCache::evict(size_t index) {
