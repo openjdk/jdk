@@ -2220,8 +2220,13 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
 }
 
 void Compile::save_graph(PhaseIterGVN* igvn, const char* label) {
+  if (method() == nullptr || method()->holder() == nullptr || 
+      method()->name() == nullptr || method()->holder()->name() == nullptr)
+	return ;
+
   // If we are compiling any of our interesting methods, then save to file
-  if (strcmp(method()->name()->as_utf8(), "foldStrings") == 0) {
+  if (strstr(method()->holder()->name()->as_utf8(), "JavacParser") != nullptr &&
+      strcmp(method()->name()->as_utf8(), "merge") == 0) {
     Unique_Node_List wq;
     wq.push(root());
     stringStream graph;
@@ -2289,7 +2294,7 @@ void Compile::save_graph(PhaseIterGVN* igvn, const char* label) {
     }
 
     stringStream filename;
-    filename.print("/tmp/graph_%d_%s_%d.ir", compile_id(), label, _graph_counter++);
+    filename.print("/tmp/graph_%d_%d_%s.ir", compile_id(), _graph_counter++, label);
 
     fileStream fs(filename.freeze());
     fs.print("%s", graph.freeze());
