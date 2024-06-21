@@ -66,6 +66,7 @@ import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.opt.CommandLine;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
