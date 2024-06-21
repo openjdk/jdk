@@ -24,43 +24,10 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.Set;
-
-interface WinLauncher extends Launcher {
-
-    @Override
-    default Path executableName() {
-        return Path.of(name() + ".exe");
+abstract class ProxyBase<T> {
+    ProxyBase(T target) {
+        this.target = target;
     }
-
-    boolean isConsole();
-
-    enum WinShortcut {
-        WinShortcutDesktop,
-        WinShortcutStartMenu
-    }
-
-    Set<WinShortcut> shortcuts();
-
-    static class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
-        Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
-            super(launcher);
-            this.isConsole = isConsole;
-            this.shortcuts = shortcuts;
-        }
-
-        @Override
-        public boolean isConsole() {
-            return isConsole;
-        }
-
-        @Override
-        public Set<WinShortcut> shortcuts() {
-            return shortcuts;
-        }
-
-        private final boolean isConsole;
-        private final Set<WinShortcut> shortcuts;
-    }
+    
+    protected final T target;
 }

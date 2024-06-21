@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 public class Functional {
 
@@ -114,6 +115,22 @@ public class Functional {
     }
 
     @FunctionalInterface
+    public interface ThrowingUnaryOperator<T> {
+
+        T apply(T t) throws Throwable;
+
+        public static <T> UnaryOperator<T> toUnaryOperator(ThrowingUnaryOperator<T> v) {
+            return (t) -> {
+                try {
+                    return v.apply(t);
+                } catch (Throwable ex) {
+                    throw rethrowUnchecked(ex);
+                }
+            };
+        }
+    }
+
+    @FunctionalInterface
     public interface ThrowingRunnable {
 
         void run() throws Throwable;
@@ -150,6 +167,10 @@ public class Functional {
     }
 
     public static <T, R> Function<T, R> identityFunction(Function<T, R> v) {
+        return v;
+    }
+
+    public static <T> UnaryOperator<T> identityUnaryOperator(UnaryOperator<T> v) {
         return v;
     }
 

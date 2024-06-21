@@ -58,7 +58,7 @@ interface WinMsiPackage extends Package {
 
     Path serviceInstaller();
 
-    static class Impl extends Package.Proxy implements WinMsiPackage {
+    static class Impl extends Package.Proxy<Package> implements WinMsiPackage {
 
         Impl(Package pkg, boolean withInstallDirChooser, boolean withShortcutPrompt, String helpURL,
                 String updateURL, String startMenuGroupName, boolean isSystemWideInstall,
@@ -130,7 +130,7 @@ interface WinMsiPackage extends Package {
 
     private static WinMsiPackage createFromParams(Map<String, ? super Object> params) throws ConfigException {
         var pkg = Package.createFromParams(params, WinApplication.createFromParams(params),
-                PackageType.WinMsi);
+                StandardPackageType.WinMsi);
         var withInstallDirChooser = Internal.INSTALLDIR_CHOOSER.fetchFrom(params);
         var withShortcutPrompt = Internal.SHORTCUT_PROMPT.fetchFrom(params);
         var helpURL = Internal.HELP_URL.fetchFrom(params);

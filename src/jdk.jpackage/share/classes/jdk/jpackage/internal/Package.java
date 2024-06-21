@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -39,7 +40,10 @@ import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 
 interface Package {
 
-    enum PackageType {
+    interface PackageType {
+    }
+
+    enum StandardPackageType implements PackageType {
         WinMsi(".msi"),
         WinExe(".exe"),
         LinuxDeb(".deb"),
@@ -47,7 +51,7 @@ interface Package {
         MacPkg(".pkg"),
         MacDmg(".dmg");
 
-        PackageType(String suffix) {
+        StandardPackageType(String suffix) {
             this.suffix = suffix;
         }
 
@@ -55,7 +59,7 @@ interface Package {
             return suffix;
         }
 
-        static PackageType fromCmdLineType(String type) {
+        static StandardPackageType fromCmdLineType(String type) {
             return Stream.of(values()).filter(pt -> {
                 return pt.suffix().substring(1).equals(type);
             }).findAny().get();
@@ -68,10 +72,18 @@ interface Package {
 
     PackageType type();
 
+    default StandardPackageType asStandardPackageType() {
+        if (type() instanceof StandardPackageType stdType) {
+            return stdType;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Returns platform-specific package name.
      */
-    String name();
+    String packageName();
 
     String description();
 
@@ -87,20 +99,27 @@ interface Package {
         return app().appLayout();
     }
 
-    default Path installerName() {
-        var type = type();
-        switch (type) {
-            case WinMsi, WinExe -> {
-                return Path.of(String.format("%s-%s%s", name(), version(), type.suffix()));
+    /**
+     * Returns package file name.
+     */
+    default Path packageFileName() {
+        if (type() instanceof StandardPackageType type) {
+            switch (type) {
+                case WinMsi, WinExe -> {
+                    return Path
+                            .of(String.format("%s-%s%s", packageName(), version(), type.suffix()));
+                }
+                default -> {
+                    throw new UnsupportedOperationException();
+                }
             }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
     default boolean isRuntimeInstaller() {
-        return app().mainLauncher() == null;
+        return app().isRuntime();
     }
 
     /**
@@ -109,16 +128,16 @@ interface Package {
      */
     Path relativeInstallDir();
 
-    static record Impl(Application app, PackageType type, String name, String description,
+    static record Impl(Application app, PackageType type, String packageName, String description,
             String version, String aboutURL, Path licenseFile, Path predefinedAppImage,
             Path relativeInstallDir) implements Package {
 
     }
 
-    static class Proxy implements Package {
+    static class Proxy<T extends Package> extends ProxyBase<T> implements Package {
 
-        Proxy(Package target) {
-            this.target = target;
+        Proxy(T target) {
+            super(target);
         }
 
         @Override
@@ -132,8 +151,8 @@ interface Package {
         }
 
         @Override
-        public String name() {
-            return target.name();
+        public String packageName() {
+            return target.packageName();
         }
 
         @Override
@@ -165,48 +184,88 @@ interface Package {
         public Path relativeInstallDir() {
             return target.relativeInstallDir();
         }
-
-        private final Package target;
     }
 
     static Package createFromParams(Map<String, ? super Object> params, Application app,
-            PackageType type) throws ConfigException {
-        var name = Optional.ofNullable(INSTALLER_NAME.fetchFrom(params)).orElseGet(app::name);
+            PackageType pkgType) throws ConfigException {
+        var packageName = Optional.ofNullable(INSTALLER_NAME.fetchFrom(params)).orElseGet(app::name);
         var description = Optional.ofNullable(DESCRIPTION.fetchFrom(params)).orElseGet(app::name);
         var version = Optional.ofNullable(VERSION.fetchFrom(params)).orElseGet(app::version);
         var aboutURL = ABOUT_URL.fetchFrom(params);
         var licenseFile = Optional.ofNullable(LICENSE_FILE.fetchFrom(params)).map(Path::of).orElse(null);
         var predefinedAppImage = getPredefinedAppImage(params);
 
-        var relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(Path::of)
-                .orElseGet(() -> {
-                    switch (type) {
-                        case WinExe, WinMsi -> {
-                            return app.appImageDirName();
-                        }
-                        case LinuxDeb, LinuxRpm -> {
-                            return Path.of("/opt").resolve(app.appImageDirName());
-                        }
-                        case MacDmg, MacPkg -> {
-                            String root;
-                            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                                root = "/Library/Java/JavaVirtualMachines";
-                            } else {
-                                root = "/Applications";
-                            }
-                            return Path.of(root).resolve(app.appImageDirName());
-                        }
-                        default -> {
-                            throw new IllegalArgumentException();
-                        }
-                    }
-                });
+        var relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
+            return toSupplier(() -> mapInstallDir(Path.of(v), pkgType)).get();
+        }).orElseGet(() -> {
+            if (pkgType instanceof StandardPackageType stdPkgType) {
+                return defaultInstallDir(app, stdPkgType);
+            } else {
+                return app.appImageDirName();
+            }
+        });
         if (relativeInstallDir.isAbsolute()) {
             relativeInstallDir = relativeInstallDir.relativize(Path.of("/"));
         }
 
-        return new Impl(app, type, name, description, version, aboutURL, licenseFile,
+        return new Impl(app, pkgType, packageName, description, version, aboutURL, licenseFile,
                 predefinedAppImage, relativeInstallDir);
+    }
+
+    private static Path defaultInstallDir(Application app, StandardPackageType type) {
+        switch (type) {
+            case WinExe, WinMsi -> {
+                return app.appImageDirName();
+            }
+            case LinuxDeb, LinuxRpm -> {
+                return Path.of("/opt").resolve(app.appImageDirName());
+            }
+            case MacDmg, MacPkg -> {
+                String root;
+                if (app.isRuntime()) {
+                    root = "/Library/Java/JavaVirtualMachines";
+                } else {
+                    root = "/Applications";
+                }
+                return Path.of(root).resolve(app.appImageDirName());
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    private static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
+        var ex = new ConfigException(MessageFormat.format(I18N.getString("error.invalid-install-dir"),
+                installDir), null);
+
+        if (installDir.getFileName().equals(Path.of(""))) {
+            // Trailing '/' or '\\'. Strip them away.
+            installDir = installDir.getParent();
+        }
+
+        if (installDir.toString().isEmpty()) {
+            throw ex;
+        }
+
+        if (pkgType instanceof StandardPackageType stdPkgType) {
+            switch (stdPkgType) {
+                case WinExe, WinMsi -> {
+                    if (installDir.isAbsolute()) {
+                        throw ex;
+                    }
+                }
+            }
+        } else if (!installDir.isAbsolute()) {
+            throw ex;
+        }
+
+        if (!installDir.normalize().toString().equals(installDir.toString())) {
+            // Don't allow '..' or '.' in path components
+            throw ex;
+        }
+
+        return installDir;
     }
 
     final static String PARAM_ID = "target.package";
@@ -215,8 +274,8 @@ interface Package {
             PARAM_ID, Package.class, params -> {
                 return toSupplier(() -> {
                     return Package.createFromParams(params, Application.TARGET_APPLICATION
-                            .fetchFrom(params), PackageType.fromCmdLineType(Workshop.PACKAGE_TYPE
-                            .fetchFrom(params)));
+                            .fetchFrom(params), StandardPackageType.fromCmdLineType(
+                            Workshop.PACKAGE_TYPE.fetchFrom(params)));
                 }).get();
             }, null);
 }

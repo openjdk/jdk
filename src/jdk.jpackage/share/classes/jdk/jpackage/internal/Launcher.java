@@ -31,8 +31,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 
 interface Launcher {
 
@@ -48,10 +46,6 @@ interface Launcher {
 
     boolean isService();
 
-    String version();
-
-    String release();
-
     String description();
 
     /**
@@ -61,15 +55,14 @@ interface Launcher {
     Path icon();
 
     static record Impl(String name, LauncherStartupInfo startupInfo,
-            List<FileAssociation> fileAssociations, boolean isService, String version,
-            String release, String description, Path icon) implements Launcher {
+            List<FileAssociation> fileAssociations, boolean isService, String description, Path icon) implements Launcher {
 
     }
 
-    static class Proxy implements Launcher {
+    static class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
 
-        Proxy(Launcher target) {
-            this.target = target;
+        Proxy(T target) {
+            super(target);
         }
 
         @Override
@@ -93,16 +86,6 @@ interface Launcher {
         }
 
         @Override
-        public String version() {
-            return target.version();
-        }
-
-        @Override
-        public String release() {
-            return target.release();
-        }
-
-        @Override
         public String description() {
             return target.description();
         }
@@ -111,8 +94,6 @@ interface Launcher {
         public Path icon() {
             return target.icon();
         }
-
-        private final Launcher target;
     }
 
     static Launcher createFromParams(Map<String, ? super Object> params) {
@@ -124,12 +105,10 @@ interface Launcher {
         }
 
         var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
-        var version = VERSION.fetchFrom(params);
-        var release = RELEASE.fetchFrom(params);
         var description = DESCRIPTION.fetchFrom(params);
         var icon = StandardBundlerParam.ICON.fetchFrom(params);
         var fa = FileAssociation.fetchFrom(params);
 
-        return new Impl(name, startupInfo, fa, isService, version, release, description, icon);
+        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
 }

@@ -233,7 +233,7 @@ public class WinMsiBundler  extends AbstractBundler {
             installerIcon = appImageLayout.launchersDirectory().resolve(pkg.app().mainLauncher()
                     .executableName());
 
-            new PackageFile(pkg.name()).save(appImageLayout);
+            new PackageFile(pkg.packageName()).save(appImageLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -274,7 +274,7 @@ public class WinMsiBundler  extends AbstractBundler {
             .setResourceCategoryId("resource.post-app-image-script")
             .setScriptNameSuffix("post-image")
             .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-            .run(workshop, pkg.name());
+            .run(workshop, pkg.packageName());
 
             return buildMSI(workshop, pkg, wixVars, outputParentDir);
         } catch (IOException ex) {
@@ -299,7 +299,7 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpAllowDowngrades", "yes");
         }
 
-        data.put("JpAppName", pkg.name());
+        data.put("JpAppName", pkg.packageName());
         data.put("JpAppDescription", pkg.description());
         data.put("JpAppVendor", pkg.app().vendor());
         data.put("JpAppVersion", pkg.version());
@@ -335,7 +335,7 @@ public class WinMsiBundler  extends AbstractBundler {
             Map<String, String> wixVars, Path outdir)
             throws IOException {
 
-        Path msiOut = outdir.resolve(pkg.installerName());
+        Path msiOut = outdir.resolve(pkg.packageFileName());
 
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.preparing-msi-config"), msiOut.toAbsolutePath()

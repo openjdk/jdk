@@ -27,8 +27,6 @@ package jdk.jpackage.internal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_MENU_HINT;
-import static jdk.jpackage.internal.Arguments.CLIOptions.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
@@ -51,8 +49,8 @@ interface WinApplication extends Application {
             boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
 
             var shortcuts = Map.of(WinShortcutDesktop, List.of(SHORTCUT_HINT,
-                    Internal.WIN_SHORTCUT_HINT_PARAM), WinShortcutStartMenu,
-                    List.of(MENU_HINT, Internal.WIN_MENU_HINT_PARAM)).entrySet().stream().filter(
+                    Internal.WIN_SHORTCUT_HINT), WinShortcutStartMenu,
+                    List.of(MENU_HINT, Internal.WIN_MENU_HINT)).entrySet().stream().filter(
                     e -> {
                         var shortcutParams = e.getValue();
                         if (launcherParams.containsKey(shortcutParams.get(0).getID())) {
@@ -75,16 +73,16 @@ interface WinApplication extends Application {
 
     static final class Internal {
 
-        private static final StandardBundlerParam<Boolean> WIN_MENU_HINT_PARAM = new StandardBundlerParam<>(
-                WIN_MENU_HINT.getId(),
+        private static final StandardBundlerParam<Boolean> WIN_MENU_HINT = new StandardBundlerParam<>(
+                Arguments.CLIOptions.WIN_MENU_HINT.getId(),
                 Boolean.class,
                 p -> false,
                 // valueOf(null) is false,
                 // and we actually do want null in some cases
                 (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
 
-        private static final StandardBundlerParam<Boolean> WIN_SHORTCUT_HINT_PARAM = new StandardBundlerParam<>(
-                WIN_SHORTCUT_HINT.getId(),
+        private static final StandardBundlerParam<Boolean> WIN_SHORTCUT_HINT = new StandardBundlerParam<>(
+                Arguments.CLIOptions.WIN_SHORTCUT_HINT.getId(),
                 Boolean.class,
                 p -> false,
                 // valueOf(null) is false,

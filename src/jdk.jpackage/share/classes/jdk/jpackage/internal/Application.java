@@ -75,6 +75,10 @@ interface Application {
 
     Launcher mainLauncher();
 
+    default boolean isRuntime() {
+        return mainLauncher() == null;
+    }
+
     List<Launcher> additionalLaunchers();
 
     default boolean isService() {
@@ -82,7 +86,7 @@ interface Application {
     }
 
     default ApplicationLayout appLayout() {
-        if (mainLauncher() == null) {
+        if (isRuntime()) {
             return ApplicationLayout.javaRuntime();
         } else {
             return ApplicationLayout.platformAppImage();
@@ -101,10 +105,10 @@ interface Application {
 
     }
 
-    static class Proxy implements Application {
+    static class Proxy<T extends Application> extends ProxyBase<T> implements Application {
 
-        Proxy(Application target) {
-            this.target = target;
+        Proxy(T target) {
+            super(target);
         }
 
         @Override
@@ -146,8 +150,6 @@ interface Application {
         public List<Launcher> additionalLaunchers() {
             return target.additionalLaunchers();
         }
-
-        private final Application target;
     }
 
     static Application createFromParams(Map<String, ? super Object> params,
