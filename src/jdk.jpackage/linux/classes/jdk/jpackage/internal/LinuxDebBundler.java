@@ -58,85 +58,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 
 public class LinuxDebBundler extends LinuxPackageBundler {
 
-    // Debian rules for package naming are used here
-    // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
-    //
-    // Package names must consist only of lower case letters (a-z),
-    // digits (0-9), plus (+) and minus (-) signs, and periods (.).
-    // They must be at least two characters long and
-    // must start with an alphanumeric character.
-    //
-    private static final Pattern DEB_PACKAGE_NAME_PATTERN =
-            Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
-
-    private static final BundlerParamInfo<String> PACKAGE_NAME =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_BUNDLE_NAME.getId(),
-            String.class,
-            params -> {
-                String nm = INSTALLER_NAME.fetchFrom(params);
-                if (nm == null) return null;
-
-                // make sure to lower case and spaces/underscores become dashes
-                nm = nm.toLowerCase().replaceAll("[ _]", "-");
-                return nm;
-            },
-            (s, p) -> {
-                if (!DEB_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    throw new IllegalArgumentException(new ConfigException(
-                            MessageFormat.format(I18N.getString(
-                            "error.invalid-value-for-package-name"), s),
-                            I18N.getString(
-                            "error.invalid-value-for-package-name.advice")));
-                }
-
-                return s;
-            });
-
     private static final String TOOL_DPKG_DEB = "dpkg-deb";
     private static final String TOOL_DPKG = "dpkg";
     private static final String TOOL_FAKEROOT = "fakeroot";
-
-    private static final String DEB_ARCH;
-    static {
-        String debArch;
-        try {
-            debArch = Executor.of(TOOL_DPKG, "--print-architecture").saveOutput(
-                    true).executeExpectSuccess().getOutput().get(0);
-        } catch (IOException ex) {
-            debArch = null;
-        }
-        DEB_ARCH = debArch;
-    }
-
-    private static final String releaseSuffix(Map<String, ? super Object> params) {
-        return Optional.ofNullable(RELEASE.fetchFrom(params, false)).map(
-                rel -> "-" + rel).orElse("");
-    }
-
-    private static final BundlerParamInfo<String> FULL_PACKAGE_NAME =
-            new StandardBundlerParam<>(
-                    "linux.deb.fullPackageName", String.class, params -> {
-                        return PACKAGE_NAME.fetchFrom(params)
-                            + "_" + VERSION.fetchFrom(params)
-                            + releaseSuffix(params)
-                            + "_" + DEB_ARCH;
-                    }, (s, p) -> s);
-
-    private static final BundlerParamInfo<String> EMAIL =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
-            String.class,
-            params -> "Unknown",
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> MAINTAINER =
-            new StandardBundlerParam<> (
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId() + ".internal",
-            String.class,
-            params -> VENDOR.fetchFrom(params) + " <"
-                    + EMAIL.fetchFrom(params) + ">",
-            (s, p) -> s);
 
     private static final BundlerParamInfo<String> SECTION =
             new StandardBundlerParam<>(
@@ -197,9 +121,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     private static final Pattern PACKAGE_NAME_REGEX = Pattern.compile("^(^\\S+):");
 
     @Override
-    protected void initLibProvidersLookup(
-            Map<String, ? super Object> params,
-            LibProvidersLookup libProvidersLookup) {
+    protected void initLibProvidersLookup(LibProvidersLookup libProvidersLookup) {
 
         libProvidersLookup.setPackageLookup(file -> {
             Path realPath = file.toRealPath();

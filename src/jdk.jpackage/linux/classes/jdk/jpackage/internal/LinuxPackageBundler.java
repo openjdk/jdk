@@ -63,8 +63,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         // we are not interested in return code, only possible exception
         appImageBundler.validate(params);
 
-        validateInstallDir(LINUX_INSTALL_DIR.fetchFrom(params));
-
         FileAssociation.verify(FileAssociation.fetchFrom(params));
 
         // If package name has some restrictions, the string converter will
@@ -115,44 +113,53 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Path outputParentDir) throws PackagerException {
         IOUtils.writableOutputDir(outputParentDir);
 
-        PlatformPackage thePackage = createMetaPackage(params);
+        // Order is important!
+        LinuxPackage pkg;
+        if (Package.TARGET_PACKAGE.fetchFrom(params) instanceof LinuxPackage linuxPkg) {
+            pkg = linuxPkg;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        var workshop = Workshop.WORKSHOP.fetchFrom(params);
+
+        Workshop pkgWorkshop = new Workshop.Proxy(workshop) {
+            @Override
+            public Path appImageDir() {
+                return buildRoot().resolve("pkg-image");
+            }
+        };
+        
+        params.put(Workshop.WORKSHOP.getID(), pkgWorkshop);
 
         Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
-            ApplicationLayout layout = appImageLayout(params);
+            ApplicationLayout layout = pkg.app().appLayout();
             layout.pathGroup().setPath(new Object(),
                     AppImageFile.getPathInAppImage(Path.of("")));
             return layout.resolveAt(imageRoot);
         };
 
         try {
-            Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
+            Path appImage = pkg.predefinedAppImage();
 
             // we either have an application image or need to build one
             if (appImage != null) {
-                initAppImageLayout.apply(appImage).copy(
-                        thePackage.sourceApplicationLayout());
+                initAppImageLayout.apply(appImage).copy(pkg.appLayout().resolveAt(pkgWorkshop
+                        .appImageDir()));
             } else {
-                final Path srcAppImageRoot = thePackage.sourceRoot().resolve("src");
-                appImage = appImageBundler.execute(params, srcAppImageRoot);
-                ApplicationLayout srcAppLayout = initAppImageLayout.apply(
-                        appImage);
-                if (appImage.equals(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params))) {
-                    // Application image points to run-time image.
-                    // Copy it.
-                    srcAppLayout.copy(thePackage.sourceApplicationLayout());
-                } else {
-                    // Application image is a newly created directory tree.
-                    // Move it.
-                    srcAppLayout.move(thePackage.sourceApplicationLayout());
-                    IOUtils.deleteRecursive(srcAppImageRoot);
+                Files.createDirectories(workshop.appImageDir().getParent());
+                appImageBundler.execute(params, workshop.appImageDir().getParent());
+                Files.delete(AppImageFile.getPathInAppImage(workshop.appImageDir()));
+                if (pkg.isInstallDirInUsrTree()) {
+                    initAppImageLayout.apply(workshop.appImageDir()).copy(pkg.appLayout().resolveAt(
+                            pkgWorkshop.appImageDir()));
                 }
             }
 
             for (var ca : customActions) {
-                ca.init(thePackage, params);
+                ca.init(pkgWorkshop, pkg);
             }
 
-            Map<String, String> data = createDefaultReplacementData(params);
+            Map<String, String> data = createDefaultReplacementData(workshop, pkg);
 
             for (var ca : customActions) {
                 ShellCustomAction.mergeReplacementData(data, ca.instance.
@@ -178,10 +185,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
     }
 
-    private List<String> getListOfNeededPackages(
-            Map<String, ? super Object> params) throws IOException {
-
-        PlatformPackage thePackage = createMetaPackage(params);
+    private List<String> getListOfNeededPackages(Workshop workshop) throws IOException {
 
         final List<String> caPackages = customActions.stream()
                 .map(ca -> ca.instance)
@@ -189,16 +193,14 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 .flatMap(List::stream).toList();
 
         final List<String> neededLibPackages;
-        if (withFindNeededPackages && Files.exists(thePackage.sourceRoot())) {
+        if (withFindNeededPackages) {
             LibProvidersLookup lookup = new LibProvidersLookup();
-            initLibProvidersLookup(params, lookup);
+            initLibProvidersLookup(lookup);
 
-            neededLibPackages = lookup.execute(thePackage.sourceRoot());
+            neededLibPackages = lookup.execute(workshop.appImageDir());
         } else {
             neededLibPackages = Collections.emptyList();
-            if (!Files.exists(thePackage.sourceRoot())) {
-                Log.info(I18N.getString("warning.foreign-app-image"));
-            }
+            Log.info(I18N.getString("warning.foreign-app-image"));
         }
 
         // Merge all package lists together.
@@ -211,17 +213,16 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         return result;
     }
 
-    private Map<String, String> createDefaultReplacementData(
-            Map<String, ? super Object> params) throws IOException {
+    private Map<String, String> createDefaultReplacementData(Workshop workshop, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        data.put("APPLICATION_PACKAGE", createMetaPackage(params).name());
-        data.put("APPLICATION_VENDOR", VENDOR.fetchFrom(params));
-        data.put("APPLICATION_VERSION", VERSION.fetchFrom(params));
-        data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
+        data.put("APPLICATION_PACKAGE", pkg.packageName());
+        data.put("APPLICATION_VENDOR", pkg.app().vendor());
+        data.put("APPLICATION_VERSION", pkg.version());
+        data.put("APPLICATION_DESCRIPTION", pkg.description());
 
-        String defaultDeps = String.join(", ", getListOfNeededPackages(params));
-        String customDeps = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params).strip();
+        String defaultDeps = String.join(", ", getListOfNeededPackages(workshop));
+        String customDeps = pkg.additionalDependencies();
         if (!customDeps.isEmpty() && !defaultDeps.isEmpty()) {
             customDeps = ", " + customDeps;
         }
@@ -234,9 +235,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     protected abstract List<ConfigException> verifyOutputBundle(
             Map<String, ? super Object> params, Path packageBundle);
 
-    protected abstract void initLibProvidersLookup(
-            Map<String, ? super Object> params,
-            LibProvidersLookup libProvidersLookup);
+    protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
     protected abstract List<ToolValidator> getToolValidators(
             Map<String, ? super Object> params);
@@ -252,95 +251,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Map<String, ? super Object> params, Path outputParentDir) throws
             PackagerException, IOException;
 
-    protected final PlatformPackage createMetaPackage(
-            Map<String, ? super Object> params) {
-
-        Supplier<ApplicationLayout> packageLayout = () -> {
-            String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
-            if (isInstallDirInUsrTree(installDir)) {
-                return ApplicationLayout.linuxUsrTreePackageImage(
-                        Path.of("/").relativize(Path.of(installDir)),
-                        packageName.fetchFrom(params));
-            }
-            return appImageLayout(params);
-        };
-
-        return new PlatformPackage() {
-            @Override
-            public String name() {
-                return packageName.fetchFrom(params);
-            }
-
-            @Override
-            public Path sourceRoot() {
-                return IMAGES_ROOT.fetchFrom(params).toAbsolutePath();
-            }
-
-            @Override
-            public ApplicationLayout sourceApplicationLayout() {
-                return packageLayout.get().resolveAt(
-                        applicationInstallDir(sourceRoot()));
-            }
-
-            @Override
-            public ApplicationLayout installedApplicationLayout() {
-                return packageLayout.get().resolveAt(
-                        applicationInstallDir(Path.of("/")));
-            }
-
-            private Path applicationInstallDir(Path root) {
-                String installRoot = LINUX_INSTALL_DIR.fetchFrom(params);
-                if (isInstallDirInUsrTree(installRoot)) {
-                    return root;
-                }
-
-                Path installDir = Path.of(installRoot, name());
-                if (installDir.isAbsolute()) {
-                    installDir = Path.of("." + installDir.toString()).normalize();
-                }
-                return root.resolve(installDir);
-            }
-        };
-    }
-
-    private ApplicationLayout appImageLayout(
-            Map<String, ? super Object> params) {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return ApplicationLayout.javaRuntime();
-        }
-        return ApplicationLayout.linuxAppImage();
-    }
-
-    private static void validateInstallDir(String installDir) throws
-            ConfigException {
-
-        if (installDir.isEmpty()) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.invalid-install-dir"), "/"), null);
-        }
-
-        boolean valid = false;
-        try {
-            final Path installDirPath = Path.of(installDir);
-            valid = installDirPath.isAbsolute();
-            if (valid && !installDirPath.normalize().toString().equals(
-                    installDirPath.toString())) {
-                // Don't allow '/opt/foo/..' or /opt/.
-                valid = false;
-            }
-        } catch (InvalidPathException ex) {
-        }
-
-        if (!valid) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.invalid-install-dir"), installDir), null);
-        }
-    }
-
-    protected static boolean isInstallDirInUsrTree(String installDir) {
-        return Set.of("/usr/local", "/usr").contains(installDir);
-    }
-
     private final BundlerParamInfo<String> packageName;
     private final Bundler appImageBundler;
     private boolean withFindNeededPackages;
@@ -352,38 +262,12 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             this.factory = factory;
         }
 
-        void init(PlatformPackage thePackage, Map<String, ? super Object> params)
-                throws IOException {
-            instance = factory.create(thePackage, params);
+        void init(Workshop workshop, Package pkg) throws IOException {
+            instance = factory.create(workshop, pkg);
             Objects.requireNonNull(instance);
         }
 
         private final ShellCustomActionFactory factory;
         ShellCustomAction instance;
     }
-
-    private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId(),
-            String.class,
-            params -> "",
-            (s, p) -> s
-    );
-
-    static final BundlerParamInfo<String> LINUX_INSTALL_DIR =
-            new StandardBundlerParam<>(
-            "linux-install-dir",
-            String.class,
-            params -> {
-                 String dir = INSTALL_DIR.fetchFrom(params);
-                 if (dir != null) {
-                     if (dir.endsWith("/")) {
-                         dir = dir.substring(0, dir.length()-1);
-                     }
-                     return dir;
-                 }
-                 return "/opt";
-             },
-            (s, p) -> s
-    );
 }

@@ -55,6 +55,19 @@ class UnixLaunchersAsServices extends ShellCustomAction {
                 factory::apply).toList();
     }
 
+    UnixLaunchersAsServices(Workshop workshop, Application app, List<String> requiredPackages, Function<Launcher, UnixLauncherAsService> factory) throws IOException {
+        this.workshop = workshop;
+        this.pkg = pkg;
+        this.requiredPackages = requiredPackages;
+
+        // Read launchers information
+        launchers = pkg.
+                
+                AppImageFile.getLaunchers(PREDEFINED_APP_IMAGE.fetchFrom(
+                params), params).stream().filter(LauncherInfo::isService).map(
+                factory::apply).toList();
+    }
+
     @Override
     final List<String> requiredPackages() {
         if (launchers.isEmpty()) {
@@ -106,15 +119,15 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
     abstract static class UnixLauncherAsService extends LauncherAsService {
 
-        UnixLauncherAsService(String name, Map<String, Object> mainParams,
-                OverridableResource resource) {
-            super(name, mainParams, resource);
+        UnixLauncherAsService(Launcher launcher, OverridableResource resource) {
+            super(launcher, resource);
         }
 
         abstract Path descriptorFilePath(Path root);
     }
 
-    private final PlatformPackage thePackage;
+    private final Workshop workshop;
+    private final Package pkg;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
     private final Enquoter enqouter = Enquoter.forShellLiterals();
