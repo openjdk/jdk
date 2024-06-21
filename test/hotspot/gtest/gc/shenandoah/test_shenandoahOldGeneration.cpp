@@ -29,6 +29,13 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
+#define SKIP_IF_NOT_SHENANDOAH() \
+  if (!(UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational())) {                 \
+    tty->print_cr("skipped (run with -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational)");  \
+    return;                                                                                      \
+  }
+
+
 class ShenandoahOldGenerationTest : public ::testing::Test {
 protected:
   static const size_t INITIAL_PLAB_SIZE;
@@ -42,10 +49,7 @@ protected:
   }
 
   void SetUp() override {
-    if (!(UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational())) {
-      GTEST_SKIP() << "Test must be run with -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational";
-      return;
-    }
+    SKIP_IF_NOT_SHENANDOAH();
 
     ShenandoahHeap::heap()->lock()->lock(false);
 
@@ -85,22 +89,26 @@ const size_t ShenandoahOldGenerationTest::INITIAL_PLAB_SIZE = 42;
 const size_t ShenandoahOldGenerationTest::INITIAL_PLAB_PROMOTED = 128;
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_can_promote) {
+  SKIP_IF_NOT_SHENANDOAH();
   EXPECT_TRUE(old->can_promote(128 * HeapWordSize)) << "Should have room to promote";
   EXPECT_FALSE(old->can_promote(384 * HeapWordSize)) << "Should not have room to promote";
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_can_allocate_plab_for_promotion) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(128, 128);
   EXPECT_TRUE(old->can_allocate(req)) << "Should have room to promote";
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_can_allocate_plab_for_evacuation) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(384, 384);
   EXPECT_FALSE(old->can_promote(req.size() * HeapWordSize)) << "No room for promotions";
   EXPECT_TRUE(old->can_allocate(req)) << "Should have room to evacuate";
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_cannot_allocate_plab) {
+  SKIP_IF_NOT_SHENANDOAH();
   // Simulate having exhausted the evacuation reserve when request is too big to be promoted
   old->set_evacuation_reserve(0);
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(384, 384);
@@ -108,19 +116,21 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_cannot_allocate_plab) {
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_can_allocate_for_shared_evacuation) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(768, ShenandoahAffiliation::OLD_GENERATION, false);
   EXPECT_FALSE(old->can_promote(req.size() * HeapWordSize)) << "No room for promotion";
   EXPECT_TRUE(old->can_allocate(req)) << "Should have room to evacuate shared (even though evacuation reserve is smaller than request)";
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_cannot_allocate_for_shared_promotion) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(768, ShenandoahAffiliation::OLD_GENERATION, true);
   EXPECT_FALSE(old->can_promote(req.size() * HeapWordSize)) << "No room for promotion";
   EXPECT_FALSE(old->can_allocate(req)) << "No room to promote, should fall back to evacuation in young gen";
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_expend_promoted) {
-
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(128, 128);
 
   // simulate the allocation
@@ -139,6 +149,7 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_expend_promoted) {
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_actual_size_exceeds_promotion_reserve) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(128, 128);
 
   // simulate an allocation that exceeds the promotion reserve after allocation
@@ -156,6 +167,7 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_actual_size_exceeds_promotion_reserv
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_shared_expends_promoted_but_does_not_change_plab) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, true);
   req.set_actual_size(128);
   size_t actual_size = req.actual_size() * HeapWordSize;
@@ -171,6 +183,7 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_shared_expends_promoted_but_does_not
 }
 
 TEST_VM_F(ShenandoahOldGenerationTest, test_shared_evacuation_has_no_side_effects) {
+  SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, false);
   req.set_actual_size(128);
 
@@ -183,3 +196,5 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_shared_evacuation_has_no_side_effect
   EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Not a plab, should not have touched plab";
   EXPECT_FALSE(promotions_enabled());
 }
+
+#undef SKIP_IF_NOT_SHENANDOAH
