@@ -25,7 +25,6 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
