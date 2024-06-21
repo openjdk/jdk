@@ -24,7 +24,7 @@
 /* @test id=tmp
  * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
- *     that support it, test directory is /tmp.
+ *     that support it, tests using /tmp directory.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
  * @run main CreationTime
@@ -33,8 +33,8 @@
 /* @test id=cwd
  * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
- *     that support it, test directory is JTwork/scratch. The JTwork/scratch
- *     directory maybe at diff disk partition to /tmp on linux
+ *     that support it, tests using the test scratch directory, the test
+ *     scratch directory maybe at diff disk partition to /tmp on linux.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
  * @run main CreationTime .
