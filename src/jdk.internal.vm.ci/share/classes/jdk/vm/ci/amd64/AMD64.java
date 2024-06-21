@@ -83,6 +83,7 @@ public class AMD64 extends Architecture {
     public static final Register r30 = new Register(30, 30, "r30", CPU);
     public static final Register r31 = new Register(31, 31, "r31", CPU);
 
+    // The set of common CPU registers available on all x64 platforms.
     public static final Register[] cpuRegisters = {
         rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi,
         r8, r9, r10, r11, r12, r13, r14, r15
