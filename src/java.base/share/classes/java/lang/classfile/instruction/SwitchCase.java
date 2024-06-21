@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * @see LookupSwitchInstruction
  * @see TableSwitchInstruction
  *
- * @since 22
+ * @since 24
  */
 public sealed interface SwitchCase
         permits AbstractInstruction.SwitchCaseImpl {

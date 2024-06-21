@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models a single "opens" declaration in the {@link ModuleAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleOpenInfo
         permits UnboundAttribute.UnboundModuleOpenInfo {

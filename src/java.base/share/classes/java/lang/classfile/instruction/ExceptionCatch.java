@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  *
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ExceptionCatch extends PseudoInstruction
         permits AbstractPseudoInstruction.ExceptionCatchImpl {

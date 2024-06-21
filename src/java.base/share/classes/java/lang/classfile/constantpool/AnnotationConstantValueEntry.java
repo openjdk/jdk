@@ -31,7 +31,7 @@ import java.lang.constant.ConstantDesc;
  * which includes the four kinds of primitive constants, and UTF8 constants.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface AnnotationConstantValueEntry extends PoolEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, Utf8Entry {

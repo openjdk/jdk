@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models a single "requires" declaration in the {@link ModuleAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleRequireInfo
         permits UnboundAttribute.UnboundModuleRequiresInfo {

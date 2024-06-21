@@ -35,7 +35,7 @@ import java.lang.constant.ConstantDescs;
  * @see Instruction
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
 public enum Opcode {
 
@@ -696,7 +696,7 @@ public enum Opcode {
     /**
      * Kinds of opcodes.
      *
-     * @since 22
+     * @since 24
      */
     public static enum Kind {
 

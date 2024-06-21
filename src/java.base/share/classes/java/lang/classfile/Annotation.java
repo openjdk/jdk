@@ -46,7 +46,7 @@ import java.util.List;
  * @see RuntimeInvisibleParameterAnnotationsAttribute
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface Annotation
         extends WritableElement<Annotation>

@@ -49,7 +49,7 @@ import jdk.internal.classfile.impl.CodeStackTrackerImpl;
  *     });
  * }
  *
- * @since 22
+ * @since 24
  */
 public sealed interface CodeStackTracker extends CodeTransform permits CodeStackTrackerImpl {
 

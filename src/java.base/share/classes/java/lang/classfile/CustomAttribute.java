@@ -31,7 +31,7 @@ package java.lang.classfile;
  * format and the {@linkplain CustomAttribute} representation.
  * @param <T> the custom attribute type
  *
- * @since 22
+ * @since 24
  */
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {

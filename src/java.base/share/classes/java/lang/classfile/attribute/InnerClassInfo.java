@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models a single inner class in the {@link InnerClassesAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface InnerClassInfo
         permits UnboundAttribute.UnboundInnerClassInfo {

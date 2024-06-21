@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.LabelImpl;
  * can be bound to the current position within a {@linkplain CodeBuilder} via
  * {@link CodeBuilder#labelBinding(Label)} or {@link CodeBuilder#with(ClassFileElement)}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface Label
         permits LabelImpl {

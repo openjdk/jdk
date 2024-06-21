@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.ClassFileVersionImpl;
  * java.lang.classfile.ClassElement} when traversing the elements of a {@link
  * ClassModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ClassFileVersion
         extends ClassElement

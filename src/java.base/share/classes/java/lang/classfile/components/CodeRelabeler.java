@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.CodeRelabelerImpl;
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link java.lang.classfile.Label} is bound in the target bytecode exactly once.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabelerImpl {
 

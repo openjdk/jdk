@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry

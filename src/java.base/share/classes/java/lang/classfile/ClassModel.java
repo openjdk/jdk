@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.ClassImpl;
  * a streaming view (e.g., {@link #elements()}), or via random access (e.g.,
  * {@link #flags()}), or by freely mixing the two.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ClassModel
         extends CompoundElement<ClassElement>, AttributedElement

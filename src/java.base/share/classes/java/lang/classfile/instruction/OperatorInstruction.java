@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface OperatorInstruction extends Instruction
         permits AbstractInstruction.UnboundOperatorInstruction {

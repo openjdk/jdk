@@ -36,7 +36,7 @@ import java.lang.classfile.ClassReader;
  * @jvms 4.4 The Constant Pool
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ConstantPool extends Iterable<PoolEntry>
         permits ClassReader, ConstantPoolBuilder {
@@ -67,7 +67,6 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool, or the entry is not of the given type
-     * @since 23
      */
     <T extends PoolEntry> T entryByIndex(int index, Class<T> cls);
 

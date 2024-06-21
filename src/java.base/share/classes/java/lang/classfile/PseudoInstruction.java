@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * pseudo-instructions can be disabled by modifying the value of classfile
  * options (e.g., {@link ClassFile.DebugElementsOption}).
  *
- * @since 22
+ * @since 24
  */
 public sealed interface PseudoInstruction
         extends CodeElement

@@ -43,7 +43,7 @@ import java.util.List;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface RuntimeInvisibleAnnotationsAttribute
         extends Attribute<RuntimeInvisibleAnnotationsAttribute>,

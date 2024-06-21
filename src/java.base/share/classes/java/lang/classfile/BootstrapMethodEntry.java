@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
  * the {@link ConstantPool}, since the bootstrap method table is logically
  * part of the constant pool.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface BootstrapMethodEntry
         extends WritableElement<BootstrapMethodEntry>

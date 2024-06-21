@@ -28,7 +28,7 @@
  *
  * The {@code java.lang.classfile.attribute} package contains interfaces describing code instructions.
  *
- * @since 22
+ * @since 24
  */
 package java.lang.classfile.instruction;
 

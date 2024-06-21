@@ -45,7 +45,7 @@ import java.util.function.Function;
  * Encapsulates additional reading context such as mappers for custom attributes
  * and processing options.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ClassReader extends ConstantPool
         permits ClassReaderImpl {
@@ -124,7 +124,6 @@ public sealed interface ClassReader extends ConstantPool
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the entry is not of the given type
-     * @since 23
      */
     <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls);
 

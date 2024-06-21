@@ -111,7 +111,7 @@
  * instrumenting transformation:
  * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
  *
- * @since 22
+ * @since 24
  */
 package java.lang.classfile.components;
 

@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface IncrementInstruction extends Instruction
         permits AbstractInstruction.BoundIncrementInstruction,

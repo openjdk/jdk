@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.Util;
  * Models the interfaces of a class.  Delivered as a {@link
  * java.lang.classfile.ClassElement} when traversing a {@link ClassModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface Interfaces
         extends ClassElement

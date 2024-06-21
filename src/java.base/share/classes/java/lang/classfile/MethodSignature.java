@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface MethodSignature
         permits SignaturesImpl.MethodSignatureImpl {

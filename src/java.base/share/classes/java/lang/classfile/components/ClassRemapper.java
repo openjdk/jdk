@@ -51,7 +51,7 @@ import jdk.internal.classfile.impl.ClassRemapperImpl;
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 

@@ -32,7 +32,7 @@ import java.lang.constant.PackageDesc;
  * classfile.
  * @jvms 4.4.12 The CONSTANT_Package_info Structure
  *
- * @since 22
+ * @since 24
  */
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {

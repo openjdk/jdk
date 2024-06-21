@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.DirectMethodBuilder;
  * @param <T> the type of the entity
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface WritableElement<T> extends ClassFileElement
         permits Annotation, AnnotationElement, AnnotationValue, Attribute,

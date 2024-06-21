@@ -56,7 +56,7 @@ import jdk.internal.classfile.impl.Util;
  * <p>
  * The attribute was introduced in the Java SE Platform version 9.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleAttribute
         extends Attribute<ModuleAttribute>, ClassElement
@@ -170,7 +170,7 @@ public sealed interface ModuleAttribute
     /**
      * A builder for module attributes.
      *
-     * @since 22
+     * @since 24
      */
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {

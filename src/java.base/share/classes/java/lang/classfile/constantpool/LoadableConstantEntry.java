@@ -32,7 +32,7 @@ import java.lang.classfile.TypeKind;
  * {@code LDC} instructions.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface LoadableConstantEntry extends PoolEntry
         permits ClassEntry, ConstantDynamicEntry, ConstantValueEntry, MethodHandleEntry, MethodTypeEntry {

@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  *
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LocalVariable extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {

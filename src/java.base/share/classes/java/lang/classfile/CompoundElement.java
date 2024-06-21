@@ -43,7 +43,7 @@ import java.util.stream.StreamSupport;
  * @param <E> the element type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface CompoundElement<E extends ClassFileElement>
         extends ClassFileElement, Iterable<E>

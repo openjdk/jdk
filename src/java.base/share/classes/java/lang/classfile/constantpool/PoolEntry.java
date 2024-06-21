@@ -30,7 +30,7 @@ import java.lang.classfile.WritableElement;
  * Models an entry in the constant pool of a classfile.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface PoolEntry extends WritableElement<PoolEntry>
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,

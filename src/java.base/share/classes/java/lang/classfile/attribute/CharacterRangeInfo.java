@@ -29,7 +29,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models a single character range in the {@link CharacterRangeTableAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface CharacterRangeInfo
         permits UnboundAttribute.UnboundCharacterRangeInfo {

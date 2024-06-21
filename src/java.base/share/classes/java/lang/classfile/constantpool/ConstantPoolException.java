@@ -29,7 +29,7 @@ package java.lang.classfile.constantpool;
  * Thrown to indicate that requested entry cannot be obtained from the constant
  * pool.
  *
- * @since 22
+ * @since 24
  */
 public class ConstantPoolException extends IllegalArgumentException {
 

@@ -33,7 +33,7 @@ package java.lang.classfile;
  * will implement {@link ClassElement}, {@link MethodElement}, etc.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ClassFileElement
         permits AttributedElement, CompoundElement, WritableElement,

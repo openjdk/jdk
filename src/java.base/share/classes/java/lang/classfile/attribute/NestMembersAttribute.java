@@ -47,7 +47,7 @@ import jdk.internal.classfile.impl.Util;
  * <p>
  * The attribute was introduced in the Java SE Platform version 11.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface NestMembersAttribute extends Attribute<NestMembersAttribute>, ClassElement
         permits BoundAttribute.BoundNestMembersAttribute, UnboundAttribute.UnboundNestMembersAttribute {

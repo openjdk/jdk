@@ -32,7 +32,7 @@ import java.lang.constant.ConstantDesc;
  * types and {@linkplain String} constants.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ConstantValueEntry extends LoadableConstantEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {

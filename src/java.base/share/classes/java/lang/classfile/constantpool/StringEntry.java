@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  * @jvms 4.4.3 The CONSTANT_String_info Structure
  *
- * @since 22
+ * @since 24
  */
 public sealed interface StringEntry
         extends ConstantValueEntry

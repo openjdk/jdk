@@ -54,7 +54,7 @@ import java.lang.classfile.attribute.UnknownAttribute;
  * a {@link ClassModel} or be presented to a {@link ClassBuilder}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ClassElement extends ClassFileElement
         permits AccessFlags, Superclass, Interfaces, ClassFileVersion,

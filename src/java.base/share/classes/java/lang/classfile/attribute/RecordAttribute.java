@@ -44,7 +44,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * <p>
  * The attribute was introduced in the Java SE Platform version 16.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface RecordAttribute extends Attribute<RecordAttribute>, ClassElement
         permits BoundAttribute.BoundRecordAttribute, UnboundAttribute.UnboundRecordAttribute {

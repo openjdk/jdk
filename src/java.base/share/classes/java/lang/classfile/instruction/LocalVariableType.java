@@ -43,7 +43,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * traversal of the elements of a {@link CodeModel}, according to the setting of
  * the {@link ClassFile.DebugElementsOption} option.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {

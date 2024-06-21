@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * <p>
  * The attribute was introduced in the Java SE Platform version 6.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface StackMapTableAttribute
         extends Attribute<StackMapTableAttribute>, CodeElement

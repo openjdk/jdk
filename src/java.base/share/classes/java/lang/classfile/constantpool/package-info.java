@@ -28,7 +28,7 @@
  *
  * The {@code java.lang.classfile.constantpool} package contains interfaces describing classfile constant pool entries.
  *
- * @since 22
+ * @since 24
  */
 package java.lang.classfile.constantpool;
 

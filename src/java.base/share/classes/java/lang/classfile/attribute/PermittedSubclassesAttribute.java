@@ -47,7 +47,7 @@ import jdk.internal.classfile.impl.Util;
  * <p>
  * The attribute was introduced in the Java SE Platform version 17.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface PermittedSubclassesAttribute
         extends Attribute<PermittedSubclassesAttribute>, ClassElement

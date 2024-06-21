@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * @see Annotation
  * @see AnnotationValue
  *
- * @since 22
+ * @since 24
  */
 public sealed interface AnnotationElement
         extends WritableElement<AnnotationElement>

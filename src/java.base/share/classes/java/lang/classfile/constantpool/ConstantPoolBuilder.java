@@ -56,7 +56,7 @@ import static java.util.Objects.requireNonNull;
  * The {@linkplain ConstantPoolBuilder} also provides access to some of the
  * state of the {@linkplain ClassBuilder}, such as classfile processing options.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ConstantPoolBuilder
         extends ConstantPool, WritableElement<ConstantPool>

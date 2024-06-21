@@ -43,7 +43,7 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
  * @see ClassFileTransform
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {

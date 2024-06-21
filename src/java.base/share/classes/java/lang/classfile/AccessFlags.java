@@ -33,7 +33,7 @@ import java.lang.reflect.AccessFlag;
  * {@link ClassElement}, {@link FieldElement}, or {@link MethodElement}
  * when traversing the corresponding model type.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface AccessFlags
         extends ClassElement, MethodElement, FieldElement

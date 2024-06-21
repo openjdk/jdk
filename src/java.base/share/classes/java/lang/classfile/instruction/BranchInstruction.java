@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.Util;
  * {@code kind} of {@link Opcode.Kind#BRANCH}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface BranchInstruction extends Instruction
         permits AbstractInstruction.BoundBranchInstruction,

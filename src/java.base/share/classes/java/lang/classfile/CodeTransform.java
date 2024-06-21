@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.TransformImpl;
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
 @FunctionalInterface
 public non-sealed interface CodeTransform

@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  * @jvms 4.4.9 The CONSTANT_MethodType_info Structure
  *
- * @since 22
+ * @since 24
  */
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry

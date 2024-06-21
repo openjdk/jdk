@@ -33,7 +33,7 @@ import java.lang.constant.ClassDesc;
  * classfile.
  * @jvms 4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures
  *
- * @since 22
+ * @since 24
  */
 public sealed interface FieldRefEntry extends MemberRefEntry
         permits AbstractPoolEntry.FieldRefEntryImpl {

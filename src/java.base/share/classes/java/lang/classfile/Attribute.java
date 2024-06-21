@@ -75,7 +75,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * @param <A> the attribute type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface Attribute<A extends Attribute<A>>
         extends WritableElement<A>

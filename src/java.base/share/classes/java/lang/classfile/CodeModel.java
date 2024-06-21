@@ -38,7 +38,7 @@ import java.lang.classfile.instruction.ExceptionCatch;
  * of the method body are accessed via a streaming view (e.g., {@link
  * #elements()}).
  *
- * @since 22
+ * @since 24
  */
 public sealed interface CodeModel
         extends CompoundElement<CodeElement>, AttributedElement, MethodElement

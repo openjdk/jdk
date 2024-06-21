@@ -32,7 +32,7 @@ import java.lang.classfile.BootstrapMethodEntry;
  * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface DynamicConstantPoolEntry extends PoolEntry
         permits ConstantDynamicEntry, InvokeDynamicEntry {

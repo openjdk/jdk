@@ -32,7 +32,7 @@ import java.lang.constant.ModuleDesc;
  * classfile.
  * @jvms 4.4.11 The CONSTANT_Module_info Structure
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleEntry extends PoolEntry
         permits AbstractPoolEntry.ModuleEntryImpl {

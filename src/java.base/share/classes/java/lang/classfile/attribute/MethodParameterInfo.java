@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
 /**
  * Models a single method parameter in the {@link MethodParametersAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface MethodParameterInfo
         permits UnboundAttribute.UnboundMethodParameterInfo {

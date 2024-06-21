@@ -30,7 +30,7 @@ import java.lang.invoke.TypeDescriptor;
 /**
  * Describes the types that can be part of a field or method descriptor.
  *
- * @since 22
+ * @since 24
  */
 public enum TypeKind {
     /** the primitive type byte */
@@ -66,7 +66,6 @@ public enum TypeKind {
 
     /**
      * {@return the code used by the {@code newarray} opcode corresponding to this type}
-     * @since 23
      */
     public int newarrayCode() {
         return newarrayCode;
@@ -106,7 +105,6 @@ public enum TypeKind {
      * array code used as an operand to {@code newarray}}
      * @param newarrayCode the operand of the {@code newarray} instruction
      * @throws IllegalArgumentException if the code is invalid
-     * @since 23
      */
     public static TypeKind fromNewarrayCode(int newarrayCode) {
         return switch (newarrayCode) {

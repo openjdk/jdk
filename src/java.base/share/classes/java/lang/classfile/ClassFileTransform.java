@@ -73,7 +73,7 @@ import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * @param <B> the builder type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
@@ -129,7 +129,7 @@ public sealed interface ClassFileTransform<
      *
      * @param <E> the element type
      *
-     * @since 22
+     * @since 24
      */
     interface ResolvedTransform<E extends ClassFileElement> {
         /**

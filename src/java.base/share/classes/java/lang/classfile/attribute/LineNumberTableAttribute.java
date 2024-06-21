@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * <p>
  * The attribute permits multiple instances in a given location.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LineNumberTableAttribute
         extends Attribute<LineNumberTableAttribute>

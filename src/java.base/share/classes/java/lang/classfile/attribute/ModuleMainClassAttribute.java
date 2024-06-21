@@ -45,7 +45,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * <p>
  * The attribute was introduced in the Java SE Platform version 9.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleMainClassAttribute
         extends Attribute<ModuleMainClassAttribute>, ClassElement

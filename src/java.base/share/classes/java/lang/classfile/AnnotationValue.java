@@ -45,7 +45,7 @@ import java.util.List;
  * @see AnnotationElement
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
         permits AnnotationValue.OfAnnotation, AnnotationValue.OfArray,
@@ -55,7 +55,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an annotation-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfAnnotation extends AnnotationValue
             permits AnnotationImpl.OfAnnotationImpl {
@@ -66,7 +66,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an array-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfArray extends AnnotationValue
             permits AnnotationImpl.OfArrayImpl {
@@ -78,7 +78,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * Models a constant-valued element
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
     sealed interface OfConstant extends AnnotationValue
             permits AnnotationValue.OfString, AnnotationValue.OfDouble,
@@ -95,7 +95,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfString extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfStringImpl {
@@ -106,7 +106,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfDouble extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfDoubleImpl {
@@ -117,7 +117,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfFloat extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfFloatImpl {
@@ -128,7 +128,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfLong extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfLongImpl {
@@ -139,7 +139,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfInteger extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfIntegerImpl {
@@ -150,7 +150,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfShort extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfShortImpl {
@@ -161,7 +161,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfCharacter extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfCharacterImpl {
@@ -172,7 +172,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfByte extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfByteImpl {
@@ -183,7 +183,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfBoolean extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfBooleanImpl {
@@ -194,7 +194,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a class-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfClass extends AnnotationValue
             permits AnnotationImpl.OfClassImpl {
@@ -210,7 +210,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an enum-valued element
      *
-     * @since 22
+     * @since 24
      */
     sealed interface OfEnum extends AnnotationValue
             permits AnnotationImpl.OfEnumImpl {

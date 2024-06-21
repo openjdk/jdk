@@ -37,7 +37,7 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
  * exception metadata, label target metadata, etc.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface CodeElement extends ClassFileElement
         permits Instruction, PseudoInstruction,

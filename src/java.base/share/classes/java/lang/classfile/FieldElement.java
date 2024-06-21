@@ -39,7 +39,7 @@ import java.lang.classfile.attribute.UnknownAttribute;
  * a {@link FieldModel} or be presented to a {@link FieldBuilder}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface FieldElement extends ClassFileElement
         permits AccessFlags,

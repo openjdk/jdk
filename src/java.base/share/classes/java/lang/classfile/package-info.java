@@ -546,6 +546,6 @@
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
  *
- * @since 22
+ * @since 24
  */
 package java.lang.classfile;

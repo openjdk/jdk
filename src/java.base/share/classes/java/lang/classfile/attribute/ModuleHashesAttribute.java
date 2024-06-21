@@ -68,7 +68,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleHashesAttribute
         extends Attribute<ModuleHashesAttribute>, ClassElement

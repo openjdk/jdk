@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeModel
         permits BoundAttribute.BoundCodeAttribute {

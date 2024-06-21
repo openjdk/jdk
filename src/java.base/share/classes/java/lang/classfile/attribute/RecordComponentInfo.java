@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models a single record component in the {@link java.lang.classfile.attribute.RecordAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface RecordComponentInfo
         extends AttributedElement

@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.LineNumberImpl;
  *
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LineNumber extends PseudoInstruction
         permits LineNumberImpl {

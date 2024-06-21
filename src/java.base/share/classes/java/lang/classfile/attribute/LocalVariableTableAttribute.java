@@ -40,7 +40,7 @@ import java.util.List;
  * <p>
  * The attribute permits multiple instances in a given location.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LocalVariableTableAttribute
         extends Attribute<LocalVariableTableAttribute>

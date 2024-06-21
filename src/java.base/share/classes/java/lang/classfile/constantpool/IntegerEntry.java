@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
  *
- * @since 22
+ * @since 24
  */
 public sealed interface IntegerEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry

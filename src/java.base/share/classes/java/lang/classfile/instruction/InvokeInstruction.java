@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.Util;
  * will have a {@code kind} of {@link Opcode.Kind#INVOKE}.  Delivered as a
  * {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface InvokeInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeInterfaceInstruction, AbstractInstruction.BoundInvokeInstruction, AbstractInstruction.UnboundInvokeInstruction {

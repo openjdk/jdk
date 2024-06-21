@@ -50,7 +50,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface SignatureAttribute
         extends Attribute<SignatureAttribute>,

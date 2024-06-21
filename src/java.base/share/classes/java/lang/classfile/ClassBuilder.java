@@ -50,7 +50,7 @@ import java.lang.classfile.attribute.CodeAttribute;
  *
  * @see ClassTransform
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ClassBuilder
         extends ClassFileBuilder<ClassElement, ClassBuilder>

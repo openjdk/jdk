@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface StoreInstruction extends Instruction
         permits AbstractInstruction.BoundStoreInstruction, AbstractInstruction.UnboundStoreInstruction {

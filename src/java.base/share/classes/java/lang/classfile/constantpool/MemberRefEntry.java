@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * which includes references to fields, methods, and interface methods.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface MemberRefEntry extends PoolEntry
         permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {

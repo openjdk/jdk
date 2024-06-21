@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
  * attribute. Delivered as a {@link CodeElement} when traversing the elements of
  * a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface DiscontinuedInstruction extends Instruction {
 
@@ -48,7 +48,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
     sealed interface JsrInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundJsrInstruction,
@@ -90,7 +90,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
     sealed interface RetInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundRetInstruction,

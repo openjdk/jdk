@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ModuleHashInfo
         permits UnboundAttribute.UnboundModuleHashInfo {

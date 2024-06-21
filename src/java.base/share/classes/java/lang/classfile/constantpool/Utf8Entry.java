@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * classfile.
  * @jvms 4.4.7 The CONSTANT_Utf8_info Structure
  *
- * @since 22
+ * @since 24
  */
 public sealed interface Utf8Entry
         extends CharSequence, AnnotationConstantValueEntry

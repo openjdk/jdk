@@ -35,14 +35,14 @@ package java.lang.classfile;
  * CustomAttribute}.
  * @param <A> the attribute type
  *
- * @since 22
+ * @since 24
  */
 public interface AttributeMapper<A> {
 
     /**
      * Attribute stability indicator
      *
-     * @since 22
+     * @since 24
      */
     enum AttributeStability {
 

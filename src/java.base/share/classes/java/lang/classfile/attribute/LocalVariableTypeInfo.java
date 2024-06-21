@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models a single local variable in the {@link LocalVariableTypeTableAttribute}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface LocalVariableTypeInfo
         permits UnboundAttribute.UnboundLocalVariableTypeInfo, BoundLocalVariableType {

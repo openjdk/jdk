@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.BufWriterImpl;
  * are provided to write various standard entities (e.g., {@code u2}, {@code u4})
  * to the end of the buffer, as well as to create constant pool entries.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface BufWriter
         permits BufWriterImpl {

@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.Util;
  * Opcode.Kind#ARRAY_STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
 public sealed interface ArrayStoreInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayStoreInstruction {

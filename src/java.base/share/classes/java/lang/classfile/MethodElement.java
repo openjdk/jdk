@@ -43,7 +43,7 @@ import java.lang.classfile.attribute.UnknownAttribute;
  * a {@link MethodModel} or be presented to a {@link MethodBuilder}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
 public sealed interface MethodElement
         extends ClassFileElement
