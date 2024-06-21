@@ -219,7 +219,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // this at the end, and hope for the best.
   address pc = (address)uc->Pc;
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char), false);
   st->cr();
 }
 

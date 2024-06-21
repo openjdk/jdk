@@ -1273,7 +1273,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // longs and doubles will be split into two words.
         unitsize = sizeof(narrowOop);
       }
-      os::print_hex_dump(&lsh, base, top, unitsize, 32, requested_base);
+      os::print_hex_dump(&lsh, base, top, unitsize, true, 32, requested_base);
     }
   }
 

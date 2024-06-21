@@ -92,7 +92,7 @@ void BlockTree::verify_node_pointer(const Node* n) const {
   // the node has been overwritten. Either way, print a hex dump, then
   // assert away.
   if (n->_canary != Node::_canary_value) {
-    os::print_hex_dump(tty, (address)n, (address)n + sizeof(Node), 1);
+    os::print_hex_dump(tty, (address)n, (address)n + sizeof(Node), 1, true);
     tree_assert(false, "Invalid node: @" PTR_FORMAT " canary broken or pointer invalid", p2i(n));
   }
 }

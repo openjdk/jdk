@@ -46,7 +46,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
     if (start >= end) return;
 
     stringStream ss;
-    os::print_hex_dump(&ss, start, end, 4);
+    os::print_hex_dump(&ss, start, end, 4, true);
     msg.append("\n");
     msg.append("Raw heap memory:\n%s", ss.freeze());
   }

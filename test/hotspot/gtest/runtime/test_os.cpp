@@ -167,32 +167,18 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
 }
 #endif
 
-static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const char* expected) {
+static void do_test_print_hex_dump(const uint8_t* addr, size_t len, int unitsize, const char* expected, bool test_with_ascii) {
   char buf[256];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
-  os::print_hex_dump(&ss, addr, addr + len, unitsize);
+  os::print_hex_dump(&ss, addr, addr + len, unitsize, test_with_ascii);
   // tty->print_cr("expected: %s", expected);
   // tty->print_cr("result: %s", buf);
   EXPECT_THAT(buf, HasSubstr(expected));
 }
 
-TEST_VM(os, test_print_hex_dump) {
-  const char* pattern [4] = {
-#ifdef VM_LITTLE_ENDIAN
-    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
-    "0100 0302 0504 0706 0908 0b0a 0d0c 0f0e",
-    "03020100 07060504 0b0a0908 0f0e0d0c",
-    "0706050403020100 0f0e0d0c0b0a0908"
-#else
-    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
-    "0001 0203 0405 0607 0809 0a0b 0c0d 0e0f",
-    "00010203 04050607 08090a0b 0c0d0e0f",
-    "0001020304050607 08090a0b0c0d0e0f"
-#endif
-  };
-
-  const char* pattern_not_readable [4] = {
+static void test_print_hexdump_invalid(bool test_with_ascii) {
+  constexpr const char* pattern_not_readable [4] = {
     "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??",
     "???? ???? ???? ???? ???? ???? ???? ????",
     "???????? ???????? ???????? ????????",
@@ -200,49 +186,108 @@ TEST_VM(os, test_print_hex_dump) {
   };
 
   // On AIX, zero page is readable.
-  address unreadable =
-#ifdef AIX
-    (address) 0xFFFFFFFFFFFF0000ULL;
-#else
-    (address) 0
-#endif
-    ;
+  const address unreadable = (address) AIX_ONLY(0xFFFFFFFFFFFF0000ULL) NOT_AIX(0);
 
-  ResourceMark rm;
+  do_test_print_hex_dump(unreadable, 100, 1, pattern_not_readable[0], test_with_ascii);
+  do_test_print_hex_dump(unreadable, 100, 2, pattern_not_readable[1], test_with_ascii);
+  do_test_print_hex_dump(unreadable, 100, 4, pattern_not_readable[2], test_with_ascii);
+  do_test_print_hex_dump(unreadable, 100, 8, pattern_not_readable[3], test_with_ascii);
+}
+
+static void test_print_hexdump_valid(bool test_with_ascii) {
+  const char* expected_no_ascii[4] = {
+#ifdef VM_LITTLE_ENDIAN
+    "40 01 42 03 44 05 46 07 48 09 4a 0b 4c 0d 4e 0f",
+    "0140 0342 0544 0746 0948 0b4a 0d4c 0f4e",
+    "03420140 07460544 0b4a0948 0f4e0d4c",
+    "0746054403420140 0f4e0d4c0b4a0948"
+#else
+    "40 01 42 03 44 05 46 07 48 09 4a 0b 4c 0d 4e 0f",
+    "4001 4203 4405 4607 4809 4a0b 4c0d 4e0f",
+    "40014203 44054607 48094a0b 4c0d4e0f",
+    "4001420344054607 48094a0b4c0d4e0f"
+#endif
+  };
+
+  const char* expected_with_ascii[4] = {
+#ifdef VM_LITTLE_ENDIAN
+    "40 01 42 03 44 05 46 07 48 09 4a 0b 4c 0d 4e 0f   @_B_D_F_H_J_L_N_",
+    "0140 0342 0544 0746 0948 0b4a 0d4c 0f4e   @_ B_ D_ F_ H_ J_ L_ N_",
+    "03420140 07460544 0b4a0948 0f4e0d4c   @_B_ D_F_ H_J_ L_N_",
+    "0746054403420140 0f4e0d4c0b4a0948   @_B_D_F_ H_J_L_N_",
+#else
+    "40 01 42 03 44 05 46 07 48 09 4a 0b 4c 0d 4e 0f   @_B_D_F_H_J_L_N_",
+    "4001 4203 4405 4607 4809 4a0b 4c0d 4e0f   @_ B_ D_ F_ H_ J_ L_ N_",
+    "40014203 44054607 48094a0b 4c0d4e0f   @_B_ D_F_ H_J_ L_N_",
+    "4001420344054607 48094a0b4c0d4e0f   @_B_D_F_ H_J_L_N_",
+#endif
+  };
+
+  const char** expected = test_with_ascii ? expected_with_ascii : expected_no_ascii;
+
+  constexpr uint8_t bytes[] = { 0x40, 0x01, 0x42, 0x03, 0x44, 0x05, 0x46, 0x07, 0x48, 0x09, 0x4a, 0x0b, 0x4c, 0x0d, 0x4e, 0x0f };
+
   char buf[64];
   stringStream ss(buf, sizeof(buf));
   outputStream* out = &ss;
-//  outputStream* out = tty; // enable for printout
-
-  // Test dumping unreadable memory
-  // Exclude test for Windows for now, since it needs SEH handling to work which cannot be
-  // guaranteed when we call directly into VM code. (see JDK-8220220)
-#ifndef _WIN32
-  do_test_print_hex_dump(unreadable, 100, 1, pattern_not_readable[0]);
-  do_test_print_hex_dump(unreadable, 100, 2, pattern_not_readable[1]);
-  do_test_print_hex_dump(unreadable, 100, 4, pattern_not_readable[2]);
-  do_test_print_hex_dump(unreadable, 100, 8, pattern_not_readable[3]);
-#endif
-
-  // Test dumping readable memory
-  address arr = (address)os::malloc(100, mtInternal);
-  for (u1 c = 0; c < 100; c++) {
-    arr[c] = c;
-  }
 
   // properly aligned
-  do_test_print_hex_dump(arr, 100, 1, pattern[0]);
-  do_test_print_hex_dump(arr, 100, 2, pattern[1]);
-  do_test_print_hex_dump(arr, 100, 4, pattern[2]);
-  do_test_print_hex_dump(arr, 100, 8, pattern[3]);
+  do_test_print_hex_dump(bytes, 100, 1, expected[0], test_with_ascii);
+  do_test_print_hex_dump(bytes, 100, 2, expected[1], test_with_ascii);
+  do_test_print_hex_dump(bytes, 100, 4, expected[2], test_with_ascii);
+  do_test_print_hex_dump(bytes, 100, 8, expected[3], test_with_ascii);
 
   // Not properly aligned. Should automatically down-align by unitsize
-  do_test_print_hex_dump(arr + 1, 100, 2, pattern[1]);
-  do_test_print_hex_dump(arr + 1, 100, 4, pattern[2]);
-  do_test_print_hex_dump(arr + 1, 100, 8, pattern[3]);
+  do_test_print_hex_dump(bytes + 1, 100, 2, expected[1], test_with_ascii);
+  do_test_print_hex_dump(bytes + 1, 100, 4, expected[2], test_with_ascii);
+  do_test_print_hex_dump(bytes + 1, 100, 8, expected[3], test_with_ascii);
 
-  os::free(arr);
 }
+
+TEST_VM(os, test_print_hex_dump_no_ascii)   { test_print_hexdump_valid(false); }
+TEST_VM(os, test_print_hex_dump_with_ascii) { test_print_hexdump_valid(true); }
+
+TEST_VM(os, test_print_hex_dump_extended_form) {
+  constexpr char expected_64_le[] =
+      "0x0000aaaaaaaaaa00:   00000001 00000000 001a5880 00000030 2e6b646a 65746e69 6c616e72 616f6c2e   ____ ____ _X__ 0___ jdk. inte rnal .loa \n"
+      "0x0000aaaaaaaaaa20:   2e726564 73616c43 616f4c73                                                der. Clas sLoa \n";
+  constexpr char expected_64_be[] =
+      "0x0000aaaaaaaaaa00:   01000000 00000000 80581a00 30000000 6a646b2e 696e7465 726e616c 2e6c6f61   ____ ____ _X__ 0___ jdk. inte rnal .loa \n"
+      "0x0000aaaaaaaaaa20:   6465722e 436c6173 734c6f61                                                der. Clas sLoa \n";
+  constexpr char expected_32_le[] =
+      "0xaaaaaa00:   00000001 00000000 001a5880 00000030 2e6b646a 65746e69 6c616e72 616f6c2e   ____ ____ _X__ 0___ jdk. inte rnal .loa \n"
+      "0xaaaaaa20:   2e726564 73616c43 616f4c73                                                der. Clas sLoa \n";
+  const char* expected =
+#ifdef LITTLE_ENDIAN
+  #ifdef _LP64
+      expected_64_le
+  #else
+      expected_32_le
+  #endif
+#else
+      expected_64_be
+#endif
+;
+  constexpr uint8_t bytes[] = {
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x58, 0x1a, 0x00, 0x30, 0x00, 0x00, 0x00,
+    0x6a, 0x64, 0x6b, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x6c, 0x6f, 0x61,
+    0x64, 0x65, 0x72, 0x2e, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x4c, 0x6f, 0x61
+  };
+  stringStream ss;
+  os::print_hex_dump(&ss, bytes, bytes + sizeof(bytes), 4, true, 32, (const uint8_t*) LP64_ONLY(0xAAAAAAAAAA00ULL) NOT_LP64(0xAAAAAA00ULL));
+
+  EXPECT_STREQ(ss.base(), expected);
+}
+
+
+// Exclude test for Windows for now, since it needs SEH handling to work which cannot be
+// guaranteed when we call directly into VM code. (see JDK-8220220)
+#ifndef WINDOWS
+TEST_VM(os, test_print_hex_dump_unreadable) {
+  test_print_hexdump_invalid(true);
+  test_print_hexdump_invalid(false);
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Test os::vsnprintf and friends.

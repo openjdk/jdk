@@ -954,9 +954,23 @@ ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
   return true;
 }
 
-static void print_hex_location(outputStream* st, address p, int unitsize) {
+// Helper for os::print_hex_dump
+static void print_ascii_form(stringStream& ascii_form, uint64_t value, int unitsize) {
+  const union {
+    uint64_t v;
+    uint8_t c[sizeof(v)];
+  } u = { .v = value };
+  for (int i = 0; i < unitsize; i ++) {
+    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
+    const uint8_t c = u.c[idx];
+    ascii_form.put(::isprint(c) ? c : '_');
+  }
+}
+
+// Helper for os::print_hex_dump
+static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize, stringStream& ascii_form) {
   assert(is_aligned(p, unitsize), "Unaligned");
-  address pa = align_down(p, sizeof(intptr_t));
+  const uint8_t* pa = align_down(p, sizeof(intptr_t));
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
@@ -967,6 +981,7 @@ static void print_hex_location(outputStream* st, address p, int unitsize) {
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
       st->print("%016" FORMAT64_MODIFIER "x", value);
+      print_ascii_form(ascii_form, value, unitsize);
     } else {
       st->print_raw("????????????????");
     }
@@ -991,6 +1006,7 @@ static void print_hex_location(outputStream* st, address p, int unitsize) {
       case 4: st->print("%08x", (u4)value); break;
       case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
     }
+    print_ascii_form(ascii_form, value, unitsize);
   } else {
     switch (unitsize) {
       case 1: st->print_raw("??"); break;
@@ -1001,9 +1017,12 @@ static void print_hex_location(outputStream* st, address p, int unitsize) {
   }
 }
 
-void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                        int bytes_per_line, address logical_start) {
+void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* end, int unitsize,
+                        bool print_ascii, int bytes_per_line, const uint8_t* logical_start) {
+  constexpr int max_bytes_per_line = 64;
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
+  assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
+         is_power_of_2(bytes_per_line), "invalid bytes_per_line");
 
   start = align_down(start, unitsize);
   logical_start = align_down(logical_start, unitsize);
@@ -1012,25 +1031,48 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   int cols = 0;
   int cols_per_line = bytes_per_line / unitsize;
 
-  address p = start;
-  address logical_p = logical_start;
+  const uint8_t* p = start;
+  const uint8_t* logical_p = logical_start;
+
+  char tmp[max_bytes_per_line * 2 + // two letters per byte
+           cols_per_line +          // dividing space between units
+           1];                      // \0
+  stringStream ascii_form(tmp, sizeof(tmp));
 
   // Print out the addresses as if we were starting from logical_start.
-  st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    print_hex_location(st, p, unitsize);
+    if (cols == 0) {
+      st->print(PTR_FORMAT ":   ", p2i(logical_p));
+    }
+    print_hex_location(st, p, unitsize, ascii_form);
+    if (unitsize > 1) {
+      ascii_form.put(' '); // divider
+    }
     p += unitsize;
     logical_p += unitsize;
     cols++;
-    if (cols >= cols_per_line && p < end) {
-       cols = 0;
+    if (cols >= cols_per_line) {
+       if (print_ascii) {
+         st->print("   %s", ascii_form.base());
+       }
+       ascii_form.reset();
        st->cr();
-       st->print(PTR_FORMAT ":   ", p2i(logical_p));
+       cols = 0;
     } else {
        st->print(" ");
     }
   }
-  st->cr();
+
+  if (cols > 0) { // did not print a full line
+    if (print_ascii) {
+      // indent last ascii part to match that of full lines
+      const int size_of_printed_unit = unitsize * 2;
+      const int space_left = (cols_per_line - cols) * (size_of_printed_unit + 1);
+      st->sp(space_left);
+      st->print("  %s", ascii_form.base());
+    }
+    st->cr();
+  }
 }
 
 void os::print_dhm(outputStream* st, const char* startStr, long sec) {
@@ -1043,12 +1085,12 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
 
 void os::print_tos(outputStream* st, address sp) {
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t), true);
 }
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  print_hex_dump(st, pc - 256, pc + 256, unitsize);
+  print_hex_dump(st, pc - 256, pc + 256, unitsize, false);
 }
 
 void os::print_environment_variables(outputStream* st, const char** env_list) {

@@ -62,7 +62,7 @@ bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
     // Note: We deliberately print the surroundings too without bounds check. Might be interesting,
     // and os::print_hex_dump uses SafeFetch, so this is fine without bounds checks.
     os::print_hex_dump(tty, (address)(align_down(p2, 0x10) - 0x10),
-                            (address)(align_up(end, 0x10) + 0x10), 1);
+                            (address)(align_up(end, 0x10) + 0x10), 1, true);
   }
 
   return first_wrong == nullptr;

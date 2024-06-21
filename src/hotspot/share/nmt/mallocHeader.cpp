@@ -56,11 +56,11 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
   address to2 = from2 + min_dump_length;
   if (from2 > to1) {
     // Dump gets too large, split up in two sections.
-    os::print_hex_dump(st, from1, to1, 1);
+    os::print_hex_dump(st, from1, to1, 1, true);
     st->print_cr("...");
-    os::print_hex_dump(st, from2, to2, 1);
+    os::print_hex_dump(st, from2, to2, 1, true);
   } else {
     // print one hex dump
-    os::print_hex_dump(st, from1, to2, 1);
+    os::print_hex_dump(st, from1, to2, 1, true);
   }
 }
