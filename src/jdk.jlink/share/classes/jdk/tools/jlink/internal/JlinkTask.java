@@ -791,7 +791,8 @@ public class JlinkTask {
             try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(diffResourceName)){
                 perModuleDiff = ResourceDiff.read(in);
             } catch (IOException e) {
-                throw new AssertionError("Failure to get diff resource for module " + module, e);
+                throw new AssertionError("Failure to retrieve resource diff for " +
+                                         "module " + module, e);
             }
             return new JRTArchive(module, path, !config.ignoreModifiedRuntime(), perModuleDiff);
         } else if (Files.isDirectory(path)) {

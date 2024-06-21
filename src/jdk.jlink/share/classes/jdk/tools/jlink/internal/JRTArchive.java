@@ -58,8 +58,9 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
 /**
- * An archive implementation based on the run-time image (lib/modules, or jimage)
- * and associated files from the filesystem if any (e.g. native libraries).
+ * An archive implementation based on the JDK's modules image (lib/modules,
+ * or jimage) as well as associated files from the filesystem of the JDK
+ * installation.
  */
 public class JRTArchive implements Archive {
 
