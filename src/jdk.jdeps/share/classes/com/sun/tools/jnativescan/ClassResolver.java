@@ -35,31 +35,24 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.module.ModuleDescriptor;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.jar.JarFile;
-import java.util.zip.ZipFile;
+import java.util.stream.Stream;
 
 abstract class ClassResolver implements AutoCloseable {
 
-    static ClassResolver forScannedModules(List<ScannedModule> modules, Runtime.Version version) throws IOException {
-        List<JarFile> loaded = new ArrayList<>();
+    static ClassResolver forClassFileSources(List<ClassFileSource> sources, Runtime.Version version) throws IOException {
         Map<ClassDesc, Info> classMap = new HashMap<>();
-        for (ScannedModule m : modules) {
-            JarFile jf = new JarFile(m.path().toFile(), false, ZipFile.OPEN_READ, version);
-            loaded.add(jf);
-            jf.versionedStream().filter(je -> je.getName().endsWith(".class")).forEach(je -> {
-                try {
-                    ClassModel model = ClassFile.of().parse(jf.getInputStream(je).readAllBytes());
-                    ClassDesc desc =  model.thisClass().asSymbol();
-                    classMap.put(desc, new Info(m.moduleName(), m.path(), model));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+        for (ClassFileSource source : sources) {
+            try (Stream<byte[]> classFiles = source.classFiles(version)) {
+                classFiles.forEach(bytes -> {
+                    ClassModel model = ClassFile.of().parse(bytes);
+                    ClassDesc desc = model.thisClass().asSymbol();
+                    classMap.put(desc, new Info(source, model));
+                });
+            }
         }
-        return new ScannedModuleClassResolver(loaded, classMap);
+        return new SimpleClassResolver(classMap);
     }
 
     static ClassResolver forSystemModules(Runtime.Version version) {
@@ -75,7 +68,7 @@ abstract class ClassResolver implements AutoCloseable {
         return new SystemModuleClassResolver(fm);
     }
 
-    record Info(String moduleName, Path jarPath, ClassModel model) {}
+    record Info(ClassFileSource source, ClassModel model) {}
 
     public abstract void forEach(BiConsumer<ClassDesc, ClassResolver.Info> action);
     public abstract Optional<ClassResolver.Info> lookup(ClassDesc desc);
@@ -83,13 +76,11 @@ abstract class ClassResolver implements AutoCloseable {
     @Override
     public abstract void close() throws IOException;
 
-    private static class ScannedModuleClassResolver extends ClassResolver {
+    private static class SimpleClassResolver extends ClassResolver {
 
-        private final List<JarFile> jars;
         private final Map<ClassDesc, ClassResolver.Info> classMap;
 
-        public ScannedModuleClassResolver(List<JarFile> jars, Map<ClassDesc, Info> classMap) {
-            this.jars = jars;
+        public SimpleClassResolver(Map<ClassDesc, Info> classMap) {
             this.classMap = classMap;
         }
 
@@ -102,11 +93,7 @@ abstract class ClassResolver implements AutoCloseable {
         }
 
         @Override
-        public void close() throws IOException {
-            for (JarFile jarFile : jars) {
-                jarFile.close();
-            }
-        }
+        public void close() {}
     }
 
     private static class SystemModuleClassResolver extends ClassResolver {
@@ -159,7 +146,7 @@ abstract class ClassResolver implements AutoCloseable {
                             throw new JNativeScanFatalError("System class can not be found: " + qualName);
                         }
                         ClassModel model = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
-                        return new Info(moduleName, null, model);
+                        return new Info(null, model);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

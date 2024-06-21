@@ -30,14 +30,12 @@ import java.lang.constant.ClassDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolvedModule;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 class JNativeScanTask {
@@ -60,8 +58,7 @@ class JNativeScanTask {
     }
 
     public void run() throws JNativeScanFatalError {
-        List<ScannedModule> modulesToScan = new ArrayList<>();
-        findAllClassPathJars().forEach(modulesToScan::add);
+        List<ClassFileSource> toScan = new ArrayList<>(findAllClassPathJars());
 
         ModuleFinder moduleFinder = ModuleFinder.of(modulePaths.toArray(Path[]::new));
         List<String> rootModules = cmdRootModules;
@@ -71,15 +68,12 @@ class JNativeScanTask {
         Configuration config = Configuration.resolveAndBind(moduleFinder, List.of(systemConfiguration()),
                 ModuleFinder.of(), rootModules);
         for (ResolvedModule m : config.modules()) {
-            URI location = m.reference().location().orElseThrow();
-            Path path = Path.of(location);
-            checkRegularJar(path);
-            modulesToScan.add(new ScannedModule(path, m.name()));
+            toScan.add(new ClassFileSource.Module(m.reference()));
         }
 
-        SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
-        try(ClassResolver classesToScan = ClassResolver.forScannedModules(modulesToScan, version);
-                ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
+        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
+        try(ClassResolver classesToScan = ClassResolver.forClassFileSources(toScan, version);
+            ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
             NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
             allRestrictedMethods = finder.findAll();
         } catch (IOException e) {
@@ -92,30 +86,40 @@ class JNativeScanTask {
         }
     }
 
-    // recursively look for all class path jars, starting at the root jars
-    // in this.classPaths, and recursively following all Class-Path manifest
-    // attributes
-    private Stream<ScannedModule> findAllClassPathJars() throws JNativeScanFatalError {
-        Stream.Builder<ScannedModule> builder = Stream.builder();
-        Deque<Path> classPathJars = new ArrayDeque<>(classPaths);
-        while (!classPathJars.isEmpty()) {
-            Path jar = classPathJars.poll();
-            checkRegularJar(jar);
-            String[] classPathAttribute = classPathAttribute(jar);
-            Path parentDir = jar.getParent();
-            for (String classPathEntry : classPathAttribute) {
-                Path otherJar = parentDir != null
-                        ? parentDir.resolve(classPathEntry)
-                        : Path.of(classPathEntry);
-                if (Files.exists(otherJar)) {
-                    // Class-Path attribute specifies that jars that
-                    // are not found are simply ignored. Do the same here
-                    classPathJars.offer(otherJar);
+    private List<ClassFileSource> findAllClassPathJars() throws JNativeScanFatalError {
+        List<ClassFileSource> result = new ArrayList<>();
+        for (Path path : classPaths) {
+            if (isJarFile(path)) {
+                Deque<Path> jarsToScan  = new ArrayDeque<>();
+                jarsToScan.offer(path);
+
+                // recursively look for all class path jars, starting at the root jars
+                // in this.classPaths, and recursively following all Class-Path manifest
+                // attributes
+                while (!jarsToScan.isEmpty()) {
+                    Path jar = jarsToScan.poll();
+                    String[] classPathAttribute = classPathAttribute(jar);
+                    Path parentDir = jar.getParent();
+                    for (String classPathEntry : classPathAttribute) {
+                        Path otherJar = parentDir != null
+                                ? parentDir.resolve(classPathEntry)
+                                : Path.of(classPathEntry);
+                        if (Files.exists(otherJar)) {
+                            // Class-Path attribute specifies that jars that
+                            // are not found are simply ignored. Do the same here
+                            jarsToScan.offer(otherJar);
+                        }
+                    }
+                    result.add(new ClassFileSource.ClassPathJar(jar));
                 }
+            } else if (Files.isDirectory(path)) {
+                result.add(new ClassFileSource.ClassPathDirectory(path));
+            } else {
+                throw new JNativeScanFatalError(
+                    "Path does not appear to be a jar file, or directory containing classes: " + path);
             }
-            builder.add(new ScannedModule(jar, "ALL-UNNAMED"));
         }
-        return builder.build();
+        return result;
     }
 
     private String[] classPathAttribute(Path jar) {
@@ -144,15 +148,15 @@ class JNativeScanTask {
         return finder.findAll().stream().map(mr -> mr.descriptor().name()).toList();
     }
 
-    private void printNativeAccess(SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void printNativeAccess(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
         String nativeAccess = allRestrictedMethods.keySet().stream()
-                .map(ScannedModule::moduleName)
+                .map(ClassFileSource::moduleName)
                 .distinct()
                 .collect(Collectors.joining(","));
         out.println(nativeAccess);
     }
 
-    private void dumpAll(SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void dumpAll(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
         if (allRestrictedMethods.isEmpty()) {
             out.println("  <no restricted methods>");
         } else {
@@ -175,10 +179,8 @@ class JNativeScanTask {
         }
     }
 
-    private static void checkRegularJar(Path path) throws JNativeScanFatalError {
-        if (!(Files.exists(path) && Files.isRegularFile(path) && path.toString().endsWith(".jar"))) {
-            throw new JNativeScanFatalError("File does not exist, or does not appear to be a regular jar file: " + path);
-        }
+    private static boolean isJarFile(Path path) throws JNativeScanFatalError {
+        return Files.exists(path) && Files.isRegularFile(path) && path.toString().endsWith(".jar");
     }
 
     public enum Action {

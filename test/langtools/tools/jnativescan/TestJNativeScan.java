@@ -155,15 +155,18 @@ class TestJNativeScan extends JNativeScanTestBase {
     @Test
     public void testFileDoesNotExist() {
         assertFailure(jnativescan("--class-path", "non-existent.jar"))
-                .stderrShouldContain("File does not exist, or does not appear to be a regular jar file");
+                .stderrShouldContain("Path does not appear to be a jar file, or directory containing classes");
     }
 
     @Test
     public void testModuleNotAJarFile() {
         String modulePath = moduleRoot("org.myapp").toString() + File.pathSeparator + orgLib.toString();
-        assertFailure(jnativescan("--module-path", modulePath,
+        assertSuccess(jnativescan("--module-path", modulePath,
                         "--add-modules", "ALL-MODULE-PATH"))
-                .stderrShouldContain("File does not exist, or does not appear to be a regular jar file");
+                .stdoutShouldContain("lib.Lib")
+                .stdoutShouldContain("lib.Lib::m()void is a native method declaration")
+                .stdoutShouldContain("lib.Lib::doIt()void references restricted methods")
+                .stdoutShouldContain("java.lang.foreign.MemorySegment::reinterpret(long)MemorySegment");
     }
 
     @Test
@@ -209,5 +212,22 @@ class TestJNativeScan extends JNativeScanTestBase {
         assertFailure(jnativescan("--module-path", MODULE_PATH))
                 .stdoutShouldBeEmpty()
                 .stderrShouldContain("Missing required option(s) [add-modules]");
+    }
+
+    @Test
+    public void testClassPathDirectory() {
+        assertSuccess(jnativescan("--class-path", testClasses.toString()))
+                .stderrShouldBeEmpty()
+                .stdoutShouldContain("ALL-UNNAMED")
+                .stdoutShouldContain("UnnamedPackage")
+                .stdoutShouldContain("UnnamedPackage::m()void is a native method declaration")
+                .stdoutShouldContain("UnnamedPackage::main(String[])void references restricted methods")
+                .stdoutShouldContain("main.Main")
+                .stdoutShouldContain("main.Main::m()void is a native method declaration")
+                .stdoutShouldContain("main.Main::main(String[])void references restricted methods")
+                .stdoutShouldContain("lib.Lib")
+                .stdoutShouldContain("lib.Lib::m()void is a native method declaration")
+                .stdoutShouldContain("lib.Lib::doIt()void references restricted methods")
+                .stdoutShouldContain("java.lang.foreign.MemorySegment::reinterpret(long)MemorySegment");
     }
 }

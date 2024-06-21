@@ -56,9 +56,9 @@ class NativeMethodFinder {
         return new NativeMethodFinder(classesToScan, systemClassResolver);
     }
 
-    public SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
-        SortedMap<ScannedModule, SortedMap<ClassDesc, List<RestrictedUse>>> restrictedMethods
-                = new TreeMap<>(Comparator.comparing(ScannedModule::moduleName));
+    public SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
+        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> restrictedMethods
+                = new TreeMap<>(Comparator.comparing(ClassFileSource::moduleName));
         classesToScan.forEach((_, info) -> {
             ClassModel classModel = info.model();
             List<RestrictedUse> perClass = new ArrayList<>();
@@ -92,8 +92,7 @@ class NativeMethodFinder {
                 }
             });
             if (!perClass.isEmpty()) {
-                ScannedModule scannedModule = new ScannedModule(info.jarPath(), info.moduleName());
-                restrictedMethods.computeIfAbsent(scannedModule,
+                restrictedMethods.computeIfAbsent(info.source(),
                                 _ -> new TreeMap<>(Comparator.comparing(JNativeScanTask::qualName)))
                         .put(classModel.thisClass().asSymbol(), perClass);
             }
