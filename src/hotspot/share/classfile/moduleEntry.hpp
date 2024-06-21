@@ -121,7 +121,7 @@ public:
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
   GrowableArray<ModuleEntry*>* reads() const {
-    DEBUG_ONLY(assert(!_reads_is_archived, "sanity"));
+    assert(!_reads_is_archived, "sanity");
     return _reads;
   }
   void set_reads(GrowableArray<ModuleEntry*>* r) {
@@ -129,7 +129,7 @@ public:
     DEBUG_ONLY(_reads_is_archived = false);
   }
   Array<ModuleEntry*>* archived_reads() const {
-    DEBUG_ONLY(assert(_reads_is_archived, "sanity"));
+    assert(_reads_is_archived, "sanity");
     return _archived_reads;
   }
   void set_archived_reads(Array<ModuleEntry*>* r) {

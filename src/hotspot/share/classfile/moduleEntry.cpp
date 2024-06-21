@@ -164,7 +164,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   if (m == nullptr) {
     set_can_read_all_unnamed();
   } else {
-    if (_reads == nullptr) {
+    if (reads() == nullptr) {
       // Lazily create a module's reads list
       GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
       set_reads(new_reads);
@@ -248,8 +248,8 @@ void ModuleEntry::module_reads_do(ModuleClosure* f) {
 
   if (has_reads_list()) {
     int reads_len = reads()->length();
-    for (int i = 0; i < reads_len; ++i) {
-      f->do_module(reads()->at(i));
+    for (ModuleEntry* m : *reads()) {
+      f->do_module(m);
     }
   }
 }
