@@ -279,7 +279,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
-  assert(resolved_references() != NULL,
+  assert(resolved_references() != nullptr,
          "a resolved_references array should have been created for this class");
   ObjectLocker ol(resolved_references, current);
 
@@ -601,7 +601,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   // or MethodType constant pool cache entries.
   JavaThread* current = THREAD;
   objArrayHandle resolved_references(current, cpool->resolved_references());
-  assert(resolved_references() != NULL,
+  assert(resolved_references() != nullptr,
          "a resolved_references array should have been created for this class");
   ObjectLocker ol(resolved_references, current);
 
@@ -634,7 +634,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   constantPoolHandle cp(current, constant_pool());
 
   objArrayHandle resolved_references(current, cp->resolved_references());
-  assert(resolved_references() != NULL,
+  assert(resolved_references() != nullptr,
          "a resolved_references array should have been created for this class");
   ObjectLocker ol(resolved_references, current);
   assert(index >= 0, "Indy index must be positive at this point");

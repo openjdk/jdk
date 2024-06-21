@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ class java_lang_Class : AllStatic {
   static oop  protection_domain(oop java_class);
   static oop  init_lock(oop java_class);
   static void clear_init_lock(oop java_class) {
-    set_init_lock(java_class, NULL);
+    set_init_lock(java_class, nullptr);
   }
   static oop  component_mirror(oop java_class);
   static objArrayOop  signers(oop java_class);
