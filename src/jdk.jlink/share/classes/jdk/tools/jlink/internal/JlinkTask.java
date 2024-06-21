@@ -781,11 +781,31 @@ public class JlinkTask {
                 }
             }
             return modularJarArchive;
+        } else if (!"jrt".equals(path.toUri().getScheme()) && Files.isDirectory(path)) {
+            // The jrt URI path scheme conditional is there since we'd otherwise
+            // enter this branch for linkable JDK runtimes where the path is
+            // a jrt path and for the specific JDK module is a directory.
+            Path modInfoPath = path.resolve("module-info.class");
+            if (Files.isRegularFile(modInfoPath)) {
+                return new DirArchive(path, findModuleName(modInfoPath));
+            } else {
+                throw new IllegalArgumentException(
+                        taskHelper.getMessage("err.not.a.module.directory", path));
+            }
         } else if (config.linkFromRuntimeImage()) {
-            // This is after jmod and modular jar branches, since, in runtime link
-            // mode custom - JDK external modules - are only supported via the
-            // module path. Directory module paths are not supported since those
-            // clash with JRT-FS based archives of JRTArchive.
+            // This is after all other archive types, since user-provided
+            // modules might be in any of the above forms and we'd like to
+            // support them.
+            //
+            // For linkable JDK runtimes the modules image includes resource
+            // diffs on a per-module bases as part of the jdk.jlink module.
+            // See ImageFileCreator.generateJImage() where those are added at
+            // JDK build time for linkable JDK runtimes.
+            //
+            // Here we retrieve the per module difference file, which is
+            // potentially empty, from the modules image and pass that on to
+            // JRTArchive for further processing. When streaming resources from
+            // the archive, the diff is being applied.
             String diffResourceName = String.format(DIFF_PATTERN, module);
             List<ResourceDiff> perModuleDiff = null;
             try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(diffResourceName)){
@@ -795,14 +815,6 @@ public class JlinkTask {
                                          "module " + module, e);
             }
             return new JRTArchive(module, path, !config.ignoreModifiedRuntime(), perModuleDiff);
-        } else if (Files.isDirectory(path)) {
-            Path modInfoPath = path.resolve("module-info.class");
-            if (Files.isRegularFile(modInfoPath)) {
-                return new DirArchive(path, findModuleName(modInfoPath));
-            } else {
-                throw new IllegalArgumentException(
-                        taskHelper.getMessage("err.not.a.module.directory", path));
-            }
         } else {
             throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
