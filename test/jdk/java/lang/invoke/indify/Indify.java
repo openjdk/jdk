@@ -509,7 +509,6 @@ public class Indify {
                 final Stack<Boolean> shouldProceedAfterIndyAdded = new Stack<>();
 
                 for (Instruction i : getInstructions(m)){
-                    shouldProceedAfterIndyAdded.clear();
                     shouldProceedAfterIndyAdded.push(true);
 
                     if(i.opcode().bytecode() != INVOKESTATIC) continue;  //this is not an invokestatic instruction
@@ -1074,7 +1073,7 @@ public class Indify {
 
             MemberRefEntry ref;
             if(refKind <= (byte) STATIC_SETTER.refKind){
-                 ref = poolBuilder.fieldRefEntry(ownerClass, nameAndTypeEntry);
+                ref = poolBuilder.fieldRefEntry(ownerClass, nameAndTypeEntry);
                 return poolBuilder.methodHandleEntry(refKind, ref);
             }
             else if(refKind == (byte) INTERFACE_VIRTUAL.refKind){
