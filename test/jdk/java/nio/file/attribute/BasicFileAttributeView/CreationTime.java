@@ -45,9 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
 import java.time.Instant;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
