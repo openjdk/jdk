@@ -44,7 +44,7 @@ private:
   template<bool ALLOW_BLOC>
   void contended_lock_internal(Thread* thread);
 public:
-  ShenandoahLock() : _state(unlocked), _owner(nullptr), _threads_at_sp(0) {};
+  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
   void lock(bool allow_block_for_safepoint) {
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
