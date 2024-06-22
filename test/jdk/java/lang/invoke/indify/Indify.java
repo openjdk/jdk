@@ -368,7 +368,6 @@ public class Indify {
         ClassModel model = parseClassFile(f);
         Logic logic = new Logic(model);
         Boolean changed = logic.transform();
-        System.err.println("Class file transformation: " + changed);
         logic.reportPatternMethods(quiet, keepgoing);
         if (changed || all) {
             File outfile;
