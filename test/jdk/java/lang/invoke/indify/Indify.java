@@ -616,19 +616,19 @@ public class Indify {
                 char mark = 0;
                 if (poolMarks[entry.index()] != 0) continue;
 
-                if(entry instanceof Utf8Entry utf8Entry){
+                if (entry instanceof Utf8Entry utf8Entry) {
                     mark = nameMark(utf8Entry.stringValue());
                 }
-                if(entry instanceof ClassEntry classEntry){
+                if (entry instanceof ClassEntry classEntry) {
                     mark = nameMark(classEntry.asInternalName());
                 }
-                if(entry instanceof StringEntry stringEntry){
+                if (entry instanceof StringEntry stringEntry) {
                     mark = nameMark(stringEntry.stringValue());
                 }
-                if(entry instanceof NameAndTypeEntry nameAndTypeEntry){
+                if (entry instanceof NameAndTypeEntry nameAndTypeEntry) {
                     mark = nameAndTypeMark(nameAndTypeEntry.name(), nameAndTypeEntry.type());
                 }
-                if(entry instanceof MemberRefEntry memberRefEntry){
+                if (entry instanceof MemberRefEntry memberRefEntry) {
                     poolMarks[memberRefEntry.owner().index()] = nameMark(memberRefEntry.owner().asInternalName());
                     if(poolMarks[memberRefEntry.owner().index()] != 0){
                         mark = poolMarks[memberRefEntry.owner().index()];
