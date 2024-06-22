@@ -376,7 +376,7 @@ public class Indify {
                 ensureDirectory(dest);
                 outfile = classPathFile(dest, model.thisClass().name().stringValue());
             } else {
-                outfile = f;
+                outfile = f;  // overwrite input file, no matter where it is
             }
             Files.write(outfile.toPath(), transformToBytes(logic.classModel));
             if (!quiet) System.err.println("wrote "+outfile);
