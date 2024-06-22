@@ -28,7 +28,6 @@ package java.math;
 import static java.math.BigDecimal.INFLATED;
 import static java.math.BigInteger.LONG_MASK;
 import java.util.Arrays;
-import jdk.internal.math.DoubleConsts;
 
 /**
  * A class used to represent multiprecision integers that makes efficient
