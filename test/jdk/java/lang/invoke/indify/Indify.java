@@ -650,7 +650,7 @@ public class Indify {
             if (mark == 0) return 0;
             String descriptor = type.stringValue();
             String requiredType;
-            switch (mark){
+            switch (mark) {
                 case 'H', 'I': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
                 case 'T': requiredType = "()Ljava/lang/invoke/MethodType;";    break;
                 default:  return 0;
