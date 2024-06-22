@@ -502,14 +502,16 @@ public class Indify {
                 if (constants.containsKey(m.methodName().stringValue())) continue; // Skip if pattern method, it will be removed
 
                 Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
-                Stack<PoolEntry> currentIndyConstant = new Stack<>();
+                Stack<PoolEntry> pendingIndy = new Stack<>(); // stack to hold the pending invokedynamic constant to replace the invokeExact
 
                 CodeTransform codeTransform = (b, e) -> {
                     if (e instanceof InvokeInstruction invokeInstruction) {
+                        String methodInvoked = invokeInstruction.method().name().stringValue();
+
                         if (invokeInstruction.opcode().bytecode() == INVOKEVIRTUAL &&
-                                !currentIndyConstant.isEmpty() &&
-                                invokeInstruction.method().name().stringValue().equals("invokeExact")) {
-                            b.invokeDynamicInstruction((InvokeDynamicEntry) currentIndyConstant.pop());
+                                !pendingIndy.isEmpty() &&
+                                methodInvoked.equals("invokeExact")) {
+                            b.invokeDynamicInstruction((InvokeDynamicEntry) pendingIndy.pop());
                             if (!quiet) System.err.println("Removing <<invokeExact>> invocation on MethodHandle");
                             return;
                         }
@@ -524,7 +526,6 @@ public class Indify {
                             return;
                         }
 
-                        String methodInvoked = invokeInstruction.method().name().stringValue();
 
                         // Is it a pattern method?
                         if (!constants.containsKey(methodInvoked)) {
@@ -535,7 +536,7 @@ public class Indify {
                         PoolEntry newConstant = constants.get(methodInvoked);
 
                         if (newConstant instanceof InvokeDynamicEntry) {
-                            currentIndyConstant.push(newConstant);
+                            pendingIndy.push(newConstant);
                             if (!quiet) {
                                 System.err.println(":::Transforming the Method: " + m.methodName() +
                                         " | Call to method: " + invokeInstruction.name() +
