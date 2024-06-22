@@ -610,11 +610,11 @@ public class Indify {
             if (!quiet)  System.err.flush();
         }
 
-        boolean initializeMarks(){
+        boolean initializeMarks() {
             boolean anyMarkChanged = false;
-            for(PoolEntry entry : classModel.constantPool()){
+            for (PoolEntry entry : classModel.constantPool()) {
                 char mark = 0;
-                if(poolMarks[entry.index()] != 0) continue;
+                if (poolMarks[entry.index()] != 0) continue;
 
                 if(entry instanceof Utf8Entry utf8Entry){
                     mark = nameMark(utf8Entry.stringValue());
