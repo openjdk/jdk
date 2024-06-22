@@ -522,7 +522,6 @@ public class Indify {
                         return;
                     }
 
-
                     // Is it a pattern method?
                     if (!constants.containsKey(methodInvoked)) {
                         b.with(e);
@@ -534,9 +533,8 @@ public class Indify {
                     if (newConstant instanceof InvokeDynamicEntry) {
                         pendingIndy.push(newConstant);
                         if (!quiet) {
-                            System.err.println(":::Transforming the Method: " + ((InvokeInstruction) e).method().name() +
-                                    " | Call to method: " + invokeInstruction.name() +
-                                    " is transformed to => invokedynamic: " +
+                            System.err.println(":::Transforming the Method Class for: " + ((InvokeInstruction) e).method().name() +
+                                    "  to => invokedynamic: " +
                                     ((InvokeDynamicEntry) newConstant).nameAndType());
                         }
 
@@ -544,8 +542,7 @@ public class Indify {
                         b.nop();
                     } else {
                         if (!quiet) {
-                            System.err.println(":::Transforming the Method: " + ((InvokeInstruction) e).method().name() +
-                                    " | instruction: invokestatic " + invokeInstruction.type() +
+                            System.err.println(":::Transforming the Method Call of: " + ((InvokeInstruction) e).method().name() +
                                     " to => ldc: " + newConstant.index());
                         }
                         b.ldc((LoadableConstantEntry) newConstant);
@@ -555,19 +552,17 @@ public class Indify {
                 }
             };
 
+            // Remove all pattern methods from the class model
+            removePatternMethods(quiet);
+
             // Apply the transformation to the class model
             classModel = of().parse(of().transform(classModel, ClassTransform.transformingMethodBodies(codeTransform)));
 
-            this.classModel = removePatternMethodsAndVerify(classModel);
-
             return true;
-
         }
 
-
-        ClassModel removePatternMethodsAndVerify(ClassModel classModel){
-
-            ClassModel newClassModel = of().parse(
+        void removePatternMethods(boolean quietly) {
+            classModel = of().parse(
                     of().transform(classModel, (b, e) ->
                     {
                         if (!(e instanceof MethodModel mm &&
@@ -575,22 +570,11 @@ public class Indify {
                                         mm.methodName().stringValue().startsWith("MT_") ||
                                         mm.methodName().stringValue().startsWith("INDY_"))
                         )) b.with(e);
-                        else System.err.println("Removing pattern method: " + ((MethodModel) e).methodName());
+                        else{
+                            if(!quietly) System.err.println("Removing pattern method: " + ((MethodModel) e).methodName());
+                        }
                     })
             );
-
-            try {
-                List<VerifyError> errors = of().verify(newClassModel);
-                if (!errors.isEmpty()) {
-                    for (VerifyError e : errors) {
-                        System.err.println(e.getMessage());
-                    }
-                    throw new IOException("Verification failed");
-                } else System.out.println("Verification passed");} catch (IOException ignored) {
-
-            }
-
-            return newClassModel;
         }
 
         boolean findPatternMethods() {
@@ -660,6 +644,7 @@ public class Indify {
             }
             return anyMarkChanged;
         }
+
         char nameAndTypeMark(Utf8Entry name, Utf8Entry type){
             char mark = poolMarks[name.index()] = nameMark(name.stringValue());
             if (mark == 0) return 0;
