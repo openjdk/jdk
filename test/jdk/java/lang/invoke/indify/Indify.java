@@ -633,8 +633,8 @@ public class Indify {
                     if(poolMarks[memberRefEntry.owner().index()] != 0){
                         mark = poolMarks[memberRefEntry.owner().index()];
                     }
-                    else{
-                        if(memberRefEntry.owner().equals(classModel.thisClass())){
+                    else {
+                        if (memberRefEntry.owner().equals(classModel.thisClass())) {
                             mark = nameMark(memberRefEntry.name().stringValue());
                         }
                     }
