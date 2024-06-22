@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -900,9 +900,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity draft="unconfirmed">Ŋmeŋme Ni Ekumɔ</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity draft="unconfirmed">Kurrie</exemplarCity>
-			</zone>
 			<zone type="Antarctica/Macquarie">
 				<exemplarCity draft="unconfirmed">Makwarie</exemplarCity>
 			</zone>
@@ -927,23 +924,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity draft="unconfirmed">Kreston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity draft="unconfirmed">Kakla Wuɔfɔ</exemplarCity>
-			</zone>
 			<zone type="America/Swift_Current">
 				<exemplarCity draft="unconfirmed">Swift Karɛnt</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity draft="unconfirmed">Kambridge Ŋshɔnine Bibioo</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="unconfirmed">Faa Ni Nɛɔ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity draft="unconfirmed">Rankin Ŋshɔnine</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity draft="unconfirmed">Sarawa Ŋshɔnine Bibioo</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity draft="unconfirmed">Ikaluit</exemplarCity>
@@ -1274,13 +1262,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">Mauritius Be</generic>
 					<standard draft="unconfirmed">Mauritius Be Yɛ Fɛi Beiaŋ</standard>
 					<daylight draft="unconfirmed">Mauritius Be Yɛ Latsa Beiaŋ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">Meziko Kooyi-Anaigbɛ Be</generic>
-					<standard draft="unconfirmed">Meziko Kooyi-Anaigbɛ Be Yɛ Fɛi Beiaŋ</standard>
-					<daylight draft="unconfirmed">Meziko Kooyi-Anaigbɛ Be Yɛ Latsa Beiaŋ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

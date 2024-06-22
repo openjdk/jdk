@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public class Resolve {
     DeferredAttr deferredAttr;
     Check chk;
     Infer infer;
+    Preview preview;
     ClassFinder finder;
     ModuleFinder moduleFinder;
     Types types;
@@ -135,7 +136,7 @@ public class Resolve {
         moduleFinder = ModuleFinder.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        Preview preview = Preview.instance(context);
+        preview = Preview.instance(context);
         Source source = Source.instance(context);
         Options options = Options.instance(context);
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
@@ -1480,10 +1481,11 @@ public class Resolve {
 
     /** Find unqualified variable or field with given name.
      *  Synthetic fields always skipped.
+     *  @param pos       The position to use for error reporting.
      *  @param env     The current environment.
      *  @param name    The name of the variable or field.
      */
-    Symbol findVar(Env<AttrContext> env, Name name) {
+    Symbol findVar(DiagnosticPosition pos, Env<AttrContext> env, Name name) {
         Symbol bestSoFar = varNotFound;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
@@ -1508,7 +1510,7 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && (sym.flags_field & SYNTHETIC) == 0)
+                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
@@ -2421,15 +2423,15 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(env, name, kind), name));
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
     }
 
-    Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
+    Symbol findIdentInternal(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
 
         if (kind.contains(KindSelector.VAL)) {
-            sym = findVar(env, name);
+            sym = findVar(pos, env, name);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -3766,6 +3768,7 @@ public class Resolve {
                        Env<AttrContext> env,
                        TypeSymbol c,
                        Name name) {
+        Assert.check(name == names._this || name == names._super);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
@@ -3775,7 +3778,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue)
+                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3828,6 +3831,86 @@ public class Resolve {
         return result.toList();
     }
 
+    /**
+     * Determine if an early instance field reference may appear in a constructor prologue.
+     *
+     * <p>
+     * This is only allowed when:
+     *  - The field is being assigned a value (i.e., written but not read)
+     *  - The field is not inherited from a superclass
+     *  - The assignment is not within a lambda, because that would require
+     *    capturing 'this' which is not allowed prior to super().
+     *
+     * <p>
+     * Note, this method doesn't catch all such scenarios, because this method
+     * is invoked for symbol "x" only for "x = 42" but not for "this.x = 42".
+     * We also don't verify that the field has no initializer, which is required.
+     * To catch those cases, we rely on similar logic in Attr.checkAssignable().
+     */
+    private boolean isAllowedEarlyReference(DiagnosticPosition pos, Env<AttrContext> env, VarSymbol v) {
+
+        // Check assumptions
+        Assert.check(env.info.ctorPrologue);
+        Assert.check((v.flags_field & STATIC) == 0);
+
+        // The symbol must appear in the LHS of an assignment statement
+        if (!(env.tree instanceof JCAssign assign))
+            return false;
+
+        // The assignment statement must not be within a lambda
+        if (env.info.isLambda)
+            return false;
+
+        // Get the symbol's qualifier, if any
+        JCExpression lhs = TreeInfo.skipParens(assign.lhs);
+        JCExpression base;
+        switch (lhs.getTag()) {
+        case IDENT:
+            base = null;
+            break;
+        case SELECT:
+            JCFieldAccess select = (JCFieldAccess)lhs;
+            base = select.selected;
+            if (!TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))
+                return false;
+            break;
+        default:
+            return false;
+        }
+
+        // If an early reference, the field must not be declared in a superclass
+        if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
+            return false;
+
+        // The flexible constructors feature must be enabled
+        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
+
+        // OK
+        return true;
+    }
+
+    /**
+     * Determine if the variable appearance constitutes an early reference to the current class.
+     *
+     * <p>
+     * This means the variable is an instance field of the current class and it appears
+     * in an early initialization context of it (i.e., one of its constructor prologues).
+     *
+     * <p>
+     * Such a reference is only allowed for assignments to non-initialized fields that are
+     * not inherited from a superclass, though that is not enforced by this method.
+     *
+     * @param env    The current environment
+     * @param base   Variable qualifier, if any, otherwise null
+     * @param v      The variable
+     */
+    public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
+        return env.info.ctorPrologue &&
+            (v.flags() & STATIC) == 0 &&
+            v.owner.kind == TYP &&
+            types.isSubtype(env.enclClass.type, v.owner.type) &&
+            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
+    }
 
     /**
      * Resolve `c.this' for an enclosing class c that contains the

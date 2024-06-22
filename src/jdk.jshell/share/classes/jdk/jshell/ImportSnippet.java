@@ -96,7 +96,7 @@ public class ImportSnippet extends PersistentSnippet {
         return isStatic;
     }
 
-    /**** internal access ****/
+    //**** internal access ****
 
     @Override
     ImportKey key() {

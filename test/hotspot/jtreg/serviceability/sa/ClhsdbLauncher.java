@@ -149,6 +149,7 @@ public class ClhsdbLauncher {
         oa.shouldNotMatch("^WARNING in native method:.*$");
         // This will detect most SA failures, including during the attach.
         oa.shouldNotMatch("^sun.jvm.hotspot.debugger.DebuggerException:.*$");
+        oa.shouldNotMatch("sun.jvm.hotspot.utilities.AssertionFailure");
         // This will detect unexpected exceptions, like NPEs and asserts, that are caught
         // by sun.jvm.hotspot.CommandProcessor.
         oa.shouldNotMatch("^Error: .*$");

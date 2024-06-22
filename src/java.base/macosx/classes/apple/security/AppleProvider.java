@@ -28,7 +28,7 @@ package apple.security;
 import java.security.*;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
-/**
+/*
  * The Apple Security Provider.
  */
 

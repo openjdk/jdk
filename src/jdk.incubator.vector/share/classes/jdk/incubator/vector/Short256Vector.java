@@ -893,6 +893,12 @@ final class Short256Vector extends ShortVector {
         return super.fromArray0Template(Short256Mask.class, a, offset, (Short256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short256Mask.class, a, offset, indexMap, mapOffset, (Short256Mask) m);
+    }
 
     @ForceInline
     @Override

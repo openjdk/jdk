@@ -470,7 +470,8 @@ public class Flow {
 
         protected void scanSyntheticBreak(TreeMaker make, JCTree swtch) {
             if (swtch.hasTag(SWITCH_EXPRESSION)) {
-                JCYield brk = make.at(Position.NOPOS).Yield(null);
+                JCYield brk = make.at(Position.NOPOS).Yield(make.Erroneous()
+                                                                .setType(swtch.type));
                 brk.target = swtch;
                 scan(brk);
             } else {
@@ -526,7 +527,7 @@ public class Flow {
             alive = Liveness.DEAD;
         }
 
-    /*************************************************************************
+    /* ***********************************************************************
      * Visitor methods for statements and definitions
      *************************************************************************/
 
@@ -936,7 +937,7 @@ public class Flow {
                             for (PatternDescription pdOther : patterns) {
                                 if (pdOther instanceof BindingPattern bpOther) {
                                     Set<Symbol> currentPermittedSubTypes =
-                                            allPermittedSubTypes((ClassSymbol) bpOther.type.tsym, s -> true);
+                                            allPermittedSubTypes(bpOther.type.tsym, s -> true);
 
                                     PERMITTED: for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
                                         Symbol perm = it.next();
@@ -972,9 +973,9 @@ public class Flow {
             return patterns;
         }
 
-        private Set<Symbol> allPermittedSubTypes(ClassSymbol root, Predicate<ClassSymbol> accept) {
+        private Set<Symbol> allPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
             Set<Symbol> permitted = new HashSet<>();
-            List<ClassSymbol> permittedSubtypesClosure = List.of(root);
+            List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
 
             while (permittedSubtypesClosure.nonEmpty()) {
                 ClassSymbol current = permittedSubtypesClosure.head;
@@ -996,6 +997,20 @@ public class Flow {
             }
 
             return permitted;
+        }
+
+        private List<ClassSymbol> baseClasses(TypeSymbol root) {
+            if (root instanceof ClassSymbol clazz) {
+                return List.of(clazz);
+            } else if (root instanceof TypeVariableSymbol tvar) {
+                ListBuffer<ClassSymbol> result = new ListBuffer<>();
+                for (Type bound : tvar.getBounds()) {
+                    result.appendList(baseClasses(bound.tsym));
+                }
+                return result.toList();
+            } else {
+                return List.nil();
+            }
         }
 
         /* Among the set of patterns, find sub-set of patterns such:
@@ -1143,7 +1158,7 @@ public class Flow {
                         reducedNestedPatterns[i] = newNested;
                     }
 
-                    covered &= isBpCovered(componentType[i], newNested);
+                    covered &= checkCovered(componentType[i], List.of(newNested));
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
@@ -1174,7 +1189,7 @@ public class Flow {
                             }
                         }
                     } else if (pd instanceof BindingPattern bp) {
-                        Set<Symbol> permittedSymbols = allPermittedSubTypes((ClassSymbol) bp.type.tsym, cs -> true);
+                        Set<Symbol> permittedSymbols = allPermittedSubTypes(bp.type.tsym, cs -> true);
 
                         if (!permittedSymbols.isEmpty()) {
                             for (Symbol permitted : permittedSymbols) {
@@ -1330,7 +1345,7 @@ public class Flow {
             // Do nothing for modules
         }
 
-    /**************************************************************************
+    /* ************************************************************************
      * main method
      *************************************************************************/
 
@@ -1446,7 +1461,7 @@ public class Flow {
             }
         }
 
-    /*************************************************************************
+    /* ***********************************************************************
      * Visitor methods for statements and definitions
      *************************************************************************/
 
@@ -1914,7 +1929,7 @@ public class Flow {
             // Do nothing for modules
         }
 
-    /**************************************************************************
+    /* ************************************************************************
      * main method
      *************************************************************************/
 
@@ -3223,7 +3238,7 @@ public class Flow {
             // Do nothing for modules
         }
 
-    /**************************************************************************
+    /* ************************************************************************
      * main method
      *************************************************************************/
 
@@ -3342,7 +3357,7 @@ public class Flow {
             log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));
         }
 
-    /*************************************************************************
+    /* ***********************************************************************
      * Visitor methods for statements and definitions
      *************************************************************************/
 
@@ -3461,7 +3476,7 @@ public class Flow {
             // Do nothing for modules
         }
 
-    /**************************************************************************
+    /* ************************************************************************
      * main method
      *************************************************************************/
 

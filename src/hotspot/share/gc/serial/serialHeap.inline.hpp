@@ -27,8 +27,8 @@
 
 #include "gc/serial/serialHeap.hpp"
 
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 class ScavengeHelper {
   DefNewGeneration* _young_gen;

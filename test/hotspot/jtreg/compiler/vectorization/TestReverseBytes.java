@@ -25,7 +25,8 @@
  * @bug 8288112
  * @summary Auto-vectorization of ReverseBytes operations.
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.simpleArch == "AArch64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.simpleArch == "AArch64" |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestReverseBytes
  */

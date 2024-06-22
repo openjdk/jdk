@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,24 @@ public interface JavaShellToolBuilder {
      * @since 17
      */
     default JavaShellToolBuilder interactiveTerminal(boolean terminal) {
+        return this;
+    }
+
+    /**
+     * Provide a hint of the display window's dimensions when using an interactive terminal.
+     *
+     * <p>
+     * When the input stream for this Java Shell is {@code System.in}, this setting is ignored.
+     *
+     * @implSpec Implementations may choose to ignore this method. The default implementation
+     * of this method returns {@code this}.
+     *
+     * @param columns number of displayed columns
+     * @param rows number of displayed rows
+     * @return the {@code JavaShellToolBuilder} instance
+     * @since 24
+     */
+    default JavaShellToolBuilder windowSize(int columns, int rows) {
         return this;
     }
 

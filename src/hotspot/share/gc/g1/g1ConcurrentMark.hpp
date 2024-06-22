@@ -507,7 +507,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // method. So, this way, each task will spend very little time in
   // claim_region() and is allowed to call the regular clock method
   // frequently.
-  HeapRegion* claim_region(uint worker_id);
+  G1HeapRegion* claim_region(uint worker_id);
 
   // Determines whether we've run out of regions to scan. Note that
   // the finger can point past the heap end in case the heap was expanded
@@ -564,25 +564,25 @@ public:
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
   // Update the TAMS for the given region to the current top.
-  inline void update_top_at_mark_start(HeapRegion* r);
+  inline void update_top_at_mark_start(G1HeapRegion* r);
   // Reset the TAMS for the given region to bottom of that region.
-  inline void reset_top_at_mark_start(HeapRegion* r);
+  inline void reset_top_at_mark_start(G1HeapRegion* r);
 
-  inline HeapWord* top_at_mark_start(const HeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(const G1HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;
   // Returns whether the given object been allocated since marking start (i.e. >= TAMS in that region).
   inline bool obj_allocated_since_mark_start(oop obj) const;
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
-  inline void update_top_at_rebuild_start(HeapRegion* r);
+  inline void update_top_at_rebuild_start(G1HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(HeapRegion* r) const;
+  inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics(HeapRegion* r);
+  void clear_statistics(G1HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
-  void humongous_object_eagerly_reclaimed(HeapRegion* r);
+  void humongous_object_eagerly_reclaimed(G1HeapRegion* r);
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
@@ -659,8 +659,8 @@ public:
   // them.
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
-  void add_root_region(HeapRegion* r);
-  bool is_root_region(HeapRegion* r);
+  void add_root_region(G1HeapRegion* r);
+  bool is_root_region(G1HeapRegion* r);
   void root_region_scan_abort_and_wait();
 
 private:
@@ -688,7 +688,7 @@ public:
   // Clears marks for all objects in the given region in the marking
   // bitmap. This should only be used to clean the bitmap during a
   // safepoint.
-  void clear_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(G1HeapRegion* hr);
 
   // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).
@@ -758,7 +758,7 @@ private:
   G1CMOopClosure*             _cm_oop_closure;
 
   // Region this task is scanning, null if we're not scanning any
-  HeapRegion*                 _curr_region;
+  G1HeapRegion*               _curr_region;
   // Local finger of this task, null if we're not scanning a region
   HeapWord*                   _finger;
   // Limit of the region this task is scanning, null if we're not scanning one
@@ -806,7 +806,7 @@ private:
 
   // Updates the local fields after this task has claimed
   // a new region to scan
-  void setup_for_region(HeapRegion* hr);
+  void setup_for_region(G1HeapRegion* hr);
   // Makes the limit of the region up-to-date
   void update_region_limit();
 
@@ -969,7 +969,7 @@ public:
   // The header and footer are printed in the constructor and
   // destructor respectively.
   G1PrintRegionLivenessInfoClosure(const char* phase_name);
-  virtual bool do_heap_region(HeapRegion* r);
+  virtual bool do_heap_region(G1HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
 #endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

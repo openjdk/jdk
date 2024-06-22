@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -245,7 +246,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of

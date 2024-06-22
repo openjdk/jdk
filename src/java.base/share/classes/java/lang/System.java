@@ -71,6 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
+import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
@@ -190,8 +191,9 @@ public final class System {
      */
     public static final PrintStream err = null;
 
-    // Holder for the initial value of `in`, set within `initPhase1()`.
-    private static InputStream initialIn;
+    // Initial values of System.in and System.err, set in initPhase1().
+    private static @Stable InputStream initialIn;
+    private static @Stable PrintStream initialErr;
 
     // indicates if a security manager is possible
     private static final int NEVER = 1;
@@ -354,9 +356,6 @@ public final class System {
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
-    // Remember initial System.err. setSecurityManager() warning goes here
-    private static volatile @Stable PrintStream initialErrStream;
-
     private static URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
         @SuppressWarnings("removal")
@@ -416,7 +415,7 @@ public final class System {
                 } else {
                     source = callerClass.getName() + " (" + url + ")";
                 }
-                initialErrStream.printf("""
+                initialErr.printf("""
                         WARNING: A terminally deprecated method in java.lang.System has been called
                         WARNING: System::setSecurityManager has been called by %s
                         WARNING: Please consider reporting this to the maintainers of %s
@@ -2190,16 +2189,17 @@ public final class System {
 
         lineSeparator = props.getProperty("line.separator");
 
-        FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
-        FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
-        FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
+        FileInputStream fdIn = new In(FileDescriptor.in);
+        FileOutputStream fdOut = new Out(FileDescriptor.out);
+        FileOutputStream fdErr = new Out(FileDescriptor.err);
         initialIn = new BufferedInputStream(fdIn);
         setIn0(initialIn);
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
         setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
+        initialErr = newPrintStream(fdErr, props.getProperty("stderr.encoding"));
+        setErr0(initialErr);
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
@@ -2215,6 +2215,83 @@ public final class System {
 
         // system properties, java.lang and other core classes are now initialized
         VM.initLevel(1);
+    }
+
+    /**
+     * System.in.
+     */
+    private static class In extends FileInputStream {
+        In(FileDescriptor fd) {
+            super(fd);
+        }
+
+        @Override
+        public int read() throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read();
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read(b, off, len);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+    }
+
+    /**
+     * System.out/System.err wrap this output stream.
+     */
+    private static class Out extends FileOutputStream {
+        Out(FileDescriptor fd) {
+            super(fd);
+        }
+
+        public void write(int b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b, off, len);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
     }
 
     // @see #initPhase2()
@@ -2327,8 +2404,6 @@ public final class System {
                     " file system is not supported: " +
                     notSupportedJnuEncoding);
         }
-
-        initialErrStream = System.err;
 
         // initializing the system class loader
         VM.initLevel(3);
@@ -2518,6 +2593,10 @@ public final class System {
 
             public InputStream initialSystemIn() {
                 return initialIn;
+            }
+
+            public PrintStream initialSystemErr() {
+                return initialErr;
             }
 
             public void setCause(Throwable t, Throwable cause) {

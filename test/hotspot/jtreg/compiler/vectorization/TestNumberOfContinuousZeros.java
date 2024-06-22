@@ -27,7 +27,8 @@
 * @summary Test vectorization of numberOfTrailingZeros/numberOfLeadingZeros for Long
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*")
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
+*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
 * @library /test/lib /
 * @run driver compiler.vectorization.TestNumberOfContinuousZeros
 */
@@ -39,8 +40,10 @@ import java.util.Random;
 import jdk.test.lib.Asserts;
 
 public class TestNumberOfContinuousZeros {
-    private long[] input;
-    private int[] output;
+    private long[] inputLong;
+    private int[] outputLong;
+    private int[] inputInt;
+    private int[] outputInt;
     private static final int LEN = 1024;
     private Random rng;
 
@@ -49,39 +52,71 @@ public class TestNumberOfContinuousZeros {
     }
 
     public TestNumberOfContinuousZeros() {
-        input = new long[LEN];
-        output = new int[LEN];
+        inputLong = new long[LEN];
+        outputLong = new int[LEN];
+        inputInt = new int[LEN];
+        outputInt = new int[LEN];
         rng = new Random(42);
         for (int i = 0; i < LEN; ++i) {
-            input[i] = rng.nextLong();
+            inputLong[i] = rng.nextLong();
+            inputInt[i] = rng.nextInt();
         }
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTTRAILINGZEROS_VL, "> 0"})
-    public void vectorizeNumberOfTrailingZeros() {
+    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
+    public void vectorizeNumberOfTrailingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = Long.numberOfTrailingZeros(input[i]);
+            outputLong[i] = Long.numberOfTrailingZeros(inputLong[i]);
         }
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTLEADINGZEROS_VL, "> 0"})
-    public void vectorizeNumberOfLeadingZeros() {
+    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    public void vectorizeNumberOfLeadingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = Long.numberOfLeadingZeros(input[i]);
+            outputLong[i] = Long.numberOfLeadingZeros(inputLong[i]);
         }
     }
 
-    @Run(test = {"vectorizeNumberOfTrailingZeros", "vectorizeNumberOfLeadingZeros"})
-    public void checkResult() {
-        vectorizeNumberOfTrailingZeros();
+    @Run(test = {"vectorizeNumberOfTrailingZerosLong", "vectorizeNumberOfLeadingZerosLong"})
+    public void checkResultLong() {
+        vectorizeNumberOfTrailingZerosLong();
         for (int i = 0; i < LEN; ++i) {
-            Asserts.assertEquals(output[i], Long.numberOfTrailingZeros(input[i]));
+            Asserts.assertEquals(outputLong[i], Long.numberOfTrailingZeros(inputLong[i]));
         }
-        vectorizeNumberOfLeadingZeros();
+        vectorizeNumberOfLeadingZerosLong();
         for (int i = 0; i < LEN; ++i) {
-            Asserts.assertEquals(output[i], Long.numberOfLeadingZeros(input[i]));
+            Asserts.assertEquals(outputLong[i], Long.numberOfLeadingZeros(inputLong[i]));
+        }
+    }
+
+
+    @Test
+    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VI, "> 0"})
+    public void vectorizeNumberOfTrailingZerosInt() {
+        for (int i = 0; i < LEN; ++i) {
+            outputInt[i] = Integer.numberOfTrailingZeros(inputInt[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VI, "> 0"})
+    public void vectorizeNumberOfLeadingZerosInt() {
+        for (int i = 0; i < LEN; ++i) {
+            outputInt[i] = Integer.numberOfLeadingZeros(inputInt[i]);
+        }
+    }
+
+    @Run(test = {"vectorizeNumberOfTrailingZerosInt", "vectorizeNumberOfLeadingZerosInt"})
+    public void checkResultInt() {
+        vectorizeNumberOfTrailingZerosInt();
+        for (int i = 0; i < LEN; ++i) {
+            Asserts.assertEquals(outputInt[i], Integer.numberOfTrailingZeros(inputInt[i]));
+        }
+        vectorizeNumberOfLeadingZerosInt();
+        for (int i = 0; i < LEN; ++i) {
+            Asserts.assertEquals(outputInt[i], Integer.numberOfLeadingZeros(inputInt[i]));
         }
     }
 }

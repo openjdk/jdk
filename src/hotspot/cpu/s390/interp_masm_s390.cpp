@@ -324,12 +324,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   } else if (index_size == sizeof(u4)) {
 
     load_sized_value(index, param, 4, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    not_(index);  // Convert to plain index.
   } else if (index_size == sizeof(u1)) {
     z_llgc(index, param);
   } else {

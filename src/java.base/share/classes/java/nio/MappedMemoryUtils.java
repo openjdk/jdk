@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,13 @@ import jdk.internal.misc.Unsafe;
             long offset = mappingOffset(address, index);
             long mappingAddress = mappingAddress(address, offset, index);
             long mappingLength = mappingLength(offset, length);
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
         }
     }

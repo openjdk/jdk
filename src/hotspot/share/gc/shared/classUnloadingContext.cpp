@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ void ClassUnloadingContext::purge_nmethods() {
     NMethodSet* set = _unlinked_nmethods[i];
     for (nmethod* nm : *set) {
       freed_memory += nm->size();
-      nm->purge(false /* free_code_cache_data */, _unregister_nmethods_during_purge);
+      nm->purge(_unregister_nmethods_during_purge);
     }
   }
 

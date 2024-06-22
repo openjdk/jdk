@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 
 #include "unittest.hpp"
@@ -103,6 +104,56 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
   }
 }
 
+static void test_autoindent(bool on) {
+  stringStream ss;
+  const bool prior = ss.set_autoindent(on);
+  EXPECT_FALSE(prior);
+  {
+    streamIndentor si(&ss, 5);
+    ss.print("ABC");
+    ss.print("DEF");
+    ss.cr();
+    ss.print_cr("0123");
+    {
+      streamIndentor si(&ss, 5);
+      ss.print_cr("4567");
+      ss.print_raw("89AB");
+      ss.print_raw("CDEXXXX", 3);
+      ss.print_raw_cr("XYZ");
+    }
+    ss.print("%u", 100);
+    ss.print_raw("KB");
+    ss.cr();
+  }
+  ss.print("end");
+
+  if (on) {
+    EXPECT_STREQ(ss.base(),
+        "     ABCDEF\n"
+        "     0123\n"
+        "          4567\n"
+        "          89ABCDEXYZ\n"
+        "     100KB\n"
+        "end"
+    );
+  } else {
+    // no autoindent: calls should work as always without indentation
+    EXPECT_STREQ(ss.base(),
+        "ABCDEF\n"
+        "0123\n"
+        "4567\n"
+        "89ABCDEXYZ\n"
+        "100KB\n"
+        "end"
+    );
+  }
+  bool prior2 = ss.set_autoindent(prior);
+  EXPECT_EQ(prior2, on);
+}
+
+TEST_VM(ostream, autoindent_on)  { test_autoindent(true);  }
+TEST_VM(ostream, autoindent_off) { test_autoindent(false); }
+
 /* Activate to manually test bufferedStream dynamic cap.
 
 TEST_VM(ostream, bufferedStream_dynamic_large) {
@@ -123,6 +174,257 @@ TEST_VM(ostream, bufferedStream_dynamic_large) {
 
 */
 
+// Test helper for do_vsnprintf
+class outputStream::TestSupport : AllStatic {
 
+  // Shared constants and variables for all subtests.
+  static const size_t buflen = 11;
+  static char buffer[buflen];
+  static const size_t max_len = buflen - 1;
+  static size_t result_len;
+  static const char* result;
 
+  static void reset() {
+    result_len = 0;
+    result = nullptr;
+    buffer[0] = '\0';
+  }
 
+  static const char* test(char* buf, size_t len, bool add_cr,
+                          size_t& rlen, const char* format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    const char* res = do_vsnprintf(buf, len, format, ap, add_cr, rlen);
+    va_end(ap);
+    return res;
+  }
+
+ public:
+  // Case set 1: constant string with no format specifiers
+  static void test_constant_string() {
+    reset();
+    // Case 1-1: no cr, no truncation, excess capacity
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, false, result_len, str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 1-2: no cr, no truncation, exact capacity
+    {
+      const char* str = "0123456789";
+      size_t initial_len = strlen(str);
+      ASSERT_EQ(initial_len, max_len);
+      result = test(buffer, buflen, false, result_len, str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 1-3: no cr, no truncation, exceeds capacity
+    {
+      const char* str = "0123456789A";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len > max_len);
+      result = test(buffer, buflen, false, result_len, str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len);
+    }
+    reset();
+    // Case 1-4: add cr, no truncation, excess capacity
+    {
+      const char* str = "01234567";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 1-5: add cr, no truncation, exact capacity
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 1-6: add cr, truncation
+    {
+      const char* str = "0123456789";
+      size_t initial_len = strlen(str);
+      ASSERT_EQ(initial_len, max_len);
+      ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
+      result = test(buffer, buflen, true, result_len, str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+  }
+
+  // Case set 2: "%s" string
+  static void test_percent_s_string() {
+    reset();
+    // Case 2-1: no cr, no truncation, excess capacity
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, false, result_len, "%s", str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 2-2: no cr, no truncation, exact capacity
+    {
+      const char* str = "0123456789";
+      size_t initial_len = strlen(str);
+      ASSERT_EQ(initial_len, max_len);
+      result = test(buffer, buflen, false, result_len, "%s", str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 2-3: no cr, no truncation, exceeds capacity
+    {
+      const char* str = "0123456789A";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len > max_len);
+      result = test(buffer, buflen, false, result_len, "%s", str);
+      ASSERT_EQ(result, str);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len);
+    }
+    reset();
+    // Case 2-4: add cr, no truncation, excess capacity
+    {
+      const char* str = "01234567";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, "%s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 2-5: add cr, no truncation, exact capacity
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str);
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, "%s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 2-6: add cr, truncation
+    {
+      const char* str = "0123456789";
+      size_t initial_len = strlen(str);
+      ASSERT_EQ(initial_len, max_len);
+      ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
+      result = test(buffer, buflen, true, result_len, "%s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+  }
+
+  // Case set 3: " %s" string - the space means we avoid the pass-through optimization and use vsnprintf
+  static void test_general_string() {
+    reset();
+    // Case 3-1: no cr, no truncation, excess capacity
+    {
+      const char* str = "01234567";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, false, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 3-2: no cr, no truncation, exact capacity
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_EQ(initial_len, max_len);
+      result = test(buffer, buflen, false, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 3-3: no cr, truncation
+    {
+      const char* str = "0123456789";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_TRUE(initial_len > max_len);
+      ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1));
+      result = test(buffer, buflen, false, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+    }
+    reset();
+    // Case 3-4: add cr, no truncation, excess capacity
+    {
+      const char* str = "0123456";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 3-5: add cr, no truncation, exact capacity
+    {
+      const char* str = "01234567";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_TRUE(initial_len < max_len);
+      result = test(buffer, buflen, true, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len + 1);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+    reset();
+    // Case 3-6: add cr, truncation
+    {
+      const char* str = "012345678";
+      size_t initial_len = strlen(str) + 1;
+      ASSERT_EQ(initial_len, max_len);
+      ::printf("Truncation warning expected: requires %d\n", (int)(initial_len + 1 + 1));
+      result = test(buffer, buflen, true, result_len, " %s", str);
+      ASSERT_EQ(result, buffer);
+      ASSERT_EQ(strlen(result), result_len);
+      ASSERT_EQ(result_len, initial_len);
+      ASSERT_TRUE(result_len <= max_len);
+    }
+  }
+
+};
+
+const size_t outputStream::TestSupport::max_len;
+char outputStream::TestSupport::buffer[outputStream::TestSupport::buflen];
+size_t outputStream::TestSupport::result_len = 0;
+const char* outputStream::TestSupport::result = nullptr;
+
+TEST_VM(ostream, do_vsnprintf_buffering) {
+  outputStream::TestSupport::test_constant_string();
+  outputStream::TestSupport::test_percent_s_string();
+  outputStream::TestSupport::test_general_string();
+}

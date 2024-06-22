@@ -593,12 +593,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       // Add check to deoptimize the nmethod once the holder class is fully initialized
       clinit_deopt();
     }
-
-    // Add check to deoptimize the nmethod if RTM state was changed
-    rtm_deopt();
   }
 
-  // Check for bailouts during method entry or RTM state check setup.
+  // Check for bailouts during method entry.
   if (failing()) {
     if (log)  log->done("parse");
     C->set_default_node_notes(caller_nn);
@@ -980,6 +977,54 @@ void Parse::do_exits() {
   Node* iophi = _exits.i_o();
   _exits.set_i_o(gvn().transform(iophi));
 
+  // Figure out if we need to emit the trailing barrier. The barrier is only
+  // needed in the constructors, and only in three cases:
+  //
+  // 1. The constructor wrote a final. The effects of all initializations
+  //    must be committed to memory before any code after the constructor
+  //    publishes the reference to the newly constructed object. Rather
+  //    than wait for the publication, we simply block the writes here.
+  //    Rather than put a barrier on only those writes which are required
+  //    to complete, we force all writes to complete.
+  //
+  // 2. Experimental VM option is used to force the barrier if any field
+  //    was written out in the constructor.
+  //
+  // 3. On processors which are not CPU_MULTI_COPY_ATOMIC (e.g. PPC64),
+  //    support_IRIW_for_not_multiple_copy_atomic_cpu selects that
+  //    MemBarVolatile is used before volatile load instead of after volatile
+  //    store, so there's no barrier after the store.
+  //    We want to guarantee the same behavior as on platforms with total store
+  //    order, although this is not required by the Java memory model.
+  //    In this case, we want to enforce visibility of volatile field
+  //    initializations which are performed in constructors.
+  //    So as with finals, we add a barrier here.
+  //
+  // "All bets are off" unless the first publication occurs after a
+  // normal return from the constructor.  We do not attempt to detect
+  // such unusual early publications.  But no barrier is needed on
+  // exceptional returns, since they cannot publish normally.
+  //
+  if (method()->is_initializer() &&
+       (wrote_final() ||
+         (AlwaysSafeConstructors && wrote_fields()) ||
+         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
+                          alloc_with_final());
+
+    // If Memory barrier is created for final fields write
+    // and allocation node does not escape the initialize method,
+    // then barrier introduced by allocation node can be removed.
+    if (DoEscapeAnalysis && alloc_with_final()) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
+      alloc->compute_MemBar_redundancy(method());
+    }
+    if (PrintOpto && (Verbose || WizardMode)) {
+      method()->print_name();
+      tty->print_cr(" writes finals and needs a memory barrier");
+    }
+  }
+
   // Any method can write a @Stable field; insert memory barriers
   // after those also. Can't bind predecessor allocation node (if any)
   // with barrier because allocation doesn't always dominate
@@ -1008,16 +1053,6 @@ void Parse::do_exits() {
       // loading.  It could also be due to an error, so mark this method as not compilable because
       // otherwise this could lead to an infinite compile loop.
       // In any case, this code path is rarely (and never in my testing) reached.
-#ifdef ASSERT
-      tty->print_cr("# Can't determine return type.");
-      tty->print_cr("# exit control");
-      _exits.control()->dump(2);
-      tty->print_cr("# ret phi type");
-      _gvn.type(ret_phi)->dump();
-      tty->print_cr("# ret phi");
-      ret_phi->dump(2);
-#endif // ASSERT
-      assert(false, "Can't determine return type.");
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
@@ -2149,47 +2184,10 @@ void Parse::clinit_deopt() {
   guard_klass_being_initialized(holder);
 }
 
-// Add check to deoptimize if RTM state is not ProfileRTM
-void Parse::rtm_deopt() {
-#if INCLUDE_RTM_OPT
-  if (C->profile_rtm()) {
-    assert(C->has_method(), "only for normal compilations");
-    assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
-    assert(depth() == 1, "generate check only for main compiled method");
-
-    // Set starting bci for uncommon trap.
-    set_parse_bci(is_osr_parse() ? osr_bci() : 0);
-
-    // Load the rtm_state from the MethodData.
-    const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
-    Node* mdo = makecon(adr_type);
-    int offset = in_bytes(MethodData::rtm_state_offset());
-    Node* adr_node = basic_plus_adr(mdo, mdo, offset);
-    Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-    // Separate Load from Cmp by Opaque.
-    // In expand_macro_nodes() it will be replaced either
-    // with this load when there are locks in the code
-    // or with ProfileRTM (cmp->in(2)) otherwise so that
-    // the check will fold.
-    Node* profile_state = makecon(TypeInt::make(ProfileRTM));
-    Node* opq   = _gvn.transform( new Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
-    Node* chk   = _gvn.transform( new CmpINode(opq, profile_state) );
-    Node* tst   = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
-    // Branch to failure if state was changed
-    { BuildCutout unless(this, tst, PROB_ALWAYS);
-      uncommon_trap(Deoptimization::Reason_rtm_state_change,
-                    Deoptimization::Action_make_not_entrant);
-    }
-  }
-#endif
-}
-
 //------------------------------return_current---------------------------------
 // Append current _map to _exit_return
 void Parse::return_current(Node* value) {
-  if (RegisterFinalizersAtInit &&
-      method()->intrinsic_id() == vmIntrinsics::_Object_init) {
+  if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
   }
 

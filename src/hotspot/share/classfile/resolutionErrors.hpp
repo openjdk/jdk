@@ -58,9 +58,8 @@ public:
   static const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
 
   // This function is used to encode an invokedynamic index to differentiate it from a
-  // constant pool index.  It assumes it is being called with a index that is less than 0
+  // constant pool index.
   static int encode_indy_index(int index) {
-    assert(index < 0, "Unexpected non-negative cpCache index");
     return index + CPCACHE_INDEX_MANGLE_VALUE;
   }
 };

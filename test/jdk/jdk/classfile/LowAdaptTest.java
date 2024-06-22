@@ -80,15 +80,15 @@ class LowAdaptTest {
             cb.withMethod("doit", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
                           mb -> mb.withCode(xb -> {
-                              xb.invokeDynamicInstruction(indy);
-                              xb.storeInstruction(TypeKind.ReferenceType, 1);
-                              xb.loadInstruction(TypeKind.ReferenceType, 1);
-                              xb.loadInstruction(TypeKind.IntType, 0);
-                              xb.invokeInstruction(Opcode.INVOKEINTERFACE, ClassDesc.of("java.util.function.IntUnaryOperator"),
-                                                   "applyAsInt", MethodTypeDesc.ofDescriptor("(I)I"), true);
-                              xb.storeInstruction(TypeKind.IntType, 2);
-                              xb.loadInstruction(TypeKind.IntType, 2);
-                              xb.returnInstruction(TypeKind.IntType);
+                              xb.invokedynamic(indy);
+                              xb.astore(1);
+                              xb.aload(1);
+                              xb.iload(0);
+                              xb.invokeinterface(ClassDesc.of("java.util.function.IntUnaryOperator"),
+                                                   "applyAsInt", MethodTypeDesc.ofDescriptor("(I)I"));
+                              xb.istore(2);
+                              xb.iload(2);
+                              xb.ireturn();
                           }));
         });
 
