@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +20,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-package vm.share.process;
-
-/*
- * StreamListener listens on events from BufferedInputStream.
  *
- * Note: StreamListener should not never block as it potentially
- * runs in thread that reads the input.
  */
-public interface StreamListener {
-        public void onStart();
-        public void onRead(String line);
-        public void onFinish();
-        public void onException(Throwable e);
-}
+
+#ifndef SHARE_SANITIZERS_UB_HPP
+#define SHARE_SANITIZERS_UB_HPP
+
+// ATTRIBUTE_NO_UBSAN
+//
+// Function attribute which informs the compiler to disable UBSan checks in the
+// following function or method.
+// Useful if the function or method is known to do something special or even 'dangerous', for
+// example causing desired signals/crashes.
+#if defined(__clang__) || defined(__GNUC__)
+#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
+#endif
+
+#ifndef ATTRIBUTE_NO_UBSAN
+#define ATTRIBUTE_NO_UBSAN
+#endif
+
+#endif // SHARE_SANITIZERS_UB_HPP

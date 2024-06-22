@@ -25,15 +25,19 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.*;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,15 +45,10 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.lang.classfile.Attribute;
+import jdk.internal.constant.ReferenceClassDescImpl;
 
 import static java.lang.classfile.ClassFile.*;
-import static jdk.internal.constant.ConstantUtils.binaryNameToDesc;
-
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.Label;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.Attributes;
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -1249,14 +1248,14 @@ public final class StackMapGenerator {
         //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = referenceType(CD_Object),
             THROWABLE_TYPE = referenceType(CD_Throwable),
-            INT_ARRAY_TYPE = referenceType(CD_int.arrayType()),
-            BOOLEAN_ARRAY_TYPE = referenceType(CD_boolean.arrayType()),
-            BYTE_ARRAY_TYPE = referenceType(CD_byte.arrayType()),
-            CHAR_ARRAY_TYPE = referenceType(CD_char.arrayType()),
-            SHORT_ARRAY_TYPE = referenceType(CD_short.arrayType()),
-            LONG_ARRAY_TYPE = referenceType(CD_long.arrayType()),
-            DOUBLE_ARRAY_TYPE = referenceType(CD_double.arrayType()),
-            FLOAT_ARRAY_TYPE = referenceType(CD_float.arrayType()),
+            INT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[I")),
+            BOOLEAN_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[Z")),
+            BYTE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[B")),
+            CHAR_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[C")),
+            SHORT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[S")),
+            LONG_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[J")),
+            DOUBLE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[D")),
+            FLOAT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[F")),
             STRING_TYPE = referenceType(CD_String),
             CLASS_TYPE = referenceType(CD_Class),
             METHOD_HANDLE_TYPE = referenceType(CD_MethodHandle),
@@ -1321,8 +1320,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = binaryNameToDesc("java.lang.Cloneable");
-        private static final ClassDesc CD_Serializable = binaryNameToDesc("java.io.Serializable");
+        private static final ClassDesc CD_Cloneable = ReferenceClassDescImpl.ofValidated("Ljava/lang/Cloneable;");
+        private static final ClassDesc CD_Serializable = ReferenceClassDescImpl.ofValidated("Ljava/io/Serializable;");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {

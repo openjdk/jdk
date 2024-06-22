@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.gc;
+package vm.compiler.complog.share;
 
-/**
- * This class is used to distinguish between OOME in metaspace and OOME in heap when triggering class unloading.
+import nsk.share.log.Log;
+
+/*
+ * StreamListener that logs everything to Log at debug priority.
  */
-public class HeapOOMEException extends RuntimeException {
+public class StreamLogger implements StreamListener {
+        private String prefix;
+        private Log log;
 
-    private static final long serialVersionUID = 1L;
+        public StreamLogger(String prefix, Log log) {
+                this.prefix = prefix;
+                this.log = log;
+        }
 
-    public HeapOOMEException(String string) {
-        super(string);
-    }
+        public void onStart() {
+                // do nothing
+        }
 
+        public void onFinish() {
+                // do nothing
+        }
+
+        public void onRead(String s) {
+                log.debug(prefix + s);
+        }
+
+        public void onException(Throwable e) {
+                log.debug(prefix + "Exception");
+                log.debug(e);
+        }
 }
