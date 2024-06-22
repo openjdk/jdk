@@ -54,25 +54,23 @@ void ShenandoahLock::contended_lock_internal(Thread* thread) {
       ctr--;
     } else {
       if (ALLOW_BLOCK) {
-         JavaThread* jthread = JavaThread::cast(thread);
-         if (SafepointMechanism::local_poll_armed(jthread)) {
-           //When local_poll_armed is true, TBIVM should block always the thread at SP WaitBarrier,
-           //Hence there is no need to call os::naked_yield() to waste resource on context switch.
-           ThreadBlockInVM block(jthread);
-         } else {
-           // No garentee to block immediately when there is SP global poll,
-           // Since after SP state is set to _synchronizing, VMThread arms each Java thread one by one; 
-           // Before ~ThreadBlockInVM block the thread at barrier, it test local_poll_armed for the thread.
-           // Hence it a typical race condition, there is high chance under extemely contended situation,
-           // it take multiple attmpts to block the thread, espcially when VM VMThread called global poll
-           // and then CPU swiches to next thread before VM VMThread arms Java threads.
-           //
-           // Constructor of ThreadBlockInVM set the state of thread to blocked, and mark the frame anchor walkable;
-           // so even the ~ThreadBlockInVM has not been executed to block thread at barrier(yield to others), Safepoint
-           // still treat the thread safe for safepoint because the status is _thread_blocked and it has walkable frames.
-           ThreadBlockInVM block(jthread);
-           os::naked_yield();
-         }
+        JavaThread *jthread = JavaThread::cast(thread);
+        ThreadBlockInVM block(jthread);
+        if (SafepointSynchronize::is_synchronizing()) {
+          //SafepointSynchronize::begin set SP state to synchronizing first, then it arms all
+          //the Java threads one by one.
+          //When a Java thread see synchronizing state, the thread may not be armed, but ~ThreadBlockInVM only
+          //blocks the thread using WaitBarrier when the thread is local armed;
+          //so there is chance that ~ThreadBlockInVM may not block the thread right after global poll is set.
+          //We can trap the Java thread here until SafepointSynchronize arms the thread for local poll;
+          //it keeps yielding to other threads until the thread is armed, which benefits VM Thread to get more CPU time
+          //to arm all java threads and synchronize threads to safepoint.
+          while (!SafepointMechanism::local_poll_armed(jthread)) {
+            os::naked_yield();
+          }
+        } else {
+          os::naked_yield();
+        }
       } else {
         os::naked_yield();
       }
