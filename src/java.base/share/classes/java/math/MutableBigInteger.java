@@ -43,6 +43,7 @@ import java.util.Arrays;
  * @see     BigInteger
  * @author  Michael McCloskey
  * @author  Timothy Buktu
+ * @author  Fabio Romano
  * @since   1.3
  */
 
