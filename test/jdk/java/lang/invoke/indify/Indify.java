@@ -498,71 +498,65 @@ public class Indify {
             if (!initializeMarks()) return false;
             if (!findPatternMethods()) return false;
 
-            for (MethodModel m : classModel.methods()) {
-                if (constants.containsKey(m.methodName().stringValue())) continue; // Skip if pattern method, it will be removed
+            Stack<PoolEntry> pendingIndy = new Stack<>(); // stack to hold the pending invokedynamic constant to replace the invokeExact
 
-                Predicate<MethodModel> filter = method -> Objects.equals(method.methodName().stringValue(), m.methodName().stringValue());
-                Stack<PoolEntry> pendingIndy = new Stack<>(); // stack to hold the pending invokedynamic constant to replace the invokeExact
+            CodeTransform codeTransform = (b, e) -> {
+                if (e instanceof InvokeInstruction invokeInstruction) {
+                    String methodInvoked = invokeInstruction.method().name().stringValue();
 
-                CodeTransform codeTransform = (b, e) -> {
-                    if (e instanceof InvokeInstruction invokeInstruction) {
-                        String methodInvoked = invokeInstruction.method().name().stringValue();
-
-                        if (invokeInstruction.opcode().bytecode() == INVOKEVIRTUAL &&
-                                !pendingIndy.isEmpty() &&
-                                methodInvoked.equals("invokeExact")) {
-                            b.invokeDynamicInstruction((InvokeDynamicEntry) pendingIndy.pop());
-                            if (!quiet) System.err.println("Removing <<invokeExact>> invocation on MethodHandle");
-                            return;
-                        }
-
-                        if (invokeInstruction.opcode().bytecode() != INVOKESTATIC) {
-                            b.with(e); // Not an INVOKESTATIC instruction, keep it as is
-                            return;
-                        }
-
-                        if (poolMarks[invokeInstruction.method().index()] == 0) {
-                            b.with(e); // Skip if not marked
-                            return;
-                        }
-
-
-                        // Is it a pattern method?
-                        if (!constants.containsKey(methodInvoked)) {
-                            b.with(e);
-                            return;
-                        }
-
-                        PoolEntry newConstant = constants.get(methodInvoked);
-
-                        if (newConstant instanceof InvokeDynamicEntry) {
-                            pendingIndy.push(newConstant);
-                            if (!quiet) {
-                                System.err.println(":::Transforming the Method: " + m.methodName() +
-                                        " | Call to method: " + invokeInstruction.name() +
-                                        " is transformed to => invokedynamic: " +
-                                        ((InvokeDynamicEntry) newConstant).nameAndType());
-                            }
-
-                            if (!quiet) System.err.println("Removing instruction invokestatic for Method: " + invokeInstruction.name());
-                            b.nop();
-                        } else {
-                            if (!quiet) {
-                                System.err.println(":::Transforming the Method: " + m.methodName() +
-                                        " | instruction: invokestatic " + invokeInstruction.type() +
-                                        " to => ldc: " + newConstant.index());
-                            }
-                            b.ldc((LoadableConstantEntry) newConstant);
-                        }
-                    } else {
-                        b.with(e);
+                    if (invokeInstruction.opcode().bytecode() == INVOKEVIRTUAL &&
+                            !pendingIndy.isEmpty() &&
+                            methodInvoked.equals("invokeExact")) {
+                        b.invokeDynamicInstruction((InvokeDynamicEntry) pendingIndy.pop());
+                        if (!quiet) System.err.println("Removing <<invokeExact>> invocation on MethodHandle");
+                        return;
                     }
-                };
 
-                // Apply the transformation to the class model
-                ClassTransform classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
-                classModel = of().parse(of().transform(classModel, classTransform));
-            }
+                    if (invokeInstruction.opcode().bytecode() != INVOKESTATIC) {
+                        b.with(e); // Not an INVOKESTATIC instruction, keep it as is
+                        return;
+                    }
+
+                    if (poolMarks[invokeInstruction.method().index()] == 0) {
+                        b.with(e); // Skip if not marked
+                        return;
+                    }
+
+
+                    // Is it a pattern method?
+                    if (!constants.containsKey(methodInvoked)) {
+                        b.with(e);
+                        return;
+                    }
+
+                    PoolEntry newConstant = constants.get(methodInvoked);
+
+                    if (newConstant instanceof InvokeDynamicEntry) {
+                        pendingIndy.push(newConstant);
+                        if (!quiet) {
+                            System.err.println(":::Transforming the Method: " + ((InvokeInstruction) e).method().name() +
+                                    " | Call to method: " + invokeInstruction.name() +
+                                    " is transformed to => invokedynamic: " +
+                                    ((InvokeDynamicEntry) newConstant).nameAndType());
+                        }
+
+                        if (!quiet) System.err.println("Removing instruction invokestatic for Method: " + invokeInstruction.name());
+                        b.nop();
+                    } else {
+                        if (!quiet) {
+                            System.err.println(":::Transforming the Method: " + ((InvokeInstruction) e).method().name() +
+                                    " | instruction: invokestatic " + invokeInstruction.type() +
+                                    " to => ldc: " + newConstant.index());
+                        }
+                        b.ldc((LoadableConstantEntry) newConstant);
+                    }
+                } else {
+                    b.with(e);
+                }
+            };
+
+            // Apply the transformation to the class model
+            classModel = of().parse(of().transform(classModel, ClassTransform.transformingMethodBodies(codeTransform)));
 
             this.classModel = removePatternMethodsAndVerify(classModel);
 
