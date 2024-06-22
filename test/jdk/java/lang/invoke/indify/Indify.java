@@ -36,7 +36,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -267,8 +266,8 @@ public class Indify {
                     a = a.substring(0, eq+1);
                 }
                 switch (a) {
-                case "--java":  // keep this argument
-                    return;
+                case "--java":
+                    return;  // keep this argument
                 case "-d": case "--dest": case "-d=": case "--dest=":
                     dest = new File(a2 != null ? a2 : maybeExpandProperties(av.remove(1)));
                     break;
@@ -350,11 +349,11 @@ public class Indify {
         File f = new File(a);
         String fn = f.getName();
         if (fn.endsWith(".class") && f.isFile())
-            indifyFile(f);
+            indifyFile(f, dest);
         else if (fn.endsWith(".jar") && f.isFile())
-            indifyJar(); //Not yet implemented
+            indifyJar(f, dest); //Not yet implemented
         else if (f.isDirectory())
-            indifyTree(f);
+            indifyTree(f, dest);
         else if (!keepgoing)
             throw new RuntimeException("unrecognized file: "+a);
     }
@@ -364,29 +363,23 @@ public class Indify {
             System.err.println("Created new directory to: "+dir);
     }
 
-    public void indifyFile(File f) throws IOException {
+    public void indifyFile(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading " + f);
         ClassModel model = parseClassFile(f);
         Logic logic = new Logic(model);
         Boolean changed = logic.transform();
         System.err.println("Class file transformation: " + changed);
         logic.reportPatternMethods(quiet, keepgoing);
-        writeNewClassFile(logic.classModel, changed, f);
-    }
-
-    void writeNewClassFile(ClassModel newClassModel, Boolean changed, File sourceFile) throws IOException {
-        byte[] new_bytes = transformToBytes(newClassModel);
-        if(changed || all){
-            File destFile;
-            if(dest != null){
+        if (changed || all) {
+            File outfile;
+            if (dest != null) {
                 ensureDirectory(dest);
-                destFile = classPathFile(dest, newClassModel.thisClass().name().stringValue());
+                outfile = classPathFile(dest, model.thisClass().name().stringValue());
             } else {
-                destFile = sourceFile;
+                outfile = f;
             }
-            if (verbose) System.err.println("writing "+destFile);
-            Files.write(destFile.toPath(), new_bytes);
-            System.err.println("Wrote New ClassFile to: "+destFile);
+            Files.write(outfile.toPath(), transformToBytes(logic.classModel));
+            if (!quiet) System.err.println("wrote "+outfile);
         }
     }
 
@@ -400,11 +393,11 @@ public class Indify {
         return new File(pathDir, qualname);
     }
 
-    public void indifyJar() {
+    public void indifyJar(File f, Object dest) throws IOException {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public void indifyTree(File f) throws IOException {
+    public void indifyTree(File f, File dest) throws IOException {
         if (verbose)  System.err.println("reading directory: "+f);
         for (File f2 : Objects.requireNonNull(f.listFiles((dir, name) -> {
             if (name.endsWith(".class")) return true;
@@ -413,9 +406,9 @@ public class Indify {
             return Character.isJavaIdentifierStart(name.charAt(0));
         }))) {
             if (f2.getName().endsWith(".class"))
-                indifyFile(f2);
+                indifyFile(f2, dest);
             else if (f2.isDirectory())
-                indifyTree(f2);
+                indifyTree(f2, dest);
         }
     }
 
@@ -475,11 +468,11 @@ public class Indify {
             ClassModel model = parseClassFile(f);
             Logic logic = new Logic(model);
             Boolean changed = logic.transform();
-            if (verbose && changed) System.err.println("(no change)");
+            if (verbose && !changed) System.err.println("(no change)");
             logic.reportPatternMethods(!verbose, keepgoing);
-            byte[] new_Bytes = transformToBytes(logic.classModel);
+            byte[] newBytes = transformToBytes(logic.classModel);
 
-            return defineClass(null, new_Bytes, 0, new_Bytes.length);
+            return defineClass(null, newBytes, 0, newBytes.length);
         }
     }
 
@@ -498,7 +491,7 @@ public class Indify {
             if (!initializeMarks()) return false;
             if (!findPatternMethods()) return false;
 
-            Stack<PoolEntry> pendingIndy = new Stack<>(); // stack to hold the pending invokedynamic constant to replace the invokeExact
+            Deque<PoolEntry> pendingIndy = new ArrayDeque<>(); //Holding the pending invokedynamic constant to replace the invokeExact
 
             CodeTransform codeTransform = (b, e) -> {
                 if (e instanceof InvokeInstruction invokeInstruction) {
@@ -533,7 +526,7 @@ public class Indify {
                     if (newConstant instanceof InvokeDynamicEntry) {
                         pendingIndy.push(newConstant);
                         if (!quiet) {
-                            System.err.println(":::Transforming the Method Class for: " + ((InvokeInstruction) e).method().name() +
+                            System.err.println(":::Transforming the Method Class for: " + invokeInstruction.method().name() +
                                     "  to => invokedynamic: " +
                                     ((InvokeDynamicEntry) newConstant).nameAndType());
                         }
@@ -542,7 +535,7 @@ public class Indify {
                         b.nop();
                     } else {
                         if (!quiet) {
-                            System.err.println(":::Transforming the Method Call of: " + ((InvokeInstruction) e).method().name() +
+                            System.err.println(":::Transforming the Method Call of: " + invokeInstruction.method().name() +
                                     " to => ldc: " + newConstant.index());
                         }
                         b.ldc((LoadableConstantEntry) newConstant);
@@ -579,11 +572,11 @@ public class Indify {
 
         boolean findPatternMethods() {
             boolean found = false;
-            for(char mark : "THI".toCharArray()) {
-                for(MethodModel m : classModel.methods()){
+            for (char mark : "THI".toCharArray()) {
+                for (MethodModel m : classModel.methods()) {
                     if (!Modifier.isPrivate(m.flags().flagsMask())) continue;
                     if (!Modifier.isStatic(m.flags().flagsMask())) continue;
-                    if(nameAndTypeMark(m.methodName(), m.methodType()) == mark) {
+                    if (nameAndTypeMark(m.methodName(), m.methodType()) == mark) {
                         PoolEntry entry = scanPattern(m, mark);
                         if (entry == null) continue;
                         constants.put(m.methodName().stringValue(), entry);
@@ -596,18 +589,18 @@ public class Indify {
 
         void reportPatternMethods(boolean quietly, boolean allowMatchFailure) {
             if (!quietly && !constants.keySet().isEmpty())
-                System.err.println("pattern methods removed: "+constants.keySet());
+                System.err.println("pattern methods removed: " + constants.keySet());
             for (MethodModel m : classModel.methods()) {
                 if (nameMark(m.methodName().stringValue()) != 0 &&
                         constants.get(m.methodName().stringValue()) == null) {
-                    String failure = "method has a special name but fails to match pattern: "+ m.methodName();
+                    String failure = "method has a special name but fails to match pattern: " + m.methodName();
                     if (!allowMatchFailure)
                         throw new IllegalArgumentException(failure);
                     else if (!quietly)
-                        System.err.println("warning: "+failure);
+                        System.err.println("warning: " + failure);
                 }
             }
-            if (!quiet)  System.err.flush();
+            if (!quiet) System.err.flush();
         }
 
         boolean initializeMarks() {
@@ -630,7 +623,7 @@ public class Indify {
                 }
                 if (entry instanceof MemberRefEntry memberRefEntry) {
                     poolMarks[memberRefEntry.owner().index()] = nameMark(memberRefEntry.owner().asInternalName());
-                    if(poolMarks[memberRefEntry.owner().index()] != 0){
+                    if (poolMarks[memberRefEntry.owner().index()] != 0) {
                         mark = poolMarks[memberRefEntry.owner().index()];
                     }
                     else {
@@ -1105,17 +1098,8 @@ public class Indify {
         }
     }
 
-    private byte[] openInputIntoBytes(File f) throws IOException{
-        try{
-            return Files.readAllBytes(f.toPath());
-        }
-        catch(IOException e){
-            throw new IOException("Error reading file: "+f);
-        }
-    }
-
-    private ClassModel parseClassFile(File f) throws IOException{
-        byte[] bytes = openInputIntoBytes(f);
+    private ClassModel parseClassFile(File f) throws IOException {
+        byte[] bytes = Files.readAllBytes(f.toPath());
 
         try {
             List<VerifyError> errors = of().verify(bytes);
@@ -1134,14 +1118,16 @@ public class Indify {
 
     static String simplifyType(String type) {
         String simpleType = OBJ_SIGNATURE.matcher(type).replaceAll("L");
-        assert(simpleType.matches("^\\([A-Z]*\\)[A-Z]$"));
+        assert (simpleType.matches("^\\([A-Z]*\\)[A-Z]$"));
         // change (DD)D to (D_D_)D_
         simpleType = WIDE_SIGNATURE.matcher(simpleType).replaceAll("\\0_");
         return simpleType;
     }
+
     static int argsize(String type) {
-        return simplifyType(type).length()-3;
+        return simplifyType(type).length() - 3;
     }
+
     private static final Pattern OBJ_SIGNATURE = Pattern.compile("\\[*L[^;]*;|\\[+[A-Z]");
     private static final Pattern WIDE_SIGNATURE = Pattern.compile("[JD]");
 }
