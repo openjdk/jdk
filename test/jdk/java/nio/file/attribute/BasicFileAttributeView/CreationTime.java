@@ -144,7 +144,7 @@ public class CreationTime {
     public static void main(String[] args) throws IOException {
         // create temporary directory to run tests
         Path dir;
-        if(args.length == 0) {
+        if (args.length == 0) {
             dir = TestUtil.createTemporaryDirectory();
         } else {
             dir = TestUtil.createTemporaryDirectory(args[0]);
