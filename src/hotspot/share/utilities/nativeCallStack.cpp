@@ -117,24 +117,3 @@ void NativeCallStack::print_on(outputStream* out) const {
   }
   out->cr();
 }
-
-NativeCallStackPrinter::NativeCallStackPrinter(outputStream* out) : _out(out) {}
-
-void NativeCallStackPrinter::print_stack(const NativeCallStack* stack) const {
-  for (int i = 0; i < NMT_TrackingStackDepth; i++) {
-    const address pc = stack->get_frame(i);
-
-    if (pc != nullptr) {
-      // cached?
-      bool created = false;
-      Entry* const cached_value = _cache.put_if_absent(pc, &created);
-      if (!created) {
-        _out->print_raw_cr(cached_value->text);
-      } else {
-        stringStream ss(cached_value->text, sizeof(cached_value->text));
-        stack->print_frame(&ss, pc);
-        _out->print_raw_cr(cached_value->text);
-      }
-    }
-  }
-}

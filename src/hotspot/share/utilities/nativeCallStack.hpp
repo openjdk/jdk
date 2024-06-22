@@ -130,15 +130,4 @@ public:
 
 #define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)
 
-// When printing many instances of NativeCallStack that may share many PC addresses,
-// a NativeCallStackPrinter improves performance by caching printed frames by address.
-class NativeCallStackPrinter {
-  struct Entry { char text[1024]; };
-  mutable ResourceHashtable<address, Entry, 293, AnyObj::C_HEAP, mtNMT> _cache;
-  outputStream* const _out;
-public:
-  NativeCallStackPrinter(outputStream* out);
-  void print_stack(const NativeCallStack* stack) const;
-};
-
 #endif // SHARE_UTILITIES_NATIVECALLSTACK_HPP
