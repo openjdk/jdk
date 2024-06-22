@@ -43,6 +43,8 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
@@ -829,8 +831,6 @@ final class StringLatin1 {
         assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
         long address  = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        Unsafe UNSAFE = Unsafe.getUnsafe();
-
         UNSAFE.putByte(val, address    , (byte)(c1));
         UNSAFE.putByte(val, address + 1, (byte)(c2));
         UNSAFE.putByte(val, address + 2, (byte)(c3));
@@ -841,8 +841,6 @@ final class StringLatin1 {
         assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
         long address  = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        Unsafe UNSAFE = Unsafe.getUnsafe();
-
         UNSAFE.putByte(val, address    , (byte)(c1));
         UNSAFE.putByte(val, address + 1, (byte)(c2));
         UNSAFE.putByte(val, address + 2, (byte)(c3));
