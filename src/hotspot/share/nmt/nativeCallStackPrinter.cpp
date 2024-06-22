@@ -34,13 +34,6 @@ NativeCallStackPrinter::NativeCallStackPrinter(outputStream* out) :
     _text_storage(mtNMT, Arena::Tag::tag_other, 128 * K), _out(out)
 {}
 
-#ifdef ASSERT
-NativeCallStackPrinter::~NativeCallStackPrinter() {
-  _out->print_cr("stack printer cache: entries: %d text size: %zu",
-                 _cache.number_of_entries(), _text_storage.size_in_bytes());
-}
-#endif
-
 void NativeCallStackPrinter::print_stack(const NativeCallStack* stack) const {
   for (int i = 0; i < NMT_TrackingStackDepth; i++) {
     const address pc = stack->get_frame(i);
@@ -54,7 +47,6 @@ void NativeCallStackPrinter::print_stack(const NativeCallStack* stack) const {
         char* store = NEW_ARENA_ARRAY(&_text_storage, char, len + 1);
         strcpy(store, ss.base());
         (*cached_frame_text) = store;
-_out->put('x');
       }
       _out->print_raw_cr(*cached_frame_text);
     }

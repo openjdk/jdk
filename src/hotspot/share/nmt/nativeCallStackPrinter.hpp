@@ -45,7 +45,6 @@ class NativeCallStackPrinter {
   outputStream* const _out;
 public:
   NativeCallStackPrinter(outputStream* out);
-  DEBUG_ONLY(~NativeCallStackPrinter();)
   void print_stack(const NativeCallStack* stack) const;
 };
 
