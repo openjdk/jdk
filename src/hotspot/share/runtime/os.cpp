@@ -974,7 +974,7 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
-    intptr_t i1, i2;
+    intptr_t i1 = 0, i2 = 0;
     if (read_safely_from((intptr_t*)pa, &i1) &&
         read_safely_from((intptr_t*)pa + 1, &i2)) {
       const uint64_t value =
@@ -1045,14 +1045,11 @@ void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* e
       st->print(PTR_FORMAT ":   ", p2i(logical_p));
     }
     print_hex_location(st, p, unitsize, ascii_form);
-    if (unitsize > 1) {
-      ascii_form.put(' '); // divider
-    }
     p += unitsize;
     logical_p += unitsize;
     cols++;
     if (cols >= cols_per_line) {
-       if (print_ascii) {
+       if (print_ascii && !ascii_form.is_empty()) {
          st->print("   %s", ascii_form.base());
        }
        ascii_form.reset();
