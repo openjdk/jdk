@@ -31,7 +31,7 @@
 #include "utilities/ostream.hpp"
 
 NativeCallStackPrinter::NativeCallStackPrinter(outputStream* out) :
-    _text_storage(mtNMT, Arena::Tag::tag_other, 64 * K), _out(out)
+    _text_storage(mtNMT, Arena::Tag::tag_other, 128 * K), _out(out)
 {}
 
 #ifdef ASSERT
