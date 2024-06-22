@@ -122,7 +122,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   const methodHandle& hot_method, int hot_count,
-                  CompileTask::CompileReason compile_reason, bool is_blocking);
+                  CompileTask::CompileReason compile_reason, DirectiveSet* directive, bool is_blocking);
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);

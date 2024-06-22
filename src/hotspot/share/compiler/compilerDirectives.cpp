@@ -728,7 +728,7 @@ void DirectivesStack::print(outputStream* st) {
 
 void DirectivesStack::release(DirectiveSet* set) {
   assert(set != nullptr, "Never nullptr");
-  MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker locker(DirectivesStack_lock, !DirectivesStack_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   if (set->is_exclusive_copy()) {
     // Old CompilecCmmands forced us to create an exclusive copy
     delete set;
@@ -752,7 +752,7 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
 
   DirectiveSet* match = nullptr;
   {
-    MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
+    ConditionalMutexLocker locker(DirectivesStack_lock, !DirectivesStack_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
     CompilerDirectives* dir = _top;
     assert(dir != nullptr, "Must be initialized");
