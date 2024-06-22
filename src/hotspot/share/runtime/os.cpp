@@ -941,25 +941,25 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
+ATTRIBUTE_NO_ASAN static bool read_safely_from(const uint8_t* p, uintptr_t* result) {
   const intptr_t errval = 0x1717;
-  intptr_t i = SafeFetchN(p, errval);
+  intptr_t i = SafeFetchN((intptr_t*)p, errval);
   if (i == errval) {
-    i = SafeFetchN(p, ~errval);
+    i = SafeFetchN((intptr_t*)p, ~errval);
     if (i == ~errval) {
       return false;
     }
   }
-  (*result) = i;
+  (*result) = (uintptr_t)i;
   return true;
 }
 
 // Helper for os::print_hex_dump
 static void print_ascii_form(stringStream& ascii_form, uint64_t value, int unitsize) {
-  const union {
+  union {
     uint64_t v;
     uint8_t c[sizeof(v)];
-  } u = { .v = value };
+  } u = { value };
   for (int i = 0; i < unitsize; i ++) {
     const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
     const uint8_t c = u.c[idx];
@@ -974,9 +974,9 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
-    intptr_t i1 = 0, i2 = 0;
-    if (read_safely_from((intptr_t*)pa, &i1) &&
-        read_safely_from((intptr_t*)pa + 1, &i2)) {
+    uintptr_t i1 = 0, i2 = 0;
+    if (read_safely_from(pa, &i1) &&
+        read_safely_from(pa + sizeof(uintptr_t), &i2)) {
       const uint64_t value =
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
@@ -988,8 +988,8 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
     return;
   }
 #endif // 32-bit, qwords
-  intptr_t i = 0;
-  if (read_safely_from((intptr_t*)pa, &i)) {
+  uintptr_t i = 0;
+  if (read_safely_from(pa, &i)) {
     // bytes:   CA FE BA BE DE AD C0 DE
     // bytoff:   0  1  2  3  4  5  6  7
     // LE bits:  0  8 16 24 32 40 48 56
@@ -999,7 +999,7 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
       LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
       BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
     const int bitfieldsize = unitsize * BitsPerByte;
-    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    uintptr_t value = bitfield(i, bitoffset, bitfieldsize);
     switch (unitsize) {
       case 1: st->print("%02x", (u1)value); break;
       case 2: st->print("%04x", (u2)value); break;
