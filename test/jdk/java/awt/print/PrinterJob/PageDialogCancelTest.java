@@ -21,29 +21,38 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8320362
- * @summary Verifies successful connection to external server with
- *          KEYCHAINSTORE-ROOT trust store
- * @library /test/lib
- * @requires os.family == "mac"
- * @run main/othervm/manual HttpsURLConnectionTest https://github.com KeychainStore-Root
+ * @bug 8334366
+ * @key headful printer
+ * @summary Verifies original pageobject is returned unmodified
+ *          on cancelling pagedialog
+ * @requires (os.family == "windows")
+ * @run main PageDialogCancelTest
  */
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
 
-public class HttpsURLConnectionTest {
-    public static void main(String[] args) {
-        System.setProperty( "javax.net.ssl.trustStoreType", args[1]);
-        try {
-            HttpsURLConnection httpsCon = (HttpsURLConnection) new URL(args[0]).openConnection();
-            if(httpsCon.getResponseCode() != 200) {
-                throw new RuntimeException("Test failed : bad http response code : "+ httpsCon.getResponseCode());
-            }
-        } catch(IOException ioe) {
-            throw new RuntimeException("Test failed: " + ioe.getMessage());
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.PrinterJob;
+
+public class PageDialogCancelTest {
+
+    public static void main(String[] args) throws Exception {
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        PageFormat oldFormat = new PageFormat();
+        Robot robot = new Robot();
+        Thread t1 = new Thread(() -> {
+            robot.delay(2000);
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            robot.waitForIdle();
+        });
+        t1.start();
+        PageFormat newFormat = pj.pageDialog(oldFormat);
+        if (!newFormat.equals(oldFormat)) {
+            throw new RuntimeException("Original PageFormat not returned on cancelling PageDialog");
         }
     }
 }
+
