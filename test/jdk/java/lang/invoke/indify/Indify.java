@@ -267,7 +267,7 @@ public class Indify {
                     a = a.substring(0, eq+1);
                 }
                 switch (a) {
-                case "--java":
+                case "--java":  // keep this argument
                     return;
                 case "-d": case "--dest": case "-d=": case "--dest=":
                     dest = new File(a2 != null ? a2 : maybeExpandProperties(av.remove(1)));
