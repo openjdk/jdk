@@ -28,6 +28,7 @@ package java.math;
 import static java.math.BigDecimal.INFLATED;
 import static java.math.BigInteger.LONG_MASK;
 import java.util.Arrays;
+import jdk.internal.math.DoubleConsts;
 
 /**
  * A class used to represent multiprecision integers that makes efficient
@@ -1903,19 +1904,33 @@ class MutableBigInteger {
     MutableBigInteger[] sqrtRem() {
         // Special cases.
         if (this.isZero()) {
-            return new MutableBigInteger[] { this, this };
-        } else if (this.intLen == 1) {
-            MutableBigInteger r = new MutableBigInteger(this);
+            return new MutableBigInteger[] { new MutableBigInteger(), new MutableBigInteger() };
+        } else if (this.intLen <= 2) {
+            final long x = this.toLong(); // unsigned
 
-            final long val = this.value[offset] & LONG_MASK;
-            if (val < 4) { // result is unity
-                r.subtract(ONE);
-                return new MutableBigInteger[] { ONE, r };
+            if (this.intLen == 1) {
+                if (x < 4) // result is unity
+                    return new MutableBigInteger[] { ONE, new MutableBigInteger((int) (x - 1)) };
+
+                long s = (long) Math.sqrt(x); // Math.sqrt is exact
+                return new MutableBigInteger[] {
+                        new MutableBigInteger((int) s), new MutableBigInteger((int) (x - s * s))
+                };
             }
 
-            int s = (int) Math.sqrt(val); // Math.sqrt is exact
-            r.subtract(new MutableBigInteger(s * s));
-            return new MutableBigInteger[] { new MutableBigInteger(s), r };
+            // Initial estimate is the square root of the unsigned long value.
+            long s = (long) Math.sqrt(x > 0 ? x : x + 0x1p64);
+            if (s > LONG_MASK // avoid overflow of s * s
+                    || Long.compareUnsigned(x, s * s) < 0) {
+                s--;
+            }
+
+            long r = x - s * s;
+            return new MutableBigInteger[] {
+                    new MutableBigInteger((int) s),
+                    r <= LONG_MASK ? new MutableBigInteger((int) r)
+                    : new MutableBigInteger(new int[] { 1,  (int) r})
+            };
         }
 
         long bitLength = this.bitLength();
@@ -1958,31 +1973,24 @@ class MutableBigInteger {
      */
     private MutableBigInteger[] sqrtRemZimmermann(int len) {
         if (len == 2) { // Base case
-            long hi = value[offset] & LONG_MASK, lo = value[offset + 1] & LONG_MASK;
-            long s = (long) Math.sqrt(hi); // Math.sqrt is exact
-            long r = hi - s * s;
-
-            final long dividend = (r << 16) | (lo >> 16), divisor = s << 1;
-            final long q = dividend / divisor;
-            final long u = dividend % divisor;
-            s = (s << 16) + q;
-            r = ((u << 16) | (lo & 0xffffL)) - q * q;
-
-            if (r < 0) {
-                r += (s << 1) - 1;
+            long x = ((value[offset] & LONG_MASK) << 32) | (value[offset + 1] & LONG_MASK);
+            long s = (long) Math.sqrt(x > 0 ? x : x + 0x1p64);
+            if (s > LONG_MASK || Long.compareUnsigned(x, s * s) < 0)
                 s--;
-            }
 
-            // Allocate sufficient space to hold the normalized final result
+            long r = x - s * s;
+
+            // Allocate sufficient space to hold the normalized final square root
             MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3) + 1) >> 1]);
 
-            // Place the partial result
+            // Place the partial square root
             sqrt.intLen = 1;
             sqrt.value[0] = (int) s;
 
-            return new MutableBigInteger[] { sqrt, (r & LONG_MASK) == r
-                    ? new MutableBigInteger((int) r)
-                    : new MutableBigInteger(new int[] { 1,  (int) r}) };
+            return new MutableBigInteger[] { sqrt,
+                    r <= LONG_MASK ? new MutableBigInteger((int) r)
+                    : new MutableBigInteger(new int[] { 1,  (int) r})
+            };
         }
 
         // Recursive step (len >= 3)
