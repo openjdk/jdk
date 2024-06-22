@@ -111,6 +111,25 @@ class MutableBigInteger {
      * the int val.
      */
     MutableBigInteger(int val) {
+        init(val);
+    }
+
+    /**
+     * Construct a new MutableBigInteger with a magnitude specified by
+     * the long val.
+     */
+    MutableBigInteger(long val) {
+        if ((val & LONG_MASK) == val) {
+            init((int) val);
+        } else {
+            value = new int[2];
+            intLen = 2;
+            value[0] = (int) (val >>> 32);
+            value[1] = (int) val;
+        }
+    }
+
+    private void init(int val) {
         value = new int[1];
         intLen = 1;
         value[0] = val;
@@ -1925,12 +1944,7 @@ class MutableBigInteger {
                 s--;
             }
 
-            long r = x - s * s;
-            return new MutableBigInteger[] {
-                    new MutableBigInteger((int) s),
-                    r <= LONG_MASK ? new MutableBigInteger((int) r)
-                    : new MutableBigInteger(new int[] { 1,  (int) r})
-            };
+            return new MutableBigInteger[] { new MutableBigInteger((int) s), new MutableBigInteger(x - s * s) };
         }
 
         long bitLength = this.bitLength();
@@ -1987,10 +2001,7 @@ class MutableBigInteger {
             sqrt.intLen = 1;
             sqrt.value[0] = (int) s;
 
-            return new MutableBigInteger[] { sqrt,
-                    r <= LONG_MASK ? new MutableBigInteger((int) r)
-                    : new MutableBigInteger(new int[] { 1,  (int) r})
-            };
+            return new MutableBigInteger[] { sqrt, new MutableBigInteger(x - s * s) };
         }
 
         // Recursive step (len >= 3)
