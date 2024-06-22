@@ -655,7 +655,7 @@ public class Indify {
                 case 'T': requiredType = "()Ljava/lang/invoke/MethodType;";    break;
                 default:  return 0;
             }
-            if(matchType(descriptor, requiredType)) return mark;
+            if (matchType(descriptor, requiredType)) return mark;
             return 0;
         }
 
