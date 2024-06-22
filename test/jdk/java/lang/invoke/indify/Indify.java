@@ -510,7 +510,7 @@ public class Indify {
                                 !currentIndyConstant.isEmpty() &&
                                 invokeInstruction.method().name().stringValue().equals("invokeExact")) {
                             b.invokeDynamicInstruction((InvokeDynamicEntry) currentIndyConstant.pop());
-                            System.err.println("--> I removed the instruction invokeExact for Method: " + invokeInstruction.name());
+                            if (!quiet) System.err.println("Removing <<invokeExact>> invocation on MethodHandle");
                             return;
                         }
 
@@ -519,52 +519,39 @@ public class Indify {
                             return;
                         }
 
-                        int methodIndex = invokeInstruction.method().index();
-                        if (poolMarks[methodIndex] == 0) {
+                        if (poolMarks[invokeInstruction.method().index()] == 0) {
                             b.with(e); // Skip if not marked
                             return;
                         }
 
-                        MemberRefEntry ref = (MemberRefEntry) poolBuilder.entryByIndex(methodIndex);
-                        String methName = ref.nameAndType().name().stringValue();
-                        String methType = ref.nameAndType().type().stringValue();
+                        String methodInvoked = invokeInstruction.method().name().stringValue();
 
-                        MethodModel patternMethod = null;
-                        for (MethodModel mm : classModel.methods()) {
-                            if (mm.methodName().stringValue().equals(methName) && mm.methodType().stringValue().equals(methType)) {
-                                patternMethod = mm;
-                                break;
-                            }
-                        }
-
-                        if (patternMethod == null) {
-                            b.with(e); // No matching pattern method, keep the instruction as is
+                        // Is it a pattern method?
+                        if (!constants.containsKey(methodInvoked)) {
+                            b.with(e);
                             return;
                         }
 
-                        PoolEntry newConstant = constants.get(patternMethod.methodName().stringValue());
+                        PoolEntry newConstant = constants.get(methodInvoked);
 
                         if (newConstant instanceof InvokeDynamicEntry) {
                             currentIndyConstant.push(newConstant);
-                            if (!quiet) System.err.println(":::Transforming the Method: " + m.methodName() + " instruction: " + e + " invokedynamic: " + newConstant.index());
-
-                            String methodName = invokeInstruction.method().name().stringValue();
-                            String patternMethodName = patternMethod.methodName().stringValue();
-
-                            if (methodName.equals(patternMethodName)) {
-                                System.err.println(">> Removing instruction invokestatic for Method: " + invokeInstruction.name());
-                            } else {
-                                b.with(e);
+                            if (!quiet) {
+                                System.err.println(":::Transforming the Method: " + m.methodName() +
+                                        " | Call to method: " + invokeInstruction.name() +
+                                        " is transformed to => invokedynamic: " +
+                                        ((InvokeDynamicEntry) newConstant).nameAndType());
                             }
+
+                            if (!quiet) System.err.println("Removing instruction invokestatic for Method: " + invokeInstruction.name());
+                            b.nop();
                         } else {
-                            assert (invokeInstruction.sizeInBytes() == 3);
-                            if (invokeInstruction.method().name().stringValue().equals(patternMethod.methodName().stringValue())) {
-                                System.err.println(":::Transforming the Method: " + m.methodName() + " | instruction: invokestatic " + invokeInstruction.type() + " to => ldc: " + newConstant.index());
-                                b.ldc((LoadableConstantEntry) newConstant);
-                                return;
-                            } else {
-                                b.with(e);
+                            if (!quiet) {
+                                System.err.println(":::Transforming the Method: " + m.methodName() +
+                                        " | instruction: invokestatic " + invokeInstruction.type() +
+                                        " to => ldc: " + newConstant.index());
                             }
+                            b.ldc((LoadableConstantEntry) newConstant);
                         }
                     } else {
                         b.with(e);
@@ -575,9 +562,11 @@ public class Indify {
                 ClassTransform classTransform = ClassTransform.transformingMethodBodies(filter, codeTransform);
                 classModel = of().parse(of().transform(classModel, classTransform));
             }
+
             this.classModel = removePatternMethodsAndVerify(classModel);
 
             return true;
+
         }
 
 
