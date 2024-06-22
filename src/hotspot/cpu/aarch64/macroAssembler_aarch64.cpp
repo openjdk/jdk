@@ -699,11 +699,9 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
 
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    const char* is_int1 = (code_section()->contains(entry.target())) ? "(int)" : "(ext)";
-    const char* is_int2 = (code_section()->contains(entry.target() - delta)) ? "(int)" : "(ext)";
-    // tty->print_cr("call: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    // tty->print_cr("call: %p->%p", entry.target(), entry.target() - delta);
     entry = RuntimeAddress(entry.target() - delta);
-  } // else tty->print_cr("call");
+  }
 
   if (target_needs_far_br) {
     uint64_t offset;
@@ -730,7 +728,7 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
 
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    //tty->print_cr("jump: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    // tty->print_cr("jump: %p->%p", entry.target(), entry.target() - delta);
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -911,9 +909,7 @@ address MacroAssembler::trampoline_call(Address entry) {
 
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    const char* is_int1 = (code_section()->contains(entry.target())) ? "(int)" : "(ext)";
-    const char* is_int2 = (code_section()->contains(entry.target() - delta)) ? "(int)" : "(ext)";
-    //zz tty->print_cr("trmp: %s%p->%s%p", is_int1, entry.target(), is_int2, entry.target() - delta);
+    // tty->print_cr("trmp: %p->%p", entry.target(), entry.target() - delta);
     target = entry.target() - delta;
   };
 

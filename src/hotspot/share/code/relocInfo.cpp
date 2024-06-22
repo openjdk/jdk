@@ -375,19 +375,8 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   if (!CodeCache::contains(callee) && is_pc_relative) {
     int sect = src->section_index_of(orig_addr);
     delta = (intptr_t)CodeCache::low_bound() - (intptr_t)src->code_section(sect)->start();
-    if (NativeInstruction::is_adrp_at(addr())) {
-      delta = delta >> 12 << 12;
-      // tty->print_cr("adrp: %p<-%p", (void*)((uintptr_t)(callee+delta)>>12<<12), (void*)((uintptr_t)callee>>12<<12));
-    }
+    // tty->print_cr("----: %p<-%p", (callee+delta), callee);
   }
-  //if (type() == relocInfo::runtime_call_type) {
-  //  if (delta != 0)
-  //    tty->print_cr("%s reloc runtime_call %s %p->%p", pcr, is_int, callee, callee+delta);
-  //  else
-  //    tty->print_cr("%s reloc runtime_call %s %p", pcr, is_int, callee);
-  //} else {
-  //  tty->print_cr("%s reloc call %s %p", pcr, is_int, callee);
-  //}
 
   // Reassert the callee address, this time in the new copy of the code.
   pd_set_call_destination(callee+delta);
