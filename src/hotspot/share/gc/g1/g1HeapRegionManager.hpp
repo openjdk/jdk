@@ -32,19 +32,19 @@
 #include "memory/allocation.hpp"
 #include "services/memoryUsage.hpp"
 
-class HeapRegion;
+class G1HeapRegion;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 class FreeRegionList;
 class WorkerThreads;
 
-class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
+class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
  protected:
-  virtual HeapRegion* default_value() const { return nullptr; }
+  virtual G1HeapRegion* default_value() const { return nullptr; }
 };
 
 // This class keeps track of the actual heap memory, auxiliary data
-// and its metadata (i.e., HeapRegion instances) and the list of free regions.
+// and its metadata (i.e., G1HeapRegion instances) and the list of free regions.
 //
 // This allows maximum flexibility for deciding what to commit or uncommit given
 // a request from outside.
@@ -55,9 +55,9 @@ class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
 // regions that are consecutive in the array should also be adjacent in the
 // address space (i.e., region(i).end() == region(i+1).bottom().
 //
-// We create a HeapRegion when we commit the region's address space
+// We create a G1HeapRegion when we commit the region's address space
 // for the first time. When we uncommit the address space of a
-// region we retain the HeapRegion to be able to re-use it in the
+// region we retain the G1HeapRegion to be able to re-use it in the
 // future (in case we recommit it).
 //
 // We keep track of four lengths:
@@ -81,7 +81,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // can either be active (ready for use) or inactive (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
-  // Internal only. The highest heap region +1 we allocated a HeapRegion instance for.
+  // Internal only. The highest heap region +1 we allocated a G1HeapRegion instance for.
   uint _allocated_heapregions_length;
 
   HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
@@ -137,12 +137,12 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   void reactivate_regions(uint start, uint num_regions);
   void uncommit_regions(uint start, uint num_regions);
 
-  // Allocate a new HeapRegion for the given index.
-  HeapRegion* new_heap_region(uint hrm_index);
+  // Allocate a new G1HeapRegion for the given index.
+  G1HeapRegion* new_heap_region(uint hrm_index);
 
   // Humongous allocation helpers
-  HeapRegion* allocate_humongous_from_free_list(uint num_regions);
-  HeapRegion* allocate_humongous_allow_expand(uint num_regions);
+  G1HeapRegion* allocate_humongous_from_free_list(uint num_regions);
+  G1HeapRegion* allocate_humongous_allow_expand(uint num_regions);
 
   // Expand helper for cases when the regions to expand are well defined.
   void expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers);
@@ -153,7 +153,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
 #ifdef ASSERT
 public:
-  bool is_free(HeapRegion* hr) const;
+  bool is_free(G1HeapRegion* hr) const;
 #endif
 public:
   // Empty constructor, we'll initialize it with the initialize() method.
@@ -165,32 +165,32 @@ public:
                   G1RegionToSpaceMapper* cardtable);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
-  // new HeapRegion that owns HeapRegion at index 0. Since at the moment we commit
+  // new G1HeapRegion that owns G1HeapRegion at index 0. Since at the moment we commit
   // the heap from the lowest address, this region (and its associated data
   // structures) are available and we do not need to check further.
-  HeapRegion* get_dummy_region() { return new_heap_region(0); }
+  G1HeapRegion* get_dummy_region() { return new_heap_region(0); }
 
-  // Return the HeapRegion at the given index. Assume that the index
+  // Return the G1HeapRegion at the given index. Assume that the index
   // is valid.
-  inline HeapRegion* at(uint index) const;
+  inline G1HeapRegion* at(uint index) const;
 
-  // Return the HeapRegion at the given index, null if the index
+  // Return the G1HeapRegion at the given index, null if the index
   // is for an unavailable region.
-  inline HeapRegion* at_or_null(uint index) const;
+  inline G1HeapRegion* at_or_null(uint index) const;
 
   // Returns whether the given region is available for allocation.
   inline bool is_available(uint region) const;
 
   // Return the next region (by index) that is part of the same
   // humongous object that hr is part of.
-  inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
+  inline G1HeapRegion* next_region_in_humongous(G1HeapRegion* hr) const;
 
   // If addr is within the committed space return its corresponding
-  // HeapRegion, otherwise return null.
-  inline HeapRegion* addr_to_region(HeapWord* addr) const;
+  // G1HeapRegion, otherwise return null.
+  inline G1HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.
-  inline void insert_into_free_list(HeapRegion* hr);
+  inline void insert_into_free_list(G1HeapRegion* hr);
 
   // Rebuild the free region list from scratch.
   void rebuild_free_list(WorkerThreads* workers);
@@ -201,15 +201,15 @@ public:
   }
 
   // Allocate a free region with specific node index. If fails allocate with next node index.
-  HeapRegion* allocate_free_region(HeapRegionType type, uint requested_node_index);
+  G1HeapRegion* allocate_free_region(HeapRegionType type, uint requested_node_index);
 
   // Allocate a humongous object from the free list
-  HeapRegion* allocate_humongous(uint num_regions);
+  G1HeapRegion* allocate_humongous(uint num_regions);
 
   // Allocate a humongous object by expanding the heap
-  HeapRegion* expand_and_allocate_humongous(uint num_regions);
+  G1HeapRegion* expand_and_allocate_humongous(uint num_regions);
 
-  inline HeapRegion* allocate_free_regions_starting_at(uint first, uint num_regions);
+  inline G1HeapRegion* allocate_free_regions_starting_at(uint first, uint num_regions);
 
   // Remove all regions from the free list.
   void remove_all_free_regions() {
@@ -226,7 +226,7 @@ public:
   }
 
   size_t total_free_bytes() const {
-    return num_free_regions() * HeapRegion::GrainBytes;
+    return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
   // Return the number of regions available (uncommitted) regions.
@@ -247,14 +247,14 @@ public:
 
   // Expand the sequence to reflect that the heap has grown. Either create new
   // HeapRegions, or re-use existing ones. Returns the number of regions the
-  // sequence was expanded by. If a HeapRegion allocation fails, the resulting
+  // sequence was expanded by. If a G1HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
   uint expand_by(uint num_regions, WorkerThreads* pretouch_workers);
 
   // Try to expand on the given node index, returning the index of the new region.
   uint expand_on_preferred_node(uint node_index);
 
-  HeapRegion* next_region_in_heap(const HeapRegion* r) const;
+  G1HeapRegion* next_region_in_heap(const G1HeapRegion* r) const;
 
   // Find the highest free or uncommitted region in the reserved heap,
   // and if uncommitted, commit it. If none are available, return G1_NO_HRM_INDEX.

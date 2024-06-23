@@ -169,10 +169,10 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     return earliest;
   }
 
-  while (1) {
-    Node *next = ctl;
-    // Moving the node out of a loop on the projection of a If
-    // confuses loop predication. So once we hit a Loop in a If branch
+  while (true) {
+    Node* next = ctl;
+    // Moving the node out of a loop on the projection of an If
+    // confuses Loop Predication. So, once we hit a loop in an If branch
     // that doesn't branch to an UNC, we stop. The code that process
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
@@ -1781,7 +1781,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
-  C->print_method(PHASE_BEFORE_CLOOPS, 3);
+  C->print_method(PHASE_BEFORE_CLOOPS, 3, x);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2289,7 +2289,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 #endif
 
-  C->print_method(PHASE_AFTER_CLOOPS, 3);
+  C->print_method(PHASE_AFTER_CLOOPS, 3, l);
 
   // Capture bounds of the loop in the induction variable Phi before
   // subsequent transformation (iteration splitting) obscures the
@@ -4380,10 +4380,9 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
-    assert(opaque4->Opcode() == Op_Opaque4, "must be");
-    if (!useful_predicates.member(opaque4)) { // not in the useful list
-      _igvn.replace_node(opaque4, opaque4->in(2));
+    Opaque4Node* opaque4_node = C->template_assertion_predicate_opaq_node(i - 1)->as_Opaque4();
+    if (!useful_predicates.member(opaque4_node)) { // not in the useful list
+      _igvn.replace_node(opaque4_node, opaque4_node->in(2));
     }
   }
 }
@@ -6082,18 +6081,25 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
   return LCA;
 }
 
-// true if CFG node d dominates CFG node n
-bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
-  if (d == n)
+// Is CFG node 'dominator' dominating node 'n'?
+bool PhaseIdealLoop::is_dominator(Node* dominator, Node* n) {
+  if (dominator == n) {
     return true;
-  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
-  uint dd = dom_depth(d);
+  }
+  assert(dominator->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  uint dd = dom_depth(dominator);
   while (dom_depth(n) >= dd) {
-    if (n == d)
+    if (n == dominator) {
       return true;
+    }
     n = idom(n);
   }
   return false;
+}
+
+// Is CFG node 'dominator' strictly dominating node 'n'?
+bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
+  return dominator != n && is_dominator(dominator, n);
 }
 
 //------------------------------dom_lca_for_get_late_ctrl_internal-------------
@@ -6378,31 +6384,16 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (least != early) {
     // Move the node above predicates as far up as possible so a
-    // following pass of loop predication doesn't hoist a predicate
+    // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    Node* new_ctrl = least;
-    for (;;) {
-      if (!new_ctrl->is_Proj()) {
+    PredicateEntryIterator predicate_iterator(least);
+    while (predicate_iterator.has_next()) {
+      Node* next_predicate_entry = predicate_iterator.next_entry();
+      if (is_strict_dominator(next_predicate_entry, early)) {
         break;
       }
-      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern();
-      if (call == nullptr) {
-        break;
-      }
-      int req = call->uncommon_trap_request();
-      Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-      if (trap_reason != Deoptimization::Reason_loop_limit_check &&
-          trap_reason != Deoptimization::Reason_predicate &&
-          trap_reason != Deoptimization::Reason_profile_predicate) {
-        break;
-      }
-      Node* c = new_ctrl->in(0)->in(0);
-      if (is_dominator(c, early) && c != early) {
-        break;
-      }
-      new_ctrl = c;
+      least = next_predicate_entry;
     }
-    least = new_ctrl;
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.

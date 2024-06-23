@@ -431,6 +431,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Determines if the GC identified by `name` is supported by the JVMCI compiler.
   bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
 
+  // Determines if the intrinsic identified by `id` is supported by the JVMCI compiler.
+  bool is_intrinsic_supported(JVMCIEnv* JVMCIENV, jint id);
+
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                                            const methodHandle&       target,

@@ -111,6 +111,16 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
+int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
+  // If an encoding error occurred (result < 0) then it's not clear
+  // whether the buffer is NUL terminated, so ensure it is.
+  if ((result < 0) && (len > 0)) {
+    buf[len - 1] = '\0';
+  }
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
 // Returns buffer, or null if it failed.
@@ -1925,7 +1935,11 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     return nullptr; // overflow
   }
 
-  char* const hi_att = align_down(MIN2(max, absolute_max) - bytes, alignment_adjusted);
+  char* const hi_end = MIN2(max, absolute_max);
+  if ((uintptr_t)hi_end < bytes) {
+    return nullptr; // no need to go on
+  }
+  char* const hi_att = align_down(hi_end - bytes, alignment_adjusted);
   if (hi_att > max) {
     return nullptr; // overflow
   }

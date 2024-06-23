@@ -97,14 +97,6 @@ $(eval $(call SetupTarget, buildtools-hotspot, \
 ))
 
 ################################################################################
-# Special targets for certain modules
-
-$(eval $(call SetupTarget, generate-exported-symbols, \
-    MAKEFILE := BuildStatic, \
-    DEPS := java.base-libs jdk.jdwp.agent-libs, \
-))
-
-################################################################################
 # Gensrc targets, generating source before java compilation can be done
 #
 $(eval $(call DeclareRecipesForPhase, GENSRC, \
@@ -904,10 +896,6 @@ else
   $(STATIC_LIBS_TARGETS): $(JVM_MAIN_GENSRC_TARGETS)
 
   $(LAUNCHER_TARGETS): java.base-libs
-
-  ifeq ($(STATIC_BUILD), true)
-    $(LAUNCHER_TARGETS): generate-exported-symbols
-  endif
 
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))

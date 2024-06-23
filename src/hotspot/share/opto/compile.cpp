@@ -713,10 +713,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
+  if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
-    // Need MDO to record RTM code generation state.
     method()->ensure_method_data();
   }
 
@@ -1075,25 +1074,8 @@ void Compile::Init(bool aliasing) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking && has_method() && (method()->method_data_or_null() != nullptr)) {
-    int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option(CompileCommandEnum::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
-      // Don't generate RTM lock eliding code.
-      set_rtm_state(NoRTM);
-    } else if (method_has_option(CompileCommandEnum::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      set_rtm_state(UseRTM);
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      set_rtm_state(ProfileRTM);
-    }
-  }
-#endif
   if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
     set_clinit_barrier_on_entry(true);
   }
@@ -3222,7 +3204,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:
@@ -3464,10 +3445,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-  case Op_CastII: {
-    remove_range_check_cast(n->as_CastII());
-  }
-  break;
 #ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
@@ -3619,6 +3596,16 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
 #endif
 
+#ifdef ASSERT
+  case Op_CastII:
+    // Verify that all range check dependent CastII nodes were removed.
+    if (n->isa_CastII()->has_range_check()) {
+      n->dump(3);
+      assert(false, "Range check dependent CastII node was not removed");
+    }
+    break;
+#endif
+
   case Op_ModI:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
@@ -3627,8 +3614,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
           DivModINode* divmod = DivModINode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3649,8 +3634,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
           DivModLNode* divmod = DivModLNode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3671,8 +3654,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModI)) {
           UDivModINode* divmod = UDivModINode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3693,8 +3674,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModL)) {
           UDivModLNode* divmod = UDivModLNode::make(n);
-          divmod->add_prec_from(n);
-          divmod->add_prec_from(d);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3893,34 +3872,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     assert(!n->is_Mem(), "");
     assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
-  }
-}
-
-void Compile::remove_range_check_cast(CastIINode* cast) {
-  if (cast->has_range_check()) {
-    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
-    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
-    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminate a
-    // range check or a null divisor check.
-    assert(cast->in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
-    ResourceMark rm;
-    Unique_Node_List wq;
-    wq.push(cast);
-    for (uint next = 0; next < wq.size(); ++next) {
-      Node* m = wq.at(next);
-      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
-        Node* use = m->fast_out(i);
-        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
-          use->ensure_control_or_add_prec(cast->in(0));
-        } else if (!use->is_CFG() && !use->is_Phi()) {
-          wq.push(use);
-        }
-      }
-    }
-    cast->subsume_by(cast->in(1), this);
-    if (cast->outcnt() == 0) {
-      cast->disconnect_inputs(this);
-    }
   }
 }
 

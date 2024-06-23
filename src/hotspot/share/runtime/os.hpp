@@ -344,6 +344,7 @@ class os: AllStatic {
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
+  static size_t rss();
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -771,8 +772,8 @@ class os: AllStatic {
   static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
-  // Provide C99 compliant versions of these functions, since some versions
-  // of some platforms don't.
+  // Provide wrapper versions of these functions to guarantee NUL-termination
+  // in all cases.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 

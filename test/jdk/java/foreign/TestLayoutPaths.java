@@ -34,6 +34,7 @@ import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.lang.invoke.VarHandle.AccessMode;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -329,6 +330,57 @@ public class TestLayoutPaths {
                     .asSpreader(long[].class, seqIndexes.length);
             assertThrows(IndexOutOfBoundsException.class, () -> seqByteOffsetHandle.invoke(0L, seqIndexes));
         }
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                         long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 1];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 1, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        MethodHandle getter_handle = seqLayout.varHandle(seqPathElements)
+                .toMethodHandle(AccessMode.GET)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testSliceHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                        long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 1];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 1, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        MethodHandle getter_handle = seqLayout.sliceHandle(seqPathElements)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testArrayElementVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                          long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 2];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 2, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        seqIndexes[1] = 0;
+        MethodHandle getter_handle = seqLayout.arrayElementVarHandle(seqPathElements)
+                .toMethodHandle(AccessMode.GET)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
     }
 
     @Test

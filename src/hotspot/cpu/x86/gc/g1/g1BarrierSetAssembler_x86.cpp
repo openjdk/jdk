@@ -286,7 +286,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ movptr(tmp, store_addr);
   __ xorptr(tmp, new_val);
-  __ shrptr(tmp, HeapRegion::LogOfHRGrainBytes);
+  __ shrptr(tmp, G1HeapRegion::LogOfHRGrainBytes);
   __ jcc(Assembler::equal, done);
 
   // crosses regions, storing null?

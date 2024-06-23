@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1011,8 +1011,10 @@ public:
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
   }
-  // true if CFG node d dominates CFG node n
-  bool is_dominator(Node *d, Node *n);
+
+  bool is_dominator(Node* dominator, Node* n);
+  bool is_strict_dominator(Node* dominator, Node* n);
+
   // return get_ctrl for a data node and self(n) for a CFG node
   Node* ctrl_or_self(Node* n) {
     if (has_ctrl(n))
@@ -1380,7 +1382,8 @@ public:
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+                                                        Node* offset, Node* limit, int stride_con, Node* value,
+                                                        bool is_template);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1459,7 +1462,7 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
-  // Move UnorderedReduction out of loop if possible
+  // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
   // Create a scheduled list of nodes control dependent on ctrl set.

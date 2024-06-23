@@ -85,6 +85,42 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
+    public Console println(Object obj) {
+        synchronized (writeLock) {
+            delegate.println(obj);
+        }
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console print(Object obj) {
+        synchronized (writeLock) {
+            delegate.print(obj);
+        }
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IOError {@inheritDoc}
+     */
+    @Override
+    public String readln(String prompt) {
+        synchronized (writeLock) {
+            synchronized (readLock) {
+                return delegate.readln(prompt);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Console format(String format, Object ... args) {
         return format(Locale.getDefault(Locale.Category.FORMAT), format, args);
     }

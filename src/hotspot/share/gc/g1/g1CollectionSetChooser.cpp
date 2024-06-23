@@ -91,7 +91,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     }
 
     // Set element in array.
-    void set(uint idx, HeapRegion* hr) {
+    void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
       _data[idx] = CandidateInfo(hr, 0.0);
@@ -124,7 +124,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     uint _regions_added;
 
-    void add_region(HeapRegion* hr) {
+    void add_region(G1HeapRegion* hr) {
       if (_cur_chunk_idx == _cur_chunk_end) {
         _array->claim_chunk(_cur_chunk_idx, _cur_chunk_end);
       }
@@ -143,7 +143,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _cur_chunk_end(0),
       _regions_added(0) { }
 
-    bool do_heap_region(HeapRegion* r) {
+    bool do_heap_region(G1HeapRegion* r) {
       // Candidates from marking are always old; also keep regions that are already
       // collection set candidates (some retained regions) in that list.
       if (!r->is_old() || r->is_collection_set_candidate()) {
@@ -212,7 +212,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     uint max_to_prune = num_candidates - min_old_cset_length;
 
     while (true) {
-      HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
+      G1HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
       size_t const reclaimable = r->reclaimable_bytes();
       if (num_pruned >= max_to_prune ||
           wasted_bytes + reclaimable > allowed_waste) {

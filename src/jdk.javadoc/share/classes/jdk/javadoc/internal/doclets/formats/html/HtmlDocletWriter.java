@@ -751,29 +751,6 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
-     * {@return a content element containing a breadcrumb navigtation link for {@code elem}}
-     * Only module, package and type elements can appear in breadcrumb navigation.
-     *
-     * @param elem the element
-     * @param selected whether to use the style for current page element
-     */
-    protected Content getBreadcrumbLink(Element elem, boolean selected) {
-        HtmlTree link = switch (elem) {
-            case ModuleElement mdle -> links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
-                    Text.of(mdle.getQualifiedName()));
-            case PackageElement pkg -> links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                    getLocalizedPackageName(pkg));
-            case TypeElement type -> links.createLink(pathString(type, docPaths.forName(type)),
-                    utils.getSimpleName(type));
-            default -> throw new IllegalArgumentException(Objects.toString(elem));
-        };
-        if (selected) {
-            link.setStyle(HtmlStyle.currentSelection);
-        }
-        return link;
-    }
-
-    /**
      * {@return the link to the given package}
      *
      * @param packageElement the package to link to

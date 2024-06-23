@@ -114,7 +114,7 @@ public class ModuleVersion extends ModuleTestBase {
     private void checkModuleVersion(Path classfile, String version) throws IOException {
         ClassModel cm = ClassFile.of().parse(classfile);
 
-        ModuleAttribute moduleAttribute = cm.findAttribute(Attributes.MODULE).orElse(null);
+        ModuleAttribute moduleAttribute = cm.findAttribute(Attributes.module()).orElse(null);
 
         if (moduleAttribute == null) {
             throw new AssertionError("Version attribute missing!");

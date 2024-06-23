@@ -307,6 +307,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
+  bool inline_intpoly_montgomeryMult_P256();
+  bool inline_intpoly_assign();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
@@ -348,6 +350,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
   bool inline_vector_shuffle_iota();
+  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);

@@ -3729,7 +3729,7 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
-      w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+      w.stream()->print_cr("%s %s", ClassListParser::lambda_form_tag(), c_line);
     }
   }
 #endif // INCLUDE_CDS
