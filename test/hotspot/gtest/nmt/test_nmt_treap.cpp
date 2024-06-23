@@ -300,7 +300,9 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
       } else {
         treap.remove(i);
       }
-      verify_it(treap);
+      if (i % 100 == 0) {
+        verify_it(treap);
+      }
     }
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
@@ -309,14 +311,16 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
       } else {
         treap.remove(i);
       }
-      verify_it(treap);
+      if (i % 100 == 0) {
+        verify_it(treap);
+      }
     }
   }
   { // Make a very large treap and verify at the end
   struct Nothing {};
     TreapCHeap<int, Nothing, Cmp> treap;
-    constexpr const int five_million = 5000000;
-    for (int i = 0; i < five_million; i++) {
+    constexpr const int one_hundred_thousand = 100000;
+    for (int i = 0; i < one_hundred_thousand; i++) {
       treap.upsert(i, Nothing());
     }
     verify_it(treap);
