@@ -280,11 +280,9 @@ class MutableBigInteger {
      * Compare the magnitude of two MutableBigIntegers. Returns -1, 0 or 1
      * as this MutableBigInteger is numerically less than, equal to, or
      * greater than {@code b}.
+     * Assumes no leading unnecessary zeros.
      */
     final int compare(MutableBigInteger b) {
-        this.normalize();
-        b.normalize();
-
         int blen = b.intLen;
         if (intLen < blen)
             return -1;
@@ -308,11 +306,9 @@ class MutableBigInteger {
     /**
      * Returns a value equal to what {@code b.leftShift(32*ints); return compare(b);}
      * would return, but doesn't change the value of {@code b}.
+     * Assumes no leading unnecessary zeros.
      */
     private int compareShifted(MutableBigInteger b, int ints) {
-        this.normalize();
-        b.normalize();
-
         int blen = b.intLen;
         int alen = intLen - ints;
         if (alen < blen)
@@ -505,7 +501,6 @@ class MutableBigInteger {
      * Returns true iff this MutableBigInteger has a value of one.
      */
     boolean isOne() {
-        normalize();
         return (intLen == 1) && (value[offset] == 1);
     }
 
@@ -513,7 +508,6 @@ class MutableBigInteger {
      * Returns true iff this MutableBigInteger has a value of zero.
      */
     boolean isZero() {
-        normalize();
         return (intLen == 0);
     }
 
@@ -2062,13 +2056,17 @@ class MutableBigInteger {
     }
 
     private MutableBigInteger getBlockZimmermann(int blockIndex, int len, int limit, int blockLen) {
-        int from = offset + len - (blockIndex + 1) * blockLen;
-        int intEnd = offset + limit;
-        if (from >= intEnd)
+        int blockEnd = offset + len - blockIndex * blockLen;
+        int from = blockEnd - blockLen, to = Math.min(blockEnd, offset + limit);
+
+        // Skip leading zeros
+        for(; from < to && value[from] == 0; from++);
+
+        if (from >= to)
             return new MutableBigInteger();
 
-        int[] block = new int[blockLen];
-        System.arraycopy(value, from, block, 0, Math.min(intEnd - from, blockLen));
+        int[] block = new int[blockEnd - from];
+        System.arraycopy(value, from, block, 0, to - from);
         return new MutableBigInteger(block);
     }
 
