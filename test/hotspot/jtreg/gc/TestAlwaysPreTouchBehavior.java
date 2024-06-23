@@ -120,8 +120,9 @@ public class TestAlwaysPreTouchBehavior {
 
     final static long M = 1024 * 1024;
     final static long G = M * 1024L;
-    final static  long heapsize = M * 256L;
-    final static  long requiredAvailable = heapsize * 2 + G;
+    final static  long heapsize = M * 128;
+    final static  long requiredAvailableBefore = heapsize * 2 + 256 * M;
+    final static  long requiredAvailableDuring = 256 * M;
 
     private static String[] prepareOptions(String[] extraVMOptions) {
         List<String> allOptions = new ArrayList<String>();
@@ -151,17 +152,24 @@ public class TestAlwaysPreTouchBehavior {
 
     public static void main(String [] args) throws IOException {
 
+        Runtime runtime = Runtime.getRuntime();
+        long committed = runtime.totalMemory();
         long avail = wb.hostAvailableMemory();
+        long rss = wb.rss();
+        System.out.println("RSS: " + rss + " available: " + avail + " committed " + committed);
 
         if (args[0].equals("run")) {
-            long rss = wb.rss();
-            Runtime runtime = Runtime.getRuntime();
-            long committed = runtime.totalMemory();
-            System.out.println("RSS: " + rss + " available: " + avail + " committed " + committed);
-            Asserts.assertGreaterThan(rss, committed, "RSS of this process(" + rss + "b) should be bigger than or equal to committed heap mem(" + committed + "b)");
+            if (rss < committed) {
+                if (avail < requiredAvailableDuring) {
+                    throw new SkippedException("Not enough memory for this  test (" + avail + ")");
+                } else {
+                    throw new RuntimeException("RSS of this process(" + rss + "b) should be bigger than or " +
+                                               "equal to committed heap mem(" + committed + "b)");
+                }
+            }
         } else {
-            System.out.println(" available: " + avail + "(required " + requiredAvailable + ")");
-            if (avail < requiredAvailable) {
+            System.out.println(" available: " + avail + "(required " + requiredAvailableBefore + ")");
+            if (avail < requiredAvailableBefore) {
                 throw new SkippedException("Not enough memory for this  test (" + avail + ")");
             }
             // pass options to the test
