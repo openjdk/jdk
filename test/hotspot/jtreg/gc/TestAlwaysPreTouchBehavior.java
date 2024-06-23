@@ -120,9 +120,10 @@ public class TestAlwaysPreTouchBehavior {
 
     final static long M = 1024 * 1024;
     final static long G = M * 1024L;
-    final static  long heapsize = M * 128;
-    final static  long requiredAvailableBefore = heapsize * 2 + 256 * M;
-    final static  long requiredAvailableDuring = 256 * M;
+    final static long heapsize = M * 128;
+    final static long expectedMaxNonHeapRSS = M * 256;
+    final static  long requiredAvailableBefore = heapsize * 2 + expectedMaxNonHeapRSS;
+    final static  long requiredAvailableDuring = expectedMaxNonHeapRSS;
 
     private static String[] prepareOptions(String[] extraVMOptions) {
         List<String> allOptions = new ArrayList<String>();
