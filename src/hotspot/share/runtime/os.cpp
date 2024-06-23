@@ -1029,15 +1029,13 @@ void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* e
   bytes_per_line = align_up(bytes_per_line, 8);
 
   int cols = 0;
-  int cols_per_line = bytes_per_line / unitsize;
+  const int cols_per_line = bytes_per_line / unitsize;
 
   const uint8_t* p = start;
   const uint8_t* logical_p = logical_start;
 
-  char tmp[max_bytes_per_line * 2 + // two letters per byte
-           cols_per_line +          // dividing space between units
-           1];                      // \0
-  stringStream ascii_form(tmp, sizeof(tmp));
+  char tmp[max_bytes_per_line * 2 + 1];
+  stringStream ascii_form;
 
   // Print out the addresses as if we were starting from logical_start.
   while (p < end) {
