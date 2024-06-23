@@ -231,8 +231,6 @@ public final class ChunkWriter implements Closeable {
         }
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG)) {
             for (CheckpointPool pool : event.getPools()) {
-                output.writeLong(pool.getTypeId());
-                output.writeLong(pool.getTouchedCount());
                 for (PoolEntry pe : pool.getEntries()) {
                     if (!pe.isTouched()) {
                         String name = pe.getType().getName();
