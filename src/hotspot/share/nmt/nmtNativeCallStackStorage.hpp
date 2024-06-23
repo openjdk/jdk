@@ -72,7 +72,7 @@ private:
   using TableEntryStorage = HomogenousObjectArray<TableEntry, mtNMT>;
   using TableEntryIndex = typename TableEntryStorage::I;
 
-  TableEntryStorage _allocator;
+  TableEntryStorage _entry_storage;
 
   struct TableEntry {
     TableEntryIndex next;
@@ -85,22 +85,7 @@ private:
     : next(TableEntryStorage::nil), stack() {}
   };
 
-  StackIndex put(const NativeCallStack& value) {
-    int bucket = value.calculate_hash() % _table_size;
-    TableEntryIndex link = _table[bucket];
-    while (link != TableEntryStorage::nil) {
-      TableEntry& l = _allocator.at(link);
-      if (value.equals(get(l.stack))) {
-        return l.stack;
-      }
-      link = l.next;
-    }
-    int idx = _stacks.append(value);
-    StackIndex si(idx);
-    TableEntryIndex new_link = _allocator.allocate(_table[bucket], si);
-    _table[bucket] = new_link;
-    return si;
-  }
+  StackIndex put(const NativeCallStack& value);
 
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
