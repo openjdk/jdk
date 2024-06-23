@@ -242,7 +242,7 @@ reg_def V0_H  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next()   );
 reg_def V0_J  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(2)  );
 reg_def V0_K  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(3)  );
 
-reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg() 	        );
+reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()           );
 reg_def V1_H  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next()   );
 reg_def V1_J  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(2)  );
 reg_def V1_K  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(3)  );
@@ -262,7 +262,7 @@ reg_def V4_H  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next()   );
 reg_def V4_J  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(2)  );
 reg_def V4_K  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(3)  );
 
-reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg() 	        );
+reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()           );
 reg_def V5_H  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next()   );
 reg_def V5_J  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(2)  );
 reg_def V5_K  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(3)  );
@@ -272,7 +272,7 @@ reg_def V6_H  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next()   );
 reg_def V6_J  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(2)  );
 reg_def V6_K  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(3)  );
 
-reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg() 	        );
+reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()           );
 reg_def V7_H  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next()   );
 reg_def V7_J  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(2)  );
 reg_def V7_K  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(3)  );
@@ -1914,6 +1914,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       return UsePopCountInstruction;
 
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:
@@ -1921,6 +1923,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+
     case Op_FmaF:
     case Op_FmaD:
     case Op_FmaVF:
@@ -3304,6 +3307,16 @@ operand iRegP_R15()
   constraint(ALLOC_IN_RC(r15_reg));
   match(RegP);
   // match(iRegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand iRegP_R16()
+%{
+  constraint(ALLOC_IN_RC(r16_reg));
+  match(RegP);
   match(iRegPNoSp);
   op_cost(0);
   format %{ %}
@@ -7856,34 +7869,6 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 // ============================================================================
 // BSWAP Instructions
 
-instruct bytes_reverse_int(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesI src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 13);
-  format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int" %}
-
-  ins_encode %{
-    __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_long(iRegLNoSp dst, iRegL src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesL src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 29);
-  format %{ "revb  $dst, $src\t#@bytes_reverse_long" %}
-
-  ins_encode %{
-    __ revb(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
 instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesUS src));
 
@@ -10100,12 +10085,42 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
   match(Set result (PartialSubtypeCheck sub super));
   effect(KILL tmp, KILL cr);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super\t#@partialSubtypeCheck" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
+%{
+  predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
+
+  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+
+  ins_encode %{
+    bool success = false;
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $result$$Register,
+                                                 $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                                 $tmpR16$$Register, super_klass_slot);
+    } else {
+      address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      success = (call != nullptr);
+    }
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -10116,7 +10131,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 su
   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
   effect(KILL tmp, KILL result);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super == 0\t#@partialSubtypeCheckVsZero" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));

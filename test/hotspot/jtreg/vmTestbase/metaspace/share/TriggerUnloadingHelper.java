@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,36 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package metaspace.share;
 
-import nsk.share.log.Log;
+import nsk.share.test.ExecutionController;
 
-/*
- * StreamListener that logs everything to Log at debug priority.
- */
-public class StreamLogger implements StreamListener {
-        private String prefix;
-        private Log log;
+public interface TriggerUnloadingHelper {
 
-        public StreamLogger(String prefix, Log log) {
-                this.prefix = prefix;
-                this.log = log;
-        }
+    public void triggerUnloading(ExecutionController stresser);
 
-        public void onStart() {
-                // do nothing
-        }
-
-        public void onFinish() {
-                // do nothing
-        }
-
-        public void onRead(String s) {
-                log.debug(prefix + s);
-        }
-
-        public void onException(Throwable e) {
-                log.debug(prefix + "Exception");
-                log.debug(e);
-        }
 }
