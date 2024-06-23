@@ -1000,6 +1000,10 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
       BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
     const int bitfieldsize = unitsize * BitsPerByte;
     uintptr_t value = bitfield(i, bitoffset, bitfieldsize);
+
+//#ifdef _WIN32
+    st->print("i %zu value %zu ", i, value);
+//#endif
     switch (unitsize) {
       case 1: st->print("%02x", (u1)value); break;
       case 2: st->print("%04x", (u2)value); break;
