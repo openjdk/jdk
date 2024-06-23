@@ -963,7 +963,7 @@ static void print_ascii_form(stringStream& ascii_form, uint64_t value, int units
   for (int i = 0; i < unitsize; i ++) {
     const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
     const uint8_t c = u.c[idx];
-    ascii_form.put(::isprint(c) ? c : '_');
+    ascii_form.put(::isprint(c) && ::isascii(c) ? c : '_');
   }
 }
 
