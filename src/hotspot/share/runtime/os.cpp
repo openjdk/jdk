@@ -1034,7 +1034,6 @@ void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* e
   const uint8_t* p = start;
   const uint8_t* logical_p = logical_start;
 
-  char tmp[max_bytes_per_line * 2 + 1];
   stringStream ascii_form;
 
   // Print out the addresses as if we were starting from logical_start.
