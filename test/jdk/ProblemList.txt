@@ -620,8 +620,6 @@ javax/net/ssl/SSLSession/CertMsgCheck.java                      8326705 generic-
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
 
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliasonerarootcav1  8333640 generic-all
-
 ############################################################################
 
 # jdk_sound

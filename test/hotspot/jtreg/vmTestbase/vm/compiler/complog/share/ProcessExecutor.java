@@ -20,23 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package vm.compiler.complog.share;
 
 import nsk.share.TestBug;
 import nsk.share.TestFailure;
 import nsk.share.log.Log;
-import vm.share.ProcessUtils;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.lang.reflect.Field;
 
 public class ProcessExecutor {
     private static long CLEANUP_TIMEOUT = 60000;
@@ -138,8 +131,8 @@ public class ProcessExecutor {
         return -1;
     }
 
-    public int getPid() {
-        return ProcessUtils.getPid(process);
+    public long getPid() {
+        return process.pid();
     }
 
     public OutputStream getStdIn() {

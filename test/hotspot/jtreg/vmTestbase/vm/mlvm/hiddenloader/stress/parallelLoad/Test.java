@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import vm.mlvm.hiddenloader.share.StressClassLoadingTest;
 import vm.mlvm.hiddenloader.share.HiddenkTestee01;
 import vm.mlvm.share.MlvmTestExecutor;
 import vm.mlvm.share.MultiThreadedTest;
-import vm.share.FileUtils;
+import vm.mlvm.share.FileUtils;
 
 /**
  * Verifies that loading classes in parallel from several threads using
