@@ -182,11 +182,15 @@ public final class ChunkWriter implements Closeable {
         chunkComplete = true;
         lastCheckpoint = 0;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG)) {
-            for (var entry : waste.entrySet()) {
-                String msg = "Chunk waste " + entry.getKey() + " " + entry.getValue() + " bytes.";
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG, msg);
-            }
+            // Log largest waste first
+            waste.entrySet().stream()
+                 .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                 .forEach(entry -> {
+                     String msg = "Total chunk waste by " + entry.getKey() + ": " + entry.getValue() + " bytes.";
+                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG, msg);
+                 });
         }
+        waste.clear();
     }
 
     private void writeMetadataEvent(ChunkHeader header) throws IOException {
@@ -234,8 +238,8 @@ public final class ChunkWriter implements Closeable {
                         String name = pe.getType().getName();
                         long amount = pe.getEndPosition() - pe.getStartPosition();
                         waste.merge(pe.getType().getName(), amount, Long::sum);
-                        String msg = "Found unreferenced constant ID " + pe.getId() +
-                                     " of type "+ name + " using/wasting " + amount + " bytes.";
+                        String msg = "Unreferenced constant ID " + pe.getId() +
+                                     " of type "+ name + " using " + amount + " bytes.";
                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, msg);
                     }
                 }
