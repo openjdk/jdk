@@ -438,14 +438,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           # It's harmless to be suppressed in clang as well.
           ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
           ASAN_LDFLAGS="-fsanitize=address"
-          # detect_stack_use_after_return is using a fake stack and thus JDK would crashe:
-          # assert(_thread->is_in_live_stack((address)this)) failed: not on stack?
-          if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
-            ASAN_CFLAGS="$ASAN_CFLAGS --param asan-use-after-return=0"
-          fi
-          if test "x$TOOLCHAIN_TYPE" = "xclang"; then
-            ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
-          fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
           ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"

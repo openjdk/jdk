@@ -42,6 +42,9 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
+#ifdef ADDRESS_SANITIZER
+#include <sanitizer/asan_interface.h>
+#endif
 
 class CompilerThread;
 class HandleArea;
@@ -466,11 +469,23 @@ class Thread: public ThreadShadow {
   void metadata_handles_do(void f(Metadata*));
 
  private:
+  bool is_in_asan_fake_stack(address adr) const {
+#ifdef ADDRESS_SANITIZER
+    if (__asan_addr_is_in_fake_stack(__asan_get_current_fake_stack(), adr, nullptr/*beg*/, nullptr/*end*/)) {
+      return true;
+    }
+#endif
+    return false;
+  }
+
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >/>= limit
   // The check is inclusive of limit if passed true, else exclusive.
   bool is_in_stack_range(address adr, address limit, bool inclusive) const {
     assert(stack_base() > limit && limit >= stack_end(), "limit is outside of stack");
+    if (is_in_asan_fake_stack(adr)) {
+      return true;
+    }
     return stack_base() > adr && (inclusive ? adr >= limit : adr > limit);
   }
 
@@ -497,6 +512,9 @@ class Thread: public ThreadShadow {
   // Like is_in_full_stack_checked but without the assertions as this
   // may be called in a thread before _stack_base is initialized.
   bool is_in_full_stack(address adr) const {
+    if (is_in_asan_fake_stack(adr)) {
+      return true;
+    }
     address stack_end = _stack_base - _stack_size;
     return _stack_base > adr && adr >= stack_end;
   }
