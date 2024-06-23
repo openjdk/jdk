@@ -38,7 +38,7 @@
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
-  friend class VMATreeTest;
+  friend class NMTVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
