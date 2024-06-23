@@ -113,7 +113,7 @@ struct LL2 {
     Node& n = alloc.at(start);
     E e = n.e;
     NodePtr next_start = n.next;
-    alloc.free(start);
+    alloc.deallocate(start);
     start = next_start;
     return e;
   }
