@@ -68,29 +68,28 @@ public:
   };
 
 private:
-  struct Link;
-  using Allocator = HomogenousObjectArray<Link, mtNMT>;
-  using LinkPtr = typename Allocator::I;
-  LinkPtr nil() { return Allocator::nil; }
+  struct TableEntry;
+  using TableEntryStorage = HomogenousObjectArray<TableEntry, mtNMT>;
+  using TableEntryIndex = typename TableEntryStorage::I;
 
-  Allocator _allocator;
+  TableEntryStorage _allocator;
 
-  struct Link {
-    LinkPtr next;
+  struct TableEntry {
+    TableEntryIndex next;
     StackIndex stack;
-    Link(LinkPtr next, StackIndex v)
+    TableEntry(TableEntryIndex next, StackIndex v)
       : next(next),
         stack(v) {
     }
-    Link()
-    : next(Allocator::nil), stack() {}
+    TableEntry()
+    : next(TableEntryStorage::nil), stack() {}
   };
 
   StackIndex put(const NativeCallStack& value) {
     int bucket = value.calculate_hash() % _table_size;
-    LinkPtr link = _table[bucket];
-    while (link != nil()) {
-      Link& l = _allocator.at(link);
+    TableEntryIndex link = _table[bucket];
+    while (link != TableEntryStorage::nil) {
+      TableEntry& l = _allocator.at(link);
       if (value.equals(get(l.stack))) {
         return l.stack;
       }
@@ -98,7 +97,7 @@ private:
     }
     int idx = _stacks.append(value);
     StackIndex si(idx);
-    LinkPtr new_link = _allocator.allocate(_table[bucket], si);
+    TableEntryIndex new_link = _allocator.allocate(_table[bucket], si);
     _table[bucket] = new_link;
     return si;
   }
@@ -107,7 +106,7 @@ private:
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int default_table_size = 4099;
   int _table_size;
-  LinkPtr* _table;
+  TableEntryIndex* _table;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   const bool _is_detailed_mode;
 
@@ -133,9 +132,9 @@ public:
   : _table_size(table_size), _table(nullptr), _stacks(),
     _is_detailed_mode(is_detailed_mode), _fake_stack() {
     if (_is_detailed_mode) {
-      _table = NEW_C_HEAP_ARRAY(LinkPtr, _table_size, mtNMT);
+      _table = NEW_C_HEAP_ARRAY(TableEntryIndex, _table_size, mtNMT);
       for (int i = 0; i < _table_size; i++) {
-        _table[i] = Allocator::nil;
+        _table[i] = TableEntryStorage::nil;
       }
     }
   }
