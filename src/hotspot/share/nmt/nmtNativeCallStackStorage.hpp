@@ -44,26 +44,15 @@ class NativeCallStackStorage : public CHeapObjBase {
 public:
   struct StackIndex {
     friend NativeCallStackStorage;
-
-  private:
-    static constexpr const int32_t _invalid = -1;
-
     int32_t _stack_index;
-    StackIndex(int32_t stack_index)
-      : _stack_index(stack_index) {
-    }
-
   public:
+    static constexpr const int32_t invalid = -1;
     static bool equals(const StackIndex& a, const StackIndex& b) {
       return a._stack_index == b._stack_index;
     }
 
     bool is_invalid() {
-      return _stack_index == _invalid;
-    }
-
-    StackIndex()
-      : _stack_index(_invalid) {
+      return _stack_index == invalid;
     }
   };
 
@@ -77,12 +66,6 @@ private:
   struct TableEntry {
     TableEntryIndex next;
     StackIndex stack;
-    TableEntry(TableEntryIndex next, StackIndex v)
-      : next(next),
-        stack(v) {
-    }
-    TableEntry()
-    : next(TableEntryStorage::nil), stack() {}
   };
 
   StackIndex put(const NativeCallStack& value);
@@ -101,7 +84,7 @@ public:
   StackIndex push(const NativeCallStack& stack) {
     // Not in detailed mode, so not tracking stacks.
     if (!_is_detailed_mode) {
-      return StackIndex();
+      return StackIndex{StackIndex::invalid};
     }
     return put(stack);
   }

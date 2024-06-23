@@ -36,7 +36,7 @@ NativeCallStackStorage::StackIndex NativeCallStackStorage::put(const NativeCallS
     link = l.next;
   }
   int idx = _stacks.append(value);
-  StackIndex si(idx);
+  StackIndex si{idx};
   TableEntryIndex new_link = _entry_storage.allocate(_table[bucket], si);
   _table[bucket] = new_link;
   return si;

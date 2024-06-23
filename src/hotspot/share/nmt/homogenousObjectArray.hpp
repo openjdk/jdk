@@ -60,6 +60,7 @@ public:
 
   template<typename... Args>
   I allocate(Args... args) {
+    static_assert(std::is_trivial<E>::value, "must be");
     BackingElement* be;
     I i;
     if (_free_start != nil) {
@@ -73,11 +74,12 @@ public:
       be = _backing_storage.adr_at(i);
     }
 
-    ::new (be) E(args...);
+    ::new (be) E{args...};
     return i;
   }
 
   void deallocate(I i) {
+    static_assert(std::is_trivial<E>::value, "must be");
     assert(i == nil || is_in_bounds(i), "out of bounds free");
     if (i == nil) return;
     BackingElement& be_freed = _backing_storage.at(i);
@@ -86,6 +88,7 @@ public:
   }
 
   E& at(I i) {
+    static_assert(std::is_trivial<E>::value, "must be");
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i).e);
