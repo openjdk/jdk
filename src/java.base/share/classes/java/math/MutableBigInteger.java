@@ -2060,7 +2060,7 @@ class MutableBigInteger {
         int from = blockEnd - blockLen, to = Math.min(blockEnd, offset + limit);
 
         // Skip leading zeros
-        for(; from < to && value[from] == 0; from++);
+        for (; from < to && value[from] == 0; from++);
 
         if (from >= to)
             return new MutableBigInteger();
