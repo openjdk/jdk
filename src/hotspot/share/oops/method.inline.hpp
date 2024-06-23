@@ -39,10 +39,10 @@ inline address Method::from_interpreted_entry() const {
   return Atomic::load_acquire(&_from_interpreted_entry);
 }
 
-inline nmethod* Method::code() const {
-  assert( check_code(), "" );
-  return Atomic::load_acquire(&_code);
-}
+//inline nmethod* Method::code() const {
+//  assert( check_code(), "" );
+//  return Atomic::load_acquire(&_code);
+//}
 
 // Write (bci, line number) pair to stream
 inline void CompressedLineNumberWriteStream::write_pair_regular(int bci_delta, int line_delta) {

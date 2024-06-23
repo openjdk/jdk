@@ -27,6 +27,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "code/nmethod.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/signature.hpp"
@@ -1419,7 +1420,17 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
-        os->print("Cannot read field \"%s\"", name->as_C_string());
+
+        os->print("Cesar, ");
+        if (this->_method != nullptr) {
+          if (this->_method->code() != nullptr) {
+            nmethod* nm = this->_method->code();
+            os->print("Compilation %d at level %d bci %d -> ", nm->compile_id(), nm->comp_level(), bci);
+          }
+        }
+
+        os->print("I cannot read field \"%s\"", name->as_C_string());
+
       } break;
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos);

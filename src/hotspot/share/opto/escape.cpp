@@ -478,13 +478,13 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
       if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr)) {
         found_sr_allocate = true;
       } else {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("%dth input of Phi %d is SR but can't be eliminated.", i, ophi->_idx);)
+        if (TraceReduceAllocationMerges) tty->print_cr("%s %d) %dth input of Phi %d is SR but can't be eliminated.", _compile->method()->name()->as_utf8(), _compile->compile_id(), i, ophi->_idx);
         ptn->set_scalar_replaceable(false);
       }
     }
   }
 
-  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("Can NOT reduce Phi %d on invocation %d. No SR Allocate as input.", ophi->_idx, _invocation);)
+  if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. No SR Allocate as input.", _compile->method()->name()->as_utf8(), _compile->compile_id(), ophi->_idx, _invocation);
   return found_sr_allocate;
 }
 
@@ -533,10 +533,10 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
 
     if (use->is_SafePoint()) {
       if (use->is_Call() && use->as_Call()->has_non_debug_use(n)) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
+        if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation);
         return false;
       } else if (has_been_reduced(n->is_Phi() ? n->as_Phi() : n->as_CastPP()->in(1)->as_Phi(), use->as_SafePoint())) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
+        if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. It has already been reduced.", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation);
         return false;
       }
     } else if (use->is_AddP()) {
@@ -546,25 +546,20 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         const Type* load_type = _igvn->type(use_use);
 
         if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn)) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", n->_idx, _invocation, use_use->Name());)
+          if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, NodeClassNames[use_use->Opcode()]);
           return false;
         } else if (load_type->isa_narrowklass() || load_type->isa_klassptr()) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. [Narrow] Klass Load: %s", n->_idx, _invocation, use_use->Name());)
+          if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. [Narrow] Klass Load: %s", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, NodeClassNames[use_use->Opcode()]);
           return false;
         }
       }
     } else if (nesting > 0) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", n->_idx, _invocation, use->Name(), nesting);)
+      if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, NodeClassNames[use->Opcode()], nesting);
       return false;
     } else if (use->is_CastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
-#ifndef PRODUCT
-        if (TraceReduceAllocationMerges) {
-          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
-          use->dump();
-        }
-#endif
+        if (TraceReduceAllocationMerges) { tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation); }
         return false;
       }
 
@@ -578,12 +573,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
             Node* iff_cmp = iff->in(1)->in(1);
             int opc = iff_cmp->Opcode();
             if ((opc == Op_CmpP || opc == Op_CmpN) && !can_reduce_cmp(n, iff_cmp)) {
-#ifndef PRODUCT
-              if (TraceReduceAllocationMerges) {
-                tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
-                n->dump(5);
-              }
-#endif
+              if (TraceReduceAllocationMerges) { tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, use->_idx); }
               return false;
             }
           }
@@ -595,11 +585,11 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
       }
     } else if (use->Opcode() == Op_CmpP || use->Opcode() == Op_CmpN) {
       if (!can_reduce_cmp(n, use)) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CmpP/N %d isn't reducible.", n->_idx, _invocation, use->_idx);)
+        if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. CmpP/N %d isn't reducible.", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, use->_idx);
         return false;
       }
     } else {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. One of the uses is: %d %s", n->_idx, _invocation, use->_idx, use->Name());)
+      if (TraceReduceAllocationMerges) tty->print_cr("%s %d) Can NOT reduce Phi %d on invocation %d. One of the uses is: %d %s", _compile->method()->name()->as_utf8(), _compile->compile_id(), n->_idx, _invocation, use->_idx, NodeClassNames[use->Opcode()]);
       return false;
     }
   }
@@ -630,7 +620,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
     return false;
   }
 
-  NOT_PRODUCT(if (TraceReduceAllocationMerges) { tty->print_cr("Can reduce Phi %d during invocation %d: ", ophi->_idx, _invocation); })
+  if (TraceReduceAllocationMerges) { tty->print_cr("%s %d) Can reduce Phi %d during invocation %d: ", _compile->method()->name()->as_utf8(), _compile->compile_id(), ophi->_idx, _invocation); }
   return true;
 }
 

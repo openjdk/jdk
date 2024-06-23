@@ -357,7 +357,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  nmethod* code() const;
+  nmethod* code() const { return Atomic::load_acquire(&_code); }
 
   // Locks NMethodState_lock if not held.
   void unlink_code(nmethod *compare);
