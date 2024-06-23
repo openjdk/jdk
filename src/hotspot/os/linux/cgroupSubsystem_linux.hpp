@@ -71,7 +71,7 @@ enum CG_INFO {
   MEMORY_IDX,
   PIDS_IDX, // pids is not required
   CG_INFO_REQUIRED_END = PIDS_IDX,
-  CG_INFO_LENGTH = PIDS_IDX+1
+  CG_INFO_LENGTH = PIDS_IDX + 1
 };
 
 #define CONTAINER_READ_NUMBER_CHECKED(controller, filename, log_string, retval)       \

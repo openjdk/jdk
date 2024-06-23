@@ -39,9 +39,10 @@ class CgroupV1Controller: public CgroupController {
 
     /* Constructed subsystem directory */
     char *_path;
-    void set_subsystem_path(char *cgroup_path);
 
   public:
+    void set_subsystem_path(char *cgroup_path);
+
     CgroupV1Controller(char* root, char* mountpoint, char* cgroup_path)
       : _root(os::strdup(root)),
         _mount_point(os::strdup(mountpoint)),

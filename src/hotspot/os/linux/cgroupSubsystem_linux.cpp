@@ -379,7 +379,8 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 
   for (int i = CG_INFO_START; i < CG_INFO_REQUIRED_END; i++) {
     if (!cg_infos[i]._data_complete) {
-      log_debug(os, container)("Required cgroup v1 memory subsystem not found");
+      log_debug(os, container)("Required cgroup v1 subsystem controller %s not found",
+                               cg_controller_name[i]);
       *flags = INVALID_CGROUPS_V1;
       return false;
     }
