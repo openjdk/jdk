@@ -2009,7 +2009,7 @@ class MutableBigInteger {
         final int blockLen = len >> 2, blockBitLen = blockLen << 5;
         MutableBigInteger dividend = sr[1];
         dividend.leftShift(blockBitLen);
-        dividend.add(getBlockZimmermann(1, len, limit, blockLen));
+        dividend.add(new MutableBigInteger(getBlockZimmermann(1, len, limit, blockLen)));
         MutableBigInteger twiceSqrt = new MutableBigInteger(sr[0]);
         twiceSqrt.leftShift(1);
         MutableBigInteger q = new MutableBigInteger();
@@ -2021,7 +2021,7 @@ class MutableBigInteger {
 
         MutableBigInteger rem = u;
         rem.leftShift(blockBitLen);
-        rem.add(getBlockZimmermann(0, len, limit, blockLen));
+        rem.add(new MutableBigInteger(getBlockZimmermann(0, len, limit, blockLen)));
         BigInteger qBig = q.toBigInteger();
         int rSign = rem.subtract(new MutableBigInteger(qBig.multiply(qBig).mag));
 
@@ -2038,12 +2038,12 @@ class MutableBigInteger {
         if (excessInts != 0) {
             final int halfShift = excessInts << 4;
             if (!rem.isZero()) {
-                final int sqrtEnd = sqrt.offset + sqrt.intLen, s0Len = (halfShift + 31) >> 5;
-                int[] s0Mag = Arrays.copyOfRange(sqrt.value, sqrtEnd - s0Len, sqrtEnd);
-                if ((halfShift & 31) != 0)
-                    s0Mag[0] &= (1 << halfShift) - 1;
+                final int s0Len = (halfShift + 31) >> 5;
+                int[] s0Mag = sqrt.getBlockZimmermann(0, sqrt.intLen, sqrt.intLen, s0Len);
+                if (s0Mag.length == s0Len && (halfShift & 31) != 0)
+                    s0Mag[0] &= (1 << halfShift) - 1; // Remove excess bits
 
-                BigInteger s0 = new BigInteger(1, s0Mag);
+                BigInteger s0 = new BigInteger(s0Mag, 1);
                 if (s0.signum != 0) { // An optimization
                     rem.add(new MutableBigInteger(s0.shiftLeft(1).multiply(sqrt.toBigInteger()).mag));
                     rem.subtract(new MutableBigInteger(s0.multiply(s0).mag));
@@ -2055,19 +2055,20 @@ class MutableBigInteger {
         return new MutableBigInteger[] { sqrt, rem };
     }
 
-    private MutableBigInteger getBlockZimmermann(int blockIndex, int len, int limit, int blockLen) {
-        int blockEnd = offset + len - blockIndex * blockLen;
-        int from = blockEnd - blockLen, to = Math.min(blockEnd, offset + limit);
+    private int[] getBlockZimmermann(int blockIndex, int len, int limit, int blockLen) {
+        final int blockEnd = offset + len - blockIndex * blockLen;
+        final int to = Math.min(blockEnd, offset + limit);
 
         // Skip leading zeros
-        for (; from < to && value[from] == 0; from++);
+        int from;
+        for (from = blockEnd - blockLen; from < to && value[from] == 0; from++);
 
         if (from >= to)
-            return new MutableBigInteger();
+            return new int[0];
 
         int[] block = new int[blockEnd - from];
         System.arraycopy(value, from, block, 0, to - from);
-        return new MutableBigInteger(block);
+        return block;
     }
 
     /**
