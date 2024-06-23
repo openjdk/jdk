@@ -52,8 +52,8 @@
 
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
-  friend class VMATreeTest;
-  friend class TreapTest;
+  friend class NMTVMATreeTest;
+  friend class NMTTreapTest;
 public:
   class TreapNode {
     friend Treap;
