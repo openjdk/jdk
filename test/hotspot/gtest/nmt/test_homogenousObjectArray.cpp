@@ -41,15 +41,11 @@ struct LL {
   struct Node {
     E e;
     NodePtr next;
-    Node(E e, NodePtr next)
-      : e(e),
-        next(next) {
-    }
   };
 
   NodePtr start;
   LL()
-    : start(NodeAllocator::nil) {
+  : start{NodeAllocator::nil} {
   }
 
   void push(E e) {
@@ -86,10 +82,6 @@ struct LL2 {
   struct Node {
     E e;
     NodePtr next;
-    Node(E e, NodePtr next)
-      : e(e),
-        next(next) {
-    }
   };
 
   NodePtr start;
