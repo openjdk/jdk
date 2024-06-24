@@ -38,12 +38,21 @@ import java.util.function.Supplier;
 
 public final class StableValueImpl<T> implements StableValue<T> {
 
+    // Unsafe allows StableValue to be used early in the boot sequence
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    // Used to indicate a holder value is `null` (see field `value` below)
+    // A wrapper method `nullSentinel()` is used for generic type conversion.
     private static final Object NULL_SENTINEL = new Object();
+
+    // Used to indicate a mutex is never needed anymore.
+    private static final Object TOMBSTONE = new Object();
+
+    // Unsafe offsets for direct access
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
-
-    private final Object mutex = new Object();
+    private static final long MUTEX_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "mutex");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -58,6 +67,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Stable
     private T value;
 
+    // This field is lazily initialized on demand and when it is no longer needed
+    // (i.e. when a holder value is set) the TOMBSTONE singleton is stored to allow
+    // the previous, now-redundant mutex object to be collected.
+    private volatile Object mutex;
+
+    // Only allow creation via a factory
     private StableValueImpl() {}
 
     @ForceInline
@@ -66,15 +81,23 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (value() != null) {
             return false;
         }
-        synchronized (mutex) {
+        Object m = acquireMutex();
+        if (m == TOMBSTONE) {
+            // A holder value must be set as a holder value store
+            // happens before a mutex TOMBSTONE store
+            return false;
+        }
+        synchronized (m) {
             // Updates to the `value` is always made under `mutex` synchronization
             // meaning plain memory semantics is enough here.
             if (valuePlain() != null) {
                 return false;
             }
             set0(value);
-            return true;
+            // The holder value store must happen before the mutex release
+            releaseMutex();
         }
+        return true;
     }
 
     @ForceInline
@@ -143,7 +166,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @SuppressWarnings("unchecked")
     @DontInline
     private <I> T tryCompute(I input, Object provider) {
-        synchronized (mutex) {
+        Object m = acquireMutex();
+        if (m == TOMBSTONE) {
+            // A holder value must be set as a holder value store
+            // happens before a mutex TOMBSTONE store
+            return unwrap(value());
+        }
+        synchronized (m) {
             // Updates to the `value` is always made under `mutex` synchronization
             // meaning plain memory semantics is enough here.
             T t = valuePlain();
@@ -156,6 +185,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
                 t = ((Function<I, T>) provider).apply(input);
             }
             set0(t);
+            // The holder value store must happen before the mutex release
+            releaseMutex();
             return t;
         }
     }
@@ -213,6 +244,19 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
+    private Object acquireMutex() {
+        if (mutex != null) {
+            // We already have a mutex
+            return mutex;
+        }
+        Object newMutex = new Object();
+        Object witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, newMutex);
+        return witness == null ? newMutex : witness;
+    }
+
+    private void releaseMutex() {
+        mutex = TOMBSTONE;
+    }
 
     // Factory
     public static <T> StableValueImpl<T> newInstance() {
