@@ -320,8 +320,7 @@ final class StringConcatHelper {
         byte[] buf = newArray(indexCoder);
         // prepend each argument in reverse order, since we prepending
         // from the end of the byte array
-        indexCoder = prepend(indexCoder, buf, s2);
-        indexCoder = prepend(indexCoder, buf, s1);
+        indexCoder = prepend(indexCoder, buf, s2, s1);
         return newString(buf, indexCoder);
     }
 
