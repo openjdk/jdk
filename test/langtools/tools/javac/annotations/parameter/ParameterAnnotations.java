@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8024694
+ * @bug 8024694 8334870
  * @summary Check javac can handle various Runtime(In)VisibleParameterAnnotations attribute combinations
  * @enablePreview
  * @library /tools/lib
