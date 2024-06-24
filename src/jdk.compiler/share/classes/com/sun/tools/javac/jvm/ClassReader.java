@@ -2928,7 +2928,8 @@ public class ClassReader {
         }
 
         if (sym.owner.isEnum()) {
-            if (methodParameterCount == parameterAnnotations.length + 2) {
+            if (methodParameterCount == parameterAnnotations.length + 2 &&
+                sym.type == methodDescriptor) {
                 //handle constructors of enum types without the Signature attribute -
                 //there are the two synthetic parameters (name and ordinal) in the
                 //constructor, but there may be only parameter annotations for the
@@ -2943,7 +2944,8 @@ public class ClassReader {
             //and local variables (as trailing parameters)
             //if there are less parameter annotations than parameters, put the existing
             //ones starting with offset:
-            if (methodParameterCount > parameterAnnotations.length) {
+            if (methodParameterCount > parameterAnnotations.length &&
+                sym.type == methodDescriptor) {
                 ParameterAnnotations[] newParameterAnnotations = new ParameterAnnotations[methodParameterCount];
                 System.arraycopy(parameterAnnotations, 0, newParameterAnnotations, 1, parameterAnnotations.length);
                 parameterAnnotations = newParameterAnnotations;
