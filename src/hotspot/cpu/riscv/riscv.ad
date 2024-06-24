@@ -10127,7 +10127,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
                                                  $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
                                                  $tmpR16$$Register, super_klass_slot);
     } else {
-      address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      address call = __ patchable_far_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
     }
     if (!success) {

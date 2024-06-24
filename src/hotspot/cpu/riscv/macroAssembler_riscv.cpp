@@ -3715,15 +3715,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // The next slot to be inspected, by the stub we're about to call,
   // is secondary_supers[r_array_index]. Bits 0 and 1 in the bitmap
   // have been checked.
-  Address stub = RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
-  if (stub_is_near) {
-    jump_link(stub, t0);
-  } else {
-    address call = trampoline_call(stub);
-    if (call == nullptr) {
-      return false; // trampoline allocation failed
-    }
-  }
+  rt_call(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
 
   BLOCK_COMMENT("} lookup_secondary_supers_table");
 
