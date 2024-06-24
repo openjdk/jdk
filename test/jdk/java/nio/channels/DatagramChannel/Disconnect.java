@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
+
 import jdk.test.lib.net.IPSupport;
 
 public class Disconnect {
@@ -42,23 +43,23 @@ public class Disconnect {
 
         // test with default protocol family
         try (DatagramChannel dc = DatagramChannel.open()) {
-            test(dc);
-            test(dc);
+            test(dc, InetAddress.getLoopbackAddress());
+            test(dc, InetAddress.getLoopbackAddress());
         }
 
         if (IPSupport.hasIPv4()) {
             // test with IPv4 only
             try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
-                test(dc);
-                test(dc);
+                test(dc, InetAddress.ofLiteral("127.0.0.1"));
+                test(dc, InetAddress.ofLiteral("127.0.0.1"));
             }
         }
 
         if (IPSupport.hasIPv6()) {
             // test with IPv6 only
             try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
-                test(dc);
-                test(dc);
+                test(dc, InetAddress.ofLiteral("::1"));
+                test(dc, InetAddress.ofLiteral("::1"));
             }
         }
     }
@@ -68,12 +69,11 @@ public class Disconnect {
      * a second or subsequent time with the same DatagramChannel instance to check
      * that disconnect works as expected.
      */
-    static void test(DatagramChannel dc) throws IOException {
+    static void test(DatagramChannel dc, InetAddress l0) throws IOException {
         try (DatagramChannel server = DatagramChannel.open()) {
-            server.bind(new InetSocketAddress(0));
+            server.bind(new InetSocketAddress(l0, 0));
 
-            InetAddress lh = InetAddress.getLocalHost();
-            dc.connect(new InetSocketAddress(lh, server.socket().getLocalPort()));
+            dc.connect(new InetSocketAddress(l0, server.socket().getLocalPort()));
 
             dc.write(ByteBuffer.wrap("hello".getBytes()));
 
