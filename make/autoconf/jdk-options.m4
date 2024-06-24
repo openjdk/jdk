@@ -438,8 +438,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           # It's harmless to be suppressed in clang as well.
           ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
           ASAN_LDFLAGS="-fsanitize=address"
-          # detect_stack_use_after_return is using a fake stack and thus JDK would crash:
-          # assert(_thread->is_in_live_stack((address)this)) failed: not on stack?
+          # detect_stack_use_after_return causes ASAN to offload stack-local
+          # variables to c-heap and therefore breaks assumptions in hotspot
+          # that rely on data (e.g. Marks) living in thread stacks.
           if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
             ASAN_CFLAGS="$ASAN_CFLAGS --param asan-use-after-return=0"
           fi
