@@ -502,7 +502,7 @@ static Monitor* create_init_monitor(const char* name) {
 }
 
 InstanceKlass::InstanceKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -978,6 +978,8 @@ void InstanceKlass::rewrite_class(TRAPS) {
 // This is outside is_rewritten flag. In case of an exception, it can be
 // executed more than once.
 void InstanceKlass::link_methods(TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_ik_link_methods_time());
+
   int len = methods()->length();
   for (int i = len-1; i >= 0; i--) {
     methodHandle m(THREAD, methods()->at(i));
@@ -2555,7 +2557,9 @@ void InstanceKlass::remove_unshareable_info() {
     init_implementor();
   }
 
-  constants()->remove_unshareable_info();
+  // Call remove_unshareable_info() on other objects that belong to this class, except
+  // for constants()->remove_unshareable_info(), which is called in a separate pass in
+  // ArchiveBuilder::make_klasses_shareable(),
 
   for (int i = 0; i < methods()->length(); i++) {
     Method* m = methods()->at(i);
@@ -4036,7 +4040,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
+        ((CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {
