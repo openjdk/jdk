@@ -451,7 +451,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
                     rme->is_resolved(Bytecodes::_invokeinterface);
 
     // Just for safety -- this should not happen, but do not archive if we ever see this.
-    resolved &= !(rme->is_resolved(Bytecodes::_invokehandle) || 
+    resolved &= !(rme->is_resolved(Bytecodes::_invokehandle) ||
                   rme->is_resolved(Bytecodes::_invokestatic));
 
     if (resolved && can_archive_resolved_method(rme)) {
