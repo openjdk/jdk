@@ -92,6 +92,14 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     private int    lineNumber;
     /**
+     * The compilation ID.
+     */
+    private int    compId;
+    /**
+     * The compilation level.
+     */
+    private int    compLevel;
+    /**
      * Control to show full or partial module, package, and class names.
      */
     private byte   format = 0; // Default to show all
@@ -204,6 +212,22 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     public int getLineNumber() {
         return lineNumber;
+    }
+
+    /**
+     * return compilation id.
+     * @return the compilation id.
+     */
+    public int getCompId() {
+        return compId;
+    }
+
+    /**
+     * return compilation level.
+     * @return the compilation level.
+     */
+    public int getCompLevel() {
+        return compLevel;
     }
 
     /**
@@ -391,6 +415,12 @@ public final class StackTraceElement implements java.io.Serializable {
             sb.append(fileName);
             if (lineNumber >= 0) {
                 sb.append(':').append(lineNumber);
+            }
+            if (compId >= 0) {
+                sb.append('^').append(compId);
+            }
+            if (compLevel >= 0) {
+                sb.append('*').append(compLevel);
             }
         }
         sb.append(')');

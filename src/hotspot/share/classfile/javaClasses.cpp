@@ -2419,6 +2419,8 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
       nmethod* nm = method->code();
       if (nm != nullptr) {
         os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(comp_id %d, comp_level %d)", nm->compile_id(), nm->comp_level());
+      } else {
+        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "no nmethod");
       }
     }
   }
@@ -2910,6 +2912,8 @@ void java_lang_StackTraceElement::fill_in(Handle element,
     // The method was redefined, accurate line number information isn't available
     java_lang_StackTraceElement::set_fileName(element(), nullptr);
     java_lang_StackTraceElement::set_lineNumber(element(), -1);
+    java_lang_StackTraceElement::set_compId(element(), -100);
+    java_lang_StackTraceElement::set_compLevel(element(), -100);
   } else {
     Symbol* source;
     oop source_file;
@@ -2918,6 +2922,8 @@ void java_lang_StackTraceElement::fill_in(Handle element,
 
     java_lang_StackTraceElement::set_fileName(element(), source_file);
     java_lang_StackTraceElement::set_lineNumber(element(), line_number);
+    java_lang_StackTraceElement::set_compId(element(), method->code() != nullptr ? method->code()->compile_id() : -1);
+    java_lang_StackTraceElement::set_compLevel(element(), method->code() != nullptr ? method->code()->comp_level() : -1);
   }
 }
 
@@ -4838,6 +4844,8 @@ void jdk_internal_misc_UnsafeConstants::set_unsafe_constants() {
 int java_lang_StackTraceElement::_methodName_offset;
 int java_lang_StackTraceElement::_fileName_offset;
 int java_lang_StackTraceElement::_lineNumber_offset;
+int java_lang_StackTraceElement::_compId_offset;
+int java_lang_StackTraceElement::_compLevel_offset;
 int java_lang_StackTraceElement::_moduleName_offset;
 int java_lang_StackTraceElement::_moduleVersion_offset;
 int java_lang_StackTraceElement::_classLoaderName_offset;
@@ -4852,7 +4860,9 @@ int java_lang_StackTraceElement::_declaringClassObject_offset;
   macro(_declaringClass_offset,  k, "declaringClass",  string_signature, false); \
   macro(_methodName_offset,      k, "methodName",      string_signature, false); \
   macro(_fileName_offset,        k, "fileName",        string_signature, false); \
-  macro(_lineNumber_offset,      k, "lineNumber",      int_signature,    false)
+  macro(_lineNumber_offset,      k, "lineNumber",      int_signature,    false); \
+  macro(_compId_offset,          k, "compId",          int_signature,    false); \
+  macro(_compLevel_offset,       k, "compLevel",       int_signature,    false)
 
 // Support for java_lang_StackTraceElement
 void java_lang_StackTraceElement::compute_offsets() {
@@ -4880,6 +4890,14 @@ void java_lang_StackTraceElement::set_methodName(oop element, oop value) {
 
 void java_lang_StackTraceElement::set_lineNumber(oop element, int value) {
   element->int_field_put(_lineNumber_offset, value);
+}
+
+void java_lang_StackTraceElement::set_compId(oop element, int value) {
+  element->int_field_put(_compId_offset, value);
+}
+
+void java_lang_StackTraceElement::set_compLevel(oop element, int value) {
+  element->int_field_put(_compLevel_offset, value);
 }
 
 void java_lang_StackTraceElement::set_moduleName(oop element, oop value) {

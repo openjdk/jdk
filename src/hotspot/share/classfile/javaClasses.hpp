@@ -1551,6 +1551,8 @@ class java_lang_StackTraceElement: AllStatic {
   static int _declaringClass_offset;
   static int _methodName_offset;
   static int _fileName_offset;
+  static int _compId_offset;
+  static int _compLevel_offset;
   static int _lineNumber_offset;
 
   // Setters
@@ -1561,6 +1563,8 @@ class java_lang_StackTraceElement: AllStatic {
   static void set_methodName(oop element, oop value);
   static void set_fileName(oop element, oop value);
   static void set_lineNumber(oop element, int value);
+  static void set_compId(oop element, int value);
+  static void set_compLevel(oop element, int value);
   static void set_declaringClassObject(oop element, oop value);
 
   static void decode_file_and_line(Handle java_mirror, InstanceKlass* holder, int version,
