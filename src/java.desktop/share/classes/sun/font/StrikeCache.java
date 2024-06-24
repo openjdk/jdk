@@ -252,9 +252,7 @@ public final class StrikeCache {
         MemorySegment pixelData = (MemorySegment)imageHandle.get(seg);
         int sz = rb * hgt;
         pixelData = pixelData.reinterpret(sz);
-        byte[] bytes = new byte[sz];
-        MemorySegment.copy(pixelData, ValueLayout.JAVA_BYTE, 0, bytes, 0, sz);
-        return bytes;
+        return pixelData.toArray(ValueLayout.JAVA_BYTE);
     }
 
     static final byte getPixelByte(MemorySegment pixelData, long index) {
