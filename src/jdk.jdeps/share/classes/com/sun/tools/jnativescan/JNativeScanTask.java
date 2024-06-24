@@ -26,6 +26,7 @@ package com.sun.tools.jnativescan;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
@@ -37,6 +38,7 @@ import java.util.*;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 class JNativeScanTask {
@@ -71,11 +73,26 @@ class JNativeScanTask {
             toScan.add(new ClassFileSource.Module(m.reference()));
         }
 
-        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
-        try(ClassResolver classesToScan = ClassResolver.forClassFileSources(toScan, version);
-            ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
-            NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
-            allRestrictedMethods = finder.findAll();
+        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods
+                = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
+        try(ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
+            NativeMethodFinder finder = NativeMethodFinder.create(systemClassResolver);
+
+            for (ClassFileSource source : toScan) {
+                SortedMap<ClassDesc, List<RestrictedUse>> perClass
+                        = new TreeMap<>(Comparator.comparing(JNativeScanTask::qualName));
+                try (Stream<ClassModel> stream = source.classModels()) {
+                    stream.forEach(classModel -> {
+                        List<RestrictedUse> restrictedUses = finder.find(classModel);
+                        if (!restrictedUses.isEmpty()) {
+                            perClass.put(classModel.thisClass().asSymbol(), restrictedUses);
+                        }
+                    });
+                }
+                if (!perClass.isEmpty()) {
+                    allRestrictedMethods.put(source, perClass);
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -110,7 +127,7 @@ class JNativeScanTask {
                             jarsToScan.offer(otherJar);
                         }
                     }
-                    result.add(new ClassFileSource.ClassPathJar(jar));
+                    result.add(new ClassFileSource.ClassPathJar(jar, version));
                 }
             } else if (Files.isDirectory(path)) {
                 result.add(new ClassFileSource.ClassPathDirectory(path));

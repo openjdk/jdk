@@ -31,29 +31,19 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.module.ModuleDescriptor;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 
-abstract class ClassResolver implements AutoCloseable {
+interface ClassResolver extends AutoCloseable {
 
-    static ClassResolver forClassFileSources(List<ClassFileSource> sources, Runtime.Version version) throws IOException {
-        Map<ClassDesc, Info> classMap = new HashMap<>();
-        for (ClassFileSource source : sources) {
-            try (Stream<byte[]> classFiles = source.classFiles(version)) {
-                classFiles.forEach(bytes -> {
-                    ClassModel model = ClassFile.of().parse(bytes);
-                    ClassDesc desc = model.thisClass().asSymbol();
-                    classMap.put(desc, new Info(source, model));
-                });
-            }
-        }
-        return new SimpleClassResolver(classMap);
-    }
+    Optional<ClassModel> lookup(ClassDesc desc);
+
+    @Override
+    void close() throws IOException;
 
     static ClassResolver forSystemModules(Runtime.Version version) {
         String platformName = String.valueOf(version.feature());
@@ -68,41 +58,13 @@ abstract class ClassResolver implements AutoCloseable {
         return new SystemModuleClassResolver(fm);
     }
 
-    record Info(ClassFileSource source, ClassModel model) {}
-
-    public abstract void forEach(BiConsumer<ClassDesc, ClassResolver.Info> action);
-    public abstract Optional<ClassResolver.Info> lookup(ClassDesc desc);
-
-    @Override
-    public abstract void close() throws IOException;
-
-    private static class SimpleClassResolver extends ClassResolver {
-
-        private final Map<ClassDesc, ClassResolver.Info> classMap;
-
-        public SimpleClassResolver(Map<ClassDesc, Info> classMap) {
-            this.classMap = classMap;
-        }
-
-        public void forEach(BiConsumer<ClassDesc, ClassResolver.Info> action) {
-            classMap.forEach(action);
-        }
-
-        public Optional<ClassResolver.Info> lookup(ClassDesc desc) {
-            return Optional.ofNullable(classMap.get(desc));
-        }
-
-        @Override
-        public void close() {}
-    }
-
-    private static class SystemModuleClassResolver extends ClassResolver {
+    class SystemModuleClassResolver implements ClassResolver {
 
         private final JavaFileManager platformFileManager;
         private final Map<String, String> packageToSystemModule;
-        private final Map<ClassDesc, Info> cache = new HashMap<>();
+        private final Map<ClassDesc, ClassModel> cache = new HashMap<>();
 
-        public SystemModuleClassResolver(JavaFileManager platformFileManager) {
+        private SystemModuleClassResolver(JavaFileManager platformFileManager) {
             this.platformFileManager = platformFileManager;
             this.packageToSystemModule = packageToSystemModule(platformFileManager);
         }
@@ -129,12 +91,7 @@ abstract class ClassResolver implements AutoCloseable {
         }
 
         @Override
-        public void forEach(BiConsumer<ClassDesc, Info> action) {
-            throw new UnsupportedOperationException("NYI");
-        }
-
-        @Override
-        public Optional<Info> lookup(ClassDesc desc) {
+        public Optional<ClassModel> lookup(ClassDesc desc) {
             return Optional.ofNullable(cache.computeIfAbsent(desc, _ -> {
                 String qualName = JNativeScanTask.qualName(desc);
                 String moduleName = packageToSystemModule.get(desc.packageName());
@@ -145,8 +102,9 @@ abstract class ClassResolver implements AutoCloseable {
                         if (jfo == null) {
                             throw new JNativeScanFatalError("System class can not be found: " + qualName);
                         }
-                        ClassModel model = ClassFile.of().parse(jfo.openInputStream().readAllBytes());
-                        return new Info(null, model);
+                        try (InputStream inputStream = jfo.openInputStream()) {
+                            return ClassFile.of().parse(inputStream.readAllBytes());
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
