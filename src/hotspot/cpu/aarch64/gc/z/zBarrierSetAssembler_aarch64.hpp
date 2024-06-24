@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,9 +187,6 @@ public:
 #endif // COMPILER1
 
 #ifdef COMPILER2
-  OptoReg::Name refine_register(const Node* node,
-                                OptoReg::Name opto_reg);
-
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,

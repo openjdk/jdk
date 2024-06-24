@@ -35,14 +35,8 @@
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
-#elif (__GNUC__ > 13) || ((__GNUC__ == 13) && (__GNUC_MINOR__ >= 2))
+#elif (__GNUC__ > 13) || ((__GNUC__ == 13) && (__GNUC_MINOR__ > 2))
 #define FULL_COMPILER_ATOMIC_SUPPORT
-#endif
-
-#if defined(__clang_major__)
-#define CORRECT_COMPILER_ATOMIC_SUPPORT
-#elif defined(__GNUC__) && (__riscv_xlen <= 32 || __GNUC__ > 13)
-#define CORRECT_COMPILER_ATOMIC_SUPPORT
 #endif
 
 template<size_t byte_size>
@@ -120,9 +114,9 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((
 }
 #endif
 
-#ifndef CORRECT_COMPILER_ATOMIC_SUPPORT
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
 // The implementation of `__atomic_compare_exchange` lacks sign extensions
-// in GCC 13 and lower when using with 32-bit unsigned integers on RV64,
+// in GCC 13.2 and lower when using with 32-bit unsigned integers on RV64,
 // so we should implement it manually.
 // GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114130.
 // See also JDK-8326936.
@@ -192,11 +186,7 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
                                                         atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  STATIC_ASSERT(byte_size >= 4);
-#endif
-
-#ifndef CORRECT_COMPILER_ATOMIC_SUPPORT
-  STATIC_ASSERT(byte_size != 4);
+  STATIC_ASSERT(byte_size > 4);
 #endif
 
   STATIC_ASSERT(byte_size == sizeof(T));
@@ -235,6 +225,5 @@ struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
 };
 
 #undef FULL_COMPILER_ATOMIC_SUPPORT
-#undef CORRECT_COMPILER_ATOMIC_SUPPORT
 
 #endif // OS_CPU_LINUX_RISCV_ATOMIC_LINUX_RISCV_HPP

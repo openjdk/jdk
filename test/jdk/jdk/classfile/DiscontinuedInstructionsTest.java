@@ -50,9 +50,9 @@ class DiscontinuedInstructionsTest {
                 .withVersion(JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(CD_void, cd_list), ACC_PUBLIC | ACC_STATIC, cob -> cob
                         .block(bb -> {
-                            bb.constantInstruction("Hello")
+                            bb.loadConstant("Hello")
                               .with(DiscontinuedInstruction.JsrInstruction.of(bb.breakLabel()));
-                            bb.constantInstruction("World")
+                            bb.loadConstant("World")
                               .with(DiscontinuedInstruction.JsrInstruction.of(Opcode.JSR_W, bb.breakLabel()))
                               .return_();
                         })

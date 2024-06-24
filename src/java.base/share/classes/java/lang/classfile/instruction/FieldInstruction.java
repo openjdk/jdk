@@ -89,6 +89,8 @@ public sealed interface FieldInstruction extends Instruction
      * @param op the opcode for the specific type of field access instruction,
      *           which must be of kind {@link Opcode.Kind#FIELD_ACCESS}
      * @param field a constant pool entry describing the field
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#FIELD_ACCESS}.
      */
     static FieldInstruction of(Opcode op, FieldRefEntry field) {
         Util.checkKind(op, Opcode.Kind.FIELD_ACCESS);

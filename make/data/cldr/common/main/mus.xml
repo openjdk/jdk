@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -19,8 +19,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a c e f h i k l m n o p r s t u v w y ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[b d ē g j q z]</exemplarCharacters>
+		<exemplarCharacters>[a c eē f h i k l m n o p r s t u v w y ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b d g j q z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A C E F H I K L M N O P R S T U V W Y]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
@@ -73,13 +73,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<days>
 					<dayContext type="format">
 						<dayWidth type="wide">
-							<day type="sun">Nettv Cako</day>
+							<day type="sun">Nettvʼcako</day>
 							<day type="mon">Enhvteceskv</day>
 							<day type="tue">Enhvteceskv Enhvyvtke</day>
 							<day type="wed">Ennvrkvpv</day>
 							<day type="thu">Ennvrkvpv Enhvyvtke</day>
 							<day type="fri">Nak Okkoskv Nettv</day>
-							<day type="sat">Nettv Cakcuse</day>
+							<day type="sat">Nettv Cakʼcuse</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -142,7 +142,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Hvse</displayName>
 			</field>
 			<field type="week">
-				<displayName>Nettv Cako</displayName>
+				<displayName>Nettvcako</displayName>
 			</field>
 			<field type="day">
 				<displayName>Nettv</displayName>

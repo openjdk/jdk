@@ -27,7 +27,7 @@
  *   and various MaxVectorSize values, and +- AlignVector.
  *
  * Note: this test is auto-generated. Please modify / generate with script:
- *       https://bugs.openjdk.org/browse/JDK-8310190
+ *       https://bugs.openjdk.org/browse/JDK-8333729
  *
  * Types: int, long, short, char, byte, float, double
  * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -14, 14, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
@@ -113,7 +113,6 @@
  * @test id=vanilla-A
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
- * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
  */
@@ -122,7 +121,6 @@
  * @test id=vanilla-U
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
- * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
  */
@@ -1285,7 +1283,7 @@ public class TestDependencyOffsets {
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::init",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::test*",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::verify",
-                           "-XX:LoopUnrollLimit=250");
+                           "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         if (args.length != 1) {
             throw new RuntimeException("Test requires exactly one argument!");

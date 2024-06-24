@@ -138,7 +138,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(elem_bt));
+  TypeArrayKlass* tak = Universe::typeArrayKlass(elem_bt);
 
   typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 

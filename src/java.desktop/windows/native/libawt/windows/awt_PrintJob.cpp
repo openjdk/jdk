@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,13 @@
  */
 #define ROUND_TO_INT(num)     ((int) floor((num) + 0.5))
 
+jfieldID AwtPrintDialog::pageID;
+
 /************************************************************************
  * WPrintJob native methods
  */
 
 extern "C" {
-
-/*** Private Constants ***/
-
-static const char *kJavaIntStr = "I";
-static const char *kJavaLongStr = "J";
 
 /* 2D printing uses 3 byte BGR pixels in Raster printing */
 static int J2DRasterBPP = 3;
@@ -209,7 +206,6 @@ static const double POINTS_TO_HIMETRIC = (2540.0 / 72.0);
  */
 static const double POINTS_TO_LOMETRIC = (254.0 / 72.0);
 
-jfieldID AwtPrintDialog::pageID;
 
 
 /*** Private Macros ***/
@@ -307,18 +303,11 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
 static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
                         jfloat fontSize, jboolean isBold, jboolean isItalic,
                         jint rotation, jfloat awScale);
-static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
-                        jfloat fontSize, jboolean isBold, jboolean isItalic,
-                        jint rotation, jfloat awScale);
 
 static int CALLBACK fontEnumProcW(ENUMLOGFONTEXW  *lpelfe,
                                  NEWTEXTMETRICEX *lpntme,
                                  int FontType,
                                  LPARAM lParam);
-static int CALLBACK fontEnumProcA(ENUMLOGFONTEXA  *logfont,
-                                  NEWTEXTMETRICEX  *lpntme,
-                                  int FontType,
-                                  LPARAM lParam);
 
 static int embolden(int currentWeight);
 static BOOL getPrintableArea(HDC pdc, HANDLE hDevMode, RectDouble *margin);
@@ -493,6 +482,18 @@ Java_sun_awt_windows_WPageDialog_initIDs(JNIEnv *env, jclass cls)
  * WPageDialogPeer native methods
  */
 
+#define CLEANUP_SHOW {                      \
+    env->DeleteGlobalRef(peerGlobalRef);    \
+    if (target != NULL) {                   \
+        env->DeleteLocalRef(target);        \
+    }                                       \
+    if (parent != NULL) {                   \
+        env->DeleteLocalRef(parent);        \
+    }                                       \
+    env->DeleteLocalRef(page);              \
+    env->DeleteLocalRef(self);              \
+}
+
 /*
  * Class:     sun_awt_windows_WPageDialogPeer
  * Method:    show
@@ -521,8 +522,6 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
-
-    jboolean doIt = JNI_FALSE; // Assume the user will cancel the dialog.
     PAGESETUPDLG setup;
     memset(&setup, 0, sizeof(setup));
 
@@ -572,13 +571,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
         AwtPrintControl::getPrintHDName(env,self) == NULL) {
-        (void)::PageSetupDlg(&setup);
+        static_cast<void>(::PageSetupDlg(&setup));
         /* check if hDevMode and hDevNames are set.
          * If both are null, then there is no default printer.
          */
         if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-            doIt = JNI_FALSE;
-            goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
     } else {
         int measure = PSD_INTHOUSANDTHSOFINCHES;
@@ -605,8 +604,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
     if (env->ExceptionCheck()) {
-        doIt = JNI_FALSE;
-        goto done;
+        CLEANUP_SHOW;
+        return JNI_FALSE;
     }
 
     setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
@@ -619,8 +618,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
         jobject paper = getPaper(env, page);
         if (paper == NULL) {
-            doIt = JNI_FALSE;
-            goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
                                                 MM_HIENGLISH :
@@ -660,9 +659,9 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          * and place them into a Paper instance.
          */
         setPaperValues(env, paper, &paperSize, &margins, units);
-         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+        if (env->ExceptionCheck()) {
+            CLEANUP_SHOW;
+            return JNI_FALSE;
          }
         /*
          * Put the updated Paper instance and the orientation into
@@ -670,13 +669,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          */
         setPaper(env, page, paper);
         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         setPageFormatOrientation(env, page, orientation);
         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         if (setup.hDevMode != NULL) {
             DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
@@ -684,14 +683,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                 if (devmode->dmFields & DM_PAPERSIZE) {
                     jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
                     if (err) {
-                        doIt = JNI_FALSE;
-                        goto done;
+                        CLEANUP_SHOW;
+                        return JNI_FALSE;
                     }
                 }
             }
             ::GlobalUnlock(setup.hDevMode);
         }
-        doIt = JNI_TRUE;
     }
 
     AwtDialog::CheckUninstallModalHook();
@@ -708,18 +706,9 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
     }
 
-done:
-    env->DeleteGlobalRef(peerGlobalRef);
-    if (target != NULL) {
-        env->DeleteLocalRef(target);
-    }
-    if (parent != NULL) {
-        env->DeleteLocalRef(parent);
-    }
-    env->DeleteLocalRef(page);
-    env->DeleteLocalRef(self);
+    CLEANUP_SHOW;
 
-    return doIt;
+    return JNI_TRUE;
 
     CATCH_BAD_ALLOC_RET(0);
 }
@@ -881,6 +870,21 @@ done:
 
 }
 
+#define CLEANUP_VALIDATE_PAPER {                                               \
+    if (privateDC == TRUE) {                                                   \
+        if (printDC != NULL) {                                                 \
+            /* In this case we know that this DC has no GDI objects to free */ \
+             ::DeleteDC(printDC);                                              \
+        }                                                                      \
+        if (hDevMode != NULL) {                                                \
+            ::GlobalFree(hDevMode);                                            \
+        }                                                                      \
+        if (hDevNames != NULL) {                                               \
+            ::GlobalFree(hDevNames);                                           \
+        }                                                                      \
+    }                                                                          \
+}
+
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    validatePaper
@@ -919,7 +923,12 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         }
     }
 
-    JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
+    if (printDC == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "Invalid printDC");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     /* We try to mitigate the effects of floating point rounding errors
      * by only setting a value if it would differ from the value in the
@@ -932,7 +941,10 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jdouble paperWidth, paperHeight;
     jboolean err;
     WORD dmPaperSize = getPrintPaperSize(env, &err, self);
-    if (err) goto done;
+    if (err) {
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     double ix, iy, iw, ih, pw, ph;
 
@@ -940,24 +952,59 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jmethodID getID;
 
     jclass paperClass = env->GetObjectClass(origPaper);
-    JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
+    if (paperClass == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "paper class not found");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getWidth method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     pw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getHeight method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ph = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getX method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ix = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getY method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     iy = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getW method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     iw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getH method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ih = env->CallDoubleMethod(origPaper, getID);
 
     matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
@@ -1050,29 +1097,27 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
 
     jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
-    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
+    if (setSizeID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no setSize method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     jmethodID setImageableID = env->GetMethodID(paperClass,
                                         SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
-    JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
+    if (setImageableID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no setImageable method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
     env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
 
-done:
     /* Free any resources allocated */
-    if (privateDC == TRUE) {
-        if (printDC != NULL) {
-            /* In this case we know that this DC has no GDI objects to free */
-             ::DeleteDC(printDC);
-        }
-        if (hDevMode != NULL) {
-            ::GlobalFree(hDevMode);
-        }
-        if (hDevNames != NULL) {
-            ::GlobalFree(hDevNames);
-        }
-    }
+    CLEANUP_VALIDATE_PAPER;
 
     CATCH_BAD_ALLOC;
 }
@@ -2262,131 +2307,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_setFont
  * into 'printDC' and returns a 'true'. If there is no equivalent
  * font then 'false' is returned.
  */
-static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
-                        jfloat fontSize, jboolean isBold, jboolean isItalic,
-                        jint rotation, jfloat awScale)
-{
-    LOGFONTA lf;
-    LOGFONTA matchedLogFont;
-    BOOL foundFont = false;     // Assume we didn't find a matching GDI font.
-
-    memset(&matchedLogFont, 0, sizeof(matchedLogFont));
-
-    LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
-
-
-    /* Some fontnames of Non-ASCII fonts like 'MS Minchou' are themselves
-     * Non-ASCII.  They are assumed to be written in Unicode.
-     * Hereby, they are converted into platform codeset.
-     */
-    int maxlen = static_cast<int>(sizeof(lf.lfFaceName)) - 1;
-    // maxlen is int due to cbMultiByte parameter is int
-    int destLen = WideCharToMultiByte(CP_ACP,        // convert to ASCII code page
-                                      0,             // flags
-                                      fontNameW,     // Unicode string
-                                      -1,            // Unicode length is calculated automatically
-                                      lf.lfFaceName, // Put ASCII string here
-                                      maxlen,        // max len
-                                      NULL,          // default handling of unmappables
-                                      NULL);         // do not care if def char is used
-
-    /* If WideCharToMultiByte succeeded then the number
-     * of bytes it copied into the face name buffer will
-     * be greater than zero and we just need to NULL terminate
-     * the string. If there was an error then the number of
-     * bytes copied is zero and we can not match the font.
-     */
-    if (destLen > 0) {
-
-        DASSERT(destLen < sizeof(lf.lfFaceName));
-        lf.lfFaceName[destLen] = '\0';
-        lf.lfCharSet = DEFAULT_CHARSET;
-        lf.lfPitchAndFamily = 0;
-
-        foundFont = !EnumFontFamiliesExA((HDC)printDC, &lf,
-                                        (FONTENUMPROCA) fontEnumProcA,
-                                        (LPARAM) &matchedLogFont, 0);
-    }
-
-
-    if (foundFont) {
-
-        /* Build a font of the requested size with no
-         * width modifications. A negative font height
-         * tells GDI that we want that values absolute
-         * value as the font's point size. If the font
-         * is successfully built then set it as the current
-         * GDI font.
-         */
-        matchedLogFont.lfHeight = -ROUND_TO_LONG(fontSize);
-        matchedLogFont.lfWidth = 0;
-        matchedLogFont.lfEscapement = rotation;
-        matchedLogFont.lfOrientation = rotation;
-        matchedLogFont.lfUnderline = 0;
-        matchedLogFont.lfStrikeOut = 0;
-
-        /* Force bold or italic if requested. The font name
-           such as Arial Bold may have already set a weight
-           so here we just try to increase it.
-        */
-        if (isBold) {
-            matchedLogFont.lfWeight = embolden(matchedLogFont.lfWeight);
-        } else {
-            matchedLogFont.lfWeight = FW_REGULAR;
-        }
-
-        if (isItalic) {
-            matchedLogFont.lfItalic = 0xff;     // TRUE
-        }  else {
-            matchedLogFont.lfItalic = FALSE;
-        }
-
-        HFONT font = CreateFontIndirectA(&matchedLogFont);
-        if (font) {
-            HFONT oldFont = (HFONT)::SelectObject(printDC, font);
-            if (oldFont != NULL) {
-                ::DeleteObject(oldFont);
-                if (awScale != 1.0) {
-                    TEXTMETRIC tm;
-                    DWORD avgWidth;
-                    GetTextMetrics(printDC, &tm);
-                    avgWidth = tm.tmAveCharWidth;
-                    matchedLogFont.lfWidth = (LONG)((fabs)(avgWidth*awScale));
-                    font = CreateFontIndirectA(&matchedLogFont);
-                    if (font) {
-                        oldFont = (HFONT)::SelectObject(printDC, font);
-                        if (oldFont != NULL) {
-                            ::DeleteObject(oldFont);
-                            GetTextMetrics(printDC, &tm);
-                        } else {
-                            foundFont = false;
-                        }
-                    } else {
-                        foundFont = false;
-                    }
-                }
-            } else {
-                foundFont = false;
-            }
-        } else {
-            foundFont = false;
-        }
-    }
-
-    JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
-
-    return foundFont ? JNI_TRUE : JNI_FALSE;
-}
-
-/**
- * Try to convert a java font to a GDI font. On entry, 'printDC',
- * is the device context we want to draw into. 'fontName' is
- * the name of the font to be matched and 'fontSize' is the
- * size of the font in device coordinates. If there is an
- * equivalent GDI font then this function sets that font
- * into 'printDC' and returns a 'true'. If there is no equivalent
- * font then 'false' is returned.
- */
 static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
                         jfloat fontSize, jboolean isBold, jboolean isItalic,
                         jint rotation, jfloat awScale)
@@ -2510,29 +2430,6 @@ static int CALLBACK fontEnumProcW(ENUMLOGFONTEXW *logfont,// logical-font data
                     LPARAM lParam)
 {
     LOGFONTW *matchedLogFont = (LOGFONTW *) lParam;
-    int stop = 0;          // Take the first style found.
-
-    if (matchedLogFont != NULL) {
-        *matchedLogFont = logfont->elfLogFont;
-    }
-
-    return stop;
-}
-
-/**
- * Invoked by GDI as a result of the EnumFontFamiliesExA
- * call this routine choses a GDI font that matches
- * a Java font. When a match is found then function
- * returns a zero result to terminate the EnumFontFamiliesExA
- * call. The information about the chosen font is copied into
- * the LOGFONTA structure pointed to by 'lParam'.
- */
-static int CALLBACK fontEnumProcA(ENUMLOGFONTEXA *logfont,// logical-font data
-                    NEWTEXTMETRICEX *lpntme,              // physical-font data
-                    int FontType,                         // type of font
-                    LPARAM lParam)
-{
-    LOGFONTA *matchedLogFont = (LOGFONTA *) lParam;
     int stop = 0;          // Take the first style found.
 
     if (matchedLogFont != NULL) {

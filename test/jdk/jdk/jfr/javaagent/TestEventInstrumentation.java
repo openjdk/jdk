@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,13 @@
  */
 package jdk.jfr.javaagent;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.constant.ClassDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -29,17 +36,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
-
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 
 /*
  * @test
@@ -48,8 +51,8 @@ import jdk.test.lib.Asserts;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
+ * @enablePreview
  * @build jdk.jfr.javaagent.InstrumentationEventCallback
  *        jdk.jfr.javaagent.TestEventInstrumentation
  * @run driver jdk.test.lib.util.JavaAgentBuilder
@@ -99,6 +102,9 @@ public class TestEventInstrumentation {
     }
 
     static class Transformer implements ClassFileTransformer {
+        private static final ClassDesc CD_InstrumentationEventCallback = InstrumentationEventCallback.class
+                .describeConstable().orElseThrow();
+
         public byte[] transform(ClassLoader classLoader, String className,
                                 Class<?> classBeingRedefined, ProtectionDomain pd,
                                 byte[] bytes) throws IllegalClassFormatException {
@@ -109,63 +115,31 @@ public class TestEventInstrumentation {
                     return null;
                 }
 
-                ClassReader reader = new ClassReader(bytes);
-                ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-                CallbackClassVisitor classVisitor = new CallbackClassVisitor(writer);
+                var cf = ClassFile.of();
+                result = cf.transform(cf.parse(bytes), (clb, ce) -> {
+                    if (ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)) {
+                        clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {
+                            @Override
+                            public void atStart(CodeBuilder cb) {
+                                cb.invokestatic(CD_InstrumentationEventCallback, "callback", MTD_void);
+                                log("instrumented <init> in class " + className);
+                            }
 
-                // visit the reader's class by the classVisitor
-                reader.accept(classVisitor, 0);
-                result = writer.toByteArray();
+                            @Override
+                            public void accept(CodeBuilder cb, CodeElement ce) {
+                                cb.accept(ce);
+                            }
+                        }));
+                    } else {
+                        clb.with(ce);
+                    }
+                });
             } catch (Exception e) {
                 log("Exception occured in transform(): " + e.getMessage());
                 e.printStackTrace(System.out);
                 transformException = e;
             }
             return result;
-        }
-
-        private static class CallbackClassVisitor extends ClassVisitor {
-            private String className;
-
-            public CallbackClassVisitor(ClassVisitor cv) {
-                super(Opcodes.ASM7, cv);
-            }
-
-            @Override
-            public void visit(int version, int access, String name, String signature,
-                              String superName, String[] interfaces) {
-                // visit the header of the class - called per class header visit
-                cv.visit(version, access, name, signature, superName, interfaces);
-                className = name;
-            }
-
-            @Override
-            public MethodVisitor visitMethod(
-                                             int access, String methodName, String desc,
-                                             String signature, String[] exceptions) {
-                // called for each method in a class
-                boolean isInstrumentedMethod = methodName.contains("<init>");
-                MethodVisitor mv = cv.visitMethod(access, methodName, desc, signature, exceptions);
-                if (isInstrumentedMethod) {
-                    mv = new CallbackMethodVisitor(mv);
-                    log("instrumented <init> in class " + className);
-                }
-                return mv;
-            }
-        }
-
-        public static class CallbackMethodVisitor extends MethodVisitor {
-            public CallbackMethodVisitor(MethodVisitor mv) {
-                super(Opcodes.ASM7, mv);
-            }
-
-            @Override
-            public void visitCode() {
-                mv.visitCode();
-                String methodDescr = Type.getMethodDescriptor(Type.VOID_TYPE, Type.VOID_TYPE);
-                String className = InstrumentationEventCallback.class.getName().replace('.', '/');
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, "callback", "()V", false);
-            }
         }
     }
 }

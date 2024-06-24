@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,13 @@ class JfrIntrinsicSupport : AllStatic {
 #define JFR_HAVE_INTRINSICS
 
 #define JFR_TEMPLATES(template)                                                                                      \
+  template(jdk_jfr_internal_HiddenWait,                               "jdk/jfr/internal/HiddenWait")                 \
   template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                        \
   template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")   \
   template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;") \
   template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")      \
   template(eventConfiguration_name,                                   "eventConfiguration")                          \
   template(commit_name,                                               "commit")                                      \
-  template(jfr_chunk_rotation_monitor,                                "jdk/jfr/internal/JVM$ChunkRotationMonitor")   \
 
 #define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                      \
   do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)               \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         Double defaultCaretAspectRatio = Double.valueOf(0.025);
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
+        Color tabbedPaneBg = new ColorUIResource(238, 238, 238);
+        Color unselectedTabColor = new ColorUIResource(255, 255, 255);
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                        "ctrl C", DefaultEditorKit.copyAction,
@@ -1020,6 +1022,11 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "TabbedPane.selectedLabelShift", 3,
             "TabbedPane.font", new FontLazyValue(Region.TABBED_PANE),
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(2, 2, 0, 1),
+            "TabbedPane.selected", tabbedPaneBg,
+            "TabbedPane.contentOpaque", Boolean.TRUE,
+            "TabbedPane.tabsOpaque", Boolean.TRUE,
+            "TabbedPane.contentAreaColor", tabbedPaneBg,
+            "TabbedPane.unselectedBackground", unselectedTabColor,
 
             "Table.scrollPaneBorder", zeroBorder,
             "Table.background", tableBg,

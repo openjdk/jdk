@@ -60,14 +60,14 @@ inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
+inline int stackChunkOopDesc::bottom() const            { return jdk_internal_vm_StackChunk::bottom(as_oop()); }
+inline void stackChunkOopDesc::set_bottom(int value)    { jdk_internal_vm_StackChunk::set_bottom(this, value); }
+
 inline int stackChunkOopDesc::sp() const                { return jdk_internal_vm_StackChunk::sp(as_oop()); }
 inline void stackChunkOopDesc::set_sp(int value)        { jdk_internal_vm_StackChunk::set_sp(this, value); }
 
 inline address stackChunkOopDesc::pc() const            { return jdk_internal_vm_StackChunk::pc(as_oop()); }
 inline void stackChunkOopDesc::set_pc(address value)    { jdk_internal_vm_StackChunk::set_pc(this, value); }
-
-inline int stackChunkOopDesc::argsize() const           { return jdk_internal_vm_StackChunk::argsize(as_oop()); }
-inline void stackChunkOopDesc::set_argsize(int value)   { jdk_internal_vm_StackChunk::set_argsize(as_oop(), value); }
 
 inline uint8_t stackChunkOopDesc::flags() const         { return jdk_internal_vm_StackChunk::flags(as_oop()); }
 inline void stackChunkOopDesc::set_flags(uint8_t value) { jdk_internal_vm_StackChunk::set_flags(this, value); }
@@ -108,7 +108,10 @@ inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_Stac
 template<DecoratorSet decorators>
 inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
-inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize() - frame::metadata_words_at_top; }
+inline int stackChunkOopDesc::argsize() const {
+  assert(!is_empty(), "should not ask for argsize in empty chunk");
+  return stack_size() - bottom() - frame::metadata_words_at_top;
+}
 
 inline HeapWord* stackChunkOopDesc::start_of_stack() const {
    return (HeapWord*)(cast_from_oop<intptr_t>(as_oop()) + InstanceStackChunkKlass::offset_of_stack());
@@ -132,10 +135,8 @@ inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
 }
 
 inline bool stackChunkOopDesc::is_empty() const {
-  assert(sp() <= stack_size(), "");
-  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize() - frame::metadata_words_at_top),
-    "sp: %d size: %d argsize: %d", sp(), stack_size(), argsize());
-  return sp() == stack_size();
+  assert(sp() <= bottom(), "");
+  return sp() == bottom();
 }
 
 inline bool stackChunkOopDesc::is_in_chunk(void* p) const {

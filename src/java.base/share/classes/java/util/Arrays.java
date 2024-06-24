@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4358,11 +4358,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4385,11 +4381,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_SHORT);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4412,11 +4404,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_CHAR);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4439,11 +4427,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_BYTE);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4549,15 +4533,10 @@ public final class Arrays {
      * @since 1.5
      */
     public static int hashCode(Object[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-
-        for (Object element : a)
-            result = 31 * result + Objects.hashCode(element);
-
-        return result;
+        }
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**

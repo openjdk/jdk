@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,10 +292,10 @@ class vframeStreamCommon : StackObj {
   inline int decode_offset() const;
   inline oop continuation() const;
 
-  CodeBlob*         cb()         const { return _frame.cb();  }
-  CompiledMethod*   nm()         const {
-      assert( cb() != nullptr && cb()->is_compiled(), "usage");
-      return (CompiledMethod*) cb();
+  CodeBlob* cb() const { return _frame.cb();  }
+  nmethod*  nm() const {
+    assert(cb() != nullptr, "usage");
+    return cb()->as_nmethod();
   }
 
   const RegisterMap* reg_map() { return &_reg_map; }

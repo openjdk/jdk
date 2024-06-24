@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,8 @@ class MallocSiteTable : AllStatic {
 
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
-  static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
-    MallocSite* site = malloc_site(marker);
+  static inline bool access_stack(NativeCallStack& stack, const MallocHeader& header) {
+    MallocSite* site = malloc_site(header.mst_marker());
     if (site != nullptr) {
       stack = *site->call_stack();
       return true;

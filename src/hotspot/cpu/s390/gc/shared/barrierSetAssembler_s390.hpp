@@ -29,6 +29,12 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.hpp"
+#include "opto/optoreg.hpp"
+
+class Node;
+#endif // COMPILER2
 
 class InterpreterMacroAssembler;
 
@@ -52,6 +58,11 @@ public:
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
 
   virtual void barrier_stubs_init() {}
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
 
 #endif // CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP

@@ -476,15 +476,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Always enable optional macros for VM.
   ALWAYS_CFLAGS_JVM="-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
 
-  # Setup some hard coded includes
-  ALWAYS_CFLAGS_JDK=" \
-      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base/\$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
-      -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava \
-      -I${TOPDIR}/src/hotspot/share/include \
-      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_TARGET_OS_TYPE}/include"
-
   ###############################################################################
 
   # Adjust flags according to debug level.
@@ -511,12 +502,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     ALWAYS_DEFINES_JVM="-D_GNU_SOURCE"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # Access APIs for Windows 8 and above
-    # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
-    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
+    # _WIN32_WINNT=0x0602 means access APIs for Windows 8 and above. See
+    # https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    ALWAYS_DEFINES="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
+        -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS"
+    ALWAYS_DEFINES_JDK="$ALWAYS_DEFINES -DWIN32 -DIAL"
+    ALWAYS_DEFINES_JVM="$ALWAYS_DEFINES -DNOMINMAX"
   fi
 
   ###############################################################################
@@ -577,8 +568,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
     # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
@@ -650,11 +641,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   JDK_PICFLAG="$PICFLAG"
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # Linking is different on MacOSX
-    JDK_PICFLAG=''
-    if test "x$STATIC_BUILD" = xtrue; then
-      JVM_PICFLAG=""
-    fi
+    # Linking is different on macOS
+    JVM_PICFLAG=""
   fi
 
   # Extra flags needed when building optional static versions of certain
@@ -871,7 +859,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
       $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
-  CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
+  CFLAGS_JDK_COMMON="$ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
       $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
       $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"

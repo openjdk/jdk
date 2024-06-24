@@ -128,7 +128,6 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   InterpreterOopMap();
-  ~InterpreterOopMap();
 
   // Copy the OopMapCacheEntry in parameter "from" into this
   // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
@@ -180,7 +179,15 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry);
-  static void cleanup_old_entries();
+
+  // Check if we need to clean up old entries
+  static bool has_cleanup_work();
+
+  // Request cleanup if work is needed
+  static void trigger_cleanup();
+
+  // Clean up the old entries
+  static void cleanup();
 };
 
 #endif // SHARE_INTERPRETER_OOPMAPCACHE_HPP

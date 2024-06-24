@@ -120,19 +120,19 @@ class os::Aix {
   struct meminfo_t {
 
     // Amount of virtual memory (in units of 4 KB pages)
-    unsigned long long virt_total;
+    size_t virt_total;
 
     // Amount of real memory, in bytes
-    unsigned long long real_total;
+    size_t real_total;
 
     // Amount of free real memory, in bytes
-    unsigned long long real_free;
+    size_t real_free;
 
     // Total amount of paging space, in bytes
-    unsigned long long pgsp_total;
+    size_t pgsp_total;
 
     // Amount of free paging space, in bytes
-    unsigned long long pgsp_free;
+    size_t pgsp_free;
 
   };
 

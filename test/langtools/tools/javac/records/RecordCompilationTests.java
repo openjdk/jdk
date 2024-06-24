@@ -1320,7 +1320,7 @@ class RecordCompilationTests extends CompilationTestCase {
                 ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods()) {
                     if (method.methodName().equalsString("<init>")) {
-                        CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                        CodeAttribute code_attribute = method.findAttribute(Attributes.code()).orElseThrow();
                         for (CodeElement ce : code_attribute.elementList()) {
                             if (ce instanceof Instruction instruction && instruction.opcode() == Opcode.PUTFIELD) {
                                 if (putField1 != null && putField2 != null) {

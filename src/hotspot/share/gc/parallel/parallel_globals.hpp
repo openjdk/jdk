@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,11 @@
                           develop_pd,                                       \
                           product,                                          \
                           product_pd,                                       \
-                          notproduct,                                       \
                           range,                                            \
                           constraint)                                       \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
           "any dead space)")                                                \
-          range(0, max_uintx)                                               \
-                                                                            \
-  product(uintx, HeapFirstMaximumCompactionCount, 3,                        \
-          "The collection count for the first maximum compaction")          \
           range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
