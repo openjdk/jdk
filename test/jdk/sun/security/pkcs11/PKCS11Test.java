@@ -82,7 +82,7 @@ public abstract class PKCS11Test {
 
     // Version of the NSS artifact. This coincides with the version of
     // the NSS version
-    private static final String NSS_BUNDLE_VERSION = "3.91";
+    private static final String NSS_BUNDLE_VERSION = "3.96";
     private static final String NSSLIB = "jpg.tests.jdk.nsslib";
 
     static double nss_version = -1;

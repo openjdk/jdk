@@ -1921,8 +1921,9 @@ void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
   if (use_op == Op_AddI || use_op == Op_SubI) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* cmpu = use->fast_out(i);
-      if (cmpu->Opcode() == Op_CmpU) {
-        // Got a CmpU which might need the new type information from node n.
+      const uint cmpu_opcode = cmpu->Opcode();
+      if (cmpu_opcode == Op_CmpU || cmpu_opcode == Op_CmpU3) {
+        // Got a CmpU or CmpU3 which might need the new type information from node n.
         push_if_not_bottom_type(worklist, cmpu);
       }
     }

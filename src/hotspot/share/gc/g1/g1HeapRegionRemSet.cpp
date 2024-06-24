@@ -55,7 +55,7 @@ void HeapRegionRemSet::initialize(MemRegion reserved) {
   _heap_base_address = reserved.start();
 }
 
-HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
+HeapRegionRemSet::HeapRegionRemSet(G1HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _code_roots(),
   _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
@@ -123,7 +123,7 @@ void HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {
   _code_roots.nmethods_do(blk);
 }
 
-void HeapRegionRemSet::clean_code_roots(HeapRegion* hr) {
+void HeapRegionRemSet::clean_code_roots(G1HeapRegion* hr) {
   _code_roots.clean(hr);
 }
 

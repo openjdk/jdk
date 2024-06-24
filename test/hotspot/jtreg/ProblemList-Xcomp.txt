@@ -28,8 +28,6 @@
 #############################################################################
 
 vmTestbase/nsk/jvmti/AttachOnDemand/attach020/TestDescription.java 8287324 generic-all
-vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
-vmTestbase/nsk/jvmti/SetFieldModificationWatch/setfmodw001/TestDescription.java 8205957 linux-x64,windows-x64
 vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
 
 vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64

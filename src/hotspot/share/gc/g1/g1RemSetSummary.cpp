@@ -190,23 +190,23 @@ private:
   RegionTypeCounter _all;
 
   size_t _max_rs_mem_sz;
-  HeapRegion* _max_rs_mem_sz_region;
+  G1HeapRegion* _max_rs_mem_sz_region;
 
   size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
   size_t total_cards_occupied() const       { return _all.cards_occupied(); }
 
   size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
-  HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
+  G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
 
   size_t _max_code_root_mem_sz;
-  HeapRegion* _max_code_root_mem_sz_region;
+  G1HeapRegion* _max_code_root_mem_sz_region;
 
   size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
   size_t total_code_root_elems() const      { return _all.code_root_elems(); }
 
   size_t max_code_root_mem_sz() const       { return _max_code_root_mem_sz; }
-  HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
+  G1HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
@@ -215,7 +215,7 @@ public:
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr)
   {}
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the

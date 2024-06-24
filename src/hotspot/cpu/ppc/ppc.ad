@@ -641,6 +641,8 @@ reg_class rarg1_bits64_reg(R3_H, R3);
 reg_class rarg2_bits64_reg(R4_H, R4);
 reg_class rarg3_bits64_reg(R5_H, R5);
 reg_class rarg4_bits64_reg(R6_H, R6);
+reg_class rarg5_bits64_reg(R7_H, R7);
+reg_class rarg6_bits64_reg(R8_H, R8);
 // Thread register, 'written' by tlsLoadP, see there.
 reg_class thread_bits64_reg(R16_H, R16);
 
@@ -3430,6 +3432,7 @@ encode %{
     call->_in_rms            = _in_rms;
     call->_nesting           = _nesting;
     call->_override_symbolic_info = _override_symbolic_info;
+    call->_arg_escape        = _arg_escape;
 
     // New call needs all inputs of old call.
     // Req...
@@ -4353,6 +4356,8 @@ operand iRegPsrc() %{
   match(rarg2RegP);
   match(rarg3RegP);
   match(rarg4RegP);
+  match(rarg5RegP);
+  match(rarg6RegP);
   match(threadRegP);
   format %{ %}
   interface(REG_INTER);
@@ -4403,6 +4408,20 @@ operand rarg3RegP() %{
 
 operand rarg4RegP() %{
   constraint(ALLOC_IN_RC(rarg4_bits64_reg));
+  match(iRegPdst);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand rarg5RegP() %{
+  constraint(ALLOC_IN_RC(rarg5_bits64_reg));
+  match(iRegPdst);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand rarg6RegP() %{
+  constraint(ALLOC_IN_RC(rarg6_bits64_reg));
   match(iRegPdst);
   format %{ %}
   interface(REG_INTER);
@@ -12021,6 +12040,35 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
                                      $tmp_klass$$Register, nullptr, $result$$Register);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP super_con, rarg6RegP result,
+                                       rarg1RegP tempR1, rarg5RegP tempR2, rarg4RegP tempR3, rscratch1RegP tempR4,
+                                       flagsRegCR0 cr0, regCTR ctr)
+%{
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr0, KILL ctr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP tempR4);
+
+  ins_cost(DEFAULT_COST*8);  // smaller than the other version
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg" %}
+
+  ins_encode %{
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+                                       $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
+                                       $result$$Register, super_klass_slot);
+    } else {
+      address stub = StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot);
+      Register r_stub_addr = $tempR1$$Register;
+      __ add_const_optimized(r_stub_addr, R29_TOC, MacroAssembler::offset_to_global_toc(stub), R0);
+      __ mtctr(r_stub_addr);
+      __ bctrl();
+    }
+  %}
+
+  ins_pipe(pipe_class_memory);
 %}
 
 // inlined locking and unlocking

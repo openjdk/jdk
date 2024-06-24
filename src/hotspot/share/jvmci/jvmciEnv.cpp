@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,6 +514,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception from JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
@@ -545,6 +546,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception to JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
     JavaCallArguments jargs;
     jargs.push_int(format);
@@ -958,6 +960,31 @@ jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, 
                                                      JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
                                                      JNIJVMCI::HotSpotJVMCIRuntime::isGCSupported_method(),
                                                      gcIdentifier);
+    if (jni()->ExceptionCheck()) {
+      return false;
+    }
+    return result;
+  }
+}
+
+jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isIntrinsicSupported (JVMCIObject runtime, jint intrinsicIdentifier) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
+    jargs.push_int(intrinsicIdentifier);
+    JavaValue result(T_BOOLEAN);
+    JavaCalls::call_special(&result,
+                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                            vmSymbols::isIntrinsicSupported_name(),
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
+    return result.get_jboolean();
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jboolean result = jni()->CallNonvirtualBooleanMethod(runtime.as_jobject(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::isIntrinsicSupported_method(),
+                                                     intrinsicIdentifier);
     if (jni()->ExceptionCheck()) {
       return false;
     }

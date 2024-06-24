@@ -486,7 +486,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_lang
 
-java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
@@ -551,8 +550,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8308807 aix-ppc6
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
-
-java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
 java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc64
 
@@ -621,7 +618,9 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 javax/net/ssl/SSLSession/CertMsgCheck.java                      8326705 generic-all
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
+
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliasonerarootcav1  8333640 generic-all
 
 ############################################################################
 

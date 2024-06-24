@@ -48,7 +48,7 @@ public class InnerClassAttrMustNotHaveStrictFPFlagTest {
 
     void analyzeClassFile(File path) throws Exception {
         ClassModel classFile = ClassFile.of().parse(path.toPath());
-        InnerClassesAttribute innerClasses = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute innerClasses = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
         assert innerClasses != null;
         for (InnerClassInfo classInfo : innerClasses.classes()) {
             Assert.check(classInfo.flagsMask() != ClassFile.ACC_STRICT,

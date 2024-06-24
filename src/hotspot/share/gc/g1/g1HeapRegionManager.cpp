@@ -58,7 +58,7 @@ public:
       guarantee(Heap_lock->owned_by_self(), "master free list MT safety protocol outside a safepoint");
     }
   }
-  bool is_correct_type(HeapRegion* hr) { return hr->is_free(); }
+  bool is_correct_type(G1HeapRegion* hr) { return hr->is_free(); }
   const char* get_description() { return "Free Regions"; }
 };
 
@@ -85,13 +85,13 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
   _bot_mapper = bot;
   _cardtable_mapper = cardtable;
 
-  _regions.initialize(heap_storage->reserved(), HeapRegion::GrainBytes);
+  _regions.initialize(heap_storage->reserved(), G1HeapRegion::GrainBytes);
 
   _committed_map.initialize(reserved_length());
 }
 
-HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
-  HeapRegion* hr = nullptr;
+G1HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
+  G1HeapRegion* hr = nullptr;
   bool from_head = !type.is_young();
   G1NUMA* numa = G1NUMA::numa();
 
@@ -118,7 +118,7 @@ HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint re
   return hr;
 }
 
-HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
+G1HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
   uint candidate = find_contiguous_in_free_list(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
     return nullptr;
@@ -126,7 +126,7 @@ HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_region
   return allocate_free_regions_starting_at(candidate, num_regions);
 }
 
-HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
+G1HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
   uint candidate = find_contiguous_allow_expand(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
     return nullptr;
@@ -135,7 +135,7 @@ HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions)
   return allocate_free_regions_starting_at(candidate, num_regions);
 }
 
-HeapRegion* HeapRegionManager::allocate_humongous(uint num_regions) {
+G1HeapRegion* HeapRegionManager::allocate_humongous(uint num_regions) {
   // Special case a single region to avoid expensive search.
   if (num_regions == 1) {
     return allocate_free_region(HeapRegionType::Humongous, G1NUMA::AnyNodeIndex);
@@ -143,20 +143,20 @@ HeapRegion* HeapRegionManager::allocate_humongous(uint num_regions) {
   return allocate_humongous_from_free_list(num_regions);
 }
 
-HeapRegion* HeapRegionManager::expand_and_allocate_humongous(uint num_regions) {
+G1HeapRegion* HeapRegionManager::expand_and_allocate_humongous(uint num_regions) {
   return allocate_humongous_allow_expand(num_regions);
 }
 
 #ifdef ASSERT
-bool HeapRegionManager::is_free(HeapRegion* hr) const {
+bool HeapRegionManager::is_free(G1HeapRegion* hr) const {
   return _free_list.contains(hr);
 }
 #endif
 
-HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
+G1HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   HeapWord* bottom = g1h->bottom_addr_for_region(hrm_index);
-  MemRegion mr(bottom, bottom + HeapRegion::GrainWords);
+  MemRegion mr(bottom, bottom + G1HeapRegion::GrainWords);
   assert(reserved().contains(mr), "invariant");
   return g1h->new_heap_region(hrm_index, mr);
 }
@@ -164,7 +164,7 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
 void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
   commit_regions(start, num_regions, pretouch_workers);
   for (uint i = start; i < start + num_regions; i++) {
-    HeapRegion* hr = _regions.get_by_index(i);
+    G1HeapRegion* hr = _regions.get_by_index(i);
     if (hr == nullptr) {
       hr = new_heap_region(i);
       OrderAccess::storestore();
@@ -197,7 +197,7 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
   if (G1HeapRegionPrinter::is_active()) {
     for (uint i = start; i < end; i++) {
       // Can't use at() here since region is no longer marked available.
-      HeapRegion* hr = _regions.get_by_index(i);
+      G1HeapRegion* hr = _regions.get_by_index(i);
       assert(hr != nullptr, "Region should still be present");
       G1HeapRegionPrinter::uncommit(hr);
     }
@@ -218,7 +218,7 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
 void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
   for (uint i = start; i < start + num_regions; i++) {
     assert(is_available(i), "Just made region %u available but is apparently not.", i);
-    HeapRegion* hr = at(i);
+    G1HeapRegion* hr = at(i);
 
     hr->initialize();
     hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
@@ -248,7 +248,7 @@ void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   // Reset NUMA index to and print state change.
   uint end = start + num_regions;
   for (uint i = start; i < end; i++) {
-    HeapRegion* hr = at(i);
+    G1HeapRegion* hr = at(i);
     hr->set_node_index(G1NUMA::UnknownNodeIndex);
     G1HeapRegionPrinter::inactive(hr);
   }
@@ -430,7 +430,7 @@ void HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) {
   // General sanity check, regions found should either be available and empty
   // or not available so that we can make them available and use them.
   for (uint i = start; i < (start + num_regions); i++) {
-    HeapRegion* hr = _regions.get_by_index(i);
+    G1HeapRegion* hr = _regions.get_by_index(i);
     assert(!is_available(i) || hr->is_free(),
            "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
            " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
@@ -486,11 +486,11 @@ uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
   return find_contiguous_in_range(0, reserved_length(), num_regions);
 }
 
-HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {
+G1HeapRegion* HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) const {
   guarantee(r != nullptr, "Start region must be a valid region");
   guarantee(is_available(r->hrm_index()), "Trying to iterate starting from region %u which is not in the heap", r->hrm_index());
   for (uint i = r->hrm_index() + 1; i < _allocated_heapregions_length; i++) {
-    HeapRegion* hr = _regions.get_by_index(i);
+    G1HeapRegion* hr = _regions.get_by_index(i);
     if (is_available(i)) {
       return hr;
     }
@@ -505,7 +505,7 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
     if (!is_available(i)) {
       continue;
     }
-    guarantee(at(i) != nullptr, "Tried to access region %u that has a null HeapRegion*", i);
+    guarantee(at(i) != nullptr, "Tried to access region %u that has a null G1HeapRegion*", i);
     bool res = blk->do_heap_region(at(i));
     if (res) {
       blk->set_incomplete();
@@ -534,7 +534,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   // entry which is either free or not yet committed.  If not yet
   // committed, expand at that index.
   for (uint curr = reserved_length(); curr-- > 0;) {
-    HeapRegion *hr = _regions.get_by_index(curr);
+    G1HeapRegion* hr = _regions.get_by_index(curr);
     if (hr == nullptr || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
       expand_exact(curr, 1, nullptr);
@@ -563,7 +563,7 @@ bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* com
       commits++;
       expand_exact(curr_index, 1, pretouch_workers);
     }
-    HeapRegion* curr_region  = _regions.get_by_index(curr_index);
+    G1HeapRegion* curr_region  = _regions.get_by_index(curr_index);
     if (!curr_region->is_free()) {
       return false;
     }
@@ -587,7 +587,7 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* h
     if (!is_available(index)) {
       continue;
     }
-    HeapRegion* r = _regions.get_by_index(index);
+    G1HeapRegion* r = _regions.get_by_index(index);
     // We'll ignore regions already claimed.
     if (hrclaimer->is_region_claimed(index)) {
       continue;
@@ -699,7 +699,7 @@ void HeapRegionManager::verify() {
       continue;
     }
     num_committed++;
-    HeapRegion* hr = _regions.get_by_index(i);
+    G1HeapRegion* hr = _regions.get_by_index(i);
     guarantee(hr != nullptr, "invariant: i: %u", i);
     guarantee(!prev_committed || hr->bottom() == prev_end,
               "invariant i: %u " HR_FORMAT " prev_end: " PTR_FORMAT,
@@ -800,9 +800,9 @@ public:
       return;
     }
 
-    FreeRegionList *free_list = worker_freelist(worker_id);
+    FreeRegionList* free_list = worker_freelist(worker_id);
     for (uint i = start; i < end; i++) {
-      HeapRegion *region = _hrm->at_or_null(i);
+      G1HeapRegion* region = _hrm->at_or_null(i);
       if (region != nullptr && region->is_free()) {
         // Need to clear old links to allow to be added to new freelist.
         region->unlink_from_list();

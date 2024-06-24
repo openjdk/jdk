@@ -61,7 +61,8 @@ public interface CaseTree extends Tree {
      * For default case, returns an empty list.
      *
      * @return labels for this case
-     * @since 12
+     *
+     * @since 14
      */
     List<? extends ExpressionTree> getExpressions();
 
@@ -98,7 +99,8 @@ public interface CaseTree extends Tree {
      * {@linkplain CaseKind#STATEMENT}.
      *
      * @return case value or null
-     * @since 12
+     *
+     * @since 14
      */
     public default Tree getBody() {
         return null;
@@ -108,7 +110,8 @@ public interface CaseTree extends Tree {
      * Returns the kind of this case.
      *
      * @return the kind of this case
-     * @since 12
+     *
+     * @since 14
      */
     public default CaseKind getCaseKind() {
         return CaseKind.STATEMENT;
@@ -121,7 +124,7 @@ public interface CaseTree extends Tree {
      *     <li>RULE: {@code case <expression> -> <expression>/<statement>}</li>
      * </ul>
      *
-     * @since 12
+     * @since 14
      */
     public enum CaseKind {
         /**
