@@ -1526,7 +1526,7 @@ public:
 
   bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
 
-// Check for aggressive application of 'split-if' optimization,
+  // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
   Node *split_if_with_blocks_pre ( Node *n );
