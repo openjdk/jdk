@@ -175,6 +175,8 @@ public sealed interface StableValue<T>
      * {@snippet lang = java :
      *     T t = stable.computeIfUnset(T::new);
      * }
+     * <p>
+     * If this method returns without throwing an Exception, a holder value is always set.
      *
      * @implSpec
      * The implementation of this method is equivalent to the following steps for this
@@ -191,8 +193,6 @@ public sealed interface StableValue<T>
      * Except, the method is atomic, thread-safe and guarded with synchronization
      * with respect to this method and all other methods that can set this StableValue's
      * holder value.
-     * <p>
-     * If this method returns without throwing an Exception, a holder value is always set.
      *
      * @param supplier the supplier to be used to compute a holder value
      * @return the current (existing or computed) holder value associated with
