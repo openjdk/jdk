@@ -2417,8 +2417,8 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       nmethod* nm = method->code();
-      if (WizardMode && nm != nullptr) {
-        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+      if (nm != nullptr) {
+        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(comp_id %d, comp_level %d)", nm->compile_id(), nm->comp_level());
       }
     }
   }
