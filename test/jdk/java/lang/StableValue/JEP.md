@@ -319,7 +319,7 @@ class ErrorMessages {
         // 3. Access the stable list element with as-declared-final performance
         //    (evaluation made before the first access)
         return MESSAGES.get(messageNumber)
-                .computeIfUnset(messageNumber, ErrorMessages::readFromFile);
+                .mapIfUnset(messageNumber, ErrorMessages::readFromFile);
     }
 
 }
@@ -366,7 +366,7 @@ class MapDemo {
     //    (evaluation made before the first access)
     static Logger logger(String name) {
         return LOGGERS.get(name)
-                .computeIfUnset(name, Logger::getLogger);
+                .mapIfUnset(name, Logger::getLogger);
     }
 }
 ```
@@ -400,7 +400,7 @@ class Memoized {
 
     // 2. Declare a memoized (cached) function backed by the stable map
     private static final Function<String, Logger> LOGGERS =
-            n -> MAP.get(n).computeIfUnset(n , Logger::getLogger);
+            n -> MAP.get(n).mapIfUnset(n , Logger::getLogger);
 
     ...
 
@@ -431,7 +431,7 @@ class ErrorMessages {
 
     // 2. Declare a memoized IntFunction backed by the stable list
     private static final IntFunction<String> ERROR_FUNCTION =
-            i -> ERROR_PAGES.get(i).computeIfUnset(i , ErrorMessages::readFromFile);
+            i -> ERROR_PAGES.get(i).mapIfUnset(i , ErrorMessages::readFromFile);
 
     // 3. Define a function that is to be called the first
     //    time a particular message number is referenced

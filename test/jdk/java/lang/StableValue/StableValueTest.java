@@ -116,15 +116,15 @@ final class StableValueTest {
     }
 
     @Test
-    void computeIfUnset2Arg() {
+    void mapIfUnset() {
         StableValue<Integer> stable = StableValue.newInstance();
         StableTestUtil.CountingFunction<Integer, Integer> cntFunction = new StableTestUtil.CountingFunction<>(Function.identity());
         StableTestUtil.CountingFunction<Integer, Integer> cntFunction2 = new StableTestUtil.CountingFunction<>(Function.identity());
-        assertEquals(42, stable.computeIfUnset(42, cntFunction));
+        assertEquals(42, stable.mapIfUnset(42, cntFunction));
         assertEquals(1, cntFunction.cnt());
-        assertEquals(42, stable.computeIfUnset(42, cntFunction));
+        assertEquals(42, stable.mapIfUnset(42, cntFunction));
         assertEquals(1, cntFunction.cnt());
-        assertEquals(42, stable.computeIfUnset(13, cntFunction2));
+        assertEquals(42, stable.mapIfUnset(13, cntFunction2));
         assertEquals(0, cntFunction2.cnt());
         assertEquals("StableValue[42]", stable.toString());
         assertEquals(42, stable.orElse(null));
@@ -134,14 +134,14 @@ final class StableValueTest {
     }
 
     @Test
-    void computeIfUnset2ArgException() {
+    void mapIfUnsetException() {
         StableValue<Integer> stable = StableValue.newInstance();
         Function<Integer, Integer> function = _ -> {
             throw new UnsupportedOperationException("aaa");
         };
-        var x = assertThrows(UnsupportedOperationException.class, () -> stable.computeIfUnset(42, function));
+        var x = assertThrows(UnsupportedOperationException.class, () -> stable.mapIfUnset(42, function));
         assertTrue(x.getMessage().contains("aaa"));
-        assertEquals(42, stable.computeIfUnset(42, Function.identity()));
+        assertEquals(42, stable.mapIfUnset(42, Function.identity()));
         assertEquals("StableValue[42]", stable.toString());
         assertEquals(42, stable.orElse(13));
         assertFalse(stable.trySet(null));

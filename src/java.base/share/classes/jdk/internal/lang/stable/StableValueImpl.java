@@ -132,7 +132,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     @Override
-    public <I> T computeIfUnset(I input, Function<? super I, ? extends T> function) {
+    public <I> T mapIfUnset(I input, Function<? super I, ? extends T> function) {
         final T t = value();
         if (t != null) {
             return unwrap(t);

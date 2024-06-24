@@ -250,7 +250,7 @@ public sealed interface StableValue<T>
      * @return the current (existing or computed) holder value associated with
      *         this stable value
      */
-    <I> T computeIfUnset(I input, Function<? super I, ? extends T> mapper);
+    <I> T mapIfUnset(I input, Function<? super I, ? extends T> mapper);
 
     // Convenience methods
 
