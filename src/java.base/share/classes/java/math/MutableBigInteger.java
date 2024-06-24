@@ -1985,8 +1985,6 @@ class MutableBigInteger {
             if (s > LONG_MASK || Long.compareUnsigned(x, s * s) < 0)
                 s--;
 
-            long r = x - s * s;
-
             // Allocate sufficient space to hold the normalized final square root
             MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3) + 1) >> 1]);
 
