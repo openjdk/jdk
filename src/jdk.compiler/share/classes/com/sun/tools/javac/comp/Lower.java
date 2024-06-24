@@ -3893,7 +3893,7 @@ public class Lower extends TreeTranslator {
     public void visitLambda(JCLambda tree) {
         Type prevRestype = currentRestype;
         try {
-            currentRestype = types.findDescriptorType(tree.type).getReturnType();
+            currentRestype = types.erasure(tree.getDescriptorType(types)).getReturnType();
             tree.body = tree.getBodyKind() == BodyKind.EXPRESSION ?
                     translate((JCExpression) tree.body, currentRestype) :
                     translate(tree.body);
