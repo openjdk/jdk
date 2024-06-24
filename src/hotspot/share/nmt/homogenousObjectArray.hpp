@@ -22,10 +22,10 @@
 
  */
 
-#include "utilities/growableArray.hpp"
-
 #ifndef SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
 #define SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
+
+#include "utilities/growableArray.hpp"
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely

@@ -26,8 +26,8 @@
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/growableArray.hpp"
 #include "nmt/homogenousObjectArray.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.
