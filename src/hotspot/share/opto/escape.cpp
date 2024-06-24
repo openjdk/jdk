@@ -3503,7 +3503,7 @@ bool ConnectionGraph::not_global_escape(Node *n) {
 // all compiled code paths have corresponding Lock/Unlock pairs.
 bool ConnectionGraph::can_eliminate_lock(AbstractLockNode* alock) {
   BoxLockNode* box = alock->box_node()->as_BoxLock();
-  if (!box->is_unbalanced() && not_global_escape(alock->obj_node())) {
+  if (alock->is_balanced() && not_global_escape(alock->obj_node())) {
     if (EliminateNestedLocks) {
       // We can mark whole locking region as Local only when only
       // one object is used for locking.
