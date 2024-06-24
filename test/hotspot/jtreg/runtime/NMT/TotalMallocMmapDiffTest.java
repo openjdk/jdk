@@ -50,7 +50,7 @@ public class TotalMallocMmapDiffTest {
     public static void main(String[] args) throws Exception {
 
         // Get baseline
-        OutputAnalyzer output = NMTTestUtils.startJcmdVMNativeMemory("baseline=true");
+        OutputAnalyzer output = NMTTestUtils.startJcmdVMNativeMemory("baseline=true", "scale=1");
         output.shouldContain("Baseline taken");
 
         // Allocate some memory via malloc
@@ -89,21 +89,19 @@ public class TotalMallocMmapDiffTest {
 
     private static long getMallocDiff(OutputAnalyzer output) {
         // First match should be global malloc diff
-        String malloc = output.firstMatch("malloc=\\d* \\+\\d*");
-        return Long.parseLong(malloc.substring(malloc.indexOf("+") + 1));
+        String malloc = output.firstMatch("malloc=\\d+ \\+(\\d+)", 1);
+        return Long.parseLong(malloc);
     }
 
     private static long getReservedDiff(OutputAnalyzer output) {
         // First match should be global mmap diff
-        String reservedDiff = output.firstMatch("mmap: reserved=\\d* \\+\\d*");
-        return Long.parseLong(reservedDiff.substring(reservedDiff.indexOf("+") + 1));
+        String reservedDiff = output.firstMatch("mmap: reserved=\\d+ \\+(\\d+)", 1);
+        return Long.parseLong(reservedDiff);
     }
 
     private static long getCommittedDiff(OutputAnalyzer output) {
         // First match should be global mmap diff
-        String committedDiff = output.firstMatch("mmap: reserved=\\d* \\+\\d*, committed=\\d* \\+\\d*");
-        committedDiff = committedDiff
-                .substring(committedDiff.indexOf("=", committedDiff.indexOf("=") + 1));
-        return Long.parseLong(committedDiff.substring(committedDiff.indexOf("+") + 1));
+        String committedDiff = output.firstMatch("mmap: reserved=\\d+ \\+\\d+, committed=\\d+ \\+(\\d+)", 1);
+        return Long.parseLong(committedDiff);
     }
 }

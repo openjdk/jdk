@@ -502,6 +502,7 @@ void MemSummaryDiffReporter::report_diff() {
   print_malloc_diff(current_malloced_bytes, current_count, early_malloced_bytes,
                     early_count, mtNone);
   out->cr();
+  out->cr();
 
   // mmap diff
   out->print("mmap: ");
@@ -515,6 +516,7 @@ void MemSummaryDiffReporter::report_diff() {
     _current_baseline.virtual_memory_snapshot()->total_committed();
   print_virtual_memory_diff(current_reserved, current_committed, early_reserved,
                             early_committed);
+  out->cr();
   out->cr();
 
   // Summary diff by memory type
