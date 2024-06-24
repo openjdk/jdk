@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
@@ -3890,25 +3891,16 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitLambda(JCLambda tree) {
-        Type expectedRet = types.findDescriptorType(tree.type).getReturnType();
-        int prevVariableIndex = variableIndex;
+        Type prevRestype = currentRestype;
         try {
-            variableIndex = 0;
-            if (tree.body.hasTag(JCTree.Tag.BLOCK)) {
-                Type prevRestype = currentRestype;
-                try {
-                    currentRestype = expectedRet;
-                    super.visitLambda(tree);
-                } finally {
-                    currentRestype = prevRestype;
-                }
-            } else {
-                tree.body = translate((JCExpression) tree.body, expectedRet);
-            }
-            result = tree;
+            currentRestype = types.findDescriptorType(tree.type).getReturnType();
+            tree.body = tree.getBodyKind() == BodyKind.EXPRESSION ?
+                    translate((JCExpression) tree.body, currentRestype) :
+                    translate(tree.body);
         } finally {
-            variableIndex = prevVariableIndex;
+            currentRestype = prevRestype;
         }
+        result = tree;
     }
 
     @Override
