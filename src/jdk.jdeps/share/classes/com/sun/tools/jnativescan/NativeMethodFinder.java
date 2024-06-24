@@ -58,7 +58,7 @@ class NativeMethodFinder {
 
     public SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
         SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> restrictedMethods
-                = new TreeMap<>(Comparator.comparing(ClassFileSource::moduleName));
+                = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
         classesToScan.forEach((_, info) -> {
             ClassModel classModel = info.model();
             List<RestrictedUse> perClass = new ArrayList<>();

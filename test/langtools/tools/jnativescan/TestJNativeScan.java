@@ -58,6 +58,7 @@ class TestJNativeScan extends JNativeScanTestBase {
     Path orgMyapp;
     Path orgLib;
     Path unnamedPackageJar;
+    Path libJar;
 
     @BeforeClass
     public void before() throws IOException {
@@ -65,7 +66,8 @@ class TestJNativeScan extends JNativeScanTestBase {
         testClasses = Path.of(System.getProperty("test.classes", ""));
         JarUtils.createJarFile(singleJarClassPath, testClasses, Path.of("main", "Main.class"));
 
-        JarUtils.createJarFile(Path.of("lib.jar"), testClasses, Path.of("lib", "Lib.class"));
+        libJar = Path.of("lib.jar");
+        JarUtils.createJarFile(libJar, testClasses, Path.of("lib", "Lib.class"));
         Manifest manifest = new Manifest();
         Attributes mainAttrs = manifest.getMainAttributes();
         mainAttrs.put(Attributes.Name.MANIFEST_VERSION, "1.0"); // need version or other attributes will be ignored
@@ -79,7 +81,7 @@ class TestJNativeScan extends JNativeScanTestBase {
         makeModularJar("org.service");
 
         unnamedPackageJar = Path.of("unnamed_package.jar");
-        JarUtils.createJarFile(unnamedPackageJar, manifest, testClasses, Path.of("UnnamedPackage.class"));
+        JarUtils.createJarFile(unnamedPackageJar, testClasses, Path.of("UnnamedPackage.class"));
     }
 
     @Test
@@ -229,5 +231,22 @@ class TestJNativeScan extends JNativeScanTestBase {
                 .stdoutShouldContain("lib.Lib::m()void is a native method declaration")
                 .stdoutShouldContain("lib.Lib::doIt()void references restricted methods")
                 .stdoutShouldContain("java.lang.foreign.MemorySegment::reinterpret(long)MemorySegment");
+    }
+
+    @Test
+    public void testMultipleClassPathJars() {
+        // make sure all of these are reported, even when they are all in the ALL-UNNAMED module
+        String classPath = unnamedPackageJar
+                + File.pathSeparator + singleJarClassPath
+                + File.pathSeparator + libJar;
+        assertSuccess(jnativescan("--class-path", classPath))
+                .stderrShouldBeEmpty()
+                .stdoutShouldContain("ALL-UNNAMED")
+                .stdoutShouldContain("UnnamedPackage")
+                .stdoutShouldContain(unnamedPackageJar.toString())
+                .stdoutShouldContain("lib.Lib")
+                .stdoutShouldContain(libJar.toString())
+                .stdoutShouldContain("main.Main")
+                .stdoutShouldContain(singleJarClassPath.toString());
     }
 }
