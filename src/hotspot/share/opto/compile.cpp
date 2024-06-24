@@ -2225,8 +2225,11 @@ void Compile::save_graph(PhaseIterGVN* igvn, const char* label) {
 	return ;
 
   // If we are compiling any of our interesting methods, then save to file
-  if (strstr(method()->holder()->name()->as_utf8(), "JavacParser") != nullptr &&
-      strcmp(method()->name()->as_utf8(), "merge") == 0) {
+  if ((strstr(method()->holder()->name()->as_utf8(), "JavacParser") != nullptr && strcmp(method()->name()->as_utf8(), "merge") == 0) ||
+      (strstr(method()->holder()->name()->as_utf8(), "JavacParser") != nullptr && strcmp(method()->name()->as_utf8(), "foldIfNeeded") == 0) ||
+      (strstr(method()->holder()->name()->as_utf8(), "JavacParser") != nullptr && strcmp(method()->name()->as_utf8(), "foldStrings") == 0) ||
+      (strstr(method()->holder()->name()->as_utf8(), "ListBuffer")  != nullptr && strcmp(method()->name()->as_utf8(), "first") == 0)
+     ) {
     Unique_Node_List wq;
     wq.push(root());
     stringStream graph;
