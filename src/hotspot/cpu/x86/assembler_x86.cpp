@@ -842,7 +842,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
 
   case REX2:
     NOT_LP64(assert(false, "64bit prefixes"));
-    if ((0xFF & *ip++) & REXBIT_W) {
+    if ((0xFF & *ip++) & REX2BIT_W) {
       is_64bit = true;
     }
     goto again_after_prefix;
@@ -899,7 +899,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
 
     case REX2:
       NOT_LP64(assert(false, "64bit prefix found"));
-      if ((0xFF & *ip++) & REXBIT_W) {
+      if ((0xFF & *ip++) & REX2BIT_W) {
         is_64bit = true;
       }
       goto again_after_size_prefix2;
@@ -4498,7 +4498,7 @@ void Assembler::ud2() {
 
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
-  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs");
+  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs as BASE or INDEX of address operand");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   simd_prefix(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
@@ -5893,6 +5893,71 @@ void Assembler::evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, 
   emit_int16(0x6D, (0xC0 | encode));
 }
 
+#ifdef _LP64
+void Assembler::push2(Register src1, Register src2, bool with_ppx) {
+  assert(VM_Version::supports_apx_f(), "requires APX");
+  InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  /* EVEX.BASE */
+  int src_enc = src1->encoding();
+  /* EVEX.VVVV */
+  int nds_enc = src2->encoding();
+
+  bool vex_b = (src_enc & 8) == 8;
+  bool evex_v = (nds_enc >= 16);
+  bool evex_b = (src_enc >= 16);
+
+  // EVEX.ND = 1;
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  set_attributes(&attributes);
+
+  evex_prefix(0, vex_b, 0, 0, evex_b, evex_v, false /*eevex_x*/, nds_enc, VEX_SIMD_NONE, /* map4 */ VEX_OPCODE_0F_3C);
+  emit_int16(0xFF, (0xC0 | (0x6 << 3) | (src_enc & 7)));
+}
+
+void Assembler::pop2(Register src1, Register src2, bool with_ppx) {
+  assert(VM_Version::supports_apx_f(), "requires APX");
+  InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  /* EVEX.BASE */
+  int src_enc = src1->encoding();
+  /* EVEX.VVVV */
+  int nds_enc = src2->encoding();
+
+  bool vex_b = (src_enc & 8) == 8;
+  bool evex_v = (nds_enc >= 16);
+  bool evex_b = (src_enc >= 16);
+
+  // EVEX.ND = 1;
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  set_attributes(&attributes);
+
+  evex_prefix(0, vex_b, 0, 0, evex_b, evex_v, false /*eevex_x*/, nds_enc, VEX_SIMD_NONE, /* map4 */ VEX_OPCODE_0F_3C);
+  emit_int16(0x8F, (0xC0 | (src_enc & 7)));
+}
+
+void Assembler::push2p(Register src1, Register src2) {
+  push2(src1, src2, true);
+}
+
+void Assembler::pop2p(Register src1, Register src2) {
+  pop2(src1, src2, true);
+}
+
+void Assembler::pushp(Register src) {
+  assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(src->encoding());
+  emit_int8(0x50 | encode);
+}
+
+void Assembler::popp(Register dst) {
+  assert(VM_Version::supports_apx_f(), "requires APX");
+  int encode = prefixq_and_encode_rex2(dst->encoding());
+  emit_int8((unsigned char)0x58 | encode);
+}
+#endif //_LP64
+
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -7207,6 +7272,7 @@ void Assembler::vroundpd(XMMRegister dst, XMMRegister src, int32_t rmode, int ve
 
 void Assembler::vroundpd(XMMRegister dst, Address src, int32_t rmode,  int vector_len) {
   assert(VM_Version::supports_avx(), "");
+  assert(!needs_eevex(src.base(), src.index()), "does not support extended gprs as BASE or INDEX of address operand");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
@@ -11011,6 +11077,7 @@ void Assembler::evpbroadcastq(XMMRegister dst, Register src, int vector_len) {
 
 void Assembler::vpgatherdd(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
+  assert(!needs_eevex(src.base()), "does not support extended gprs as BASE of address operand");
   assert(vector_len == Assembler::AVX_128bit || vector_len == Assembler::AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   assert(src.isxmmindex(),"expected to be xmm index");
@@ -11024,6 +11091,7 @@ void Assembler::vpgatherdd(XMMRegister dst, Address src, XMMRegister mask, int v
 
 void Assembler::vpgatherdq(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
+  assert(!needs_eevex(src.base()), "does not support extended gprs as BASE of address operand");
   assert(vector_len == Assembler::AVX_128bit || vector_len == Assembler::AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   assert(src.isxmmindex(),"expected to be xmm index");
@@ -11037,6 +11105,7 @@ void Assembler::vpgatherdq(XMMRegister dst, Address src, XMMRegister mask, int v
 
 void Assembler::vgatherdpd(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
+  assert(!needs_eevex(src.base()), "does not support extended gprs as BASE of address operand");
   assert(vector_len == Assembler::AVX_128bit || vector_len == Assembler::AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   assert(src.isxmmindex(),"expected to be xmm index");
@@ -11050,6 +11119,7 @@ void Assembler::vgatherdpd(XMMRegister dst, Address src, XMMRegister mask, int v
 
 void Assembler::vgatherdps(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
+  assert(!needs_eevex(src.base()), "does not support extended gprs as BASE of address operand");
   assert(vector_len == Assembler::AVX_128bit || vector_len == Assembler::AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   assert(src.isxmmindex(),"expected to be xmm index");
@@ -11808,7 +11878,6 @@ void Assembler::evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_r, boo
       _attributes->get_embedded_opmask_register_specifier() != 0) {
     byte4 |= (_attributes->is_clear_context() ? EVEX_Z : 0);
   }
-
   emit_int32(EVEX_4bytes, byte2, byte3, byte4);
 }
 
@@ -12921,14 +12990,14 @@ void Assembler::emit_data64(jlong data,
 int Assembler::get_base_prefix_bits(int enc) {
   int bits = 0;
   if (enc & 16) bits |= REX2BIT_B4;
-  if (enc & 8) bits |= REXBIT_B;
+  if (enc & 8) bits |= REX2BIT_B;
   return bits;
 }
 
 int Assembler::get_index_prefix_bits(int enc) {
   int bits = 0;
   if (enc & 16) bits |= REX2BIT_X4;
-  if (enc & 8) bits |= REXBIT_X;
+  if (enc & 8) bits |= REX2BIT_X;
   return bits;
 }
 
@@ -12943,7 +13012,7 @@ int Assembler::get_index_prefix_bits(Register index) {
 int Assembler::get_reg_prefix_bits(int enc) {
   int bits = 0;
   if (enc & 16) bits |= REX2BIT_R4;
-  if (enc & 8) bits |= REXBIT_R;
+  if (enc & 8) bits |= REX2BIT_R;
   return bits;
 }
 
@@ -13181,6 +13250,15 @@ bool Assembler::prefix_is_rex2(int prefix) {
   return (prefix & 0xFF00) == WREX2;
 }
 
+int Assembler::get_prefixq_rex2(Address adr, bool is_map1) {
+  assert(UseAPX, "APX features not enabled");
+  int bits = REX2BIT_W;
+  if (is_map1) bits |= REX2BIT_M0;
+  bits |= get_base_prefix_bits(adr.base());
+  bits |= get_index_prefix_bits(adr.index());
+  return WREX2 | bits;
+}
+
 int Assembler::get_prefixq(Address adr, bool is_map1) {
   if (adr.base_needs_rex2() || adr.index_needs_rex2()) {
     return get_prefixq_rex2(adr, is_map1);
@@ -13188,15 +13266,6 @@ int Assembler::get_prefixq(Address adr, bool is_map1) {
   int8_t prfx = get_prefixq(adr, rax);
   assert(REX_W <= prfx && prfx <= REX_WXB, "must be");
   return is_map1 ? (((int16_t)prfx) << 8) | 0x0F : (int16_t)prfx;
-}
-
-int Assembler::get_prefixq_rex2(Address adr, bool is_map1) {
-  assert(UseAPX, "APX features not enabled");
-  int bits = REXBIT_W;
-  if (is_map1) bits |= REX2BIT_M0;
-  bits |= get_base_prefix_bits(adr.base());
-  bits |= get_index_prefix_bits(adr.index());
-  return WREX2 | bits;
 }
 
 int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
@@ -13243,7 +13312,7 @@ int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
 
 int Assembler::get_prefixq_rex2(Address adr, Register src, bool is_map1) {
   assert(UseAPX, "APX features not enabled");
-  int bits = REXBIT_W;
+  int bits = REX2BIT_W;
   if (is_map1) bits |= REX2BIT_M0;
   bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
@@ -13306,7 +13375,7 @@ void Assembler::prefixq(Address adr, XMMRegister src) {
 }
 
 void Assembler::prefixq_rex2(Address adr, XMMRegister src) {
-  int bits = REXBIT_W;
+  int bits = REX2BIT_W;
   bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
   bits |= get_reg_prefix_bits(src->encoding());
@@ -13329,7 +13398,7 @@ int Assembler::prefixq_and_encode(int reg_enc, bool is_map1) {
 
 
 int Assembler::prefixq_and_encode_rex2(int reg_enc, bool is_map1) {
-  prefix16(WREX2 | REXBIT_W | (is_map1 ? REX2BIT_M0: 0) | get_base_prefix_bits(reg_enc));
+  prefix16(WREX2 | REX2BIT_W | (is_map1 ? REX2BIT_M0: 0) | get_base_prefix_bits(reg_enc));
   return reg_enc & 0x7;
 }
 
@@ -13358,7 +13427,7 @@ int Assembler::prefixq_and_encode(int dst_enc, int src_enc, bool is_map1) {
 }
 
 int Assembler::prefixq_and_encode_rex2(int dst_enc, int src_enc, bool is_map1) {
-  int init_bits = REXBIT_W | (is_map1 ? REX2BIT_M0 : 0);
+  int init_bits = REX2BIT_W | (is_map1 ? REX2BIT_M0 : 0);
   return prefix_and_encode_rex2(dst_enc, src_enc, init_bits);
 }
 
@@ -14168,7 +14237,7 @@ void Assembler::precompute_instructions() {
   ResourceMark rm;
 
   // Make a temporary buffer big enough for the routines we're capturing
-  int size = 256;
+  int size = UseAPX ? 512 : 256;
   char* tmp_code = NEW_RESOURCE_ARRAY(char, size);
   CodeBuffer buffer((address)tmp_code, size);
   MacroAssembler masm(&buffer);
@@ -14212,31 +14281,6 @@ static void emit_copy(CodeSection* code_section, u_char* src, int src_len) {
   code_section->set_end(end + src_len);
 }
 
-void Assembler::popa() { // 64bit
-  emit_copy(code_section(), popa_code, popa_len);
-}
-
-void Assembler::popa_uncached() { // 64bit
-  movq(r15, Address(rsp, 0));
-  movq(r14, Address(rsp, wordSize));
-  movq(r13, Address(rsp, 2 * wordSize));
-  movq(r12, Address(rsp, 3 * wordSize));
-  movq(r11, Address(rsp, 4 * wordSize));
-  movq(r10, Address(rsp, 5 * wordSize));
-  movq(r9,  Address(rsp, 6 * wordSize));
-  movq(r8,  Address(rsp, 7 * wordSize));
-  movq(rdi, Address(rsp, 8 * wordSize));
-  movq(rsi, Address(rsp, 9 * wordSize));
-  movq(rbp, Address(rsp, 10 * wordSize));
-  // Skip rsp as it is restored automatically to the value
-  // before the corresponding pusha when popa is done.
-  movq(rbx, Address(rsp, 12 * wordSize));
-  movq(rdx, Address(rsp, 13 * wordSize));
-  movq(rcx, Address(rsp, 14 * wordSize));
-  movq(rax, Address(rsp, 15 * wordSize));
-
-  addq(rsp, 16 * wordSize);
-}
 
 // Does not actually store the value of rsp on the stack.
 // The slot for rsp just contains an arbitrary value.
@@ -14247,26 +14291,107 @@ void Assembler::pusha() { // 64bit
 // Does not actually store the value of rsp on the stack.
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
-  subq(rsp, 16 * wordSize);
+  if (UseAPX) {
+    // Data being pushed by PUSH2 must be 16B-aligned on the stack, for this push rax upfront
+    // and use it as a temporary register for stack alignment.
+    pushp(rax);
+    // Move original stack pointer to RAX and align stack pointer to 16B boundary.
+    movq(rax, rsp);
+    andq(rsp, -(StackAlignmentInBytes));
+    // Push pair of original stack pointer along with remaining registers
+    // at 16B aligned boundary.
+    push2p(rax, r31);
+    push2p(r30, r29);
+    push2p(r28, r27);
+    push2p(r26, r25);
+    push2p(r24, r23);
+    push2p(r22, r21);
+    push2p(r20, r19);
+    push2p(r18, r17);
+    push2p(r16, r15);
+    push2p(r14, r13);
+    push2p(r12, r11);
+    push2p(r10, r9);
+    push2p(r8, rdi);
+    push2p(rsi, rbp);
+    push2p(rbx, rdx);
+    // To maintain 16 byte alignment after rcx is pushed.
+    subq(rsp, 8);
+    pushp(rcx);
+  } else {
+    subq(rsp, 16 * wordSize);
+    movq(Address(rsp, 15 * wordSize), rax);
+    movq(Address(rsp, 14 * wordSize), rcx);
+    movq(Address(rsp, 13 * wordSize), rdx);
+    movq(Address(rsp, 12 * wordSize), rbx);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
+    // FIXME: For APX any such direct access should also consider EGPR size
+    // during address compution.
+    movq(Address(rsp, 10 * wordSize), rbp);
+    movq(Address(rsp, 9 * wordSize), rsi);
+    movq(Address(rsp, 8 * wordSize), rdi);
+    movq(Address(rsp, 7 * wordSize), r8);
+    movq(Address(rsp, 6 * wordSize), r9);
+    movq(Address(rsp, 5 * wordSize), r10);
+    movq(Address(rsp, 4 * wordSize), r11);
+    movq(Address(rsp, 3 * wordSize), r12);
+    movq(Address(rsp, 2 * wordSize), r13);
+    movq(Address(rsp, wordSize), r14);
+    movq(Address(rsp, 0), r15);
+  }
+}
 
-  movq(Address(rsp, 15 * wordSize), rax);
-  movq(Address(rsp, 14 * wordSize), rcx);
-  movq(Address(rsp, 13 * wordSize), rdx);
-  movq(Address(rsp, 12 * wordSize), rbx);
-  // Skip rsp as the value is normally not used. There are a few places where
-  // the original value of rsp needs to be known but that can be computed
-  // from the value of rsp immediately after pusha (rsp + 16 * wordSize).
-  movq(Address(rsp, 10 * wordSize), rbp);
-  movq(Address(rsp, 9 * wordSize), rsi);
-  movq(Address(rsp, 8 * wordSize), rdi);
-  movq(Address(rsp, 7 * wordSize), r8);
-  movq(Address(rsp, 6 * wordSize), r9);
-  movq(Address(rsp, 5 * wordSize), r10);
-  movq(Address(rsp, 4 * wordSize), r11);
-  movq(Address(rsp, 3 * wordSize), r12);
-  movq(Address(rsp, 2 * wordSize), r13);
-  movq(Address(rsp, wordSize), r14);
-  movq(Address(rsp, 0), r15);
+void Assembler::popa() { // 64bit
+  emit_copy(code_section(), popa_code, popa_len);
+}
+
+void Assembler::popa_uncached() { // 64bit
+  if (UseAPX) {
+    popp(rcx);
+    addq(rsp, 8);
+    // Data being popped by POP2 must be 16B-aligned on the stack.
+    pop2p(rdx, rbx);
+    pop2p(rbp, rsi);
+    pop2p(rdi, r8);
+    pop2p(r9, r10);
+    pop2p(r11, r12);
+    pop2p(r13, r14);
+    pop2p(r15, r16);
+    pop2p(r17, r18);
+    pop2p(r19, r20);
+    pop2p(r21, r22);
+    pop2p(r23, r24);
+    pop2p(r25, r26);
+    pop2p(r27, r28);
+    pop2p(r29, r30);
+    // Popped value in RAX holds original unaligned stack pointer.
+    pop2p(r31, rax);
+    // Reinstantiate original stack pointer.
+    movq(rsp, rax);
+    popp(rax);
+  } else {
+    movq(r15, Address(rsp, 0));
+    movq(r14, Address(rsp, wordSize));
+    movq(r13, Address(rsp, 2 * wordSize));
+    movq(r12, Address(rsp, 3 * wordSize));
+    movq(r11, Address(rsp, 4 * wordSize));
+    movq(r10, Address(rsp, 5 * wordSize));
+    movq(r9,  Address(rsp, 6 * wordSize));
+    movq(r8,  Address(rsp, 7 * wordSize));
+    movq(rdi, Address(rsp, 8 * wordSize));
+    movq(rsi, Address(rsp, 9 * wordSize));
+    movq(rbp, Address(rsp, 10 * wordSize));
+    // Skip rsp as it is restored automatically to the value
+    // before the corresponding pusha when popa is done.
+    movq(rbx, Address(rsp, 12 * wordSize));
+    movq(rdx, Address(rsp, 13 * wordSize));
+    movq(rcx, Address(rsp, 14 * wordSize));
+    movq(rax, Address(rsp, 15 * wordSize));
+
+    addq(rsp, 16 * wordSize);
+  }
 }
 
 void Assembler::vzeroupper() {

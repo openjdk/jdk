@@ -322,6 +322,34 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void population_count(Register dst, Register src, Register tmp1, Register tmp2);
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  bool lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3,
+                                     Register tmp4,
+                                     u1 super_klass_slot,
+                                     bool stub_is_near = false);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register result,
+                                               Register tmp1);
+
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
                            Register tmp_reg,

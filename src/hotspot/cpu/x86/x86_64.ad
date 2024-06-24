@@ -128,6 +128,53 @@ reg_def R14_H(SOC, SOE, Op_RegI, 14, r14->as_VMReg()->next());
 reg_def R15  (SOC, SOE, Op_RegI, 15, r15->as_VMReg());
 reg_def R15_H(SOC, SOE, Op_RegI, 15, r15->as_VMReg()->next());
 
+reg_def R16  (SOC, SOC, Op_RegI, 16, r16->as_VMReg());
+reg_def R16_H(SOC, SOC, Op_RegI, 16, r16->as_VMReg()->next());
+
+reg_def R17  (SOC, SOC, Op_RegI, 17, r17->as_VMReg());
+reg_def R17_H(SOC, SOC, Op_RegI, 17, r17->as_VMReg()->next());
+
+reg_def R18  (SOC, SOC, Op_RegI, 18, r18->as_VMReg());
+reg_def R18_H(SOC, SOC, Op_RegI, 18, r18->as_VMReg()->next());
+
+reg_def R19  (SOC, SOC, Op_RegI, 19, r19->as_VMReg());
+reg_def R19_H(SOC, SOC, Op_RegI, 19, r19->as_VMReg()->next());
+
+reg_def R20  (SOC, SOC, Op_RegI, 20, r20->as_VMReg());
+reg_def R20_H(SOC, SOC, Op_RegI, 20, r20->as_VMReg()->next());
+
+reg_def R21  (SOC, SOC, Op_RegI, 21, r21->as_VMReg());
+reg_def R21_H(SOC, SOC, Op_RegI, 21, r21->as_VMReg()->next());
+
+reg_def R22  (SOC, SOC, Op_RegI, 22, r22->as_VMReg());
+reg_def R22_H(SOC, SOC, Op_RegI, 22, r22->as_VMReg()->next());
+
+reg_def R23  (SOC, SOC, Op_RegI, 23, r23->as_VMReg());
+reg_def R23_H(SOC, SOC, Op_RegI, 23, r23->as_VMReg()->next());
+
+reg_def R24  (SOC, SOC, Op_RegI, 24, r24->as_VMReg());
+reg_def R24_H(SOC, SOC, Op_RegI, 24, r24->as_VMReg()->next());
+
+reg_def R25  (SOC, SOC, Op_RegI, 25, r25->as_VMReg());
+reg_def R25_H(SOC, SOC, Op_RegI, 25, r25->as_VMReg()->next());
+
+reg_def R26  (SOC, SOC, Op_RegI, 26, r26->as_VMReg());
+reg_def R26_H(SOC, SOC, Op_RegI, 26, r26->as_VMReg()->next());
+
+reg_def R27  (SOC, SOC, Op_RegI, 27, r27->as_VMReg());
+reg_def R27_H(SOC, SOC, Op_RegI, 27, r27->as_VMReg()->next());
+
+reg_def R28  (SOC, SOC, Op_RegI, 28, r28->as_VMReg());
+reg_def R28_H(SOC, SOC, Op_RegI, 28, r28->as_VMReg()->next());
+
+reg_def R29  (SOC, SOC, Op_RegI, 29, r29->as_VMReg());
+reg_def R29_H(SOC, SOC, Op_RegI, 29, r29->as_VMReg()->next());
+
+reg_def R30  (SOC, SOC, Op_RegI, 30, r30->as_VMReg());
+reg_def R30_H(SOC, SOC, Op_RegI, 30, r30->as_VMReg()->next());
+
+reg_def R31  (SOC, SOC, Op_RegI, 31, r31->as_VMReg());
+reg_def R31_H(SOC, SOC, Op_RegI, 31, r31->as_VMReg()->next());
 
 // Floating Point Registers
 
@@ -154,6 +201,22 @@ alloc_class chunk0(R10,         R10_H,
                    R13,         R13_H,
                    R14,         R14_H,
                    R15,         R15_H,
+                   R16,         R16_H,
+                   R17,         R17_H,
+                   R18,         R18_H,
+                   R19,         R19_H,
+                   R20,         R20_H,
+                   R21,         R21_H,
+                   R22,         R22_H,
+                   R23,         R23_H,
+                   R24,         R24_H,
+                   R25,         R25_H,
+                   R26,         R26_H,
+                   R27,         R27_H,
+                   R28,         R28_H,
+                   R29,         R29_H,
+                   R30,         R30_H,
+                   R31,         R31_H,
                    RSP,         RSP_H);
 
 
@@ -167,7 +230,7 @@ alloc_class chunk0(R10,         R10_H,
 // Empty register class.
 reg_class no_reg();
 
-// Class for all pointer/long registers
+// Class for all pointer/long registers including APX extended GPRs.
 reg_class all_reg(RAX, RAX_H,
                   RDX, RDX_H,
                   RBP, RBP_H,
@@ -183,9 +246,25 @@ reg_class all_reg(RAX, RAX_H,
                   R12, R12_H,
                   R13, R13_H,
                   R14, R14_H,
-                  R15, R15_H);
+                  R15, R15_H,
+                  R16, R16_H,
+                  R17, R17_H,
+                  R18, R18_H,
+                  R19, R19_H,
+                  R20, R20_H,
+                  R21, R21_H,
+                  R22, R22_H,
+                  R23, R23_H,
+                  R24, R24_H,
+                  R25, R25_H,
+                  R26, R26_H,
+                  R27, R27_H,
+                  R28, R28_H,
+                  R29, R29_H,
+                  R30, R30_H,
+                  R31, R31_H);
 
-// Class for all int registers
+// Class for all int registers including APX extended GPRs.
 reg_class all_int_reg(RAX
                       RDX,
                       RBP,
@@ -199,7 +278,23 @@ reg_class all_int_reg(RAX
                       R11,
                       R12,
                       R13,
-                      R14);
+                      R14,
+                      R16,
+                      R17,
+                      R18,
+                      R19,
+                      R20,
+                      R21,
+                      R22,
+                      R23,
+                      R24,
+                      R25,
+                      R26,
+                      R27,
+                      R28,
+                      R29,
+                      R30,
+                      R31);
 
 // Class for all pointer registers
 reg_class any_reg %{
@@ -386,6 +481,8 @@ static bool need_r12_heapbase() {
 }
 
 void reg_mask_init() {
+  constexpr Register egprs[] = {r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30, r31};
+
   // _ALL_REG_mask is generated by adlc from the all_reg register class below.
   // We derive a number of subsets from it.
   _ANY_REG_mask = _ALL_REG_mask;
@@ -404,6 +501,12 @@ void reg_mask_init() {
   _PTR_REG_mask.Remove(OptoReg::as_OptoReg(rsp->as_VMReg()->next()));
   _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()));
   _PTR_REG_mask.Remove(OptoReg::as_OptoReg(r15->as_VMReg()->next()));
+  if (!UseAPX) {
+    for (uint i = 0; i < sizeof(egprs)/sizeof(Register); i++) {
+      _PTR_REG_mask.Remove(OptoReg::as_OptoReg(egprs[i]->as_VMReg()));
+      _PTR_REG_mask.Remove(OptoReg::as_OptoReg(egprs[i]->as_VMReg()->next()));
+    }
+  }
 
   _STACK_OR_PTR_REG_mask = _PTR_REG_mask;
   _STACK_OR_PTR_REG_mask.OR(STACK_OR_STACK_SLOTS_mask());
@@ -419,6 +522,7 @@ void reg_mask_init() {
   _PTR_NO_RAX_RBX_REG_mask = _PTR_NO_RAX_REG_mask;
   _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()));
   _PTR_NO_RAX_RBX_REG_mask.Remove(OptoReg::as_OptoReg(rbx->as_VMReg()->next()));
+
 
   _LONG_REG_mask = _PTR_REG_mask;
   _STACK_OR_LONG_REG_mask = _LONG_REG_mask;
@@ -441,6 +545,12 @@ void reg_mask_init() {
   _LONG_NO_RBP_R13_REG_mask.Remove(OptoReg::as_OptoReg(r13->as_VMReg()->next()));
 
   _INT_REG_mask = _ALL_INT_REG_mask;
+  if (!UseAPX) {
+    for (uint i = 0; i < sizeof(egprs)/sizeof(Register); i++) {
+      _INT_REG_mask.Remove(OptoReg::as_OptoReg(egprs[i]->as_VMReg()));
+    }
+  }
+
   if (PreserveFramePointer) {
     _INT_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
   }
@@ -12320,7 +12430,6 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
   format %{ "testl   rax, [$poll]\t"
             "# Safepoint: poll for GC" %}
   ins_cost(125);
-  size(4); /* setting an explicit size will cause debug builds to assert if size is incorrect */
   ins_encode %{
     __ relocate(relocInfo::poll_type);
     address pre_pc = __ pc();

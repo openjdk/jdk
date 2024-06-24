@@ -105,8 +105,9 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
+bool CodeInstaller::pd_relocate(address pc, jint mark) {
   Unimplemented();
+  return false;
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
