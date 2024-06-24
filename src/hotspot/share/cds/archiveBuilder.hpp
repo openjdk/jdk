@@ -408,6 +408,11 @@ public:
     write_pointer_in_buffer((address*)ptr_location, (address)src_addr);
   }
 
+  void mark_and_relocate_to_buffered_addr(address* ptr_location);
+  template <typename T> void mark_and_relocate_to_buffered_addr(T ptr_location) {
+    mark_and_relocate_to_buffered_addr((address*)ptr_location);
+  }
+
   address get_buffered_addr(address src_addr) const;
   template <typename T> T get_buffered_addr(T src_addr) const {
     return (T)get_buffered_addr((address)src_addr);

@@ -287,7 +287,7 @@ void MetaspaceShared::initialize_for_static_dump() {
 
 // Called by universe_post_init()
 void MetaspaceShared::post_initialize(TRAPS) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
       CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
@@ -924,7 +924,7 @@ void MetaspaceShared::unrecoverable_writing_error(const char* message) {
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
-  assert(UseSharedSpaces, "Must be called when UseSharedSpaces is enabled");
+  assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
   FileMapInfo* static_mapinfo = open_static_archive();
@@ -1414,7 +1414,7 @@ static int archive_regions[]     = { MetaspaceShared::rw, MetaspaceShared::ro };
 static int archive_regions_count = 2;
 
 MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs) {
-  assert(UseSharedSpaces, "must be runtime");
+  assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo == nullptr) {
     return MAP_ARCHIVE_SUCCESS; // The dynamic archive has not been specified. No error has happened -- trivially succeeded.
   }
@@ -1444,7 +1444,7 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
 }
 
 void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
-  assert(UseSharedSpaces, "must be runtime");
+  assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo != nullptr) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count);
     mapinfo->unmap_region(MetaspaceShared::bm);
@@ -1542,7 +1542,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 bool MetaspaceShared::remap_shared_readonly_as_readwrite() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // remap the shared readonly space to shared readwrite, private
     FileMapInfo* mapinfo = FileMapInfo::current_info();
     if (!mapinfo->remap_shared_readonly_as_readwrite()) {
@@ -1560,7 +1560,7 @@ bool MetaspaceShared::remap_shared_readonly_as_readwrite() {
 }
 
 void MetaspaceShared::print_on(outputStream* st) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     st->print("CDS archive(s) mapped at: ");
     address base = (address)MetaspaceObj::shared_metaspace_base();
     address static_top = (address)_shared_metaspace_static_top;
