@@ -119,7 +119,11 @@ final class StableValuesTest {
         assertEquals(1, cif.cnt());
         assertEquals(42, memoized.apply(42));
         assertEquals(1, cif.cnt());
-        assertEquals("MemoizedFunction[stables={13=StableValue.unset, 42=StableValue[42]}, original=" + cif + "]", memoized.toString());
+        assertTrue(memoized.toString().startsWith("MemoizedFunction[stables={"));
+        // Key order is unspecified
+        assertTrue(memoized.toString().contains("13=StableValue.unset"));
+        assertTrue(memoized.toString().contains("42=StableValue[42]"));
+        assertTrue(memoized.toString().endsWith(", original=" + cif + "]"));
     }
 
     @Test
@@ -141,26 +145,6 @@ final class StableValuesTest {
         }
         assertEquals(42, memoized.apply(42));
         assertEquals(13, memoized.apply(13));
-    }
-
-    @Test
-    void ofList() {
-        List<StableValue<Integer>> list = StableValue.ofList(13);
-        assertEquals(13, list.size());
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        list.forEach(e -> idMap.put(e, true));
-        assertEquals(13, idMap.size());
-    }
-
-    @Test
-    void ofMap() {
-        Map<Integer, StableValue<Integer>> map = StableValue.ofMap(Set.of(1, 2, 3));
-        assertEquals(3, map.size());
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        map.forEach((k, v) -> idMap.put(v, true));
-        assertEquals(3, idMap.size());
     }
 
 }

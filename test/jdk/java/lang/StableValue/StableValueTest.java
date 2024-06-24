@@ -32,8 +32,11 @@ import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -171,6 +174,92 @@ final class StableValueTest {
         other.setOrThrow(13);
         assertNotEquals(s0, other);
         assertNotEquals(s0, "a");
+    }
+
+    @Test
+    void ofList() {
+        List<StableValue<Integer>> list = StableValue.ofList(13);
+        assertEquals(13, list.size());
+        // Check, every StableValue is distinct
+        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        list.forEach(e -> idMap.put(e, true));
+        assertEquals(13, idMap.size());
+    }
+
+    @Test
+    void ofList3DimLazy() {
+        int[] dims = new int[]{2, 3, 4};
+
+        List<StableValue<
+                List<StableValue<
+                        List<StableValue<Integer>>>>>> list3d = StableValue.ofList(dims[0]);
+
+        int[] indices = new int[]{1, 2, 3};
+
+        int element = from3dLazy(list3d, dims, indices)
+                .computeIfUnset(() -> 42);
+
+        assertEquals(42, element);
+        assertEquals(42, from3dLazy(list3d, dims, indices).orElseThrow());
+    }
+
+    private <T> StableValue<T> from3dLazy(
+            List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d,
+            int[] dims, int[] indices) {
+        return list3d
+                .get(indices[0]).mapIfUnset(dims[1], StableValue::ofList)
+                .get(indices[1]).mapIfUnset(dims[2], StableValue::ofList)
+                .get(indices[2]);
+    }
+
+    @Test
+    void ofList3Dim() {
+        int[] dims = new int[]{2, 3, 4};
+
+        List<StableValue< List<StableValue< List<StableValue<Integer>>>>>> list3d = create3d(dims);
+
+        int[] indices = new int[]{1, 2, 3};
+
+        int element = from3d(list3d, indices)
+                .computeIfUnset(() -> 42);
+
+        assertEquals(42, element);
+        assertEquals(42, from3d(list3d, indices).orElseThrow());
+    }
+
+    private <T> List<StableValue< List<StableValue< List<StableValue<T>>>>>> create3d(
+            int[] dims) {
+
+        List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d =
+                StableValue.ofList(dims[0]);
+        for (int d0 = 0; d0 < dims[0] ; d0++) {
+            List<StableValue< List<StableValue<T>>>> list2d = StableValue.ofList(dims[1]);
+            list3d.get(d0).setOrThrow(list2d);
+            for (int d1 = 0; d1 < dims[1]; d1++) {
+                List<StableValue<T>> list = StableValue.ofList(dims[2]);
+                list2d.get(d1).setOrThrow(list);
+            }
+        }
+        return list3d;
+    }
+
+    private <T> StableValue<T> from3d(
+            List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d, int[] indices) {
+        return list3d
+                .get(indices[0]).orElseThrow()
+                .get(indices[1]).orElseThrow()
+                .get(indices[2]);
+    }
+
+
+    @Test
+    void ofMap() {
+        Map<Integer, StableValue<Integer>> map = StableValue.ofMap(Set.of(1, 2, 3));
+        assertEquals(3, map.size());
+        // Check, every StableValue is distinct
+        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        map.forEach((k, v) -> idMap.put(v, true));
+        assertEquals(3, idMap.size());
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;
