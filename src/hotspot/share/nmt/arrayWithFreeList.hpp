@@ -36,8 +36,8 @@ class ArrayWithFreeList {
 
   // An E must be trivially copyable and destructible, but it may be constructed
   // however it likes.
-  constexpr bool E_satisfies_type_requirements() {
-    return std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value;
+  constexpr void static_assert_E_satisfies_type_requirements() const {
+    static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value, "must be");
   }
 
 public:
@@ -68,7 +68,7 @@ public:
 
   template<typename... Args>
   I allocate(Args... args) {
-    static_assert(E_satisfies_type_requirements(), "must be");
+    static_assert_E_satisfies_type_requirements();
     BackingElement* be;
     I i;
     if (_free_start != nil) {
@@ -87,7 +87,7 @@ public:
   }
 
   void deallocate(I i) {
-    static_assert(E_satisfies_type_requirements(), "must be");
+    static_assert_E_satisfies_type_requirements();
     assert(i == nil || is_in_bounds(i), "out of bounds free");
     if (i == nil) return;
     BackingElement& be_freed = _backing_storage.at(i);
@@ -96,7 +96,7 @@ public:
   }
 
   E& at(I i) {
-    static_assert(E_satisfies_type_requirements(), "must be");
+    static_assert_E_satisfies_type_requirements();
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i).e);
