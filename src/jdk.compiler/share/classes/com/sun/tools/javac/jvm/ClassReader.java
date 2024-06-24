@@ -218,6 +218,12 @@ public class ClassReader {
     int[] parameterAccessFlags;
 
     /**
+     * A table to hold the access flags of the method parameters,
+     * for all parameters including synthetic and mandated ones.
+     */
+    int[] allParameterAccessFlags;
+
+    /**
      * A table to hold annotations for method parameters.
      */
     ParameterAnnotations[] parameterAnnotations;
@@ -1145,12 +1151,18 @@ public class ClassReader {
                     int newbp = bp + attrlen;
                     if (saveParameterNames) {
                         int numEntries = nextByte();
+                        allParameterAccessFlags = new int[numEntries];
                         parameterNameIndicesMp = new int[numEntries];
                         parameterAccessFlags = new int[numEntries];
+                        int allParamIndex = 0;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
                             int flags = nextChar();
+                            allParameterAccessFlags[allParamIndex++] = flags;
+                            if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
+                                continue;
+                            }
                             parameterNameIndicesMp[index] = nameIndex;
                             parameterAccessFlags[index] = flags;
                             index++;
@@ -2824,6 +2836,7 @@ public class ClassReader {
         parameterAnnotations = null;
         parameterNameIndicesLvt = null;
         parameterNameIndicesMp = null;
+        allParameterAccessFlags = null;
         parameterAccessFlags = null;
     }
 
@@ -2847,14 +2860,14 @@ public class ClassReader {
             return ;
         }
 
-        if (parameterAccessFlags != null) {
+        if (allParameterAccessFlags != null) {
             //MethodParameters attribute present, use it:
 
             //count the number of non-synthetic and non-mandatory parameters:
             int realParameters = 0;
 
-            for (int i = 0; i < parameterAccessFlags.length; i++) {
-                if ((parameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+            for (int i = 0; i < allParameterAccessFlags.length; i++) {
+                if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
                     realParameters++;
                 }
             }
@@ -2862,7 +2875,7 @@ public class ClassReader {
             int methodDescriptorParameterCount = methodDescriptor.getParameterTypes().size();
 
             if (realParameters == parameterAnnotations.length &&
-                parameterAccessFlags.length == methodDescriptorParameterCount) {
+                allParameterAccessFlags.length == methodDescriptorParameterCount) {
                 //if we have parameter annotations for each non-synthetic/mandatory parameter,
                 //and if Signature was not present, expand the parameterAnnotations to cover
                 //all the method descriptor's parameters:
@@ -2872,7 +2885,7 @@ public class ClassReader {
                     int srcIndex = 0;
 
                     for (int i = 0; i < methodParameterCount; i++) {
-                        if ((parameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                        if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
                             newParameterAnnotations[i] = parameterAnnotations[srcIndex++];
                         }
                     }
@@ -2883,7 +2896,7 @@ public class ClassReader {
                 }
             } else if (realParameters == methodParameterCount &&
                        methodDescriptorParameterCount == parameterAnnotations.length &&
-                       parameterAccessFlags.length == methodDescriptorParameterCount) {
+                       allParameterAccessFlags.length == methodDescriptorParameterCount) {
                 //if there are as many parameter annotations as parameters in
                 //the method descriptor, and as many real parameters as parameters
                 //in the method's type (after accounting for Signature), shrink
@@ -2894,7 +2907,7 @@ public class ClassReader {
                 int targetIndex = 0;
 
                 for (int i = 0; i < parameterAnnotations.length; i++) {
-                    if ((parameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                    if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
                         newParameterAnnotations[targetIndex++] = parameterAnnotations[i];
                     }
                 }
@@ -2958,18 +2971,14 @@ public class ClassReader {
      */
     private VarSymbol parameter(int mpIndex, int lvtIndex, Type t, MethodSymbol owner, Set<Name> exclude) {
         long flags = PARAMETER;
-        boolean synthetic = false;
         Name argName;
         if (parameterAccessFlags != null && mpIndex < parameterAccessFlags.length
                 && parameterAccessFlags[mpIndex] != 0) {
-            synthetic = (flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0;
-            if (!synthetic) {
-                flags |= parameterAccessFlags[mpIndex];
-            }
+            flags |= parameterAccessFlags[mpIndex];
         }
         if (parameterNameIndicesMp != null && mpIndex < parameterNameIndicesMp.length
                 // if name_index is 0, then we might still get a name from the LocalVariableTable
-                && parameterNameIndicesMp[mpIndex] != 0 && !synthetic) {
+                && parameterNameIndicesMp[mpIndex] != 0) {
             argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
             flags |= NAME_FILLED;
         } else if (parameterNameIndicesLvt != null && lvtIndex < parameterNameIndicesLvt.length
