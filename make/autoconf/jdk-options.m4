@@ -197,7 +197,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   # three different page sizes: 4K, 64K, and if run on Mac m1 hardware, 16K.
   COMPATIBLE_CDS_ALIGNMENT_DEFAULT=false
   if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
-    COMPATIBLE_CDS_ALIGNMENT_DEFAULT=true
+    COMPATIBLE_CDS_ALIGNMENT_DEFAULT=auto
   fi
   AC_SUBST(COMPATIBLE_CDS_ALIGNMENT_DEFAULT)
 
