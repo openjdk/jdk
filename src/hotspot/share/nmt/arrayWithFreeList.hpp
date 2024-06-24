@@ -22,16 +22,24 @@
 
  */
 
-#ifndef SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
-#define SHARE_NMT_HOMOGENOUSOBJECTARRAY_HPP
+#ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
+#define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
 #include "utilities/growableArray.hpp"
+#include <type_traits>
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
 // identified via array index.
 template<typename E, MEMFLAGS flag>
-class HomogenousObjectArray {
+class ArrayWithFreeList {
+
+  // An E must be trivially copyable and destructible, but it may be constructed
+  // however it likes.
+  constexpr bool E_satisfies_type_requirements() {
+    return std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value;
+  }
+
 public:
   using I = int32_t;
   static constexpr const I nil = -1;
@@ -52,15 +60,15 @@ private:
   }
 
 public:
-  NONCOPYABLE(HomogenousObjectArray<E COMMA flag>);
+  NONCOPYABLE(ArrayWithFreeList<E COMMA flag>);
 
-  HomogenousObjectArray(int initial_capacity = 8)
+  ArrayWithFreeList(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
     _free_start(nil) {}
 
   template<typename... Args>
   I allocate(Args... args) {
-    static_assert(std::is_trivial<E>::value, "must be");
+    static_assert(E_satisfies_type_requirements(), "must be");
     BackingElement* be;
     I i;
     if (_free_start != nil) {
@@ -79,7 +87,7 @@ public:
   }
 
   void deallocate(I i) {
-    static_assert(std::is_trivial<E>::value, "must be");
+    static_assert(E_satisfies_type_requirements(), "must be");
     assert(i == nil || is_in_bounds(i), "out of bounds free");
     if (i == nil) return;
     BackingElement& be_freed = _backing_storage.at(i);
@@ -88,7 +96,7 @@ public:
   }
 
   E& at(I i) {
-    static_assert(std::is_trivial<E>::value, "must be");
+    static_assert(E_satisfies_type_requirements(), "must be");
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
     return reinterpret_cast<E&>(_backing_storage.at(i).e);

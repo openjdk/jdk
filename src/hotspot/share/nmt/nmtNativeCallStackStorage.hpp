@@ -26,7 +26,7 @@
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
 #include "memory/allocation.hpp"
-#include "nmt/homogenousObjectArray.hpp"
+#include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -58,7 +58,7 @@ public:
 
 private:
   struct TableEntry;
-  using TableEntryStorage = HomogenousObjectArray<TableEntry, mtNMT>;
+  using TableEntryStorage = ArrayWithFreeList<TableEntry, mtNMT>;
   using TableEntryIndex = typename TableEntryStorage::I;
 
   TableEntryStorage _entry_storage;

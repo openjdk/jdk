@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "unittest.hpp"
-#include "nmt/homogenousObjectArray.hpp"
+#include "nmt/arrayWithFreeList.hpp"
 
-using A = HomogenousObjectArray<int, mtTest>;
+using A = ArrayWithFreeList<int, mtTest>;
 
 class HomogenousObjectArrayTest  : public testing::Test {
 };
@@ -35,7 +35,7 @@ class HomogenousObjectArrayTest  : public testing::Test {
 template<typename E>
 struct LL {
   struct Node;
-  using NodeAllocator = HomogenousObjectArray<Node, mtTest>;
+  using NodeAllocator = ArrayWithFreeList<Node, mtTest>;
   using NodePtr = typename NodeAllocator::I;
   NodeAllocator alloc;
   struct Node {
@@ -125,7 +125,7 @@ TEST_VM_F(HomogenousObjectArrayTest, TestLinkedLists) {
     test_with_list(list);
   }
   {
-    LL2<int, HomogenousObjectArray> list;
+    LL2<int, ArrayWithFreeList> list;
     test_with_list(list);
   }
 }
