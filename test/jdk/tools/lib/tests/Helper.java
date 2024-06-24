@@ -68,15 +68,15 @@ public class Helper {
     private static final Path JDK_HOME = Paths.get(System.getProperty("test.jdk"));
 
     public static Helper newHelper() throws IOException {
-        if (!Files.exists(JDK_HOME.resolve("jmods"))) {
+        return newHelper(false);
+    }
+
+    public static Helper newHelper(boolean linkableRuntime) throws IOException {
+        if (!linkableRuntime && !Files.exists(JDK_HOME.resolve("jmods"))) {
             // Skip test if the jmods directory is missing (e.g. exploded image)
             System.err.println("Test not run, NO jmods directory");
             return null;
         }
-        return new Helper(JDK_HOME, false);
-    }
-
-    public static Helper newHelper(boolean linkableRuntime) throws IOException {
         return new Helper(JDK_HOME, linkableRuntime);
     }
 
