@@ -38,25 +38,29 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class StableValuesTest {
 
+    private static final int SIZE = 2;
+
     @Test
-    void ofMemoized() {
+    void memoizedSupplier() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
-        Supplier<Integer> memoizeded = StableValues.memoizedSupplier(cs, null);
-        assertEquals(42, memoizeded.get());
+        Supplier<Integer> memoized = StableValues.memoizedSupplier(cs, null);
+        assertEquals(42, memoized.get());
         assertEquals(1, cs.cnt());
-        assertEquals(42, memoizeded.get());
+        assertEquals(42, memoized.get());
         assertEquals(1, cs.cnt());
-        assertEquals("MemoizedSupplier[stable=StableValue[42], original=" + cs + "]", memoizeded.toString());
+        assertEquals("MemoizedSupplier[stable=StableValue[42], original=" + cs + "]", memoized.toString());
     }
 
     @Test
-    void ofMemoizedBackground() {
+    void memoizedSupplierBackground() {
 
         final AtomicInteger cnt = new AtomicInteger(0);
         ThreadFactory factory = new ThreadFactory() {
@@ -68,11 +72,75 @@ final class StableValuesTest {
                 });
             }
         };
-        Supplier<Integer> memoizeded = StableValues.memoizedSupplier(() -> 42, factory);
+        Supplier<Integer> memoized = StableValues.memoizedSupplier(() -> 42, factory);
         while (cnt.get() < 1) {
             Thread.onSpinWait();
         }
-        assertEquals(42, memoizeded.get());
+        assertEquals(42, memoized.get());
+    }
+
+    @Test
+    void memoizedIntFunction() {
+        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(i -> i);
+        IntFunction<Integer> memoized = StableValues.memoizedIntFunction(SIZE, cif, null);
+        assertEquals(1, memoized.apply(1));
+        assertEquals(1, cif.cnt());
+        assertEquals(1, memoized.apply(1));
+        assertEquals(1, cif.cnt());
+        assertEquals("MemoizedIntFunction[stables=[StableValue.unset, StableValue[1]], original=" + cif + "]", memoized.toString());
+    }
+
+    @Test
+    void memoizedIntFunctionBackground() {
+
+        final AtomicInteger cnt = new AtomicInteger(0);
+        ThreadFactory factory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(() -> {
+                    r.run();
+                    cnt.incrementAndGet();
+                });
+            }
+        };
+        IntFunction<Integer> memoized = StableValues.memoizedIntFunction(SIZE, i -> i, factory);
+        while (cnt.get() < 2) {
+            Thread.onSpinWait();
+        }
+        assertEquals(0, memoized.apply(0));
+        assertEquals(1, memoized.apply(1));
+    }
+
+    @Test
+    void memoizedFunction() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(i -> i);
+        Function<Integer, Integer> memoized = StableValues.memoizedFunction(Set.of(13, 42), cif, null);
+        assertEquals(42, memoized.apply(42));
+        assertEquals(1, cif.cnt());
+        assertEquals(42, memoized.apply(42));
+        assertEquals(1, cif.cnt());
+        assertEquals("MemoizedFunction[stables={13=StableValue.unset, 42=StableValue[42]}, original=" + cif + "]", memoized.toString());
+    }
+
+    @Test
+    void memoizedFunctionBackground() {
+
+        final AtomicInteger cnt = new AtomicInteger(0);
+        ThreadFactory factory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(() -> {
+                    r.run();
+                    cnt.incrementAndGet();
+                });
+            }
+        };
+        Function<Integer, Integer> memoized = StableValues.memoizedFunction(Set.of(13, 42), i -> i, factory);
+        while (cnt.get() < 2) {
+            Thread.onSpinWait();
+        }
+        assertEquals(42, memoized.apply(42));
+        assertEquals(13, memoized.apply(13));
     }
 
     @Test
