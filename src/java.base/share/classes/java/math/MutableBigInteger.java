@@ -1959,7 +1959,7 @@ class MutableBigInteger {
             final int halfShift = shift >> 1;
             if (!sqrtRem[1].isZero()) {
                 final int sqrtEnd = sqrtRem[0].offset + sqrtRem[0].intLen;
-                final int s0 = sqrtRem[0].value[sqrtEnd - 1] & ((1 << halfShift) - 1);
+                final int s0 = sqrtRem[0].value[sqrtEnd - 1] & (-1 >>> -halfShift);
                 if (s0 != 0) { // An optimization
                     // s0 is at most 15 bit long
                     sqrtRem[1].add(new MutableBigInteger(sqrtRem[0].toBigInteger().multiply(s0 << 1).mag));
@@ -2038,8 +2038,8 @@ class MutableBigInteger {
             if (!rem.isZero()) {
                 final int s0Len = (halfShift + 31) >> 5;
                 int[] s0Mag = sqrt.getBlockZimmermann(0, sqrt.intLen, sqrt.intLen, s0Len);
-                if (s0Mag.length == s0Len && (halfShift & 31) != 0)
-                    s0Mag[0] &= (1 << halfShift) - 1; // Remove excess bits
+                if (s0Mag.length == s0Len)
+                    s0Mag[0] &= -1 >>> -halfShift; // Remove excess bits
 
                 BigInteger s0 = new BigInteger(s0Mag, 1);
                 if (s0.signum != 0) { // An optimization
