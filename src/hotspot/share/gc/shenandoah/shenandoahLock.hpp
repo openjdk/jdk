@@ -48,7 +48,7 @@ public:
   void lock(bool allow_block_for_safepoint) {
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
-    if(allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) {
+    if (allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) {
       // Java thread, and there is a pending safepoint. Dive into contended locking
       // immediately without trying anything else, and block.
       contended_lock(allow_block_for_safepoint);

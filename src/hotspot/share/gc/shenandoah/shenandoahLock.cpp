@@ -44,7 +44,8 @@ template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
   // Spin this much on multi-processor, do not spin on multi-processor.
-  uint32_t ctr = os::is_MP() ? 0x1F : 0;
+  int ctr = os::is_MP() ? 0x1F : 0;
+  // Apply TTAS to avoid more expenseive CAS calls if the lock is still held by other thread.
   while (Atomic::load(&_state) == locked ||
     Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
