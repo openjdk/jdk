@@ -208,7 +208,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <h2>Property Summary</h2>
                     <div id="method-summary-table">
-                    <div class="table-tabs" role="row" aria-orientation="horizontal">\
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
                     rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
                     nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
