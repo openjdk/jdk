@@ -457,15 +457,15 @@ class ErrorMessages {
 }
 ```
 
-The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or 
+The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or
 a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able
 to write such constructs in a few lines.
 
 An advantage with memoized functions, compared to working directly with StableValues, is that the initialization logic
 can be centralized and maintained in a single place, usually at the same place where the memoized function is defined.
 
-The StableValues API offers yet another factory for memoized suppliers that will invoke a provided `original` 
-supplier at most once (if successful) and also allows an optional `threadFactory` to be provided from which 
+The StableValues API offers yet another factory for memoized suppliers that will invoke a provided `original`
+supplier at most once (if successful) and also allows an optional `threadFactory` to be provided from which
 a new value-computing background thread will be created:
 
 ```
@@ -474,10 +474,10 @@ static final Supplier<T> MEMOIZED = StableValues.memoizedSupplier(original, Thre
 
 This can provide a best-of-several-worlds situation where the memoized supplier can be quickly defined (as no
 computation is made by the defining thread), the holder value is computed in a background thread (thus neither
-interfering significantly with the critical startup path nor with future accessing threads), and the threads actually 
+interfering significantly with the critical startup path nor with future accessing threads), and the threads actually
 accessing the holder value can access the holder value with as-if-final performance and without having to compute
 a holder value. This is true under the assumption, that the background thread can complete computation before accessing
-threads requires a holder value. If this is not the case, at least some reduction of blocking time can be enjoyed as 
+threads requires a holder value. If this is not the case, at least some reduction of blocking time can be enjoyed as
 the background thread has a head start compared to the accessing threads.
 
 ## Alternatives
