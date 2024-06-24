@@ -162,16 +162,15 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(orElse(null));
+        return Objects.hashCode(value());
     }
 
     @Override
     public boolean equals(Object obj) {
         return obj instanceof StableValueImpl<?> other &&
-                // Note that the value returned from `orElse()` can never be
-                // `nullSentinel()` (because it will be unwrapped to `null`).
-                // Therefore, we can safely use this as a marker for "no value set".
-                Objects.equals(orElse(nullSentinel()), other.orElse(nullSentinel()));
+                // Note that the returned value() will be `null` if the holder value
+                // is unset and `nullSentinel()` if the holder value is `null`.
+                Objects.equals(value(), other.value());
     }
 
     @Override
