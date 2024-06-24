@@ -30,42 +30,43 @@
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/semaphore.inline.hpp"
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread() && allow_block_for_safepoint) {
-    contended_lock_internal<true>(thread);
+    contended_lock_internal<true>(JavaThread::cast(thread));
   } else {
-    contended_lock_internal<false>(thread);
+    contended_lock_internal<false>(nullptr);
   }
 }
 
 template<bool ALLOW_BLOCK>
-void ShenandoahLock::contended_lock_internal(Thread* thread) {
-  assert(!ALLOW_BLOCK || thread->is_Java_thread(), "Must be a Java thread when allow block.");
-  uint32_t ctr = os::is_MP() ? 0x1F : 0; //Do not spin on single processor.
-  while (Atomic::load(&_state) == locked || Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
+  assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
+  // Spin this much on multi-processor, do not spin on multi-processor.
+  uint32_t ctr = os::is_MP() ? 0x1F : 0;
+  while (Atomic::load(&_state) == locked ||
+    Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
-      // Lightly contended, spin a little if SP it NOT synchronizing.
+      // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
       ctr--;
     } else {
       if (ALLOW_BLOCK) {
-        JavaThread *jthread = JavaThread::cast(thread);
-        ThreadBlockInVM block(jthread);
+        ThreadBlockInVM block(java_thread);
         if (SafepointSynchronize::is_synchronizing()) {
-          //SafepointSynchronize::begin set SP state to synchronizing first, then it arms all
-          //the Java threads one by one.
-          //When a Java thread see synchronizing state, the thread may not be armed, but ~ThreadBlockInVM only
-          //blocks the thread using WaitBarrier when the thread is local armed;
-          //so there is chance that ~ThreadBlockInVM may not block the thread right after global poll is set.
-          //We can trap the Java thread here until SafepointSynchronize arms the thread for local poll;
-          //it keeps yielding to other threads until the thread is armed, which benefits VM Thread to get more CPU time
-          //to arm all java threads and synchronize threads to safepoint.
-          while (!SafepointMechanism::local_poll_armed(jthread)) {
+          // If safepoint is pending, we want to block and allow safepoint to proceed.
+          // Normally, TBIVM above would block us in its destructor.
+          //
+          // But that blocking only happens when TBIVM knows the thread poll is armed.
+          // There is a window between announcing a safepoint and arming the thread poll
+          // during which trying to continuously enter TBIVM is counter-productive.
+          // Under high contention, we may end up going in circles thousands of times.
+          // To avoid it, we wait here until local poll is armed and then proceed
+          // to TBVIM exit for blocking. We do not SpinPause, but yield to let
+          // VM thread to arm the poll sooner.
+          while (SafepointSynchronize::is_synchronizing() &&
+            !SafepointMechanism::local_poll_armed(java_thread)) {
             os::naked_yield();
           }
         } else {

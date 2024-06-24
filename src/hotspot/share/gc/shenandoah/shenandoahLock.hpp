@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/semaphore.hpp"
 
 class ShenandoahLock  {
 private:
@@ -41,8 +40,8 @@ private:
   Thread* volatile _owner;
   shenandoah_padding(2);
 
-  template<bool ALLOW_BLOC>
-  void contended_lock_internal(Thread* thread);
+  template<bool ALLOW_BLOCK>
+  void contended_lock_internal(JavaThread* java_thread);
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
@@ -50,7 +49,9 @@ public:
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
     if(allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) {
-        contended_lock(allow_block_for_safepoint);
+      // Java thread, and there is a pending safepoint. Dive into contended locking
+      // immediately without trying anything else, and block.
+      contended_lock(allow_block_for_safepoint);
     } else {
       // Try to lock fast, or dive into contended lock handling.
       if (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
@@ -59,13 +60,13 @@ public:
     }
 
     assert(Atomic::load(&_state) == locked, "must be locked");
-    assert(Atomic::load(&_owner) == nullptr, "must not be owned");
+    DEBUG_ONLY(assert(Atomic::load(&_owner) == nullptr, "must not be owned"););
     Atomic::store(&_owner, Thread::current());
   }
 
   void unlock() {
     assert(Atomic::load(&_owner) == Thread::current(), "sanity");
-    Atomic::store(&_owner, (Thread*)nullptr);
+    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr););
     OrderAccess::fence();
     Atomic::store(&_state, unlocked);
   }
