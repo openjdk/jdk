@@ -4316,7 +4316,7 @@ void ArchDesc::identify_cisc_spill_instructions() {
       if ( instr->_matrule == nullptr )  continue;
 
       MatchRule &mrule = *instr->_matrule;
-      Predicate* pred  = InstructForm::build_predicate(instr->_matrule, instr->_predicate);
+      Predicate *pred  =  instr->build_predicate();
 
       // Grab the machine type of the operand
       const char *rootOp = instr->_ident;
@@ -4337,7 +4337,7 @@ void ArchDesc::identify_cisc_spill_instructions() {
             && (instr2->reduce_result() != nullptr) // want same result
             && (strcmp(result, instr2->reduce_result()) == 0)) {
           MatchRule &mrule2 = *instr2->_matrule;
-          Predicate* pred2  = InstructForm::build_predicate(instr2->_matrule, instr2->_predicate);
+          Predicate *pred2  =  instr2->build_predicate();
           found_cisc_alternate = instr->cisc_spills_to(*this, instr2);
         }
       }
