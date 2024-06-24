@@ -57,6 +57,7 @@ public:
   ConstraintCastNode(Node* ctrl, Node* n, const Type* t, ConstraintCastNode::DependencyType dependency,
                      const TypeTuple* extra_types)
           : TypeNode(t,2), _dependency(dependency), _extra_types(extra_types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_ConstraintCast);
     init_req(0, ctrl);
     init_req(1, n);
@@ -103,7 +104,6 @@ class CastIINode: public ConstraintCastNode {
   public:
   CastIINode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
-    assert(ctrl != nullptr, "control should be set");
     init_class_id(Class_CastII);
   }
   virtual int Opcode() const;
@@ -131,7 +131,6 @@ class CastLLNode: public ConstraintCastNode {
 public:
   CastLLNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
-    assert(ctrl != nullptr, "control should be set");
     init_class_id(Class_CastLL);
   }
 
