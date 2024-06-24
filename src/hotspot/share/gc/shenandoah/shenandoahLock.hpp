@@ -60,13 +60,13 @@ public:
     }
 
     assert(Atomic::load(&_state) == locked, "must be locked");
-    DEBUG_ONLY(assert(Atomic::load(&_owner) == nullptr, "must not be owned"););
-    Atomic::store(&_owner, Thread::current());
+    assert(Atomic::load(&_owner) == nullptr, "must not be owned");
+    DEBUG_ONLY(Atomic::store(&_owner, Thread::current());)
   }
 
   void unlock() {
     assert(Atomic::load(&_owner) == Thread::current(), "sanity");
-    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr););
+    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr);)
     OrderAccess::fence();
     Atomic::store(&_state, unlocked);
   }
