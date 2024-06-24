@@ -195,7 +195,7 @@ TEST_VM(os, test_print_hex_dump) {
               ADDRESS2 ":   ff ff e0 dc 23 00 6a 64 6b 2f 69 6e 74 65 72 6e 61 6c 2f 6c 6f 61 64 65 72 2f 4e 61 74 69 76 65   " ASCII_1 "\n" \
               ADDRESS3 ":   4c 69 62 72 61 72 69 65 73 00 00 00 00 00 00 00                                                   " ASCII_2 "\n"
 
-#ifdef LITTLE_ENDIAN
+#ifdef VM_LITTLE_ENDIAN
 #define PAT_2 ADDRESS1 ":   ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ????\n" \
               ADDRESS2 ":   ffff dce0 0023 646a 2f6b 6e69 6574 6e72 6c61 6c2f 616f 6564 2f72 614e 6974 6576   " ASCII_1 "\n" \
               ADDRESS3 ":   694c 7262 7261 6569 0073 0000 0000 0000                                           " ASCII_2 "\n"
