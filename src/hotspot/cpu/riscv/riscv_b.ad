@@ -178,13 +178,13 @@ instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
 
 // BSWAP instructions
 instruct bytes_reverse_int_b(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseZbb);
   match(Set dst (ReverseBytesI src));
 
   ins_cost(ALU_COST * 2);
   format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int_b" %}
 
   ins_encode %{
+    assert(UseZbb, "must be");
     __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
@@ -192,13 +192,13 @@ instruct bytes_reverse_int_b(iRegINoSp dst, iRegIorL2I src) %{
 %}
 
 instruct bytes_reverse_long_b(iRegLNoSp dst, iRegL src) %{
-  predicate(UseZbb);
   match(Set dst (ReverseBytesL src));
 
   ins_cost(ALU_COST);
   format %{ "rev8  $dst, $src\t#@bytes_reverse_long_b" %}
 
   ins_encode %{
+    assert(UseZbb, "must be");
     __ rev8(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 

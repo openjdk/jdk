@@ -858,6 +858,19 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  BOOL ret = GetProcessMemoryInfo(
+      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  if (ret) {
+    rss = pmex.WorkingSetSize;
+  }
+  return rss;
+}
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
@@ -2745,7 +2758,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) && defined(_LP64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
