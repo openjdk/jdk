@@ -76,7 +76,7 @@ final class JepTest {
         private static final int SIZE = 8;
 
         // 1. Declare a stable list of default error pages to serve up
-        private static final List<StableValue<String>> MESSAGES = StableValues.ofList(SIZE);
+        private static final List<StableValue<String>> MESSAGES = StableValue.ofList(SIZE);
 
         // 2. Define a function that is to be called the first
         //    time a particular message number is referenced
@@ -102,7 +102,7 @@ final class JepTest {
         // 1. Declare a stable map of loggers with two allowable keys:
         //    "com.foo.Bar" and "com.foo.Baz"
         static final Map<String, StableValue<Logger>> LOGGERS =
-                StableValues.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         // 2. Access the memoized map with as-declared-final performance
         //    (evaluation made before the first access)
@@ -114,18 +114,14 @@ final class JepTest {
 
     class Memoized {
 
-        // 1. Declare a map with stable values
-        private static final Map<String, StableValue<Logger>> MAP =
-                StableValues.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-        // 2. Declare a memoized (cached) function backed by the stable map
+        // 1. Declare a memoized (cached) function backed by a stable map
         private static final Function<String, Logger> LOGGERS =
-                n -> MAP.get(n).mapIfUnset(n , Logger::getLogger);
-
+                StableValues.memoizedFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
+                Logger::getLogger, null);
 
         private static final String NAME = "com.foo.Baz";
 
-        // 3. Access the memoized value via the function with as-declared-final
+        // 2. Access the memoized value via the function with as-declared-final
         //    performance (evaluation made before the first access)
         Logger logger = LOGGERS.apply(NAME);
     }
@@ -136,17 +132,12 @@ final class JepTest {
         class ErrorMessages {
             private static final int SIZE = 8;
 
-
-            // 1. Declare a stable list of default error pages to serve up
-            private static final List<StableValue<String>> ERROR_PAGES =
-                    StableValues.ofList(SIZE);
-
-            // 2. Declare a memoized IntFunction backed by the stable list
+            // 1. Declare a memoized IntFunction backed by a stable list
             private static final IntFunction<String> ERROR_FUNCTION =
-                    i -> ERROR_PAGES.get(i).mapIfUnset(i, ErrorMessages::readFromFile);
+                    StableValues.memoizedIntFunction(SIZE, ErrorMessages::readFromFile, null);
 
-            // 3. Define a function that is to be called the first
-//    time a particular message number is referenced
+            // 2. Define a function that is to be called the first
+            //    time a particular message number is referenced
             private static String readFromFile(int messageNumber) {
                 try {
                     return Files.readString(Path.of("message-" + messageNumber + ".html"));
@@ -155,8 +146,8 @@ final class JepTest {
                 }
             }
 
-            // 4. Access the memoized list element with as-declared-final performance
-//    (evaluation made before the first access)
+            // 3. Access the memoized list element with as-declared-final performance
+            //    (evaluation made before the first access)
             String msg = ERROR_FUNCTION.apply(2);
         }
     }

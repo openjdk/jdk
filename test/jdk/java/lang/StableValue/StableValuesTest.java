@@ -77,7 +77,7 @@ final class StableValuesTest {
 
     @Test
     void ofList() {
-        List<StableValue<Integer>> list = StableValues.ofList(13);
+        List<StableValue<Integer>> list = StableValue.ofList(13);
         assertEquals(13, list.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -87,7 +87,7 @@ final class StableValuesTest {
 
     @Test
     void ofMap() {
-        Map<Integer, StableValue<Integer>> map = StableValues.ofMap(Set.of(1, 2, 3));
+        Map<Integer, StableValue<Integer>> map = StableValue.ofMap(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();

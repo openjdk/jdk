@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -52,8 +54,8 @@ public final class StableValues {
     /**
      * {@return a new thread-safe, stable, lazily computed {@linkplain Supplier supplier}
      * that records the value of the provided {@code original} supplier upon being first
-     * accessed via {@linkplain Supplier#get()}, or via a background thread created from
-     * the provided {@code factory} (if non-null)}
+     * accessed via {@linkplain Supplier#get()}, or optionally via a background thread
+     * created from the provided {@code factory} (if non-null)}
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
@@ -73,11 +75,11 @@ public final class StableValues {
      *
      * @param original supplier used to compute a memoized value
      * @param factory  an optional factory that, if non-null, will be used to create
-     *                 a background thread that will compute the memoized value. If the
-     *                 factory is {@code null}, no background thread will be started.
+     *                 a background thread that will attempt to compute the memoized
+     *                 value. If the factory is {@code null}, no background thread will
+     *                 be created.
      * @param <T>      the type of results supplied by the returned supplier
      */
-
     public static <T> Supplier<T> memoizedSupplier(Supplier<? extends T> original,
                                                    ThreadFactory factory) {
           Objects.requireNonNull(original);
@@ -103,52 +105,136 @@ public final class StableValues {
       }
 
     /**
-     * {@return a shallowly immutable, stable List of distinct fresh stable values}
+     * {@return a new thread-safe, stable, lazily computed {@linkplain IntFunction}
+     * that, for each allowed input, records the values of the provided {@code original}
+     * IntFunction upon being first accessed via {@linkplain IntFunction#apply(int)}, or
+     * optionally via background threads created from the provided {@code factory}
+     * (if non-null)}
      * <p>
-     * The method is equivalent to the following for a given non-negative {@code size}:
-     * {@snippet lang = java :
-     *     List<StableValue<T>> list = Stream.generate(StableValue::<T>newInstance)
-     *                 .limit(size)
-     *                 .toList();
-     * }
-     * @param size the size of the returned list
-     * @param <T>  the {@code StableValue}s' element type
+     * The provided {@code original} IntFunction is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain IntFunction#apply(int)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code original} IntFunction invokes the returned IntFunction recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * <p>
+     * If the provided {@code original} IntFunction throws an exception, it is relayed
+     * to the initial caller. If the memoized IntFunction is computed by a background
+     * thread, exceptions from the provided {@code original} IntFunction will be relayed
+     * to the background thread's {@linkplain Thread#getUncaughtExceptionHandler()
+     * uncaught exception handler}.
+     * <p>
+     * The order in which background threads are started is unspecified.
+     *
+     * @param size     the size of the allowed inputs in {@code [0, size)}
+     * @param original IntFunction used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 {@code size} background threads that will attempt to compute all
+     *                 the memoized values. If the provided factory is {@code null}, no
+     *                 background threads will be created.
+     * @param <R>      the type of results delivered by the returned IntFunction
      */
-    public static <T> List<StableValue<T>> ofList(int size) {
+    public static <R> IntFunction<R> memoizedIntFunction(int size,
+                                                         IntFunction<? extends R> original,
+                                                         ThreadFactory factory) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        @SuppressWarnings("unchecked")
-        final var stableValues = (StableValue<T>[]) new StableValue<?>[size];
-        for (int i = 0; i < size; i++) {
-            stableValues[i] = StableValue.newInstance();
+        Objects.requireNonNull(original);
+        // `factory` is nullable
+
+        final List<StableValue<R>> backing = StableValue.ofList(size);
+
+        // A record provides better debug capabilities than a lambda
+        record MemoizedIntFunction<R>(List<StableValue<R>> stables,
+                                      IntFunction<? extends R> original) implements IntFunction<R> {
+            @Override public R apply(int value) { return stables.get(value)
+                    .mapIfUnset(value, original::apply); }
         }
-        return List.of(stableValues);
+
+        final IntFunction<R> memoized = new MemoizedIntFunction<>(backing, original);
+
+        if (factory != null) {
+            for (int i = 0; i < size; i++) {
+                final int input = i;
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(input); }
+                });
+                thread.start();
+            }
+        }
+
+        return memoized;
     }
 
     /**
-     * {@return a shallowly immutable, stable Map with the provided {@code keys}
-     * and associated distinct fresh stable values}
+     * {@return a new thread-safe, stable, lazily computed {@linkplain Function}
+     * that, for each allowed input in the given set of {@code inputs}, records the
+     * values of the provided {@code original} Function upon being first accessed via
+     * {@linkplain Function#apply(Object)}, or optionally via background threads created
+     * from the provided {@code factory} (if non-null)}
      * <p>
-     * The method is equivalent to the following for a given non-null set of {@code keys}:
-     * {@snippet lang = java :
-     *     Map<K, StableValue<T>> map = keys.stream()
-     *                 .collect(Collectors.toMap(
-     *                     Function.identity(), _ -> StableValue.newInstance()));
-     * }
-     * @param keys the keys in the {@code Map}
-     * @param <K>  the {@code Map}'s key type
-     * @param <T>  the StableValue's type for the {@code Map}'s value type
+     * The provided {@code original} Function is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain Function#apply(Object)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code original} Function invokes the returned Function recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * <p>
+     * If the provided {@code original} Function throws an exception, it is relayed
+     * to the initial caller. If the memoized Function is computed by a background
+     * thread, exceptions from the provided {@code original} Function will be relayed to
+     * the background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
+     * exception handler}.
+     * <p>
+     * The order in which background threads are started is unspecified.
+     *
+     * @param inputs   the set of allowed input values
+     * @param original Function used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 {@code size} background threads that will attempt to compute the
+     *                 memoized values. If the provided factory is {@code null}, no
+     *                 background threads will be created.
+     * @param <R>      the type of results delivered by the returned Function
      */
-    public static <K, T> Map<K, StableValue<T>> ofMap(Set<K> keys) {
-        Objects.requireNonNull(keys);
-        @SuppressWarnings("unchecked")
-        final var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
-        int i = 0;
-        for (K key : keys) {
-            entries[i++] = Map.entry(key, StableValue.newInstance());
+    public static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
+                                                         Function<? super T, ? extends R> original,
+                                                         ThreadFactory factory) {
+        Objects.requireNonNull(inputs);
+
+        final Map<T, StableValue<R>> backing = StableValue.ofMap(inputs);
+
+        // A record provides better debug capabilities than a lambda
+        record MemoizedFunction<T, R>(Map<T, StableValue<R>> stables,
+                                      Function<? super T, ? extends R> original) implements Function<T, R> {
+            @Override
+            public R apply(T value) {
+                StableValue<R> stable = MemoizedFunction.this.stables.get(value);
+                if (stable == null) {
+                    throw new IllegalArgumentException("Input not allowed: " + value);
+                }
+                return stable.mapIfUnset(value, original);
+            }
         }
-        return Map.ofEntries(entries);
+
+        final Function<T, R> memoized = new MemoizedFunction<>(backing, original);
+
+        if (factory != null) {
+            for (final T t : inputs) {
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(t); }
+                });
+                thread.start();
+            }
+        }
+
+        return memoized;
     }
 
 }

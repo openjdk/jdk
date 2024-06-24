@@ -27,7 +27,11 @@ package jdk.internal.lang;
 
 import jdk.internal.lang.stable.StableValueImpl;
 
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -72,34 +76,26 @@ import java.util.function.Supplier;
  *     Supplier<T> memoized = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
  * }
  * <p>
- * A memoized IntFunction, for the allowed given {@code size} values {@code [0, size)}
+ * A memoized IntFunction, for the allowed given {@code size} input values {@code [0, size)}
  * and where the given {@code original} IntFunction is guaranteed to be successfully
  * invoked at most once per inout index even in a multithreaded environment, can be
  * created like this:
- * {@snippet lang = java :
- *     static <R> IntFunction<R> memoizedIntFunction(int size,
- *                                                   IntFunction<? extends R> original) {
- *         List<StableValue<R>> backing = StableValues.ofList(size);
- *         return i -> backing.get(i)
- *                       .computeIfUnset(i, original::apply);
- *     }
- * }
- * A memoized Function, for the allowed given {@code input} values and where the
+ * {@snippet lang = java:
+ *     IntFunction<R> memoized = StableValues.memoizedIntFunction(size, original, null);
+ *}
+ * Just like a memoized supplier, a thread factory can be provided as a second parameter
+ * allowing all the values for the allowed input values to be computed by distinct
+ * background threads.
+ * <p>
+ * A memoized Function, for the given set of allowed {@code inputs} and where the
  * given {@code original} function is guaranteed to be successfully invoked at most
  * once per input value even in a multithreaded environment, can be created like this:
  * {@snippet lang = java :
- *     static <T, R> Function<T, R> memoizedFunction(Set<T> inputs,
- *                                                   Function<? super T, ? extends R> original) {
- *         Map<T, StableValue<R>> backing = StableValues.ofMap(keys);
- *         return t -> {
- *             if (!backing.containsKey(t)) {
- *                 throw new IllegalArgumentException("Input not allowed: "+t);
- *             }
- *             return backing.get(t)
- *                         .computeIfUnset(t, original);
- *         };
- *     }
+ *    Function<T, R> memoized = StableValues.memoizedFunction(inputs, original, null);
  * }
+ * Just like a memoized supplier, a thread factory can be provided as a second parameter
+ * allowing all the values for the allowed input values to be computed by distinct
+ * background threads.
  * <p>
  * The constructs above are eligible for similar JVM optimizations as the StableValue
  * class itself.
@@ -131,6 +127,7 @@ import java.util.function.Supplier;
  */
 public sealed interface StableValue<T>
         permits StableValueImpl {
+
 
     // Principal methods
 
@@ -244,7 +241,7 @@ public sealed interface StableValue<T>
      * <p>
      * If this method returns without throwing an Exception, a holder value is always set.
      *
-     * @param input  context to be applied to the {@code mapper}
+     * @param input  context to be applied to the {@code mapper} (nullable)
      * @param mapper the mapper to be used to compute a holder value
      * @param <I>    The type of the {@code input} context
      * @return the current (existing or computed) holder value associated with
@@ -270,8 +267,7 @@ public sealed interface StableValue<T>
         }
     }
 
-
-    // Factory
+    // Factories
 
     /**
      * {@return a fresh stable value with an unset holder value}
@@ -280,6 +276,59 @@ public sealed interface StableValue<T>
      */
     static <T> StableValue<T> newInstance() {
         return StableValueImpl.newInstance();
+    }
+
+    /**
+     * {@return a shallowly immutable, stable List of distinct fresh stable values}
+     * <p>
+     * The method is equivalent to the following for a given non-negative {@code size}:
+     * {@snippet lang = java :
+     *     List<StableValue<T>> list = Stream.generate(StableValue::<T>newInstance)
+     *                 .limit(size)
+     *                 .toList();
+     * }
+     * but may be more efficient.
+     *
+     * @param size the size of the returned list
+     * @param <T>  the {@code StableValue}s' element type
+     */
+    static <T> List<StableValue<T>> ofList(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        final var stableValues = (StableValue<T>[]) new StableValue<?>[size];
+        for (int i = 0; i < size; i++) {
+            stableValues[i] = newInstance();
+        }
+        return List.of(stableValues);
+    }
+
+    /**
+     * {@return a shallowly immutable, stable Map with the provided {@code keys}
+     * and associated distinct fresh stable values}
+     * <p>
+     * The method is equivalent to the following for a given non-null set of {@code keys}:
+     * {@snippet lang = java :
+     *     Map<K, StableValue<T>> map = keys.stream()
+     *                 .collect(Collectors.toMap(
+     *                     Function.identity(), _ -> StableValue.newInstance()));
+     * }
+     * but may be more efficient.
+     *
+     * @param keys the keys in the {@code Map}
+     * @param <K>  the {@code Map}'s key type
+     * @param <T>  the StableValue's type for the {@code Map}'s value type
+     */
+    static <K, T> Map<K, StableValue<T>> ofMap(Set<K> keys) {
+        Objects.requireNonNull(keys);
+        @SuppressWarnings("unchecked")
+        final var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        int i = 0;
+        for (K key : keys) {
+            entries[i++] = Map.entry(key, newInstance());
+        }
+        return Map.ofEntries(entries);
     }
 
 }

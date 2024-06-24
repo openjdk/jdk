@@ -16,6 +16,8 @@ _at most once_. Stable Values offer the performance and safety benefits of final
 
 - It is not a goal to provide additional language support for expressing lazy computation.
 This might be the subject of a future JEP.
+- It is not a goal to provide lazy collections such as a lazy `List<E>` or a lazy `Map<K, V>`.
+This might be the subject of a future JEP.
 - It is not a goal to prevent or deprecate existing idioms for expressing lazy initialization.
 
 ## Motivation
@@ -211,8 +213,8 @@ The Stable Values API defines functions and an interface so that client code in 
 - Define and use stable (scalar) values:
     - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html)
 - Define collections:
-    - [`StableValues.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofList(int))
-    - [`StableValues.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValues.html#ofMap(java.util.Set))
+    - [`StableValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#ofList(int))
+    - [`StableValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#ofMap(java.util.Set))
 
 The Stable Values API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/module-summary.html) module.
 
@@ -290,7 +292,7 @@ Like a `StableValue` object, a `List` of stable value elements is created via a 
 providing the size of the desired `List`:
 
 ```
-static <V> List<StableValue<V>> StableValues.ofList(int size) { ... }
+static <V> List<StableValue<V>> StableValue.ofList(int size) { ... }
 ```
 
 This allows for improving the handling of lists with stable values and enables a much better
@@ -303,7 +305,7 @@ class ErrorMessages {
     private static final int SIZE = 8;
 
     // 1. Declare a stable list of default error pages to serve up
-    private static final List<StableValue<String>> MESSAGES = StableValues.ofList(SIZE);
+    private static final List<StableValue<String>> MESSAGES = StableValue.ofList(SIZE);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -360,7 +362,7 @@ class MapDemo {
     // 1. Declare a stable map of loggers with two allowable keys:
     //    "com.foo.Bar" and "com.foo.Baz"
     static final Map<String, StableValue<Logger>> LOGGERS =
-            StableValues.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+            StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
     // 2. Access the memoized map with as-declared-final performance
     //    (evaluation made before the first access)
@@ -394,30 +396,25 @@ reused for subsequent  calls with recurring input values. Here is how we could m
 ```
 class Memoized {
 
-    // 1. Declare a map with stable values
-    private static final Map<String, StableValue<Logger>> MAP =
-            StableValues.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-    // 2. Declare a memoized (cached) function backed by the stable map
+    // 1. Declare a memoized (cached) function backed by a stable map
     private static final Function<String, Logger> LOGGERS =
-            n -> MAP.get(n).mapIfUnset(n , Logger::getLogger);
-
-    ...
+            StableValues.memoizedFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
+            Logger::getLogger, null);
 
     private static final String NAME = "com.foo.Baz";
 
-    // 3. Access the memoized value via the function with as-declared-final
+    // 2. Access the memoized value via the function with as-declared-final
     //    performance (evaluation made before the first access)
     Logger logger = LOGGERS.apply(NAME);
 }
 ```
+Note: the last `null` parameter signifies an optional thread factory that will be explained later on.
 
 In the example above, for each key, the function is invoked at most once per loading of the containing class
-`MapDemo` (`MapDemo`, in turn, can be loaded at most once into any given `ClassLoader`) as it is backed by a
-`Map` with lazily computed values which upholds the invoke-at-most-once-per-key invariant.
+`Memoized` (`Memoized`, in turn, can be loaded at most once into any given `ClassLoader`) and it is backed by a
+_stable map_ with lazily computed values which upholds the invoke-at-most-once-per-key invariant.
 
-It should be noted that the enumerated collection of keys given at creation time constitutes the only valid
-input keys for the memoized function.
+It should be noted that the enumerated set of valid inputs given at creation time constitutes the only valid input keys for the memoized function.
 
 Similarly to how a `Function` can be memoized using a backing lazily computed map, the same pattern
 can be used for an `IntFunction` that will record its cached value in a backing _stable list_:
@@ -425,29 +422,25 @@ can be used for an `IntFunction` that will record its cached value in a backing 
 ```
 class ErrorMessages {
 
-    // 1. Declare a stable list of default error pages to serve up
-    private static final List<StableValue<String>> ERROR_PAGES =
-            StableValues.ofList(SIZE);
+    private static final int SIZE = 8;
 
-    // 2. Declare a memoized IntFunction backed by the stable list
+    // 1. Declare a memoized IntFunction backed by a stable list
     private static final IntFunction<String> ERROR_FUNCTION =
-            i -> ERROR_PAGES.get(i).mapIfUnset(i , ErrorMessages::readFromFile);
+            StableValues.memoizedIntFunction(SIZE, ErrorMessages::readFromFile, null);
 
-    // 3. Define a function that is to be called the first
+    // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
     private static String readFromFile(int messageNumber) {
         try {
-            return Files.readString(Path.of("message-" + messageNumber + ".html"));
+             return Files.readString(Path.of("message-" + messageNumber + ".html"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    ...
-
-    // 4. Access the memoized list element with as-declared-final performance
+    // 3. Access the memoized list element with as-declared-final performance
     //    (evaluation made before the first access)
-    String msg =  ERROR_FUNCTION.apply(2);
+    String msg = ERROR_FUNCTION.apply(2);
 
     // <!DOCTYPE html>
     // <html lang="en">
@@ -457,28 +450,35 @@ class ErrorMessages {
 }
 ```
 
-The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or
-a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able
-to write such constructs in a few lines.
+The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) via the `StableValues::memoizedSupplier` factory. Additional memoized functional constructs, such a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`) can be custom made. An astute reader will be able to write such constructs in a few lines.
 
-An advantage with memoized functions, compared to working directly with StableValues, is that the initialization logic
+An advantage with memoized functions, compared to working directly with StableValue instances, is that the initialization logic
 can be centralized and maintained in a single place, usually at the same place where the memoized function is defined.
 
-The StableValues API offers yet another factory for memoized suppliers that will invoke a provided `original`
-supplier at most once (if successful) and also allows an optional `threadFactory` to be provided from which
-a new value-computing background thread will be created:
+As noted above, the memoized factories in the StableValues API offers an optional tailing thread factory parameter from which new value-computing background threads will be created:
 
 ```
-static final Supplier<T> MEMOIZED = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
+// 1. Centrally declare a memoized (cached) function backed by a stable map
+//    computed in the background by two distinct virtual threads.
+private static final Function<String, Logger> LOGGERS =
+        StableValues.memoizedFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
+        Logger::getLogger, 
+        Thread.ofVirtual().factory()); // Create cheap virtual threads for background computation
+        
+private static final String NAME = "com.foo.Baz";
+
+// 2. Access the memoized value via the function with as-declared-final
+//    performance (evaluation already started and perhaps even completed before the first access)
+Logger logger = LOGGERS.apply(NAME);        
 ```
 
-This can provide a best-of-several-worlds situation where the memoized supplier can be quickly defined (as no
-computation is made by the defining thread), the holder value is computed in a background thread (thus neither
+This can provide a best-of-several-worlds situation where the memoized function can be quickly defined (as no
+computation is made by the defining thread), the holder value is computed in background threads (thus neither
 interfering significantly with the critical startup path nor with future accessing threads), and the threads actually
 accessing the holder value can access the holder value with as-if-final performance and without having to compute
-a holder value. This is true under the assumption, that the background thread can complete computation before accessing
+a holder value. This is true under the assumption, that the background threads can complete computation before accessing
 threads requires a holder value. If this is not the case, at least some reduction of blocking time can be enjoyed as
-the background thread has a head start compared to the accessing threads.
+the background threads have had a head start compared to the accessing threads.
 
 ## Alternatives
 
