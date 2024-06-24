@@ -78,6 +78,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
+
 #ifndef _WINDOWS
 # include <poll.h>
 #endif
@@ -2063,6 +2067,19 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
   assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(addr) + bytes);
 }
+
+julong os::used_memory() {
+#ifdef LINUX
+  if (OSContainer::is_containerized()) {
+    jlong mem_usage = OSContainer::memory_usage_in_bytes();
+    if (mem_usage > 0) {
+      return mem_usage;
+    }
+  }
+#endif
+  return os::physical_memory() - os::available_memory();
+}
+
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
