@@ -738,9 +738,7 @@ public final class StringConcatFactory {
         int idx = classIndex(cl);
         MethodHandle prepend = NO_PREFIX_PREPENDERS[idx];
         if (prepend == null) {
-            NO_PREFIX_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
-                    methodType(long.class, long.class, byte[].class,
-                            Wrapper.asPrimitiveType(cl))).rebind();
+            NO_PREFIX_PREPENDERS[idx] = prepend = MethodHandles.insertArguments(prepender(cl), 3, "");
         }
         return prepend;
     }
