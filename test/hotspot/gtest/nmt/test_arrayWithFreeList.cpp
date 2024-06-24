@@ -28,7 +28,7 @@
 
 using A = ArrayWithFreeList<int, mtTest>;
 
-class HomogenousObjectArrayTest  : public testing::Test {
+class ArrayWithFreeListTest  : public testing::Test {
 };
 
 // A linked list which sets the allocator itself
@@ -119,7 +119,7 @@ void test_with_list(List& list) {
   EXPECT_EQ(1, list.pop());
 }
 
-TEST_VM_F(HomogenousObjectArrayTest, TestLinkedLists) {
+TEST_VM_F(ArrayWithFreeListTest, TestLinkedLists) {
   {
     LL<int> list;
     test_with_list(list);
@@ -130,7 +130,7 @@ TEST_VM_F(HomogenousObjectArrayTest, TestLinkedLists) {
   }
 }
 
-TEST_VM_F(HomogenousObjectArrayTest, FreeingShouldReuseMemory) {
+TEST_VM_F(ArrayWithFreeListTest, FreeingShouldReuseMemory) {
   A alloc;
   A::I i = alloc.allocate(1);
   int* x = &alloc.at(i);
@@ -140,7 +140,7 @@ TEST_VM_F(HomogenousObjectArrayTest, FreeingShouldReuseMemory) {
   EXPECT_EQ(x, y);
 }
 
-TEST_VM_F(HomogenousObjectArrayTest, FreeingInTheMiddleWorks) {
+TEST_VM_F(ArrayWithFreeListTest, FreeingInTheMiddleWorks) {
   A alloc;
   A::I i0 = alloc.allocate(0);
   A::I i1 = alloc.allocate(0);
