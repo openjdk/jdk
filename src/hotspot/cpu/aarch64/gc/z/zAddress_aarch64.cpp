@@ -38,7 +38,7 @@
 
 // Default value if probing is not implemented for a certain platform
 // Max address bit is restricted by implicit assumptions in the code, for instance
-// the bit layout of XForwardingEntry or Partial array entry (see XMarkStackEntry) in mark stack
+// the bit layout of ZForwardingEntry or Partial array entry (see ZMarkStackEntry) in mark stack
 static const size_t DEFAULT_MAX_ADDRESS_BIT = 46;
 // Minimum value returned, if probing fail
 static const size_t MINIMUM_MAX_ADDRESS_BIT = 36;

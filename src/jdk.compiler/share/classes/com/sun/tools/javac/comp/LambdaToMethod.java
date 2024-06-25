@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1239,7 +1239,7 @@ public class LambdaToMethod extends TreeTranslator {
         private int lambdaCount = 0;
 
         /**
-         * List of types undergoing construction via explicit constructor chaining.
+         * List of types undergoing construction, i.e., in an early construction context.
          */
         private List<ClassSymbol> typesUnderConstruction;
 
@@ -1280,15 +1280,10 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitApply(JCMethodInvocation tree) {
-            List<ClassSymbol> previousNascentTypes = typesUnderConstruction;
-            try {
-                Name methName = TreeInfo.name(tree.meth);
-                if (methName == names._this || methName == names._super) {
-                    typesUnderConstruction = typesUnderConstruction.prepend(currentClass());
-                }
-                super.visitApply(tree);
-            } finally {
-                typesUnderConstruction = previousNascentTypes;
+            super.visitApply(tree);
+            if (TreeInfo.isConstructorCall(tree)) {
+                Assert.check(typesUnderConstruction.head == currentClass());
+                typesUnderConstruction = typesUnderConstruction.tail;   // end of early construction context
             }
         }
             // where
@@ -1439,13 +1434,16 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
+            List<ClassSymbol> prevTypesUnderConstruction = typesUnderConstruction;
             List<Frame> prevStack = frameStack;
             try {
+                if (TreeInfo.isConstructor(tree))       // start early construction context (Object() notwithstanding)
+                    typesUnderConstruction = typesUnderConstruction.prepend(currentClass());
                 frameStack = frameStack.prepend(new Frame(tree));
                 super.visitMethodDef(tree);
-            }
-            finally {
+            } finally {
                 frameStack = prevStack;
+                typesUnderConstruction = prevTypesUnderConstruction;
             }
         }
 

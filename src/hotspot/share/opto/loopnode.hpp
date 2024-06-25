@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1011,8 +1011,10 @@ public:
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
   }
-  // true if CFG node d dominates CFG node n
-  bool is_dominator(Node *d, Node *n);
+
+  bool is_dominator(Node* dominator, Node* n);
+  bool is_strict_dominator(Node* dominator, Node* n);
+
   // return get_ctrl for a data node and self(n) for a CFG node
   Node* ctrl_or_self(Node* n) {
     if (has_ctrl(n))
@@ -1375,12 +1377,14 @@ public:
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+                                                        Node* offset, Node* limit, int stride_con, Node* value,
+                                                        bool is_template);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1459,7 +1463,7 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
-  // Move UnorderedReduction out of loop if possible
+  // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
@@ -1532,6 +1536,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);

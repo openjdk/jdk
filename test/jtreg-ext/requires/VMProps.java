@@ -67,6 +67,9 @@ public class VMProps implements Callable<Map<String, String>> {
     // value known to jtreg as an indicator of error state
     private static final String ERROR_STATE = "__ERROR__";
 
+    private static final String GC_PREFIX = "-XX:+Use";
+    private static final String GC_SUFFIX = "GC";
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static class SafeMap {
@@ -348,8 +351,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
 
-        String GC_PREFIX  = "-XX:+Use";
-        String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
         if (jtropts != null) {
             for (String opt : jtropts.split(",")) {
@@ -462,7 +463,31 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if this VM can write Java heap objects into the CDS archive
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if the VM options specified via the "test.cds.runtime.options"
+     * property is compatible with writing Java heap objects into the CDS archive
+     */
+    protected boolean isCDSRuntimeOptionsCompatible() {
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts == null) {
+            return true;
+        }
+        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        String G1GC_ENABLED = "-XX:+UseG1GC";
+        for (String opt : jtropts.split(",")) {
+            if (opt.equals(CCP_DISABLED)) {
+                return false;
+            }
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
+                !opt.equals(G1GC_ENABLED)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

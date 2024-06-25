@@ -24,7 +24,8 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
- * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
+ * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED
+ *     --add-opens java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
 import java.lang.reflect.Method;

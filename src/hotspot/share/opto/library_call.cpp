@@ -638,7 +638,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_base64_decodeBlock();
   case vmIntrinsics::_poly1305_processBlocks:
     return inline_poly1305_processBlocks();
-
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+    return inline_intpoly_montgomeryMult_P256();
+  case vmIntrinsics::_intpoly_assign:
+    return inline_intpoly_assign();
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray(false);
@@ -1202,6 +1205,9 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
   Node* tgt_count = load_array_length(tgt);
 
+  Node* result = nullptr;
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
+
   if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
     // Divide src size by 2 if String is UTF16 encoded
     src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
@@ -1211,7 +1217,16 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
     tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
   }
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, result_rgn, result_phi, ae);
+  if (call_opt_stub) {
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::_string_indexof_array[ae],
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               result_rgn, result_phi, ae);
+  }
   if (result != nullptr) {
     result_phi->init_req(3, result);
     result_rgn->init_req(3, control());
@@ -1223,7 +1238,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//-----------------------------inline_string_indexOf-----------------------
+//-----------------------------inline_string_indexOfI-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1231,6 +1246,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
+
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
   Node* src         = argument(0); // byte[]
   Node* src_count   = argument(1); // char count
@@ -1256,8 +1272,21 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
 
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
+  Node* result = nullptr;
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, region, phi, ae);
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
+
+  if (call_opt_stub) {
+    assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::_string_indexof_array[ae],
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               region, phi, ae);
+  }
   if (result != nullptr) {
     // The result is index relative to from_index if substring was found, -1 otherwise.
     // Generate code which will fold into cmove.
@@ -5010,7 +5039,13 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   assert(alloc_obj->is_CheckCastPP() && raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");
 
   AllocateNode* alloc = nullptr;
-  if (ReduceBulkZeroing) {
+  if (ReduceBulkZeroing &&
+      // If we are implementing an array clone without knowing its source type
+      // (can happen when compiling the array-guarded branch of a reflective
+      // Object.clone() invocation), initialize the array within the allocation.
+      // This is needed because some GCs (e.g. ZGC) might fall back in this case
+      // to a runtime clone call that assumes fully initialized source arrays.
+      (!is_array || obj->get_ptr_type()->isa_aryptr() != nullptr)) {
     // We will be completely responsible for initializing this object -
     // mark Initialize node as complete.
     alloc = AllocateNode::Ideal_allocation(alloc_obj);
@@ -5975,71 +6010,17 @@ bool LibraryCallKit::inline_multiplyToLen() {
     return false;
   }
 
-  // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes BigInteger.multiplyToLen() if deoptimization happens
-  // on the return from z array allocation in runtime.
-  { PreserveReexecuteState preexecs(this);
-    jvms()->set_should_reexecute(true);
+  Node* x_start = array_element_address(x, intcon(0), x_elem);
+  Node* y_start = array_element_address(y, intcon(0), y_elem);
+  // 'x_start' points to x array + scaled xlen
+  // 'y_start' points to y array + scaled ylen
 
-    Node* x_start = array_element_address(x, intcon(0), x_elem);
-    Node* y_start = array_element_address(y, intcon(0), y_elem);
-    // 'x_start' points to x array + scaled xlen
-    // 'y_start' points to y array + scaled ylen
+  Node* z_start = array_element_address(z, intcon(0), T_INT);
 
-    // Allocate the result array
-    Node* zlen = _gvn.transform(new AddINode(xlen, ylen));
-    ciKlass* klass = ciTypeArrayKlass::make(T_INT);
-    Node* klass_node = makecon(TypeKlassPtr::make(klass));
-
-    IdealKit ideal(this);
-
-#define __ ideal.
-     Node* one = __ ConI(1);
-     Node* zero = __ ConI(0);
-     IdealVariable need_alloc(ideal), z_alloc(ideal);  __ declarations_done();
-     __ set(need_alloc, zero);
-     __ set(z_alloc, z);
-     __ if_then(z, BoolTest::eq, null()); {
-       __ increment (need_alloc, one);
-     } __ else_(); {
-       // Update graphKit memory and control from IdealKit.
-       sync_kit(ideal);
-       Node* cast = new CastPPNode(control(), z, TypePtr::NOTNULL);
-       _gvn.set_type(cast, cast->bottom_type());
-       C->record_for_igvn(cast);
-
-       Node* zlen_arg = load_array_length(cast);
-       // Update IdealKit memory and control from graphKit.
-       __ sync_kit(this);
-       __ if_then(zlen_arg, BoolTest::lt, zlen); {
-         __ increment (need_alloc, one);
-       } __ end_if();
-     } __ end_if();
-
-     __ if_then(__ value(need_alloc), BoolTest::ne, zero); {
-       // Update graphKit memory and control from IdealKit.
-       sync_kit(ideal);
-       Node * narr = new_array(klass_node, zlen, 1);
-       // Update IdealKit memory and control from graphKit.
-       __ sync_kit(this);
-       __ set(z_alloc, narr);
-     } __ end_if();
-
-     sync_kit(ideal);
-     z = __ value(z_alloc);
-     // Can't use TypeAryPtr::INTS which uses Bottom offset.
-     _gvn.set_type(z, TypeOopPtr::make_from_klass(klass));
-     // Final sync IdealKit and GraphKit.
-     final_sync(ideal);
-#undef __
-
-    Node* z_start = array_element_address(z, intcon(0), T_INT);
-
-    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                   OptoRuntime::multiplyToLen_Type(),
-                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                   x_start, xlen, y_start, ylen, z_start, zlen);
-  } // original reexecute is set back here
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                 OptoRuntime::multiplyToLen_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 x_start, xlen, y_start, ylen, z_start);
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   set_result(z);
@@ -7568,6 +7549,69 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   return true;
 }
 
+bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_montgomeryMult_P256 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_montgomeryMult_P256();
+  stubName = "intpoly_montgomeryMult_P256";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* r = argument(3);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is NULL");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is NULL");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_montgomeryMult_P256_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, b_start, r_start);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_assign() {
+  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_assign has %d parameters", callee()->signature()->size());
+  const char *stubName = "intpoly_assign";
+  address stubAddr = StubRoutines::intpoly_assign();
+  if (!stubAddr) return false;
+
+  Node* set = argument(0);
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* arr_length = load_array_length(a);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is NULL");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_assign_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 set, a_start, b_start, arr_length);
+  return true;
+}
+
 //------------------------------inline_digestBase_implCompress-----------------------
 //
 // Calculate MD5 for single-block byte[] array.
@@ -7637,7 +7681,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_sha3_implCompress:
     assert(UseSHA3Intrinsics, "need SHA3 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, T_BYTE);
+    state = get_state_from_digest_object(digestBase_obj, T_LONG);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
     block_size = get_block_size_from_digest_object(digestBase_obj);
@@ -7737,7 +7781,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA3";
       stub_name = "sha3_implCompressMB";
       stub_addr = StubRoutines::sha3_implCompressMB();
-      elem_type = T_BYTE;
+      elem_type = T_LONG;
     }
     break;
   default:

@@ -140,14 +140,10 @@ public:
   void gc_prologue();
   void gc_epilogue();
 
-  bool should_collect(bool   full,
-                      size_t word_size,
-                      bool   is_tlab);
-
   bool should_allocate(size_t word_size, bool is_tlab) {
     bool result = false;
     size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab || supports_tlab_allocation()) {
+    if (!is_tlab) {
       result = (word_size > 0) && (word_size < overflow_limit);
     }
     return result;
@@ -156,11 +152,9 @@ public:
   // Performance Counter support
   void update_counters();
 
-  void record_spaces_top();
-
   // Statistics
 
-  void update_gc_stats(Generation* current_generation, bool full);
+  void update_promote_stats();
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.

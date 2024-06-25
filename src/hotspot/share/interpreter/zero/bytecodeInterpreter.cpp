@@ -2443,7 +2443,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             if (entry->is_vfinal()) {
               callee = entry->method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }

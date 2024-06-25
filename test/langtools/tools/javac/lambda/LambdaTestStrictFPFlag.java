@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,49 @@
  * @test
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
- * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
+ * @library /tools/lib /test/lib
+ * @enablePreview
  * @run main LambdaTestStrictFPFlag
  */
 
-import java.io.*;
-import java.net.URL;
-import com.sun.tools.classfile.*;
+import jdk.test.lib.compiler.CompilerUtils;
+import toolbox.ToolBox;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.nio.file.Path;
 
 public class LambdaTestStrictFPFlag {
+    private static final String SOURCE = """
+            class Test {
+                strictfp void test() {
+                    Face itf = () -> { };
+                }
+            }
+
+            interface Face {
+                void m();
+            }
+            """;
+
     public static void main(String[] args) throws Exception {
         new LambdaTestStrictFPFlag().run();
     }
 
     void run() throws Exception {
-        ClassFile cf = getClassFile("LambdaTestStrictFPFlag$Test.class");
-        ConstantPool cp = cf.constant_pool;
+        Path src = Path.of("src");
+        Path out = Path.of("out");
+
+        ToolBox toolBox = new ToolBox();
+        toolBox.writeJavaFiles(src, SOURCE);
+        CompilerUtils.compile(src, out, "--release", "16");
+
+        ClassModel cm = ClassFile.of().parse(out.resolve("Test.class"));
         boolean found = false;
-        for (Method meth: cf.methods) {
-            if (meth.getName(cp).startsWith("lambda$")) {
-                if ((meth.access_flags.flags & AccessFlags.ACC_STRICT) == 0) {
+        for (MethodModel meth: cm.methods()) {
+            if (meth.methodName().stringValue().startsWith("lambda$")) {
+                if ((meth.flags().flagsMask() & ClassFile.ACC_STRICT) == 0){
                     throw new Exception("strict flag missing from lambda");
                 }
                 found = true;
@@ -54,42 +76,5 @@ public class LambdaTestStrictFPFlag {
         if (!found) {
             throw new Exception("did not find lambda method");
         }
-    }
-
-// this version of the code can be used when ClassFile API in not in a preview
-//    void run() throws Exception {
-//        ClassModel cm = getClassFile("LambdaTestStrictFPFlag$Test.class");
-//        boolean found = false;
-//        for (MethodModel meth: cm.methods()) {
-//            if (meth.methodName().stringValue().startsWith("lambda$")) {
-//                if ((meth.flags().flagsMask() & ClassFile.ACC_STRICT) == 0){
-//                    throw new Exception("strict flag missing from lambda");
-//                }
-//                found = true;
-//            }
-//        }
-//        if (!found) {
-//            throw new Exception("did not find lambda method");
-//        }
-//    }
-
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
-        URL url = getClass().getResource(name);
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
-        }
-    }
-
-    class Test {
-        strictfp void test() {
-            Face itf = () -> { };
-        }
-    }
-
-    interface Face {
-        void m();
     }
 }

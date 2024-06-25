@@ -453,7 +453,6 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   print_heap_before_gc();
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
 
-  record_gen_tops_before_GC();
   increment_total_collections(false);
   const bool should_verify = total_collections() >= VerifyGCStartAt;
   if (should_verify && VerifyBeforeGC) {
@@ -469,7 +468,10 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
-  update_gc_stats(_young_gen, false);
+  // Only update stats for successful young-gc
+  if (result) {
+    _old_gen->update_promote_stats();
+  }
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
@@ -559,9 +561,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   if (result != nullptr) {
     return result;
   }
-
-  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
-    "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
   // space available is large enough for the allocation, then a more
@@ -765,6 +764,8 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
   // Need to clear claim bits for the next mark.
   ClassLoaderDataGraph::clear_claimed_marks();
 
+  _old_gen->update_promote_stats();
+
   // Resize the metaspace capacity after full collections
   MetaspaceGC::compute_new_size();
 
@@ -832,20 +833,15 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 size_t SerialHeap::tlab_capacity(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
 size_t SerialHeap::tlab_used(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
   return _young_gen->tlab_used();
 }
 
 size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
   return _young_gen->unsafe_max_tlab_alloc();
 }
 
@@ -956,12 +952,3 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
-
-#ifndef PRODUCT
-void SerialHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    _young_gen->record_spaces_top();
-    _old_gen->record_spaces_top();
-  }
-}
-#endif  // not PRODUCT
