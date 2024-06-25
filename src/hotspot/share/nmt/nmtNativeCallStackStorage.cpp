@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 
 NativeCallStackStorage::StackIndex NativeCallStackStorage::put(const NativeCallStack& value) {
@@ -40,4 +41,20 @@ NativeCallStackStorage::StackIndex NativeCallStackStorage::put(const NativeCallS
   TableEntryIndex new_link = _entry_storage.allocate(_table[bucket], si);
   _table[bucket] = new_link;
   return si;
+}
+NativeCallStackStorage::NativeCallStackStorage(bool is_detailed_mode, int table_size)
+  : _table_size(table_size),
+    _table(nullptr),
+    _stacks(),
+    _is_detailed_mode(is_detailed_mode),
+    _fake_stack() {
+  if (_is_detailed_mode) {
+    _table = NEW_C_HEAP_ARRAY(TableEntryIndex, _table_size, mtNMT);
+    for (int i = 0; i < _table_size; i++) {
+      _table[i] = TableEntryStorage::nil;
+    }
+  }
+}
+NativeCallStackStorage::~NativeCallStackStorage() {
+  FREE_C_HEAP_ARRAY(LinkPtr, _table);
 }

@@ -25,7 +25,6 @@
 #ifndef SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
-#include "memory/allocation.hpp"
 #include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -73,7 +72,7 @@ private:
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int default_table_size = 4099;
-  int _table_size;
+  const int _table_size;
   TableEntryIndex* _table;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   const bool _is_detailed_mode;
@@ -96,20 +95,9 @@ public:
     return _stacks.at(si._stack_index);
   }
 
-  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
-  : _table_size(table_size), _table(nullptr), _stacks(),
-    _is_detailed_mode(is_detailed_mode), _fake_stack() {
-    if (_is_detailed_mode) {
-      _table = NEW_C_HEAP_ARRAY(TableEntryIndex, _table_size, mtNMT);
-      for (int i = 0; i < _table_size; i++) {
-        _table[i] = TableEntryStorage::nil;
-      }
-    }
-  }
+  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size);
 
-  ~NativeCallStackStorage() {
-    FREE_C_HEAP_ARRAY(LinkPtr, _table);
-  }
+  ~NativeCallStackStorage();
 };
 
 #endif // SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP

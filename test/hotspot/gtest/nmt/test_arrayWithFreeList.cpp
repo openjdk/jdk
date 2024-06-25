@@ -69,6 +69,7 @@ struct LL {
     return e;
   }
 };
+
 // A linked list which is capable of having multiple different allocators. This is done through higher-kinded types.
 // That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
 // and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
