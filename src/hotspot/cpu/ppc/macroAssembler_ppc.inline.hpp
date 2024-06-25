@@ -28,6 +28,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
+
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/barrierSet.hpp"

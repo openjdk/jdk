@@ -293,7 +293,7 @@ class MacroAssembler: public Assembler {
     num_volatile_fp_regs = 14,
     num_volatile_regs = num_volatile_gp_regs + num_volatile_fp_regs
   };
-  
+
   // Branch-free implementation to convert !0 to false.
   void normalize_bool(Register dst, Register src, bool use_64bit);
   void save_volatile_gprs(   Register dst_base, int offset,

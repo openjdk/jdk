@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
@@ -346,7 +347,7 @@ long MacroAssembler::get_const(address a) {
 // Set register dst to true if dst is non zero using temp for calculations on Power Version<10.
 // Set register dst to true if dst is non zero for Power 10 and above machines.
 void MacroAssembler::normalize_bool(Register dst, Register temp, bool use_64bit) {
- 
+
   if (VM_Version::has_brw()) {
     if(use_64bit)
       cmpdi(CCR0, dst, 0);
