@@ -114,8 +114,8 @@ import jdk.internal.javac.PreviewFeature;
  * instanceOf}, {@link #new_ new_}, and {@link #return_() return_} respectively,
  * due to clashes with keywords in the Java programming language.
  * <li>Factories are not provided for instructions {@code jsr}, {@code jsr_w},
- * and {@code ret}, which cannot appear in class files with major version
- * {@value ClassFile#JAVA_7_VERSION} or higher. (JVMS {@jvms 4.9.1})
+ * {@code ret}, and {@code wide ret}, which cannot appear in class files with
+ * major version {@value ClassFile#JAVA_7_VERSION} or higher. (JVMS {@jvms 4.9.1})
  * </ul>
  *
  * @see CodeTransform
@@ -857,7 +857,11 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction to load a reference from a local variable
+     * Generate an instruction to load a reference from a local variable.
+     *
+     * <p>This factory may also generate {@code aload_<N>} and
+     * {@code wide aload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -902,6 +906,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a reference into a local variable
+     *
+     * <p>This factory may also generate {@code astore_<N>} and
+     * {@code wide astore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1067,6 +1075,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a double from a local variable
+     *
+     * <p>This factory may also generate {@code dload_<N>} and
+     * {@code wide dload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1108,6 +1120,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a double into a local variable
+     *
+     * <p>This factory may also generate {@code dstore_<N>} and
+     * {@code wide dstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1271,6 +1287,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a float from a local variable
+     *
+     * <p>This factory may also generate {@code fload_<N>} and
+     * {@code wide fload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1312,6 +1332,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a float into a local variable
+     *
+     * <p>This factory may also generate {@code fstore_<N>} and
+     * {@code wide fstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1371,6 +1395,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to branch always
+     *
+     * <p>This factory may also generate {@code goto_w} instructions if the offset
+     * to target cannot be encoded in a signed 2-byte integer, if the {@link
+     * ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS FIX_SHORT_JUMPS} option
+     * is set.
      *
      * @apiNote The instruction's name is {@code goto}, which coincides with a
      * reserved keyword of the Java programming language, thus this method is
@@ -1692,6 +1721,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load an int from a local variable
+     *
+     * <p>This factory may also generate {@code iload_<N>} and
+     * {@code wide iload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1946,6 +1979,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store an int into a local variable
+     *
+     * <p>This factory may also generate {@code istore_<N>} and
+     * {@code wide istore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2070,6 +2107,8 @@ public sealed interface CodeBuilder
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
      *
+     * <p>This factory may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
      * @apiNote {@link #loadConstant(ConstantDesc) loadConstant} generates more optimal instructions
      * and should be used for general constants if an {@code ldc} instruction is not strictly required.
      *
@@ -2082,6 +2121,9 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This factory may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
      * @param entry the constant value
      * @return this builder
      */
@@ -2102,6 +2144,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a long from a local variable
+     *
+     * <p>This factory may also generate {@code lload_<N>} and
+     * {@code wide lload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2167,6 +2213,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a long into a local variable
+     *
+     * <p>This factory may also generate {@code lstore_<N>} and
+     * {@code wide lstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
