@@ -3604,10 +3604,26 @@ void InstanceKlass::print_on(outputStream* st) const {
     st->print("%s", source_debug_extension());
     st->cr();
   }
-  st->print(BULLET"class annotations:       "); class_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"class type annotations:  "); class_type_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
+  if (class_annotations() != nullptr) {
+    st->print(BULLET"class annotations:       ");
+    class_annotations()->print_value_on(st);
+    st->cr();
+  }
+  if (class_type_annotations() != nullptr) {
+    st->print(BULLET"class type annotations:  ");
+    class_type_annotations()->print_value_on(st);
+    st->cr();
+  }
+  if (fields_annotations() != nullptr) {
+    st->print(BULLET"field annotations:       ");
+    fields_annotations()->print_value_on(st);
+    st->cr();
+  }
+  if (fields_type_annotations() != nullptr) {
+    st->print(BULLET"field type annotations:  ");
+    fields_type_annotations()->print_value_on(st);
+    st->cr();
+  }
   {
     bool have_pv = false;
     // previous versions are linked together through the InstanceKlass
