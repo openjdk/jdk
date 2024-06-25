@@ -46,7 +46,7 @@ public final class DoubleToDecimal extends ToDecimal {
     public static final DoubleToDecimal LATIN1 = new DoubleToDecimal(ToDecimal.LATIN1);
 
     /**
-     * Use UTF16 encoding to process the input byte[] str
+     * Use UTF16 encoding to process the in-out byte[] str
      *
      */
     public static final DoubleToDecimal UTF16  = new DoubleToDecimal(ToDecimal.UTF16);
