@@ -168,13 +168,12 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
 
             for (int limit = (offset + length); offset < limit;) {
 
-                int remains = (limit - offset) + (count - position);
-                int fragLen = Math.min(fragLimit - count + position,
-                    limit - offset);
+                int remains = (limit - offset);
+                int fragLen = Math.min(fragLimit - count + position, remains);
 
                 // use the buf of ByteArrayOutputStream
                 write(source, offset, fragLen);
-                if (remains < fragLimit) {
+                if (remains < fragLen) {
                     return;
                 }
 
