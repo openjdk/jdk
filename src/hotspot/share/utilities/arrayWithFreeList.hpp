@@ -1,0 +1,194 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+
+ */
+
+#ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
+#define SHARE_NMT_ARRAYWITHFREELIST_HPP
+
+#include "nmt/memflags.hpp"
+#include <limits>
+#include <type_traits>
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
+
+// A flat array of elements E, backed by C-heap, growing on-demand. It allows for
+// returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
+// identified via array index.
+template<typename E, MEMFLAGS flag, typename II = int32_t>
+class ArrayWithFreeList {
+  constexpr void static_assert_E_satisfies_type_requirements(bool fixed) const {
+    static_assert(std::numeric_limits<II>::is_exact, "must be");
+    if (fixed) {
+      static_assert(std::is_trivially_destructible<E>::value, "must be");
+    } else {
+      static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value, "must be");
+    }
+  }
+
+public:
+  // Export the I so it's easily available for consumption by users
+  using I = II;
+  static constexpr const I nil = std::numeric_limits<I>::max();
+  static constexpr const I max = nil - 1;
+
+  // A free list allocator element is either a link to the next free space
+  // Or an actual element.
+  union BackingElement {
+    I link;
+    E e;
+  };
+
+private:
+  // A minimal resizable array with customizable len/cap properties.
+  class resizable_array {
+    bool fixed_size;
+    I len;
+    I cap;
+    BackingElement* data;
+
+    bool grow() {
+      // overflow check
+      if (std::numeric_limits<I>::max() - cap < cap) {
+        return false;
+      }
+      I next_cap = next_power_of_2(cap);
+      void* next_array = os::realloc(data, next_cap * sizeof(BackingElement), flag);
+      if (next_array == nullptr) {
+        return false;
+      }
+      data = static_cast<BackingElement*>(next_array);
+      cap = next_cap;
+      return true;
+    }
+
+  public:
+    resizable_array(I initial_cap)
+    : fixed_size(false),
+      len(0),
+      cap(initial_cap),
+      data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
+    }
+
+    resizable_array(BackingElement* data, size_t capacity)
+    : fixed_size(true),
+      len(0),
+      cap(capacity),
+      data(data) {}
+
+    ~resizable_array() {
+      if (!fixed_size) {
+        os::free(data);
+      }
+    }
+
+    I length() {
+      return len;
+    }
+
+    BackingElement& at(I i) {
+      assert(i < len, "oob");
+      return data[i];
+    }
+
+    BackingElement* adr_at(I i) {
+      return &at(i);
+    }
+
+    I append() {
+      if (len == cap) {
+        if (fixed_size) return nil;
+        if (!grow()) {
+          return nil;
+        }
+      }
+      I idx = len++;
+      return idx;
+    }
+
+    void remove_last() {
+      I idx = len - 1;
+      --len;
+    }
+  };
+
+  resizable_array _backing_storage;
+  I _free_start;
+
+  bool is_in_bounds(I i) {
+    return i >= 0 && i < _backing_storage.length();
+  }
+
+public:
+  NONCOPYABLE(ArrayWithFreeList);
+
+  ArrayWithFreeList(int initial_capacity = 8)
+    : _backing_storage(initial_capacity),
+    _free_start(nil) {
+    static_assert_E_satisfies_type_requirements(false);
+  }
+
+  ArrayWithFreeList(BackingElement* data, size_t capacity)
+  : _backing_storage(data, capacity), _free_start(nil) {
+    static_assert_E_satisfies_type_requirements(true);
+  }
+
+  template<typename... Args>
+  I allocate(Args... args) {
+    BackingElement* be;
+    I i;
+    if (_free_start != nil) {
+      // Must point to already existing index
+      be = _backing_storage.adr_at(_free_start);
+      i = _free_start;
+      _free_start = be->link;
+    } else {
+      // There are no free elements, allocate a new one.
+      i = _backing_storage.append();
+      if (i == nil) return i;
+      be = _backing_storage.adr_at(i);
+    }
+
+    ::new (be) E{args...};
+    return i;
+  }
+
+  void deallocate(I i) {
+    assert(i == nil || is_in_bounds(i), "out of bounds free");
+    if (i == nil) return;
+    if (i == _backing_storage.length()) {
+      _backing_storage.remove_last();
+    } else {
+      BackingElement& be_freed = _backing_storage.at(i);
+      be_freed.link = _free_start;
+      _free_start = i;
+    }
+  }
+
+  E& at(I i) {
+    assert(i != nil, "null pointer dereference");
+    assert(is_in_bounds(i), "out of bounds dereference");
+    return reinterpret_cast<E&>(_backing_storage.at(i).e);
+  }
+};
+
+#endif // SHARE_NMT_ARRAYWITHFREELIST_HPP
