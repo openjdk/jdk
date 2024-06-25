@@ -48,6 +48,9 @@ bool NativeInstruction::is_call_at(address addr) {
 
 //-----------------------------------------------------------------------------
 // NativeShortCallTrampoline
+//
+// Implements the trampoline part of patchable far call - trampoline call.
+
 class NativeShortCall;
 
 class NativeShortCallTrampolineStub : public NativeInstruction {
@@ -106,6 +109,10 @@ NativeShortCallTrampolineStub* NativeShortCallTrampolineStub::at(address addr) {
 
 //-----------------------------------------------------------------------------
 // NativeShortCall
+//
+// Implements the trampoline call, a short call with a trampoline, version of patchable far call.
+// Enabled by setting the experimental UseTrampolines to true.
+
 class NativeShortCall: private NativeInstruction {
  public:
   enum RISCV_specific_constants {
@@ -294,6 +301,10 @@ bool NativeShortCall::is_call_before(address return_address) {
 
 //-----------------------------------------------------------------------------
 // NativeFarCall
+//
+// Implements direct far calling loading an address from the stub section version of patchable far call.
+// This is the default (experimental flag UseTrampolines, default false).
+
 class NativeFarCall: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
