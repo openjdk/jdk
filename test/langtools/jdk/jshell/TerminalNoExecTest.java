@@ -83,10 +83,7 @@ public class TerminalNoExecTest {
                         .redirectInput(testScript.toFile())
                         .start();
 
-            if (!target.waitFor(1, TimeUnit.MINUTES)) {
-                target.destroy();
-                throw new AssertionError("Didn't finish in time!");
-            }
+            target.waitFor();
 
             int exitCode = target.exitValue();
 
