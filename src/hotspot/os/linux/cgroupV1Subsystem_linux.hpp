@@ -127,8 +127,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     jlong pids_max();
     jlong pids_current();
 
-    void print_version_specific_info(outputStream* st);
-
     const char * container_type() {
       return "cgroupv1";
     }

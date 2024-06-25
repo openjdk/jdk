@@ -107,24 +107,10 @@ class CgroupV2Subsystem: public CgroupSubsystem {
         _cpu(new CachingCgroupController<CgroupCpuController>(cpu)) {
     }
 
-    jlong read_memory_limit_in_bytes();
-    int cpu_quota();
-    int cpu_period();
-    int cpu_shares();
-    jlong memory_and_swap_limit_in_bytes();
-    jlong memory_and_swap_usage_in_bytes();
-    jlong memory_soft_limit_in_bytes();
-    jlong memory_usage_in_bytes();
-    jlong memory_max_usage_in_bytes();
-    jlong rss_usage_in_bytes();
-    jlong cache_usage_in_bytes();
-
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
     jlong pids_max();
     jlong pids_current();
-
-    void print_version_specific_info(outputStream* st);
 
     const char * container_type() {
       return "cgroupv2";
