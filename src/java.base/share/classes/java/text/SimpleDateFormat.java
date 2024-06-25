@@ -1376,7 +1376,7 @@ public class SimpleDateFormat extends DateFormat {
         int fieldID = PATTERN_INDEX_TO_DATE_FORMAT_FIELD[patternCharIndex];
         Field f = PATTERN_INDEX_TO_DATE_FORMAT_FIELD_ID[patternCharIndex];
 
-        delegate.formatted(fieldID, f, f, beginOffset, buffer.length(), StringBuf.of(buffer));
+        delegate.formatted(fieldID, f, f, beginOffset, buffer.length(), StringBufFactory.of(buffer));
     }
 
     /**

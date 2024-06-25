@@ -588,13 +588,13 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
-        return format(number, StringBuf.of(result), fieldPosition).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuffer();
     }
 
     @Override
     StringBuilder format(double number, StringBuilder result,
                          FieldPosition fieldPosition) {
-        return format(number, StringBuf.of(result), fieldPosition).asStringBuilder();
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuilder();
     }
 
     private StringBuf format(double number, StringBuf result,
@@ -772,7 +772,7 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
@@ -781,7 +781,7 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
     /**
@@ -873,7 +873,7 @@ public class DecimalFormat extends NumberFormat {
                                 FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     /**
@@ -933,7 +933,7 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
     }
 
     /**
@@ -1009,15 +1009,15 @@ public class DecimalFormat extends NumberFormat {
         StringBuffer sb = new StringBuffer();
 
         if (obj instanceof Double || obj instanceof Float) {
-            format(((Number)obj).doubleValue(), StringBuf.of(sb), delegate);
+            format(((Number)obj).doubleValue(), StringBufFactory.of(sb), delegate);
         } else if (obj instanceof Long || obj instanceof Integer ||
                    obj instanceof Short || obj instanceof Byte ||
                    obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number)obj).longValue(), StringBuf.of(sb), delegate);
+            format(((Number)obj).longValue(), StringBufFactory.of(sb), delegate);
         } else if (obj instanceof BigDecimal) {
-            format((BigDecimal)obj, StringBuf.of(sb), delegate);
+            format((BigDecimal)obj, StringBufFactory.of(sb), delegate);
         } else if (obj instanceof BigInteger) {
-            format((BigInteger)obj, StringBuf.of(sb), delegate, false);
+            format((BigInteger)obj, StringBufFactory.of(sb), delegate, false);
         } else if (obj == null) {
             throw new NullPointerException(
                 "formatToCharacterIterator must be passed non-null object");

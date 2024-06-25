@@ -593,7 +593,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
@@ -601,7 +601,7 @@ public final class CompactNumberFormat extends NumberFormat {
                          FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
     private StringBuf format(double number, StringBuf result,
@@ -691,7 +691,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     @Override
@@ -699,7 +699,7 @@ public final class CompactNumberFormat extends NumberFormat {
                          FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
     }
 
     private StringBuf format(long number, StringBuf result, FieldDelegate delegate) {
@@ -786,7 +786,7 @@ public final class CompactNumberFormat extends NumberFormat {
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
     private StringBuf format(BigDecimal number, StringBuf result,
@@ -872,7 +872,7 @@ public final class CompactNumberFormat extends NumberFormat {
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
-        return format(number, StringBuf.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
     }
 
     private StringBuf format(BigInteger number, StringBuf result,
@@ -1153,15 +1153,15 @@ public final class CompactNumberFormat extends NumberFormat {
         StringBuffer sb = new StringBuffer();
 
         if (obj instanceof Double || obj instanceof Float) {
-            format(((Number) obj).doubleValue(), StringBuf.of(sb), delegate);
+            format(((Number) obj).doubleValue(), StringBufFactory.of(sb), delegate);
         } else if (obj instanceof Long || obj instanceof Integer
                 || obj instanceof Short || obj instanceof Byte
                 || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number) obj).longValue(), StringBuf.of(sb), delegate);
+            format(((Number) obj).longValue(), StringBufFactory.of(sb), delegate);
         } else if (obj instanceof BigDecimal) {
-            format((BigDecimal) obj, StringBuf.of(sb), delegate);
+            format((BigDecimal) obj, StringBufFactory.of(sb), delegate);
         } else if (obj instanceof BigInteger) {
-            format((BigInteger) obj, StringBuf.of(sb), delegate, false);
+            format((BigInteger) obj, StringBufFactory.of(sb), delegate, false);
         } else if (obj == null) {
             throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");

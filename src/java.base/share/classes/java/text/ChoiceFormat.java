@@ -514,13 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double) number, StringBuf.of(toAppendTo), status).asStringBuffer();
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
     }
 
     @Override
     StringBuilder format(long number, StringBuilder toAppendTo,
                          FieldPosition status) {
-        return format((double) number, StringBuf.of(toAppendTo), status).asStringBuilder();
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
     }
 
     /**
@@ -537,14 +537,14 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format(number, StringBuf.of(toAppendTo), status).asStringBuffer();
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
     }
 
     @Override
     StringBuilder format(double number,
                          StringBuilder toAppendTo,
                          FieldPosition status) {
-        return format(number, StringBuf.of(toAppendTo), status).asStringBuilder();
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
     }
 
     private StringBuf format(double number, StringBuf toAppendTo,
