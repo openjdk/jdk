@@ -24,11 +24,13 @@
 /* @test
  * @summary Basic tests for StableValue implementations
  * @modules java.base/jdk.internal.lang
+ * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} StableValueTest.java
  * @run junit/othervm --enable-preview StableValueTest
  */
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.lang.stable.StableValueImpl;
 import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
@@ -85,74 +87,6 @@ final class StableValueTest {
     }
 
     @Test
-    void computeIfUnset() {
-        StableValue<Integer> stable = StableValue.newInstance();
-        StableTestUtil.CountingSupplier<Integer> cntSupplier = new StableTestUtil.CountingSupplier<>(() -> 42);
-        StableTestUtil.CountingSupplier<Integer> cntSupplier2 = new StableTestUtil.CountingSupplier<>(() -> 13);
-        assertEquals(42, stable.computeIfUnset(cntSupplier));
-        assertEquals(1, cntSupplier.cnt());
-        assertEquals(42, stable.computeIfUnset(cntSupplier));
-        assertEquals(1, cntSupplier.cnt());
-        assertEquals(42, stable.computeIfUnset(cntSupplier2));
-        assertEquals(0, cntSupplier2.cnt());
-        assertEquals("StableValue[42]", stable.toString());
-        assertEquals(42, stable.orElse(null));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
-    }
-
-    @Test
-    void computeIfUnsetException() {
-        StableValue<Integer> stable = StableValue.newInstance();
-        Supplier<Integer> supplier = () -> {
-            throw new UnsupportedOperationException("aaa");
-        };
-        var x = assertThrows(UnsupportedOperationException.class, () -> stable.computeIfUnset(supplier));
-        assertTrue(x.getMessage().contains("aaa"));
-        assertEquals(42, stable.computeIfUnset(() -> 42));
-        assertEquals("StableValue[42]", stable.toString());
-        assertEquals(42, stable.orElse(13));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
-    }
-
-    @Test
-    void mapIfUnset() {
-        StableValue<Integer> stable = StableValue.newInstance();
-        StableTestUtil.CountingFunction<Integer, Integer> cntFunction = new StableTestUtil.CountingFunction<>(Function.identity());
-        StableTestUtil.CountingFunction<Integer, Integer> cntFunction2 = new StableTestUtil.CountingFunction<>(Function.identity());
-        assertEquals(42, stable.mapIfUnset(42, cntFunction));
-        assertEquals(1, cntFunction.cnt());
-        assertEquals(42, stable.mapIfUnset(42, cntFunction));
-        assertEquals(1, cntFunction.cnt());
-        assertEquals(42, stable.mapIfUnset(13, cntFunction2));
-        assertEquals(0, cntFunction2.cnt());
-        assertEquals("StableValue[42]", stable.toString());
-        assertEquals(42, stable.orElse(null));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
-    }
-
-    @Test
-    void mapIfUnsetException() {
-        StableValue<Integer> stable = StableValue.newInstance();
-        Function<Integer, Integer> function = _ -> {
-            throw new UnsupportedOperationException("aaa");
-        };
-        var x = assertThrows(UnsupportedOperationException.class, () -> stable.mapIfUnset(42, function));
-        assertTrue(x.getMessage().contains("aaa"));
-        assertEquals(42, stable.mapIfUnset(42, Function.identity()));
-        assertEquals("StableValue[42]", stable.toString());
-        assertEquals(42, stable.orElse(13));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
-    }
-
-    @Test
     void testHashCode() {
         StableValue<Integer> s0 = StableValue.newInstance();
         StableValue<Integer> s1 = StableValue.newInstance();
@@ -178,7 +112,7 @@ final class StableValueTest {
 
     @Test
     void ofList() {
-        List<StableValue<Integer>> list = StableValue.ofList(13);
+        List<StableValueImpl<Integer>> list = StableValueImpl.ofList(13);
         assertEquals(13, list.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -187,74 +121,8 @@ final class StableValueTest {
     }
 
     @Test
-    void ofList3DimLazy() {
-        int[] dims = new int[]{2, 3, 4};
-
-        List<StableValue<
-                List<StableValue<
-                        List<StableValue<Integer>>>>>> list3d = StableValue.ofList(dims[0]);
-
-        int[] indices = new int[]{1, 2, 3};
-
-        int element = from3dLazy(list3d, dims, indices)
-                .computeIfUnset(() -> 42);
-
-        assertEquals(42, element);
-        assertEquals(42, from3dLazy(list3d, dims, indices).orElseThrow());
-    }
-
-    private <T> StableValue<T> from3dLazy(
-            List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d,
-            int[] dims, int[] indices) {
-        return list3d
-                .get(indices[0]).mapIfUnset(dims[1], StableValue::ofList)
-                .get(indices[1]).mapIfUnset(dims[2], StableValue::ofList)
-                .get(indices[2]);
-    }
-
-    @Test
-    void ofList3Dim() {
-        int[] dims = new int[]{2, 3, 4};
-
-        List<StableValue< List<StableValue< List<StableValue<Integer>>>>>> list3d = create3d(dims);
-
-        int[] indices = new int[]{1, 2, 3};
-
-        int element = from3d(list3d, indices)
-                .computeIfUnset(() -> 42);
-
-        assertEquals(42, element);
-        assertEquals(42, from3d(list3d, indices).orElseThrow());
-    }
-
-    private <T> List<StableValue< List<StableValue< List<StableValue<T>>>>>> create3d(
-            int[] dims) {
-
-        List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d =
-                StableValue.ofList(dims[0]);
-        for (int d0 = 0; d0 < dims[0] ; d0++) {
-            List<StableValue< List<StableValue<T>>>> list2d = StableValue.ofList(dims[1]);
-            list3d.get(d0).setOrThrow(list2d);
-            for (int d1 = 0; d1 < dims[1]; d1++) {
-                List<StableValue<T>> list = StableValue.ofList(dims[2]);
-                list2d.get(d1).setOrThrow(list);
-            }
-        }
-        return list3d;
-    }
-
-    private <T> StableValue<T> from3d(
-            List<StableValue< List<StableValue< List<StableValue<T>>>>>> list3d, int[] indices) {
-        return list3d
-                .get(indices[0]).orElseThrow()
-                .get(indices[1]).orElseThrow()
-                .get(indices[2]);
-    }
-
-
-    @Test
     void ofMap() {
-        Map<Integer, StableValue<Integer>> map = StableValue.ofMap(Set.of(1, 2, 3));
+        Map<Integer, StableValueImpl<Integer>> map = StableValueImpl.ofMap(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -271,10 +139,6 @@ final class StableValueTest {
             return false;
         }
     };
-    private static final BiPredicate<StableValue<Integer>, Integer> COMPUTE_IF_UNSET = (s, i) -> {
-        int r = s.computeIfUnset(() -> i);
-        return r == i;
-    };
 
     @Test
     void raceTrySet() {
@@ -286,17 +150,12 @@ final class StableValueTest {
         race(SET_OR_THROW);
     }
 
-    @Test
-    void raceComputeIfUnset() {
-        race(COMPUTE_IF_UNSET);
-    }
 
     @Test
     void raceMixed() {
-        race((s, i) -> switch (i % 3) {
+        race((s, i) -> switch (i % 2) {
             case 0 -> TRY_SET.test(s, i);
             case 1 -> SET_OR_THROW.test(s, i);
-            case 2 -> COMPUTE_IF_UNSET.test(s, i);
             default -> fail("should not reach here");
         });
     }

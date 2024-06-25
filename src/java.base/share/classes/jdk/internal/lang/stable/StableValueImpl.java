@@ -27,14 +27,14 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.Set;
 
 public final class StableValueImpl<T> implements StableValue<T> {
 
@@ -45,33 +45,23 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // A wrapper method `nullSentinel()` is used for generic type conversion.
     private static final Object NULL_SENTINEL = new Object();
 
-    // Used to indicate a mutex is not needed anymore.
-    private static final Object TOMBSTONE = new Object();
-
     // Unsafe offsets for direct object access
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
-    private static final long MUTEX_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "mutex");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
     // This field is reflectively accessed via Unsafe using explicit memory semantics.
     //
-    // Value          Meaning
-    // -------        -----
-    // null           Unset
-    // nullSentinel() Set(null)
-    // other          Set(other)
+    // | Value          |  Meaning      |
+    // | -------------- |  ------------ |
+    // | null           |  Unset        |
+    // | nullSentinel() |  Set(null)    |
+    // | other          |  Set(other)   |
+    //
     @Stable
     private T value;
-
-    // This field is initialized on demand to a new distinct mutex object.
-    // When synchronization is no longer needed (i.e. when a holder value is set),
-    // the field is set to the `TOMBSTONE` singleton object to allow the previous,
-    // now-redundant mutex object to be collected.
-    private volatile Object mutex;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
@@ -82,42 +72,21 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (value() != null) {
             return false;
         }
-        Object m = acquireMutex();
-        if (m == TOMBSTONE) {
-            // A holder value must already be set as a holder value store
-            // happens before a mutex TOMBSTONE store
-            return false;
-        }
-        synchronized (m) {
-            // The one-and-only update of the `value` field is always made under
-            // `mutex` synchronization meaning plain memory semantics is enough here.
-            if (valuePlain() != null) {
-                return false;
-            }
-            set0(value);
-            // The holder value store must happen before the mutex release
-            releaseMutex();
-        }
-        return true;
-    }
 
-    @ForceInline
-    private void set0(T value) {
         // Prevents reordering of store operations with other store operations.
         // This means any stores made to fields in the `value` object prior to this
         // point cannot be reordered with the CAS operation of the reference to the
         // `value` field.
-        // In other words, if a reader (using plain memory semantics) can observe a
+        // In other words, if a loader (using plain memory semantics) can observe a
         // `value` reference, any field updates made prior to this fence are
         // guaranteed to be seen.
         // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
         // Doug Lea, 2018
         UNSAFE.storeStoreFence();
 
-        // We are alone here under the `mutex`
         // This upholds the invariant, the `@Stable value` field is written to
         // at most once.
-        UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, wrap(value));
+        return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
     }
 
     @ForceInline
@@ -146,7 +115,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value() != null;
     }
 
-    @ForceInline
+/*    @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
         final T t = value();
@@ -192,7 +161,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             releaseMutex();
             return t;
         }
-    }
+    }*/
 
     @Override
     public int hashCode() {
@@ -216,7 +185,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     // First, try to read the value using plain memory semantics.
     // If not set, fall back to `volatile` memory semantics.
-    private T value() {
+    public T value() {
         final T t = valuePlain();
         return t != null ? t : (T) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
@@ -234,7 +203,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Unwraps null sentinel values into `null`
     @ForceInline
-    private static <T> T unwrap(T t) {
+    public static <T> T unwrap(T t) {
         return t != nullSentinel() ? t : null;
     }
 
@@ -247,24 +216,32 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
-    private Object acquireMutex() {
-        if (mutex != null) {
-            // We already have a mutex
-            return mutex;
-        }
-        Object newMutex = new Object();
-        // Guarantees, only one distinct mutex object per StableValue is ever exposed.
-        Object witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, newMutex);
-        return witness == null ? newMutex : witness;
-    }
-
-    private void releaseMutex() {
-        mutex = TOMBSTONE;
-    }
-
     // Factory for creating new StableValue instances
-    public static <T> StableValue<T> newInstance() {
+    public static <T> StableValueImpl<T> newInstance() {
         return new StableValueImpl<>();
+    }
+
+    public static <T> List<StableValueImpl<T>> ofList(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
+        for (int i = 0; i < size; i++) {
+            stableValues[i] = newInstance();
+        }
+        return List.of(stableValues);
+    }
+
+    public static <K, T> Map<K, StableValueImpl<T>> ofMap(Set<K> keys) {
+        Objects.requireNonNull(keys);
+        @SuppressWarnings("unchecked")
+        final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        int i = 0;
+        for (K key : keys) {
+            entries[i++] = Map.entry(key, newInstance());
+        }
+        return Map.ofEntries(entries);
     }
 
 }

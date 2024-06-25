@@ -25,6 +25,10 @@
 
 package jdk.internal.lang;
 
+import jdk.internal.lang.stable.CachedFunction;
+import jdk.internal.lang.stable.CachedIntFunction;
+import jdk.internal.lang.stable.CachedSupplier;
+import jdk.internal.lang.stable.LazyList;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.util.List;
@@ -32,16 +36,21 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A thin, atomic, thread-safe, set-at-most-once, stable value holder eligible for
- * certain JVM optimizations if set to a value.
+ * A thin, atomic, non-blocking, thread-safe, set-at-most-once, stable value holder
+ * eligible for certain JVM optimizations if set to a value.
  * <p>
  * A stable value is said to be monotonic because the state of a stable value can only go
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
+ * <p>
+ * StableValue is mainly intended to be a member of a holding class and is usually neither
+ * exposed directly via accessors nor passed as a method parameter.
  *
  * <a id="Factories"></a>
  * <h2>Factories</h2>
@@ -51,60 +60,57 @@ import java.util.function.Supplier;
  * <p>
  * The utility class {@linkplain StableValues} contains a number of convenience methods
  * for creating constructs involving StableValue:
- * <p>
- * A List of StableValue elements with a given {@code size} can be created the following way:
+ *
+ * A <em>cached</em> (also called "memoized") Supplier, where a given {@code original}
+ * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
+ * environment, can be created like this:
  * {@snippet lang = java :
- *     List<StableValue<E>> list = StableValues.ofList(size);
+ *     Supplier<T> cached = StableValue.newCachedSupplier(original, null);
  * }
- * The list can be used to model stable one-dimensional arrays. If two- or more
- * dimensional arrays are to be modeled, a List of List of ... of StableValue can be used.
- * <p>
- * A Map with a given set of {@code keys} associated with StableValue objects can be
- * created like this:
- * {@snippet lang = java :
- *     Map<K, StableValue<V>> map = StableValues.ofMap(keys);
- * }
- * A <em>memoized</em> Supplier, where a given {@code original} Supplier is guaranteed to
- * be successfully invoked at most once even in a multithreaded environment, can be
- * created like this:
- * {@snippet lang = java :
- *     Supplier<T> memoized = StableValues.memoizedSupplier(original, null);
- * }
- * The memoized supplier can also be lazily computed by a fresh background thread if a
+ * The cached supplier can also be lazily computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
  * {@snippet lang = java :
- *     Supplier<T> memoized = StableValues.memoizedSupplier(original, Thread.ofVirtual().factory());
+ *     Supplier<T> cached = StableValue.newCachedSupplier(original, Thread.ofVirtual().factory());
  * }
  * <p>
- * A memoized IntFunction, for the allowed given {@code size} input values {@code [0, size)}
- * and where the given {@code original} IntFunction is guaranteed to be successfully
- * invoked at most once per inout index even in a multithreaded environment, can be
- * created like this:
+ * A cached (also called "memoized") IntFunction, for the allowed given {@code size}
+ * input values {@code [0, size)} and where the given {@code original} IntFunction is
+ * guaranteed to be successfully invoked at most once per inout index even in a
+ * multithreaded environment, can be created like this:
  * {@snippet lang = java:
- *     IntFunction<R> memoized = StableValues.memoizedIntFunction(size, original, null);
+ *     IntFunction<R> cached = StableValue.newCachedIntFunction(size, original, null);
  *}
- * Just like a memoized supplier, a thread factory can be provided as a second parameter
+ * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
  * <p>
- * A memoized Function, for the given set of allowed {@code inputs} and where the
- * given {@code original} function is guaranteed to be successfully invoked at most
- * once per input value even in a multithreaded environment, can be created like this:
+ * A cached (also called "memoized") Function, for the given set of allowed {@code inputs}
+ * and where the given {@code original} function is guaranteed to be successfully invoked
+ * at most once per input value even in a multithreaded environment, can be created like
+ * this:
  * {@snippet lang = java :
- *    Function<T, R> memoized = StableValues.memoizedFunction(inputs, original, null);
+ *    Function<T, R> cached = StableValue.newCachedFunction(inputs, original, null);
  * }
- * Just like a memoized supplier, a thread factory can be provided as a second parameter
+ * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
  * <p>
- * The constructs above are eligible for similar JVM optimizations as the StableValue
- * class itself.
- *
- * <a id="Blocking"></a>
- * <h2>Blocking</h2>
- * All methods that can set the stable value's holder value are guarded such that
- * competing set operations (by other threads) will block if another set operation is
- * already in progress.
+ * A lazy List of stable elements with a given {@code size} and given {@code mapper} can
+ * be created the following way:
+ * {@snippet lang = java :
+ *     List<E> lazyList = StableValue.lazyList(size, mapper);
+ * }
+ * The list can be used to model stable one-dimensional arrays. If two- or more
+ * dimensional arrays are to be modeled, a List of List of ... of E can be used.
+ * <p>
+ * A Map with a given set of {@code keys} and given (@code mapper) associated with
+ * stable values can be created like this:
+ * {@snippet lang = java :
+ *     Map<K, V> lazyMap = StableValue.lazyMap(keys, mapper);
+ * }
+ * <p>
+ * The constructs above are eligible for similar JVM optimizations as StableValue
+ * instances.
  *
  * <a id="MemoryConsistency"></a>
  * <h2>Memory Consistency Properties</h2>
@@ -121,13 +127,21 @@ import java.util.function.Supplier;
  * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
+ * <a id="Identity"></a>
+ * Implementations of this interface can be
+ * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * classes; programmers should treat instances that are
+ * {@linkplain Object#equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @param <T> type of the holder value
  *
  * @since 24
  */
 public sealed interface StableValue<T>
         permits StableValueImpl {
-
 
     // Principal methods
 
@@ -161,94 +175,6 @@ public sealed interface StableValue<T>
      */
     boolean isSet();
 
-    /**
-     * If the holder value is unset, attempts to compute the holder value using the
-     * provided {@code supplier} and enters the result into the holder value.
-     *
-     * <p>If the {@code supplier} itself throws an (unchecked) exception, the exception
-     * is rethrown, and no holder value is set. The most common usage is to construct a
-     * new object serving as an initial value or memoized result, as in:
-     *
-     * {@snippet lang = java :
-     *     T t = stable.computeIfUnset(T::new);
-     * }
-     * <p>
-     * If this method returns without throwing an Exception, a holder value is always set.
-     *
-     * @implSpec
-     * The implementation of this method is equivalent to the following steps for this
-     * {@code stable} and a given non-null {@code supplier}:
-     *
-     * {@snippet lang = java :
-     *     if (stable.isSet()) {
-     *         return stable.orElseThrow();
-     *     }
-     *     T newValue = supplier.get();
-     *     stable.trySet(newValue);
-     *     return newValue;
-     * }
-     * Except, the method is atomic, thread-safe and guarded with synchronization
-     * with respect to this method and all other methods that can set this StableValue's
-     * holder value.
-     *
-     * @param supplier the supplier to be used to compute a holder value
-     * @return the current (existing or computed) holder value associated with
-     *         this stable value
-     */
-    T computeIfUnset(Supplier<? extends T> supplier);
-
-    /**
-     * If the holder value is unset, attempts to compute the holder value using the
-     * provided {@code mapper} applied to the provided {@code input} context and enters
-     * the result into the holder value.
-     *
-     * <p>If the {@code mapper} itself throws an (unchecked) exception, the exception
-     * is rethrown, and no holder value is set. The most common usage is to construct a
-     * new object serving as an initial value or memoized result, as in:
-     *
-     * {@snippet lang = java :
-     *     Map<K, StableValue<V>> map = StableValues.ofMap(...);
-     *     K key = ...;
-     *     T t = map.get(key)
-     *              .computeIfUnset(key, Foo::valueFromKey);
-     * }
-     *<p>
-     * The method also allows static Functions/lambdas to be used, for example by
-     * providing `this` as an {@code input} and the static Function/lambda accessing
-     * properties of the `this` input.
-     * <p>
-     * This method can also be used to emulate a compare-and-exchange idiom for a
-     * given {@code stable} and {@code candidate} value, as in:
-     * {@snippet lang = java :
-     *    T t = stable.computeIfUnset(candidate, Function.identity());
-     * }
-     *
-     * @implSpec
-     * The implementation of this method is equivalent to the following steps for this
-     * {@code stable} and a given non-null {@code mapper} and {@code inout}:
-     *
-     * {@snippet lang = java :
-     *     if (stable.isSet()) {
-     *         return stable.orElseThrow();
-     *     }
-     *     T newValue = mapper.apply(input);
-     *     stable.trySet(newValue);
-     *     return newValue;
-     * }
-     * Except, the method is atomic, thread-safe and guarded with synchronization
-     * with respect to this method and all other methods that can set this StableValue's
-     * holder value.
-     * <p>
-     * If this method returns without throwing an Exception, a holder value is always set.
-     *
-     * @param input  context to be applied to the {@code mapper} (nullable)
-     * @param mapper the mapper to be used to compute a holder value
-     * @param <I>    The type of the {@code input} context
-     * @return the current (existing or computed) holder value associated with
-     *         this stable value
-     */
-    <I> T mapIfUnset(I input, Function<? super I, ? extends T> mapper);
-
     // Convenience methods
 
     /**
@@ -279,56 +205,214 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a shallowly immutable, stable List of distinct fresh stable values}
+     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@linkplain Supplier supplier} that records the value of the provided
+     * {@code original} supplier upon being first accessed via
+     * {@linkplain Supplier#get()}, or optionally via a background thread created from
+     * the provided {@code factory} (if non-null)}
      * <p>
-     * The method is equivalent to the following for a given non-negative {@code size}:
-     * {@snippet lang = java :
-     *     List<StableValue<T>> list = Stream.generate(StableValue::<T>newInstance)
-     *                 .limit(size)
-     *                 .toList();
-     * }
-     * but may be more efficient.
+     * The provided {@code original} supplier is guaranteed to be successfully invoked
+     * at most once even in a multi-threaded environment. Competing threads invoking the
+     * {@linkplain Supplier#get()} method when a value is already under computation
+     * will block until a value is computed or an exception is thrown by the
+     * computing thread.
+     * <p>
+     * If the {@code original} Supplier invokes the returned Supplier recursively,
+     * a StackOverflowError will be thrown when the returned
+     * Supplier's {@linkplain Supplier#get()} method is invoked.
+     * <p>
+     * If the provided {@code original} supplier throws an exception, it is relayed
+     * to the initial caller. If the memoized supplier is computed by a background thread,
+     * exceptions from the provided {@code original} supplier will be relayed to the
+     * background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
+     * exception handler}.
      *
-     * @param size the size of the returned list
-     * @param <T>  the {@code StableValue}s' element type
+     * @param original supplier used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 a background thread that will attempt to compute the memoized
+     *                 value. If the factory is {@code null}, no background thread will
+     *                 be created.
+     * @param <T>      the type of results supplied by the returned supplier
      */
-    static <T> List<StableValue<T>> ofList(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
+    static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
+                                              ThreadFactory factory) {
+        Objects.requireNonNull(original);
+        // `factory` is nullable
+
+        final Supplier<T> memoized = CachedSupplier.of(original);
+
+        if (factory != null) {
+            final Thread thread = factory.newThread(new Runnable() {
+                @Override
+                public void run() {
+                    memoized.get();
+                }
+            });
+            thread.start();
         }
-        @SuppressWarnings("unchecked")
-        final var stableValues = (StableValue<T>[]) new StableValue<?>[size];
-        for (int i = 0; i < size; i++) {
-            stableValues[i] = newInstance();
-        }
-        return List.of(stableValues);
+        return memoized;
     }
 
     /**
-     * {@return a shallowly immutable, stable Map with the provided {@code keys}
-     * and associated distinct fresh stable values}
+     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@linkplain IntFunction } that, for each allowed input, records the values of the
+     * provided {@code original} IntFunction upon being first accessed via
+     * {@linkplain IntFunction#apply(int)}, or optionally via background threads created
+     * from the provided {@code factory} (if non-null)}
      * <p>
-     * The method is equivalent to the following for a given non-null set of {@code keys}:
-     * {@snippet lang = java :
-     *     Map<K, StableValue<T>> map = keys.stream()
-     *                 .collect(Collectors.toMap(
-     *                     Function.identity(), _ -> StableValue.newInstance()));
-     * }
-     * but may be more efficient.
+     * The provided {@code original} IntFunction is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain IntFunction#apply(int)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code original} IntFunction invokes the returned IntFunction recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * <p>
+     * If the provided {@code original} IntFunction throws an exception, it is relayed
+     * to the initial caller. If the memoized IntFunction is computed by a background
+     * thread, exceptions from the provided {@code original} IntFunction will be relayed
+     * to the background thread's {@linkplain Thread#getUncaughtExceptionHandler()
+     * uncaught exception handler}.
+     * <p>
+     * The order in which background threads are started is unspecified.
      *
-     * @param keys the keys in the {@code Map}
-     * @param <K>  the {@code Map}'s key type
-     * @param <T>  the StableValue's type for the {@code Map}'s value type
+     * @param size     the size of the allowed inputs in {@code [0, size)}
+     * @param original IntFunction used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 {@code size} background threads that will attempt to compute all
+     *                 the memoized values. If the provided factory is {@code null}, no
+     *                 background threads will be created.
+     * @param <R>      the type of results delivered by the returned IntFunction
      */
-    static <K, T> Map<K, StableValue<T>> ofMap(Set<K> keys) {
-        Objects.requireNonNull(keys);
-        @SuppressWarnings("unchecked")
-        final var entries = (Map.Entry<K, StableValue<T>>[]) new Map.Entry<?, ?>[keys.size()];
-        int i = 0;
-        for (K key : keys) {
-            entries[i++] = Map.entry(key, newInstance());
+    static <R> IntFunction<R> newCachingIntFunction(int size,
+                                                    IntFunction<? extends R> original,
+                                                    ThreadFactory factory) {
+
+        final IntFunction<R> memoized = CachedIntFunction.of(size, original);
+
+        if (factory != null) {
+            for (int i = 0; i < size; i++) {
+                final int input = i;
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(input); }
+                });
+                thread.start();
+            }
         }
-        return Map.ofEntries(entries);
+        return memoized;
+    }
+
+    /**
+     * {@return a new caching, thread-safe, stable, lazily computed {@linkplain Function}
+     * that, for each allowed input in the given set of {@code inputs}, records the
+     * values of the provided {@code original} Function upon being first accessed via
+     * {@linkplain Function#apply(Object)}, or optionally via background threads created
+     * from the provided {@code factory} (if non-null)}
+     * <p>
+     * The provided {@code original} Function is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain Function#apply(Object)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code original} Function invokes the returned Function recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * <p>
+     * If the provided {@code original} Function throws an exception, it is relayed
+     * to the initial caller. If the memoized Function is computed by a background
+     * thread, exceptions from the provided {@code original} Function will be relayed to
+     * the background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
+     * exception handler}.
+     * <p>
+     * The order in which background threads are started is unspecified.
+     *
+     * @param inputs   the set of allowed input values
+     * @param original Function used to compute a memoized value
+     * @param factory  an optional factory that, if non-null, will be used to create
+     *                 {@code size} background threads that will attempt to compute the
+     *                 memoized values. If the provided factory is {@code null}, no
+     *                 background threads will be created.
+     * @param <R>      the type of results delivered by the returned Function
+     */
+    static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,
+                                                    Function<? super T, ? extends R> original,
+                                                    ThreadFactory factory) {
+
+        final Function<T, R> memoized = CachedFunction.of(inputs, original);
+
+        if (factory != null) {
+            for (final T t : inputs) {
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(t); }
+                });
+                thread.start();
+            }
+        }
+        return memoized;
+    }
+
+    /**
+     * {@return a lazy, immutable, stable List of the provided {@code size} where the
+     * individual elements of the list are lazily computed vio the provided
+     * {@code mapper} whenever an element is first accessed (directly or indirectly) via
+     * {@linkplain List#get(int)}}
+     * <p>
+     * The provided {@code mapper} IntFunction is guaranteed to be successfully invoked
+     * at most once per list index, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain IntFunction#apply(int)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code mapper} IntFunction invokes the returned IntFunction recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * List's {@linkplain List#get(int)} method is invoked.
+     * <p>
+     * If the provided {@code mapper} IntFunction throws an exception, it is relayed
+     * to the initial caller.
+     *
+     * @param size   the size of the returned list
+     * @param mapper to invoke whenever an element is first accessed
+     * @param <T>    the {@code StableValue}s' element type
+     */
+    static <T> List<T> lazyList(int size, IntFunction<? extends T> mapper) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(mapper);
+        return LazyList.of(size, mapper);
+    }
+
+    /**
+     * {@return a lazy, immutable, stable Map of the provided {@code keys} where the
+     * associated values of the maps are lazily computed vio the provided
+     * {@code mapper} whenever a value is first accessed (directly or indirectly) via
+     * {@linkplain Map#get(Object)}}
+     * <p>
+     * The provided {@code mapper} Function is guaranteed to be successfully invoked
+     * at most once per key, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain Map#get(Object)} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
+     * <p>
+     * If the {@code mapper} Function invokes the returned Map recursively
+     * for a particular key, a StackOverflowError will be thrown when the returned
+     * Map's {@linkplain Map#get(Object)}} method is invoked.
+     * <p>
+     * If the provided {@code mapper} Function throws an exception, it is relayed
+     * to the initial caller.
+     *
+     * @param keys   the keys in the returned map
+     * @param mapper to invoke whenever an associated value is first accessed
+     * @param <K>    the type of keys maintained by the returned map
+     * @param <V>    the type of mapped values
+     */
+    static <K, V> Map<K, V> lazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(keys);
+        Objects.requireNonNull(mapper);
+        throw new UnsupportedOperationException();
     }
 
 }

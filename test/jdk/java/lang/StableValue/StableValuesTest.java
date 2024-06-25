@@ -29,12 +29,8 @@
  */
 
 import jdk.internal.lang.StableValue;
-import jdk.internal.lang.StableValues;
 import org.junit.jupiter.api.Test;
 
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,12 +47,12 @@ final class StableValuesTest {
     @Test
     void memoizedSupplier() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
-        Supplier<Integer> memoized = StableValues.memoizedSupplier(cs, null);
+        Supplier<Integer> memoized = StableValue.newCachingSupplier(cs, null);
         assertEquals(42, memoized.get());
         assertEquals(1, cs.cnt());
         assertEquals(42, memoized.get());
         assertEquals(1, cs.cnt());
-        assertEquals("MemoizedSupplier[stable=StableValue[42], original=" + cs + "]", memoized.toString());
+        assertEquals("CachedSupplier[stable=StableValue[42], original=" + cs + "]", memoized.toString());
     }
 
     @Test
@@ -72,7 +68,7 @@ final class StableValuesTest {
                 });
             }
         };
-        Supplier<Integer> memoized = StableValues.memoizedSupplier(() -> 42, factory);
+        Supplier<Integer> memoized = StableValue.newCachingSupplier(() -> 42, factory);
         while (cnt.get() < 1) {
             Thread.onSpinWait();
         }
@@ -82,12 +78,12 @@ final class StableValuesTest {
     @Test
     void memoizedIntFunction() {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(i -> i);
-        IntFunction<Integer> memoized = StableValues.memoizedIntFunction(SIZE, cif, null);
+        IntFunction<Integer> memoized = StableValue.newCachingIntFunction(SIZE, cif, null);
         assertEquals(1, memoized.apply(1));
         assertEquals(1, cif.cnt());
         assertEquals(1, memoized.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals("MemoizedIntFunction[stables=[StableValue.unset, StableValue[1]], original=" + cif + "]", memoized.toString());
+        assertEquals("CachedIntFunction[stables=[StableValue.unset, StableValue[1]], original=" + cif + "]", memoized.toString());
     }
 
     @Test
@@ -103,7 +99,7 @@ final class StableValuesTest {
                 });
             }
         };
-        IntFunction<Integer> memoized = StableValues.memoizedIntFunction(SIZE, i -> i, factory);
+        IntFunction<Integer> memoized = StableValue.newCachingIntFunction(SIZE, i -> i, factory);
         while (cnt.get() < 2) {
             Thread.onSpinWait();
         }
@@ -114,12 +110,12 @@ final class StableValuesTest {
     @Test
     void memoizedFunction() {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(i -> i);
-        Function<Integer, Integer> memoized = StableValues.memoizedFunction(Set.of(13, 42), cif, null);
+        Function<Integer, Integer> memoized = StableValue.newCachingFunction(Set.of(13, 42), cif, null);
         assertEquals(42, memoized.apply(42));
         assertEquals(1, cif.cnt());
         assertEquals(42, memoized.apply(42));
         assertEquals(1, cif.cnt());
-        assertTrue(memoized.toString().startsWith("MemoizedFunction[stables={"));
+        assertTrue(memoized.toString().startsWith("CachedFunction[stables={"));
         // Key order is unspecified
         assertTrue(memoized.toString().contains("13=StableValue.unset"));
         assertTrue(memoized.toString().contains("42=StableValue[42]"));
@@ -139,7 +135,7 @@ final class StableValuesTest {
                 });
             }
         };
-        Function<Integer, Integer> memoized = StableValues.memoizedFunction(Set.of(13, 42), i -> i, factory);
+        Function<Integer, Integer> memoized = StableValue.newCachingFunction(Set.of(13, 42), i -> i, factory);
         while (cnt.get() < 2) {
             Thread.onSpinWait();
         }

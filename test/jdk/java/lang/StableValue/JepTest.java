@@ -29,7 +29,6 @@
  */
 
 import jdk.internal.lang.StableValue;
-import jdk.internal.lang.StableValues;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 final class JepTest {
@@ -61,62 +61,25 @@ final class JepTest {
     }
 
     class Bar2 {
-        // 1. Declare a stable field
-        private static final StableValue<Logger> LOGGER = StableValue.newInstance();
+
+        // 1. Declare a caching supplier
+        private static final Supplier<Logger> LOGGER =
+                StableValue.newCachingSupplier( () -> Logger.getLogger("com.foo.Bar"), null );
+
 
         static Logger logger() {
             // 2. Access the stable value with as-declared-final performance
             //    (single evaluation made before the first access)
-            return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
+            return LOGGER.get();
         }
     }
 
-    class ErrorMessages {
-
-        private static final int SIZE = 8;
-
-        // 1. Declare a stable list of default error pages to serve up
-        private static final List<StableValue<String>> MESSAGES = StableValue.ofList(SIZE);
-
-        // 2. Define a function that is to be called the first
-        //    time a particular message number is referenced
-        private static String readFromFile(int messageNumber) {
-            try {
-                return Files.readString(Path.of("message-" + messageNumber + ".html"));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        static String errorPage(int messageNumber) {
-            // 3. Access the stable list element with as-declared-final performance
-            //    (evaluation made before the first access)
-            return MESSAGES.get(messageNumber)
-                    .mapIfUnset(messageNumber, ErrorMessages::readFromFile);
-        }
-
-    }
-
-    class MapDemo {
-
-        // 1. Declare a stable map of loggers with two allowable keys:
-        //    "com.foo.Bar" and "com.foo.Baz"
-        static final Map<String, StableValue<Logger>> LOGGERS =
-                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-        // 2. Access the memoized map with as-declared-final performance
-        //    (evaluation made before the first access)
-        static Logger logger(String name) {
-            return LOGGERS.get(name)
-                    .mapIfUnset(name, Logger::getLogger);
-        }
-    }
 
     class Memoized {
 
         // 1. Declare a memoized (cached) function backed by a stable map
         private static final Function<String, Logger> LOGGERS =
-                StableValues.memoizedFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
+                StableValue.newCachingFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
                 Logger::getLogger, null);
 
         private static final String NAME = "com.foo.Baz";
@@ -134,7 +97,7 @@ final class JepTest {
 
             // 1. Declare a memoized IntFunction backed by a stable list
             private static final IntFunction<String> ERROR_FUNCTION =
-                    StableValues.memoizedIntFunction(SIZE, ErrorMessages::readFromFile, null);
+                    StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile, null);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
