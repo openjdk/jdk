@@ -45,10 +45,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // A wrapper method `nullSentinel()` is used for generic type conversion.
     private static final Object NULL_SENTINEL = new Object();
 
-    // Used to indicate a mutex is never needed anymore.
+    // Used to indicate a mutex is not needed anymore.
     private static final Object TOMBSTONE = new Object();
 
-    // Unsafe offsets for direct access
+    // Unsafe offsets for direct object access
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
     private static final long MUTEX_OFFSET =
@@ -59,20 +59,21 @@ public final class StableValueImpl<T> implements StableValue<T> {
     //
     // This field is reflectively accessed via Unsafe using explicit memory semantics.
     //
-    // Meaning        Value
+    // Value          Meaning
     // -------        -----
-    // Unset:         null
-    // Set(non-null): The set value (!= nullSentinel())
-    // Set(null):     nullSentinel()
+    // null           Unset
+    // nullSentinel() Set(null)
+    // other          Set(other)
     @Stable
     private T value;
 
-    // This field is lazily initialized on demand and when it is no longer needed
-    // (i.e. when a holder value is set) the TOMBSTONE singleton is stored to allow
-    // the previous, now-redundant mutex object to be collected.
+    // This field is initialized on demand to a new distinct mutex object.
+    // When synchronization is no longer needed (i.e. when a holder value is set),
+    // the field is set to the `TOMBSTONE` singleton object to allow the previous,
+    // now-redundant mutex object to be collected.
     private volatile Object mutex;
 
-    // Only allow creation via a factory
+    // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
 
     @ForceInline
@@ -83,13 +84,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
         }
         Object m = acquireMutex();
         if (m == TOMBSTONE) {
-            // A holder value must be set as a holder value store
+            // A holder value must already be set as a holder value store
             // happens before a mutex TOMBSTONE store
             return false;
         }
         synchronized (m) {
-            // Updates to the `value` is always made under `mutex` synchronization
-            // meaning plain memory semantics is enough here.
+            // The one-and-only update of the `value` field is always made under
+            // `mutex` synchronization meaning plain memory semantics is enough here.
             if (valuePlain() != null) {
                 return false;
             }
@@ -109,7 +110,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
         // In other words, if a reader (using plain memory semantics) can observe a
         // `value` reference, any field updates made prior to this fence are
         // guaranteed to be seen.
-        UNSAFE.storeStoreFence(); // Redundant as a volatile put provides a store barrier?
+        // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
+        // Doug Lea, 2018
+        UNSAFE.storeStoreFence();
 
         // We are alone here under the `mutex`
         // This upholds the invariant, the `@Stable value` field is written to
@@ -168,13 +171,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     private <I> T tryCompute(I input, Object provider) {
         Object m = acquireMutex();
         if (m == TOMBSTONE) {
-            // A holder value must be set as a holder value store
+            // A holder value must already be set as a holder value store
             // happens before a mutex TOMBSTONE store
             return unwrap(value());
         }
         synchronized (m) {
-            // Updates to the `value` is always made under `mutex` synchronization
-            // meaning plain memory semantics is enough here.
+            // The one-and-only update of the `value` field is always made under
+            // `mutex` synchronization meaning plain memory semantics is enough here.
             T t = valuePlain();
             if (t != null) {
                 return unwrap(t);
@@ -199,7 +202,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof StableValueImpl<?> other &&
-                // Note that the returned value() will be `null` if the holder value
+                // Note that the returned `value()` will be `null` if the holder value
                 // is unset and `nullSentinel()` if the holder value is `null`.
                 Objects.equals(value(), other.value());
     }
@@ -224,12 +227,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value;
     }
 
-    // Wraps null values into a sentinel value
+    // Wraps `null` values into a sentinel value
     private static <T> T wrap(T t) {
         return (t == null) ? nullSentinel() : t;
     }
 
-    // Unwraps null sentinel values into null
+    // Unwraps null sentinel values into `null`
     @ForceInline
     private static <T> T unwrap(T t) {
         return t != nullSentinel() ? t : null;
@@ -250,6 +253,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             return mutex;
         }
         Object newMutex = new Object();
+        // Guarantees, only one distinct mutex object per StableValue is ever exposed.
         Object witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, newMutex);
         return witness == null ? newMutex : witness;
     }
@@ -258,8 +262,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
         mutex = TOMBSTONE;
     }
 
-    // Factory
-    public static <T> StableValueImpl<T> newInstance() {
+    // Factory for creating new StableValue instances
+    public static <T> StableValue<T> newInstance() {
         return new StableValueImpl<>();
     }
 
