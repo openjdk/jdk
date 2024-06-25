@@ -211,8 +211,9 @@ final class SSLConfiguration implements Cloneable {
             if (nstServerCount != null && SSLLogger.isOn &&
                 SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
-                    "jdk.tls.server.newSessionTicketCount defaults to 3 as " +
-                        "the property was not between 0 and 10");
+                    "jdk.tls.server.newSessionTicketCount defaults to " +
+                        SERVER_NST_DEFAULT + " as the property was not " +
+                        "between 0 and 10");
             }
         } else {
             serverNewSessionTicketCount = nstServerCount;

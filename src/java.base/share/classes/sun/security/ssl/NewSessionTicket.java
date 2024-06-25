@@ -488,7 +488,7 @@ final class NewSessionTicket {
         }
     }
 
-        /**
+    /**
      * The "NewSessionTicket" handshake message producer for RFC 5077
      */
     private static final class T12NewSessionTicketProducer
