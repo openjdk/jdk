@@ -47,7 +47,7 @@ public abstract class VectorLoadToStoreForwarding {
     @Setup
     public void init() {
         aI = new int[SIZE];
-        
+
         for (int i = 0; i < SIZE; i++) {
             aI[i] = r.nextInt();
         }
