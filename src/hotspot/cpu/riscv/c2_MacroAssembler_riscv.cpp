@@ -2358,7 +2358,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -2411,7 +2411,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE, Assembler::m2);
 
   bind(DONE);
 
@@ -2452,7 +2452,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   if (str1_isL == str2_isL) { // LL or UU
     // Below construction of v regs and lmul is based on test on 2 different boards,
     // vlen == 128 and vlen == 256 respectively.
-    if (!str1_isL && MaxVectorSize == 16) { // UU
+    if (!encLL && MaxVectorSize == 16) { // UU
       element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
     } else { // UU + MaxVectorSize or LL
       element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);

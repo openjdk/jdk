@@ -3563,7 +3563,7 @@ instruct varray_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct vstring_compareUVlen16(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
+instruct vstring_compareU_128b(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
                           iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                           vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)
