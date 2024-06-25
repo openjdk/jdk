@@ -39,7 +39,7 @@ class CgroupV2Controller: public CgroupController {
     static char* construct_path(char* mount_path, char *cgroup_path);
 
   public:
-    CgroupV2Controller(char * mount_path, char *cgroup_path) :
+    CgroupV2Controller(char* mount_path, char *cgroup_path) :
                                             _mount_path(os::strdup(mount_path)),
                                             _cgroup_path(os::strdup(cgroup_path)),
                                             _path(construct_path(mount_path, cgroup_path)) {
@@ -62,7 +62,7 @@ class CgroupV2CpuController: public CgroupCpuController {
     CgroupV2Controller _reader;
     CgroupV2Controller* reader() { return &_reader; }
   public:
-    CgroupV2CpuController(CgroupV2Controller reader) : _reader(reader) {
+    CgroupV2CpuController(const CgroupV2Controller& reader) : _reader(reader) {
     }
     int cpu_quota();
     int cpu_period();
@@ -74,7 +74,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     CgroupV2Controller _reader;
     CgroupV2Controller* reader() { return &_reader; }
   public:
-    CgroupV2MemoryController(CgroupV2Controller reader) : _reader(reader) {
+    CgroupV2MemoryController(const CgroupV2Controller& reader) : _reader(reader) {
     }
 
     jlong read_memory_limit_in_bytes(julong upper_bound) override;

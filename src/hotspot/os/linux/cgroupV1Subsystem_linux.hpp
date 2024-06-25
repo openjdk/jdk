@@ -89,7 +89,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong read_mem_swap(julong host_total_memsw);
 
   public:
-    CgroupV1MemoryController(CgroupV1Controller reader)
+    CgroupV1MemoryController(const CgroupV1Controller& reader)
       : _reader(reader),
         _uses_mem_hierarchy(false) {
     }
@@ -110,7 +110,7 @@ class CgroupV1CpuController final : public CgroupCpuController {
     }
 
   public:
-    CgroupV1CpuController(CgroupV1Controller reader) : _reader(reader) {
+    CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
     }
 };
 
