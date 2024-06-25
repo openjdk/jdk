@@ -92,7 +92,7 @@ tier3 = \
     -:jdk_svc_sanity \
     -:svc_tools \
     :jdk_jpackage \
-    :jdk_since_check
+    :jdk_since_checks
 
 # Everything not in other tiers
 tier4 = \
@@ -668,5 +668,5 @@ jdk_core_no_security = \
    -:jdk_security
 
 # Set of tests for `@since` checks in source code documentation
-jdk_since_check = \
-   tools/sincechecker/testjavabase/CheckSince_javaBase.java
+jdk_since_checks = \
+   tools/sincechecker/modules/java_base/CheckSince_javaBase.java
