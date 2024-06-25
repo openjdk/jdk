@@ -44,6 +44,7 @@ public class ScalarReplacementWithGCBarrierTests {
             head = n;
         }
 
+        @ForceInline
         public Iter iter() {
             Iter iter = new Iter();
             iter.list = this;
@@ -63,6 +64,7 @@ public class ScalarReplacementWithGCBarrierTests {
         public Node n;
         public Integer sum;
 
+        @ForceInline
         public boolean next() {
             int lastSum = sum;
             while (sum - lastSum < 1000) {
