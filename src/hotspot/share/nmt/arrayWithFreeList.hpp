@@ -46,10 +46,10 @@ public:
 
 private:
   // A free list allocator element is either a link to the next free space
-  // Or an actual element.
-  union alignas(E) BackingElement {
+  // or an actual element.
+  union BackingElement {
     I link;
-    char e[sizeof(E)];
+    E e;
   };
 
   GrowableArrayCHeap<BackingElement, flag> _backing_storage;
@@ -99,7 +99,7 @@ public:
     static_assert_E_satisfies_type_requirements();
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
-    return reinterpret_cast<E&>(_backing_storage.at(i).e);
+    return _backing_storage.at(i).e;
   }
 };
 
