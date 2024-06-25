@@ -171,7 +171,8 @@ jlong CgroupV2MemoryController::cache_usage_in_bytes() {
 // respectively. In order to properly report a cgroup v1 like
 // compound value we need to sum the two values. Setting a swap limit
 // without also setting a memory limit is not allowed.
-jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem, julong host_swap) {
+jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem,
+                                                               julong host_swap /* unused in cg v2 */) {
   jlong swap_limit;
   bool is_ok = reader()->read_number_handle_max("/memory.swap.max", &swap_limit);
   if (!is_ok) {
