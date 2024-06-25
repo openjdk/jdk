@@ -47,6 +47,8 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -70,12 +72,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DeferredCloseTest {
 
     private static final int NUM_ITERATIONS = 50;
+    private static final InetSocketAddress BIND_ADDR = new InetSocketAddress(
+            InetAddress.getLoopbackAddress(), 0);
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        // configure our patched java.net.InetSocketAddress implementation
+        // to introduce delay in certain methods which get invoked
+        // internally from the DC.send() implementation
+        introduceDelayInInetSocketAddress();
+    }
+
+    @AfterAll
+    public static void afterAll() throws Exception {
+        // delays in patched InetSocketAddress are no longer needed
+        undoDelayInInetSocketAddress();
+    }
 
     private static Stream<Arguments> dcOperations() {
         return Stream.of(
                 Arguments.of(
                         // repeatedly do DC.send() till there's a ClosedChannelException
-                        "DC.send()", (Function<DatagramChannel, Void>) (dc) -> {
+                        "DC.send()",
+                        null,
+                        (Function<DatagramChannel, Void>) (dc) -> {
                             ByteBuffer bb = ByteBuffer.allocate(100);
                             try {
                                 // We send to ourselves. Target, content and
@@ -83,18 +103,9 @@ public class DeferredCloseTest {
                                 // in this test.
                                 SocketAddress target = dc.getLocalAddress();
                                 System.out.println("DC: " + dc + " sending to " + target);
-                                // configure our patched java.net.InetSocketAddress implementation
-                                // to introduce delay in certain methods which get invoked
-                                // internally from the DC.send() implementation
-                                introduceDelayInInetSocketAddressMethod();
-                                try {
-                                    while (true) {
-                                        bb.clear();
-                                        dc.send(bb, target);
-                                    }
-                                } finally {
-                                    // delays in patched InetSocketAddress are no longer needed
-                                    undoDelayInInetSocketAddressMethod();
+                                while (true) {
+                                    bb.clear();
+                                    dc.send(bb, target);
                                 }
                             } catch (ClosedChannelException _) {
                             } catch (Exception e) {
@@ -105,29 +116,29 @@ public class DeferredCloseTest {
                 ),
                 Arguments.of(
                         // repeatedly do DC.receive() till there's a ClosedChannelException
-                        "DC.receive()", (Function<DatagramChannel, Void>) (dc) -> {
-                            ByteBuffer rcvBB = ByteBuffer.allocate(100);
-                            ByteBuffer sendBB = ByteBuffer.allocate(100);
+                        "DC.receive()",
+                        (Function<DatagramChannel, Void>) (dc) -> {
                             try {
                                 SocketAddress target = dc.getLocalAddress();
-                                System.out.println("DC: " + dc + " receiving datagrams");
-                                // configure our patched java.net.InetSocketAddress implementation
-                                // to introduce delay in certain methods which get invoked
-                                // internally from the DC.receive() implementation
-                                introduceDelayInInetSocketAddressMethod();
-                                try {
-                                    while (true) {
-                                        // first send() a few datagrams so that subsequent
-                                        // receive() does receive them and thus triggers
-                                        // the potential race with the deferred close
-                                        sendBB.clear();
-                                        dc.send(sendBB, target);
-                                        rcvBB.clear();
-                                        dc.receive(rcvBB);
-                                    }
-                                } finally {
-                                    // delays in patched InetSocketAddress are no longer needed
-                                    undoDelayInInetSocketAddressMethod();
+                                ByteBuffer sendBB = ByteBuffer.allocate(100);
+                                // first send() a few datagrams so that subsequent
+                                // receive() does receive them and thus triggers
+                                // the potential race with the deferred close
+                                for (int i = 0; i < 5; i++) {
+                                    sendBB.clear();
+                                    dc.send(sendBB, target);
+                                }
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            return null;
+                        },
+                        (Function<DatagramChannel, Void>) (dc) -> {
+                            try {
+                                ByteBuffer rcvBB = ByteBuffer.allocate(10);
+                                while (true) {
+                                    rcvBB.clear();
+                                    dc.receive(rcvBB);
                                 }
                             } catch (ClosedChannelException _) {
                             } catch (Exception e) {
@@ -142,11 +153,12 @@ public class DeferredCloseTest {
     /**
      * Runs the test for DatagramChannel.
      *
-     * @see #runTest(ExecutorService, SelectionKey, Callable)
+     * @see #runTest(ExecutorService, SelectionKey, Callable, CountDownLatch)
      */
     @ParameterizedTest
     @MethodSource("dcOperations")
-    public void testDatagramChannel(String opName, Function<DatagramChannel, Void> dcOperation)
+    public void testDatagramChannel(String opName, Function<DatagramChannel, Void> preOp,
+                                    Function<DatagramChannel, Void> dcOperation)
             throws Exception {
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             for (int i = 1; i <= NUM_ITERATIONS; i++) {
@@ -155,12 +167,20 @@ public class DeferredCloseTest {
                 try (Selector sel = Selector.open();
                      DatagramChannel dc = DatagramChannel.open()) {
                     // create a non-blocking bound DatagramChannel
-                    dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                    dc.bind(BIND_ADDR);
                     dc.configureBlocking(false);
                     // register the DatagramChannel with a selector
                     // (doesn't matter the interestOps)
-                    final var key = dc.register(sel, SelectionKey.OP_READ);
-                    runTest(executor, key, () -> dcOperation.apply(dc));
+                    SelectionKey key = dc.register(sel, SelectionKey.OP_READ);
+                    if (preOp != null) {
+                        preOp.apply(dc);
+                    }
+                    CountDownLatch opStartLatch = new CountDownLatch(1);
+                    runTest(executor, key, () -> {
+                        // notify that we will now start operation on the DC
+                        opStartLatch.countDown();
+                        return dcOperation.apply(dc);
+                    }, opStartLatch);
                 }
             }
         }
@@ -209,7 +229,7 @@ public class DeferredCloseTest {
     /**
      * Runs the test for SocketChannel
      *
-     * @see #runTest(ExecutorService, SelectionKey, Callable)
+     * @see #runTest(ExecutorService, SelectionKey, Callable, CountDownLatch)
      */
     @ParameterizedTest
     @MethodSource("scOperations")
@@ -222,14 +242,14 @@ public class DeferredCloseTest {
                 try (Selector sel = Selector.open();
                      SocketChannel sc = SocketChannel.open()) {
                     // create and bind a SocketChannel
-                    sc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                    sc.bind(BIND_ADDR);
                     // stay in blocking mode till the SocketChannel is connected
                     sc.configureBlocking(true);
                     Future<SocketChannel> acceptedChannel;
                     SocketChannel conn;
                     // create a remote server and connect to it
                     try (ServerSocketChannel server = ServerSocketChannel.open()) {
-                        server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                        server.bind(BIND_ADDR);
                         SocketAddress remoteAddr = server.getLocalAddress();
                         acceptedChannel = executor.submit(new ConnAcceptor(server));
                         System.out.println("connecting to " + remoteAddr);
@@ -242,8 +262,13 @@ public class DeferredCloseTest {
                         System.out.println("switched to non-blocking: " + sc);
                         // register the SocketChannel with a selector
                         // (doesn't matter the interestOps)
-                        final var key = sc.register(sel, SelectionKey.OP_READ);
-                        runTest(executor, key, () -> scOperation.apply(sc));
+                        SelectionKey key = sc.register(sel, SelectionKey.OP_READ);
+                        CountDownLatch opStartLatch = new CountDownLatch(1);
+                        runTest(executor, key, () -> {
+                            // notify that we will now start operation on the SC
+                            opStartLatch.countDown();
+                            return scOperation.apply(sc);
+                        }, opStartLatch);
                     }
                 }
             }
@@ -253,7 +278,7 @@ public class DeferredCloseTest {
     /**
      * Runs the test for ServerSocketChannel
      *
-     * @see #runTest(ExecutorService, SelectionKey, Callable)
+     * @see #runTest(ExecutorService, SelectionKey, Callable, CountDownLatch)
      */
     @Test
     public void testServerSocketChannel() throws Exception {
@@ -264,11 +289,14 @@ public class DeferredCloseTest {
                 try (Selector sel = Selector.open();
                      ServerSocketChannel ssc = ServerSocketChannel.open()) {
                     // create and bind a ServerSocketChannel
-                    ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                    ssc.bind(BIND_ADDR);
                     ssc.configureBlocking(false);
                     // register the ServerSocketChannel with a selector
-                    final var key = ssc.register(sel, SelectionKey.OP_ACCEPT);
+                    SelectionKey key = ssc.register(sel, SelectionKey.OP_ACCEPT);
+                    CountDownLatch opStartLatch = new CountDownLatch(1);
                     runTest(executor, key, () -> {
+                        // notify that we will now start accept()ing
+                        opStartLatch.countDown();
                         // repeatedly do SSC.accept() till there's a ClosedChannelException
                         try {
                             while (true) {
@@ -277,7 +305,7 @@ public class DeferredCloseTest {
                         } catch (ClosedChannelException _) {
                         }
                         return null;
-                    });
+                    }, opStartLatch);
                 }
             }
         }
@@ -286,7 +314,7 @@ public class DeferredCloseTest {
     /**
      * Runs the test for SinkChannel
      *
-     * @see #runTest(ExecutorService, SelectionKey, Callable)
+     * @see #runTest(ExecutorService, SelectionKey, Callable, CountDownLatch)
      */
     @Test
     public void testSinkChannel() throws Exception {
@@ -298,8 +326,11 @@ public class DeferredCloseTest {
                 try (Selector sel = Selector.open();
                      Pipe.SinkChannel sink = pipe.sink()) {
                     sink.configureBlocking(false);
-                    final var key = sink.register(sel, SelectionKey.OP_WRITE);
+                    SelectionKey key = sink.register(sel, SelectionKey.OP_WRITE);
+                    CountDownLatch opStartLatch = new CountDownLatch(1);
                     runTest(executor, key, () -> {
+                        // notify that we will now start write()ing
+                        opStartLatch.countDown();
                         // repeatedly do SC.write() till there's a ClosedChannelException
                         ByteBuffer bb = ByteBuffer.allocate(100);
                         try {
@@ -310,7 +341,7 @@ public class DeferredCloseTest {
                         } catch (ClosedChannelException _) {
                         }
                         return null;
-                    });
+                    }, opStartLatch);
                 }
             }
         }
@@ -319,7 +350,7 @@ public class DeferredCloseTest {
     /**
      * Runs the test for SourceChannel
      *
-     * @see #runTest(ExecutorService, SelectionKey, Callable)
+     * @see #runTest(ExecutorService, SelectionKey, Callable, CountDownLatch)
      */
     @Test
     public void testSourceChannel() throws Exception {
@@ -331,8 +362,11 @@ public class DeferredCloseTest {
                 try (Selector sel = Selector.open();
                      Pipe.SourceChannel source = pipe.source()) {
                     source.configureBlocking(false);
-                    final var key = source.register(sel, SelectionKey.OP_READ);
+                    SelectionKey key = source.register(sel, SelectionKey.OP_READ);
+                    CountDownLatch opStartLatch = new CountDownLatch(1);
                     runTest(executor, key, () -> {
+                        // notify that we will now start read()ing
+                        opStartLatch.countDown();
                         // repeatedly do SC.read() till there's a ClosedChannelException
                         ByteBuffer bb = ByteBuffer.allocate(100);
                         try {
@@ -343,7 +377,7 @@ public class DeferredCloseTest {
                         } catch (ClosedChannelException _) {
                         }
                         return null;
-                    });
+                    }, opStartLatch);
                 }
             }
         }
@@ -367,28 +401,25 @@ public class DeferredCloseTest {
      * invokes one last Selector.select() operation to finish the deferred close of the channel.
      */
     private static void runTest(ExecutorService executor, SelectionKey selectionKey,
-                                Callable<Void> channelOperation) throws Exception {
+                                Callable<Void> channelOperation, CountDownLatch chanOpStartLatch)
+            throws Exception {
 
         SelectableChannel channel = selectionKey.channel();
         assertFalse(channel.isBlocking(), "channel isn't non-blocking: " + channel);
         selectionKey.selector().selectNow();
-        CountDownLatch tasksStartedLatch = new CountDownLatch(2);
         // run the channel operations
-        Future<?> channelOpResult = executor.submit(() -> {
-            // notify that the task has started
-            tasksStartedLatch.countDown();
-            return channelOperation.call();
-        });
+        Future<?> channelOpResult = executor.submit(channelOperation);
+        CountDownLatch selectorTaskStartLatch = new CountDownLatch(1);
         // run the Selector.select() task
         Future<?> selectorTaskResult = executor.submit(
-                new SelectorTask(selectionKey, tasksStartedLatch));
-        // await for the 2 tasks to start
-        tasksStartedLatch.await();
-        // just a few more milliseconds before we initiate the channel close
-        Thread.sleep(100);
+                new SelectorTask(selectionKey, selectorTaskStartLatch));
+        // await for the channel operation task and the selector task to start
+        chanOpStartLatch.await();
+        selectorTaskStartLatch.await();
         // close the channel while it's still registered with the Selector,
         // so that the close is deferred by the channel implementations.
         System.out.println("closing channel: " + channel);
+        assertTrue(channel.isOpen(), "channel already closed: " + channel);
         assertTrue(channel.isRegistered(), "channel isn't registered: " + channel);
         channel.close();
         // wait for the operation on the channel and the selector task to complete
@@ -413,10 +444,10 @@ public class DeferredCloseTest {
         @Override
         public Void call() throws Exception {
             try {
-                // notify that the task has started
-                startedLatch.countDown();
                 Selector selector = selectionKey.selector();
                 SelectableChannel channel = selectionKey.channel();
+                // notify that the task has started
+                startedLatch.countDown();
                 while (true) {
                     selector.select(10);
                     if (!channel.isOpen()) {
@@ -456,18 +487,16 @@ public class DeferredCloseTest {
      * Configures our patched java.net.InetSocketAddress to introduce delays in
      * certain places within the implementation of that class
      */
-    private static void introduceDelayInInetSocketAddressMethod() throws Exception {
-        Field f = InetSocketAddress.class.getField("INTRODUCE_DELAY");
-        ThreadLocal<Boolean> introduceDelay = (ThreadLocal<Boolean>) f.get(null);
-        introduceDelay.set(true);
+    private static void introduceDelayInInetSocketAddress() throws Exception {
+        Field f = InetSocketAddress.class.getField("enableDelay");
+        f.set(null, true);
     }
 
     /**
      * Reverts the delays introduced in our patched java.net.InetSocketAddress class
      */
-    private static void undoDelayInInetSocketAddressMethod() throws Exception {
-        Field f = InetSocketAddress.class.getField("INTRODUCE_DELAY");
-        ThreadLocal<Boolean> introduceDelay = (ThreadLocal<Boolean>) f.get(null);
-        introduceDelay.remove();
+    private static void undoDelayInInetSocketAddress() throws Exception {
+        Field f = InetSocketAddress.class.getField("enableDelay");
+        f.set(null, false);
     }
 }

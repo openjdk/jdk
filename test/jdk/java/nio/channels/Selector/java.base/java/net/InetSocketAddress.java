@@ -31,12 +31,7 @@ public class InetSocketAddress extends SocketAddress {
     @java.io.Serial
     private static final long serialVersionUID = 5076001401234631237L;
 
-    public static final ThreadLocal<Boolean> INTRODUCE_DELAY = new ThreadLocal<>() {
-        @Override
-        protected Boolean initialValue() {
-            return false;
-        }
-    };
+    public static boolean enableDelay;
 
     static {
         System.out.println("patched InetSocketAddress class in use");
@@ -68,9 +63,6 @@ public class InetSocketAddress extends SocketAddress {
         this.hostname = host;
         this.addr = addr;
         this.port = checkPort(port);
-        if (INTRODUCE_DELAY.get()) {
-            doDelay();
-        }
     }
 
     public static InetSocketAddress createUnresolved(String host, int port) {
@@ -81,7 +73,7 @@ public class InetSocketAddress extends SocketAddress {
         this.hostname = hostname;
         this.addr = addr;
         this.port = port;
-        if (INTRODUCE_DELAY.get()) {
+        if (enableDelay) {
             doDelay();
         }
     }
@@ -92,10 +84,9 @@ public class InetSocketAddress extends SocketAddress {
      * @return the port number.
      */
     public final int getPort() {
-        if (!INTRODUCE_DELAY.get()) {
-            return port;
+        if (enableDelay) {
+            doDelay();
         }
-        doDelay();
         return this.port;
     }
 
@@ -195,7 +186,7 @@ public class InetSocketAddress extends SocketAddress {
     private static void doDelay() {
         System.out.println("intentional delay injected in InetSocketAddress");
         try {
-            Thread.sleep(100);
+            Thread.sleep(10);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
