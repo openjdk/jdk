@@ -67,6 +67,8 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
     private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final Consumer<FieldBuilder> STATIC_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_STATIC);
+    private static final Consumer<FieldBuilder> FINAL_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_FINAL);
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -622,7 +624,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                        .with(SourceFileAttribute.of(classDesc.displayName()))
 
                     // emit static types and BMH_SPECIES fields
-                       .withField(sdFieldName, CD_SPECIES_DATA, ACC_STATIC);
+                       .withField(sdFieldName, CD_SPECIES_DATA, STATIC_FIELD_FLAGS);
 
                     // handy holder for dealing with groups of typed values (ctor arguments and fields)
                     class Var {
@@ -706,7 +708,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                     // emit bound argument fields
                     for (Var field : fields) {
-                        clb.withField(field.name, field.desc, ACC_FINAL);
+                        clb.withField(field.name, field.desc, FINAL_FIELD_FLAGS);
                     }
 
                     // emit implementation of speciesData()
