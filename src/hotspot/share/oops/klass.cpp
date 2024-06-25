@@ -132,7 +132,8 @@ void Klass::set_name(Symbol* n) {
     _name->increment_refcount();
   }
 
-  if (UseSecondarySupersTable) {
+  // if (UseSecondarySupersTable)
+    {
     elapsedTimer selftime;
     selftime.start();
 
@@ -329,7 +330,8 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
 #ifdef ASSERT
-  if (UseSecondarySupersTable && secondaries != nullptr) {
+  if (// UseSecondarySupersTable && 
+      secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
   }
@@ -470,11 +472,12 @@ Array<Klass*>* Klass::pack_secondary_supers(ClassLoaderData* loader_data,
   }
 #endif
 
-  if (UseSecondarySupersTable) {
+  // if (UseSecondarySupersTable)
+    {
     bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
-  } else {
-    bitmap = SECONDARY_SUPERS_BITMAP_EMPTY;
-  }
+  } // else {
+  //   bitmap = SECONDARY_SUPERS_BITMAP_EMPTY;
+  // }
   return secondary_supers;
 }
 
@@ -1279,7 +1282,8 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
-    if (UseSecondarySupersTable) {
+    // if (UseSecondarySupersTable)
+      {
       st->print("  - "); st->print("%d elements;", _secondary_supers->length());
       st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
       if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
