@@ -306,7 +306,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
       push_on_queue(G1TaskQueueEntry(array, 1, pow));
     }
 
-    // Split out tasks, as suggested in ShenandoahMarkTask docs. Record the last
+    // Split out tasks, as suggested in G1TaskQueueEntry docs. Record the last
     // successful right boundary to figure out the irregular tail.
     while ((1 << pow) > (int)ObjArrayMarkingStride &&
            (slice * 2 < G1TaskQueueEntry::slice_size())) {

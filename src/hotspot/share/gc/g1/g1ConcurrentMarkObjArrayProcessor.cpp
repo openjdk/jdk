@@ -98,7 +98,7 @@ size_t G1CMObjArrayProcessor::process_slice(oop obj, int slice, int pow) {
 
   assert (ObjArrayMarkingStride > 0, "sanity");
 
-  // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
+  // Split out tasks, as suggested in G1TaskQueueEntry docs. Avoid pushing tasks that
   // are known to start beyond the array.
   while ((1 << pow) > (int)ObjArrayMarkingStride && (slice*2 < G1TaskQueueEntry::slice_size())) {
     pow--;
