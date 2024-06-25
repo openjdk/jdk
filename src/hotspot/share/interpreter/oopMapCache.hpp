@@ -156,7 +156,7 @@ class OopMapCache : public CHeapObj<mtClass> {
          _probe_depth = 3       // probe depth in case of collisions
   };
 
-  OopMapCacheEntry* volatile * _array;
+  OopMapCacheEntry* volatile _array[_size];
 
   unsigned int hash_value_for(const methodHandle& method, int bci) const;
   OopMapCacheEntry* entry_at(int i) const;

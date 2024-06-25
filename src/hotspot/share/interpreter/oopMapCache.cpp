@@ -445,17 +445,13 @@ inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int 
 OopMapCacheEntry* volatile OopMapCache::_old_entries = nullptr;
 
 OopMapCache::OopMapCache() {
-  _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry*, _size, mtClass);
   for(int i = 0; i < _size; i++) _array[i] = nullptr;
 }
 
 
 OopMapCache::~OopMapCache() {
-  assert(_array != nullptr, "sanity check");
   // Deallocate oop maps that are allocated out-of-line
   flush();
-  // Deallocate array
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry*, _array);
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
