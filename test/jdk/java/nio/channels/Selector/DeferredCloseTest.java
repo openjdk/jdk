@@ -21,14 +21,12 @@
  * questions.
  */
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
@@ -49,11 +47,6 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.misc.VM;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -68,42 +61,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          the Selector during its deferred close implementation won't prematurely release
  *          the channel's resources
  *
- * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.access.foreign
- *          java.base/jdk.internal.misc
- *
+ * @comment we use a patched java.net.InetSocketAddress to allow the test to intentionally
+ *          craft some delays at specific locations in the implementation of InetSocketAddress
+ *          to trigger race conditions
+ * @compile/module=java.base java/net/InetSocketAddress.java
  * @run junit/othervm/timeout=240 DeferredCloseTest
  */
 public class DeferredCloseTest {
 
     private static final int NUM_ITERATIONS = 50;
-
-    private static final JavaNioAccess originalJavaNioAccess;
-
-    /*
-     * Sets up a JavaNioAccess implementation which introduces an artificial
-     * delay in the implementation of certain method calls. JavaNioAccess itself plays no other role
-     * other than it being used in the implementation of APIs of several of the SelectableChannel
-     * classes. We override it in this test to introduce delays in some method calls. It thus
-     * allows us to introduce a race between the Selector and the SelectableChannel operations,
-     * effectively increasing the efficacy of this test.
-     *
-     * We use a static block, instead of @BeforeAll, to set our custom test specific
-     * JavaNioAccess very early and thus reduce the chances of JavaNioAccess already
-     * being looked up and cached by SelectableChannel implementations.
-     */
-    static {
-        originalJavaNioAccess = SharedSecrets.getJavaNioAccess();
-        SharedSecrets.setJavaNioAccess(new DelayInjectingNIOAccess());
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        // reset back to the original
-        if (originalJavaNioAccess != null) {
-            SharedSecrets.setJavaNioAccess(originalJavaNioAccess);
-        }
-    }
 
     private static Stream<Arguments> dcOperations() {
         return Stream.of(
@@ -117,13 +83,22 @@ public class DeferredCloseTest {
                                 // in this test.
                                 SocketAddress target = dc.getLocalAddress();
                                 System.out.println("DC: " + dc + " sending to " + target);
-                                while (true) {
-                                    bb.clear();
-                                    dc.send(bb, target);
+                                // configure our patched java.net.InetSocketAddress implementation
+                                // to introduce delay in certain methods which get invoked
+                                // internally from the DC.send() implementation
+                                introduceDelayInInetSocketAddressMethod();
+                                try {
+                                    while (true) {
+                                        bb.clear();
+                                        dc.send(bb, target);
+                                    }
+                                } finally {
+                                    // delays in patched InetSocketAddress are no longer needed
+                                    undoDelayInInetSocketAddressMethod();
                                 }
                             } catch (ClosedChannelException _) {
-                            } catch (IOException ioe) {
-                                throw new UncheckedIOException(ioe);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
                             }
                             return null;
                         }
@@ -132,15 +107,31 @@ public class DeferredCloseTest {
                         // repeatedly do DC.receive() till there's a ClosedChannelException
                         "DC.receive()", (Function<DatagramChannel, Void>) (dc) -> {
                             ByteBuffer rcvBB = ByteBuffer.allocate(100);
+                            ByteBuffer sendBB = ByteBuffer.allocate(100);
                             try {
+                                SocketAddress target = dc.getLocalAddress();
                                 System.out.println("DC: " + dc + " receiving datagrams");
-                                while (true) {
-                                    rcvBB.clear();
-                                    dc.receive(rcvBB);
+                                // configure our patched java.net.InetSocketAddress implementation
+                                // to introduce delay in certain methods which get invoked
+                                // internally from the DC.receive() implementation
+                                introduceDelayInInetSocketAddressMethod();
+                                try {
+                                    while (true) {
+                                        // first send() a few datagrams so that subsequent
+                                        // receive() does receive them and thus triggers
+                                        // the potential race with the deferred close
+                                        sendBB.clear();
+                                        dc.send(sendBB, target);
+                                        rcvBB.clear();
+                                        dc.receive(rcvBB);
+                                    }
+                                } finally {
+                                    // delays in patched InetSocketAddress are no longer needed
+                                    undoDelayInInetSocketAddressMethod();
                                 }
                             } catch (ClosedChannelException _) {
-                            } catch (IOException ioe) {
-                                throw new UncheckedIOException(ioe);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
                             }
                             return null;
                         }
@@ -461,113 +452,22 @@ public class DeferredCloseTest {
         }
     }
 
+    /**
+     * Configures our patched java.net.InetSocketAddress to introduce delays in
+     * certain places within the implementation of that class
+     */
+    private static void introduceDelayInInetSocketAddressMethod() throws Exception {
+        Field f = InetSocketAddress.class.getField("INTRODUCE_DELAY");
+        ThreadLocal<Boolean> introduceDelay = (ThreadLocal<Boolean>) f.get(null);
+        introduceDelay.set(true);
+    }
 
-    private static final class DelayInjectingNIOAccess implements JavaNioAccess {
-        private final JavaNioAccess realJavaNioAccess = SharedSecrets.getJavaNioAccess();
-
-        @Override
-        public VM.BufferPool getDirectBufferPool() {
-            return realJavaNioAccess.getDirectBufferPool();
-        }
-
-        @Override
-        public ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj,
-                                              MemorySegment segment) {
-            return realJavaNioAccess.newDirectByteBuffer(addr, cap, obj, segment);
-        }
-
-        @Override
-        public ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long addr,
-                                              int cap, Object obj, MemorySegment segment) {
-            return realJavaNioAccess.newMappedByteBuffer(unmapperProxy, addr, cap, obj, segment);
-        }
-
-        @Override
-        public ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity,
-                                            MemorySegment segment) {
-            return realJavaNioAccess.newHeapByteBuffer(hb, offset, capacity, segment);
-        }
-
-        @Override
-        public Object getBufferBase(Buffer bb) {
-            return realJavaNioAccess.getBufferBase(bb);
-        }
-
-        @Override
-        public long getBufferAddress(Buffer buffer) {
-            return realJavaNioAccess.getBufferAddress(buffer);
-        }
-
-        @Override
-        public UnmapperProxy unmapper(Buffer buffer) {
-            return realJavaNioAccess.unmapper(buffer);
-        }
-
-        @Override
-        public MemorySegment bufferSegment(Buffer buffer) {
-            return realJavaNioAccess.bufferSegment(buffer);
-        }
-
-        @Override
-        public void acquireSession(Buffer buffer) {
-            // intentionally introduce an artificial delay
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            realJavaNioAccess.acquireSession(buffer);
-        }
-
-        @Override
-        public void releaseSession(Buffer buffer) {
-            realJavaNioAccess.releaseSession(buffer);
-        }
-
-        @Override
-        public boolean isThreadConfined(Buffer buffer) {
-            return realJavaNioAccess.isThreadConfined(buffer);
-        }
-
-        @Override
-        public boolean hasSession(Buffer buffer) {
-            return realJavaNioAccess.hasSession(buffer);
-        }
-
-        @Override
-        public void force(FileDescriptor fd, long address, boolean isSync,
-                          long offset, long size) {
-            realJavaNioAccess.force(fd, address, isSync, offset, size);
-        }
-
-        @Override
-        public void load(long address, boolean isSync, long size) {
-            realJavaNioAccess.load(address, isSync, size);
-        }
-
-        @Override
-        public void unload(long address, boolean isSync, long size) {
-            realJavaNioAccess.unload(address, isSync, size);
-        }
-
-        @Override
-        public boolean isLoaded(long address, boolean isSync, long size) {
-            return realJavaNioAccess.isLoaded(address, isSync, size);
-        }
-
-        @Override
-        public void reserveMemory(long size, long cap) {
-            realJavaNioAccess.reserveMemory(size, cap);
-        }
-
-        @Override
-        public void unreserveMemory(long size, long cap) {
-            realJavaNioAccess.unreserveMemory(size, cap);
-        }
-
-        @Override
-        public int pageSize() {
-            return realJavaNioAccess.pageSize();
-        }
+    /**
+     * Reverts the delays introduced in our patched java.net.InetSocketAddress class
+     */
+    private static void undoDelayInInetSocketAddressMethod() throws Exception {
+        Field f = InetSocketAddress.class.getField("INTRODUCE_DELAY");
+        ThreadLocal<Boolean> introduceDelay = (ThreadLocal<Boolean>) f.get(null);
+        introduceDelay.remove();
     }
 }
