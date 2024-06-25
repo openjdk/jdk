@@ -201,7 +201,7 @@
           "Maximum size of marking stack in bytes.")                        \
           range(1, (INT_MAX - 1))                                           \
                                                                             \
-  product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
+  product(size_t, MarkStackSize, NOT_LP64(512*K) LP64_ONLY(4*M),             \
           "Size of marking stack in bytes.")                                \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (INT_MAX - 1))                                           \

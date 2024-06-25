@@ -99,10 +99,11 @@ public:
 class G1CMMarkStack {
 public:
   // Number of TaskQueueEntries that can fit in a single chunk.
-  static const size_t EntriesPerChunk = 1024 - 1 /* One reference for the next pointer */;
+  static const size_t EntriesPerChunk = 512 - 1  /* One reference for the next pointer */;
 private:
   struct TaskQueueEntryChunk {
     TaskQueueEntryChunk* next;
+    NOT_LP64(void* dummy;) // To make things align.
     G1TaskQueueEntry data[EntriesPerChunk];
   };
 

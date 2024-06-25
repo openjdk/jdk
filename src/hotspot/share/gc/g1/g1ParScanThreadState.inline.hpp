@@ -36,7 +36,9 @@
 
 inline void G1ParScanThreadState::push_on_queue(G1TaskQueueEntry task) {
   verify_task(task);
+  log_trace(gc)("push_on_queue before");
   _task_queue->push(task);
+  log_trace(gc)("push_on_queue after");
 }
 
 bool G1ParScanThreadState::needs_partial_trimming() const {

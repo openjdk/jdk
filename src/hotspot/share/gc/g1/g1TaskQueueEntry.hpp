@@ -26,6 +26,9 @@
 #ifndef SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
 #define SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
 
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
+
 // A task queue entry that encodes both regular oops, and the array oops plus sliceing data for
 // parallel array processing.
 // The design goal is to make the regular oop ops very fast, because that would be the prevailing
@@ -80,6 +83,7 @@
 // There is also a fallback version that uses plain fields, when we don't have enough space to steal the
 // bits from the native pointer. It is useful to debug the optimized version.
 //
+#ifdef _LP64
 class G1TaskQueueEntry {
 private:
   // Everything is encoded into this field...
@@ -189,15 +193,73 @@ public:
   inline int        slice()             const { return decode_slice(_val); }
   inline int        pow()               const { return decode_pow(_val);   }
 
-  DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
-
-  static uintptr_t max_addressable() {
-    return nth_bit(oop_bits);
+  static int slice_size() {
+    return nth_bit(slice_bits);
   }
+};
+#else
+class G1TaskQueueEntry {
+private:
+  static const uint8_t slice_bits  = 10;
+
+  void*    _ptr;
+  uint16_t _slice;
+  uint16_t _pow;
+
+public:
+  G1TaskQueueEntry() {
+    _ptr = nullptr;
+    _slice = 0;
+    _pow = 0;
+    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+    log_trace(gc)("init new G1TaskQueueEntry");
+  }
+  G1TaskQueueEntry(oop o) {
+    _ptr = cast_from_oop<void*>(o);
+    _slice = 0;
+    _pow = 0;
+    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+    assert(!is_array_slice(),  "task should not be sliced");
+    log_trace(gc)("init new G1TaskQueueEntry: oop: " PTR_FORMAT, p2i(o));
+  }
+  G1TaskQueueEntry(oop* o) {
+    _ptr = reinterpret_cast<void*>(o);
+    _slice = 0;
+    _pow = 0;
+    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+    assert(!is_array_slice(),  "task should not be sliced");
+    log_trace(gc)("init new G1TaskQueueEntry: oop*: " PTR_FORMAT, p2i(o));
+  }
+  G1TaskQueueEntry(narrowOop* o) {
+    ShouldNotReachHere();
+  }
+  G1TaskQueueEntry(oop o, int slice, int pow) {
+    _ptr = cast_from_oop<void*>(o);
+    _slice = slice;
+    _pow = pow;
+    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+    assert(is_array_slice(),  "task should be sliced");
+    log_trace(gc)("init new G1TaskQueueEntry: oop: " PTR_FORMAT ", slice: %d, pow: %d", p2i(o), slice, pow);
+  }
+
+  // Trivially copyable.
+
+public:
+  bool is_oop_ptr()            const { return !is_array_slice(); }
+  bool is_narrow_oop_ptr()     const { return false; }
+  bool is_array_slice()        const { return is_array_slice();  }
+  bool is_oop()                const { return !is_array_slice(); }
+  bool is_null()               const { return _ptr == nullptr; }
+
+  inline oop*       to_oop_ptr()        const { return reinterpret_cast<oop*>(_ptr); }
+  inline narrowOop* to_narrow_oop_ptr() const { ShouldNotReachHere();                }
+  inline oop        to_oop()            const { return cast_to_oop(_ptr);            }
+  inline int        slice()             const { return _slice;                       }
+  inline int        pow()               const { return _pow;                         }
 
   static int slice_size() {
     return nth_bit(slice_bits);
   }
 };
-
+#endif
 #endif // SHARE_GC_G1_G1TASKQUEUEENTRY_HPP

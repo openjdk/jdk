@@ -235,6 +235,7 @@ void G1ParScanThreadState::do_partial_array(oop obj, int slice, int pow) {
   while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < G1TaskQueueEntry::slice_size())) {
     pow--;
     slice *= 2;
+    log_trace(gc)("pushing new partial array");
     push_on_queue(G1TaskQueueEntry(array, slice - 1, pow));
   }
 
@@ -303,6 +304,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
       pow--;
       slice = 2;
       last_idx = (1 << pow);
+      log_trace(gc)("pushing new partial array overflow");
       push_on_queue(G1TaskQueueEntry(array, 1, pow));
     }
 
@@ -315,6 +317,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
       int right_slice = slice * 2;
       int left_slice_end = left_slice * (1 << pow);
       if (left_slice_end < len) {
+        log_trace(gc)("pushing new partial array 2");
         push_on_queue(G1TaskQueueEntry(array, left_slice, pow));
         slice = right_slice;
         last_idx = left_slice_end;

@@ -60,8 +60,11 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
          (obj->is_forwarded() &&
          obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
-
-  _par_scan_state->push_on_queue(G1TaskQueueEntry(p));
+  log_trace(gc)("push obj task 2: %d", sizeof(G1TaskQueueEntry));
+  G1TaskQueueEntry entry(p);
+  log_trace(gc)("push obj created");
+  _par_scan_state->push_on_queue(entry);
+  log_trace(gc)("push obj task 2 done");
 }
 
 template <class T>
