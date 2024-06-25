@@ -665,7 +665,7 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
   UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: $COMPATIBLE_CDS_ALIGNMENT_DEFAULT,
       RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
       DESC: [enable use alternative compatible cds core region alignment],
-      DEFAULT_DESC: [disabled except on aarch64],
+      DEFAULT_DESC: [disabled except on linux-aarch64],
       CHECKING_MSG: [if compatible cds region alignment enabled],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if CDS archive is available])
