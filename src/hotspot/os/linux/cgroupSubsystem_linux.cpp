@@ -170,6 +170,46 @@ static bool find_ro_opt(char* mount_opts) {
   return false;
 }
 
+/*
+ * Read values of a /proc/self/mountinfo line into variables. For cgroups v1
+ * super options are needed. On cgroups v2 super options are not used.
+ *
+ * The scanning of a single mountinfo line entry is as follows:
+ *
+ * 36  35  98:0      /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
+ * (1) (2) (3):(4)   (5)   (6)      (7)      (8)   (9) (10)   (11)         (12)
+ *
+ * The numbers in parentheses are labels for the descriptions below:
+ *
+ *  (1)   mount ID:        matched with '%*d' and discarded
+ *  (2)   parent ID:       matched with '%*d' and discarded
+ *  (3)   major:           ---,---> major, minor separated by ':'. matched with '%*d:%*d' and discarded
+ *  (4)   minor:           ---'
+ *  (5)   root:            matched with '%s' and captured in 'tmproot'. Must be non-empty.
+ *  (6)   mount point:     matched with '%s' and captured in 'tmpmount'. Must be non-empty.
+ *  (7)   mount options:   matched with '%s' and captured in 'mount_opts'. Must be non-empty.
+ *  (8)   optional fields: ---,---> matched with '%*[^-]-'. Anything not a hyphen, followed by a hyphen
+ *  (9)   separator:       ---'     and discarded. Note: The discarded match is space characters if there
+ *                                  are no optionals. Otherwise it includes the optional fields as well.
+ * (10)   filesystem type: matched with '%s' and captured in 'tmp_fs_type'
+ * (11)   mount source:    matched with '%*s' and discarded
+ * (12)   super options:   matched with '%s' and captured in 'tmpcgroups'
+ */
+static inline bool match_mount_info_line(char* line,
+                                         char* tmproot,
+                                         char* tmpmount,
+                                         char* mount_opts,
+                                         char* tmp_fs_type,
+                                         char* tmpcgroups) {
+ return sscanf(line,
+               "%*d %*d %*d:%*d %s %s %s%*[^-]- %s %*s %s",
+               tmproot,
+               tmpmount,
+               mount_opts,
+               tmp_fs_type,
+               tmpcgroups) == 5;
+}
+
 bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
                                             const char* proc_cgroups,
                                             const char* proc_self_cgroup,
@@ -349,29 +389,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      *
      * We collect the read only mount option in the cgroup infos so as to have that
      * info ready when determining is_containerized().
-     *
-     * The scanning of a single mountinfo line entry is as follows:
-     *
-     * 36  35  98:0      /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
-     * (1) (2) (3):(4)   (5)   (6)      (7)      (8)   (9) (10)   (11)         (12)
-     *
-     * The numbers in parentheses are labels for the descriptions below:
-     *
-     *  (1)   mount ID:        matched with '%*d' and discarded
-     *  (2)   parent ID:       matched with '%*d' and discarded
-     *  (3)   major:           ---,---> major, minor separated by ':'. matched with '%*d:%*d' and discarded
-     *  (4)   minor:           ---'
-     *  (5)   root:            matched with '%s' and captured in 'tmproot'. Must be non-empty.
-     *  (6)   mount point:     matched with '%s' and captured in 'tmpmount'. Must be non-empty.
-     *  (7)   mount options:   matched with '%s' and captured in 'mount_opts'. Must be non-empty.
-     *  (8)   optional fields: ---,---> matched with '%*[^-]-'. Anything not a hyphen, followed by a hyphen
-     *  (9)   separator:       ---'     and discarded. Note: The discarded match is space characters if there
-     *                                  are no optionals. Otherwise it includes the optional fields as well.
-     * (10)   filesystem type: matched with '%s' and captured in 'tmp_fs_type'
-     * (11)   mount source:    matched with '%*s' and discarded
-     * (12)   super options:   matched with '%*s' and discarded
      */
-    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %s %s %s%*[^-]- %s %*s %*s", tmproot, tmpmount, mount_opts, tmp_fs_type) == 4) {
+    if (is_cgroupsV2 && match_mount_info_line(p,
+                                              tmproot,
+                                              tmpmount,
+                                              mount_opts,
+                                              tmp_fs_type,
+                                              tmpcgroups /* unused */)) {
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
@@ -398,28 +422,8 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      *
      * 44 31 0:39 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:23 - cgroup cgroup rw,pids
      *
-     * The scanning of a single mountinfo line entry is as follows:
-     *
-     * 36  35  98:0      /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
-     * (1) (2) (3):(4)   (5)   (6)      (7)      (8)   (9) (10)   (11)         (12)
-     *
-     * The numbers in parentheses are labels for the descriptions below:
-     *
-     *  (1)   mount ID:        matched with '%*d' and discarded
-     *  (2)   parent ID:       matched with '%*d' and discarded
-     *  (3)   major:           ---,---> major, minor separated by ':'. matched with '%*d:%*d' and discarded
-     *  (4)   minor:           ---'
-     *  (5)   root:            matched with '%s' and captured in 'tmproot'. Must be non-empty.
-     *  (6)   mount point:     matched with '%s' and captured in 'tmpmount'. Must be non-empty.
-     *  (7)   mount options:   matched with '%s' and captured in 'mount_opts'. Must be non-empty.
-     *  (8)   optional fields: ---,---> matched with '%*[^-]-'. Anything not a hyphen, followed by a hyphen
-     *  (9)   separator:       ---'     and discarded. Note: The discarded match is space characters if there
-     *                                  are no optionals. Otherwise it includes the optional fields as well.
-     * (10)   filesystem type: matched with '%s' and captured in 'tmp_fs_type'
-     * (11)   mount source:    matched with '%*s' and discarded
-     * (12)   super options:   matched with '%s' and captured in 'tmpcgroups'
      */
-    if (sscanf(p, "%*d %*d %*d:%*d %s %s %s%*[^-]- %s %*s %s", tmproot, tmpmount, mount_opts, tmp_fs_type, tmpcgroups) == 5) {
+    if (match_mount_info_line(p, tmproot, tmpmount, mount_opts, tmp_fs_type, tmpcgroups)) {
       if (strcmp("cgroup", tmp_fs_type) != 0) {
         // Skip cgroup2 fs lines on hybrid or unified hierarchy.
         continue;
