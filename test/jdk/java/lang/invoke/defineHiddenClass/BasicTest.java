@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8330467
  * @modules jdk.compiler
  * @library /test/lib
  * @enablePreview
@@ -172,6 +173,20 @@ public class BasicTest {
     @Test
     public void testLambda() throws Throwable {
         HiddenTest t = (HiddenTest)defineHiddenClass("Lambda").newInstance();
+        try {
+            t.test();
+        } catch (Error e) {
+            if (!e.getMessage().equals("thrown by " + t.getClass().getName())) {
+                throw e;
+            }
+        }
+    }
+
+    // Define a hidden class that uses lambda and contains its implementation
+    // This verifies LambdaMetaFactory supports the caller which is a hidden class
+    @Test
+    public void testHiddenLambda() throws Throwable {
+        HiddenTest t = (HiddenTest)defineHiddenClass("HiddenLambda").newInstance();
         try {
             t.test();
         } catch (Error e) {

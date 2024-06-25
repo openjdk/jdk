@@ -335,6 +335,10 @@ public class HtmlDoclet extends AbstractDoclet {
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
         copyLegalFiles(options.createIndex());
+        // Print a notice if the documentation contains diagnostic markers
+        if (messages.containsDiagnosticMarkers()) {
+            messages.notice("doclet.contains.diagnostic.markers");
+        }
     }
 
     @Override

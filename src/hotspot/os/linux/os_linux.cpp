@@ -314,7 +314,10 @@ static jlong host_free_swap() {
 }
 
 jlong os::free_swap_space() {
-  jlong host_free_swap_val = host_free_swap();
+  // os::total_swap_space() might return the containerized limit which might be
+  // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
+  jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
+  assert(host_free_swap_val >= 0, "sysinfo failed?");
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -354,6 +357,15 @@ julong os::physical_memory() {
   phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
   return phys_mem;
+}
+
+size_t os::rss() {
+  size_t size = 0;
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    size = info.vmrss * K;
+  }
+  return size;
 }
 
 static uint64_t initial_total_ticks = 0;
@@ -1353,7 +1365,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
       i = 0;
       if (s) {
         // Skip blank chars
-        do { s++; } while (s && isspace(*s));
+        do { s++; } while (s && isspace((unsigned char) *s));
 
 #define _UFM UINTX_FORMAT
 #define _DFM INTX_FORMAT
@@ -2972,7 +2984,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+  STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -2982,7 +2994,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value, "MAP_FIXED_NOREPLACE != MAP_FIXED_NOREPLACE_value");
+  STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
@@ -3512,81 +3524,6 @@ static address get_stack_commited_bottom(address bottom, size_t size) {
 
   return nbot;
 }
-
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  int mincore_return_value;
-  const size_t stripe = 1024;  // query this many pages each time
-  unsigned char vec[stripe + 1];
-  // set a guard
-  vec[stripe] = 'X';
-
-  const size_t page_sz = os::vm_page_size();
-  uintx pages = size / page_sz;
-
-  assert(is_aligned(start, page_sz), "Start address must be page aligned");
-  assert(is_aligned(size, page_sz), "Size must be page aligned");
-
-  committed_start = nullptr;
-
-  int loops = checked_cast<int>((pages + stripe - 1) / stripe);
-  int committed_pages = 0;
-  address loop_base = start;
-  bool found_range = false;
-
-  for (int index = 0; index < loops && !found_range; index ++) {
-    assert(pages > 0, "Nothing to do");
-    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
-    pages -= pages_to_query;
-
-    // Get stable read
-    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
-
-    // During shutdown, some memory goes away without properly notifying NMT,
-    // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
-    // Bailout and return as not committed for now.
-    if (mincore_return_value == -1 && errno == ENOMEM) {
-      return false;
-    }
-
-    // If mincore is not supported.
-    if (mincore_return_value == -1 && errno == ENOSYS) {
-      return false;
-    }
-
-    assert(vec[stripe] == 'X', "overflow guard");
-    assert(mincore_return_value == 0, "Range must be valid");
-    // Process this stripe
-    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
-      if ((vec[vecIdx] & 0x01) == 0) { // not committed
-        // End of current contiguous region
-        if (committed_start != nullptr) {
-          found_range = true;
-          break;
-        }
-      } else { // committed
-        // Start of region
-        if (committed_start == nullptr) {
-          committed_start = loop_base + page_sz * vecIdx;
-        }
-        committed_pages ++;
-      }
-    }
-
-    loop_base += pages_to_query * page_sz;
-  }
-
-  if (committed_start != nullptr) {
-    assert(committed_pages > 0, "Must have committed region");
-    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
-    assert(committed_start >= start && committed_start < start + size, "Out of range");
-    committed_size = page_sz * committed_pages;
-    return true;
-  } else {
-    assert(committed_pages == 0, "Should not have committed region");
-    return false;
-  }
-}
-
 
 // Linux uses a growable mapping for the stack, and if the mapping for
 // the stack guard pages is not removed when we detach a thread the
@@ -4308,25 +4245,6 @@ size_t os::vm_min_address() {
     value = MAX2(_vm_min_address_default, value);
   }
   return value;
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-// Linux CFS scheduler (since 2.6.23) does not guarantee sched_yield(2) will
-// actually give up the CPU. Since skip buddy (v2.6.28):
-//
-// * Sets the yielding task as skip buddy for current CPU's run queue.
-// * Picks next from run queue, if empty, picks a skip buddy (can be the yielding task).
-// * Clears skip buddies for this run queue (yielding task no longer a skip buddy).
-//
-// An alternative is calling os::naked_short_nanosleep with a small number to avoid
-// getting re-scheduled immediately.
-//
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5140,14 +5058,6 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
-}
-
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
   return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
@@ -5246,7 +5156,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (s == nullptr) return -1;
 
   // Skip blank chars
-  do { s++; } while (s && isspace(*s));
+  do { s++; } while (s && isspace((unsigned char) *s));
 
   count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
                  &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,

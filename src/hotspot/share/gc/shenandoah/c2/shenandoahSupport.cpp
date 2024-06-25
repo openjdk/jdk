@@ -463,6 +463,12 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         "decodeBlock",
         { { TypeFunc::Parms, ShenandoahLoad },  { TypeFunc::Parms+3, ShenandoahStore },   { -1, ShenandoahNone },
           { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
+        "intpoly_montgomeryMult_P256",
+        { { TypeFunc::Parms, ShenandoahLoad },  { TypeFunc::Parms+1, ShenandoahLoad  },   { TypeFunc::Parms+2, ShenandoahStore },
+          { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
+        "intpoly_assign",
+        { { TypeFunc::Parms+1, ShenandoahStore }, { TypeFunc::Parms+2, ShenandoahLoad },  { -1, ShenandoahNone },
+          { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
       };
 
       if (call->is_call_to_arraycopystub()) {
@@ -1326,6 +1332,14 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       // appear as strip mined.
       OuterStripMinedLoopNode* outer = head->as_OuterStripMinedLoop();
       hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
+    }
+    if (head->is_BaseCountedLoop() && ctrl->is_IfProj() && ctrl->in(0)->is_BaseCountedLoopEnd() &&
+        head->as_BaseCountedLoop()->loopexit() == ctrl->in(0)) {
+      Node* entry = head->in(LoopNode::EntryControl);
+      Node* backedge = head->in(LoopNode::LoopBackControl);
+      Node* new_head = new LoopNode(entry, backedge);
+      phase->register_control(new_head, phase->get_loop(entry), entry);
+      phase->lazy_replace(head, new_head);
     }
   }
 

@@ -161,6 +161,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))        \
   decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
   decl(ext_Zacas       , "Zacas"       , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZacas))       \
+  decl(ext_Zvbb        , "Zvbb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvbb))        \
   decl(ext_Zvfh        , "Zvfh"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvfh))        \
   decl(ext_Zvkn        , "Zvkn"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvkn))        \
   decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
@@ -275,6 +276,8 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
 

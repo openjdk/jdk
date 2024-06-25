@@ -190,6 +190,13 @@ public interface SocketOptions {
 
     /**
      * See {@link StandardSocketOptions#SO_LINGER} for description of this socket option.
+     * <p>
+     * Set the value to {@code Boolean.FALSE} or an integer less than {@code 0} with
+     * {@link #setOption(int, Object)} to disable this option. An integer greater than or equal to
+     * {@code 0} will enable the option and will represent the linger interval.
+     * <p>
+     * If this option is enabled then {@link #getOption(int)} will return an integer value
+     * representing the linger interval, else the return value will be {@code Boolean.FALSE}.
      *
      * @see Socket#setSoLinger
      * @see Socket#getSoLinger

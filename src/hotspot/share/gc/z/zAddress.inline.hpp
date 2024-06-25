@@ -600,9 +600,7 @@ inline zpointer ZAddress::finalizable_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
-  const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerFinalizable | non_mark_prev_bits | ZPointerRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerFinalizable | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
@@ -610,9 +608,7 @@ inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
-  const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerMarkedOld | non_mark_prev_bits | ZPointerRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerMarkedOld | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_old_good(zaddress addr, zpointer prev) {

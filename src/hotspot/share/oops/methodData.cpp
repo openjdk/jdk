@@ -1319,7 +1319,7 @@ void MethodData::init() {
   // Set per-method invoke- and backedge mask.
   double scale = 1.0;
   methodHandle mh(Thread::current(), _method);
-  CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
+  CompilerOracle::has_option_value(mh, CompileCommandEnum::CompileThresholdScaling, scale);
   _invoke_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
   _backedge_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
@@ -1331,21 +1331,6 @@ void MethodData::init() {
 #if INCLUDE_JVMCI
   _jvmci_ir_size = 0;
   _failed_speculations = nullptr;
-#endif
-
-#if INCLUDE_RTM_OPT
-  _rtm_state = NoRTM; // No RTM lock eliding by default
-  if (UseRTMLocking &&
-      !CompilerOracle::has_option(mh, CompileCommand::NoRTMLockEliding)) {
-    if (CompilerOracle::has_option(mh, CompileCommand::UseRTMLockEliding) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      _rtm_state = UseRTM;
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      _rtm_state = ProfileRTM;
-    }
-  }
 #endif
 
   // Initialize escape flags.

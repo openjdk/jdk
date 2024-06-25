@@ -1056,7 +1056,9 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (LockingMode == LM_LEGACY && mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+    } else if (LockingMode == LM_LEGACY && mark.has_locker()
+               && current->is_Java_thread()
+               && JavaThread::cast(current)->is_lock_owned((address)mark.locker())) {
       // This is a stack-lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
       temp = mark.displaced_mark_helper();
@@ -1077,9 +1079,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
     // Inflate the monitor to set the hash.
 
-    // An async deflation can race after the inflate() call and before we
-    // can update the ObjectMonitor's header with the hash value below.
-    monitor = inflate(current, obj, inflate_cause_hash_code);
+    // There's no need to inflate if the mark has already got a monitor.
+    // NOTE: an async deflation can race after we get the monitor and
+    // before we can update the ObjectMonitor's header with the hash
+    // value below.
+    monitor = mark.has_monitor() ? mark.monitor() : inflate(current, obj, inflate_cause_hash_code);
     // Load ObjectMonitor's header/dmw field and see if it has a hash.
     mark = monitor->header();
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());

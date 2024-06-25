@@ -30,6 +30,12 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "opto/optoreg.hpp"
+
+class BarrierStubC2;
+class Node;
+#endif // COMPILER2
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
@@ -38,11 +44,6 @@ enum class NMethodPatchingType {
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
-private:
-  void incr_allocated_bytes(MacroAssembler* masm,
-                            Register var_size_in_bytes, int con_size_in_bytes,
-                            Register t1 = noreg);
-
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
@@ -129,6 +130,54 @@ public:
   static address patching_epoch_addr();
   static void clear_patching_epoch();
   static void increment_patching_epoch();
+
+#ifdef COMPILER2
+  OptoReg::Name encode_float_vector_register_size(const Node* node,
+                                                  OptoReg::Name opto_reg);
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
+
+#ifdef COMPILER2
+
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ blr(...);
+//   ..
+// }
+class SaveLiveRegisters {
+private:
+  struct RegisterData {
+    VMReg _reg;
+    int   _slots; // slots occupied once pushed into stack
+
+    // Used by GrowableArray::find()
+    bool operator == (const RegisterData& other) {
+      return _reg == other._reg;
+    }
+  };
+
+  MacroAssembler* const _masm;
+  RegSet                _gp_regs;
+  FloatRegSet           _fp_regs;
+  FloatRegSet           _neon_regs;
+  FloatRegSet           _sve_regs;
+  PRegSet               _p_regs;
+
+  static enum RC rc_class(VMReg reg);
+  static bool is_same_register(VMReg reg1, VMReg reg2);
+  static int decode_float_vector_register_size(OptoReg::Name opto_reg);
+
+public:
+  void initialize(BarrierStubC2* stub);
+  SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub);
+  ~SaveLiveRegisters();
+};
+
+#endif // COMPILER2
 
 #endif // CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP

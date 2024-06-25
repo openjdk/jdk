@@ -191,7 +191,7 @@ inline int StackChunkFrameStream<frame_kind>::stack_argsize() const {
   assert(cb() != nullptr, "");
   assert(cb()->is_nmethod(), "");
   assert(cb()->as_nmethod()->method() != nullptr, "");
-  return (cb()->as_nmethod()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 template <ChunkFrames frame_kind>

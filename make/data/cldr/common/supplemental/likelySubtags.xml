@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2023 Unicode, Inc.
+Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <!--
@@ -1650,7 +1650,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Zulu; ?; ? } => { Zulu; Latin; South Africa }-->
 		<likelySubtag from="zza" to="zza_Latn_TR"/>
 		<!--{ Zaza; ?; ? } => { Zaza; Latin; Türkiye }-->
-		
+
 		<!-- Retain und and und+macroregions that are in CLDR locales, except those mapping to en anyway  -->
 		<likelySubtag from="und" to="en_Latn_US"/>
 		<likelySubtag from="und_Latn" to="en_Latn_US"/>
@@ -1658,9 +1658,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_419" to="es_Latn_419"/>
 
 		<!--{ ?; ?; ? } => { English; Latin; United States }-->
-		
+
 		<!-- Added und_* so that all regions were handled -->
-		
+
 		<likelySubtag from="und_AC" to="en_Latn_AC"/>
 		<likelySubtag from="und_AG" to="en_Latn_AG"/>
 		<likelySubtag from="und_AI" to="en_Latn_AI"/>
@@ -1724,9 +1724,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_VI" to="en_Latn_VI"/>
 		<likelySubtag from="und_ZA" to="en_Latn_ZA"/>
 		<likelySubtag from="und_ZM" to="bem_Latn_ZM"/>
-		
+
 		<!-- Add und_script_region where the fallback from und_script would fail -->
-		
+
 		<likelySubtag from="und_Arab_AF" to="fa_Arab_AF"/>
 		<likelySubtag from="und_Arab_IR" to="fa_Arab_IR"/>
 		<likelySubtag from="und_Cyrl_BG" to="bg_Cyrl_BG"/>
@@ -1872,9 +1872,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_WS" to="sm_Latn_WS"/>
 		<likelySubtag from="und_Latn_XK" to="sq_Latn_XK"/>
 		<likelySubtag from="und_Latn_YT" to="fr_Latn_YT"/>
-		<likelySubtag from="und_Latn_ZW" to="sn_Latn_ZW"/>		
+		<likelySubtag from="und_Latn_ZW" to="sn_Latn_ZW"/>
 		<likelySubtag from="und_Tibt_BT" to="dz_Tibt_BT"/>
-		
+
 		<likelySubtag from="und_AD" to="ca_Latn_AD"/>
 		<!--{ ?; ?; Andorra } => { Catalan; Latin; Andorra }-->
 		<likelySubtag from="und_AE" to="ar_Arab_AE"/>
@@ -2880,7 +2880,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="aja" to="aja_Latn_SS" origin="sil1"/>	<!-- Aja [South Sudan] ➡︎ Aja [South Sudan] (Latin, South Sudan) -->
 		<likelySubtag from="aji" to="aji_Latn_NC" origin="sil1"/>	<!-- Ajië ➡︎ Ajië (Latin, New Caledonia) -->
 		<likelySubtag from="ajn" to="ajn_Latn_AU" origin="sil1"/>	<!-- Andajin ➡︎ Andajin (Latin, Australia) -->
-		<likelySubtag from="ajp" to="ajp_Arab_JO" origin="sil1"/>	<!-- South Levantine Arabic ➡︎ South Levantine Arabic (Arabic, Jordan) -->
 		<likelySubtag from="ajw" to="ajw_Latn_NG" origin="sil1"/>	<!-- Ajawa ➡︎ Ajawa (Latin, Nigeria) -->
 		<likelySubtag from="ajz" to="ajz_Latn_IN" origin="sil1"/>	<!-- Amri Karbi ➡︎ Amri Karbi (Latin, India) -->
 		<likelySubtag from="akb" to="akb_Latn_ID" origin="sil1"/>	<!-- Batak Angkola ➡︎ Batak Angkola (Latin, Indonesia) -->
@@ -5043,7 +5042,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kgj" to="kgj_Deva_NP" origin="sil1"/>	<!-- Gamale Kham ➡︎ Gamale Kham (Devanagari, Nepal) -->
 		<likelySubtag from="kgk" to="kgk_Latn_BR" origin="sil1"/>	<!-- Kaiwá ➡︎ Kaiwá (Latin, Brazil) -->
 		<likelySubtag from="kgl" to="kgl_Latn_AU" origin="sil1"/>	<!-- Kunggari ➡︎ Kunggari (Latin, Australia) -->
-		<likelySubtag from="kgm" to="kgm_Latn_BR" origin="sil1"/>	<!-- Karipúna ➡︎ Karipúna (Latin, Brazil) -->
 		<likelySubtag from="kgo" to="kgo_Latn_SD" origin="sil1"/>	<!-- Krongo ➡︎ Krongo (Latin, Sudan) -->
 		<likelySubtag from="kgq" to="kgq_Latn_ID" origin="sil1"/>	<!-- Kamoro ➡︎ Kamoro (Latin, Indonesia) -->
 		<likelySubtag from="kgr" to="kgr_Latn_ID" origin="sil1"/>	<!-- Abun ➡︎ Abun (Latin, Indonesia) -->
@@ -5267,7 +5265,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="krx" to="krx_Latn_SN" origin="sil1"/>	<!-- Karon ➡︎ Karon (Latin, Senegal) -->
 		<likelySubtag from="kry" to="kry_Latn_AZ" origin="sil1"/>	<!-- Kryts ➡︎ Kryts (Latin, Azerbaijan) -->
 		<likelySubtag from="krz" to="krz_Latn_ID" origin="sil1"/>	<!-- Sota Kanum ➡︎ Sota Kanum (Latin, Indonesia) -->
-		<likelySubtag from="ksa" to="ksa_Latn_NG" origin="sil1"/>	<!-- Shuwa-Zamani ➡︎ Shuwa-Zamani (Latin, Nigeria) -->
 		<likelySubtag from="ksc" to="ksc_Latn_PH" origin="sil1"/>	<!-- Southern Kalinga ➡︎ Southern Kalinga (Latin, Philippines) -->
 		<likelySubtag from="kse" to="kse_Latn_PG" origin="sil1"/>	<!-- Kuni ➡︎ Kuni (Latin, Papua New Guinea) -->
 		<likelySubtag from="ksg" to="ksg_Latn_SB" origin="sil1"/>	<!-- Kusaghe ➡︎ Kusaghe (Latin, Solomon Islands) -->
@@ -6467,7 +6464,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="noi" to="noi_Deva_IN" origin="sil1"/>	<!-- Noiri ➡︎ Noiri (Devanagari, India) -->
 		<likelySubtag from="noj" to="noj_Latn_CO" origin="sil1"/>	<!-- Nonuya ➡︎ Nonuya (Latin, Colombia) -->
 		<likelySubtag from="nok" to="nok_Latn_US" origin="sil1"/>	<!-- Nooksack ➡︎ Nooksack (Latin, United States) -->
-		<likelySubtag from="nom" to="nom_Latn_PE" origin="sil1"/>	<!-- Nocamán ➡︎ Nocamán (Latin, Peru) -->
 		<likelySubtag from="noq" to="noq_Latn_CD" origin="sil1"/>	<!-- Ngongo ➡︎ Ngongo (Latin, Congo - Kinshasa) -->
 		<likelySubtag from="nos" to="nos_Yiii_CN" origin="sil1"/>	<!-- Eastern Nisu ➡︎ Eastern Nisu (Yi, China) -->
 		<likelySubtag from="not" to="not_Latn_PE" origin="sil1"/>	<!-- Nomatsiguenga ➡︎ Nomatsiguenga (Latin, Peru) -->
@@ -6872,7 +6868,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ple" to="ple_Latn_ID" origin="sil1"/>	<!-- Palu'e ➡︎ Palu'e (Latin, Indonesia) -->
 		<likelySubtag from="plg" to="plg_Latn_AR" origin="sil1"/>	<!-- Pilagá ➡︎ Pilagá (Latin, Argentina) -->
 		<likelySubtag from="plh" to="plh_Latn_ID" origin="sil1"/>	<!-- Paulohi ➡︎ Paulohi (Latin, Indonesia) -->
-		<likelySubtag from="plj" to="plj_Latn_NG" origin="sil1"/>	<!-- Polci ➡︎ Polci (Latin, Nigeria) -->
 		<likelySubtag from="plk" to="plk_Arab_PK" origin="sil1"/>	<!-- Kohistani Shina ➡︎ Kohistani Shina (Arabic, Pakistan) -->
 		<likelySubtag from="pll" to="pll_Mymr_MM" origin="sil1"/>	<!-- Shwe Palaung ➡︎ Shwe Palaung (Myanmar, Myanmar [Burma]) -->
 		<likelySubtag from="pln" to="pln_Latn_CO" origin="sil1"/>	<!-- Palenquero ➡︎ Palenquero (Latin, Colombia) -->
@@ -6956,7 +6951,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="prk" to="prk_Latn_MM" origin="sil1"/>	<!-- Parauk ➡︎ Parauk (Latin, Myanmar [Burma]) -->
 		<likelySubtag from="prm" to="prm_Latn_PG" origin="sil1"/>	<!-- Kibiri ➡︎ Kibiri (Latin, Papua New Guinea) -->
 		<likelySubtag from="pro" to="pro_Latn_FR" origin="sil1"/>	<!-- Old Provençal ➡︎ Old Provençal (Latin, France) -->
-		<likelySubtag from="prp" to="prp_Gujr_IN" origin="sil1"/>	<!-- Parsi ➡︎ Parsi (Gujarati, India) -->
 		<likelySubtag from="prq" to="prq_Latn_PE" origin="sil1"/>	<!-- Ashéninka Perené ➡︎ Ashéninka Perené (Latin, Peru) -->
 		<likelySubtag from="prr" to="prr_Latn_BR" origin="sil1"/>	<!-- Puri ➡︎ Puri (Latin, Brazil) -->
 		<likelySubtag from="prt" to="prt_Thai_TH" origin="sil1"/>	<!-- Phai ➡︎ Phai (Thai, Thailand) -->
@@ -7015,6 +7009,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="pyu_Hani" to="pyu_Hani_TW" origin="sil1"/>	<!-- Puyuma (Han) ➡︎ Puyuma (Han, Taiwan) -->
 		<likelySubtag from="pyx" to="pyx_Mymr_MM" origin="sil1"/>	<!-- Pyu [Myanmar] ➡︎ Pyu [Myanmar] (Myanmar, Myanmar [Burma]) -->
 		<likelySubtag from="pyy" to="pyy_Latn_MM" origin="sil1"/>	<!-- Pyen ➡︎ Pyen (Latin, Myanmar [Burma]) -->
+		<likelySubtag from="pze" to="pze_Latn_NG" origin="sil1"/>	<!-- Pesse ➡︎ Pesse (Latin, Nigeria) -->
 		<likelySubtag from="pzh" to="pzh_Latn_TW" origin="sil1"/>	<!-- Pazeh ➡︎ Pazeh (Latin, Taiwan) -->
 		<likelySubtag from="pzn" to="pzn_Latn_MM" origin="sil1"/>	<!-- Jejara Naga ➡︎ Jejara Naga (Latin, Myanmar [Burma]) -->
 		<likelySubtag from="qua" to="qua_Latn_US" origin="sil1"/>	<!-- Quapaw ➡︎ Quapaw (Latin, United States) -->
@@ -7164,6 +7159,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="rri" to="rri_Latn_SB" origin="sil1"/>	<!-- Ririo ➡︎ Ririo (Latin, Solomon Islands) -->
 		<likelySubtag from="rrt" to="rrt_Latn_AU" origin="sil1"/>	<!-- Arritinngithigh ➡︎ Arritinngithigh (Latin, Australia) -->
 		<likelySubtag from="rsk" to="rsk_Cyrl_RS" origin="sil1"/>	<!-- Ruthenian ➡︎ Ruthenian (Cyrillic, Serbia) -->
+		<likelySubtag from="rsw" to="rsw_Latn_NG" origin="sil1"/>	<!-- Rishiwa ➡︎ Rishiwa (Latin, Nigeria) -->
 		<likelySubtag from="rtc" to="rtc_Latn_MM" origin="sil1"/>	<!-- Rungtu Chin ➡︎ Rungtu Chin (Latin, Myanmar [Burma]) -->
 		<likelySubtag from="rth" to="rth_Latn_ID" origin="sil1"/>	<!-- Ratahan ➡︎ Ratahan (Latin, Indonesia) -->
 		<likelySubtag from="rtw" to="rtw_Deva_IN" origin="sil1"/>	<!-- Rathawi ➡︎ Rathawi (Devanagari, India) -->
@@ -7372,7 +7368,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="slm" to="slm_Latn_PH" origin="sil1"/>	<!-- Pangutaran Sama ➡︎ Pangutaran Sama (Latin, Philippines) -->
 		<likelySubtag from="sln" to="sln_Latn_US" origin="sil1"/>	<!-- Salinan ➡︎ Salinan (Latin, United States) -->
 		<likelySubtag from="slp" to="slp_Latn_ID" origin="sil1"/>	<!-- Lamaholot ➡︎ Lamaholot (Latin, Indonesia) -->
-		<likelySubtag from="slq" to="slq_Arab_IR" origin="sil1"/>	<!-- Salchuq ➡︎ Salchuq (Arabic, Iran) -->
 		<likelySubtag from="slr" to="slr_Latn_CN" origin="sil1"/>	<!-- Salar ➡︎ Salar (Latin, China) -->
 		<likelySubtag from="slu" to="slu_Latn_ID" origin="sil1"/>	<!-- Selaru ➡︎ Selaru (Latin, Indonesia) -->
 		<likelySubtag from="slw" to="slw_Latn_PG" origin="sil1"/>	<!-- Sialum ➡︎ Sialum (Latin, Papua New Guinea) -->
@@ -7562,7 +7557,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="sza" to="sza_Latn_MY" origin="sil1"/>	<!-- Semelai ➡︎ Semelai (Latin, Malaysia) -->
 		<likelySubtag from="szb" to="szb_Latn_ID" origin="sil1"/>	<!-- Ngalum ➡︎ Ngalum (Latin, Indonesia) -->
 		<likelySubtag from="szc" to="szc_Latn_MY" origin="sil1"/>	<!-- Semaq Beri ➡︎ Semaq Beri (Latin, Malaysia) -->
-		<likelySubtag from="szd" to="szd_Latn_MY" origin="sil1"/>	<!-- Seru ➡︎ Seru (Latin, Malaysia) -->
 		<likelySubtag from="szg" to="szg_Latn_CD" origin="sil1"/>	<!-- Sengele ➡︎ Sengele (Latin, Congo - Kinshasa) -->
 		<likelySubtag from="szn" to="szn_Latn_ID" origin="sil1"/>	<!-- Sula ➡︎ Sula (Latin, Indonesia) -->
 		<likelySubtag from="szp" to="szp_Latn_ID" origin="sil1"/>	<!-- Suabo ➡︎ Suabo (Latin, Indonesia) -->
@@ -7775,7 +7769,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="tmg" to="tmg_Latn_ID" origin="sil1"/>	<!-- Ternateño ➡︎ Ternateño (Latin, Indonesia) -->
 		<likelySubtag from="tmi" to="tmi_Latn_VU" origin="sil1"/>	<!-- Tutuba ➡︎ Tutuba (Latin, Vanuatu) -->
 		<likelySubtag from="tmj" to="tmj_Latn_ID" origin="sil1"/>	<!-- Samarokena ➡︎ Samarokena (Latin, Indonesia) -->
-		<likelySubtag from="tmk" to="tmk_Deva_NP" origin="sil1"/>	<!-- Northwestern Tamang ➡︎ Northwestern Tamang (Devanagari, Nepal) -->
 		<likelySubtag from="tml" to="tml_Latn_ID" origin="sil1"/>	<!-- Tamnim Citak ➡︎ Tamnim Citak (Latin, Indonesia) -->
 		<likelySubtag from="tmm" to="tmm_Latn_VN" origin="sil1"/>	<!-- Tai Thanh ➡︎ Tai Thanh (Latin, Vietnam) -->
 		<likelySubtag from="tmn" to="tmn_Latn_ID" origin="sil1"/>	<!-- Taman [Indonesia] ➡︎ Taman [Indonesia] (Latin, Indonesia) -->
@@ -7919,6 +7912,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="tuz" to="tuz_Latn_BF" origin="sil1"/>	<!-- Turka ➡︎ Turka (Latin, Burkina Faso) -->
 		<likelySubtag from="tva" to="tva_Latn_SB" origin="sil1"/>	<!-- Vaghua ➡︎ Vaghua (Latin, Solomon Islands) -->
 		<likelySubtag from="tve" to="tve_Latn_ID" origin="sil1"/>	<!-- Te'un ➡︎ Te'un (Latin, Indonesia) -->
+		<likelySubtag from="tvi" to="tvi_Latn_NG" origin="sil1"/>	<!-- Tulai ➡︎ Tulai (Latin, Nigeria) -->
 		<likelySubtag from="tvk" to="tvk_Latn_VU" origin="sil1"/>	<!-- Southeast Ambrym ➡︎ Southeast Ambrym (Latin, Vanuatu) -->
 		<likelySubtag from="tvm" to="tvm_Latn_ID" origin="sil1"/>	<!-- Tela-Masbuar ➡︎ Tela-Masbuar (Latin, Indonesia) -->
 		<likelySubtag from="tvn" to="tvn_Mymr_MM" origin="sil1"/>	<!-- Tavoyan ➡︎ Tavoyan (Myanmar, Myanmar [Burma]) -->
@@ -8483,7 +8477,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="xsn" to="xsn_Latn_NG" origin="sil1"/>	<!-- Sanga [Nigeria] ➡︎ Sanga [Nigeria] (Latin, Nigeria) -->
 		<likelySubtag from="xsp" to="xsp_Latn_PG" origin="sil1"/>	<!-- Silopi ➡︎ Silopi (Latin, Papua New Guinea) -->
 		<likelySubtag from="xsq" to="xsq_Latn_MZ" origin="sil1"/>	<!-- Makhuwa-Saka ➡︎ Makhuwa-Saka (Latin, Mozambique) -->
-		<likelySubtag from="xss" to="xss_Cyrl_RU" origin="sil1"/>	<!-- Assan ➡︎ Assan (Cyrillic, Russia) -->
 		<likelySubtag from="xsu" to="xsu_Latn_VE" origin="sil1"/>	<!-- Sanumá ➡︎ Sanumá (Latin, Venezuela) -->
 		<likelySubtag from="xsy" to="xsy_Latn_TW" origin="sil1"/>	<!-- Saisiyat ➡︎ Saisiyat (Latin, Taiwan) -->
 		<likelySubtag from="xta" to="xta_Latn_MX" origin="sil1"/>	<!-- Alcozauca Mixtec ➡︎ Alcozauca Mixtec (Latin, Mexico) -->
@@ -8747,7 +8740,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ziw" to="ziw_Latn_TZ" origin="sil1"/>	<!-- Zigula ➡︎ Zigula (Latin, Tanzania) -->
 		<likelySubtag from="ziz" to="ziz_Latn_NG" origin="sil1"/>	<!-- Zizilivakan ➡︎ Zizilivakan (Latin, Nigeria) -->
 		<likelySubtag from="zka" to="zka_Latn_ID" origin="sil1"/>	<!-- Kaimbulawa ➡︎ Kaimbulawa (Latin, Indonesia) -->
-		<likelySubtag from="zkb" to="zkb_Cyrl_RU" origin="sil1"/>	<!-- Koibal ➡︎ Koibal (Cyrillic, Russia) -->
 		<likelySubtag from="zkd" to="zkd_Latn_MM" origin="sil1"/>	<!-- Kadu ➡︎ Kadu (Latin, Myanmar [Burma]) -->
 		<likelySubtag from="zko" to="zko_Cyrl_RU" origin="sil1"/>	<!-- Kott ➡︎ Kott (Cyrillic, Russia) -->
 		<likelySubtag from="zkp" to="zkp_Latn_BR" origin="sil1"/>	<!-- São Paulo Kaingáng ➡︎ São Paulo Kaingáng (Latin, Brazil) -->
@@ -8841,7 +8833,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ztu" to="ztu_Latn_MX" origin="sil1"/>	<!-- Güilá Zapotec ➡︎ Güilá Zapotec (Latin, Mexico) -->
 		<likelySubtag from="ztx" to="ztx_Latn_MX" origin="sil1"/>	<!-- Zaachila Zapotec ➡︎ Zaachila Zapotec (Latin, Mexico) -->
 		<likelySubtag from="zty" to="zty_Latn_MX" origin="sil1"/>	<!-- Yatee Zapotec ➡︎ Yatee Zapotec (Latin, Mexico) -->
-		<likelySubtag from="zua" to="zua_Latn_NG" origin="sil1"/>	<!-- Zeem ➡︎ Zeem (Latin, Nigeria) -->
 		<likelySubtag from="zuh" to="zuh_Latn_PG" origin="sil1"/>	<!-- Tokano ➡︎ Tokano (Latin, Papua New Guinea) -->
 		<likelySubtag from="zum" to="zum_Arab_OM" origin="sil1"/>	<!-- Kumzari ➡︎ Kumzari (Arabic, Oman) -->
 		<likelySubtag from="zun" to="zun_Latn_US" origin="sil1"/>	<!-- Zuni ➡︎ Zuni (Latin, United States) -->

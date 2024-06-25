@@ -371,7 +371,6 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     head(PROPERTIES_ELEMENT);
 
     Node *node = n;
-#ifndef PRODUCT
     Compile::current()->_in_dump_cnt++;
     print_prop(NODE_NAME_PROPERTY, (const char *)node->Name());
     print_prop("idx", node->_idx);
@@ -609,23 +608,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       }
     }
 
-    if (caller != nullptr) {
-      stringStream bciStream;
-      ciMethod* last = nullptr;
-      int last_bci;
-      while(caller) {
-        if (caller->has_method()) {
-          last = caller->method();
-          last_bci = caller->bci();
-        }
-        bciStream.print("%d ", caller->bci());
-        caller = caller->caller();
-      }
-      print_prop("bci", bciStream.freeze());
-      if (last != nullptr && last->has_linenumber_table() && last_bci >= 0) {
-        print_prop("line", last->line_number_from_bci(last_bci));
-      }
-    }
+    print_bci_and_line_number(caller);
 
 #ifdef ASSERT
     if (node->debug_orig() != nullptr) {
@@ -647,10 +630,38 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     }
 
     Compile::current()->_in_dump_cnt--;
-#endif
 
     tail(PROPERTIES_ELEMENT);
     tail(NODE_ELEMENT);
+  }
+}
+
+void IdealGraphPrinter::print_bci_and_line_number(JVMState* caller) {
+  if (caller != nullptr) {
+    ResourceMark rm;
+    stringStream bciStream;
+    stringStream lineStream;
+
+    // Print line and bci numbers for the callee and all entries in the call stack until we reach the root method.
+    while (caller) {
+      const int bci = caller->bci();
+      bool appended_line = false;
+      if (caller->has_method()) {
+        ciMethod* method = caller->method();
+        if (method->has_linenumber_table() && bci >= 0) {
+          lineStream.print("%d ", method->line_number_from_bci(bci));
+          appended_line = true;
+        }
+      }
+      if (!appended_line) {
+        lineStream.print("%s ", "_");
+      }
+      bciStream.print("%d ", bci);
+      caller = caller->caller();
+    }
+
+    print_prop("bci", bciStream.freeze());
+    print_prop("line", lineStream.freeze());
   }
 }
 

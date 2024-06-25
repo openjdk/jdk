@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -951,7 +951,6 @@ private:
                                                  Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
                                                  Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
-  static bool subgraph_has_opaque(Node* n);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
@@ -1012,8 +1011,10 @@ public:
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
   }
-  // true if CFG node d dominates CFG node n
-  bool is_dominator(Node *d, Node *n);
+
+  bool is_dominator(Node* dominator, Node* n);
+  bool is_strict_dominator(Node* dominator, Node* n);
+
   // return get_ctrl for a data node and self(n) for a CFG node
   Node* ctrl_or_self(Node* n) {
     if (has_ctrl(n))
@@ -1338,7 +1339,7 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+  IfTrueNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
                                           Deoptimization::DeoptReason reason, int opcode,
                                           bool rewire_uncommon_proj_phi_inputs = false);
 
@@ -1361,7 +1362,7 @@ public:
   }
 
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
+  BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
                          jint stride, Node* range, bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
@@ -1376,12 +1377,14 @@ public:
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+                                                        Node* offset, Node* limit, int stride_con, Node* value,
+                                                        bool is_template);
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1460,7 +1463,7 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
-  // Move UnorderedReduction out of loop if possible
+  // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
@@ -1533,6 +1536,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -1759,14 +1763,12 @@ public:
 
   void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
 
-  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-
-  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
-
-  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
-
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 
+  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
+  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_template_assertion_predicate_expression_down(Node* node);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 

@@ -36,6 +36,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -1062,7 +1063,7 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(enum CompileCommand option) {
+bool ciMethod::has_option(CompileCommandEnum option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
@@ -1072,7 +1073,7 @@ bool ciMethod::has_option(enum CompileCommand option) {
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
+bool ciMethod::has_option_value(CompileCommandEnum option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());

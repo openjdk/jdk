@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
 #endif
 
 InstanceStackChunkKlass::InstanceStackChunkKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
@@ -250,8 +250,8 @@ void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, o
   st->print_cr("       barriers: %d gc_mode: %d bitmap: %d parent: " PTR_FORMAT,
                c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i(c->parent()));
   st->print_cr("       flags mixed: %d", c->has_mixed_frames());
-  st->print_cr("       size: %d argsize: %d max_size: %d sp: %d pc: " PTR_FORMAT,
-               c->stack_size(), c->argsize(), c->max_thawing_size(), c->sp(), p2i(c->pc()));
+  st->print_cr("       size: %d bottom: %d max_size: %d sp: %d pc: " PTR_FORMAT,
+               c->stack_size(), c->bottom(), c->max_thawing_size(), c->sp(), p2i(c->pc()));
 
   if (verbose) {
     st->cr();

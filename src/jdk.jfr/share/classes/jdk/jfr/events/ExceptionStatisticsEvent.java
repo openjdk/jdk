@@ -31,14 +31,15 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ExceptionStatistics")
 @Label("Exception Statistics")
 @Category({ "Java Application", "Statistics" })
 @Description("Number of objects derived from java.lang.Throwable that have been created")
-@MirrorEvent(className = "jdk.internal.event.ExceptionStatisticsEvent")
-public final class ExceptionStatisticsEvent extends AbstractPeriodicEvent {
+@RemoveFields({"duration", "eventThread", "stackTrace"})
+public final class ExceptionStatisticsEvent extends MirrorEvent {
 
     @Label("Exceptions Created")
     public long throwables;

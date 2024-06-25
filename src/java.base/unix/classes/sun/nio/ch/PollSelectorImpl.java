@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,11 @@ class PollSelectorImpl extends SelectorImpl {
             int numPolled;
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                long comp = Blocker.begin();
+                boolean attempted = Blocker.begin(blocking);
                 try {
                     numPolled = poll(pollArray.address(), pollArraySize, to);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
                 if (numPolled == IOStatus.INTERRUPTED && timedPoll) {
                     // timed poll interrupted so need to adjust timeout

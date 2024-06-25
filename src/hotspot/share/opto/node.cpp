@@ -610,7 +610,7 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (Opcode() == Op_Opaque4) {
+  if (is_Opaque4()) {
     compile->remove_template_assertion_predicate_opaq(this);
   }
   if (is_ParsePredicate()) {
@@ -3011,7 +3011,7 @@ uint TypeNode::hash() const {
   return Node::hash() + _type->hash();
 }
 bool TypeNode::cmp(const Node& n) const {
-  return !Type::cmp(_type, ((TypeNode&)n)._type);
+  return Type::equals(_type, n.as_Type()->_type);
 }
 const Type* TypeNode::bottom_type() const { return _type; }
 const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }

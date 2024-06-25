@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1263,7 +1263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ordine de sortare după cartea de telefon</type>
 			<type key="collation" type="phonetic">ordine de sortare fonetică</type>
 			<type key="collation" type="pinyin">ordine de sortare pinyin</type>
-			<type key="collation" type="reformed">ordine de sortare reformată</type>
 			<type key="collation" type="search">căutare cu scop general</type>
 			<type key="collation" type="searchjl" draft="contributed">Căutați în funcție de consoana inițială hangul</type>
 			<type key="collation" type="standard">ordine de sortare standard</type>
@@ -2876,9 +2875,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Ora din {0}</regionFormat>
 			<regionFormat type="daylight">Ora de vară din {0}</regionFormat>
 			<regionFormat type="standard">Ora standard din {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Timpul universal coordonat</standard>
@@ -2898,9 +2894,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Viena</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
 				<exemplarCity>Dacca</exemplarCity>
@@ -3138,14 +3131,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ashgabat">
 				<exemplarCity>Așgabat</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporoje</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -3731,11 +3718,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ora de vară din Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora din Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ora din Magadan</generic>
@@ -3773,13 +3755,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Ora din Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ora Mexicului de nord-vest</generic>
-					<standard>Ora standard a Mexicului de nord-vest</standard>
-					<daylight>Ora de vară a Mexicului de nord-vest</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

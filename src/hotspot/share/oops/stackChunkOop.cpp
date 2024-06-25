@@ -533,12 +533,12 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert(oopDesc::is_oop(this), "");
 
   assert(stack_size() >= 0, "");
-  assert(argsize() >= 0, "");
   assert(!has_bitmap() || is_gc_mode(), "");
 
   if (is_empty()) {
-    assert(argsize() == 0, "");
     assert(max_thawing_size() == 0, "");
+  } else {
+    assert(argsize() >= 0, "");
   }
 
   assert(oopDesc::is_oop_or_null(parent()), "");
@@ -547,7 +547,7 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
 
   // If argsize == 0 and the chunk isn't mixed, the chunk contains the metadata (pc, fp -- frame::sender_sp_offset)
   // for the top frame (below sp), and *not* for the bottom frame.
-  int size = stack_size() - argsize() - sp();
+  int size = bottom() - sp();
   assert(size >= 0, "");
   assert((size == 0) == is_empty(), "");
 
@@ -562,20 +562,23 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert(!is_empty() || closure._cb == nullptr, "");
   if (closure._cb != nullptr && closure._cb->is_nmethod()) {
     assert(argsize() ==
-      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
       "chunk argsize: %d bottom frame argsize: %d", argsize(),
-      (closure._cb->as_nmethod()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
   }
 
   assert(closure._num_interpreted_frames == 0 || has_mixed_frames(), "");
 
   if (!concurrent) {
-    assert(closure._size <= size + argsize() + frame::metadata_words,
-           "size: %d argsize: %d closure.size: %d end sp: " PTR_FORMAT " start sp: %d chunk size: %d",
-           size, argsize(), closure._size, closure._sp - start_address(), sp(), stack_size());
-    assert(argsize() == closure._argsize - (closure._num_frames > 0 ? frame::metadata_words_at_top : 0),
-           "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
-           argsize(), closure._argsize, closure._callee_interpreted);
+    assert(closure._size <= size + (stack_size() - bottom()),
+           "size: %d bottom: %d closure.size: %d end sp: " PTR_FORMAT " start sp: %d chunk size: %d",
+           size, bottom(), closure._size, closure._sp - start_address(), sp(), stack_size());
+    if (closure._num_frames > 0) {
+      assert(closure._argsize >= frame::metadata_words_at_top, "should be set up");
+      assert(argsize() == closure._argsize - frame::metadata_words_at_top,
+             "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
+             argsize(), closure._argsize, closure._callee_interpreted);
+    }
 
     int calculated_max_size = closure._size
                               + closure._num_i2c * frame::align_wiggle

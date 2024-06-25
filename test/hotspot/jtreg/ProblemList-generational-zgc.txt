@@ -106,6 +106,7 @@ serviceability/sa/jmap-hprof/JMapHProfLargeHeapProc.java      8307393   generic-
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbAttachToDebugServer.java     8307393   generic-all
 serviceability/sa/sadebugd/ClhsdbTestConnectArgument.java     8307393   generic-all
+serviceability/sa/ClhsdbTestAllocationMerge.java              8307393   generic-all
 serviceability/sa/sadebugd/DebugdConnectTest.java             8307393   generic-all
 serviceability/sa/sadebugd/DebugdUtils.java                   8307393   generic-all
 serviceability/sa/sadebugd/DisableRegistryTest.java           8307393   generic-all
@@ -115,5 +116,4 @@ serviceability/sa/sadebugd/SADebugDTest.java                  8307393   generic-
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
 vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64

@@ -244,14 +244,11 @@ static
 struct dir_stats_struct {
   int chunks_queried;
   int chunks_shared;
-  int chunks_reshared;
   int chunks_elided;
 
   void print() {
-    tty->print_cr("Debug Data Chunks: %d, shared %d+%d, non-SP's elided %d",
-                  chunks_queried,
-                  chunks_shared, chunks_reshared,
-                  chunks_elided);
+    tty->print_cr("Debug Data Chunks: %d, shared %d, non-SP's elided %d",
+                  chunks_queried, chunks_shared, chunks_elided);
   }
 } dir_stats;
 #endif //PRODUCT
