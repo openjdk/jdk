@@ -53,30 +53,28 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
       // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
       ctr--;
-    } else {
-      if (ALLOW_BLOCK) {
-        ThreadBlockInVM block(java_thread);
-        if (SafepointSynchronize::is_synchronizing()) {
-          // If safepoint is pending, we want to block and allow safepoint to proceed.
-          // Normally, TBIVM above would block us in its destructor.
-          //
-          // But that blocking only happens when TBIVM knows the thread poll is armed.
-          // There is a window between announcing a safepoint and arming the thread poll
-          // during which trying to continuously enter TBIVM is counter-productive.
-          // Under high contention, we may end up going in circles thousands of times.
-          // To avoid it, we wait here until local poll is armed and then proceed
-          // to TBVIM exit for blocking. We do not SpinPause, but yield to let
-          // VM thread to arm the poll sooner.
-          while (SafepointSynchronize::is_synchronizing() &&
-                 !SafepointMechanism::local_poll_armed(java_thread)) {
-            os::naked_yield();
-          }
-        } else {
+    } else if (ALLOW_BLOCK) {
+      ThreadBlockInVM block(java_thread);
+      if (SafepointSynchronize::is_synchronizing()) {
+        // If safepoint is pending, we want to block and allow safepoint to proceed.
+        // Normally, TBIVM above would block us in its destructor.
+        //
+        // But that blocking only happens when TBIVM knows the thread poll is armed.
+        // There is a window between announcing a safepoint and arming the thread poll
+        // during which trying to continuously enter TBIVM is counter-productive.
+        // Under high contention, we may end up going in circles thousands of times.
+        // To avoid it, we wait here until local poll is armed and then proceed
+        // to TBVIM exit for blocking. We do not SpinPause, but yield to let
+        // VM thread to arm the poll sooner.
+        while (SafepointSynchronize::is_synchronizing() &&
+               !SafepointMechanism::local_poll_armed(java_thread)) {
           os::naked_yield();
         }
       } else {
         os::naked_yield();
       }
+    } else {
+      os::naked_yield();
     }
   }
 }
