@@ -342,6 +342,27 @@ long MacroAssembler::get_const(address a) {
   }
   return (long) x;
 }
+// Branch-free implementation to convert !0 to false
+// Set register dst to true if dst is non zero using temp for calculations on Power Version<10.
+// Set register dst to true if dst is non zero for Power 10 and above machines.
+void MacroAssembler::normalize_bool(Register dst, Register temp, bool use_64bit) {
+ 
+  if (VM_Version::has_brw()) {
+    if(use_64bit)
+      cmpdi(CCR0, dst, 0);
+    else
+      cmpwi(CCR0, dst, 0);
+    setbcr(dst, CCR0, Assembler::zero);
+  }
+  else {
+    neg(temp, dst);
+    orr(temp, dst, temp);
+    if(use_64bit)
+      srdi(dst, temp, 63);
+    else
+      srwi(dst, temp, 31);
+    }
+}
 
 // Patch the 64 bit constant of a `load_const' sequence. This is a low
 // level procedure. It neither flushes the instruction cache nor is it
@@ -2383,9 +2404,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   addi(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // convert !=0 to 1
-  neg(R0, result);
-  orr(result, result, R0);
-  srdi(result, result, 63);
+  normalize_bool(result,R0,true);
 
   const Register linear_result = r_array_index; // reuse
   li(linear_result, 1);

@@ -350,6 +350,7 @@ class Assembler : public AbstractAssembler {
 
     SETBC_OPCODE  = (31u << OPCODE_SHIFT | 384u << 1),
     SETNBC_OPCODE = (31u << OPCODE_SHIFT | 448u << 1),
+    SETBCR_OPCODE = (31u << OPCODE_SHIFT | 416u << 1),
 
     // condition register logic instructions
     CRAND_OPCODE  = (19u << OPCODE_SHIFT | 257u << 1),
