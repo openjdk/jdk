@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package metaspace.share;
 
-public interface MessageOutput {
-        public void start();
-        public void send(String msg);
-        public void finish();
+/**
+ * This class is used to distinguish between OOME in metaspace and OOME in heap when triggering class unloading.
+ */
+public class HeapOOMEException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public HeapOOMEException(String string) {
+        super(string);
+    }
+
 }

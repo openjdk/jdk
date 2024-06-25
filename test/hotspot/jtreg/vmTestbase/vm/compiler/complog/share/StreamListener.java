@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share;
+package vm.compiler.complog.share;
 
-import java.lang.reflect.Field;
-
-import jdk.internal.misc.Unsafe;
-
-@SuppressWarnings("restriction")
-public class UnsafeAccess {
-    public static Unsafe unsafe;
-
-    static {
-        try {
-            unsafe = Unsafe.getUnsafe();
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
-
-
+/*
+ * StreamListener listens on events from BufferedInputStream.
+ *
+ * Note: StreamListener should not never block as it potentially
+ * runs in thread that reads the input.
+ */
+public interface StreamListener {
+        public void onStart();
+        public void onRead(String line);
+        public void onFinish();
+        public void onException(Throwable e);
 }
