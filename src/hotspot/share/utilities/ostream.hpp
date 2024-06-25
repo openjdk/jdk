@@ -109,7 +109,8 @@ class outputStream : public CHeapObjBase {
    // line starts depending on the current indentation level:
    // print(), print_cr(), print_raw(), print_raw_cr()
    // Other APIs are unaffected
-   void set_autoindent(bool value) { _autoindent = value; }
+   // Returns old autoindent state.
+   bool set_autoindent(bool value);
 
    // sizing
    int position() const { return _position; }
@@ -175,15 +176,24 @@ class outputStream : public CHeapObjBase {
 extern outputStream* tty;           // tty output
 
 class streamIndentor : public StackObj {
- private:
-  outputStream* _str;
-  int _amount;
-
- public:
+  outputStream* const _str;
+  const int _amount;
+  NONCOPYABLE(streamIndentor);
+public:
   streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
     _str->inc(_amount);
   }
   ~streamIndentor() { _str->dec(_amount); }
+};
+
+class StreamAutoIndentor : public StackObj {
+  outputStream* const _os;
+  const bool _old;
+  NONCOPYABLE(StreamAutoIndentor);
+ public:
+  StreamAutoIndentor(outputStream* os) :
+    _os(os), _old(os->set_autoindent(true)) {}
+  ~StreamAutoIndentor() { _os->set_autoindent(_old); }
 };
 
 // advisory locking for the shared tty stream:

@@ -78,6 +78,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
+
 #ifndef _WINDOWS
 # include <poll.h>
 #endif
@@ -272,13 +276,6 @@ bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   return (n != -1);
 }
 
-#if !defined(LINUX) && !defined(_WINDOWS)
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  committed_start = start;
-  committed_size = size;
-  return true;
-}
-#endif
 
 // Helper for dll_locate_lib.
 // Pass buffer and printbuffer as we already printed the path to buffer
@@ -2063,6 +2060,19 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
   assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(addr) + bytes);
 }
+
+julong os::used_memory() {
+#ifdef LINUX
+  if (OSContainer::is_containerized()) {
+    jlong mem_usage = OSContainer::memory_usage_in_bytes();
+    if (mem_usage > 0) {
+      return mem_usage;
+    }
+  }
+#endif
+  return os::physical_memory() - os::available_memory();
+}
+
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
