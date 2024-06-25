@@ -2327,12 +2327,12 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
-                                        bool is_m2) {
+                                        Assembler::LMUL lmul) {
   Label loop;
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
   bind(loop);
-  vsetvli(tmp1, cnt, sew, is_m2 ? Assembler::m2 : Assembler::m4);
+  vsetvli(tmp1, cnt, sew, lmul);
   vlex_v(vr1, a1, sew);
   vlex_v(vr2, a2, sew);
   vmsne_vv(vrs, vr1, vr2);
@@ -2446,8 +2446,18 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   mv(cnt2, cnt1);
   bind(L);
 
+  // We focus on the optimization of small sized string.
+  // Please check below document for string size distribution statistics.
+  // https://cr.openjdk.org/~shade/density/string-density-report.pdf
   if (str1_isL == str2_isL) { // LL or UU
-    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, false);
+    // Below construction of v regs and lmul is based on test on 2 different boards,
+    // vlen == 128 and vlen == 256 respectively.
+    if (!str1_isL && MaxVectorSize == 16) { // UU
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
+    } else { // UU + MaxVectorSize or LL
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);
+    }
+
     j(DONE);
   } else { // LU or UL
     Register strL = encLU ? str1 : str2;
