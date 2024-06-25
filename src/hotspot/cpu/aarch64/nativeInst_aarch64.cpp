@@ -51,16 +51,13 @@ void NativeInstruction::wrote(int offset) {
 }
 
 address NativeCall::destination() const {
-  address addr = (address)this;
-  address destination = instruction_address() + displacement();
-  if (destination == addr) {
-    return destination;
-  }
+  address addr = instruction_address();
+  address destination = addr + displacement();
 
   // Do we use a trampoline stub for this call?
   CodeBlob* cb = CodeCache::find_blob(addr);
-  assert(cb && cb->is_nmethod(), "sanity");
-  nmethod *nm = (nmethod *)cb;
+  assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
+  nmethod *nm = cb->as_nmethod();
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
     // Yes we do, so get the destination from the trampoline stub.
     const address trampoline_stub_addr = destination;
@@ -106,11 +103,10 @@ address NativeCall::get_trampoline() {
   address call_addr = instruction_address();
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != nullptr, "Could not find the containing code blob");
-  if (!code->is_nmethod()) return nullptr;
+  assert(code != nullptr && code->is_nmethod(), "nmethod expected");
   nmethod* nm = code->as_nmethod();
 
-  address bl_destination = instruction_address() + displacement();
+  address bl_destination = call_addr + displacement();
   if (nm->stub_contains(bl_destination) &&
       is_NativeCallTrampolineStub_at(bl_destination))
     return bl_destination;
