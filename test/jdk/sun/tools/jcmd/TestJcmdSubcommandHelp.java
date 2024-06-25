@@ -58,10 +58,7 @@ public class TestJcmdSubcommandHelp {
         output.shouldNotContain("Unknown diagnostic command");
 
         if (!expectedOutput.equals(output.getOutput())) {
-            System.out.println("Expected output: ");
-            System.out.println(expectedOutput);
-            System.out.println("Issued output: ");
-            System.out.println(issuedOutput);
+            printDifferingOutputs(expectedOutput, issuedOutput);
             throw new Exception("Expected jcmd to accept 'help' suboption as a command argument" +
                                 " and issue the same help output.");
         }
@@ -74,5 +71,20 @@ public class TestJcmdSubcommandHelp {
         // Issue multiple suboptions along with 'help'
         output = JcmdBase.jcmd(CMD, HELP, "basic");
         output.shouldContain("Unknown argument \'" + HELP + "\' in diagnostic command.");
+
+        // Issue "help" suboption with trailing spaces
+        output = JcmdBase.jcmd(CMD, "help        ");
+        issuedOutput = output.getOutput();
+        if (!expectedOutput.equals(issuedOutput)) {
+            printDifferingOutputs(expectedOutput, issuedOutput);
+            throw new Exception("Expected jcmd to accept 'help' suboption with trailing spaces");
+        }
+    }
+
+    private static void printDifferingOutputs(String expected, String issued) {
+        System.out.println("Expected output: ");
+        System.out.println(expected);
+        System.out.println("Issued output: ");
+        System.out.println(issued);
     }
 }

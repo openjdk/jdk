@@ -423,6 +423,7 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
 void DCmd::reorder_help_cmd(CmdLine line, stringStream& updated_line) {
   updated_line.print("%s", "help ");
   updated_line.write(line.cmd_addr(), line.cmd_len());
+  updated_line.write("\0", 1);
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
