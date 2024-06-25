@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,13 @@ public class ConstantWriter extends BasicWriter {
                         tab();
                         println(() -> "// " + stringValue(info));
                     }
-                    case AnnotationConstantValueEntry info -> {
-                        println(() -> stringValue(info));
+                    case StringEntry info -> {
+                        print(() -> "#" + info.utf8().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case Utf8Entry _, ConstantValueEntry _ -> {
+                        println(() -> stringValue(cpInfo));
                     }
                     case MemberRefEntry info -> {
                         print(() -> "#" + info.owner().index() + ".#"
@@ -111,11 +116,6 @@ public class ConstantWriter extends BasicWriter {
                         print(() -> "#" + info.name().index());
                         tab();
                         println("// " + stringValue(info));
-                    }
-                    case StringEntry info -> {
-                        print(() -> "#" + info.utf8().index());
-                        tab();
-                        println(() -> "// " + stringValue(info));
                     }
                     default ->
                         throw new IllegalArgumentException("unknown entry: "+ cpInfo);

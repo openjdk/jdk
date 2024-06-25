@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,11 @@ class AnnotationTest {
             = Map.ofEntries(
             new AbstractMap.SimpleImmutableEntry<>("i", 1),
             new AbstractMap.SimpleImmutableEntry<>("j", 1L),
-            new AbstractMap.SimpleImmutableEntry<>("s", 1),
-            new AbstractMap.SimpleImmutableEntry<>("b", 1),
+            new AbstractMap.SimpleImmutableEntry<>("s", (short) 1),
+            new AbstractMap.SimpleImmutableEntry<>("b", (byte) 1),
             new AbstractMap.SimpleImmutableEntry<>("f", 1.0f),
             new AbstractMap.SimpleImmutableEntry<>("d", 1.0d),
-            new AbstractMap.SimpleImmutableEntry<>("z", 1),
+            new AbstractMap.SimpleImmutableEntry<>("z", Boolean.TRUE),
             new AbstractMap.SimpleImmutableEntry<>("c", (int) '1'),
             new AbstractMap.SimpleImmutableEntry<>("st", "1"),
             new AbstractMap.SimpleImmutableEntry<>("cl", ClassDesc.of("foo.Bar")),
@@ -107,7 +107,7 @@ class AnnotationTest {
                 case "arr":
                     assertTrue (evp.value() instanceof AnnotationValue.OfArray);
                     List<AnnotationValue> values = ((AnnotationValue.OfArray) evp.value()).values();
-                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).constant().constantValue()).collect(toSet()),
+                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).constantValue()).collect(toSet()),
                                  Set.of(1, 1.0f, "1"));
                     break;
                 default:

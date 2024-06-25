@@ -333,11 +333,6 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public ConstantDesc constantValue() {
-            return stringValue();
-        }
-
-        @Override
         public int length() {
             if (state == State.RAW)
                 inflate();

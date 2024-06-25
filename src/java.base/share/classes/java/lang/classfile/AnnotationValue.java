@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,17 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.AnnotationConstantValueEntry;
 import java.lang.classfile.constantpool.DoubleEntry;
 import java.lang.classfile.constantpool.FloatEntry;
 import java.lang.classfile.constantpool.IntegerEntry;
 import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
+import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.javac.PreviewFeature;
@@ -79,7 +79,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     }
 
     /**
-     * Models a constant-valued element
+     * Models a constant-valued element, which can be evaluated without
+     * class loading.
      *
      * @sealedGraph
      * @since 22
@@ -92,9 +93,13 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
                     AnnotationValue.OfCharacter, AnnotationValue.OfByte,
                     AnnotationValue.OfBoolean, AnnotationImpl.OfConstantImpl {
         /** {@return the constant} */
-        AnnotationConstantValueEntry constant();
-        /** {@return the constant} */
-        ConstantDesc constantValue();
+        PoolEntry constant();
+
+        /**
+         * {@return the constant value}
+         * @since 24
+         */
+        Constable constantValue();
     }
 
     /**
@@ -107,6 +112,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfStringImpl {
         /** {@return the constant} */
         String stringValue();
+
+        /** @since 24 */
+        @Override
+        Utf8Entry constant();
+
+        @Override
+        default String constantValue() {
+            return stringValue();
+        }
     }
 
     /**
@@ -119,6 +133,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfDoubleImpl {
         /** {@return the constant} */
         double doubleValue();
+
+        /** @since 24 */
+        @Override
+        DoubleEntry constant();
+
+        @Override
+        default Double constantValue() {
+            return doubleValue();
+        }
     }
 
     /**
@@ -131,6 +154,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfFloatImpl {
         /** {@return the constant} */
         float floatValue();
+
+        /** @since 24 */
+        @Override
+        FloatEntry constant();
+
+        @Override
+        default Float constantValue() {
+            return floatValue();
+        }
     }
 
     /**
@@ -143,6 +175,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfLongImpl {
         /** {@return the constant} */
         long longValue();
+
+        /** @since 24 */
+        @Override
+        LongEntry constant();
+
+        @Override
+        default Long constantValue() {
+            return longValue();
+        }
     }
 
     /**
@@ -155,6 +196,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfIntegerImpl {
         /** {@return the constant} */
         int intValue();
+
+        /** @since 24 */
+        @Override
+        IntegerEntry constant();
+
+        @Override
+        default Integer constantValue() {
+            return intValue();
+        }
     }
 
     /**
@@ -167,6 +217,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfShortImpl {
         /** {@return the constant} */
         short shortValue();
+
+        /** @since 24 */
+        @Override
+        IntegerEntry constant();
+
+        @Override
+        default Short constantValue() {
+            return shortValue();
+        }
     }
 
     /**
@@ -179,6 +238,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfCharacterImpl {
         /** {@return the constant} */
         char charValue();
+
+        /** @since 24 */
+        @Override
+        IntegerEntry constant();
+
+        @Override
+        default Character constantValue() {
+            return charValue();
+        }
     }
 
     /**
@@ -191,6 +259,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfByteImpl {
         /** {@return the constant} */
         byte byteValue();
+
+        /** @since 24 */
+        @Override
+        IntegerEntry constant();
+
+        @Override
+        default Byte constantValue() {
+            return byteValue();
+        }
     }
 
     /**
@@ -203,6 +280,15 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfBooleanImpl {
         /** {@return the constant} */
         boolean booleanValue();
+
+        /** @since 24 */
+        @Override
+        IntegerEntry constant();
+
+        @Override
+        default Boolean constantValue() {
+            return booleanValue();
+        }
     }
 
     /**
@@ -286,144 +372,162 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a string-valued element}
      * @param value the string
+     * @since 24
      */
-    static OfConstant ofString(Utf8Entry value) {
+    static OfString ofString(Utf8Entry value) {
         return new AnnotationImpl.OfStringImpl(value);
     }
 
     /**
      * {@return an annotation element for a string-valued element}
      * @param value the string
+     * @since 24
      */
-    static OfConstant ofString(String value) {
+    static OfString ofString(String value) {
         return ofString(TemporaryConstantPool.INSTANCE.utf8Entry(value));
     }
 
     /**
      * {@return an annotation element for a double-valued element}
      * @param value the double value
+     * @since 24
      */
-    static OfConstant ofDouble(DoubleEntry value) {
+    static OfDouble ofDouble(DoubleEntry value) {
         return new AnnotationImpl.OfDoubleImpl(value);
     }
 
     /**
      * {@return an annotation element for a double-valued element}
      * @param value the double value
+     * @since 24
      */
-    static OfConstant ofDouble(double value) {
+    static OfDouble ofDouble(double value) {
         return ofDouble(TemporaryConstantPool.INSTANCE.doubleEntry(value));
     }
 
     /**
      * {@return an annotation element for a float-valued element}
      * @param value the float value
+     * @since 24
      */
-    static OfConstant ofFloat(FloatEntry value) {
+    static OfFloat ofFloat(FloatEntry value) {
         return new AnnotationImpl.OfFloatImpl(value);
     }
 
     /**
      * {@return an annotation element for a float-valued element}
      * @param value the float value
+     * @since 24
      */
-    static OfConstant ofFloat(float value) {
+    static OfFloat ofFloat(float value) {
         return ofFloat(TemporaryConstantPool.INSTANCE.floatEntry(value));
     }
 
     /**
      * {@return an annotation element for a long-valued element}
      * @param value the long value
+     * @since 24
      */
-    static OfConstant ofLong(LongEntry value) {
+    static OfLong ofLong(LongEntry value) {
         return new AnnotationImpl.OfLongImpl(value);
     }
 
     /**
      * {@return an annotation element for a long-valued element}
      * @param value the long value
+     * @since 24
      */
-    static OfConstant ofLong(long value) {
+    static OfLong ofLong(long value) {
         return ofLong(TemporaryConstantPool.INSTANCE.longEntry(value));
     }
 
     /**
      * {@return an annotation element for an int-valued element}
      * @param value the int value
+     * @since 24
      */
-    static OfConstant ofInt(IntegerEntry value) {
+    static OfInteger ofInt(IntegerEntry value) {
         return new AnnotationImpl.OfIntegerImpl(value);
     }
 
     /**
      * {@return an annotation element for an int-valued element}
      * @param value the int value
+     * @since 24
      */
-    static OfConstant ofInt(int value) {
+    static OfInteger ofInt(int value) {
         return ofInt(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 
     /**
      * {@return an annotation element for a short-valued element}
      * @param value the short value
+     * @since 24
      */
-    static OfConstant ofShort(IntegerEntry value) {
+    static OfShort ofShort(IntegerEntry value) {
         return new AnnotationImpl.OfShortImpl(value);
     }
 
     /**
      * {@return an annotation element for a short-valued element}
      * @param value the short value
+     * @since 24
      */
-    static OfConstant ofShort(short value) {
+    static OfShort ofShort(short value) {
         return ofShort(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 
     /**
      * {@return an annotation element for a char-valued element}
      * @param value the char value
+     * @since 24
      */
-    static OfConstant ofChar(IntegerEntry value) {
+    static OfCharacter ofChar(IntegerEntry value) {
         return new AnnotationImpl.OfCharacterImpl(value);
     }
 
     /**
      * {@return an annotation element for a char-valued element}
      * @param value the char value
+     * @since 24
      */
-    static OfConstant ofChar(char value) {
+    static OfCharacter ofChar(char value) {
         return ofChar(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 
     /**
      * {@return an annotation element for a byte-valued element}
      * @param value the byte value
+     * @since 24
      */
-    static OfConstant ofByte(IntegerEntry value) {
+    static OfByte ofByte(IntegerEntry value) {
         return new AnnotationImpl.OfByteImpl(value);
     }
 
     /**
      * {@return an annotation element for a byte-valued element}
      * @param value the byte value
+     * @since 24
      */
-    static OfConstant ofByte(byte value) {
+    static OfByte ofByte(byte value) {
         return ofByte(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 
     /**
      * {@return an annotation element for a boolean-valued element}
      * @param value the boolean value
+     * @since 24
      */
-    static OfConstant ofBoolean(IntegerEntry value) {
+    static OfBoolean ofBoolean(IntegerEntry value) {
         return new AnnotationImpl.OfBooleanImpl(value);
     }
 
     /**
      * {@return an annotation element for a boolean-valued element}
      * @param value the boolean value
+     * @since 24
      */
-    static OfConstant ofBoolean(boolean value) {
+    static OfBoolean ofBoolean(boolean value) {
         int i = value ? 1 : 0;
         return ofBoolean(TemporaryConstantPool.INSTANCE.intEntry(i));
     }

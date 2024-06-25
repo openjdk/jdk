@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 
-import java.lang.constant.ConstantDesc;
 import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
@@ -101,11 +100,6 @@ public final class AnnotationImpl implements Annotation {
         default void writeTo(BufWriter buf) {
             buf.writeU1(tag());
             buf.writeIndex(constant());
-        }
-
-        @Override
-        default ConstantDesc constantValue() {
-            return constant().constantValue();
         }
 
     }
