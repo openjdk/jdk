@@ -395,8 +395,14 @@ final class StringConcatHelper {
      */
     @ForceInline
     static byte[] newArray(long indexCoder) {
-        byte coder = (byte)(indexCoder >> 32);
-        int index = ((int)indexCoder) << coder;
+        byte coder;
+        int index = (int)indexCoder;
+        if (indexCoder < UTF16) {
+            coder = String.LATIN1;
+        } else {
+            coder = String.UTF16;
+            index <<= 1;
+        }
         if (index < 0) {
             throw new OutOfMemoryError("Overflow: String length out of range");
         }
