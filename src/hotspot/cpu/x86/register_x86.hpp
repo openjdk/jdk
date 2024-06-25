@@ -45,8 +45,8 @@ public:
   inline friend constexpr Register as_Register(int encoding);
 
   enum {
-    number_of_registers      = LP64_ONLY( 16 ) NOT_LP64( 8 ),
-    number_of_byte_registers = LP64_ONLY( 16 ) NOT_LP64( 4 ),
+    number_of_registers      = LP64_ONLY( 32 ) NOT_LP64( 8 ),
+    number_of_byte_registers = LP64_ONLY( 32 ) NOT_LP64( 4 ),
     max_slots_per_register   = LP64_ONLY(  2 ) NOT_LP64( 1 )
   };
 
@@ -76,6 +76,16 @@ public:
   int operator!=(const Register r) const { return _encoding != r._encoding; }
 
   constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
+
+  // Actually available GP registers for use, depending on actual CPU capabilities and flags.
+  static int available_gp_registers() {
+#ifdef _LP64
+    if (!UseAPX) {
+      return number_of_registers / 2;
+    }
+#endif // _LP64
+    return number_of_registers;
+  }
 };
 
 extern const Register::RegisterImpl all_RegisterImpls[Register::number_of_registers + 1] INTERNAL_VISIBILITY;
@@ -115,6 +125,22 @@ constexpr Register r12 = as_Register(12);
 constexpr Register r13 = as_Register(13);
 constexpr Register r14 = as_Register(14);
 constexpr Register r15 = as_Register(15);
+constexpr Register r16 = as_Register(16);
+constexpr Register r17 = as_Register(17);
+constexpr Register r18 = as_Register(18);
+constexpr Register r19 = as_Register(19);
+constexpr Register r20 = as_Register(20);
+constexpr Register r21 = as_Register(21);
+constexpr Register r22 = as_Register(22);
+constexpr Register r23 = as_Register(23);
+constexpr Register r24 = as_Register(24);
+constexpr Register r25 = as_Register(25);
+constexpr Register r26 = as_Register(26);
+constexpr Register r27 = as_Register(27);
+constexpr Register r28 = as_Register(28);
+constexpr Register r29 = as_Register(29);
+constexpr Register r30 = as_Register(30);
+constexpr Register r31 = as_Register(31);
 #endif // _LP64
 
 

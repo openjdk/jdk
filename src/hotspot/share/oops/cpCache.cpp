@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -388,23 +389,54 @@ void ConstantPoolCache::record_gc_epoch() {
 #if INCLUDE_CDS
 void ConstantPoolCache::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
-  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
-  // still pointing to the array allocated inside save_for_archive().
+
   if (_resolved_indy_entries != nullptr) {
     for (int i = 0; i < _resolved_indy_entries->length(); i++) {
       resolved_indy_entry_at(i)->remove_unshareable_info();
     }
   }
   if (_resolved_field_entries != nullptr) {
-    for (int i = 0; i < _resolved_field_entries->length(); i++) {
-      resolved_field_entry_at(i)->remove_unshareable_info();
-    }
+    remove_resolved_field_entries_if_non_deterministic();
   }
   if (_resolved_method_entries != nullptr) {
     for (int i = 0; i < _resolved_method_entries->length(); i++) {
       resolved_method_entry_at(i)->remove_unshareable_info();
     }
+  }
+}
+
+void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
+  ConstantPool* cp = constant_pool();
+  ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
+  for (int i = 0; i < _resolved_field_entries->length(); i++) {
+    ResolvedFieldEntry* rfi = _resolved_field_entries->adr_at(i);
+    int cp_index = rfi->constant_pool_index();
+    bool archived = false;
+    bool resolved = rfi->is_resolved(Bytecodes::_getfield)  ||
+                    rfi->is_resolved(Bytecodes::_putfield);
+    if (resolved && ClassPrelinker::is_resolution_deterministic(src_cp, cp_index)) {
+      rfi->mark_and_relocate();
+      archived = true;
+    } else {
+      rfi->remove_unshareable_info();
+    }
+    if (resolved) {
+      LogStreamHandle(Trace, cds, resolve) log;
+      if (log.is_enabled()) {
+        ResourceMark rm;
+        int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+        Symbol* klass_name = cp->klass_name_at(klass_cp_index);
+        Symbol* name = cp->uncached_name_ref_at(cp_index);
+        Symbol* signature = cp->uncached_signature_ref_at(cp_index);
+        log.print("%s field  CP entry [%3d]: %s %s %s.%s:%s",
+                  (archived ? "archived" : "reverted"),
+                  cp_index,
+                  cp->pool_holder()->name()->as_C_string(),
+                  (archived ? "=>" : "  "),
+                  klass_name->as_C_string(), name->as_C_string(), signature->as_C_string());
+      }
+    }
+    ArchiveBuilder::alloc_stats()->record_field_cp_entry(archived, resolved && !archived);
   }
 }
 #endif // INCLUDE_CDS

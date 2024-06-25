@@ -29,8 +29,9 @@
  * @library /test/lib
  * @comment The test is run with -XX:LoopUnrollLimit=32 to prevent unrolling
  *          from fully replacing vectorization.
- * @run main/othervm -Xbatch -XX:LoopUnrollLimit=32
- *      compiler.loopopts.superword.TestPeeledReductionNode
+ * @run main/othervm -Xbatch
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=32
+ *                   compiler.loopopts.superword.TestPeeledReductionNode
  */
 package compiler.loopopts.superword;
 
