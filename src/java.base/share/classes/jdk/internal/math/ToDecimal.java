@@ -37,12 +37,12 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     /* Used for left-to-tight digit extraction */
     static final int MASK_28 = (1 << 28) - 1;
 
-    static final int NON_SPECIAL = 0;
-    static final int PLUS_ZERO   = 0x100;
-    static final int MINUS_ZERO  = 0x200;
-    static final int PLUS_INF    = 0x300;
-    static final int MINUS_INF   = 0x400;
-    static final int NAN         = 0x500;
+    static final int NON_SPECIAL = 0 << 8;
+    static final int PLUS_ZERO   = 1 << 8;
+    static final int MINUS_ZERO  = 2 << 8;
+    static final int PLUS_INF    = 3 << 8;
+    static final int MINUS_INF   = 4 << 8;
+    static final int NAN         = 5 << 8;
 
     static final byte LATIN1 = 0;
     static final byte UTF16  = 1;
@@ -60,29 +60,20 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         this.coder = coder;
     }
 
-    final void putChar(byte[] str, int index, int c) {
+    final int putChar(byte[] str, int index, int c) {
         if (coder == LATIN1) {
             str[index] = (byte) c;
         } else {
             JLA.putCharUTF16(str, index, (char) c);
         }
+        return index + 1;
     }
 
-    final void putCharsAt(byte[] str, int index, int c1, int c2) {
-        if (coder == LATIN1) {
-            str[index    ] = (byte) c1;
-            str[index + 1] = (byte) c2;
-        } else {
-            JLA.putCharUTF16(str, index    , c1);
-            JLA.putCharUTF16(str, index + 1, c2);
-        }
+    final int putDigit(byte[] str, int index, int d) {
+        return putChar(str, index, (byte) ('0' + d));
     }
 
-    final void putDigit(byte[] str, int index, int d) {
-        putChar(str, index, (byte) ('0' + d));
-    }
-
-    final void put8Digits(byte[] str, int index, int m) {
+    final int put8Digits(byte[] str, int index, int m) {
         /*
          * Left-to-right digits extraction:
          * algorithm 1 in [3], with b = 10, k = 8, n = 28.
@@ -92,6 +83,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         } else {
             put8DigitsUTF16 (str, index, m);
         }
+        return index + 8;
     }
 
     private static void put8DigitsLatin1(byte[] str, int index, int m) {

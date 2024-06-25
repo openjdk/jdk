@@ -408,19 +408,19 @@ public final class DoubleToDecimal extends ToDecimal {
          * Left-to-right digits extraction:
          * algorithm 1 in [3], with b = 10, k = 8, n = 28.
          */
-        putDigit(str, index++, h);
+        index = putDigit(str, index, h);
         int y = y(m);
         int t;
         int i = 1;
         for (; i < e; ++i) {
             t = 10 * y;
-            putDigit(str, index++, t >>> 28);
+            index = putDigit(str, index, t >>> 28);
             y = t & MASK_28;
         }
-        putChar(str, index++, '.');
+        index = putChar(str, index, '.');
         for (; i <= 8; ++i) {
             t = 10 * y;
-            putDigit(str, index++, t >>> 28);
+            index = putDigit(str, index, t >>> 28);
             y = t & MASK_28;
         }
         return lowDigits(str, index, l);
@@ -428,28 +428,28 @@ public final class DoubleToDecimal extends ToDecimal {
 
     private int toChars2(byte[] str, int index, int h, int m, int l, int e) {
         /* -3 < e <= 0: plain format with leading zeroes */
-        putCharsAt(str, index, '0', '.');
-        index += 2;
+        index = putDigit(str, index, 0);
+        index = putChar(str, index, '.');
         for (; e < 0; ++e) {
-            putDigit(str, index++, 0);
+            index = putDigit(str, index, 0);
         }
-        putDigit(str, index, h);
-        put8Digits(str, index + 1, m);
-        return lowDigits(str, index + 9, l);
+        index = putDigit(str, index, h);
+        index = put8Digits(str, index, m);
+        return lowDigits(str, index, l);
     }
 
     private int toChars3(byte[] str, int index, int h, int m, int l, int e) {
         /* -3 >= e | e > 7: computerized scientific notation */
-        putCharsAt(str, index, '0' + h, '.');
-        put8Digits(str, index + 2, m);
-        index = lowDigits(str, index + 10, l);
+        index = putDigit(str, index, h);
+        index = putChar(str, index, '.');
+        index = put8Digits(str, index, m);
+        index = lowDigits(str, index, l);
         return exponent(str, index, e - 1);
     }
 
     private int lowDigits(byte[] str, int index, int l) {
         if (l != 0) {
-            put8Digits(str, index, l);
-            index += 8;
+            index = put8Digits(str, index, l);
         }
         return removeTrailingZeroes(str, index);
     }
@@ -461,8 +461,7 @@ public final class DoubleToDecimal extends ToDecimal {
             e = -e;
         }
         if (e < 10) {
-            putDigit(str, index, e);
-            return index + 1;
+            return putDigit(str, index, e);
         }
         int d;
         if (e >= 100) {
@@ -479,7 +478,7 @@ public final class DoubleToDecimal extends ToDecimal {
          *     floor(e / 10) = floor(103 e / 2^10)
          */
         d = e * 103 >>> 10;
-        putCharsAt(str, index, '0' + d, '0' + e - 10 * d);
-        return index + 2;
+        index = putDigit(str, index, d);
+        return putDigit(str, index, e - 10 * d);
     }
 }
