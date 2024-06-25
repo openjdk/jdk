@@ -3170,7 +3170,7 @@ void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_co
   bind(L_loop);
   z_cg(r_value, Address(r_addr));
   z_bre(L_exit); // branch on success
-  add2reg(r_addr, wordSize);
+  z_la(r_addr, wordSize, r_addr);
   z_brct(r_count, L_loop);
 
   // z_brct above doesn't change CC.
