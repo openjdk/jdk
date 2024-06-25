@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,37 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.process;
+package metaspace.share;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.IOException;
-import nsk.share.TestFailure;
+/**
+ * This class is used to distinguish between OOME in metaspace and OOME in heap when triggering class unloading.
+ */
+public class HeapOOMEException extends RuntimeException {
 
-public class StreamMessageOutput implements MessageOutput {
-        private OutputStream out;
-        private PrintStream pout;
+    private static final long serialVersionUID = 1L;
 
-        public StreamMessageOutput() {
-        }
+    public HeapOOMEException(String string) {
+        super(string);
+    }
 
-        public StreamMessageOutput(OutputStream out) {
-                bind(out);
-        }
-
-        public void bind(OutputStream out) {
-                this.out = out;
-                this.pout = new PrintStream(out, true); // Autoflush is important
-        }
-
-        public void start() {
-        }
-
-        public void send(String msg) {
-                pout.println(msg);
-        }
-
-        public void finish() {
-                pout.close();
-        }
 }
