@@ -9609,9 +9609,9 @@ instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iReg
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
     __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
-    // If unlocking was successful, cc should indicate 'EQ'.
+    // If locking was successful, cc should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
-    // _complete_monitor_unlocking_Java for the case where cc is 'NE'.
+    // _complete_monitor_locking_Java for the case where cc is 'NE'.
   %}
   ins_pipe(pipe_class_dummy);
 %}
