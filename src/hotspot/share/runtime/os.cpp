@@ -1079,12 +1079,12 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
 
 void os::print_tos(outputStream* st, address sp) {
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t), true);
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
 }
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  print_hex_dump(st, pc - 256, pc + 256, unitsize, false);
+  print_hex_dump(st, pc - 256, pc + 256, unitsize, /* print_ascii=*/false);
 }
 
 void os::print_environment_variables(outputStream* st, const char** env_list) {

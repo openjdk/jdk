@@ -172,7 +172,7 @@ static void do_test_print_hex_dump(const uint8_t* from, const uint8_t* to, int u
   char buf[2048];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
-  os::print_hex_dump(&ss, from, to, unitsize, true, bytes_per_line, logical_start);
+  os::print_hex_dump(&ss, from, to, unitsize, /* print_ascii=*/true, bytes_per_line, logical_start);
   EXPECT_STREQ(buf, expected);
 }
 
