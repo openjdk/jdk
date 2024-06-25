@@ -48,15 +48,12 @@ public:
   void lock(bool allow_block_for_safepoint) {
     assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
-    if (allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) {
-      // Java thread, and there is a pending safepoint. Dive into contended locking
-      // immediately without trying anything else, and block.
+    if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
+        Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+      // 1. Java thread, and there is a pending safepoint. Dive into contended locking
+      //    immediately without trying anything else, and block.
+      // 2. Fast lock fails, dive into contended lock handling.
       contended_lock(allow_block_for_safepoint);
-    } else {
-      // Try to lock fast, or dive into contended lock handling.
-      if (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-        contended_lock(allow_block_for_safepoint);
-      }
     }
 
     assert(Atomic::load(&_state) == locked, "must be locked");

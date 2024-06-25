@@ -34,7 +34,7 @@
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
-  if (thread->is_Java_thread() && allow_block_for_safepoint) {
+  if (allow_block_for_safepoint && thread->is_Java_thread()) {
     contended_lock_internal<true>(JavaThread::cast(thread));
   } else {
     contended_lock_internal<false>(nullptr);
@@ -46,9 +46,9 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
   // Spin this much on multi-processor, do not spin on multi-processor.
   int ctr = os::is_MP() ? 0x1F : 0;
-  // Apply TTAS to avoid more expenseive CAS calls if the lock is still held by other thread.
+  // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
   while (Atomic::load(&_state) == locked ||
-    Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+         Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
@@ -68,7 +68,7 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
           // to TBVIM exit for blocking. We do not SpinPause, but yield to let
           // VM thread to arm the poll sooner.
           while (SafepointSynchronize::is_synchronizing() &&
-            !SafepointMechanism::local_poll_armed(java_thread)) {
+                 !SafepointMechanism::local_poll_armed(java_thread)) {
             os::naked_yield();
           }
         } else {
