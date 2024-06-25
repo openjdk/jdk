@@ -31,7 +31,7 @@ import jdk.internal.access.SharedSecrets;
 
 import static java.lang.Math.multiplyHigh;
 
-sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
+abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /* Used for left-to-tight digit extraction */
