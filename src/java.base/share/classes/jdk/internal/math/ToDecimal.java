@@ -162,7 +162,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         return index + length;
     }
 
-    int length(byte[] str) {
+    final int length(byte[] str) {
         return str.length >> coder;
     }
 
