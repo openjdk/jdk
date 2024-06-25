@@ -119,7 +119,7 @@ final class StringConcatHelper {
      */
     static long mix(long lengthCoder, String value) {
         lengthCoder += value.length();
-        if (value.coder() == String.UTF16) {
+        if (!value.isLatin1()) {
             lengthCoder |= UTF16;
         }
         return checkOverflow(lengthCoder);
@@ -153,8 +153,9 @@ final class StringConcatHelper {
                 buf[index + 3] = 's';
                 buf[index + 4] = 'e';
             }
-            indexCoder = index - prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.LATIN1);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
         } else {
             if (value) {
                 index -= 4;
@@ -170,10 +171,10 @@ final class StringConcatHelper {
                 StringUTF16.putChar(buf, index + 3, 's');
                 StringUTF16.putChar(buf, index + 4, 'e');
             }
-            indexCoder = (index - prefix.length()) | UTF16;
-            prefix.getBytes(buf, (int) indexCoder, String.UTF16);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
         }
-        return indexCoder;
     }
 
     /**
@@ -188,16 +189,18 @@ final class StringConcatHelper {
      * @return           updated index (coder value retained)
      */
     static long prepend(long indexCoder, byte[] buf, char value, String prefix) {
+        int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            buf[(int)(--indexCoder)] = (byte) (value & 0xFF);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.LATIN1);
+            buf[--index] = (byte) (value & 0xFF);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
         } else {
-            StringUTF16.putChar(buf, (int)(--indexCoder), value);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.UTF16);
+            StringUTF16.putChar(buf, --index, value);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
         }
-        return indexCoder;
     }
 
     /**
@@ -212,16 +215,18 @@ final class StringConcatHelper {
      * @return           updated index (coder value retained)
      */
     static long prepend(long indexCoder, byte[] buf, int value, String prefix) {
+        int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            indexCoder = StringLatin1.getChars(value, (int)indexCoder, buf);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.LATIN1);
+            index = StringLatin1.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
         } else {
-            indexCoder = StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.UTF16);
+            index = StringUTF16.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
         }
-        return indexCoder;
     }
 
     /**
@@ -236,16 +241,18 @@ final class StringConcatHelper {
      * @return           updated index (coder value retained)
      */
     static long prepend(long indexCoder, byte[] buf, long value, String prefix) {
+        int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            indexCoder = StringLatin1.getChars(value, (int)indexCoder, buf);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.LATIN1);
+            index = StringLatin1.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
         } else {
-            indexCoder = StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.UTF16);
+            index = StringUTF16.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
         }
-        return indexCoder;
     }
 
     /**
@@ -260,17 +267,18 @@ final class StringConcatHelper {
      * @return           updated index (coder value retained)
      */
     static long prepend(long indexCoder, byte[] buf, String value, String prefix) {
-        indexCoder -= value.length();
+        int index = ((int)indexCoder) - value.length();
         if (indexCoder < UTF16) {
-            value.getBytes(buf, (int)indexCoder, String.LATIN1);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.LATIN1);
+            value.getBytes(buf, index, String.LATIN1);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
         } else {
-            value.getBytes(buf, (int)indexCoder, String.UTF16);
-            indexCoder -= prefix.length();
-            prefix.getBytes(buf, (int) indexCoder, String.UTF16);
+            value.getBytes(buf, index, String.UTF16);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
         }
-        return indexCoder;
     }
 
     /**
