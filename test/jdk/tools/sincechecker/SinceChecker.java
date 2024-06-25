@@ -47,7 +47,6 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.Pair;
 import jtreg.SkippedException;
 
-
 /*
 This checker checks the values of the `@since` tag found in the documentation comment for an element against
 the release in which the element first appeared.
@@ -103,7 +102,6 @@ it is somewhat inspired from the VM Method Descriptors. But we use the erased re
 that were later generified remain the same.
 */
 
-
 public class SinceChecker {
     private final Map<String, Set<String>> LEGACY_PREVIEW_METHODS = new HashMap<>();
     private final Map<String, IntroducedIn> classDictionary = new HashMap<>();
@@ -124,7 +122,7 @@ public class SinceChecker {
     }
 
     private void error(String message) {
-        System. err.println(message);
+        System.err.println(message);
         errorCount++;
     }
 
@@ -271,12 +269,14 @@ public class SinceChecker {
                     "fixes are needed for this Module");
         }
         String moduleVersion = getModuleVersionFromFile(moduleDirectory);
-        checkModuleOrPackage(javadocHelper,moduleVersion, moduleElement, ct, "Module: ");
+        checkModuleOrPackage(javadocHelper, moduleVersion, moduleElement, ct, "Module: ");
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             if (ed.getTargetModules() == null) {
                 String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
-                checkModuleOrPackage(javadocHelper,packageVersion, ed.getPackage(), ct, "Package: ");
-                analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
+                if (packageVersion != null) {
+                    checkModuleOrPackage(javadocHelper, packageVersion, ed.getPackage(), ct, "Package: ");
+                    analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
+                } // Skip the package if packageVersion is null
             }
         }
     }
@@ -293,7 +293,7 @@ public class SinceChecker {
             error("Unable to retrieve `@since` for " + elementCategory + id);
         } else {
             String position = javadocHelper.getElementPosition(id);
-            checkEquals(position,moduleVersion, version, id);
+            checkEquals(position, moduleVersion, version, id);
         }
     }
 
@@ -322,21 +322,24 @@ public class SinceChecker {
                 )
                 .resolve("package-info.java");
 
+        if (!Files.exists(pkgInfo)) {
+            return null; // Skip if the file does not exist
+        }
+
         String packageTopVersion = null;
-        if (Files.exists(pkgInfo)) {
-            try {
-                String packageContent = Files.readString(pkgInfo);
-                var extractedVersion = extractSinceVersionFromText(packageContent);
-                if (extractedVersion != null) {
-                    packageTopVersion = extractedVersion.toString();
-                }
-            } catch (IOException e) {
-                error(ed.getPackage().getQualifiedName() + ": package-info.java not found or couldn't be opened");
+        try {
+            String packageContent = Files.readString(pkgInfo);
+            var extractedVersion = extractSinceVersionFromText(packageContent);
+            if (extractedVersion != null) {
+                packageTopVersion = extractedVersion.toString();
+            } else {
+                error(ed.getPackage().getQualifiedName() + ": package-info.java exists but doesn't contain @since");
             }
+        } catch (IOException e) {
+            error(ed.getPackage().getQualifiedName() + ": package-info.java couldn't be opened");
         }
         return packageTopVersion;
     }
-
 
     private void analyzePackageCheck(PackageElement pe, JavacTask ct, EffectiveSourceSinceHelper javadocHelper) {
         List<TypeElement> typeElements = ElementFilter.typesIn(pe.getEnclosedElements());
@@ -345,7 +348,7 @@ public class SinceChecker {
         }
     }
 
-    private boolean isNotCommonRecordMethod(TypeElement te, Element element , Types types) {
+    private boolean isNotCommonRecordMethod(TypeElement te, Element element, Types types) {
         var isRecord = te.getKind() == ElementKind.RECORD;
         if (!isRecord) {
             return true;
@@ -384,7 +387,6 @@ public class SinceChecker {
                 .forEach(nestedClass -> analyzeClassCheck(nestedClass, currentjdkVersion, javadocHelper, types, elementUtils));
     }
 
-
     private void checkElement(Element explicitOwner, Element element, Types types,
                               EffectiveSourceSinceHelper javadocHelper, String currentVersion, Elements elementUtils) {
         String uniqueId = getElementName(explicitOwner, element, types);
@@ -397,9 +399,11 @@ public class SinceChecker {
         }
         String sinceVersion = null;
         var effectiveSince = javadocHelper.effectiveSinceVersion(explicitOwner, element, types, elementUtils);
-        if (effectiveSince != null) {
-            sinceVersion = effectiveSince.toString();
+        if (effectiveSince == null) {
+            // Skip the element if the java file doesn't exist in src.zip
+            return;
         }
+        sinceVersion = effectiveSince.toString();
         IntroducedIn mappedVersion = classDictionary.get(uniqueId);
         if (mappedVersion == null) {
             error("Element: " + uniqueId + " was not mapped");
@@ -730,7 +734,6 @@ public class SinceChecker {
                     fillElementCache(source.fst, source.snd, source.fst.getTypes(), source.fst.getElements());
                     since = signature2Source.get(handle);
 
-
                 } catch (IOException ex) {
                     error("JavadocHelper failed for " + element);
                 }
@@ -740,7 +743,7 @@ public class SinceChecker {
         }
 
         private String getElementPosition(String signature) {
-           return signature2Location.getOrDefault(signature, "");
+            return signature2Location.getOrDefault(signature, "");
         }
 
         //where:
@@ -751,25 +754,25 @@ public class SinceChecker {
             new TreePathScanner<Void, Void>() {
                 @Override
                 public Void visitMethod(MethodTree node, Void p) {
-                    handleDeclaration(node,fileName);
+                    handleDeclaration(node, fileName);
                     return null;
                 }
 
                 @Override
                 public Void visitClass(ClassTree node, Void p) {
-                    handleDeclaration(node,fileName);
+                    handleDeclaration(node, fileName);
                     return super.visitClass(node, p);
                 }
 
                 @Override
                 public Void visitVariable(VariableTree node, Void p) {
-                    handleDeclaration(node,fileName);
+                    handleDeclaration(node, fileName);
                     return null;
                 }
 
                 @Override
                 public Void visitModule(ModuleTree node, Void p) {
-                    handleDeclaration(node,fileName);
+                    handleDeclaration(node, fileName);
                     return null;
                 }
 
@@ -781,7 +784,7 @@ public class SinceChecker {
                 @Override
                 public Void visitPackage(PackageTree node, Void p) {
                     if (cut.getSourceFile().isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-                        handleDeclaration(node,fileName);
+                        handleDeclaration(node, fileName);
                     }
                     return super.visitPackage(node, p);
                 }
@@ -792,7 +795,7 @@ public class SinceChecker {
                     if (currentElement != null) {
                         long startPosition = trees.getSourcePositions().getStartPosition(cut, node);
                         long lineNumber = cut.getLineMap().getLineNumber(startPosition);
-                        String filePathWithLineNumber = String.format("src%s:%s ",fileName,lineNumber);
+                        String filePathWithLineNumber = String.format("src%s:%s ", fileName, lineNumber);
 
                         signature2Source.put(getElementName(currentElement.getEnclosingElement(), currentElement, typeUtils), computeSinceVersion(currentElement, typeUtils, elementUtils));
                         signature2Location.put(getElementName(currentElement.getEnclosingElement(), currentElement, typeUtils), filePathWithLineNumber);
