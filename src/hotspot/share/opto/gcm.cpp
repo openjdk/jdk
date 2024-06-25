@@ -562,13 +562,29 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   return false;
 }
 
-static bool already_enqueued(const Node_List& worklist_mem, const Node_List& worklist_store, Node* mem, Node* store) {
+static bool already_enqueued(const Node_List& worklist_mem, const Node_List& worklist_store, Node* mem, PhiNode* phi) {
+  // mem is one of the inputs of phi and at least one input of phi is
+  // not mem. It's however possible that phi has mem as input multiple
+  // times. If that happens, phi is recorded as a use of mem multiple
+  // times as well. When PhaseCFG::insert_anti_dependences() goes over
+  // uses of mem and enqueues them for processing, phi would then be
+  // enqueued for processing multiple times when it only needs to be
+  // processed once. The code below checks if phi as a use of mem was
+  // already enqueued to avoid redundant processing of phi.
   uint j = worklist_mem.size();
+  // The pair worklist_mem/worklist_store is used as a queue of pairs
+  // (mem,store) where mem is pushed to worklist_mem and store is
+  // pushed to worklist_store and store is a use of mem. Anytime a mem
+  // is pushed/popped to/from worklist_mem, a store has to be
+  // pushed/popped to/from worklist_store.
+  // If there are any use of mem already enqueued, they were enqueued
+  // last (all use of mem are processed in one go).
   for (; j > 0; j--) {
     if (worklist_mem.at(j-1) != mem) {
+      // We're done with the uses of mem
       return false;
     }
-    if (worklist_store.at(j-1) == store) {
+    if (worklist_store.at(j-1) == phi) {
       return true;
     }
   }
@@ -684,6 +700,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         store = mem->fast_out(i);
+        // If this is not a store, load can't be anti dependent on this node
         if (store->needs_anti_dependence_check()) {
           continue;
         }
@@ -699,7 +716,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         } else if (store->is_Phi()) {
           // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
           // more than once.
-          if (already_enqueued(worklist_mem, worklist_store, mem, store)) {
+          if (already_enqueued(worklist_mem, worklist_store, mem, store->as_Phi())) {
             continue;
           }
         }
