@@ -833,20 +833,15 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 size_t SerialHeap::tlab_capacity(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
 size_t SerialHeap::tlab_used(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
   return _young_gen->tlab_used();
 }
 
 size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
   return _young_gen->unsafe_max_tlab_alloc();
 }
 

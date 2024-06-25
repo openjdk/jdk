@@ -35,8 +35,7 @@
  * @bug 8328938
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run main/othervm -XX:+AlignVector compiler.loopopts.superword.TestLargeScaleAndStride
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector compiler.loopopts.superword.TestLargeScaleAndStride
  */
 
 package compiler.loopopts.superword;
