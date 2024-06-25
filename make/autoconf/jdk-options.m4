@@ -497,9 +497,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
 AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 [
   UTIL_ARG_WITH(NAME: additional-ubsan-checks, TYPE: string,
-    DEFAULT: [],
-    DESC: [Custom ubsan checks],
-    OPTIONAL: true)
+      DEFAULT: [],
+      DESC: [Customizes the ubsan checks],
+      OPTIONAL: true)
 
   # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
   # Silence them for now.
