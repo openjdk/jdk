@@ -40,7 +40,7 @@ import sun.nio.cs.ISO_8859_1;
  */
 public final class DoubleToDecimal extends ToDecimal {
     /**
-     * Use LATIN1 encoding to process the input byte[] str
+     * Use LATIN1 encoding to process the in-out byte[] str
      *
      */
     public static final DoubleToDecimal LATIN1 = new DoubleToDecimal(ToDecimal.LATIN1);
