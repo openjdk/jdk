@@ -696,13 +696,13 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
          || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
 
   bool target_needs_far_br = target_needs_far_branch(entry.target());
-
+/*
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    // tty->print_cr("call: %p->%p", entry.target(), entry.target() - delta);
+    //z tty->print_cr("call: %p->%p", entry.target(), entry.target() - delta);
     entry = RuntimeAddress(entry.target() - delta);
   }
-
+*/
   if (target_needs_far_br) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -728,7 +728,9 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
 
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    // tty->print_cr("jump: %p->%p", entry.target(), entry.target() - delta);
+    intptr_t offset = (intptr_t)pc() - (intptr_t)code_section()->start();
+    //z tty->print_cr("jump: %p->%p | sect: %p, pc:%p, offset:%p",
+    //    entry.target(), entry.target() - delta, code_section()->start(), pc(), (void*)offset);
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -907,12 +909,6 @@ address MacroAssembler::trampoline_call(Address entry) {
 
   address target = entry.target();
 
-  if (!CodeCache::contains(pc())) {
-    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    // tty->print_cr("trmp: %p->%p", entry.target(), entry.target() - delta);
-    target = entry.target() - delta;
-  };
-
   if (!is_always_within_branch_range(entry)) {
     if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
@@ -933,6 +929,16 @@ address MacroAssembler::trampoline_call(Address entry) {
 
   address call_pc = pc();
   relocate(entry.rspec());
+
+  if (!CodeCache::contains(pc()) && target != pc()) {
+    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+    intptr_t offset = (intptr_t)pc() - (intptr_t)code_section()->start();
+    //z tty->print_cr("trmp: %p->%p | sect: %p, pc:%p, offset:%p",
+    //  entry.target(), entry.target() - delta,
+    //  code_section()->start(), pc(), (void*)offset);
+    target = entry.target() - delta;
+  };
+
   bl(target);
 
   postcond(pc() != badAddress);

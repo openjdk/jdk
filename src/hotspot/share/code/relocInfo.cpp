@@ -372,10 +372,25 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
 
   bool is_pc_relative = NativeInstruction::is_pc_relative_at(addr());
   uintptr_t delta = 0;
+
   if (!CodeCache::contains(callee) && is_pc_relative) {
     int sect = src->section_index_of(orig_addr);
-    delta = (intptr_t)CodeCache::low_bound() - (intptr_t)src->code_section(sect)->start();
-    // tty->print_cr("----: %p<-%p", (callee+delta), callee);
+    intptr_t sect_start = (intptr_t)src->code_section(sect)->start();
+
+    // expectation: move instruction from the temporary compiler buffer into a final place
+    if (!CodeCache::contains(orig_addr) && CodeCache::contains(addr())) {
+      delta = (intptr_t)CodeCache::low_bound() - sect_start;
+      //z tty->print_cr("----: %p<-%p | pc:%p->%p offs:%p CodeCache:[%p %p]",
+      //        (callee+delta), callee, orig_addr, addr(), orig_addr - sect_start, CodeCache::low_bound(), CodeCache::high_bound());
+    } else {
+      tty->print_cr("Relocation: something is wrong? %i%i pc:%p->%p, offs: %p, CodeCache:[%p %p]",
+        CodeCache::contains(orig_addr), CodeCache::contains(addr()),
+        orig_addr, addr(), orig_addr - sect_start, CodeCache::low_bound(), CodeCache::high_bound());
+    }
+  } else {
+    int sect = src->section_index_of(orig_addr);
+    intptr_t sect_start = (intptr_t)src->code_section(sect)->start();
+    //z tty->print_cr("%i%i  : callee: %p offs: %p", !CodeCache::contains(callee), is_pc_relative, callee, orig_addr - sect_start);
   }
 
   // Reassert the callee address, this time in the new copy of the code.
