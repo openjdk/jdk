@@ -26,9 +26,6 @@
 #ifndef SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
 #define SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
 
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
-
 // A task queue entry that encodes both regular oops, and the array oops plus sliceing data for
 // parallel array processing.
 // The design goal is to make the regular oop ops very fast, because that would be the prevailing
@@ -207,39 +204,26 @@ private:
   uint16_t _pow;
 
 public:
-  G1TaskQueueEntry() {
-    _ptr = nullptr;
-    _slice = 0;
-    _pow = 0;
-    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
-    log_trace(gc)("init new G1TaskQueueEntry");
+  G1TaskQueueEntry() :
+    _ptr(nullptr), _slice(0), _pow(0) {
   }
-  G1TaskQueueEntry(oop o) {
-    _ptr = cast_from_oop<void*>(o);
-    _slice = 0;
-    _pow = 0;
-    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+  G1TaskQueueEntry(oop o) :
+    _ptr(cast_from_oop<void*>(o)),
+    _slice(0), _pow(0) {
     assert(!is_array_slice(),  "task should not be sliced");
-    log_trace(gc)("init new G1TaskQueueEntry: oop: " PTR_FORMAT, p2i(o));
   }
-  G1TaskQueueEntry(oop* o) {
-    _ptr = reinterpret_cast<void*>(o);
-    _slice = 0;
-    _pow = 0;
-    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+  G1TaskQueueEntry(oop* o) :
+    _ptr(reinterpret_cast<void*>(o)),
+    _slice(0), _pow(0) {
     assert(!is_array_slice(),  "task should not be sliced");
-    log_trace(gc)("init new G1TaskQueueEntry: oop*: " PTR_FORMAT, p2i(o));
   }
   G1TaskQueueEntry(narrowOop* o) {
     ShouldNotReachHere();
   }
-  G1TaskQueueEntry(oop o, int slice, int pow) {
-    _ptr = cast_from_oop<void*>(o);
-    _slice = slice;
-    _pow = pow;
-    assert(sizeof(G1TaskQueueEntry) == 8, "incorrect size");
+  G1TaskQueueEntry(oop o, int slice, int pow) :
+    _ptr(cast_from_oop<void*>(o)),
+    _slice(slice), _pow(pow) {
     assert(is_array_slice(),  "task should be sliced");
-    log_trace(gc)("init new G1TaskQueueEntry: oop: " PTR_FORMAT ", slice: %d, pow: %d", p2i(o), slice, pow);
   }
 
   // Trivially copyable.
@@ -247,7 +231,7 @@ public:
 public:
   bool is_oop_ptr()            const { return !is_array_slice(); }
   bool is_narrow_oop_ptr()     const { return false; }
-  bool is_array_slice()        const { return is_array_slice();  }
+  bool is_array_slice()        const { return _slice != 0;  }
   bool is_oop()                const { return !is_array_slice(); }
   bool is_null()               const { return _ptr == nullptr; }
 

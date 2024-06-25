@@ -95,13 +95,11 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
     guarantee(num_chunks <= _chunks_in_chunk_list, "Found " SIZE_FORMAT " oop chunks which is more than there should be", num_chunks);
 
     for (size_t i = 0; i < EntriesPerChunk; ++i) {
-      log_trace(gc)("iterating chunk data: " SIZE_FORMAT, i);
       if (cur->data[i].is_null()) {
         break;
       }
       fn(cur->data[i]);
     }
-    log_trace(gc)("iterating chunk next: " PTR_FORMAT, p2i(cur->next));
     cur = cur->next;
     num_chunks++;
   }

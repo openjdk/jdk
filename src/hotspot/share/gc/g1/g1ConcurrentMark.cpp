@@ -123,9 +123,8 @@ bool G1CMMarkStack::initialize() {
   size_t initial_capacity = MarkStackSize;
   size_t max_capacity = MarkStackSizeMax;
 
-  size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) /* sizeof(G1TaskQueueEntry) NOT_LP64(* 2)*/;
-  //assert(TaskEntryChunkSizeInVoidStar == 1024, "wrong chunk size: " SIZE_FORMAT, TaskEntryChunkSizeInVoidStar);
-  log_trace(gc)("capacity_alignment: " SIZE_FORMAT, capacity_alignment());
+  size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
+
   size_t max_num_chunks = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
   size_t initial_num_chunks = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
@@ -143,7 +142,6 @@ bool G1CMMarkStack::initialize() {
 
   log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
                 initial_num_chunks, max_capacity);
-  log_trace(gc)("max_num_chunks: " SIZE_FORMAT, max_num_chunks);
 
   return _chunk_allocator.initialize(initial_num_chunks, max_num_chunks);
 }
@@ -272,10 +270,8 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
                       _max_capacity - _capacity;
 
 
-    log_trace(gc)("allocating " SIZE_FORMAT " TaskQueueArrayChunks", bucket_capacity);
     TaskQueueEntryChunk* bucket_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(bucket_capacity, mtGC);
 
-    log_trace(gc)("allocated " SIZE_FORMAT " TaskQueueArrayChunks " PTR_FORMAT, bucket_capacity, p2i(bucket_base));
     if (bucket_base == nullptr) {
       log_warning(gc)("Failed to reserve memory for increasing the overflow mark stack capacity with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.",
                       bucket_capacity, bucket_capacity * sizeof(TaskQueueEntryChunk));
@@ -292,10 +288,8 @@ void G1CMMarkStack::expand() {
 }
 
 void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {
-  log_trace(gc)("adding chunk to list");
   elem->next = *list;
   *list = elem;
-  log_trace(gc)("adding chunk to list done");
 }
 
 void G1CMMarkStack::add_chunk_to_chunk_list(TaskQueueEntryChunk* elem) {
@@ -344,9 +338,7 @@ bool G1CMMarkStack::par_push_chunk(G1TaskQueueEntry* ptr_arr) {
     }
   }
 
-  log_trace(gc)("par_push_chunk before copy");
   Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, EntriesPerChunk * sizeof(G1TaskQueueEntry));
-  log_trace(gc)("par_push_chunk after copy");
 
   add_chunk_to_chunk_list(new_chunk);
 
@@ -360,9 +352,7 @@ bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
     return false;
   }
 
-  log_trace(gc)("par_pop_chunk before copy");
   Copy::conjoint_memory_atomic(cur->data, ptr_arr, EntriesPerChunk * sizeof(G1TaskQueueEntry));
-  log_trace(gc)("par_pop_chunk after copy");
 
   add_chunk_to_free_list(cur);
   return true;
