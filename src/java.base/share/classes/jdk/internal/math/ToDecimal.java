@@ -139,13 +139,12 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         return index;
     }
 
+    @SuppressWarnings("deprecation")
     final int putSpecial(byte[] str, int index, int type) {
         String s = special(type);
         int length = s.length();
         if (coder == LATIN1) {
-            for (int i = 0; i < length; ++i) {
-                str[index + i] = (byte) s.charAt(i);
-            }
+            s.getBytes(0, length, str, index);
         } else {
             for (int i = 0; i < length; ++i) {
                 putChar(str, index + i, s.charAt(i));
