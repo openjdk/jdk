@@ -753,7 +753,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 // CodeBuffer gets the final layout (consts, insts, stubs in order of
 // ascending address).
 void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
-  //z tty->print_cr("relocate_code_to %p=>%p", insts()->start(), dest->insts()->start());
+  if (PrintCodeCache) { tty->print_cr("relocate_code_to %p=>%p", insts()->start(), dest->insts()->start()); }
   address dest_end = dest->_total_start + dest->_total_size;
   address dest_filled = nullptr;
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {

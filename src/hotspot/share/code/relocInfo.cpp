@@ -380,8 +380,10 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
     // expectation: move instruction from the temporary compiler buffer into a final place
     if (!CodeCache::contains(orig_addr) && CodeCache::contains(addr())) {
       delta = (intptr_t)CodeCache::low_bound() - sect_start;
-      //z tty->print_cr("----: %p<-%p | pc:%p->%p offs:%p CodeCache:[%p %p]",
-      //        (callee+delta), callee, orig_addr, addr(), orig_addr - sect_start, CodeCache::low_bound(), CodeCache::high_bound());
+      if (PrintCodeCache) {
+         tty->print_cr("----: %p<-%p | pc:%p->%p offs:%p CodeCache:[%p %p]",
+         (callee+delta), callee, orig_addr, addr(), orig_addr - sect_start, CodeCache::low_bound(), CodeCache::high_bound());
+      }
     } else {
       tty->print_cr("Relocation: something is wrong? %i%i pc:%p->%p, offs: %p, CodeCache:[%p %p]",
         CodeCache::contains(orig_addr), CodeCache::contains(addr()),
@@ -390,7 +392,7 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   } else {
     int sect = src->section_index_of(orig_addr);
     intptr_t sect_start = (intptr_t)src->code_section(sect)->start();
-    //z tty->print_cr("%i%i  : callee: %p offs: %p", !CodeCache::contains(callee), is_pc_relative, callee, orig_addr - sect_start);
+    if (PrintCodeCache) { tty->print_cr("%i%i  : callee: %p offs: %p", !CodeCache::contains(callee), is_pc_relative, callee, orig_addr - sect_start); }
   }
 
   // Reassert the callee address, this time in the new copy of the code.
