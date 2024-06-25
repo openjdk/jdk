@@ -167,8 +167,8 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
 }
 #endif
 
-static void do_test_print_hex_dump(const uint8_t* from, const uint8_t* to, int unitsize, int bytes_per_line,
-                                   const uint8_t* logical_start, const char* expected) {
+static void do_test_print_hex_dump(const_address from, const_address to, int unitsize, int bytes_per_line,
+                                   const_address logical_start, const char* expected) {
   char buf[2048];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
@@ -236,9 +236,9 @@ TEST_VM(os, test_print_hex_dump) {
   memcpy(two_pages + ps, bytes, sizeof(bytes));
 
   // print
-  const uint8_t* const from = (const uint8_t*) two_pages + ps - 32;
-  const uint8_t* const to = (const uint8_t*) from + 32 + sizeof(bytes);
-  const uint8_t* const logical_start = (const uint8_t*) LP64_ONLY(0xAAAAAAAAAA00ULL) NOT_LP64(0xAAAAAA00ULL);
+  const const_address from = (const_address) two_pages + ps - 32;
+  const const_address to = (const_address) from + 32 + sizeof(bytes);
+  const const_address logical_start = (const_address) LP64_ONLY(0xAAAAAAAAAA00ULL) NOT_LP64(0xAAAAAA00ULL);
 
   do_test_print_hex_dump(from, to, 1, 32, logical_start, PAT_1);
   do_test_print_hex_dump(from, to, 2, 32, logical_start, PAT_2);

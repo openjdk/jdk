@@ -941,11 +941,12 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static bool read_safely_from(const uint8_t* p, uintptr_t* result) {
-  const intptr_t errval = 0x1717;
-  intptr_t i = SafeFetchN((intptr_t*)p, errval);
+ATTRIBUTE_NO_ASAN static bool read_safely_from(const uintptr_t* p, uintptr_t* result) {
+  DEBUG_ONLY(*result = 0xAAAA;)
+  const uintptr_t errval = 0x1717;
+  uintptr_t i = (uintptr_t)SafeFetchN((intptr_t*)p, errval);
   if (i == errval) {
-    i = SafeFetchN((intptr_t*)p, ~errval);
+    i = (uintptr_t)SafeFetchN((intptr_t*)p, ~errval);
     if (i == ~errval) {
       return false;
     }
@@ -968,15 +969,15 @@ static void print_ascii_form(stringStream& ascii_form, uint64_t value, int units
 }
 
 // Helper for os::print_hex_dump
-static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize, stringStream& ascii_form) {
+static void print_hex_location(outputStream* st, const_address p, int unitsize, stringStream& ascii_form) {
   assert(is_aligned(p, unitsize), "Unaligned");
-  const uint8_t* pa = align_down(p, sizeof(intptr_t));
+  const uintptr_t* pa = (const uintptr_t*) align_down(p, sizeof(intptr_t));
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
     uintptr_t i1 = 0, i2 = 0;
     if (read_safely_from(pa, &i1) &&
-        read_safely_from(pa + sizeof(uintptr_t), &i2)) {
+        read_safely_from(pa + 1, &i2)) {
       const uint64_t value =
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
@@ -994,7 +995,7 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
     // bytoff:   0  1  2  3  4  5  6  7
     // LE bits:  0  8 16 24 32 40 48 56
     // BE bits: 56 48 40 32 24 16  8  0
-    const int offset = (int)(p - (address)pa);
+    const int offset = (int)(p - (const_address)pa);
     const int bitoffset =
       LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
       BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
@@ -1017,8 +1018,8 @@ static void print_hex_location(outputStream* st, const uint8_t* p, int unitsize,
   }
 }
 
-void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* end, int unitsize,
-                        bool print_ascii, int bytes_per_line, const uint8_t* logical_start) {
+void os::print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize,
+                        bool print_ascii, int bytes_per_line, const_address logical_start) {
   constexpr int max_bytes_per_line = 64;
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
   assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
@@ -1031,8 +1032,8 @@ void os::print_hex_dump(outputStream* st, const uint8_t* start, const uint8_t* e
   int cols = 0;
   const int cols_per_line = bytes_per_line / unitsize;
 
-  const uint8_t* p = start;
-  const uint8_t* logical_p = logical_start;
+  const_address p = start;
+  const_address logical_p = logical_start;
 
   stringStream ascii_form;
 
