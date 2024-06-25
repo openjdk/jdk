@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive) throws Exception {
+                     boolean interactive, Size size) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -143,7 +143,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
                 enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
             } else {
-                Size size = null;
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {
@@ -1312,6 +1311,7 @@ class ConsoleIOContext extends IOContext {
 
     private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
+        protected static final int DEFAULT_WIDTH = 80;
         protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
@@ -1320,9 +1320,9 @@ class ConsoleIOContext extends IOContext {
         public ProgrammaticInTerminal(InputStream input, OutputStream output,
                                        boolean interactive, Size size) throws Exception {
             this(input, output, interactive ? "ansi" : "dumb",
-                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size : new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT),
                  size != null ? size
-                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                              : interactive ? new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
                                             : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
@@ -1366,7 +1366,7 @@ class ConsoleIOContext extends IOContext {
             } catch (Throwable ex) {
                 // ignore
             }
-            return new Size(80, h);
+            return new Size(DEFAULT_WIDTH, h);
         }
         public TestTerminal(InputStream input, OutputStream output) throws Exception {
             this(input, output, computeSize());

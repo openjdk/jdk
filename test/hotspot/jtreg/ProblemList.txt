@@ -82,6 +82,13 @@ gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ZGenerational 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ZSinglegen 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 
 #############################################################################

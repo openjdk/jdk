@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package vm.share.transform;
+package vm.compiler.complog.share;
 
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
-import java.security.ProtectionDomain;
-
-public abstract class AbstractClassFileTransformer
-        implements ClassFileTransformer {
-    protected abstract boolean shouldBeTransformed(String name);
-
-    protected abstract byte[] transformClass(byte[] bytes);
-
-    @Override
-    public byte[] transform(ClassLoader loader, String className,
-            Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
-            byte[] classfileBuffer) throws IllegalClassFormatException {
-        if (shouldBeTransformed(className)) {
-            return transformClass(classfileBuffer);
-        }
-        return null;
-    }
+/*
+ * StreamListener listens on events from BufferedInputStream.
+ *
+ * Note: StreamListener should not never block as it potentially
+ * runs in thread that reads the input.
+ */
+public interface StreamListener {
+        public void onStart();
+        public void onRead(String line);
+        public void onFinish();
+        public void onException(Throwable e);
 }
