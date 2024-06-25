@@ -172,7 +172,7 @@ public final class DoubleToDecimal extends ToDecimal {
      * @throws IOException If an I/O error occurs
      */
     public int putDecimal(byte[] str, int index, double v) {
-        assert index >= 0 && index + MAX_CHARS <= length(str) : "Trusted caller missed bounds check";
+        assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
         int pair = toDecimal(str, index, v, null);
         int type = pair & 0xFF00;
