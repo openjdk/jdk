@@ -192,7 +192,7 @@ jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem, 
 
 // memory.swap.current : total amount of swap currently used by the cgroup and its descendants
 static
-jlong mem_swp_current_val(CgroupV2Controller* ctrl) {
+jlong memory_swap_current_value(CgroupV2Controller* ctrl) {
   julong swap_current;
   CONTAINER_READ_NUMBER_CHECKED(ctrl, "/memory.swap.current", "Swap currently used", swap_current);
   return (jlong)swap_current;
@@ -201,14 +201,14 @@ jlong mem_swp_current_val(CgroupV2Controller* ctrl) {
 jlong CgroupV2MemoryController::memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) {
   jlong memory_usage = memory_usage_in_bytes();
   if (memory_usage >= 0) {
-      jlong swap_current = mem_swp_current_val(reader());
+      jlong swap_current = memory_swap_current_value(reader());
       return memory_usage + (swap_current >= 0 ? swap_current : 0);
   }
   return memory_usage; // not supported or unlimited case
 }
 
 static
-jlong mem_limit_val(CgroupV2Controller* ctrl) {
+jlong memory_limit_value(CgroupV2Controller* ctrl) {
   jlong memory_limit;
   CONTAINER_READ_NUMBER_CHECKED_MAX(ctrl, "/memory.max", "Memory Limit", memory_limit);
   return memory_limit;
@@ -223,7 +223,7 @@ jlong mem_limit_val(CgroupV2Controller* ctrl) {
  *    -1 for unlimited, OSCONTAINER_ERROR for an error
  */
 jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
-  jlong limit = mem_limit_val(reader());
+  jlong limit = memory_limit_value(reader());
   if (log_is_enabled(Trace, os, container)) {
     if (limit == -1) {
       log_trace(os, container)("Memory Limit is: Unlimited");
@@ -251,15 +251,15 @@ jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
 }
 
 static
-jlong mem_swp_limit_val(CgroupV2Controller* ctrl) {
+jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   jlong swap_limit;
   CONTAINER_READ_NUMBER_CHECKED_MAX(ctrl, "/memory.swap.max", "Swap Limit", swap_limit);
   return swap_limit;
 }
 
 void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
-  jlong swap_current = mem_swp_current_val(reader());
-  jlong swap_limit = mem_swp_limit_val(reader());
+  jlong swap_current = memory_swap_current_value(reader());
+  jlong swap_limit = memory_swap_limit_value(reader());
 
   OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
