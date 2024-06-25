@@ -54,7 +54,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.VM;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -79,16 +78,21 @@ public class DeferredCloseTest {
 
     private static final int NUM_ITERATIONS = 50;
 
-    private static JavaNioAccess originalJavaNioAccess;
+    private static final JavaNioAccess originalJavaNioAccess;
 
-    /**
+    /*
      * Sets up a JavaNioAccess implementation which introduces an artificial
-     * delay in the implementation of certain method calls. This allows the test
-     * to introduce potential race between the Selector and the SelectableChannel
-     * operations, thus improving the efficacy of this test.
+     * delay in the implementation of certain method calls. JavaNioAccess itself plays no other role
+     * other than it being used in the implementation of APIs of several of the SelectableChannel
+     * classes. We override it in this test to introduce delays in some method calls. It thus
+     * allows us to introduce a race between the Selector and the SelectableChannel operations,
+     * effectively increasing the efficacy of this test.
+     *
+     * We use a static block, instead of @BeforeAll, to set our custom test specific
+     * JavaNioAccess very early and thus reduce the chances of JavaNioAccess already
+     * being looked up and cached by SelectableChannel implementations.
      */
-    @BeforeAll
-    public static void beforeAll() {
+    static {
         originalJavaNioAccess = SharedSecrets.getJavaNioAccess();
         SharedSecrets.setJavaNioAccess(new DelayInjectingNIOAccess());
     }
