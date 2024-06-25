@@ -3228,7 +3228,6 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   // We test the MSB of r_array_index, i.e., its sign bit
   testbit(r_array_index, 63);
-  // TODO: load immediate on condition could be used here;
   z_bfalse(L_failure); // if not set, then jump!!!
 
   // We will consult the secondary-super array.
@@ -3256,12 +3255,11 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   // Is there another entry to check? Consult the bitmap.
   testbit(r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
-  // TODO: load immediate on condition could be use here;
   z_bfalse(L_failure);
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
   // in Bit 2 for the look-ahead check in the slow path.
-  if (bit) {
+  if (bit != 0) {
     z_rllg(r_bitmap, r_bitmap, 64-bit); // rotate right
   }
 
@@ -3275,6 +3273,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   z_bru(L_done); // pass whatever result we got from a slow path
 
   bind(L_failure);
+  // TODO: use load immediate on condition and z_bru above will not be required
   z_lghi(r_result, 1);
 
   bind(L_done);
@@ -3322,7 +3321,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   // Implicit invariant: BITMAP_FULL implies (length > 0)
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
 
-  z_cghi(r_bitmap, (long)-1);
+  z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
   z_bre(L_huge);
 
   // NOTE: please load 0 only in r_result, as this is also being used for z_locgr down
