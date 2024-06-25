@@ -31,6 +31,7 @@ import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.invoke.InnerClassLambdaMetafactory.MethodBody;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -712,64 +713,67 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // emit implementation of speciesData()
-                    clb.withMethodBody(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL, new Consumer<CodeBuilder>() {
-                        @Override
-                        public void accept(CodeBuilder cob) {
-                            cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
-                                    .areturn();
-                        }
-                    });
+                    clb.withMethod(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
+                                            .areturn();
+                                }
+                            }));
 
                     // figure out the constructor arguments
                     MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
                     MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
                     // emit constructor
-                    clb.withMethodBody(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE, new Consumer<CodeBuilder>() {
-                        @Override
-                        public void accept(CodeBuilder cob) {
-                            cob.aload(0); // this
+                    clb.withMethod(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.aload(0); // this
 
-                            final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
-                            for (Var ca : ctorArgs) {
-                                ca.emitLoadInstruction(cob);
-                            }
+                                    final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
+                                    for (Var ca : ctorArgs) {
+                                        ca.emitLoadInstruction(cob);
+                                    }
 
-                            // super(ca...)
-                            cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
+                                    // super(ca...)
+                                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
 
-                            // store down fields
-                            Var lastFV = AFTER_THIS.lastOf(ctorArgs);
-                            for (Var f : fields) {
-                                // this.argL1 = argL1
-                                cob.aload(0);  // this
-                                lastFV = new Var(f.name, f.type, lastFV);
-                                lastFV.emitLoadInstruction(cob);
-                                cob.putfield(classDesc, f.name, f.desc);
-                            }
+                                    // store down fields
+                                    Var lastFV = AFTER_THIS.lastOf(ctorArgs);
+                                    for (Var f : fields) {
+                                        // this.argL1 = argL1
+                                        cob.aload(0);  // this
+                                        lastFV = new Var(f.name, f.type, lastFV);
+                                        lastFV.emitLoadInstruction(cob);
+                                        cob.putfield(classDesc, f.name, f.desc);
+                                    }
 
-                            cob.return_();
-                        }
-                    });
+                                    cob.return_();
+                                }
+                            }));
 
                     // emit make()  ...factory method wrapping constructor
                     MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                    clb.withMethodBody("make", methodDesc(ftryType), ACC_STATIC, new Consumer<CodeBuilder>() {
-                        @Override
-                        public void accept(CodeBuilder cob) {
-                            // make instance
-                            cob.new_(classDesc)
-                                    .dup();
-                            // load factory method arguments:  ctarg... and arg...
-                            for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
-                                v.emitLoadInstruction(cob);
-                            }
+                    clb.withMethod("make", methodDesc(ftryType), ACC_STATIC,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    // make instance
+                                    cob.new_(classDesc)
+                                            .dup();
+                                    // load factory method arguments:  ctarg... and arg...
+                                    for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
+                                        v.emitLoadInstruction(cob);
+                                    }
 
-                            // finally, invoke the constructor and return
-                            cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
-                                    .areturn();
-                        }
-                    });
+                                    // finally, invoke the constructor and return
+                                    cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
+                                            .areturn();
+                                }
+                            }));
 
                     // For each transform, emit the customized override of the transform method.
                     // This method mixes together some incoming arguments (from the transform's
