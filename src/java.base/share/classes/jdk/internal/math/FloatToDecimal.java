@@ -203,12 +203,9 @@ public final class FloatToDecimal extends ToDecimal {
             }
             if (t != 0) {
                 /* subnormal value */
-                int dk = 0;
-                if (t < C_TINY) {
-                    t *= 10;
-                    dk = -1;
-                }
-                return toDecimal(str, index, Q_MIN, t, dk) - start;
+                return (t < C_TINY
+                        ? toDecimal(str, index, Q_MIN, 10 * t, -1)
+                        : toDecimal(str, index, Q_MIN, t, 0)) - start;
             }
             return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
         }

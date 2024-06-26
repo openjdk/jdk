@@ -183,7 +183,7 @@ public final class DoubleToDecimal extends ToDecimal {
     }
 
     /*
-     *  Returns size in the lower byte, type in the high byte, where type is
+     * Returns size in the lower byte, type in the high byte, where type is
      *     PLUS_ZERO       iff v is 0.0
      *     MINUS_ZERO      iff v is -0.0
      *     PLUS_INF        iff v is POSITIVE_INFINITY
