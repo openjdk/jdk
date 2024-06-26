@@ -1396,10 +1396,16 @@ public:
   // of your data.
   Address form_address(Register Rd, Register base, int64_t byte_offset, int shift);
 
-  // Return true iff an address is within the 48-bit AArch64 address
+  // Return true if an address is within the 48-bit AArch64 address
   // space.
   bool is_valid_AArch64_address(address a) {
     return ((uint64_t)a >> 48) == 0;
+  }
+
+  // ADRP addresses 4KB pages with a range of +/- 4GB to the current PC
+  bool fits_adrp_limit(address a) {
+    return ((int64_t)a - (int64_t)pc() < 4L * (int64_t) G) &&
+           ((int64_t)pc() - (int64_t)a < 4L * (int64_t) G);
   }
 
   // Load the base of the cardtable byte map into reg.
