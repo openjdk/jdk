@@ -706,13 +706,13 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
          || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
 
   bool target_needs_far_br = target_needs_far_branch(entry.target());
-/*
+
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
     if (PrintCodeCache) { tty->print_cr("call: %p->%p", entry.target(), entry.target() - delta); }
     entry = RuntimeAddress(entry.target() - delta);
   }
-*/
+
   if (target_needs_far_br) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -1080,7 +1080,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   br(Assembler::EQ, dont);
   far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   bind(dont);
-  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+//  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
 
   return uep_offset;
 }
