@@ -238,6 +238,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase5_epilog();
   }
+  heap->free_set()->log_status();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -1091,7 +1092,6 @@ void ShenandoahFullGC::phase5_epilog() {
 
     heap->collection_set()->clear();
     heap->free_set()->rebuild();
-    heap->free_set()->log_status();
     heap->clear_cancelled_gc();
   }
 
