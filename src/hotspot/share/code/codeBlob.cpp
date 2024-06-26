@@ -268,22 +268,30 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   return blob;
 }
 
+static intptr_t offset_to_codecache(char* ptr) {
+  intptr_t offset = ((uintptr_t)ptr < (uintptr_t)CodeCache::low_bound()) ?
+            ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) :
+            ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
+  return offset;
+}
+
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
   if (!alloc_in_codecache) {
     char* ptr = (char*)aligned_alloc(K, size + 16); // 16 is a header gap
 
     if (StressCodeBuffers) {
-      while ((intptr_t)ptr > (intptr_t)CodeCache::low_bound() - 4L*1000*1000*1000 &&
-             (intptr_t)ptr - (intptr_t)CodeCache::high_bound() < 4L*1000*1000*1000) {
-        ptr = (char*)aligned_alloc(K, size + 16); // stress test: leave the garbage and reallocate
+      //tty->print_cr("offset_to_codecache %li", offset_to_codecache(ptr));
+      while (offset_to_codecache(ptr) < 4L*1000*1000*1000 &&
+             offset_to_codecache(ptr) > -4L*1000*1000*1000) {
+        // stress test: leave the garbage and reallocate
+        ptr = (char*)aligned_alloc(1000, 100*1000*1000);
+        ptr = (char*)aligned_alloc(K, size + 16);
       }
     }
 
     if (PrintCodeCache) {
-      intptr_t offset = ((intptr_t)ptr < (intptr_t)CodeCache::low_bound()) ?
-                        ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) : ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
-      tty->print_cr("- BufferBlob malloc %i [%p %p]. offset to CodeCache: %iMB",
-        size, ptr, ptr+size, (int)offset/1024/1024);
+      tty->print_cr("- BufferBlob malloc %i [%p %p]. offset to CodeCache: %li GB",
+        size, ptr, ptr+size, offset_to_codecache(ptr)/1024/1024/1024);
     }
 
     // this is to avoid "copy must preserve alignment" assert in CodeBuffer::compute_final_layout:
