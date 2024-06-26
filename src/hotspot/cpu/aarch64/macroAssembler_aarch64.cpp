@@ -1515,7 +1515,7 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
   bind(Lexit);
 }
 
-void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
+void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
                                                      Register temp2_reg,
@@ -1683,7 +1683,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Label* L_failure,
                                                    bool set_cond_codes) {
   if (! UseSecondarySupersTable) {
-    check_klass_subtype_slow_path_1
+    check_klass_subtype_slow_path_linear
       (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
   } else {
     check_klass_subtype_slow_path_table
