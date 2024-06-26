@@ -378,20 +378,6 @@ JVMFlag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
 }
 #endif // COMPILER2
 
-JVMFlag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose) {
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking && !is_power_of_2(RTMTotalCountIncrRate)) {
-    JVMFlag::printError(verbose,
-                        "RTMTotalCountIncrRate (%d) must be "
-                        "a power of 2, resetting it to 64\n",
-                        RTMTotalCountIncrRate);
-    FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
-  }
-#endif
-
-  return JVMFlag::SUCCESS;
-}
-
 #ifdef COMPILER2
 JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose) {
   if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {

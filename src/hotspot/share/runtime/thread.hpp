@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -277,7 +277,7 @@ class Thread: public ThreadShadow {
                                                  // is waiting to lock
  public:
   // Constructor
-  Thread();
+  Thread(MEMFLAGS flag = mtThread);
   virtual ~Thread() = 0;        // Thread is abstract.
 
   // Manage Thread::current()

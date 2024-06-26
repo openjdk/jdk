@@ -252,7 +252,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
 
 // "Normal" instantiation is preceded by a MetaspaceObj allocation
