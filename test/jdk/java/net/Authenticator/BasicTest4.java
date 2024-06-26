@@ -151,7 +151,7 @@ public class BasicTest4 {
                 System.out.println ("checkfor returned " + success);
                 readAll (s);
                 os = s.getOutputStream();
-                os.write (reply2.getBytes());
+                os.write ((reply2+"HelloAgain").getBytes());
                 s.close ();
 
                 if (success)
