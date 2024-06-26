@@ -119,7 +119,8 @@ public class Loopback {
 
             // send datagram to multicast group
             System.out.format("send %s -> %s%n", dc.getLocalAddress(), target);
-            ByteBuffer src = ByteBuffer.wrap("hello".getBytes("UTF-8"));
+            String str = "hello " + System.nanoTime();
+            ByteBuffer src = ByteBuffer.wrap(str.getBytes("UTF-8"));
             dc.send(src, target);
 
             // receive datagram sent to multicast group
@@ -158,6 +159,11 @@ public class Loopback {
                     } else {
                         sel.selectedKeys().clear();
                         SocketAddress sender = dc.receive(dst);
+                        if (!src.toString().contentEquals(dst.toString())) {
+                            System.out.println("src: " + src + "not equal to dst: " + dst);
+                            dst.clear();
+                            continue;
+                        }
                         if (sender != null) {
                             System.out.format("received %s from %s%n", dst, sender);
                             senderPort = ((InetSocketAddress) sender).getPort();
