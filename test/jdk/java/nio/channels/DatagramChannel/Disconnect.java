@@ -90,7 +90,7 @@ public class Disconnect {
 
             dc.write(ByteBuffer.wrap("hello".getBytes()));
 
-            if (getLocalPort(dc) == getLocalPort(server)) {
+            if (getLocalPort(dc) != getLocalPort(server)) {
                 ByteBuffer bb = ByteBuffer.allocate(100);
                 server.receive(bb);
             } else {
