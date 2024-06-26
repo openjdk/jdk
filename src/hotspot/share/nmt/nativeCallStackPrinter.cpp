@@ -37,18 +37,19 @@ NativeCallStackPrinter::NativeCallStackPrinter(outputStream* out) :
 void NativeCallStackPrinter::print_stack(const NativeCallStack* stack) const {
   for (int i = 0; i < NMT_TrackingStackDepth; i++) {
     const address pc = stack->get_frame(i);
-    if (pc != nullptr) {
-      bool created = false;
-      const char** cached_frame_text = _cache.put_if_absent(pc, &created);
-      if (created) {
-        stringStream ss(4 * K);
-        stack->print_frame(&ss, pc);
-        const size_t len = strlen(ss.base());
-        char* store = NEW_ARENA_ARRAY(&_text_storage, char, len + 1);
-        strcpy(store, ss.base());
-        (*cached_frame_text) = store;
-      }
-      _out->print_raw_cr(*cached_frame_text);
+    if (pc == nullptr) {
+      break;
     }
+    bool created = false;
+    const char** cached_frame_text = _cache.put_if_absent(pc, &created);
+    if (created) {
+      stringStream ss(4 * K);
+      stack->print_frame(&ss, pc);
+      const size_t len = ss.size();
+      char* store = NEW_ARENA_ARRAY(&_text_storage, char, len + 1);
+      memcpy(store, ss.base(), len + 1);
+      (*cached_frame_text) = store;
+    }
+    _out->print_raw_cr(*cached_frame_text);
   }
 }
