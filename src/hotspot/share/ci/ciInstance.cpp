@@ -78,11 +78,7 @@ ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
     case T_LONG:    value = ciConstant(obj->long_field(offset)); break;
     case T_OBJECT:  // fall through
     case T_ARRAY: {
-      // In case we are reading the constant off a reference @Stable field,
-      // we need to match the releasing store with this acquire. There is no easy
-      // way to know this from the offset, but it should not hurt to ask this for
-      // all reference fields.
-      oop o = obj->obj_field_acquire(offset);
+      oop o = obj->obj_field(offset);
 
       // A field will be "constant" if it is known always to be
       // a non-null reference to an instance of a particular class,

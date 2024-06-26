@@ -153,16 +153,16 @@ public class StablePrimArrayTest {
     }
 
     @Test
-    @IR(counts = { IRNode.MEMBAR_RELEASE, "1" })
+    @IR(failOn = { IRNode.MEMBAR })
     static void testMethodEmptyInit() {
-        // Reference inits have release membars.
+        // Reference inits do not have membars.
         INIT_EMPTY_CARRIER.initEmpty();
     }
 
     @Test
-    @IR(counts = { IRNode.MEMBAR_RELEASE, "1" })
+    @IR(failOn = { IRNode.MEMBAR })
     static void testMethodFullInit() {
-        // Reference inits have release membars.
+        // Reference inits do not have membars.
         INIT_FULL_CARRIER.initFull();
     }
 

@@ -209,21 +209,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   Node* val = type2size[bt] == 1 ? pop() : pop_pair();
 
   DecoratorSet decorators = IN_HEAP;
-
-  if (is_vol) {
-    // Volatile access, full SC.
-    decorators |= MO_SEQ_CST;
-  } else if (field->is_stable() && !field->is_final() &&
-             is_reference_type(field->layout_type())) {
-    // For reference @Stable fields, make sure we publish the contents
-    // safely. We need this to make sure compilers see a proper value when
-    // constant folding the access. Final @Stable fields are already
-    // handled in constructors.
-    decorators |= MO_RELEASE;
-  } else {
-    // Everything else is unordered.
-    decorators |= MO_UNORDERED;
-  }
+  decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
 
   bool is_obj = is_reference_type(bt);
 

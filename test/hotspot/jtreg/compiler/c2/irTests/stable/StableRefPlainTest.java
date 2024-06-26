@@ -108,9 +108,9 @@ public class StableRefPlainTest {
     }
 
     @Test
-    @IR(counts = { IRNode.MEMBAR_RELEASE, "1" })
+    @IR(failOn = { IRNode.MEMBAR })
     static void testMethodInit() {
-        // Reference inits have release membars.
+        // Reference inits do not have membars.
         INIT_CARRIER.init();
     }
 

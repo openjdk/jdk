@@ -1677,18 +1677,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
 
   DecoratorSet decorators = IN_HEAP;
   if (is_volatile) {
-    // Volatile access, full SC.
     decorators |= MO_SEQ_CST;
-  } else if (x->field()->is_stable() && !x->field()->is_final() &&
-             is_reference_type(field_type)) {
-    // For reference @Stable fields, make sure we publish the contents
-    // safely. We need this to make sure compilers see a proper value when
-    // constant folding the access. Final @Stable fields are already
-    // handled in constructors.
-    decorators |= MO_RELEASE;
-  } else {
-    // Everything else is unordered.
-    decorators |= MO_UNORDERED;
   }
   if (needs_patching) {
     decorators |= C1_NEEDS_PATCHING;
