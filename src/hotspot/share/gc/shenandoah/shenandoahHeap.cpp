@@ -945,24 +945,50 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       return nullptr;
     }
 
-    // Block until control thread reacted, then retry allocation.
-    //
-    // It might happen that one of the threads requesting allocation would unblock
-    // way later after GC happened, only to fail the second allocation, because
-    // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress (or until at least
-    // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
-      control_thread()->handle_alloc_failure(req, true);
-      result = allocate_memory_under_lock(req, in_new_region);
-    }
+    if (result == nullptr) {
+      // Block until control thread reacted, then retry allocation.
+      //
+      // It might happen that one of the threads requesting allocation would unblock
+      // way later after GC happened, only to fail the second allocation, because
+      // other threads have already depleted the free storage. In this case, a better
+      // strategy is to try again, until at least one full GC has completed.
+      //
+      // Stop retrying and return nullptr to cause OOMError exception if our allocation failed even after:
+      //   a) We experienced a GC that had good progress, or
+      //   b) We experienced at least one Full GC (whether or not it had good progress)
+      //
+      // TODO: Rather than require a Full GC before throwing OOMError, it might be more appropriate for handle_alloc_failure()
+      //       to trigger a concurrent GLOBAL GC, and throw OOMError if we cannot allocate even after GLOBAL GC has finished.
+      //       There is no "perfect" solution here:
+      //
+      //        1. As currently implemented, there may be a race between multiple allocating threads, both attempting
+      //           to allocate very large objects.  The first thread to retry its allocation might succeed and the second
+      //           thread to retry its allocation might fail (because the first thread consumed the newly available memory).
+      //           So the second thread experiences OOMError even through another GC would have reclaimed the memory it wanted
+      //           to allocate.
+      //        2. A GLOBAL GC won't necessarily reclaim all garbage.  Following a concurrent Generational GLOBAL GC, we may
+      //           need to perform multiple concurrent mixed evacuations in order to reclaim all of the dead memory identified
+      //           by the GLOBAL GC mark.  However, the first evacuation performed by the GLOBAL GC will normally reclaim
+      //           a significant amount of garbage (as guided by garbage first heuristic).  If this is not enough memory
+      //           to satisfy the pending allocation request, we are in "dire straits", and a fail-fast OOMError is probably
+      //           the better remediation than repeated attempts to allocate following repeated GC cycles.
 
-    if (log_is_enabled(Debug, gc, alloc)) {
-      ResourceMark rm;
-      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
-                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
+      size_t original_count = shenandoah_policy()->full_gc_count();
+      while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
+        control_thread()->handle_alloc_failure(req, true);
+        result = allocate_memory_under_lock(req, in_new_region);
+      }
+      if (result != nullptr) {
+        // If our allocation request has been satisifed after it initially failed, we count this as good gc progress
+        notify_gc_progress();
+      }
+      if (log_is_enabled(Debug, gc, alloc)) {
+        ResourceMark rm;
+        log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT
+                             ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                             Thread::current()->name(), p2i(result), req.type_string(), req.size(),
+                             original_count, get_gc_no_progress_count());
+      }
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
