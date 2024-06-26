@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          craft some delays at specific locations in the implementation of InetSocketAddress
  *          to trigger race conditions
  * @compile/module=java.base java/net/InetSocketAddress.java
- * @run junit/othervm/timeout=240 DeferredCloseTest
+ * @run junit/othervm DeferredCloseTest
  */
 public class DeferredCloseTest {
 
