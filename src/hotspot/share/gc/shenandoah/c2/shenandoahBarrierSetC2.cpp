@@ -980,7 +980,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     ShenandoahBarrierC2Support::verify(Compile::current()->root());
   } else if (phase == BarrierSetC2::BeforeCodeGen) {
     // Verify Shenandoah pre-barriers
-    const int marking_offset = in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset());
+    const int gc_state_offset = in_bytes(ShenandoahThreadLocalData::gc_state_offset());
 
     Unique_Node_List visited;
     Node_List worklist;
@@ -988,7 +988,10 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     worklist.push(compile->root());
     while (worklist.size() > 0) {
       Node *x = worklist.pop();
-      if (x == nullptr || x == compile->top()) continue;
+      if (x == nullptr || x == compile->top()) {
+        continue;
+      }
+
       if (visited.member(x)) {
         continue;
       } else {
@@ -1016,7 +1019,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
               LoadNode *load = cmp->in(1)->as_Load();
               if (load->Opcode() == Op_LoadB && load->in(2)->is_AddP() && load->in(2)->in(2)->Opcode() == Op_ThreadLocal
                   && load->in(2)->in(3)->is_Con()
-                  && load->in(2)->in(3)->bottom_type()->is_intptr_t()->get_con() == marking_offset) {
+                  && load->in(2)->in(3)->bottom_type()->is_intptr_t()->get_con() == gc_state_offset) {
 
                 Node *if_ctrl = iff->in(0);
                 Node *load_ctrl = load->in(0);

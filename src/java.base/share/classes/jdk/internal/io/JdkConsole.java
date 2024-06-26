@@ -38,6 +38,9 @@ import java.util.Locale;
 public interface JdkConsole {
     PrintWriter writer();
     Reader reader();
+    JdkConsole println(Object obj);
+    JdkConsole print(Object obj);
+    String readln(String prompt);
     JdkConsole format(Locale locale, String format, Object ... args);
     String readLine(Locale locale, String format, Object ... args);
     String readLine();

@@ -276,6 +276,8 @@ public abstract class DocTrees extends Trees {
      * @param tree the tree containing the entity
      * @return a string containing the characters
      * @spec https://www.w3.org/TR/html52 HTML Standard
+     *
+     * @since 16
      */
     public abstract String getCharacters(EntityTree tree);
 }

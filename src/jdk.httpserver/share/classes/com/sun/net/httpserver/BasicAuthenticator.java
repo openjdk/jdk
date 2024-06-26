@@ -85,6 +85,8 @@ public abstract class BasicAuthenticator extends Authenticator {
      *         correctly quoted, as specified in <a href="https://tools.ietf.org/html/rfc7230#section-3.2">
      *         RFC 7230 section-3.2</a>. Note, any {@code \} character used for
      *         quoting must itself be quoted in source code.
+     *
+     * @since 14
      */
     public BasicAuthenticator(String realm, Charset charset) {
         Objects.requireNonNull(charset);

@@ -41,13 +41,15 @@ DEBUG_ONLY(class ResourceMark;)
 // we may use jio_printf:
 //     jio_fprintf(defaultStream::output_stream(), "Message");
 // This allows for redirection via -XX:+DisplayVMOutputToStdout and
-// -XX:+DisplayVMOutputToStderr
+// -XX:+DisplayVMOutputToStderr.
+
 class outputStream : public CHeapObjBase {
  private:
    NONCOPYABLE(outputStream);
+   int _indentation; // current indentation
+   bool _autoindent; // if true, every line starts with indentation
 
  protected:
-   int _indentation; // current indentation
    int _position;    // visual position on the current line
    uint64_t _precount; // number of chars output, less than _position
    TimeStamp _stamp; // for time stamps
@@ -56,6 +58,23 @@ class outputStream : public CHeapObjBase {
 
   // Returns whether a newline was seen or not
    bool update_position(const char* s, size_t len);
+
+  // Processes the given format string and the supplied arguments
+  // to produce a formatted string in the supplied buffer. Returns
+  // the formatted string (in the buffer). If the formatted string
+  // would be longer than the buffer, it is truncated.
+  //
+  // If the format string is a plain string (no format specifiers)
+  // or is exactly "%s" to print a supplied argument string, then
+  // the buffer is ignored, and we return the string directly.
+  // However, if `add_cr` is true then we have to copy the string
+  // into the buffer, which risks truncation if the string is too long.
+  //
+  // The `result_len` reference is always set to the length of the returned string.
+  //
+  // If add_cr is true then the cr will always be placed in the buffer (buffer minimum size is 2).
+  //
+  // In a debug build, if truncation occurs a VM warning is issued.
    static const char* do_vsnprintf(char* buffer, size_t buflen,
                                    const char* format, va_list ap,
                                    bool add_cr,
@@ -69,9 +88,10 @@ class outputStream : public CHeapObjBase {
    void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) ATTRIBUTE_PRINTF(2, 0);
 
  public:
+   class TestSupport;  // Unit test support
+
    // creation
-   outputStream();
-   outputStream(bool has_time_stamps);
+   outputStream(bool has_time_stamps = false);
 
    // indentation
    outputStream& indent();
@@ -84,6 +104,14 @@ class outputStream : public CHeapObjBase {
    void fill_to(int col);
    void move_to(int col, int slop = 6, int min_space = 2);
 
+   // Automatic indentation:
+   // If autoindent mode is on, the following APIs will automatically indent
+   // line starts depending on the current indentation level:
+   // print(), print_cr(), print_raw(), print_raw_cr()
+   // Other APIs are unaffected
+   // Returns old autoindent state.
+   bool set_autoindent(bool value);
+
    // sizing
    int position() const { return _position; }
    julong count() const { return _precount + _position; }
@@ -91,14 +119,18 @@ class outputStream : public CHeapObjBase {
    void set_position(int pos)   { _position = pos; }
 
    // printing
+   // Note that (v)print_cr forces the use of internal buffering to allow
+   // appending of the "cr". This can lead to truncation if the buffer is
+   // too small.
+
    void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
    void print_cr(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
    void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
-   void print_raw(const char* str)            { write(str, strlen(str)); }
-   void print_raw(const char* str, size_t len)   { write(str,         len); }
-   void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
-   void print_raw_cr(const char* str, size_t len){ write(str,         len); cr(); }
+   void print_raw(const char* str)                { print_raw(str, strlen(str)); }
+   void print_raw(const char* str, size_t len);
+   void print_raw_cr(const char* str)             { print_raw(str); cr(); }
+   void print_raw_cr(const char* str, size_t len) { print_raw(str, len); cr(); }
    void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
    void sp(int count = 1);
@@ -144,15 +176,24 @@ class outputStream : public CHeapObjBase {
 extern outputStream* tty;           // tty output
 
 class streamIndentor : public StackObj {
- private:
-  outputStream* _str;
-  int _amount;
-
- public:
+  outputStream* const _str;
+  const int _amount;
+  NONCOPYABLE(streamIndentor);
+public:
   streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
     _str->inc(_amount);
   }
   ~streamIndentor() { _str->dec(_amount); }
+};
+
+class StreamAutoIndentor : public StackObj {
+  outputStream* const _os;
+  const bool _old;
+  NONCOPYABLE(StreamAutoIndentor);
+ public:
+  StreamAutoIndentor(outputStream* os) :
+    _os(os), _old(os->set_autoindent(true)) {}
+  ~StreamAutoIndentor() { _os->set_autoindent(_old); }
 };
 
 // advisory locking for the shared tty stream:

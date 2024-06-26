@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
 
 void* JfrIntrinsicSupport::return_lease(JavaThread* jt) {
   DEBUG_ONLY(assert_precondition(jt);)
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   ThreadStateTransition::transition_from_java(jt, _thread_in_native);
   assert(jt->jfr_thread_local()->has_java_event_writer(), "invariant");
   assert(jt->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");

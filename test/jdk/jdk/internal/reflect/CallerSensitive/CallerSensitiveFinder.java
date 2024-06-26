@@ -164,7 +164,7 @@ public class CallerSensitiveFinder {
 
     private static final String CALLER_SENSITIVE_ANNOTATION = "Ljdk/internal/reflect/CallerSensitive;";
     private static boolean isCallerSensitive(MethodModel m) {
-        var attr = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+        var attr = m.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
         if (attr != null) {
             for (var ann : attr.annotations()) {
                 if (ann.className().equalsString(CALLER_SENSITIVE_ANNOTATION)) {

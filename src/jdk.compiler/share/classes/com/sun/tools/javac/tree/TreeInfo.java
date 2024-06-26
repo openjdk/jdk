@@ -303,6 +303,16 @@ public class TreeInfo {
         }
     }
 
+    /**
+     * Is the given method invocation an invocation of this(...) or super(...)?
+     */
+    public static boolean isConstructorCall(JCMethodInvocation invoke) {
+        Name name = TreeInfo.name(invoke.meth);
+        Names names = name.table.names;
+
+        return (name == names._this || name == names._super);
+    }
+
     /** Finds super() invocations and translates them using the given mapping.
      */
     public static void mapSuperCalls(JCBlock block, Function<? super JCExpressionStatement, ? extends JCStatement> mapper) {
@@ -334,11 +344,13 @@ public class TreeInfo {
         @Override
         public void visitClassDef(JCClassDecl tree) {
             // don't descend any further
+            result = tree;
         }
 
         @Override
         public void visitLambda(JCLambda tree) {
             // don't descend any further
+            result = tree;
         }
     }
 

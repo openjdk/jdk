@@ -2479,9 +2479,12 @@ public class DecimalFormat extends NumberFormat {
                     symbols.getGroupingSeparator();
             String exponentString = symbols.getExponentSeparator();
             boolean sawDecimal = false;
-            boolean sawExponent = false;
             boolean sawDigit = false;
-            int exponent = 0; // Set to the exponent value, if any
+            // Storing as long allows us to maintain accuracy of exponent
+            // when the exponent value as well as the decimalAt nears
+            // Integer.MAX/MIN value. However, the final expressed value is an int
+            long exponent = 0;
+            boolean[] expStat = new boolean[STATUS_LENGTH];
 
             // We have to track digitCount ourselves, because digits.count will
             // pin when the maximum allowable digits is reached.
@@ -2579,21 +2582,27 @@ public class DecimalFormat extends NumberFormat {
                     // require that they be followed by a digit.  Otherwise
                     // we backup and reprocess them.
                     backup = position;
-                } else if (checkExponent && !isExponent && text.regionMatches(position, exponentString, 0, exponentString.length())
-                        && !sawExponent) {
+                } else if (checkExponent && !isExponent
+                        && text.regionMatches(position, exponentString, 0, exponentString.length())) {
                     // Process the exponent by recursively calling this method.
                     ParsePosition pos = new ParsePosition(position + exponentString.length());
-                    boolean[] stat = new boolean[STATUS_LENGTH];
                     DigitList exponentDigits = new DigitList();
 
-                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, stat) &&
-                            exponentDigits.fitsIntoLong(stat[STATUS_POSITIVE], true)) {
-                        position = pos.index; // Advance past the exponent
-                        exponent = (int)exponentDigits.getLong();
-                        if (!stat[STATUS_POSITIVE]) {
-                            exponent = -exponent;
+                    if (subparse(text, pos, "", symbols.getMinusSignText(), exponentDigits, true, expStat)) {
+                        // We parse the exponent with isExponent == true, thus fitsIntoLong()
+                        // only returns false here if the exponent DigitList value exceeds
+                        // Long.MAX_VALUE. We do not need to worry about false being
+                        // returned for faulty values as they are ignored by DigitList.
+                        if (exponentDigits.fitsIntoLong(expStat[STATUS_POSITIVE], true)) {
+                            exponent = exponentDigits.getLong();
+                            if (!expStat[STATUS_POSITIVE]) {
+                                exponent = -exponent;
+                            }
+                        } else {
+                            exponent = expStat[STATUS_POSITIVE] ?
+                                    Long.MAX_VALUE : Long.MIN_VALUE;
                         }
-                        sawExponent = true;
+                        position = pos.index; // Advance past the exponent
                     }
                     break; // Whether we fail or succeed, we exit this loop
                 } else {
@@ -2628,7 +2637,9 @@ public class DecimalFormat extends NumberFormat {
             }
 
             // Adjust for exponent, if any
-            digits.decimalAt += exponent;
+            if (exponent != 0) {
+                digits.decimalAt = shiftDecimalAt(digits.decimalAt, exponent);
+            }
 
             // If none of the text string was recognized.  For example, parse
             // "x" with pattern "#0.00" (return index and error index both 0)
@@ -2639,6 +2650,29 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         return position;
+    }
+
+    // Calculate the final decimal position based off the exponent value
+    // and the existing decimalAt position. If overflow/underflow, the value
+    // should be set as either Integer.MAX/MIN
+    private int shiftDecimalAt(int decimalAt, long exponent) {
+        try {
+            exponent = Math.addExact(decimalAt, exponent);
+        } catch (ArithmeticException ex) {
+            // If we under/overflow a Long do not bother with the decimalAt
+            // As it can only shift up to Integer.MAX/MIN which has no affect
+            if (exponent > 0 && decimalAt > 0) {
+                return Integer.MAX_VALUE;
+            } else {
+                return Integer.MIN_VALUE;
+            }
+        }
+        try {
+            decimalAt = Math.toIntExact(exponent);
+        } catch (ArithmeticException ex) {
+            decimalAt = exponent > 0 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        }
+        return decimalAt;
     }
 
     // Checks to make sure grouping size is not violated. Used when strict.
