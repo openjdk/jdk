@@ -25,176 +25,103 @@
 
 package java.lang.invoke;
 
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
-import sun.invoke.util.BytecodeDescriptor;
+import java.lang.constant.ClassDesc;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.MethodRefEntry;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
-import static sun.invoke.util.Wrapper.*;
 
-class TypeConvertingMethodAdapter extends MethodVisitor {
+import static java.lang.constant.ConstantDescs.*;
 
-    TypeConvertingMethodAdapter(MethodVisitor mv) {
-        super(Opcodes.ASM7, mv);
-    }
+class TypeConvertingMethodAdapter {
 
-    private static final int NUM_WRAPPERS = Wrapper.COUNT;
+    private static class BoxHolder {
+        private static final ConstantPoolBuilder CP = ConstantPoolBuilder.of();
 
-    private static final String NAME_OBJECT = "java/lang/Object";
-    private static final String WRAPPER_PREFIX = "Ljava/lang/";
-
-    // Same for all primitives; name of the boxing method
-    private static final String NAME_BOX_METHOD = "valueOf";
-
-    // Table of opcodes for widening primitive conversions; NOP = no conversion
-    private static final int[][] wideningOpcodes = new int[NUM_WRAPPERS][NUM_WRAPPERS];
-
-    private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
-
-    // Table of wrappers for primitives, indexed by ASM type sorts
-    private static final Wrapper[] FROM_TYPE_SORT = new Wrapper[12];
-
-    static {
-        for (Wrapper w : Wrapper.values()) {
-            if (w.basicTypeChar() != 'L') {
-                int wi = hashWrapperName(w.wrapperSimpleName());
-                assert (FROM_WRAPPER_NAME[wi] == null);
-                FROM_WRAPPER_NAME[wi] = w;
-            }
+        private static MethodRefEntry box(ClassDesc primitive, ClassDesc target) {
+            return CP.methodRefEntry(target, "valueOf", MethodTypeDescImpl.ofValidated(target, primitive));
         }
 
-        // wideningOpcodes[][] will be NOP-initialized by default
-        assert(Opcodes.NOP == 0);
+        private static final MethodRefEntry BOX_BOOLEAN = box(CD_boolean, CD_Boolean),
+                                            BOX_BYTE    = box(CD_byte, CD_Byte),
+                                            BOX_SHORT   = box(CD_short, CD_Short),
+                                            BOX_CHAR    = box(CD_char, CD_Character),
+                                            BOX_INT     = box(CD_int, CD_Integer),
+                                            BOX_LONG    = box(CD_long, CD_Long),
+                                            BOX_FLOAT   = box(CD_float, CD_Float),
+                                            BOX_DOUBLE  = box(CD_double, CD_Double);
 
-        initWidening(LONG,   Opcodes.I2L, BYTE, SHORT, INT, CHAR);
-        initWidening(LONG,   Opcodes.F2L, FLOAT);
-        initWidening(FLOAT,  Opcodes.I2F, BYTE, SHORT, INT, CHAR);
-        initWidening(FLOAT,  Opcodes.L2F, LONG);
-        initWidening(DOUBLE, Opcodes.I2D, BYTE, SHORT, INT, CHAR);
-        initWidening(DOUBLE, Opcodes.F2D, FLOAT);
-        initWidening(DOUBLE, Opcodes.L2D, LONG);
-
-        FROM_TYPE_SORT[Type.BYTE] = Wrapper.BYTE;
-        FROM_TYPE_SORT[Type.SHORT] = Wrapper.SHORT;
-        FROM_TYPE_SORT[Type.INT] = Wrapper.INT;
-        FROM_TYPE_SORT[Type.LONG] = Wrapper.LONG;
-        FROM_TYPE_SORT[Type.CHAR] = Wrapper.CHAR;
-        FROM_TYPE_SORT[Type.FLOAT] = Wrapper.FLOAT;
-        FROM_TYPE_SORT[Type.DOUBLE] = Wrapper.DOUBLE;
-        FROM_TYPE_SORT[Type.BOOLEAN] = Wrapper.BOOLEAN;
-    }
-
-    private static void initWidening(Wrapper to, int opcode, Wrapper... from) {
-        for (Wrapper f : from) {
-            wideningOpcodes[f.ordinal()][to.ordinal()] = opcode;
+        private static MethodRefEntry unbox(ClassDesc owner, String methodName, ClassDesc primitiveTarget) {
+            return CP.methodRefEntry(owner, methodName, MethodTypeDescImpl.ofValidated(primitiveTarget));
         }
+
+        private static final MethodRefEntry UNBOX_BOOLEAN = unbox(CD_Boolean, "booleanValue", CD_boolean),
+                                            UNBOX_BYTE    = unbox(CD_Number, "byteValue", CD_byte),
+                                            UNBOX_SHORT   = unbox(CD_Number, "shortValue", CD_short),
+                                            UNBOX_CHAR    = unbox(CD_Character, "charValue", CD_char),
+                                            UNBOX_INT     = unbox(CD_Number, "intValue", CD_int),
+                                            UNBOX_LONG    = unbox(CD_Number, "longValue", CD_long),
+                                            UNBOX_FLOAT   = unbox(CD_Number, "floatValue", CD_float),
+                                            UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
     }
 
-    /**
-     * Class name to Wrapper hash, derived from Wrapper.hashWrap()
-     * @param xn
-     * @return The hash code 0-15
-     */
-    private static int hashWrapperName(String xn) {
-        if (xn.length() < 3) {
-            return 0;
-        }
-        return (3 * xn.charAt(1) + xn.charAt(2)) % 16;
+    private static TypeKind primitiveTypeKindFromClass(Class<?> type) {
+        if (type == int.class)     return TypeKind.IntType;
+        if (type == long.class)    return TypeKind.LongType;
+        if (type == boolean.class) return TypeKind.BooleanType;
+        if (type == short.class)   return TypeKind.ShortType;
+        if (type == byte.class)    return TypeKind.ByteType;
+        if (type == char.class)    return TypeKind.CharType;
+        if (type == float.class)   return TypeKind.FloatType;
+        if (type == double.class)  return TypeKind.DoubleType;
+        return null;
     }
 
-    private Wrapper wrapperOrNullFromDescriptor(String desc) {
-        if (!desc.startsWith(WRAPPER_PREFIX)) {
-            // Not a class type (array or method), so not a boxed type
-            // or not in the right package
-            return null;
-        }
-        // Pare it down to the simple class name
-        String cname = desc.substring(WRAPPER_PREFIX.length(), desc.length() - 1);
-        // Hash to a Wrapper
-        Wrapper w = FROM_WRAPPER_NAME[hashWrapperName(cname)];
-        if (w == null || w.wrapperSimpleName().equals(cname)) {
-            return w;
-        } else {
-            return null;
-        }
+    static void boxIfTypePrimitive(CodeBuilder cob, TypeKind tk) {
+        box(cob, tk);
     }
 
-    private static String wrapperName(Wrapper w) {
-        return "java/lang/" + w.wrapperSimpleName();
-    }
-
-    private static String unboxMethod(Wrapper w) {
-        return w.primitiveSimpleName() + "Value";
-    }
-
-    private static String boxingDescriptor(Wrapper w) {
-        return "(" + w.basicTypeChar() + ")L" + wrapperName(w) + ";";
-    }
-
-    private static String unboxingDescriptor(Wrapper w) {
-        return "()" + w.basicTypeChar();
-    }
-
-    void boxIfTypePrimitive(Type t) {
-        Wrapper w = FROM_TYPE_SORT[t.getSort()];
-        if (w != null) {
-            box(w);
-        }
-    }
-
-    void widen(Wrapper ws, Wrapper wt) {
+    static void widen(CodeBuilder cob, TypeKind ws, TypeKind wt) {
+        ws = ws.asLoadable();
+        wt = wt.asLoadable();
         if (ws != wt) {
-            int opcode = wideningOpcodes[ws.ordinal()][wt.ordinal()];
-            if (opcode != Opcodes.NOP) {
-                visitInsn(opcode);
-            }
+            cob.conversion(ws, wt);
         }
     }
 
-    void box(Wrapper w) {
-        visitMethodInsn(Opcodes.INVOKESTATIC,
-                wrapperName(w),
-                NAME_BOX_METHOD,
-                boxingDescriptor(w), false);
-    }
-
-    /**
-     * Convert types by unboxing. The source type is known to be a primitive wrapper.
-     * @param sname A primitive wrapper corresponding to wrapped reference source type
-     * @param wt A primitive wrapper being converted to
-     */
-    void unbox(String sname, Wrapper wt) {
-        visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                sname,
-                unboxMethod(wt),
-                unboxingDescriptor(wt), false);
-    }
-
-    private String descriptorToName(String desc) {
-        int last = desc.length() - 1;
-        if (desc.charAt(0) == 'L' && desc.charAt(last) == ';') {
-            // In descriptor form
-            return desc.substring(1, last);
-        } else {
-            // Already in internal name form
-            return desc;
+    static void box(CodeBuilder cob, TypeKind tk) {
+        switch (tk) {
+            case BooleanType -> cob.invokestatic(BoxHolder.BOX_BOOLEAN);
+            case ByteType    -> cob.invokestatic(BoxHolder.BOX_BYTE);
+            case CharType    -> cob.invokestatic(BoxHolder.BOX_CHAR);
+            case DoubleType  -> cob.invokestatic(BoxHolder.BOX_DOUBLE);
+            case FloatType   -> cob.invokestatic(BoxHolder.BOX_FLOAT);
+            case IntType     -> cob.invokestatic(BoxHolder.BOX_INT);
+            case LongType    -> cob.invokestatic(BoxHolder.BOX_LONG);
+            case ShortType   -> cob.invokestatic(BoxHolder.BOX_SHORT);
         }
     }
 
-    void cast(String ds, String dt) {
-        String ns = descriptorToName(ds);
-        String nt = descriptorToName(dt);
-        if (!nt.equals(ns) && !nt.equals(NAME_OBJECT)) {
-            visitTypeInsn(Opcodes.CHECKCAST, nt);
+    static void unbox(CodeBuilder cob, TypeKind to) {
+        switch (to) {
+            case BooleanType -> cob.invokevirtual(BoxHolder.UNBOX_BOOLEAN);
+            case ByteType    -> cob.invokevirtual(BoxHolder.UNBOX_BYTE);
+            case CharType    -> cob.invokevirtual(BoxHolder.UNBOX_CHAR);
+            case DoubleType  -> cob.invokevirtual(BoxHolder.UNBOX_DOUBLE);
+            case FloatType   -> cob.invokevirtual(BoxHolder.UNBOX_FLOAT);
+            case IntType     -> cob.invokevirtual(BoxHolder.UNBOX_INT);
+            case LongType    -> cob.invokevirtual(BoxHolder.UNBOX_LONG);
+            case ShortType   -> cob.invokevirtual(BoxHolder.UNBOX_SHORT);
         }
     }
 
-    private Wrapper toWrapper(String desc) {
-        char first = desc.charAt(0);
-        if (first == '[' || first == '(') {
-            first = 'L';
+    static void cast(CodeBuilder cob, ClassDesc dt) {
+        if (!dt.equals(CD_Object)) {
+            cob.checkcast(dt);
         }
-        return Wrapper.forBasicType(first);
     }
 
     /**
@@ -204,7 +131,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
      * @param target
      * @param functional
      */
-    void convertType(Class<?> arg, Class<?> target, Class<?> functional) {
+    static void convertType(CodeBuilder cob, Class<?> arg, Class<?> target, Class<?> functional) {
         if (arg.equals(target) && arg.equals(functional)) {
             return;
         }
@@ -212,84 +139,69 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
             return;
         }
         if (arg.isPrimitive()) {
-            Wrapper wArg = Wrapper.forPrimitiveType(arg);
             if (target.isPrimitive()) {
                 // Both primitives: widening
-                widen(wArg, Wrapper.forPrimitiveType(target));
+                widen(cob, TypeKind.from(arg), TypeKind.from(target));
             } else {
                 // Primitive argument to reference target
-                String dTarget = BytecodeDescriptor.unparse(target);
-                Wrapper wPrimTarget = wrapperOrNullFromDescriptor(dTarget);
-                if (wPrimTarget != null) {
+                TypeKind wPrimTk = primitiveTypeKindFromClass(target);
+                if (wPrimTk != null) {
                     // The target is a boxed primitive type, widen to get there before boxing
-                    widen(wArg, wPrimTarget);
-                    box(wPrimTarget);
+                    widen(cob, TypeKind.from(arg), wPrimTk);
+                    box(cob, wPrimTk);
                 } else {
                     // Otherwise, box and cast
-                    box(wArg);
-                    cast(wrapperName(wArg), dTarget);
+                    box(cob, TypeKind.from(arg));
+                    cast(cob, classDesc(target));
                 }
             }
         } else {
-            String dArg = BytecodeDescriptor.unparse(arg);
-            String dSrc;
-            if (functional.isPrimitive()) {
-                dSrc = dArg;
+            Class<?> src;
+            if (arg == functional || functional.isPrimitive()) {
+                src = arg;
             } else {
                 // Cast to convert to possibly more specific type, and generate CCE for invalid arg
-                dSrc = BytecodeDescriptor.unparse(functional);
-                cast(dArg, dSrc);
+                src = functional;
+                cast(cob, classDesc(functional));
             }
-            String dTarget = BytecodeDescriptor.unparse(target);
             if (target.isPrimitive()) {
-                Wrapper wTarget = toWrapper(dTarget);
                 // Reference argument to primitive target
-                Wrapper wps = wrapperOrNullFromDescriptor(dSrc);
+                TypeKind wps = primitiveTypeKindFromClass(src);
                 if (wps != null) {
-                    if (wps.isSigned() || wps.isFloating()) {
+                    if (src != Character.class && src != Boolean.class) {
                         // Boxed number to primitive
-                        unbox(wrapperName(wps), wTarget);
+                        unbox(cob, TypeKind.from(target));
                     } else {
                         // Character or Boolean
-                        unbox(wrapperName(wps), wps);
-                        widen(wps, wTarget);
+                        unbox(cob, wps);
+                        widen(cob, wps, TypeKind.from(target));
                     }
                 } else {
                     // Source type is reference type, but not boxed type,
                     // assume it is super type of target type
-                    String intermediate;
-                    if (wTarget.isSigned() || wTarget.isFloating()) {
-                        // Boxed number to primitive
-                        intermediate = "java/lang/Number";
+                    if (target == char.class) {
+                        cast(cob, CD_Character);
+                    } else if (target == boolean.class) {
+                        cast(cob, CD_Boolean);
                     } else {
-                        // Character or Boolean
-                        intermediate = wrapperName(wTarget);
+                        // Boxed number to primitive
+                        cast(cob, CD_Number);
                     }
-                    cast(dSrc, intermediate);
-                    unbox(intermediate, wTarget);
+                    unbox(cob, TypeKind.from(target));
                 }
             } else {
                 // Both reference types: just case to target type
-                cast(dSrc, dTarget);
+                if (src != target) {
+                    cast(cob, classDesc(target));
+                }
             }
         }
     }
 
-    /**
-     * The following method is copied from
-     * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small
-     * and fast Java bytecode manipulation framework.
-     * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.
-     */
-    void iconst(final int cst) {
-        if (cst >= -1 && cst <= 5) {
-            mv.visitInsn(Opcodes.ICONST_0 + cst);
-        } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.BIPUSH, cst);
-        } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.SIPUSH, cst);
-        } else {
-            mv.visitLdcInsn(cst);
-        }
+    static ClassDesc classDesc(Class<?> cls) {
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
+             : cls == Object.class ? CD_Object
+             : cls == String.class ? CD_String
+             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
     }
 }
