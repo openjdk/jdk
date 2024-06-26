@@ -46,9 +46,7 @@ public class TestSplitPaneEnableTest {
     private static JButton rightOneTouchButton;
     private static JFrame frame;
     private static JSplitPane jsp;
-    private static volatile Point loc;
-    private static volatile int prevDivLoc;
-    private static volatile int curDivLoc;
+    private static volatile boolean btnEnabled;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -83,31 +81,17 @@ public class TestSplitPaneEnableTest {
 
                     jsp.setEnabled(false);
 
-                    frame.setSize(400, 200);
-                    frame.setLocationRelativeTo(null);
-                    frame.setVisible(true);
                 });
 
                 robot.waitForIdle();
-                robot.delay(1000);
+                robot.delay(500);
 
                 SwingUtilities.invokeAndWait(() -> {
-                    loc = leftOneTouchButton.getLocationOnScreen();
-                    prevDivLoc = jsp.getDividerLocation();
+                    btnEnabled = leftOneTouchButton.isEnabled();
                 });
-                robot.mouseMove(loc.x, loc.y);
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-                robot.waitForIdle();
-                robot.delay(1000);
-
-                SwingUtilities.invokeAndWait(() -> {
-                    curDivLoc = jsp.getDividerLocation();
-                });
-                System.out.println("current Divider location " + curDivLoc);
-                if (curDivLoc != prevDivLoc) {
-                    throw new RuntimeException("Divider position changed on disabled oneTouchExpandable arrow click");
+                System.out.println("leftOneTouchButton.isEnabled " + btnEnabled);
+                if (btnEnabled) {
+                    throw new RuntimeException("Arrow buttons still enabled for disabled splitpane");
                 }
             } finally {
                 SwingUtilities.invokeAndWait(() -> {
