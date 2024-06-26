@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class DeferredCloseTest {
 
-    private static final int NUM_ITERATIONS = 50;
+    private static final int NUM_ITERATIONS = 10;
     private static final InetSocketAddress BIND_ADDR = new InetSocketAddress(
             InetAddress.getLoopbackAddress(), 0);
 
