@@ -29,8 +29,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
-#include "gc/g1/g1HeapRegion.hpp"
+ #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -169,8 +168,8 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
     if (task_entry.is_array_slice()) {
       _words_scanned += _objArray_processor.process_slice(obj, task_entry.slice(), task_entry.pow());
     } else {
-      if (G1CMObjArrayProcessor::should_be_sliced(obj)) {
-        _words_scanned += _objArray_processor.process_obj(obj);
+      if (obj->is_objArray()) {
+        _words_scanned += _objArray_processor.process_objArray(objArrayOop(obj));
       } else {
         _words_scanned += obj->oop_iterate_size(_cm_oop_closure);;
       }

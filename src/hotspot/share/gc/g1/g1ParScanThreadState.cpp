@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1ArraySlicer.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
@@ -221,6 +222,36 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   write_ref_field_post(p, obj);
 }
 
+class G1ScavengeArraySlicer : public G1ArraySlicer {
+  G1ScanEvacuatedObjClosure& _scanner;
+  bool _skip_enqueue;
+  G1ParScanThreadState* _par_scan;
+  G1CollectedHeap* _g1h;
+public:
+  G1ScavengeArraySlicer(G1ScanEvacuatedObjClosure& scanner,
+                        bool skip_enqueue,
+                        G1ParScanThreadState* par_scan) :
+          _scanner(scanner),
+          _skip_enqueue(skip_enqueue),
+          _par_scan(par_scan),
+          _g1h(G1CollectedHeap::heap()) {}
+
+  void scan_metadata(objArrayOop array) override {
+    // TODO: According to old comment not needed, but may be cleaner?
+    if (Devirtualizer::do_metadata(&_scanner)) {
+      Devirtualizer::do_klass(&_scanner, array->klass());
+    }
+  }
+  void push_on_queue(G1TaskQueueEntry task) override {
+    _par_scan->push_on_queue(task);
+  }
+  size_t scan_array(objArrayOop array, int from, int len) override {
+    G1SkipCardEnqueueSetter x(&_scanner, _skip_enqueue);
+    array->oop_iterate_range(&_scanner, 0, len);
+    return len * (UseCompressedOops ? 2 : 1);
+  }
+};
+
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_partial_array(oop obj, int slice, int pow) {
   assert(_g1h->is_in_reserved(obj), "must be in heap.");
@@ -228,114 +259,24 @@ void G1ParScanThreadState::do_partial_array(oop obj, int slice, int pow) {
 
   objArrayOop array = objArrayOop(obj);
 
-  assert(ObjArrayMarkingStride > 0, "sanity");
-
-  // Split out tasks, as suggested in G1TaskQueueEntry docs. Avoid pushing tasks that
-  // are known to start beyond the array.
-  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < G1TaskQueueEntry::slice_size())) {
-    pow--;
-    slice *= 2;
-    push_on_queue(G1TaskQueueEntry(array, slice - 1, pow));
-  }
-
-  int slice_size = 1 << pow;
-
-  int from = (slice - 1) * slice_size;
-  int to = slice * slice_size;
-
-#ifdef ASSERT
-  int len = array->length();
-  assert(0 <= from && from < len, "from is sane: %d/%d", from, len);
-  assert(0 < to && to <= len, "to is sane: %d/%d", to, len);
-#endif
-
-  // Process claimed task.  The length of to_array is not correct, but
-  // fortunately the iteration ignores the length field and just relies
-  // on start/end.
   G1HeapRegionAttr dest_attr = _g1h->region_attr(array);
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
-  array->oop_iterate_range(&_scanner, from, to);
+  G1ScavengeArraySlicer slicer(_scanner, dest_attr.is_new_survivor(), this);
+  slicer.process_slice(array, slice, pow);
 }
 
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop obj) {
   assert(obj->is_objArray(), "precondition");
-
   objArrayOop array = objArrayOop(obj);
-  int len = array->length();
-
-  // Mark objArray klass metadata
-  // TODO: According to old comment not needed, but may be cleaner?
-  if (Devirtualizer::do_metadata(&_scanner)) {
-    Devirtualizer::do_klass(&_scanner, array->klass());
-  }
-
-  if (len <= (int) ObjArrayMarkingStride*2) {
-    // A few slices only, process directly
-    // Skip the card enqueue iff the object (to_array) is in survivor region.
-    // However, HeapRegion::is_survivor() is too expensive here.
-    // Instead, we use dest_attr.is_young() because the two values are always
-    // equal: successfully allocated young regions must be survivor regions.
-    assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
-    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-    array->oop_iterate_range(&_scanner, 0, len);
-  } else {
-    int bits = log2i_graceful(len);
-    // Compensate for non-power-of-two arrays, cover the array in excess:
-    if (len != (1 << bits)) bits++;
-
-    // Only allow full slices on the queue. This frees do_sliced_array() from checking from/to
-    // boundaries against array->length(), touching the array header on every slice.
-    //
-    // To do this, we cut the prefix in full-sized slices, and submit them on the queue.
-    // If the array is not divided in slice sizes, then there would be an irregular tail,
-    // which we will process separately.
-
-    int last_idx = 0;
-
-    int slice = 1;
-    int pow = bits;
-
-    // Handle overflow
-    if (pow >= 31) {
-      assert (pow == 31, "sanity");
-      pow--;
-      slice = 2;
-      last_idx = (1 << pow);
-      push_on_queue(G1TaskQueueEntry(array, 1, pow));
-    }
-
-    // Split out tasks, as suggested in G1TaskQueueEntry docs. Record the last
-    // successful right boundary to figure out the irregular tail.
-    while ((1 << pow) > (int)ObjArrayMarkingStride &&
-           (slice * 2 < G1TaskQueueEntry::slice_size())) {
-      pow--;
-      int left_slice = slice * 2 - 1;
-      int right_slice = slice * 2;
-      int left_slice_end = left_slice * (1 << pow);
-      if (left_slice_end < len) {
-        push_on_queue(G1TaskQueueEntry(array, left_slice, pow));
-        slice = right_slice;
-        last_idx = left_slice_end;
-      } else {
-        slice = left_slice;
-      }
-    }
-
-    // Process the irregular tail, if present
-    int from = last_idx;
-    if (from < len) {
-      // Skip the card enqueue iff the object (to_array) is in survivor region.
-      // However, HeapRegion::is_survivor() is too expensive here.
-      // Instead, we use dest_attr.is_young() because the two values are always
-      // equal: successfully allocated young regions must be survivor regions.
-      assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
-      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-      array->oop_iterate_range(&_scanner, from, len);
-    }
-  }
-}
+  // Skip the card enqueue iff the object (to_array) is in survivor region.
+  // However, HeapRegion::is_survivor() is too expensive here.
+  // Instead, we use dest_attr.is_young() because the two values are always
+  // equal: successfully allocated young regions must be survivor regions.
+  assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
+  G1ScavengeArraySlicer slicer(_scanner, dest_attr.is_young(), this);
+  slicer.process_objArray(array);
+ }
 
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::dispatch_task(G1TaskQueueEntry task) {
