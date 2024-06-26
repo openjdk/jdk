@@ -133,10 +133,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     static class TagStackItem {
         final DocTree tree; // typically, but not always, StartElementTree
-        final jdk.javadoc.internal.html.HtmlTag tag;
+        final HtmlTag tag;
         final Set<HtmlAttr> attrs;
         final Set<Flag> flags;
-        TagStackItem(DocTree tree, jdk.javadoc.internal.html.HtmlTag tag) {
+        TagStackItem(DocTree tree, HtmlTag tag) {
             this.tree = tree;
             this.tag = tag;
             attrs = EnumSet.noneOf(HtmlAttr.class);
@@ -149,7 +149,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private final Deque<TagStackItem> tagStack; // TODO: maybe want to record starting tree as well
-    private jdk.javadoc.internal.html.HtmlTag currHeadingTag;
+    private HtmlTag currHeadingTag;
 
     private int implicitHeadingRank;
     private boolean inIndex;
@@ -341,7 +341,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         for (TagStackItem tsi: tagStack) {
             warnIfEmpty(tsi, null);
             if (tsi.tree.getKind() == DocTree.Kind.START_ELEMENT
-                    && tsi.tag.endKind == jdk.javadoc.internal.html.HtmlTag.EndKind.REQUIRED) {
+                    && tsi.tag.endKind == HtmlTag.EndKind.REQUIRED) {
                 StartElementTree t = (StartElementTree) tsi.tree;
                 env.messages.error(HTML, t, "dc.tag.not.closed", t.getName());
             }
@@ -401,7 +401,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
-        final jdk.javadoc.internal.html.HtmlTag t = jdk.javadoc.internal.html.HtmlTag.get(treeName);
+        final HtmlTag t = HtmlTag.of(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.elemKind == ElemKind.HTML4) {
@@ -416,12 +416,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                     done = true;
                     break;
-                } else if (tsi.tag.endKind != jdk.javadoc.internal.html.HtmlTag.EndKind.OPTIONAL) {
+                } else if (tsi.tag.endKind != HtmlTag.EndKind.OPTIONAL) {
                     done = true;
                     break;
                 }
             }
-            if (!done && jdk.javadoc.internal.html.HtmlTag.BODY.accepts(t)) {
+            if (!done && HtmlTag.BODY.accepts(t)) {
                 while (!tagStack.isEmpty()) {
                     warnIfEmpty(tagStack.peek(), null);
                     tagStack.pop();
@@ -437,7 +437,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 case H1, H2, H3, H4, H5, H6 -> checkHeading(tree, t);
             }
 
-            if (t.flags.contains(jdk.javadoc.internal.html.HtmlTag.Flag.NO_NEST)) {
+            if (t.flags.contains(HtmlTag.Flag.NO_NEST)) {
                 for (TagStackItem i: tagStack) {
                     if (t == i.tag) {
                         env.messages.warning(HTML, tree, "dc.tag.nested.not.allowed", treeName);
@@ -463,12 +463,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             if (t != null) {
                 switch (t) {
                     case CAPTION -> {
-                        if (parent != null && parent.tag == jdk.javadoc.internal.html.HtmlTag.TABLE)
+                        if (parent != null && parent.tag == HtmlTag.TABLE)
                             parent.flags.add(Flag.TABLE_HAS_CAPTION);
                     }
 
                     case H1, H2, H3, H4, H5, H6 -> {
-                        if (parent != null && (parent.tag == jdk.javadoc.internal.html.HtmlTag.SECTION || parent.tag == jdk.javadoc.internal.html.HtmlTag.ARTICLE)) {
+                        if (parent != null && (parent.tag == HtmlTag.SECTION || parent.tag == HtmlTag.ARTICLE)) {
                             parent.flags.add(Flag.HAS_HEADING);
                         }
                     }
@@ -483,18 +483,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             return null;
         } finally {
 
-            if (t == null || t.endKind == jdk.javadoc.internal.html.HtmlTag.EndKind.NONE)
+            if (t == null || t.endKind == HtmlTag.EndKind.NONE)
                 tagStack.pop();
         }
     }
 
     // so-called "self-closing" tags are only permitted in HTML 5, for void elements
     // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
-    private boolean isSelfClosingAllowed(jdk.javadoc.internal.html.HtmlTag tag) {
-        return tag.endKind == jdk.javadoc.internal.html.HtmlTag.EndKind.NONE;
+    private boolean isSelfClosingAllowed(HtmlTag tag) {
+        return tag.endKind == HtmlTag.EndKind.NONE;
     }
 
-    private void checkStructure(StartElementTree tree, jdk.javadoc.internal.html.HtmlTag t) {
+    private void checkStructure(StartElementTree tree, HtmlTag t) {
         Name treeName = tree.getName();
         TagStackItem top = tagStack.peek();
         switch (t.blockType) {
@@ -504,7 +504,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
                 switch (top.tree.getKind()) {
                     case START_ELEMENT -> {
-                        if (top.tag.blockType == jdk.javadoc.internal.html.HtmlTag.BlockType.INLINE) {
+                        if (top.tag.blockType == HtmlTag.BlockType.INLINE) {
                             Name name = ((StartElementTree) top.tree).getName();
                             // Links may use block display style so issue warning instead of error
                             if ("a".equalsIgnoreCase(name.toString())) {
@@ -559,7 +559,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         env.messages.error(HTML, tree, "dc.tag.not.allowed.here", treeName);
     }
 
-    private void checkHeading(StartElementTree tree, jdk.javadoc.internal.html.HtmlTag tag) {
+    private void checkHeading(StartElementTree tree, HtmlTag tag) {
         // verify the new tag
         if (getHeadingRank(tag) > getHeadingRank(currHeadingTag) + 1) {
             if (currHeadingTag == null) {
@@ -577,7 +577,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         currHeadingTag = tag;
     }
 
-    private int getHeadingRank(jdk.javadoc.internal.html.HtmlTag tag) {
+    private int getHeadingRank(HtmlTag tag) {
         return (tag == null)
                 ? implicitHeadingRank
                 : switch (tag) {
@@ -594,10 +594,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEndElement(EndElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
-        final jdk.javadoc.internal.html.HtmlTag t = jdk.javadoc.internal.html.HtmlTag.get(treeName);
+        final HtmlTag t = HtmlTag.of(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
-        } else if (t.endKind == jdk.javadoc.internal.html.HtmlTag.EndKind.NONE) {
+        } else if (t.endKind == HtmlTag.EndKind.NONE) {
             env.messages.error(HTML, tree, "dc.tag.end.not.permitted", treeName);
         } else {
             boolean done = false;
@@ -624,7 +624,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     tagStack.pop();
                     done = true;
                     break;
-                } else if (top.tag == null || top.tag.endKind != jdk.javadoc.internal.html.HtmlTag.EndKind.REQUIRED) {
+                } else if (top.tag == null || top.tag.endKind != HtmlTag.EndKind.REQUIRED) {
                     warnIfEmpty(top, null);
                     tagStack.pop();
                 } else {
@@ -657,7 +657,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
         if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
-            if (tsi.tag.flags.contains(jdk.javadoc.internal.html.HtmlTag.Flag.EXPECT_CONTENT)
+            if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
@@ -681,7 +681,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             return null;
         }
 
-        jdk.javadoc.internal.html.HtmlTag currTag = tagStack.peek().tag;
+        HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
             HtmlAttr attr = currTag.getAttr(name);
@@ -727,7 +727,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
 
                     case HREF -> {
-                        if (currTag == jdk.javadoc.internal.html.HtmlTag.A) {
+                        if (currTag == HtmlTag.A) {
                             String v = getAttrValue(tree);
                             if (v == null || v.isEmpty()) {
                                 env.messages.error(HTML, tree, "dc.attr.lacks.value");
@@ -745,7 +745,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
 
                     case VALUE -> {
-                        if (currTag == jdk.javadoc.internal.html.HtmlTag.LI) {
+                        if (currTag == HtmlTag.LI) {
                             String v = getAttrValue(tree);
                             if (v == null || v.isEmpty()) {
                                 env.messages.error(HTML, tree, "dc.attr.lacks.value");
@@ -756,7 +756,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
 
                     case BORDER -> {
-                        if (currTag == jdk.javadoc.internal.html.HtmlTag.TABLE) {
+                        if (currTag == HtmlTag.TABLE) {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1)) {
@@ -766,7 +766,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             } catch (NumberFormatException ex) {
                                 env.messages.error(HTML, tree, "dc.attr.table.border.not.number", v);
                             }
-                        } else if (currTag == jdk.javadoc.internal.html.HtmlTag.IMG) {
+                        } else if (currTag == HtmlTag.IMG) {
                             String v = getAttrValue(tree);
                             try {
                                 if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 0)) {
@@ -780,7 +780,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
 
                     case ROLE -> {
-                        if (currTag == jdk.javadoc.internal.html.HtmlTag.TABLE) {
+                        if (currTag == HtmlTag.TABLE) {
                             String v = getAttrValue(tree);
                             if (Objects.equals(v, "presentation")) {
                                 tagStack.peek().flags.add(Flag.TABLE_IS_PRESENTATION);
@@ -868,7 +868,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
         }
         for (TagStackItem tsi : tagStack) {
-            if (tsi.tag == jdk.javadoc.internal.html.HtmlTag.A) {
+            if (tsi.tag == HtmlTag.A) {
                 env.messages.warning(HTML, tree, "dc.tag.a.within.a",
                         "{@" + tree.getTagName() + "}");
                 break;
@@ -899,8 +899,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         boolean prevInLink = inLink;
         // simulate inline context on tag stack
-        jdk.javadoc.internal.html.HtmlTag t = (tree.getKind() == DocTree.Kind.LINK)
-                ? jdk.javadoc.internal.html.HtmlTag.CODE : jdk.javadoc.internal.html.HtmlTag.SPAN;
+        HtmlTag t = (tree.getKind() == DocTree.Kind.LINK)
+                ? HtmlTag.CODE : HtmlTag.SPAN;
         tagStack.push(new TagStackItem(tree, t));
         try {
             inLink = true;
@@ -926,7 +926,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         if (tree.getKind() == DocTree.Kind.CODE) {
             for (TagStackItem tsi: tagStack) {
-                if (tsi.tag == jdk.javadoc.internal.html.HtmlTag.CODE) {
+                if (tsi.tag == HtmlTag.CODE) {
                     env.messages.warning(HTML, tree, "dc.tag.code.within.code");
                     break;
                 }

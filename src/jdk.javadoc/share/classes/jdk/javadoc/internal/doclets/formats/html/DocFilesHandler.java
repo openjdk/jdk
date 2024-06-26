@@ -250,7 +250,7 @@ public class DocFilesHandler {
                 switch (dt.getKind()) {
                     case START_ELEMENT:
                         StartElementTree startElem = (StartElementTree)dt;
-                        switch (HtmlTag.get(startElem.getName())) {
+                        switch (HtmlTag.of(startElem.getName())) {
                             case HEAD:
                                 inHead = true;
                                 break;
@@ -268,7 +268,7 @@ public class DocFilesHandler {
                         break;
                     case END_ELEMENT:
                         EndElementTree endElem = (EndElementTree)dt;
-                        switch (HtmlTag.get(endElem.getName())) {
+                        switch (HtmlTag.of(endElem.getName())) {
                             case HEAD:
                                 inHead = false;
                                 break loop;

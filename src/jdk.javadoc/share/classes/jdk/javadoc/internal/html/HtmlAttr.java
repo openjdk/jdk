@@ -124,7 +124,13 @@ public enum HtmlAttr {
     WIDTH,
     WRITINGSUGGESTIONS(true);
 
-    private final String text;
+    /**
+     * The "external" name of this attribute.
+     */
+    private final String name;
+    /**
+     * Whether this is a global attribute, that can be used with all HTML tags.
+     */
     private final boolean isGlobal;
 
     public enum Role {
@@ -163,40 +169,56 @@ public enum HtmlAttr {
         }
     }
 
-    HtmlAttr() {
-        this(false);
-    }
-
-    HtmlAttr(boolean flag) {
-        text = name().toLowerCase(Locale.ROOT).replace("_", "-");
-        isGlobal = flag;
-    }
-
-    public boolean isGlobal() {
-        return isGlobal;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    @Override
-    public String toString() {
-        return text;
-    }
-
-    static final Map<String, HtmlAttr> index = new HashMap<>();
-
-    static {
-        for (HtmlAttr t : values()) {
-            index.put(t.getText(), t);
-        }
-    }
-
     public enum AttrKind {
         OK,
         INVALID,
         OBSOLETE,
         HTML4
+    }
+
+    HtmlAttr() {
+        this(false);
+    }
+
+    HtmlAttr(boolean flag) {
+        name = name().toLowerCase(Locale.ROOT).replace("_", "-");
+        isGlobal = flag;
+    }
+
+    /**
+     * {@return the "external" name of this attribute}
+     * The external name is the name of the enum member in lower case with {@code _} replaced by {@code -}.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * {@return whether this attribute is a global attribute, that may appear on all tags}
+     */
+    public boolean isGlobal() {
+        return isGlobal;
+    }
+
+    // FIXME: this is used in doclint Checker, when generating messages
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    private static final Map<String, HtmlAttr> index = new HashMap<>();
+    static {
+        for (HtmlAttr t : values()) {
+            index.put(t.getName(), t);
+        }
+    }
+
+    /**
+     * {@return the attribute with the given name, or {@code null} if there is no known attribute}
+     *
+     * @param name the name
+     */
+    public static HtmlAttr of(CharSequence name) {
+        return index.get(name.toString().toLowerCase(Locale.ROOT));
     }
 }

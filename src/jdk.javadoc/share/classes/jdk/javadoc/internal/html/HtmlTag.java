@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.html;
 
+import java.io.Serial;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -40,10 +41,6 @@ import static jdk.javadoc.internal.html.HtmlAttr.*;
  *
  * The intent of this class is to embody the semantics of the current HTML standard,
  * to the extent supported/used by javadoc.
- *
- * This class is derivative of {@link TagNameOLD}.
- * Eventually, these two should be merged back together, and possibly made
- * public.
  *
  * @see <a href="https://html.spec.whatwg.org/multipage/">HTML Living Standard</a>
  * @see <a href="http://www.w3.org/TR/html5/">HTML 5 Specification</a>
@@ -154,12 +151,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -191,12 +186,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -272,12 +265,10 @@ public enum HtmlTag {
             attrs(AttrKind.HTML4, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case IMG: case BIG: case SMALL: case SUB: case SUP:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case IMG, BIG, SMALL, SUB, SUP -> false;
+                default -> (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -325,15 +316,10 @@ public enum HtmlTag {
                     HtmlAttr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case CAPTION:
-                case COLGROUP:
-                case THEAD: case TBODY: case TFOOT:
-                case TR: // HTML 3.2
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (t) {
+                case CAPTION, COLGROUP, THEAD, TBODY, TFOOT, TR -> true;
+                default -> false;
+            };
         }
     },
 
@@ -447,6 +433,7 @@ public enum HtmlTag {
     // This class exists to avoid warnings from using parameterized vararg type
     // Map<Attr,AttrKind> in signature of HtmlTag constructor.
     private static class AttrMap extends EnumMap<HtmlAttr,AttrKind>  {
+        @Serial
         private static final long serialVersionUID = 0;
         AttrMap() {
             super(HtmlAttr.class);
@@ -510,19 +497,16 @@ public enum HtmlTag {
         } else if (flags.contains(Flag.ACCEPTS_INLINE)) {
             return (t.blockType == BlockType.INLINE);
         } else {
-            switch (blockType) {
-                case BLOCK:
-                case INLINE:
-                    return (t.blockType == BlockType.INLINE);
-                case OTHER:
+            // any combination which could otherwise arrive here
+            // ought to have been handled in an overriding method
+            return switch (blockType) {
+                case BLOCK, INLINE -> (t.blockType == BlockType.INLINE);
+                case OTHER ->
                     // OTHER tags are invalid in doc comments, and will be
                     // reported separately, so silently accept/ignore any content
-                    return true;
-                default:
-                    // any combination which could otherwise arrive here
-                    // ought to have been handled in an overriding method
-                    throw new AssertionError(this + ":" + t);
-            }
+                        true;
+                default -> throw new AssertionError(this + ":" + t);
+            };
         }
     }
 
@@ -532,12 +516,12 @@ public enum HtmlTag {
         return accepts(B);
     }
 
-    public String getText() {
-        return name().toLowerCase(Locale.ROOT);
+    public String getName() {
+        return name().toLowerCase(Locale.ROOT).replace("_", "-");
     }
 
     public HtmlAttr getAttr(Name attrName) {
-        return HtmlAttr.index.get(attrName.toString().toLowerCase(Locale.ROOT));
+        return HtmlAttr.of(attrName);
     }
 
     public AttrKind getAttrKind(Name attrName) {
@@ -552,22 +536,18 @@ public enum HtmlTag {
 
     private static AttrMap attrs(AttrKind k, HtmlAttr... attrs) {
         AttrMap map = new AttrMap();
-        for (HtmlAttr a: attrs) map.put(a, k);
+        for (HtmlAttr a : attrs) map.put(a, k);
         return map;
     }
 
     private static final Map<String, HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.getText(), t);
+            index.put(t.getName(), t);
         }
     }
 
-    public static HtmlTag get(Name tagName) {
+    public static HtmlTag of(CharSequence tagName) {
         return index.get(tagName.toString().toLowerCase(Locale.ROOT));
-    }
-
-    public static HtmlTag get(String tagName) {
-        return index.get(tagName.toLowerCase(Locale.ROOT));
     }
 }

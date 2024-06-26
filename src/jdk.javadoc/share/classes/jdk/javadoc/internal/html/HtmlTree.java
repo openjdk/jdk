@@ -60,10 +60,10 @@ import java.util.function.Function;
 public class HtmlTree extends Content {
 
     /**
-     * The name of the HTML element.
+     * The tag for the HTML element.
      * This value is never {@code null}.
      */
-    public final HtmlTag tagName;
+    public final HtmlTag tag;
 
     /**
      * The attributes for the HTML element.
@@ -81,10 +81,10 @@ public class HtmlTree extends Content {
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
-     * @param tagName the name
+     * @param tag the name
      */
-    public HtmlTree(HtmlTag tagName) {
-        this.tagName = Objects.requireNonNull(tagName);
+    public HtmlTree(HtmlTag tag) {
+        this.tag = Objects.requireNonNull(tag);
     }
 
     /**
@@ -1022,7 +1022,7 @@ public class HtmlTree extends Content {
 
     @Override
     public boolean isPhrasingContent() {
-        return tagName.blockType == HtmlTag.BlockType.INLINE;
+        return tag.blockType == HtmlTag.BlockType.INLINE;
     }
 
     /**
@@ -1066,7 +1066,7 @@ public class HtmlTree extends Content {
         return !isVoid()
             && !hasContent()
             && !hasAttr(HtmlAttr.ID)
-            && tagName != HtmlTag.SCRIPT;
+            && tag != HtmlTag.SCRIPT;
     }
 
     /**
@@ -1077,7 +1077,7 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        return switch (tagName) {
+        return switch (tag) {
             case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
             default -> false;
         };
@@ -1091,7 +1091,7 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        return switch (tagName) {
+        return switch (tag) {
             case BR, COL, FRAME, HR, IMG, INPUT, LINK, META, WBR -> true;
             default -> false;
         };
@@ -1103,14 +1103,14 @@ public class HtmlTree extends Content {
         if (!isInline && !atNewline) {
             out.write(newline);
         }
-        String tagString = tagName.getText();
+        String tagString = tag.getName();
         out.write("<");
         out.write(tagString);
         for (var attr : attrs.entrySet()) {
             var key = attr.getKey();
             var value = attr.getValue();
             out.write(" ");
-            out.write(key.getText());
+            out.write(key.getName());
             if (!value.isEmpty()) {
                 out.write("=\"");
                 out.write(value.replace("\"", "&quot;"));

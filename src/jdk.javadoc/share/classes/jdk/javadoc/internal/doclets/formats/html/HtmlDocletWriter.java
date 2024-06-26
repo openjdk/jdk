@@ -126,7 +126,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
@@ -611,7 +610,7 @@ public abstract class HtmlDocletWriter {
             var contents = cb.getContents();
             if (!contents.isEmpty()) {
                 var first = contents.get(0);
-                if (first instanceof HtmlTree htmlTree && htmlTree.tagName.equals(HtmlTag.H1)) {
+                if (first instanceof HtmlTree htmlTree && htmlTree.tag.equals(HtmlTag.H1)) {
                     for (var c2 : htmlTree.getContents()) {
                         if (c2 instanceof Text t) {
                             sb.append(t.toString());
@@ -1278,7 +1277,7 @@ public abstract class HtmlDocletWriter {
         }
 
         if (name != null) {
-            HtmlTag htmlTag = HtmlTag.get(name);
+            HtmlTag htmlTag = HtmlTag.of(name);
             if (htmlTag != null) {
                 if (htmlTag.blockType != HtmlTag.BlockType.INLINE) {
                     return true;
