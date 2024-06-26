@@ -144,6 +144,7 @@ public class Loopback {
             System.out.format("send %s -> %s%n", dc.getLocalAddress(), target);
             src.clear();
             dc.send(src, target);
+            src.flip();
 
             // test that we don't receive the datagram sent to multicast group
             dc.configureBlocking(false);
@@ -159,7 +160,7 @@ public class Loopback {
                     } else {
                         sel.selectedKeys().clear();
                         SocketAddress sender = dc.receive(dst);
-                        if (!src.toString().contentEquals(dst.toString())) {
+                        if (src.mismatch(dst) != -1) {
                             System.out.println("src: " + src + "not equal to dst: " + dst);
                             dst.clear();
                             continue;
