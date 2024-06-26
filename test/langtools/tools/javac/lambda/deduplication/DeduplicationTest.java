@@ -145,7 +145,7 @@ public class DeduplicationTest {
             if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
                 continue;
             }
-            BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             for (BootstrapMethodEntry b : bsm.bootstrapMethods()) {
                 bootstrapMethodNames.add(
                         ((MethodHandleEntry)b.arguments().get(1))

@@ -276,7 +276,7 @@ public class TestOrigin extends TestRunner {
 
         Path moduleInfo = classes.resolve("module-info.class");
         ClassModel cf = ClassFile.of().parse(moduleInfo);
-        ModuleAttribute module = cf.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute module = cf.findAttribute(Attributes.module()).orElseThrow();
 
         List<ModuleRequireInfo> newRequires = new ArrayList<>(3);
         newRequires.add(ModuleRequireInfo.of(module.requires().get(0).requires(), ClassFile.ACC_MANDATED, module.requires().get(0).requiresVersion().orElse(null)));

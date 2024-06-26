@@ -42,7 +42,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     case relocInfo::oop_type: {
       oop_Relocation *reloc = (oop_Relocation *)this;
       // in movoop when BarrierSet::barrier_set()->barrier_set_nmethod() isn't null
-      if (NativeInstruction::is_load_pc_relative_at(addr())) {
+      if (MacroAssembler::is_load_pc_relative_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);
         assert((address)Bytes::get_native_u8(constptr) == x, "error in oop relocation");
@@ -60,7 +60,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be an address instruction here");
-  if (NativeCall::is_call_at(addr())) {
+  if (MacroAssembler::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
     if (trampoline != nullptr) {
       return nativeCallTrampolineStub_at(trampoline)->destination();
@@ -81,7 +81,7 @@ address Relocation::pd_call_destination(address orig_addr) {
 
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be an address instruction here");
-  if (NativeCall::is_call_at(addr())) {
+  if (MacroAssembler::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
     if (trampoline != nullptr) {
       nativeCall_at(addr())->set_destination_mt_safe(x, /* assert_lock */false);
@@ -94,7 +94,7 @@ void Relocation::pd_set_call_destination(address x) {
 }
 
 address* Relocation::pd_address_in_code() {
-  assert(NativeCall::is_load_pc_relative_at(addr()), "Not the expected instruction sequence!");
+  assert(MacroAssembler::is_load_pc_relative_at(addr()), "Not the expected instruction sequence!");
   return (address*)(MacroAssembler::target_addr_for_insn(addr()));
 }
 

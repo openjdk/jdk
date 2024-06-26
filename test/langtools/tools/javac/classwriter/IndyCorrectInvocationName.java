@@ -165,12 +165,12 @@ public class IndyCorrectInvocationName implements Plugin {
 
         Path testClass = classes.resolve("Test.class");
         ClassModel cf = ClassFile.of().parse(testClass);
-        BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+        BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
         if (bootAttr.bootstrapMethodsSize() != 1) {
             throw new AssertionError("Incorrect number of bootstrap methods: " +
                                      bootAttr.bootstrapMethodsSize());
         }
-        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.code()).orElseThrow();
         Set<BootstrapMethodEntry> seenBootstraps = new HashSet<>();
         Set<NameAndTypeEntry> seenNameAndTypes = new HashSet<>();
         Set<String> seenNames = new HashSet<>();

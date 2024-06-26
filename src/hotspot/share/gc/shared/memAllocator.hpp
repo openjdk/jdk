@@ -94,6 +94,7 @@ protected:
   const int  _length;
   const bool _do_zero;
 
+  void mem_zap_start_padding(HeapWord* mem) const PRODUCT_RETURN;
   void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
 
 public:
@@ -125,23 +126,17 @@ class InternalOOMEMark: public StackObj {
 
  public:
   explicit InternalOOMEMark(JavaThread* thread) {
-    if (thread != nullptr) {
-      _outer = thread->is_in_internal_oome_mark();
-      thread->set_is_in_internal_oome_mark(true);
-      _thread = thread;
-    } else {
-      _outer = false;
-      _thread = nullptr;
-    }
+    assert(thread != nullptr, "nullptr is not supported");
+    _outer = thread->is_in_internal_oome_mark();
+    thread->set_is_in_internal_oome_mark(true);
+    _thread = thread;
   }
 
   ~InternalOOMEMark() {
-    if (_thread != nullptr) {
-      // Check that only InternalOOMEMark sets
-      // JavaThread::_is_in_internal_oome_mark
-      assert(_thread->is_in_internal_oome_mark(), "must be");
-      _thread->set_is_in_internal_oome_mark(_outer);
-    }
+    // Check that only InternalOOMEMark sets
+    // JavaThread::_is_in_internal_oome_mark
+    assert(_thread->is_in_internal_oome_mark(), "must be");
+    _thread->set_is_in_internal_oome_mark(_outer);
   }
 
   JavaThread* thread() const  { return _thread; }

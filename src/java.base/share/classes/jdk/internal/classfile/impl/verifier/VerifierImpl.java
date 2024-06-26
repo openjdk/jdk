@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,11 @@ import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import static jdk.internal.classfile.impl.verifier.VerificationFrame.FLAG_THIS_UNINIT;
 
 /**
+ * VerifierImpl performs selected checks and verifications of the class file
+ * format according to {@jvms 4.8 Format Checking},
+ * {@jvms 4.9 Constraints on Java Virtual Machine code},
+ * {@jvms 4.10 Verification of class Files} and {@jvms 6.5 Instructions}
+ *
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/java.base/share/native/include/classfile_constants.h.template">java.base/share/native/include/classfile_constants.h.template</a>
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.hpp">hotspot/share/classfile/verifier.hpp</a>
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.cpp">hotspot/share/classfile/verifier.cpp</a>
@@ -110,22 +115,24 @@ public final class VerifierImpl {
 
     public static List<VerifyError> verify(ClassModel classModel, ClassHierarchyResolver classHierarchyResolver, Consumer<String> logger) {
         var klass = new VerificationWrapper(classModel);
-        if (!is_eligible_for_verification(klass)) {
-            return List.of();
-        }
         log_info(logger, "Start class verification for: %s", klass.thisClassName());
         try {
-            if (klass.majorVersion() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-                var errors = new VerifierImpl(klass, classHierarchyResolver, logger).verify_class();
-                if (!errors.isEmpty() && klass.majorVersion() < NOFAILOVER_MAJOR_VERSION) {
-                    log_info(logger, "Fail over class verification to old verifier for: %s", klass.thisClassName());
-                    return inference_verify(klass);
+            var errors = new ArrayList<VerifyError>();
+            errors.addAll(new ParserVerifier(classModel).verify());
+            if (is_eligible_for_verification(klass)) {
+                if (klass.majorVersion() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+                    var verifierErrors = new VerifierImpl(klass, classHierarchyResolver, logger).verify_class();
+                    if (!verifierErrors.isEmpty() && klass.majorVersion() < NOFAILOVER_MAJOR_VERSION) {
+                        log_info(logger, "Fail over class verification to old verifier for: %s", klass.thisClassName());
+                        errors.addAll(inference_verify(klass));
+                    } else {
+                        errors.addAll(verifierErrors);
+                    }
                 } else {
-                    return errors;
+                    errors.addAll(inference_verify(klass));
                 }
-            } else {
-                return inference_verify(klass);
             }
+            return errors;
         } finally {
             log_info(logger, "End class verification for: %s", klass.thisClassName());
         }
@@ -281,19 +288,23 @@ public final class VerifierImpl {
 
     void verify_method(VerificationWrapper.MethodWrapper m, List<VerifyError> errorsCollector) {
         try {
-            verify_method(m, m.maxLocals(), m.maxStack(), m.stackMapTableRawData());
+            verify_method(m);
         } catch (VerifyError err) {
             errorsCollector.add(err);
         } catch (Error | Exception e) {
-            e.printStackTrace();
             errorsCollector.add(new VerifyError(e.toString()));
         }
     }
 
     @SuppressWarnings("fallthrough")
-    void verify_method(VerificationWrapper.MethodWrapper m, int max_locals, int max_stack, byte[] stackmap_data) {
+    void verify_method(VerificationWrapper.MethodWrapper m) {
         _method = m;
         log_info(_logger, "Verifying method %s%s", m.name(), m.descriptor());
+        byte[] codeArray = m.codeArray();
+        if (codeArray == null) verifyError("Missing Code attribute");
+        int max_locals = m.maxLocals();
+        int max_stack = m.maxStack();
+        byte[] stackmap_data = m.stackMapTableRawData();
         var cp = m.constantPool();
         if (!VerificationSignature.isValidMethodSignature(m.descriptor())) verifyError("Invalid method signature");
         VerificationFrame current_frame = new VerificationFrame(max_locals, max_stack, this);
@@ -303,7 +314,7 @@ public final class VerifierImpl {
         if (code_length < 1 || code_length > MAX_CODE_SIZE) {
             verifyError(String.format("Invalid method Code length %d", code_length));
         }
-        var code = ByteBuffer.wrap(_method.codeArray(), 0, _method.codeLength());
+        var code = ByteBuffer.wrap(codeArray, 0, _method.codeLength());
         byte[] code_data = generate_code_data(code, code_length);
         int ex_minmax[] = new int[] {code_length, -1};
         verify_exception_handler_table(code_length, code_data, ex_minmax);
@@ -1817,16 +1828,16 @@ public final class VerifierImpl {
 
     void verifyError(String msg) {
         dumpMethod();
-        throw new VerifyError(String.format("%s at %s.%s%s @%d %s", msg, _klass.thisClassName(), _method.name(), _method.descriptor(), bci, errorContext));
+        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext).trim());
     }
 
     void verifyError(String msg, VerificationFrame from, VerificationFrame target) {
         dumpMethod();
-        throw new VerifyError(String.format("%s at %s.%s%s @%d %s%n  while assigning %s%n  to %s", msg, _klass.thisClassName(), _method.name(), _method.descriptor(), bci, errorContext, from, target));
+        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s%n  while assigning %s%n  to %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext, from, target));
     }
 
     void classError(String msg) {
         dumpMethod();
-        throw new ClassFormatError(String.format("%s at %s.%s%s", msg, _klass.thisClassName(), _method.name(), _method.descriptor()));
+        throw new VerifyError(String.format("%s in %s::%s(%s)", msg, _klass.thisClassName(), _method.name(), _method.parameters()));
     }
 }

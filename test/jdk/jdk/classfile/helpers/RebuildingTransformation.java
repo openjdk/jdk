@@ -76,7 +76,7 @@ class RebuildingTransformation {
                                             // first pass transforms bound to unbound instructions
                                             cob3.transforming(new CodeRebuildingTransform(), cob4 -> {
                                                 com.forEachElement(cob4::with);
-                                                com.findAttribute(Attributes.STACK_MAP_TABLE).ifPresent(cob4::with);
+                                                com.findAttribute(Attributes.stackMapTable()).ifPresent(cob4::with);
                                             }))));
                                     case AnnotationDefaultAttribute a -> mb.with(AnnotationDefaultAttribute.of(transformAnnotationValue(a.defaultValue())));
                                     case DeprecatedAttribute a -> mb.with(DeprecatedAttribute.of());

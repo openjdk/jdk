@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640
+ * @bug 8327640 8331485
  * @summary Test suite for NumberFormat parsing with strict leniency
  * @run junit/othervm -Duser.language=en -Duser.country=US StrictParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP StrictParseTest
@@ -112,7 +112,19 @@ public class StrictParseTest {
         successParse(nonLocalizedDFmt, "a12345,67890b");
         successParse(nonLocalizedDFmt, "a1234,67890b");
         failParse(nonLocalizedDFmt, "a123456,7890b", 6);
+    }
 
+    @Test // Non-localized, only run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void badExponentParseNumberFormatTest() {
+        // Some fmt, with an "E" exponent string
+        DecimalFormat fmt = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
+        fmt.setStrict(true);
+        // Upon non-numeric in exponent, parse will exit early and suffix will not
+        // exactly match, causing failure
+        failParse(fmt, "1.23E45.1", 7);
+        failParse(fmt, "1.23E45.", 7);
+        failParse(fmt, "1.23E45FOO3222", 7);
     }
 
     // All input Strings should fail

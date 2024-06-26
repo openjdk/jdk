@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2981,7 +2981,6 @@ class StubGenerator: public StubCodeGenerator {
   //   Z_ARG3    - y address
   //   Z_ARG4    - y length
   //   Z_ARG5    - z address
-  //   160[Z_SP] - z length
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
@@ -2993,8 +2992,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register y    = Z_ARG3;
     const Register ylen = Z_ARG4;
     const Register z    = Z_ARG5;
-    // zlen is passed on the stack:
-    // Address zlen(Z_SP, _z_abi(remaining_cargs));
 
     // Next registers will be saved on stack in multiply_to_len().
     const Register tmp1 = Z_tmp_1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,8 @@ public final class ChoicePopupLocation {
         robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
         robot.waitForIdle();
+        robot.delay(500);
+
         Point pt = choice.getLocationOnScreen();
         robot.mouseMove(pt.x + choice.getWidth() / 2,
                         pt.y + choice.getHeight() / 2);

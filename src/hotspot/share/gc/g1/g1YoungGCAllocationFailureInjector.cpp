@@ -39,7 +39,7 @@ public:
     _allocation_failure_regions(allocation_failure_regions),
     _allocation_failure_regions_num(cset_length * G1GCAllocationFailureALotCSetPercent / 100) { }
 
-  bool do_heap_region(HeapRegion* r) override {
+  bool do_heap_region(G1HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
     if (_allocation_failure_regions_num > 0) {
       _allocation_failure_regions.set_bit(r->hrm_index());

@@ -102,3 +102,15 @@ $ ${JTREG_HOME}/bin/jtreg -jdk:${JAVA_HOME}                                   \
  -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler\
  -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver         \
  ${WS}/hotspot/test/
+
+TESTING
+
+There are a few make targets for testing the failure_handler itself.
+ - Everything in `test/failure_handler/Makefile`
+ - The `test-failure-handler` target in `make/RunTests.gmk`
+ - The `test` target in `make/test/BuildFailureHandler.gmk`
+All of these targets are written for manual testing only. They rely on
+manual inspection of generated artifacts and cannot be run as part of a CI.
+They are tests which timeout, crash, fail in various ways and you can check
+the failure_handler output yourself. They might also leave processes running
+on your machine so be extra careful about cleaning up.

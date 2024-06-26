@@ -237,6 +237,12 @@ public class ClassDescTest extends SymbolicDescTest {
             testBadArrayRank(ClassDesc.of("Bar"));
             testArrayRankOverflow();
         }
+        try {
+            ConstantDescs.CD_void.arrayType();
+            fail("Should throw IAE");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
     }
 
     public void testBadClassDescs() {

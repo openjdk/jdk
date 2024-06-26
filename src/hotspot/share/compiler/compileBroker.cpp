@@ -1172,13 +1172,11 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     tty->cr();
   }
 
-  if (compile_reason != CompileTask::Reason_DirectivesChanged) {
-    // A request has been made for compilation.  Before we do any
-    // real work, check to see if the method has been compiled
-    // in the meantime with a definitive result.
-    if (compilation_is_complete(method, osr_bci, comp_level)) {
-      return;
-    }
+  // A request has been made for compilation.  Before we do any
+  // real work, check to see if the method has been compiled
+  // in the meantime with a definitive result.
+  if (compilation_is_complete(method, osr_bci, comp_level)) {
+    return;
   }
 
 #ifndef PRODUCT
@@ -1223,13 +1221,11 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       return;
     }
 
-    if (compile_reason != CompileTask::Reason_DirectivesChanged) {
-      // We need to check again to see if the compilation has
-      // completed.  A previous compilation may have registered
-      // some result.
-      if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return;
-      }
+    // We need to check again to see if the compilation has
+    // completed.  A previous compilation may have registered
+    // some result.
+    if (compilation_is_complete(method, osr_bci, comp_level)) {
+      return;
     }
 
     // We now know that this compilation is not pending, complete,
@@ -1378,7 +1374,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
     nmethod* method_code = method->code();
-    if (method_code != nullptr && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
+    if (method_code != nullptr) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
         return method_code;
       }

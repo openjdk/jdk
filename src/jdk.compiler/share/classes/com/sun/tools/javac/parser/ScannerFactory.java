@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@ import java.nio.CharBuffer;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.Options;
 
 
 /**
@@ -61,6 +63,7 @@ public class ScannerFactory {
     final Preview preview;
     final Tokens tokens;
     final Lint lint;
+    final boolean enableLineDocComments;
 
     /** Create a new scanner factory. */
     @SuppressWarnings("this-escape")
@@ -72,6 +75,8 @@ public class ScannerFactory {
         this.preview = Preview.instance(context);
         this.tokens = Tokens.instance(context);
         this.lint = Lint.instance(context);
+        var options = Options.instance(context);
+        this.enableLineDocComments = !options.isSet(Option.DISABLE_LINE_DOC_COMMENTS);
     }
 
     public Scanner newScanner(CharSequence input, boolean keepDocComments) {
