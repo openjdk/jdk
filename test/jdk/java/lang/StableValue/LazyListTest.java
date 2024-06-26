@@ -62,14 +62,14 @@ final class LazyListTest {
 
     @Test
     void isEmpty() {
-        assertFalse(StableValue.lazyList(SIZE, IDENTITY).isEmpty());
-        assertTrue(StableValue.lazyList(ZERO, IDENTITY).isEmpty());
+        assertFalse(newList().isEmpty());
+        assertTrue(newEmptyList().isEmpty());
     }
 
     @Test
     void size() {
-        assertEquals(SIZE, StableValue.lazyList(SIZE, IDENTITY).size());
-        assertEquals(ZERO, StableValue.lazyList(ZERO, IDENTITY).size());
+        assertEquals(SIZE, newList().size());
+        assertEquals(ZERO, newEmptyList().size());
     }
 
     @Test
@@ -98,8 +98,8 @@ final class LazyListTest {
 
     @Test
     void toArray() {
-        assertArrayEquals(new Object[ZERO], StableValue.lazyList(ZERO, IDENTITY).toArray());
-        assertArrayEquals(IntStream.range(0, SIZE).boxed().toList().toArray(), StableValue.lazyList(SIZE, IDENTITY).toArray());
+        assertArrayEquals(new Object[ZERO], newEmptyList().toArray());
+        assertArrayEquals(newRegularList().toArray(), newList().toArray());
     }
 
     @Test
@@ -113,31 +113,31 @@ final class LazyListTest {
     @Test
     void toArrayWithArraySmaller() {
         Integer[] arr = new Integer[INDEX];
-        Integer[] actual = StableValue.lazyList(SIZE, IDENTITY).toArray(arr);
+        Integer[] actual = newList().toArray(arr);
         assertNotSame(arr, actual);
-        Integer[] expected = IntStream.range(0, SIZE).boxed().toList().toArray(new Integer[0]);
+        Integer[] expected = newRegularList().toArray(new Integer[0]);
         assertArrayEquals(expected, actual);
     }
 
     @Test
     void toArrayWithGenerator() {
-        Integer[] expected = IntStream.range(0, SIZE).boxed().toList().toArray(Integer[]::new);
-        Integer[] actual = StableValue.lazyList(SIZE, IDENTITY).toArray(Integer[]::new);
+        Integer[] expected = newRegularList().toArray(Integer[]::new);
+        Integer[] actual = newList().toArray(Integer[]::new);
         assertArrayEquals(expected, actual);
     }
 
     @Test
     void firstIndex() {
-        var lazy = StableValue.lazyList(SIZE, IDENTITY);
+        var lazy = newList();
         for (int i = INDEX; i < SIZE; i++) {
-            assertEquals(i, StableValue.lazyList(SIZE, IDENTITY).indexOf(i));
+            assertEquals(i, lazy.indexOf(i));
         }
         assertEquals(-1, lazy.indexOf(SIZE + 1));
     }
 
     @Test
     void lastIndex() {
-        var lazy = StableValue.lazyList(SIZE, IDENTITY);
+        var lazy = newList();
         for (int i = INDEX; i < SIZE; i++) {
             assertEquals(i, lazy.lastIndexOf(i));
         }
@@ -146,27 +146,29 @@ final class LazyListTest {
 
     @Test
     void toStringTest() {
-        assertEquals("[]", StableValue.lazyList(ZERO, IDENTITY).toString());
+        assertEquals("[]", newEmptyList().toString());
         assertEquals("[0, 1]", StableValue.lazyList(2, IDENTITY).toString());
-        assertEquals(IntStream.range(0, SIZE).boxed().toList().toString(), StableValue.lazyList(SIZE, IDENTITY).toString());
+        assertEquals(newRegularList().toString(), newList().toString());
     }
 
     @Test
     void hashCodeTest() {
-        assertEquals(List.of().hashCode(), StableValue.lazyList(ZERO, IDENTITY).hashCode());
-        assertEquals(IntStream.range(0, SIZE).boxed().toList().hashCode(), StableValue.lazyList(SIZE, IDENTITY).hashCode());
+        assertEquals(List.of().hashCode(), newEmptyList().hashCode());
+        assertEquals(newRegularList().hashCode(), newList().hashCode());
     }
 
     @Test
     void equalsTest() {
-        assertEquals(List.of(), StableValue.lazyList(ZERO, IDENTITY));
-        assertEquals(IntStream.range(0, SIZE).boxed().toList(), StableValue.lazyList(SIZE, IDENTITY));
-        assertFalse(StableValue.lazyList(SIZE, IDENTITY).equals("A"));
+        assertTrue(newEmptyList().equals(List.of()));
+        assertTrue(List.of().equals(newEmptyList()));
+        assertTrue(newList().equals(newRegularList()));
+        assertTrue(newRegularList().equals(newList()));
+        assertFalse(newList().equals("A"));
     }
 
     @Test
     void iteratorTotal() {
-        var iterator = StableValue.lazyList(SIZE, IDENTITY).iterator();
+        var iterator = newList().iterator();
         for (int i = 0; i < SIZE; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -181,7 +183,7 @@ final class LazyListTest {
 
     @Test
     void iteratorPartial() {
-        var iterator = StableValue.lazyList(SIZE, IDENTITY).iterator();
+        var iterator = newList().iterator();
         for (int i = 0; i < INDEX; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -218,7 +220,7 @@ final class LazyListTest {
     }
 
     static <T extends Throwable> void assertThrowsForOperation(Class<T> expectedType, Operation operation) {
-        var lazy = StableValue.lazyList(SIZE, IDENTITY);
+        var lazy = newList();
         assertThrows(expectedType, () -> operation.accept(lazy));
         var sub = lazy.subList(1, SIZE / 2);
         assertThrows(expectedType, () -> operation.accept(sub));
@@ -230,16 +232,16 @@ final class LazyListTest {
 
     @Test
     void serializable() {
-        assertFalse(StableValue.lazyList(SIZE, IDENTITY) instanceof Serializable);
-        assertFalse(StableValue.lazyList(ZERO, IDENTITY) instanceof Serializable);
-        assertFalse(StableValue.lazyList(SIZE, IDENTITY).subList(1, INDEX) instanceof Serializable);
+        assertFalse(newList() instanceof Serializable);
+        assertFalse(newEmptyList() instanceof Serializable);
+        assertFalse(newList().subList(1, INDEX) instanceof Serializable);
     }
 
     @Test
     void randomAccess() {
-        assertInstanceOf(RandomAccess.class, StableValue.lazyList(SIZE, IDENTITY));
-        assertInstanceOf(RandomAccess.class, StableValue.lazyList(ZERO, IDENTITY));
-        assertInstanceOf(RandomAccess.class, StableValue.lazyList(SIZE, IDENTITY).subList(1, INDEX));
+        assertInstanceOf(RandomAccess.class, newList());
+        assertInstanceOf(RandomAccess.class, newEmptyList());
+        assertInstanceOf(RandomAccess.class, newList().subList(1, INDEX));
     }
 
     // Support constructs
@@ -293,6 +295,18 @@ final class LazyListTest {
                 new Operation("listIter().add",    l -> l.listIterator().add(1)),
                 new Operation("listIter().set",    l -> l.listIterator().set(1))
         );
+    }
+
+    static List<Integer> newList() {
+        return StableValue.lazyList(SIZE, IDENTITY);
+    }
+
+    static List<Integer> newEmptyList() {
+        return StableValue.lazyList(ZERO, IDENTITY);
+    }
+
+    static List<Integer> newRegularList() {
+        return IntStream.range(0, SIZE).boxed().toList();
     }
 
 }
