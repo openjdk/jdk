@@ -4645,7 +4645,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 }
 
 
-void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
+void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
                                                      Register temp2_reg,
@@ -4746,7 +4746,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    bool set_cond_codes) {
-  check_klass_subtype_slow_path_1
+  check_klass_subtype_slow_path_linear
     (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
 }
 
@@ -4761,10 +4761,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure) {
   if (! UseSecondarySupersTable) {
-    check_klass_subtype_slow_path_1
+    check_klass_subtype_slow_path_linear
       (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
   } else {
-    check_klass_subtype_slow_path_2
+    check_klass_subtype_slow_path_table
       (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
        L_success, L_failure, /*set_cond_codes*/false);
   }
@@ -4781,15 +4781,15 @@ Register MacroAssembler::allocate_if_noreg(Register r,
   return r;
 }
 
-void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
-                                                     Register super_klass,
-                                                     Register temp_reg,
-                                                     Register temp2_reg,
-                                                     Register temp3_reg,
-                                                     Register result_reg,
-                                                     Label* L_success,
-                                                     Label* L_failure,
-                                                     bool set_cond_codes) {
+void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
+                                                         Register super_klass,
+                                                         Register temp_reg,
+                                                         Register temp2_reg,
+                                                         Register temp3_reg,
+                                                         Register result_reg,
+                                                         Label* L_success,
+                                                         Label* L_failure,
+                                                         bool set_cond_codes) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
   bool temp2_reg_was_valid = temp2_reg->is_valid();
@@ -4802,7 +4802,7 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
   if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1, "at most one null in the batch");
 
-  BLOCK_COMMENT("check_klass_subtype_slow_path_2");
+  BLOCK_COMMENT("check_klass_subtype_slow_path_table");
 
   RegSetIterator<Register> available_regs
     = (RegSet::of(rax, rcx, rdx, r8) + r9 + r10 + r11 + r12 - temps - sub_klass - super_klass).begin();
@@ -4893,9 +4893,7 @@ do {                                                                 \
   assert(result         == rdi || result      == noreg, "mismatch"); \
 } while(0)
 
-void poo() {
-  asm("nop");
-}
+// Versions of salq and rorq that don't need count to be in rcx
 
 void MacroAssembler::salq(Register dest, Register count) {
   if (count == rcx) {

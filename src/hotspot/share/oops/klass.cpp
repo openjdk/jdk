@@ -58,10 +58,6 @@
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
 
-// Used to just annotatate cold/hot branches
-#define LIKELY(condition)   (condition)
-#define UNLIKELY(condition) (condition)
-
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -132,8 +128,7 @@ void Klass::set_name(Symbol* n) {
     _name->increment_refcount();
   }
 
-  // if (UseSecondarySupersTable)
-    {
+  {
     elapsedTimer selftime;
     selftime.start();
 
@@ -330,8 +325,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
 #ifdef ASSERT
-  if (// UseSecondarySupersTable && 
-      secondaries != nullptr) {
+  if (secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
   }
@@ -472,12 +466,7 @@ Array<Klass*>* Klass::pack_secondary_supers(ClassLoaderData* loader_data,
   }
 #endif
 
-  // if (UseSecondarySupersTable)
-    {
-    bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
-  } // else {
-  //   bitmap = SECONDARY_SUPERS_BITMAP_EMPTY;
-  // }
+  bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
   return secondary_supers;
 }
 
@@ -1282,15 +1271,12 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
-    // if (UseSecondarySupersTable)
-      {
-      st->print("  - "); st->print("%d elements;", _secondary_supers->length());
-      st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
-      if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
-          _bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
-        st->print("  - "); print_positive_lookup_stats(secondary_supers(), _bitmap, st); st->cr();
-        st->print("  - "); print_negative_lookup_stats(_bitmap, st); st->cr();
-      }
+    st->print("  - "); st->print("%d elements;", _secondary_supers->length());
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
+    if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
+        _bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      st->print("  - "); print_positive_lookup_stats(secondary_supers(), _bitmap, st); st->cr();
+      st->print("  - "); print_negative_lookup_stats(_bitmap, st); st->cr();
     }
   } else {
     st->print("null");

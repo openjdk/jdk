@@ -3557,15 +3557,13 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
   st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
-  // if (UseSecondarySupersTable)
-    {
+  {
     st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
     st->print(BULLET"bitmap:            " UINTX_FORMAT_X_0, _bitmap); st->cr();
   }
   if (secondary_supers() != nullptr) {
     if (Verbose) {
-      bool is_hashed = // UseSecondarySupersTable &&
-        (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
+      bool is_hashed = (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
       st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
       for (int i = 0; i < _secondary_supers->length(); i++) {
         ResourceMark rm; // for external_name()

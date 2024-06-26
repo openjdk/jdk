@@ -1251,19 +1251,10 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
-  LIR_Opr call_result;
-  // if (0 && UseSecondarySupersTable) {
-  //   call_result = call_runtime(clazz.value(), object.value(),
-  //                              CAST_FROM_FN_PTR(address, StubRoutines::aarch64::_is_instance_of),
-  //                              x->type(),
-  //                              nullptr); // null CodeEmitInfo results in a leaf call
-  // } else
-    {
-    call_result = call_runtime(clazz.value(), object.value(),
-                               CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
-                               x->type(),
-                               nullptr); // null CodeEmitInfo results in a leaf call
-  }
+  LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
+                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     x->type(),
+                                     nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
 }
 

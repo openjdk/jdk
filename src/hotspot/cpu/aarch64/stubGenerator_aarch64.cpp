@@ -79,10 +79,6 @@
 
 // Stub Code definitions
 
-void poolz(int n, int len) {
-    asm("nop");
-  }
-
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -2003,12 +1999,6 @@ class StubGenerator: public StubCodeGenerator {
     // save the original count
     __ mov(count_save, count);
 
-    __ push(RegSet::of(r0, r1), sp);
-    __ mov(r0, 0);
-    __ mov(r1, count);
-    __ rt_call(CAST_FROM_FN_PTR(address, poolz));
-    __ pop(RegSet::of(r0, r1), sp);
-
     // Copy from low to high addresses
     __ mov(start_to, to);              // Save destination array start address
     __ b(L_load_element);
@@ -2053,8 +2043,6 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_miss);
 
         // We will consult the secondary-super array.
-        // __ ldr(gct1, Address(/*r_sub_klass*/r19_klass, in_bytes(Klass::secondary_supers_offset())));
-
         __ lookup_secondary_supers_table(/*r_sub_klass*/r19_klass,
                                          /*r_super_klass*/ckval,
                                          /*r_array_base*/gct1,

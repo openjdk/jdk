@@ -1515,10 +1515,6 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
   bind(Lexit);
 }
 
-void queef(int n, int len) {
-  asm("nop");
-}
-
 void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
@@ -1619,7 +1615,7 @@ Register MacroAssembler::allocate_if_noreg(Register r,
 }
 
 
-void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
+void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
                                                      Register super_klass,
                                                      Register temp_reg,
                                                      Register temp2_reg,
@@ -1690,7 +1686,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     check_klass_subtype_slow_path_1
       (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
   } else {
-    check_klass_subtype_slow_path_2
+    check_klass_subtype_slow_path_table
       (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
        /*vtemp*/fnoreg,
        L_success, L_failure, set_cond_codes);
@@ -2010,8 +2006,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_length = temp2,
     r_array_index  = noreg, // unused
     r_bitmap       = noreg; // unused
-
-  // LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 

@@ -656,14 +656,14 @@ public:
                                      Label* L_success,
                                      Label* L_failure);
 
-  void check_klass_subtype_slow_path_1(Register sub_klass,
-                                       Register super_klass,
-                                       Register temp_reg,
-                                       Register temp2_reg,
-                                       Label* L_success,
-                                       Label* L_failure,
-                                       bool set_cond_codes = false);
-  void check_klass_subtype_slow_path_2(Register sub_klass,
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+  void check_klass_subtype_slow_path_table(Register sub_klass,
                                        Register super_klass,
                                        Register temp_reg,
                                        Register temp2_reg,
