@@ -35,7 +35,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
@@ -277,7 +277,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     @Override
     protected void addSummaryType(Element member, Content content) {
         if (foundNonPubConstructor) {
-            var code = new HtmlTree(TagName.CODE);
+            var code = new HtmlTree(HtmlTag.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {

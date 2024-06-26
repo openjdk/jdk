@@ -41,7 +41,7 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
@@ -108,7 +108,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(new HtmlTree(TagName.WBR));
+            content.add(new HtmlTree(HtmlTag.WBR));
         }
         content.add(signature);
 
@@ -214,7 +214,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content params = getParameters(member, false);
         if (params.charCount() > 2) {
             // only add <wbr> for non-empty parameters
-            target.add(new HtmlTree(TagName.WBR));
+            target.add(new HtmlTree(HtmlTag.WBR));
         }
         target.add(params);
     }

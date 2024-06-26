@@ -39,7 +39,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.html.Content;
 
@@ -360,7 +360,7 @@ public class Table<T> extends Content {
     private Content toContent() {
         Content main;
         if (id != null) {
-            main = new HtmlTree(TagName.DIV).setId(id);
+            main = new HtmlTree(HtmlTag.DIV).setId(id);
         } else {
             main = new ContentBuilder();
         }
@@ -402,7 +402,7 @@ public class Table<T> extends Content {
             if (id == null) {
                 throw new IllegalStateException("no id set for table");
             }
-            var tabpanel = new HtmlTree(TagName.DIV)
+            var tabpanel = new HtmlTree(HtmlTag.DIV)
                     .setId(HtmlIds.forTabPanel(id))
                     .put(HtmlAttr.ROLE, "tabpanel")
                     .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
@@ -415,7 +415,7 @@ public class Table<T> extends Content {
     }
 
     private HtmlTree createTab(HtmlId tabId, HtmlStyles style, boolean defaultTab, Content tabLabel) {
-        var tab = new HtmlTree(TagName.BUTTON)
+        var tab = new HtmlTree(HtmlTag.BUTTON)
                 .setId(tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")

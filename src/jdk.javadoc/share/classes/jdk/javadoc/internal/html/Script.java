@@ -98,7 +98,7 @@ public class Script  {
      */
     public Content asContent() {
         ScriptContent scriptContent = new ScriptContent(sb);
-        var script = new HtmlTree(TagName.SCRIPT) {
+        var script = new HtmlTree(HtmlTag.SCRIPT) {
             @Override
             public HtmlTree add(Content c) {
                 if (c != scriptContent) {

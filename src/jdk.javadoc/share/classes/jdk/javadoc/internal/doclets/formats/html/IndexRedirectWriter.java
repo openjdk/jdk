@@ -33,7 +33,7 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
@@ -92,7 +92,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(targetPath, '\'')
                 .append(")");
-        var metaRefresh = new HtmlTree(TagName.META)
+        var metaRefresh = new HtmlTree(HtmlTag.META)
                 .put(HtmlAttr.HTTP_EQUIV, "Refresh")
                 .put(HtmlAttr.CONTENT, "0;" + targetPath);
         head.addContent(script.asContent(), HtmlTree.NOSCRIPT(metaRefresh));
@@ -103,7 +103,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
-        var body = new HtmlTree(TagName.BODY).setStyle(HtmlStyles.indexRedirectPage);
+        var body = new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyles.indexRedirectPage);
         var main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 

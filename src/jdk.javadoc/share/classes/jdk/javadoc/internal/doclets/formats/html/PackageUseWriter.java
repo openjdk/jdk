@@ -36,7 +36,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -204,7 +204,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
-        headingContent.add(new HtmlTree(TagName.BR));
+        headingContent.add(new HtmlTree(HtmlTag.BR));
         headingContent.add(name);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyles.title, headingContent);

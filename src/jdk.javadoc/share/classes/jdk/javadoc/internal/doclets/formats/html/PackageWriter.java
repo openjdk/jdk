@@ -42,7 +42,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -127,7 +127,7 @@ public class PackageWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content packageContent = getContentHeader();
-        packageContent.add(new HtmlTree(TagName.HR));
+        packageContent.add(new HtmlTree(HtmlTag.HR));
         Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         addPackageSignature(div);
         buildPackageDescription(div);

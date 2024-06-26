@@ -30,7 +30,7 @@ import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.ListBuilder;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.html.Content;
 
@@ -101,10 +101,10 @@ public class TableOfContents {
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
         content.add(header);
-        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyles.hideSidebar)
+        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(Entity.LEFT_POINTING_ANGLE));
-        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyles.showSidebar)
+        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.showSidebar)
                 .add(Entity.RIGHT_POINTING_ANGLE)
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
         return content.add(listBuilder);

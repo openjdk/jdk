@@ -41,7 +41,7 @@ import javax.tools.FileObject;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -202,7 +202,7 @@ public class SourceToHTMLConverter {
                     .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
-            var pre = new HtmlTree(TagName.PRE);
+            var pre = new HtmlTree(HtmlTag.PRE);
             try (var reader = new LineNumberReader(r)) {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
@@ -247,7 +247,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(TagName.BODY).setStyle(HtmlStyles.sourcePage);
+        return new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyles.sourcePage);
     }
 
     /**

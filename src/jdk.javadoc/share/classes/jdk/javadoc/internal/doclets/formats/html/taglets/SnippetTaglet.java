@@ -52,7 +52,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
@@ -145,11 +145,11 @@ public class SnippetTaglet extends BaseTaglet {
     private Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
         var pathToRoot = tagletWriter.htmlWriter.pathToRoot;
-        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyles.snippet);
+        var pre = new HtmlTree(HtmlTag.PRE).setStyle(HtmlStyles.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         }
-        var code = new HtmlTree(TagName.CODE)
+        var code = new HtmlTree(HtmlTag.CODE)
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
@@ -218,10 +218,10 @@ public class SnippetTaglet extends BaseTaglet {
         String copiedText = resources.getText("doclet.Copied_to_clipboard");
         String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
         var snippetContainer = HtmlTree.DIV(HtmlStyles.snippetContainer,
-                new HtmlTree(TagName.BUTTON)
+                new HtmlTree(HtmlTag.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
-                        .add(new HtmlTree(TagName.IMG)
+                        .add(new HtmlTree(HtmlTag.IMG)
                                 .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
                                                              .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))

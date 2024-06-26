@@ -49,7 +49,7 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -473,7 +473,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addClassSignature(Content classInfo) {
-        classInfo.add(new HtmlTree(TagName.HR));
+        classInfo.add(new HtmlTree(HtmlTag.HR));
         classInfo.add(new Signatures.TypeSignature(typeElement, this)
                 .toContent());
     }
@@ -663,7 +663,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         if (utils.isFunctionalInterface(typeElement)) {
             var dl = HtmlTree.DL(HtmlStyles.notes);
             dl.add(HtmlTree.DT(contents.functionalInterface));
-            var dd = new HtmlTree(TagName.DD);
+            var dd = new HtmlTree(HtmlTag.DD);
             dd.add(contents.functionalInterfaceMessage);
             dl.add(dd);
             target.add(dl);

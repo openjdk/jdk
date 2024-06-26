@@ -41,7 +41,7 @@ import static jdk.javadoc.internal.html.HtmlAttr.*;
  * The intent of this class is to embody the semantics of the current HTML standard,
  * to the extent supported/used by javadoc.
  *
- * This class is derivative of {@link TagName}.
+ * This class is derivative of {@link TagNameOLD}.
  * Eventually, these two should be merged back together, and possibly made
  * public.
  *
@@ -87,6 +87,9 @@ public enum HtmlTag {
     BR(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.HTML4, CLEAR)),
 
+    BUTTON(BlockType.OTHER, EndKind.REQUIRED,
+            attrs(AttrKind.OK, FORM, NAME, TYPE, VALUE)),
+
     CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT),
             attrs(AttrKind.HTML4, ALIGN)),
@@ -117,6 +120,9 @@ public enum HtmlTag {
     DEL(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
             attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
+
+    DETAILS(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     DFN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -208,12 +214,17 @@ public enum HtmlTag {
             attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
             attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
+    INPUT(BlockType.OTHER, EndKind.NONE,
+            attrs(AttrKind.OK, NAME, TYPE, VALUE)),
+
     INS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
             attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
 
     KBD(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    LABEL(BlockType.OTHER, EndKind.REQUIRED),
 
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
@@ -302,13 +313,15 @@ public enum HtmlTag {
     SUB(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
+    SUMMARY(BlockType.BLOCK, EndKind.REQUIRED),
+
     SUP(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, BORDER),
-            attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING,
+            attrs(AttrKind.HTML4, HtmlAttr.SUMMARY, CELLPADDING, CELLSPACING,
                     HtmlAttr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
@@ -519,7 +532,7 @@ public enum HtmlTag {
         return accepts(B);
     }
 
-    public String getCSSName() {
+    public String getText() {
         return name().toLowerCase(Locale.ROOT);
     }
 
@@ -546,11 +559,15 @@ public enum HtmlTag {
     private static final Map<String, HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.getCSSName(), t);
+            index.put(t.getText(), t);
         }
     }
 
     public static HtmlTag get(Name tagName) {
         return index.get(tagName.toString().toLowerCase(Locale.ROOT));
+    }
+
+    public static HtmlTag get(String tagName) {
+        return index.get(tagName.toLowerCase(Locale.ROOT));
     }
 }

@@ -47,7 +47,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
@@ -451,7 +451,7 @@ public abstract class AbstractMemberWriter {
      */
     protected void addModifiersAndType(Element member, TypeMirror type,
             Content target) {
-        var code = new HtmlTree(TagName.CODE);
+        var code = new HtmlTree(HtmlTag.CODE);
         addModifiers(member, code);
         if (type == null) {
             code.add(switch (member.getKind()) {
@@ -473,7 +473,7 @@ public abstract class AbstractMemberWriter {
                 // Add explicit line break between method type parameters and
                 // return type in member summary table to avoid random wrapping.
                 if (typeParameters.charCount() > 10) {
-                    code.add(new HtmlTree(TagName.BR));
+                    code.add(new HtmlTree(HtmlTag.BR));
                 } else {
                     code.add(Entity.NO_BREAK_SPACE);
                 }
@@ -678,7 +678,7 @@ public abstract class AbstractMemberWriter {
      * @return the inherited summary links
      */
     public Content getInheritedSummaryLinks() {
-        return new HtmlTree(TagName.CODE);
+        return new HtmlTree(HtmlTag.CODE);
     }
 
     /**

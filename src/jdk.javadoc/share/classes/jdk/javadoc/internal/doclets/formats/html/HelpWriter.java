@@ -31,7 +31,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -105,11 +105,11 @@ public class HelpWriter extends HtmlDocletWriter {
         tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
         tableOfContents.pushNestedList();
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
-                .add(new HtmlTree(TagName.HR))
+                .add(new HtmlTree(HtmlTag.HR))
                 .add(getNavigationSection())
-                .add(new HtmlTree(TagName.HR))
+                .add(new HtmlTree(HtmlTag.HR))
                 .add(getPageKindSection())
-                .add(new HtmlTree(TagName.HR))
+                .add(new HtmlTree(HtmlTag.HR))
                 .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
         tableOfContents.popNestedList();
@@ -255,7 +255,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         getContent("doclet.help.class_interface.implementations"),
                         getContent("doclet.help.class_interface.declaration"),
                         getContent("doclet.help.class_interface.description")))
-                .add(new HtmlTree(TagName.BR))
+                .add(new HtmlTree(HtmlTag.BR))
                 .add(newHelpSectionList(
                         contents.nestedClassSummary,
                         contents.enumConstantSummary,
@@ -265,7 +265,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.methodSummary,
                         contents.annotateTypeRequiredMemberSummaryLabel,
                         contents.annotateTypeOptionalMemberSummaryLabel))
-                .add(new HtmlTree(TagName.BR))
+                .add(new HtmlTree(HtmlTag.BR))
                 .add(newHelpSectionList(
                         contents.enumConstantDetailLabel,
                         contents.fieldDetailsLabel,

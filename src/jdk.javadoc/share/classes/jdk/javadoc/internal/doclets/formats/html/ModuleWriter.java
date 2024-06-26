@@ -46,7 +46,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -192,7 +192,7 @@ public class ModuleWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content moduleContent = getContentHeader();
-        moduleContent.add(new HtmlTree(TagName.HR));
+        moduleContent.add(new HtmlTree(HtmlTag.HR));
         Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         addModuleSignature(div);
         buildModuleDescription(div);
@@ -823,7 +823,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             }
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
-                desc.add(new HtmlTree(TagName.BR));
+                desc.add(new HtmlTree(HtmlTag.BR));
                 desc.add("(");
                 var implSpan = HtmlTree.SPAN(HtmlStyles.implementationLabel, contents.implementation);
                 desc.add(implSpan);

@@ -40,7 +40,7 @@ import javax.tools.Diagnostic;
 
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -423,7 +423,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
-        headingContent.add(new HtmlTree(TagName.BR));
+        headingContent.add(new HtmlTree(HtmlTag.BR));
         headingContent.add(clname);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyles.title, headingContent);

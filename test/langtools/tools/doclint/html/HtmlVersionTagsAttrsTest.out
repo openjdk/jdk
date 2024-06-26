@@ -259,19 +259,7 @@ HtmlVersionTagsAttrsTest.java:97: error: unknown tag: hgroup
 HtmlVersionTagsAttrsTest.java:100: error: unknown tag: hgroup
      * </hgroup>
        ^
-HtmlVersionTagsAttrsTest.java:103: error: unknown tag: details
-     * <details>
-       ^
-HtmlVersionTagsAttrsTest.java:104: error: unknown tag: summary
-     * <summary>Summary</summary>
-       ^
-HtmlVersionTagsAttrsTest.java:104: error: unknown tag: summary
-     * <summary>Summary</summary>
-                       ^
-HtmlVersionTagsAttrsTest.java:106: error: unknown tag: details
-     * </details>
-       ^
-HtmlVersionTagsAttrsTest.java:129: error: element not allowed in documentation comments: <main>
+HtmlVersionTagsAttrsTest.java:125: error: element not allowed in documentation comments: <main>
      * <main>
        ^
 HtmlVersionTagsAttrsTest.java:161: error: heading not found for </section>
@@ -310,5 +298,5 @@ HtmlVersionTagsAttrsTest.java:202: error: no caption for table
 HtmlVersionTagsAttrsTest.java:205: error: no caption for table
      * </table>
        ^
-102 errors
+98 errors
 2 warnings

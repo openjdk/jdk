@@ -30,8 +30,8 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.TagName;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 
@@ -566,7 +566,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 target.add(parameters);
             } else {
-                target.add(new HtmlTree(TagName.WBR))
+                target.add(new HtmlTree(HtmlTag.WBR))
                         .add(HtmlTree.SPAN(HtmlStyles.parameters, parameters));
             }
 

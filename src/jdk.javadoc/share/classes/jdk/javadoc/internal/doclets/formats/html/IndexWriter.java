@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -224,7 +224,7 @@ public class IndexWriter extends HtmlDocletWriter {
             default -> throw new Error();
         }
         target.add(dt);
-        var dd = new HtmlTree(TagName.DD);
+        var dd = new HtmlTree(HtmlTag.DD);
         if (element.getKind() == ElementKind.MODULE || element.getKind() == ElementKind.PACKAGE) {
             addSummaryComment(element, dd);
         } else {
@@ -261,7 +261,7 @@ public class IndexWriter extends HtmlDocletWriter {
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         target.add(dt);
-        var dd = new HtmlTree(TagName.DD);
+        var dd = new HtmlTree(HtmlTag.DD);
         if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
@@ -348,7 +348,7 @@ public class IndexWriter extends HtmlDocletWriter {
             content.add(Entity.NO_BREAK_SPACE);
         }
 
-        content.add(new HtmlTree(TagName.BR));
+        content.add(new HtmlTree(HtmlTag.BR));
         var pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))

@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Script;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 
 /**
  * An HTML {@code <head>} element.
@@ -272,7 +272,7 @@ public class Head extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        var head = new HtmlTree(TagName.HEAD);
+        var head = new HtmlTree(HtmlTag.HEAD);
         head.add(getGeneratedBy(showTimestamp, generatedDate));
         head.add(HtmlTree.TITLE(title));
 
@@ -300,7 +300,7 @@ public class Head extends Content {
         }
 
         if (canonicalLink != null) {
-            var link = new HtmlTree(TagName.LINK);
+            var link = new HtmlTree(HtmlTag.LINK);
             link.put(HtmlAttr.REL, "canonical");
             link.put(HtmlAttr.HREF, canonicalLink.getPath());
             head.add(link);

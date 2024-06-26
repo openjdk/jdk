@@ -46,7 +46,7 @@ import javax.lang.model.util.SimpleTypeVisitor14;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -378,14 +378,14 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(TagName.WBR));
+                links.add(new HtmlTree(HtmlTag.WBR));
             }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(new HtmlTree(TagName.WBR));
+                    links.add(new HtmlTree(HtmlTag.WBR));
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }

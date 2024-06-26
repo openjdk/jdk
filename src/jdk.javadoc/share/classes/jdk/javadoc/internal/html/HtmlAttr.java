@@ -59,6 +59,7 @@ public enum HtmlAttr {
     ENTERKEYHINT(true),
     FACE,
     FOR,
+    FORM,
     FRAME,
     FRAMEBORDER,
     HEADERS,

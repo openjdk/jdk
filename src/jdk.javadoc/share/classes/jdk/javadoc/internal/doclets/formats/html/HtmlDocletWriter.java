@@ -105,7 +105,7 @@ import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.html.RawHtml;
 import jdk.javadoc.internal.html.Script;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.html.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
@@ -611,7 +611,7 @@ public abstract class HtmlDocletWriter {
             var contents = cb.getContents();
             if (!contents.isEmpty()) {
                 var first = contents.get(0);
-                if (first instanceof HtmlTree htmlTree && htmlTree.tagName.equals(TagName.H1)) {
+                if (first instanceof HtmlTree htmlTree && htmlTree.tagName.equals(HtmlTag.H1)) {
                     for (var c2 : htmlTree.getContents()) {
                         if (c2 instanceof Text t) {
                             sb.append(t.toString());
@@ -686,7 +686,7 @@ public abstract class HtmlDocletWriter {
         return (bottom == null || bottom.isEmpty())
                 ? null
                 : HtmlTree.FOOTER()
-                    .add(new HtmlTree(TagName.HR))
+                    .add(new HtmlTree(HtmlTag.HR))
                     .add(HtmlTree.P(HtmlStyles.legalCopy,
                             HtmlTree.SMALL(
                                     RawHtml.of(replaceDocRootDir(bottom)))));
@@ -2406,7 +2406,7 @@ public abstract class HtmlDocletWriter {
      * @return an HtmlTree for the BODY tag
      */
     public HtmlTree getBody(String title) {
-        var body = new HtmlTree(TagName.BODY).setStyle(getBodyStyle());
+        var body = new HtmlTree(HtmlTag.BODY).setStyle(getBodyStyle());
 
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
@@ -2602,7 +2602,7 @@ public abstract class HtmlDocletWriter {
                 });
         return contents.getContent(key,
                                    HtmlTree.CODE(Text.of(className)),
-                                   new HtmlTree(TagName.EM).add(featureName),
+                                   new HtmlTree(HtmlTag.EM).add(featureName),
                                    featureCodes);
     }
 

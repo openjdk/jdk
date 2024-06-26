@@ -39,7 +39,7 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.html.Text;
@@ -516,14 +516,14 @@ public class Navigation {
         }
         var navigationBar = HtmlTree.NAV();
 
-        var navContent = new HtmlTree(TagName.DIV);
+        var navContent = new HtmlTree(HtmlTag.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
         // The mobile menu button uses three empty spans to produce its animated icon
         HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyles.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
         navContent.setStyle(HtmlStyles.navContent).add(HtmlTree.DIV(HtmlStyles.navMenuButton,
-                        new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+                        new HtmlTree(HtmlTag.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                                 .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                                 .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
@@ -535,7 +535,7 @@ public class Navigation {
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
 
-        var navList = new HtmlTree(TagName.UL)
+        var navList = new HtmlTree(HtmlTag.UL)
                 .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
                 .setStyle(HtmlStyles.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);

@@ -27,7 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree.Hierarchy;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -78,9 +78,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void addLevelInfo(TypeElement parent, Collection<TypeElement> collection,
                                 Hierarchy hierarchy, Content content) {
         if (!collection.isEmpty()) {
-            var ul = new HtmlTree(TagName.UL);
+            var ul = new HtmlTree(HtmlTag.UL);
             for (TypeElement local : collection) {
-                var li = new HtmlTree(TagName.LI);
+                var li = new HtmlTree(HtmlTag.LI);
                 li.setStyle(HtmlStyles.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);

@@ -145,8 +145,8 @@ public class RawHtml extends Content {
         Matcher m = tag.matcher(rawHtmlContent);
         while (m.find()) {
             try {
-                var tn = TagName.of(m.group("tag"));
-                if (!tn.phrasingContent) {
+                var tn = HtmlTag.get(m.group("tag"));
+                if (tn.blockType != HtmlTag.BlockType.INLINE) {
                     return false;
                 }
             } catch (IllegalArgumentException e) {

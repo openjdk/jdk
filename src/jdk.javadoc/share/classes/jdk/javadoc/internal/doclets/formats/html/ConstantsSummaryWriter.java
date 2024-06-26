@@ -44,7 +44,7 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.html.Text;
@@ -414,7 +414,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      */
     private Content getTypeColumn(VariableElement member) {
         Content typeContent = new ContentBuilder();
-        var code = new HtmlTree(TagName.CODE)
+        var code = new HtmlTree(HtmlTag.CODE)
                 .setId(htmlIds.forMember(currentTypeElement, member));
         for (Modifier mod : member.getModifiers()) {
             code.add(Text.of(mod.toString()))

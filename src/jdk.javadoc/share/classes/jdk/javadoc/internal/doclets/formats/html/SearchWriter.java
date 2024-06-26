@@ -32,7 +32,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -97,8 +97,8 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
                         .add(HtmlTree.SPAN(Text.of("link"))
                                 .setId(HtmlId.of("page-search-link")))
-                        .add(new HtmlTree(TagName.BUTTON)
-                                .add(new HtmlTree(TagName.IMG)
+                        .add(new HtmlTree(HtmlTag.BUTTON)
+                                .add(new HtmlTree(HtmlTag.IMG)
                                         .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
                                                                      .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                         .put(HtmlAttr.ALT, copyUrlText))
@@ -110,10 +110,10 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(HtmlTree.P(HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("search-redirect")))
                                 .add(HtmlTree.LABEL("search-redirect",
                                         contents.getContent("doclet.search.redirect")))))
-                .add(new HtmlTree(TagName.P)
+                .add(new HtmlTree(HtmlTag.P)
                         .setId(HtmlId.of("page-search-notify"))
                         .add(contents.getContent("doclet.search.loading")))
-                .add(HtmlTree.DIV(new HtmlTree(TagName.DIV)
+                .add(HtmlTree.DIV(new HtmlTree(HtmlTag.DIV)
                                 .setId(HtmlId.of("result-container"))
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))

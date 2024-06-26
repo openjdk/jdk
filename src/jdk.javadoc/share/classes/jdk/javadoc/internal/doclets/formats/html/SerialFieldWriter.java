@@ -37,7 +37,7 @@ import com.sun.source.doctree.SerialTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.html.Content;
@@ -58,7 +58,7 @@ public class SerialFieldWriter extends FieldWriter {
     }
 
     protected Content getFieldsContentHeader() {
-        return new HtmlTree(TagName.LI).setStyle(HtmlStyles.blockList);
+        return new HtmlTree(HtmlTag.LI).setStyle(HtmlStyles.blockList);
     }
 
     protected Content getSerializableFields(String heading, Content source) {
@@ -76,7 +76,7 @@ public class SerialFieldWriter extends FieldWriter {
         Content nameContent = Text.of(fieldName);
         var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         content.add(heading);
-        var pre = new HtmlTree(TagName.PRE);
+        var pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
                 configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, fieldType));
         pre.add(fieldContent);
