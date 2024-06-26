@@ -2038,9 +2038,7 @@ class MutableBigInteger {
         MutableBigInteger rem;
         if (needRemainder) {
             rem = chunk;
-            int rSign = rem.subtract(qSqr);
-
-            if (rSign == -1) {
+            if (rem.subtract(qSqr) == -1) {
                 twiceSqrt = new MutableBigInteger(sqrt);
                 twiceSqrt.leftShift(1);
 
