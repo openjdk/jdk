@@ -1079,7 +1079,6 @@ void ShenandoahFreeSet::finish_rebuild(size_t cset_regions) {
 
   reserve_regions(reserve);
   _partitions.assert_bounds();
-  log_status();
 }
 
 void ShenandoahFreeSet::rebuild() {
@@ -1131,8 +1130,6 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
 }
 
 void ShenandoahFreeSet::log_status() {
-  shenandoah_assert_heaplocked();
-
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
   if (LogTarget(Debug, gc, free)::is_enabled()) {

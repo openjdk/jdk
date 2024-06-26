@@ -379,6 +379,8 @@ jint ShenandoahHeap::initialize() {
     _free_set->rebuild();
   }
 
+  _free_set->log_status();
+
   if (AlwaysPreTouch) {
     // For NUMA, it is important to pre-touch the storage under bitmaps with worker threads,
     // before initialize() below zeroes it with initializing thread. For any given region,
@@ -1833,6 +1835,7 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
+  _free_set->log_status();
 }
 
 void ShenandoahHeap::do_class_unloading() {
@@ -2292,6 +2295,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
+  _free_set->log_status();
 }
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
