@@ -22,8 +22,8 @@
  */
 /*
  * @test
- * @bug 9999999
- * @summary Allow capture of outer instance by skipping over inaccessible instance(s)
+ * @bug 8334248
+ * @summary Invalid error for early construction local class constructor method reference
  */
 
 public class EarlyIndirectOuterCapture {
