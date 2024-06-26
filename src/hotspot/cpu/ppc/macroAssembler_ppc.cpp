@@ -2405,7 +2405,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   addi(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // convert !=0 to 1
-  normalize_bool(result,R0,true);
+  normalize_bool(result, R0, true);
 
   const Register linear_result = r_array_index; // reuse
   li(linear_result, 1);
