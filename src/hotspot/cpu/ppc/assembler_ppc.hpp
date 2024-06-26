@@ -1784,7 +1784,6 @@ class Assembler : public AbstractAssembler {
   inline void setbcr( Register d, int biint);
   inline void setbcr( Register d, ConditionRegister cr, Condition cc);
 
-
   // Special purpose registers
   // Exception Register
   inline void mtxer(Register s1);
