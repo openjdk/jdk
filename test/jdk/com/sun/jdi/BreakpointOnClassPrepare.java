@@ -23,15 +23,22 @@
 
 /**
  * @test
- * @bug 8333542
+ * @bug 8333542 8335134
  * @summary Missed breakpoint due to JVM not blocking other threads while
  *          delivering a ClassPrepareEvent.
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g BreakpointOnClassPrepare.java
- * @run driver BreakpointOnClassPrepare SUSPEND_NONE
  * @run driver BreakpointOnClassPrepare SUSPEND_EVENT_THREAD
  * @run driver BreakpointOnClassPrepare SUSPEND_ALL
+ */
+
+/**
+ * @test id=SUSPEND_NONE
+ * @summary Disable SUSPEND_NONE mode util the JDK-8335134 has been fixed.
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g BreakpointOnClassPrepare.java
+ * @run main/othervm/manual BreakpointOnClassPrepare SUSPEND_NONE
  */
 
 import com.sun.jdi.*;
