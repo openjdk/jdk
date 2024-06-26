@@ -59,6 +59,7 @@ final class TrustedFieldTypeTest {
         assertDoesNotThrow(() -> valueNonFinal.setAccessible(true));
     }
 
+    @SuppressWarnings("removal")
     @Test
     void sunMiscUnsafe() throws NoSuchFieldException, IllegalAccessException {
         Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
