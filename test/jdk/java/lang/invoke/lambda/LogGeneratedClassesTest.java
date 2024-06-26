@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8023524 8304846
+ * @bug 8023524 8304846 8335150
  * @requires vm.flagless
  * @library /test/lib/
  * @library /java/nio/file
@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.FileStore;
 import java.nio.file.attribute.PosixFileAttributeView;
 
 import jdk.test.lib.compiler.CompilerUtils;
@@ -207,13 +208,24 @@ public class LogGeneratedClassesTest {
 
     @Test
     public void testDumpDirNotWritable() throws Exception {
-        if (!Files.getFileStore(Paths.get("."))
-                  .supportsFileAttributeView(PosixFileAttributeView.class)) {
+        FileStore fs;
+        try {
+            fs = Files.getFileStore(Paths.get("."));
+        } catch (IOException e) {
+            if (e.getMessage().contains("Mount point not found")) {
+                // We would like to skip the test with a cause with
+                //      throw new SkipException("Mount point not found");
+                // but jtreg will report failure so we just pass the test
+                // which we can look at if jtreg changed its behavior
+                System.out.println("Mount point not found. Skipping testDumpDirNotWritable test.");
+                return;
+            } else {
+                throw e;
+            }
+        }
+        if (!fs.supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
-            // We would like to skip the test with a cause with
-            //     throw new SkipException("Posix not supported");
-            // but jtreg will report failure so we just pass the test
-            // which we can look at if jtreg changed its behavior
+            // Same as above, return instead of SkipException("Posix not supported")
             System.out.println("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
             return;
         }
