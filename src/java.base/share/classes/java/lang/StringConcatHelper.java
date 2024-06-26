@@ -395,12 +395,8 @@ final class StringConcatHelper {
      */
     @ForceInline
     static byte[] newArray(long indexCoder) {
-        byte coder;
         int index = (int)indexCoder;
-        if (indexCoder < UTF16) {
-            coder = String.LATIN1;
-        } else {
-            coder = String.UTF16;
+        if (indexCoder >= UTF16) {
             index <<= 1;
         }
         if (index < 0) {
