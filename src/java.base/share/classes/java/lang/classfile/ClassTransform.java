@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform transformingMethods(MethodTransform xform) {
-        return transformingMethods(mm -> true, xform);
+        return transformingMethods(_ -> true, xform);
     }
 
     /**
@@ -157,7 +157,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform transformingFields(FieldTransform xform) {
-        return new TransformImpl.ClassFieldTransform(xform, f -> true);
+        return new TransformImpl.ClassFieldTransform(xform, _ -> true);
     }
 
     /**
@@ -170,16 +170,5 @@ public non-sealed interface ClassTransform
     @Override
     default ClassTransform andThen(ClassTransform t) {
         return new TransformImpl.ChainedClassTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given class builder.
-     */
-    @Override
-    default ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
     }
 }
