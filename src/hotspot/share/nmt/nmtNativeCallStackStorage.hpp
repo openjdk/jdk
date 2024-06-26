@@ -25,8 +25,7 @@
 #ifndef SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/arena.hpp"
+#include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -40,64 +39,41 @@
 // - Have fast comparisons
 // - Have constant time access
 // We achieve this by using a closed hashtable for finding previously existing NCS:s and referring to them by an index that's smaller than a pointer.
-class NativeCallStackStorage : public CHeapObj<mtNMT> {
+class NativeCallStackStorage : public CHeapObjBase {
 public:
   struct StackIndex {
     friend NativeCallStackStorage;
-
-  private:
-    static constexpr const int32_t _invalid = -1;
-
     int32_t _stack_index;
-    StackIndex(int32_t stack_index)
-      : _stack_index(stack_index) {
-    }
-
   public:
+    static constexpr const int32_t invalid = -1;
     static bool equals(const StackIndex& a, const StackIndex& b) {
       return a._stack_index == b._stack_index;
     }
 
     bool is_invalid() {
-      return _stack_index == _invalid;
-    }
-
-    StackIndex()
-      : _stack_index(_invalid) {
+      return _stack_index == invalid;
     }
   };
 
 private:
-  struct Link : public ArenaObj {
-    Link* next;
-    StackIndex stack;
-    Link(Link* next, StackIndex v)
-      : next(next),
-        stack(v) {
-    }
-  };
-  StackIndex put(const NativeCallStack& value) {
-    int bucket = value.calculate_hash() % _table_size;
-    Link* link = _table[bucket];
-    while (link != nullptr) {
-      if (value.equals(get(link->stack))) {
-        return link->stack;
-      }
-      link = link->next;
-    }
-    int idx = _stacks.append(value);
-    Link* new_link = new (&_arena) Link(_table[bucket], StackIndex(idx));
-    _table[bucket] = new_link;
-    return new_link->stack;
-  }
+  struct TableEntry;
+  using TableEntryStorage = ArrayWithFreeList<TableEntry, mtNMT>;
+  using TableEntryIndex = typename TableEntryStorage::I;
 
-  // For storage of the Links
-  Arena _arena;
+  TableEntryStorage _entry_storage;
+
+  struct TableEntry {
+    TableEntryIndex next;
+    StackIndex stack;
+  };
+
+  StackIndex put(const NativeCallStack& value);
+
   // Pick a prime number of buckets.
   // 4099 gives a 50% probability of collisions at 76 stacks (as per birthday problem).
   static const constexpr int default_table_size = 4099;
-  int _table_size;
-  Link** _table;
+  const int _table_size;
+  TableEntryIndex* _table;
   GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
   const bool _is_detailed_mode;
 
@@ -107,7 +83,7 @@ public:
   StackIndex push(const NativeCallStack& stack) {
     // Not in detailed mode, so not tracking stacks.
     if (!_is_detailed_mode) {
-      return StackIndex();
+      return StackIndex{StackIndex::invalid};
     }
     return put(stack);
   }
@@ -119,16 +95,9 @@ public:
     return _stacks.at(si._stack_index);
   }
 
-  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size)
-  : _arena(mtNMT), _table_size(table_size), _table(nullptr), _stacks(),
-    _is_detailed_mode(is_detailed_mode), _fake_stack() {
-    if (_is_detailed_mode) {
-      _table = NEW_ARENA_ARRAY(&_arena, Link*, _table_size);
-      for (int i = 0; i < _table_size; i++) {
-        _table[i] = nullptr;
-      }
-    }
-  }
+  NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size);
+
+  ~NativeCallStackStorage();
 };
 
 #endif // SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP

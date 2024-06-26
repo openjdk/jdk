@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,40 +20,51 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.compiler;
+package org.openjdk.bench.java.lang;
 
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.random.RandomGeneratorFactory;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1)
-public class CMove {
-    static final int SIZE = 1000000;
+@Fork(3)
+public class Shorts {
 
-    @Param({"0.003", "0.006", "0.01", "0.02", "0.03", "0.06", "0.1", "0.2", "0.3", "0.6"})
-    double freq;
+    @Param("500")
+    private int size;
 
-    boolean[] conds;
+    private short[] shorts;
+    private short[] res;
 
-    @Setup(Level.Iteration)
+    @Setup
     public void setup() {
-        var r = RandomGeneratorFactory.getDefault().create(1);
-        conds = new boolean[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            conds[i] = r.nextDouble() < freq;
+        Random r  = new Random(0);
+        shorts     = new short[size];
+        res       = new short[size];
+        for (int i = 0; i < size; i++) {
+            shorts[i] = (short)(r.nextInt(Character.MAX_VALUE + 1) + Short.MIN_VALUE);
         }
     }
 
     @Benchmark
-    public void run(Blackhole bh) {
-        for (int i = 0; i < conds.length; i++) {
-            bh.consume(conds[i] ? 2 : 1);
+    public void reverseBytes() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Short.reverseBytes(shorts[i]);
         }
     }
 }
