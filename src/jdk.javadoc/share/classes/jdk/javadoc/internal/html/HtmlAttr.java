@@ -23,9 +23,9 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import java.util.Locale;
 
 /**
  * Enum representing HTML tag attributes.
@@ -84,7 +84,7 @@ public enum HtmlAttr {
         private final String role;
 
         Role() {
-            role = Utils.toLowerCase(name());
+            role = name().toLowerCase(Locale.ROOT);
         }
 
         public String toString() {
@@ -101,7 +101,7 @@ public enum HtmlAttr {
         private final String type;
 
         InputType() {
-            type = Utils.toLowerCase(name());
+            type = name().toLowerCase(Locale.ROOT);
         }
 
         public String toString() {
@@ -110,7 +110,7 @@ public enum HtmlAttr {
     }
 
     HtmlAttr() {
-        this.value = Utils.toLowerCase(name());
+        this.value = name().toLowerCase(Locale.ROOT);
     }
 
     HtmlAttr(String name) {

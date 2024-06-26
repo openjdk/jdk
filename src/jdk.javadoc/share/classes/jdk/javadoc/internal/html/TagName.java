@@ -23,11 +23,9 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.util.Locale;
-
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Enum representing the names for HTML elements.
@@ -107,7 +105,7 @@ public enum TagName {
     }
 
     TagName(boolean phrasingContent) {
-        this.value = Utils.toLowerCase(name());
+        this.value = name().toLowerCase(Locale.ROOT);
         this.phrasingContent = phrasingContent;
     }
 

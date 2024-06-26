@@ -49,17 +49,17 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -145,7 +145,7 @@ public class SnippetTaglet extends BaseTaglet {
     private Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
         var pathToRoot = tagletWriter.htmlWriter.pathToRoot;
-        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyles.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         }
@@ -217,7 +217,7 @@ public class SnippetTaglet extends BaseTaglet {
         String copyText = resources.getText("doclet.Copy_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_to_clipboard");
         String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
+        var snippetContainer = HtmlTree.DIV(HtmlStyles.snippetContainer,
                 new HtmlTree(TagName.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
@@ -225,8 +225,8 @@ public class SnippetTaglet extends BaseTaglet {
                                 .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
                                                              .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))
-                        .addStyle(HtmlStyle.copy)
-                        .addStyle(HtmlStyle.snippetCopy)
+                        .addStyle(HtmlStyles.copy)
+                        .addStyle(HtmlStyles.snippetCopy)
                         .put(HtmlAttr.ARIA_LABEL, copySnippetText)
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));

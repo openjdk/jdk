@@ -32,14 +32,13 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.SinceTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
+import jdk.javadoc.internal.html.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
@@ -81,7 +80,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     protected void addContentSelectors(Content content) {
         List<String> releases = builder.releases;
         if (releases.size() > 1) {
-            Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
+            Content tabs = HtmlTree.DIV(HtmlStyles.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
             // Table column ids are 1-based
             int index = 1;
@@ -96,7 +95,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected void addTableTabs(Table<Element> table, String headingKey) {
-        table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+        table.setGridStyle(HtmlStyles.threeColumnReleaseSummary);
         List<String> releases = builder.releases;
         if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
@@ -148,8 +147,8 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     @Override
-    protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
+    protected HtmlStyles[] getColumnStyles() {
+        return new HtmlStyles[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 
     private static String getHeading(HtmlConfiguration configuration) {

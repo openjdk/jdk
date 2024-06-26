@@ -29,9 +29,11 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.DocType;
+import jdk.javadoc.internal.html.TagName;
 
 /**
  * Class for generating an HTML document for javadoc output.

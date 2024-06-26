@@ -26,7 +26,7 @@
  * @test
  * @bug 8267574
  * @summary check stylesheet names against HtmlStyle
- * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ * @modules jdk.javadoc/jdk.javadoc.internal.html
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  */
 
@@ -44,7 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlStyle;
 
 /**
  * This test compares the set of CSS class names defined in HtmlStyle

@@ -30,10 +30,11 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Content;
 
 /**
  * A row of header cells for an HTML table.
@@ -52,7 +53,7 @@ public class TableHeader extends Content {
      * The style class names for each of the {@code <th>} cells in the header row.
      * If not set, default style names will be used.
      */
-    private List<HtmlStyle> styles;
+    private List<HtmlStyles> styles;
 
     private boolean[] sortable;
 
@@ -90,7 +91,7 @@ public class TableHeader extends Content {
      * @param styles the style class names
      * @return this object
      */
-    public TableHeader styles(HtmlStyle... styles) {
+    public TableHeader styles(HtmlStyles... styles) {
         if (styles.length != cellContents.size()) {
             throw new IllegalStateException();
         }
@@ -118,7 +119,7 @@ public class TableHeader extends Content {
      * @param styles the style class names
      * @return this object
      */
-    public TableHeader styles(List<HtmlStyle> styles) {
+    public TableHeader styles(List<HtmlStyles> styles) {
         if (styles.size() != cellContents.size()) {
             throw new IllegalStateException();
         }
@@ -151,11 +152,11 @@ public class TableHeader extends Content {
         Content header = new ContentBuilder();
         int i = 0;
         for (Content cellContent : cellContents) {
-            HtmlStyle style = (styles != null) ? styles.get(i)
-                    : (i == 0) ? HtmlStyle.colFirst
-                    : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
-                    : (i == 1) ? HtmlStyle.colSecond : null;
-            var cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
+            HtmlStyles style = (styles != null) ? styles.get(i)
+                    : (i == 0) ? HtmlStyles.colFirst
+                    : (i == (cellContents.size() - 1)) ? HtmlStyles.colLast
+                    : (i == 1) ? HtmlStyles.colSecond : null;
+            var cell = HtmlTree.DIV(HtmlStyles.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
             }

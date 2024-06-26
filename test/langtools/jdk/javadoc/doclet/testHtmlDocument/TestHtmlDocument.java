@@ -28,6 +28,7 @@
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.util
+ *          jdk.javadoc/jdk.javadoc.internal.html
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @run main TestHtmlDocument
@@ -35,6 +36,7 @@
 
 
 import jdk.javadoc.internal.doclets.formats.html.markup.*;
+import jdk.javadoc.internal.html.*;
 
 /**
  * The class reads each file, complete with newlines, into a string to easily

@@ -34,10 +34,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Comment;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
+import jdk.javadoc.internal.html.TagName;
 
 /**
  * An HTML {@code <head>} element.

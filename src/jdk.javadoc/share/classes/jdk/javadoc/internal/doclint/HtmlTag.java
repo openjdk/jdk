@@ -34,6 +34,8 @@ import javax.lang.model.element.Name;
 
 import com.sun.tools.javac.util.StringUtils;
 
+import jdk.javadoc.internal.html.TagName;
+
 import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
 
 /**
@@ -42,7 +44,7 @@ import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
  * The intent of this class is to embody the semantics of the current HTML standard,
  * to the extent supported/used by javadoc.
  *
- * This class is derivative of {@link jdk.javadoc.internal.doclets.formats.html.markup.TagName}.
+ * This class is derivative of {@link TagName}.
  * Eventually, these two should be merged back together, and possibly made
  * public.
  *

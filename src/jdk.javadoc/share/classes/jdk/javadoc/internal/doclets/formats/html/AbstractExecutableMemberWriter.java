@@ -37,13 +37,14 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
 
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
@@ -119,7 +120,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement te, Element member,
                                   Content target) {
         ExecutableElement ee = (ExecutableElement)member;
-        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyle.memberNameLink);
+        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         addParameters(ee, code);
         target.add(code);

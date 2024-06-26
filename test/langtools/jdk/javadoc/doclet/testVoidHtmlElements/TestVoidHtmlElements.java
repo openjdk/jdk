@@ -25,12 +25,12 @@
  * @test
  * @bug 8266856
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
- *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ *          jdk.javadoc/jdk.javadoc.internal.html
  * @run main TestVoidHtmlElements
  */
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.TagName;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 public class TestVoidHtmlElements {

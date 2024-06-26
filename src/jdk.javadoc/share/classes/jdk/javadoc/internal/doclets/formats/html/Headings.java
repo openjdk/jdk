@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.html.TagName;
 
 /**
  * Aliases for HTML heading tags (H1..H6) for different kinds of pages.

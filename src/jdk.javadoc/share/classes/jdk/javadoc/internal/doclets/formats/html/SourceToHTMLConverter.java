@@ -39,11 +39,11 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -52,6 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
 
 /**
  * Converts Java Source Code to HTML.
@@ -210,7 +211,7 @@ public class SourceToHTMLConverter {
                 }
             }
             addBlankLines(pre);
-            var div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
+            var div = HtmlTree.DIV(HtmlStyles.sourceContainer, pre);
             body.add(HtmlTree.MAIN(div));
             writeToFile(body, outputdir.resolve(configuration.docPaths.forClass(te)), te);
         } catch (IOException e) {
@@ -246,7 +247,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(TagName.BODY).setStyle(HtmlStyle.sourcePage);
+        return new HtmlTree(TagName.BODY).setStyle(HtmlStyles.sourcePage);
     }
 
     /**
@@ -256,7 +257,7 @@ public class SourceToHTMLConverter {
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        var span = HtmlTree.SPAN(HtmlStyle.sourceLineNo);
+        var span = HtmlTree.SPAN(HtmlStyles.sourceLineNo);
         if (lineno < 10) {
             span.add("00" + lineno);
         } else if (lineno < 100) {

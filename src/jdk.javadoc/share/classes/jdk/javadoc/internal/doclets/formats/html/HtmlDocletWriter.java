@@ -95,19 +95,19 @@ import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererFactory;
 import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
 import jdk.internal.org.commonmark.renderer.html.HtmlWriter;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.markup.Script;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
+import jdk.javadoc.internal.html.RawHtml;
+import jdk.javadoc.internal.html.Script;
+import jdk.javadoc.internal.html.TagName;
+import jdk.javadoc.internal.html.Text;
+import jdk.javadoc.internal.html.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
@@ -127,6 +127,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguag
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.html.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
 import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;
@@ -361,7 +362,7 @@ public abstract class HtmlDocletWriter {
         if (options.noComment()) {
             return;
         }
-        var dl = HtmlTree.DL(HtmlStyle.notes);
+        var dl = HtmlTree.DL(HtmlStyles.notes);
         if (utils.isMethod(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
@@ -686,7 +687,7 @@ public abstract class HtmlDocletWriter {
                 ? null
                 : HtmlTree.FOOTER()
                     .add(new HtmlTree(TagName.HR))
-                    .add(HtmlTree.P(HtmlStyle.legalCopy,
+                    .add(HtmlTree.P(HtmlStyles.legalCopy,
                             HtmlTree.SMALL(
                                     RawHtml.of(replaceDocRootDir(bottom)))));
     }
@@ -917,7 +918,7 @@ public abstract class HtmlDocletWriter {
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                    Content label, HtmlStyle style, boolean code) {
+                                     Content label, HtmlStyles style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -1005,7 +1006,7 @@ public abstract class HtmlDocletWriter {
      * @param target the content to which the link with be added
      */
     public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context,
-                                         TypeElement typeElement, HtmlStyle style, Content target) {
+                                         TypeElement typeElement, HtmlStyles style, Content target) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
             target.add(getEnclosingPackageName(typeElement));
@@ -1047,7 +1048,7 @@ public abstract class HtmlDocletWriter {
      * @param content the content to which the link with be added
      */
     public void addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content content) {
-        addPreQualifiedClassLink(context, typeElement, HtmlStyle.typeNameLink, content);
+        addPreQualifiedClassLink(context, typeElement, HtmlStyles.typeNameLink, content);
     }
 
     /**
@@ -1091,7 +1092,7 @@ public abstract class HtmlDocletWriter {
      * @return the link for the given member.
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element element,
-                              CharSequence label, HtmlStyle style) {
+                              CharSequence label, HtmlStyles style) {
         return getDocLink(context, typeElement, element, Text.of(label), style, false);
     }
 
@@ -1125,7 +1126,7 @@ public abstract class HtmlDocletWriter {
      * @return the link for the given member.
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element element,
-                              Content label, HtmlStyle style, boolean isProperty) {
+                              Content label, HtmlStyles style, boolean isProperty) {
         if (!utils.isLinkable(typeElement, element)) {
             return label;
         }
@@ -1255,10 +1256,10 @@ public abstract class HtmlDocletWriter {
         Content result = commentTagsToContent(element, tags, first, inSummary);
         if (!result.isEmpty()) {
             if (depr) {
-                div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
+                div = HtmlTree.DIV(HtmlStyles.deprecationComment, result);
                 target.add(div);
             } else {
-                div = HtmlTree.DIV(HtmlStyle.block, result);
+                div = HtmlTree.DIV(HtmlStyles.block, result);
                 target.add(div);
             }
         }
@@ -1944,9 +1945,9 @@ public abstract class HtmlDocletWriter {
     public Content invalidTagOutput(String summary, Optional<Content> detail) {
         messages.setContainsDiagnosticMarkers();
         if (detail.isEmpty() || detail.get().isEmpty()) {
-            return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
+            return HtmlTree.SPAN(HtmlStyles.invalidTag, Text.of(summary));
         }
-        return HtmlTree.DETAILS(HtmlStyle.invalidTag)
+        return HtmlTree.DETAILS(HtmlStyles.invalidTag)
                 .add(HtmlTree.SUMMARY(Text.of(summary)))
                 .add(HtmlTree.PRE(detail.get()));
     }
@@ -2416,14 +2417,14 @@ public abstract class HtmlDocletWriter {
         return body;
     }
 
-    public HtmlStyle getBodyStyle() {
+    public HtmlStyles getBodyStyle() {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")
                 .replaceAll("^(Module|Package|Class)$", "$1Declaration")
                 .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
-        return HtmlStyle.valueOf(page);
+        return HtmlStyles.valueOf(page);
     }
 
     /**
@@ -2473,16 +2474,16 @@ public abstract class HtmlDocletWriter {
 
     public void addPreviewSummary(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
-            var div = HtmlTree.DIV(HtmlStyle.block);
-            div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
+            var div = HtmlTree.DIV(HtmlStyles.block);
+            div.add(HtmlTree.SPAN(HtmlStyles.previewLabel, contents.previewPhrase));
             target.add(div);
         }
     }
 
     public void addRestrictedSummary(Element forWhat, Content target) {
         if (utils.isRestrictedAPI(forWhat)) {
-            var div = HtmlTree.DIV(HtmlStyle.block);
-            div.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel, contents.restrictedPhrase));
+            var div = HtmlTree.DIV(HtmlStyles.block);
+            div.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel, contents.restrictedPhrase));
             target.add(div);
         }
     }
@@ -2490,7 +2491,7 @@ public abstract class HtmlDocletWriter {
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
-            var previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+            var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
             previewDiv.setId(htmlIds.forPreviewSection(forWhat));
             String name = (switch (forWhat.getKind()) {
                 case PACKAGE, MODULE ->
@@ -2506,14 +2507,14 @@ public abstract class HtmlDocletWriter {
                                          : "doclet.ReflectivePreviewPlatformLeadingNote";
             Content leadingNote =
                     contents.getContent(leadingNoteKey, nameCode);
-            previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
+            previewDiv.add(HtmlTree.SPAN(HtmlStyles.previewLabel,
                                          leadingNote));
             if (!isReflectivePreview) {
                 Content note1 = contents.getContent("doclet.PreviewTrailingNote1", nameCode);
-                previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
+                previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note1));
             }
             Content note2 = contents.getContent("doclet.PreviewTrailingNote2", nameCode);
-            previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note2));
+            previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note2));
             target.add(previewDiv);
         } else if (forWhat.getKind().isClass() || forWhat.getKind().isInterface()) {
             //in custom code:
@@ -2521,12 +2522,12 @@ public abstract class HtmlDocletWriter {
             if (!previewNotes.isEmpty()) {
                 Name name = forWhat.getSimpleName();
                 var nameCode = HtmlTree.CODE(Text.of(name));
-                var previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+                var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
                 previewDiv.setId(htmlIds.forPreviewSection(forWhat));
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
-                previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
+                previewDiv.add(HtmlTree.SPAN(HtmlStyles.previewLabel,
                                              leadingNote));
-                var ul = HtmlTree.UL(HtmlStyle.previewComment);
+                var ul = HtmlTree.UL(HtmlStyles.previewComment);
                 for (Content note : previewNotes) {
                     ul.add(HtmlTree.LI(note));
                 }
@@ -2534,11 +2535,11 @@ public abstract class HtmlDocletWriter {
                 Content note1 =
                         contents.getContent("doclet.PreviewTrailingNote1",
                                             nameCode);
-                previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
+                previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note1));
                 Content note2 =
                         contents.getContent("doclet.PreviewTrailingNote2",
                                             name);
-                previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note2));
+                previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note2));
                 target.add(previewDiv);
             }
         }
@@ -2640,19 +2641,19 @@ public abstract class HtmlDocletWriter {
     public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
         if (utils.isRestrictedAPI(forWhat)) {
             //in Java platform:
-            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            var restrictedDiv = HtmlTree.DIV(HtmlStyles.restrictedBlock);
             restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
             String name = forWhat.getSimpleName().toString();
             var nameCode = HtmlTree.CODE(Text.of(name));
             String leadingNoteKey = "doclet.RestrictedLeadingNote";
             Content leadingNote =
                     contents.getContent(leadingNoteKey, nameCode);
-            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel,
                     leadingNote));
             Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
-            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note1));
             Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
-            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note2));
             target.add(restrictedDiv);
         }
     }

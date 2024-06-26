@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,9 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -131,7 +128,7 @@ public class HtmlTree extends Content {
      * @param role the role
      * @return this object
      */
-    public HtmlTree setRole(Role role) {
+    public HtmlTree setRole(HtmlAttr.Role role) {
         return put(HtmlAttr.ROLE, role.toString());
     }
 
@@ -498,7 +495,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree FOOTER() {
         return new HtmlTree(TagName.FOOTER)
-                .setRole(Role.CONTENTINFO);
+                .setRole(HtmlAttr.Role.CONTENTINFO);
     }
 
     /**
@@ -509,7 +506,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree HEADER() {
         return new HtmlTree(TagName.HEADER)
-                .setRole(Role.BANNER);
+                .setRole(HtmlAttr.Role.BANNER);
     }
 
     /**
@@ -681,7 +678,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree MAIN() {
         return new HtmlTree(TagName.MAIN)
-                .setRole(Role.MAIN);
+                .setRole(HtmlAttr.Role.MAIN);
     }
 
     /**
@@ -692,7 +689,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree MAIN(Content body) {
         return new HtmlTree(TagName.MAIN)
-                .setRole(Role.MAIN)
+                .setRole(HtmlAttr.Role.MAIN)
                 .add(body);
     }
 
@@ -731,7 +728,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree NAV() {
         return new HtmlTree(TagName.NAV)
-                .setRole(Role.NAVIGATION);
+                .setRole(HtmlAttr.Role.NAVIGATION);
     }
 
     /**
