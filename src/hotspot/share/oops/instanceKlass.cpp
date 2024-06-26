@@ -3547,11 +3547,13 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
   st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);      st->cr();
-  st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);      st->cr();
-  if (Verbose && default_methods() != nullptr) {
-    Array<Method*>* method_array = default_methods();
-    for (int i = 0; i < method_array->length(); i++) {
-      st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+  if (default_methods() != nullptr) {
+    st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);    st->cr();
+    if (Verbose) {
+      Array<Method*>* method_array = default_methods();
+      for (int i = 0; i < method_array->length(); i++) {
+        st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+      }
     }
   }
   if (default_vtable_indices() != nullptr) {

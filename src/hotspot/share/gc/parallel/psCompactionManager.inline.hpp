@@ -157,13 +157,6 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
   }
 }
 
-inline void ParCompactionManager::update_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
-    PCAdjustPointerClosure apc(this);
-    obj->oop_iterate(&apc);
-  }
-}
-
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
   PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());

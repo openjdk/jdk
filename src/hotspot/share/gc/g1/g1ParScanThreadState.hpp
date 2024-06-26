@@ -46,7 +46,7 @@ class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
-class HeapRegion;
+class G1HeapRegion;
 class PreservedMarks;
 class PreservedMarksSet;
 class outputStream;
@@ -238,7 +238,7 @@ public:
   template <typename T>
   inline void remember_reference_into_optional_region(T* p);
 
-  inline G1OopStarChunkedList* oops_into_optional_region(const HeapRegion* hr);
+  inline G1OopStarChunkedList* oops_into_optional_region(const G1HeapRegion* hr);
 };
 
 class G1ParScanThreadStateSet : public StackObj {
@@ -265,7 +265,7 @@ class G1ParScanThreadStateSet : public StackObj {
   PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
 
   void flush_stats();
-  void record_unused_optional_region(HeapRegion* hr);
+  void record_unused_optional_region(G1HeapRegion* hr);
 
   G1ParScanThreadState* state_for_worker(uint worker_id);
   uint num_workers() const { return _num_workers; }

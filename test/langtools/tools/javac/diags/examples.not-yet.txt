@@ -118,7 +118,6 @@ compiler.warn.illegal.char.for.encoding
 compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
 compiler.warn.invalid.utf8.in.classfile                 # bad class file
-compiler.warn.is.preview                                # difficult to produce reliably despite future changes to java.base
 compiler.warn.is.preview.reflective                     # difficult to produce reliably despite future changes to java.base
 compiler.warn.output.file.clash                         # this warning is not generated on Linux
 compiler.warn.override.bridge

@@ -353,7 +353,7 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   , _tmp(tmp)
   , _expected_type(expected_type)
   , _flags(flags) {
-#if defined(X86) || defined(AARCH64)
+#if defined(X86) || defined(AARCH64) || defined(S390)
   if (expected_type != nullptr && flags == 0) {
     _stub = nullptr;
   } else {

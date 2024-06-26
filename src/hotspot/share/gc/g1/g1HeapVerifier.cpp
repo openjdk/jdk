@@ -110,7 +110,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       oop obj = CompressedOops::decode_not_null(heap_oop);
 
       // Now fetch the region containing the object
-      HeapRegion* hr = _g1h->heap_region_containing(obj);
+      G1HeapRegion* hr = _g1h->heap_region_containing(obj);
       HeapRegionRemSet* hrrs = hr->rem_set();
       // Verify that the code root list for this region
       // contains the nmethod
@@ -198,11 +198,11 @@ class VerifyObjsInRegionClosure: public ObjectClosure {
 private:
   G1CollectedHeap* _g1h;
   size_t _live_bytes;
-  HeapRegion *_hr;
+  G1HeapRegion* _hr;
   VerifyOption _vo;
 
 public:
-  VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
+  VerifyObjsInRegionClosure(G1HeapRegion* hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
   }
@@ -245,7 +245,7 @@ public:
     return _failures;
   }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     guarantee(!r->has_index_in_opt_cset(), "Region %u still has opt collection set index %u", r->hrm_index(), r->index_in_opt_cset());
     guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
@@ -394,7 +394,7 @@ public:
     _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
     _old_count(), _humongous_count(), _free_count(){ }
 
-  bool do_heap_region(HeapRegion* hr) {
+  bool do_heap_region(G1HeapRegion* hr) {
     if (hr->is_young()) {
       // TODO
     } else if (hr->is_humongous()) {
@@ -452,7 +452,7 @@ class G1VerifyRegionMarkingStateClosure : public HeapRegionClosure {
   };
 
 public:
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     if (r->is_free()) {
       return false;
     }
@@ -541,7 +541,7 @@ void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
   public:
     G1VerifyBitmapClear(bool from_tams) : _from_tams(from_tams) { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    virtual bool do_heap_region(G1HeapRegion* r) {
       G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
       G1CMBitMap* bitmap = cm->mark_bitmap();
 
@@ -562,7 +562,7 @@ class G1VerifyCardTableCleanup: public HeapRegionClosure {
 public:
   G1VerifyCardTableCleanup(G1HeapVerifier* verifier)
     : _verifier(verifier) { }
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     if (r->is_survivor()) {
       _verifier->verify_dirty_region(r);
     } else {
@@ -579,14 +579,14 @@ void G1HeapVerifier::verify_card_table_cleanup() {
   }
 }
 
-void G1HeapVerifier::verify_not_dirty_region(HeapRegion* hr) {
+void G1HeapVerifier::verify_not_dirty_region(G1HeapRegion* hr) {
   // All of the region should be clean.
   G1CardTable* ct = _g1h->card_table();
   MemRegion mr(hr->bottom(), hr->end());
   ct->verify_not_dirty_region(mr);
 }
 
-void G1HeapVerifier::verify_dirty_region(HeapRegion* hr) {
+void G1HeapVerifier::verify_dirty_region(G1HeapRegion* hr) {
   // We cannot guarantee that [bottom(),end()] is dirty.  Threads
   // dirty allocated blocks as they allocate them. The thread that
   // retires each region and replaces it with a new one will do a
@@ -608,7 +608,7 @@ private:
   G1HeapVerifier* _verifier;
 public:
   G1VerifyDirtyYoungListClosure(G1HeapVerifier* verifier) : HeapRegionClosure(), _verifier(verifier) { }
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     _verifier->verify_dirty_region(r);
     return false;
   }
@@ -626,7 +626,7 @@ private:
 public:
   G1CheckRegionAttrTableClosure() : HeapRegionClosure(), _failures(false) { }
 
-  virtual bool do_heap_region(HeapRegion* hr) {
+  virtual bool do_heap_region(G1HeapRegion* hr) {
     uint i = hr->hrm_index();
     G1HeapRegionAttr region_attr = (G1HeapRegionAttr) G1CollectedHeap::heap()->_region_attr.get_by_index(i);
     if (hr->is_humongous()) {

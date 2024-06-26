@@ -294,9 +294,6 @@ private:
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab);
 
-  // Save the tops of the spaces in all generations
-  void record_gen_tops_before_GC() PRODUCT_RETURN;
-
 private:
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;

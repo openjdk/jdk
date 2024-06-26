@@ -144,7 +144,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         }
         else {
             Attribute<BootstrapMethodsAttribute> a
-                    = new UnboundAttribute.AdHocAttribute<>(Attributes.BOOTSTRAP_METHODS) {
+                    = new UnboundAttribute.AdHocAttribute<>(Attributes.bootstrapMethods()) {
 
                 @Override
                 public void writeBody(BufWriter b) {

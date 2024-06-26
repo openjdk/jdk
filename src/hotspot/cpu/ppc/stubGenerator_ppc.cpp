@@ -3204,7 +3204,6 @@ class StubGenerator: public StubCodeGenerator {
   //    R5 - y address
   //    R6 - y length
   //    R7 - z address
-  //    R8 - z length
   //
   address generate_multiplyToLen() {
 
@@ -3217,7 +3216,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = R5;
     const Register ylen  = R6;
     const Register z     = R7;
-    const Register zlen  = R8;
 
     const Register tmp1  = R2; // TOC not used.
     const Register tmp2  = R9;
@@ -3240,7 +3238,6 @@ class StubGenerator: public StubCodeGenerator {
     // C2 does not respect int to long conversion for stub calls.
     __ clrldi(xlen, xlen, 32);
     __ clrldi(ylen, ylen, 32);
-    __ clrldi(zlen, zlen, 32);
 
     // Save non-volatile regs (frameless).
     int current_offs = 8;
@@ -3253,7 +3250,7 @@ class StubGenerator: public StubCodeGenerator {
     __ std(R30, -current_offs, R1_SP); current_offs += 8;
     __ std(R31, -current_offs, R1_SP);
 
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5,
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5,
                        tmp6, tmp7, tmp8, tmp9, tmp10, tmp11, tmp12, tmp13);
 
     // Restore non-volatile regs.

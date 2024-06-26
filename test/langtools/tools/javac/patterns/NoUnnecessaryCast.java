@@ -71,7 +71,7 @@ public class NoUnnecessaryCast {
                                       ICONST_0
                                       IRETURN
                                       """;
-        CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
         String actualInstructions = printCode(code);
         if (!expectedInstructions.equals(actualInstructions)) {
             throw new AssertionError("Unexpected instructions found:\n" +

@@ -93,7 +93,7 @@ class TestRecordComponent {
                 cb.with(ce);
         };
         ClassModel newModel = cc.parse(cc.transform(cm, xform));
-        RecordAttribute ra = newModel.findAttribute(Attributes.RECORD).orElseThrow();
+        RecordAttribute ra = newModel.findAttribute(Attributes.record()).orElseThrow();
         assertEquals(ra.components().size(), 2, "Should have two components");
         assertEquals(ra.components().get(0).name().stringValue(), "fooXYZ");
         assertEquals(ra.components().get(1).name().stringValue(), "barXYZ");
@@ -110,7 +110,7 @@ class TestRecordComponent {
                 count.addAndGet(rm.components().size());
             }});
         assertEquals(count.get(), 2);
-        assertEquals(cm.findAttribute(Attributes.RECORD).orElseThrow().components().size(), 2);
+        assertEquals(cm.findAttribute(Attributes.record()).orElseThrow().components().size(), 2);
 
         count.set(0);
     }

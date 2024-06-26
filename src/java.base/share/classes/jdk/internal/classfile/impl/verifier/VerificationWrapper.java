@@ -142,12 +142,12 @@ public final class VerificationWrapper {
         }
 
         List<LocalVariableInfo> localVariableTable() {
-            var attro = c.findAttribute(Attributes.LOCAL_VARIABLE_TABLE);
+            var attro = c.findAttribute(Attributes.localVariableTable());
             return attro.map(lvta -> lvta.localVariables()).orElse(List.of());
         }
 
         byte[] stackMapTableRawData() {
-            var attro = c.findAttribute(Attributes.STACK_MAP_TABLE);
+            var attro = c.findAttribute(Attributes.stackMapTable());
             return attro.map(attr -> ((BoundAttribute) attr).contents()).orElse(null);
         }
 

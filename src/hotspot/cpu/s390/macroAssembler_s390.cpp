@@ -5281,9 +5281,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
 
   z_stmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 
-  // In openJdk, we store the argument as 32-bit value to slot.
-  Address zlen(Z_SP, _z_abi(remaining_cargs));  // Int in long on big endian.
-
   const Register idx = tmp1;
   const Register kdx = tmp2;
   const Register xstart = tmp3;
@@ -5308,7 +5305,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   //
 
   lgr_if_needed(idx, ylen);  // idx = ylen
-  z_llgf(kdx, zlen);         // C2 does not respect int to long conversion for stub calls, thus load zero-extended.
+  z_agrk(kdx, xlen, ylen);   // kdx = xlen + ylen
   clear_reg(carry);          // carry = 0
 
   Label L_done;

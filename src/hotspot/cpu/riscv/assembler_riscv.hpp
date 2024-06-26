@@ -656,39 +656,35 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, op)                                                                \
-  void NAME(Register Rd, const int32_t offset) {                                      \
-    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");        \
-    unsigned insn = 0;                                                                \
-    patch((address)&insn, 6, 0, op);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                 \
-    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));                 \
-    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));                      \
-    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));                 \
-    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));                      \
-    emit(insn);                                                                       \
+ private:
+  // All calls and jumps must go via MASM.
+  // Format J-type
+  void _jal(Register Rd, const int32_t offset) {
+    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
+    unsigned insn = 0;
+    patch((address)&insn, 6, 0, 0b1101111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));
+    emit(insn);
   }
 
-  INSN(jal, 0b1101111);
-
-#undef INSN
-
-#define INSN(NAME, op, funct)                                                         \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                         \
-    guarantee(is_simm12(offset), "offset is invalid.");                               \
-    unsigned insn = 0;                                                                \
-    patch((address)&insn, 6, 0, op);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                 \
-    patch((address)&insn, 14, 12, funct);                                             \
-    patch_reg((address)&insn, 15, Rs);                                                \
-    int32_t val = offset & 0xfff;                                                     \
-    patch((address)&insn, 31, 20, val);                                               \
-    emit(insn);                                                                       \
+  // Format I-type
+  void _jalr(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    unsigned insn = 0;
+    patch((address)&insn, 6, 0, 0b1100111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch_reg((address)&insn, 15, Rs);
+    int32_t val = offset & 0xfff;
+    patch((address)&insn, 31, 20, val);
+    emit(insn);
   }
 
-  INSN(_jalr, 0b1100111, 0b000);
-
-#undef INSN
+ public:
 
   enum barrier {
     i = 0b1000, o = 0b0100, r = 0b0010, w = 0b0001,
@@ -2294,21 +2290,23 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, funct4, op)                                                               \
-  void NAME(Register Rs1) {                                                                  \
-    assert_cond(Rs1 != x0);                                                                  \
-    uint16_t insn = 0;                                                                       \
-    c_patch((address)&insn, 1, 0, op);                                                       \
-    c_patch_reg((address)&insn, 2, x0);                                                      \
-    c_patch_reg((address)&insn, 7, Rs1);                                                     \
-    c_patch((address)&insn, 15, 12, funct4);                                                 \
-    emit_int16(insn);                                                                        \
+ private:
+  // All calls and jumps must go via MASM.
+  // Format CR, c.jr/c.jalr
+  // Note C instruction can't be changed, i.e. relocation patching.
+  template <uint8_t InstructionType, uint8_t FunctionType>
+  void c_cr_if(Register Rs1) {
+    assert_cond(Rs1 != x0);
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, FunctionType);
+    c_patch_reg((address)&insn, 2, x0);
+    c_patch_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 15, 12, InstructionType);
+    emit_int16(insn);
   }
 
-  INSN(c_jr,   0b1000, 0b10);
-  INSN(c_jalr, 0b1001, 0b10);
-
-#undef INSN
+  void c_jr(Register Rs1)   { c_cr_if<0b1000, 0b10>(Rs1); }
+  void c_jalr(Register Rs1) { c_cr_if<0b1001, 0b10>(Rs1); }
 
   typedef void (Assembler::* j_c_insn)(address dest);
   typedef void (Assembler::* compare_and_branch_c_insn)(Register Rs1, address dest);
@@ -2331,35 +2329,36 @@ public:
     }
   }
 
-#define INSN(NAME, funct3, op)                                                               \
-  void NAME(int32_t offset) {                                                                \
-    assert(is_simm12(offset) && ((offset % 2) == 0), "invalid encoding");                    \
-    uint16_t insn = 0;                                                                       \
-    c_patch((address)&insn, 1, 0, op);                                                       \
-    c_patch((address)&insn, 2, 2, (offset & nth_bit(5)) >> 5);                               \
-    c_patch((address)&insn, 5, 3, (offset & right_n_bits(4)) >> 1);                          \
-    c_patch((address)&insn, 6, 6, (offset & nth_bit(7)) >> 7);                               \
-    c_patch((address)&insn, 7, 7, (offset & nth_bit(6)) >> 6);                               \
-    c_patch((address)&insn, 8, 8, (offset & nth_bit(10)) >> 10);                             \
-    c_patch((address)&insn, 10, 9, (offset & right_n_bits(10)) >> 8);                        \
-    c_patch((address)&insn, 11, 11, (offset & nth_bit(4)) >> 4);                             \
-    c_patch((address)&insn, 12, 12, (offset & nth_bit(11)) >> 11);                           \
-    c_patch((address)&insn, 15, 13, funct3);                                                 \
-    emit_int16(insn);                                                                        \
-  }                                                                                          \
-  void NAME(address dest) {                                                                  \
-    assert_cond(dest != nullptr);                                                            \
-    int64_t distance = dest - pc();                                                          \
-    assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");                \
-    c_j(distance);                                                                           \
-  }                                                                                          \
-  void NAME(Label &L) {                                                                      \
-    wrap_label(L, &Assembler::NAME);                                                         \
+  // Format CJ, c.j (c.jal)
+  // Note C instruction can't be changed, i.e. relocation patching.
+  void c_j(int32_t offset) {
+    assert(is_simm12(offset) && ((offset % 2) == 0), "invalid encoding");
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch((address)&insn, 2, 2, (offset & nth_bit(5)) >> 5);
+    c_patch((address)&insn, 5, 3, (offset & right_n_bits(4)) >> 1);
+    c_patch((address)&insn, 6, 6, (offset & nth_bit(7)) >> 7);
+    c_patch((address)&insn, 7, 7, (offset & nth_bit(6)) >> 6);
+    c_patch((address)&insn, 8, 8, (offset & nth_bit(10)) >> 10);
+    c_patch((address)&insn, 10, 9, (offset & right_n_bits(10)) >> 8);
+    c_patch((address)&insn, 11, 11, (offset & nth_bit(4)) >> 4);
+    c_patch((address)&insn, 12, 12, (offset & nth_bit(11)) >> 11);
+    c_patch((address)&insn, 15, 13, 0b101);
+    emit_int16(insn);
   }
 
-  INSN(c_j, 0b101, 0b01);
+  void c_j(address dest) {
+    assert_cond(dest != nullptr);
+    int64_t distance = dest - pc();
+    assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");
+    c_j(distance);
+  }
 
-#undef INSN
+  void c_j(Label &L) {
+    wrap_label(L, &Assembler::c_j);
+  }
+
+  public:
 
 #define INSN(NAME, funct3, op)                                                               \
   void NAME(Register Rs1, int32_t imm) {                                                     \
@@ -2812,24 +2811,35 @@ public:
 // --------------------------
 // Unconditional branch instructions
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* jalr -> c.jr/c.jalr */                                                                \
-    if (do_compress() && (offset == 0 && Rs != x0)) {                                        \
-      if (Rd == x1) {                                                                        \
-        c_jalr(Rs);                                                                          \
-        return;                                                                              \
-      } else if (Rd == x0) {                                                                 \
-        c_jr(Rs);                                                                            \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _jalr(Rd, Rs, offset);                                                                   \
+ protected:
+  // All calls and jumps must go via MASM.
+  void jalr(Register Rd, Register Rs, const int32_t offset) {
+    /* jalr -> c.jr/c.jalr */
+    if (do_compress() && (offset == 0 && Rs != x0)) {
+      if (Rd == x1) {
+        c_jalr(Rs);
+        return;
+      } else if (Rd == x0) {
+        c_jr(Rs);
+        return;
+      }
+    }
+    _jalr(Rd, Rs, offset);
   }
 
-  INSN(jalr);
+  void jal(Register Rd, const int32_t offset) {
+    /* jal -> c.j, note c.jal is RV32C only */
+    if (do_compress() &&
+        Rd == x0 &&
+        is_simm12(offset) && ((offset % 2) == 0)) {
+      c_j(offset);
+      return;
+    }
 
-#undef INSN
+    _jal(Rd, offset);
+  }
+
+  public:
 
 // --------------------------
 // Miscellaneous Instructions
@@ -3006,18 +3016,6 @@ public:
   INSN(prefetch_i, 0b0000000000000);
   INSN(prefetch_r, 0b0000000000001);
   INSN(prefetch_w, 0b0000000000011);
-
-#undef INSN
-
-// ---------------------------------------------------------------------------------------
-
-#define INSN(NAME, REGISTER)                       \
-  void NAME(Register Rs) {                         \
-    jalr(REGISTER, Rs, 0);                         \
-  }
-
-  INSN(jr,   x0);
-  INSN(jalr, x1);
 
 #undef INSN
 

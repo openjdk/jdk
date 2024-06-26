@@ -174,7 +174,7 @@ class LvtTest {
 
         var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
+        var lvt = main.code().get().findAttribute(Attributes.localVariableTable()).get();
         var lvs = lvt.localVariables();
 
         assertEquals(lvs.size(), 3);
@@ -278,7 +278,7 @@ class LvtTest {
         });
         var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
+        var lvtt = main.code().get().findAttribute(Attributes.localVariableTypeTable()).get();
         var lvts = lvtt.localVariableTypes();
 
         /* From javap:

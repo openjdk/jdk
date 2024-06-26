@@ -3516,7 +3516,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    result = mem;
+    // Ensure vector type is the same
+    if (!is_StoreVector() || as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type()) {
+      result = mem;
+    }
   }
 
   // Two stores in a row of the same value?
@@ -3525,7 +3528,24 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
-    result = mem;
+    if (!is_StoreVector()) {
+      result = mem;
+    } else {
+      const StoreVectorNode* store_vector = as_StoreVector();
+      const StoreVectorNode* mem_vector = mem->as_StoreVector();
+      const Node* store_indices = store_vector->indices();
+      const Node* mem_indices = mem_vector->indices();
+      const Node* store_mask = store_vector->mask();
+      const Node* mem_mask = mem_vector->mask();
+      // Ensure types, indices, and masks match
+      if (store_vector->vect_type() == mem_vector->vect_type() &&
+          ((store_indices == nullptr) == (mem_indices == nullptr) &&
+           (store_indices == nullptr || store_indices->eqv_uncast(mem_indices))) &&
+          ((store_mask == nullptr) == (mem_mask == nullptr) &&
+           (store_mask == nullptr || store_mask->eqv_uncast(mem_mask)))) {
+        result = mem;
+      }
+    }
   }
 
   // Store of zero anywhere into a freshly-allocated object?

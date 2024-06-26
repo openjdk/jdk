@@ -156,9 +156,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Printing support
   const char* name() const { return "ParOldGen"; }
 
-  // Debugging support
-  // Save the tops of all spaces for later use during mangling.
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSOLDGEN_HPP

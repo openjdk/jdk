@@ -4645,7 +4645,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
@@ -4657,8 +4656,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = r2;
     const Register ylen  = r3;
     const Register z     = r4;
-    const Register zlen  = r5;
 
+    const Register tmp0  = r5;
     const Register tmp1  = r10;
     const Register tmp2  = r11;
     const Register tmp3  = r12;
@@ -4669,7 +4668,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
@@ -4687,10 +4686,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = r0;
     const Register xlen  = r1;
     const Register z     = r2;
-    const Register zlen  = r3;
     const Register y     = r4; // == x
     const Register ylen  = r5; // == xlen
 
+    const Register tmp0  = r3;
     const Register tmp1  = r10;
     const Register tmp2  = r11;
     const Register tmp3  = r12;
@@ -4705,7 +4704,7 @@ class StubGenerator: public StubCodeGenerator {
     __ push(spilled_regs, sp);
     __ mov(y, x);
     __ mov(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ pop(spilled_regs, sp);
     __ leave();
     __ ret(lr);

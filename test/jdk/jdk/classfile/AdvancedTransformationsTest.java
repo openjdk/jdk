@@ -120,9 +120,9 @@ class AdvancedTransformationsTest {
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.defaultResolver())
                     )).verify(remapped));
-            remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
+            remapped.fields().forEach(f -> f.findAttribute(Attributes.signature()).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
-            remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
+            remapped.methods().forEach(m -> m.findAttribute(Attributes.signature()).ifPresent(sa -> {
                     var md = m.methodTypeSymbol();
                     var ms = sa.asMethodSignature();
                     verifySignature(md.returnType(), ms.result());
@@ -173,7 +173,7 @@ class AdvancedTransformationsTest {
                         cc.parse(
                                 cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
-                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
+                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.module()).get();
         assertEquals(ma.uses().get(0).asSymbol(), bar);
         var provides = ma.provides().get(0);
         assertEquals(provides.provides().asSymbol(), bar);

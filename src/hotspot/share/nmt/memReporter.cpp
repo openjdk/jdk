@@ -165,9 +165,11 @@ void MemSummaryReporter::report() {
   out->print("Total: ");
   print_total(total_reserved_amount, total_committed_amount);
   out->cr();
-  out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT,
+  out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT ", peak=" SIZE_FORMAT "%s #" SIZE_FORMAT,
                 amount_in_current_scale(total_malloced_bytes), current_scale(),
-                _malloc_snapshot->total_count());
+                _malloc_snapshot->total_count(),
+                amount_in_current_scale(_malloc_snapshot->total_peak()),
+                current_scale(), _malloc_snapshot->total_peak_count());
   out->print("       mmap:   ");
   print_total(total_mmap_reserved_bytes, total_mmap_committed_bytes);
   out->cr();

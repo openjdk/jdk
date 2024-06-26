@@ -1841,17 +1841,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
 
-  CodeBlob *cb = CodeCache::find_blob(dest);
-  if (cb != nullptr) {
-    __ far_call(RuntimeAddress(dest));
-  } else {
-    RuntimeAddress target(dest);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ movptr(t0, target.target(), offset);
-      __ jalr(x1, t0, offset);
-    });
-  }
+  __ rt_call(dest);
 
   if (info != nullptr) {
     add_call_info_here(info);

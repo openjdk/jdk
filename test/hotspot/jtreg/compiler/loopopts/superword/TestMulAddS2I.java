@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310886 8325252
+ * @bug 8310886 8325252 8320622
  * @summary Test MulAddS2I vectorization.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMulAddS2I
@@ -68,12 +68,8 @@ public class TestMulAddS2I {
 
 
     public static void main(String[] args) {
-        if (Platform.isX64() || Platform.isX86()) {
-            TestFramework.runWithFlags("-XX:+UseUnalignedLoadStores");
-            TestFramework.runWithFlags("-XX:-UseUnalignedLoadStores");
-        } else {
-            TestFramework.run();
-        }
+        TestFramework.runWithFlags("-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:-AlignVector");
     }
 
     @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh"})

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -626,7 +626,6 @@ class MacroAssembler: public Assembler {
     Register t1,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2);
 
   enum { trampoline_stub_size = 6 * 4 };
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
@@ -785,7 +784,7 @@ class MacroAssembler: public Assembler {
               Register tmp1, Register tmp2, Register carry);
   void multiply_to_len(Register x, Register xlen,
                        Register y, Register ylen,
-                       Register z, Register zlen,
+                       Register z,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);

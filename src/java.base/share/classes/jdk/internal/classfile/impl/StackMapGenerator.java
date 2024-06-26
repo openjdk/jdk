@@ -151,7 +151,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
+                ((BufWriterImpl) dcb.bytecodesBufWriter).asByteBuffer(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -380,7 +380,7 @@ public final class StackMapGenerator {
      * @return <code>StackMapTableAttribute</code> or null if stack map is empty
      */
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
-        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.STACK_MAP_TABLE) {
+        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
             public void writeBody(BufWriter b) {
                 b.writeU2(frames.size());

@@ -85,7 +85,7 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                                   .filter(this::isTestMethod)
                                   .findAny()
                                   .orElseThrow();
-        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.code()).orElseThrow();
 
         List<String> actualCode = getCodeInstructions(code_attribute);
         List<String> expectedCode = Arrays.asList(

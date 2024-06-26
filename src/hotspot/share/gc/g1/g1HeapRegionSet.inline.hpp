@@ -29,7 +29,7 @@
 
 #include "gc/g1/g1NUMA.hpp"
 
-inline void HeapRegionSetBase::add(HeapRegion* hr) {
+inline void HeapRegionSetBase::add(G1HeapRegion* hr) {
   check_mt_safety();
   assert_heap_region_set(hr->containing_set() == nullptr, "should not already have a containing set");
   assert_heap_region_set(hr->next() == nullptr, "should not already be linked");
@@ -40,7 +40,7 @@ inline void HeapRegionSetBase::add(HeapRegion* hr) {
   verify_region(hr);
 }
 
-inline void HeapRegionSetBase::remove(HeapRegion* hr) {
+inline void HeapRegionSetBase::remove(G1HeapRegion* hr) {
   check_mt_safety();
   verify_region(hr);
   assert_heap_region_set(hr->next() == nullptr, "should already be unlinked");
@@ -51,7 +51,7 @@ inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   _length--;
 }
 
-inline void FreeRegionList::add_to_tail(HeapRegion* region_to_add) {
+inline void FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
   assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
                           (length() >  0 && _head != nullptr && _tail != nullptr && _tail->hrm_index() < region_to_add->hrm_index()),
                           "invariant");
@@ -71,7 +71,7 @@ inline void FreeRegionList::add_to_tail(HeapRegion* region_to_add) {
   increase_length(region_to_add->node_index());
 }
 
-inline void FreeRegionList::add_ordered(HeapRegion* hr) {
+inline void FreeRegionList::add_ordered(G1HeapRegion* hr) {
   assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
                           (length() >  0 && _head != nullptr && _tail != nullptr),
                           "invariant");
@@ -80,7 +80,7 @@ inline void FreeRegionList::add_ordered(HeapRegion* hr) {
 
   // Now link the region
   if (_head != nullptr) {
-    HeapRegion* curr;
+    G1HeapRegion* curr;
 
     if (_last != nullptr && _last->hrm_index() < hr->hrm_index()) {
       curr = _last;
@@ -120,8 +120,8 @@ inline void FreeRegionList::add_ordered(HeapRegion* hr) {
   increase_length(hr->node_index());
 }
 
-inline HeapRegion* FreeRegionList::remove_from_head_impl() {
-  HeapRegion* result = _head;
+inline G1HeapRegion* FreeRegionList::remove_from_head_impl() {
+  G1HeapRegion* result = _head;
   _head = result->next();
   if (_head == nullptr) {
     _tail = nullptr;
@@ -132,8 +132,8 @@ inline HeapRegion* FreeRegionList::remove_from_head_impl() {
   return result;
 }
 
-inline HeapRegion* FreeRegionList::remove_from_tail_impl() {
-  HeapRegion* result = _tail;
+inline G1HeapRegion* FreeRegionList::remove_from_tail_impl() {
+  G1HeapRegion* result = _tail;
 
   _tail = result->prev();
   if (_tail == nullptr) {
@@ -145,7 +145,7 @@ inline HeapRegion* FreeRegionList::remove_from_tail_impl() {
   return result;
 }
 
-inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
+inline G1HeapRegion* FreeRegionList::remove_region(bool from_head) {
   check_mt_safety();
   verify_optional();
 
@@ -154,7 +154,7 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
   }
   assert_free_region_list(length() > 0 && _head != nullptr && _tail != nullptr, "invariant");
 
-  HeapRegion* hr;
+  G1HeapRegion* hr;
 
   if (from_head) {
     hr = remove_from_head_impl();
@@ -174,12 +174,12 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
   return hr;
 }
 
-inline HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
+inline G1HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
                                                                  uint requested_node_index) {
   assert(UseNUMA, "Invariant");
 
   const uint max_search_depth = G1NUMA::numa()->max_search_depth();
-  HeapRegion* cur;
+  G1HeapRegion* cur;
 
   // Find the region to use, searching from _head or _tail as requested.
   size_t cur_depth = 0;
@@ -207,8 +207,8 @@ inline HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
   }
 
   // Splice the region out of the list.
-  HeapRegion* prev = cur->prev();
-  HeapRegion* next = cur->next();
+  G1HeapRegion* prev = cur->prev();
+  G1HeapRegion* next = cur->next();
   if (prev == nullptr) {
     _head = next;
   } else {

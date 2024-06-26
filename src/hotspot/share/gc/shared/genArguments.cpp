@@ -101,8 +101,11 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= InitialHeapSize) {
-    log_warning(gc, ergo)("NewSize was set larger than initial heap size, will use initial heap size.");
-    FLAG_SET_ERGO(NewSize, bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment));
+    size_t revised_new_size = bound_minus_alignment(NewSize, InitialHeapSize, GenAlignment);
+    log_warning(gc, ergo)("NewSize (%zuk) is equal to or greater than initial heap size (%zuk).  A new "
+                          "NewSize of %zuk will be used to accomodate an old generation.",
+                          NewSize/K, InitialHeapSize/K, revised_new_size/K);
+    FLAG_SET_ERGO(NewSize, revised_new_size);
   }
 
   // Now take the actual NewSize into account. We will silently increase NewSize

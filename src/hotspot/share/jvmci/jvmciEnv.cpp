@@ -514,6 +514,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception from JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
@@ -545,6 +546,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception to JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
     JavaCallArguments jargs;
     jargs.push_int(format);
