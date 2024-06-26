@@ -23,41 +23,38 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
-#include "runtime/os.hpp"
-#include "unittest.hpp"
 
-using NCSS = NativeCallStackStorage;
-
-class NMTNativeCallStackStorageTest : public testing::Test {};
-
-TEST_VM_F(NMTNativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
-  NativeCallStack ncs{};
-  NCSS ncss(false);
-  NCSS::StackIndex si = ncss.push(ncs);
-  EXPECT_TRUE(si.is_invalid());
-  NativeCallStack ncs_received = ncss.get(si);
-  EXPECT_TRUE(ncs_received.is_empty());
+NativeCallStackStorage::StackIndex NativeCallStackStorage::put(const NativeCallStack& value) {
+  int bucket = value.calculate_hash() % _table_size;
+  TableEntryIndex link = _table[bucket];
+  while (link != TableEntryStorage::nil) {
+    TableEntry& l = _entry_storage.at(link);
+    if (value.equals(get(l.stack))) {
+      return l.stack;
+    }
+    link = l.next;
+  }
+  int idx = _stacks.append(value);
+  StackIndex si{idx};
+  TableEntryIndex new_link = _entry_storage.allocate(_table[bucket], si);
+  _table[bucket] = new_link;
+  return si;
 }
-
-TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
-  constexpr const int nr_of_stacks = 10;
-  NativeCallStack ncs_arr[nr_of_stacks];
-  for (int i = 0; i < nr_of_stacks; i++) {
-    ncs_arr[i] = NativeCallStack((address*)(&i), 1);
-  }
-
-  NCSS ncss(true, 1);
-  NCSS::StackIndex si_arr[nr_of_stacks];
-  for (int i = 0; i < nr_of_stacks; i++) {
-    si_arr[i] = ncss.push(ncs_arr[i]);
-  }
-
-  // Every SI should be different as every sack is different
-  for (int i = 0; i < nr_of_stacks; i++) {
-    for (int j = 0; j < nr_of_stacks; j++) {
-      if (i == j) continue;
-      EXPECT_FALSE(NCSS::StackIndex::equals(si_arr[i],si_arr[j]));
+NativeCallStackStorage::NativeCallStackStorage(bool is_detailed_mode, int table_size)
+  : _table_size(table_size),
+    _table(nullptr),
+    _stacks(),
+    _is_detailed_mode(is_detailed_mode),
+    _fake_stack() {
+  if (_is_detailed_mode) {
+    _table = NEW_C_HEAP_ARRAY(TableEntryIndex, _table_size, mtNMT);
+    for (int i = 0; i < _table_size; i++) {
+      _table[i] = TableEntryStorage::nil;
     }
   }
+}
+NativeCallStackStorage::~NativeCallStackStorage() {
+  FREE_C_HEAP_ARRAY(LinkPtr, _table);
 }
