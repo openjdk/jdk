@@ -23,7 +23,6 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -80,13 +79,13 @@ public class DeferredCloseTest {
         // configure our patched java.net.InetSocketAddress implementation
         // to introduce delay in certain methods which get invoked
         // internally from the DC.send() implementation
-        introduceDelayInInetSocketAddress();
+        InetSocketAddress.enableDelay();
     }
 
     @AfterAll
     public static void afterAll() throws Exception {
         // delays in patched InetSocketAddress are no longer needed
-        undoDelayInInetSocketAddress();
+        InetSocketAddress.disableDelay();
     }
 
     private static Stream<Arguments> dcOperations() {
@@ -481,22 +480,5 @@ public class DeferredCloseTest {
             System.out.println("Accepted connection: " + accepted);
             return accepted;
         }
-    }
-
-    /**
-     * Configures our patched java.net.InetSocketAddress to introduce delays in
-     * certain places within the implementation of that class
-     */
-    private static void introduceDelayInInetSocketAddress() throws Exception {
-        Field f = InetSocketAddress.class.getField("enableDelay");
-        f.set(null, true);
-    }
-
-    /**
-     * Reverts the delays introduced in our patched java.net.InetSocketAddress class
-     */
-    private static void undoDelayInInetSocketAddress() throws Exception {
-        Field f = InetSocketAddress.class.getField("enableDelay");
-        f.set(null, false);
     }
 }

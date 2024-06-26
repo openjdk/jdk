@@ -69,6 +69,14 @@ public class InetSocketAddress extends SocketAddress {
         return new InetSocketAddress(checkHost(host), null, checkPort(port));
     }
 
+    public static void enableDelay() {
+        enableDelay = true;
+    }
+
+    public static void disableDelay() {
+        enableDelay = false;
+    }
+
     private InetSocketAddress(String hostname, InetAddress addr, int port) {
         this.hostname = hostname;
         this.addr = addr;
