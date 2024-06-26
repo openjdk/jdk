@@ -91,7 +91,7 @@ public class Loopback {
      * IP_MULTICAST_LOOP enabled and disabled.
      */
     static void test(ProtocolFamily family, InetAddress group, NetworkInterface ni)
-        throws IOException
+        throws IOException, InterruptedException
     {
         System.out.format("\n%s socket\n", family.name());
         DatagramChannel dc;
@@ -163,12 +163,16 @@ public class Loopback {
                         if (src.mismatch(dst) != -1) {
                             System.out.println("src: " + src + "not equal to dst: " + dst);
                             dst.clear();
+                            // We're not supposed to receive stray datagrams here,
+                            // so respin with 3 full seconds as this shouldn't happen too often
+                            Thread.sleep(3000);
                             continue;
                         }
                         if (sender != null) {
                             System.out.format("received %s from %s%n", dst, sender);
                             senderPort = ((InetSocketAddress) sender).getPort();
-                            assertTrue(senderPort != localPort, "Unexpected message: localPort=" + localPort);
+                            assertTrue(senderPort != localPort,
+                                    "Unexpected message: localPort=" + localPort);
                         }
                     }
                 }
