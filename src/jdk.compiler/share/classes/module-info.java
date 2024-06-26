@@ -268,8 +268,6 @@ module jdk.compiler {
         jdk.javadoc,
         jdk.jshell,
         jdk.internal.md;
-    exports jdk.internal.shellsupport.doc to
-        jdk.jshell;
 
     uses javax.annotation.processing.Processor;
     uses com.sun.source.util.Plugin;

@@ -76,10 +76,10 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         pcMap = new HashMap<>();
         codeAttribute = attr;
         check(NoteKind.VISIBLE,
-                m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeVisibleTypeAnnotations())
                         .map(a -> a.annotations()));
         check(NoteKind.INVISIBLE,
-                m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeInvisibleTypeAnnotations())
                         .map(a -> a.annotations()));
     }
 

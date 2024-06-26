@@ -48,6 +48,7 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.HiddenWait;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -351,8 +352,11 @@ public final class Utils {
     }
 
     public static void takeNap(long millis) {
+        HiddenWait hiddenWait = new HiddenWait();
         try {
-            Thread.sleep(millis);
+            synchronized(hiddenWait) {
+                hiddenWait.wait(millis);
+            }
         } catch (InterruptedException e) {
             // ok
         }
@@ -434,5 +438,13 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    public static boolean isJDKClass(Class<?> type) {
+        return type.getClassLoader() == null;
+        // In the future we might want to also do:
+        // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
+        // but only if it is safe and there is a mechanism to register event
+        // classes in other modules besides jdk.jfr and java.base.
     }
 }

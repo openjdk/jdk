@@ -32,6 +32,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
@@ -343,37 +344,6 @@ void TenuredGeneration::gc_prologue() {
   _used_at_prologue = used();
 }
 
-bool TenuredGeneration::should_collect(bool  full,
-                                       size_t size,
-                                       bool   is_tlab) {
-  // This should be one big conditional or (||), but I want to be able to tell
-  // why it returns what it returns (without re-evaluating the conditionals
-  // in case they aren't idempotent), so I'm doing it this way.
-  // DeMorgan says it's okay.
-  if (full) {
-    log_trace(gc)("TenuredGeneration::should_collect: because full");
-    return true;
-  }
-  if (should_allocate(size, is_tlab)) {
-    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
-    return true;
-  }
-  // If we don't have very much free space.
-  // XXX: 10000 should be a percentage of the capacity!!!
-  if (free() < 10000) {
-    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
-    return true;
-  }
-  // If we had to expand to accommodate promotions from the young generation
-  if (_capacity_at_prologue < capacity()) {
-    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
-        _capacity_at_prologue, capacity());
-    return true;
-  }
-
-  return false;
-}
-
 void TenuredGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
 
@@ -388,25 +358,15 @@ void TenuredGeneration::compute_new_size() {
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
 }
 
-void TenuredGeneration::update_gc_stats(Generation* current_generation,
-                                        bool full) {
-  // If the young generation has been collected, gather any statistics
-  // that are of interest at this point.
-  bool current_is_young = SerialHeap::heap()->is_young_gen(current_generation);
-  if (!full && current_is_young) {
-    // Calculate size of data promoted from the young generation
-    // before doing the collection.
-    size_t used_before_gc = used();
-
-    // If the young gen collection was skipped, then the
-    // number of promoted bytes will be 0 and adding it to the
-    // average will incorrectly lessen the average.  It is, however,
-    // also possible that no promotion was needed.
-    if (used_before_gc >= _used_at_prologue) {
-      size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      _avg_promoted->sample(promoted_in_bytes);
-    }
+void TenuredGeneration::update_promote_stats() {
+  size_t used_after_gc = used();
+  size_t promoted_in_bytes;
+  if (used_after_gc > _used_at_prologue) {
+    promoted_in_bytes = used_after_gc - _used_at_prologue;
+  } else {
+    promoted_in_bytes = 0;
   }
+  _avg_promoted->sample(promoted_in_bytes);
 }
 
 void TenuredGeneration::update_counters() {

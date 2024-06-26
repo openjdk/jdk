@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ static const u2 JFR_VERSION_MAJOR = 2;
 static const u2 JFR_VERSION_MINOR = 1;
 
 // strictly monotone
-static jlong nanos_now() {
+jlong JfrChunk::nanos_now() {
   static jlong last = 0;
 
   jlong seconds;
@@ -147,7 +147,7 @@ void JfrChunk::update_start_ticks() {
 }
 
 void JfrChunk::update_start_nanos() {
-  const jlong now = nanos_now();
+  const jlong now = JfrChunk::nanos_now();
   assert(now >= _start_nanos, "invariant");
   assert(now >= _last_update_nanos, "invariant");
   _start_nanos = _last_update_nanos = now;

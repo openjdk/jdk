@@ -163,7 +163,8 @@ public:
 private:
   EntryCountType _size;
   EntryCountType volatile _num_entries;
-  EntryDataType _data[2];
+  // VLA implementation.
+  EntryDataType _data[1];
 
   static const EntryCountType LockBitMask = (EntryCountType)1 << (sizeof(EntryCountType) * BitsPerByte - 1);
   static const EntryCountType EntryMask = LockBitMask - 1;
@@ -184,6 +185,14 @@ private:
       Atomic::release_store(_num_entries_addr, _local_num_entries);
     }
   };
+
+  EntryDataType const* base_addr() const;
+
+  EntryDataType const* entry_addr(EntryCountType index) const;
+
+  EntryDataType* entry_addr(EntryCountType index);
+
+  EntryDataType at(EntryCountType index) const;
 public:
   G1CardSetArray(uint const card_in_region, EntryCountType num_cards);
 
@@ -238,23 +247,27 @@ public:
   using ContainerPtr = G1CardSet::ContainerPtr;
   EntryCountType volatile _num_entries;
 private:
-  ContainerPtr _buckets[2];
-  // Do not add class member variables beyond this point
+  // VLA implementation.
+  ContainerPtr _buckets[1];
+  // Do not add class member variables beyond this point.
 
   // Iterates over the given ContainerPtr with at index in this Howl card set,
   // applying a CardOrRangeVisitor on it.
   template <class CardOrRangeVisitor>
   void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
+  ContainerPtr at(EntryCountType index) const;
+
+  ContainerPtr const* buckets() const;
+
 public:
   G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config);
 
-  ContainerPtr* get_container_addr(EntryCountType index) {
-    return &_buckets[index];
-  }
+  ContainerPtr const* container_addr(EntryCountType index) const;
+
+  ContainerPtr* container_addr(EntryCountType index);
 
   bool contains(uint card_idx, G1CardSetConfiguration* config);
-
   // Iterates over all ContainerPtrs in this Howl card set, applying a CardOrRangeVisitor
   // on it.
   template <class CardOrRangeVisitor>

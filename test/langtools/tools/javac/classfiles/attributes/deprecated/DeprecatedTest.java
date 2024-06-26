@@ -243,7 +243,7 @@ public class DeprecatedTest extends TestResult {
                     .findFirst().orElse(null);
             echo("Testing outer class : " + outerClassName);
             ClassModel cf = readClassFile(classes.get(outerClassName));
-            DeprecatedAttribute attr = cf.findAttribute(Attributes.DEPRECATED).orElse(null);
+            DeprecatedAttribute attr = cf.findAttribute(Attributes.deprecated()).orElse(null);
             testAttribute(outerClassName, attr, cf);
             testInnerClasses(cf, classes);
             testMethods(cf);
@@ -255,13 +255,13 @@ public class DeprecatedTest extends TestResult {
 
     private void testInnerClasses(ClassModel cf, Map<String, ? extends JavaFileObject> classes)
             throws IOException {
-        InnerClassesAttribute innerAttr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute innerAttr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
         assert innerAttr != null;
         for (InnerClassInfo innerClass : innerAttr.classes()) {
             String innerClassName = innerClass.innerClass().name().stringValue();
             echo("Testing inner class : " + innerClassName);
             ClassModel innerCf = readClassFile(classes.get(innerClassName));
-            DeprecatedAttribute attr = innerCf.findAttribute(Attributes.DEPRECATED).orElse(null);
+            DeprecatedAttribute attr = innerCf.findAttribute(Attributes.deprecated()).orElse(null);
             assert innerClass.innerName().isPresent();
             String innerClassSimpleName = innerClass.innerName().get().stringValue();
             testAttribute(innerClassSimpleName, attr, innerCf);
@@ -276,7 +276,7 @@ public class DeprecatedTest extends TestResult {
         for (MethodModel m : cf.methods()) {
             String methodName = m.methodName().stringValue();
             echo("Testing method : " + methodName);
-            DeprecatedAttribute attr = m.findAttribute(Attributes.DEPRECATED).orElse(null);
+            DeprecatedAttribute attr = m.findAttribute(Attributes.deprecated()).orElse(null);
             testAttribute(methodName, attr, cf);
         }
     }
@@ -285,7 +285,7 @@ public class DeprecatedTest extends TestResult {
         for (FieldModel f : cm.fields()) {
             String fieldName = f.fieldName().stringValue();
             echo("Testing field : " + fieldName);
-            DeprecatedAttribute attr = f.findAttribute(Attributes.DEPRECATED).orElse(null);
+            DeprecatedAttribute attr = f.findAttribute(Attributes.deprecated()).orElse(null);
             testAttribute(fieldName, attr, cm);
         }
     }
