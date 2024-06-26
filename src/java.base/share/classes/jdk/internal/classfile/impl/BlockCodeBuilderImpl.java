@@ -52,11 +52,11 @@ public final class BlockCodeBuilderImpl
     public void start() {
         topLocal = topLocal(parent);
         terminalMaxLocals = topLocal(terminal);
-        terminal.with((LabelTarget) startLabel);
+        parent.with((LabelTarget) startLabel);
     }
 
     public void end() {
-        terminal.with((LabelTarget) endLabel);
+        parent.with((LabelTarget) endLabel);
         if (terminalMaxLocals != topLocal(terminal)) {
             throw new IllegalStateException("Interference in local variable slot management");
         }
