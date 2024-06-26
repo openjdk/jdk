@@ -32,7 +32,7 @@
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  return 20;
+  return 24;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {

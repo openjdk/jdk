@@ -1276,11 +1276,12 @@ public:
   int far_jump(Address entry, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
+    return 16; // why?
+    //if (codestub_branch_needs_far_jump()) {
+    //  return 3 * 4;  // adrp, add, br
+    //} else {
+    //  return 4;
+    //}
   }
 
   // Emit the CompiledIC call idiom
