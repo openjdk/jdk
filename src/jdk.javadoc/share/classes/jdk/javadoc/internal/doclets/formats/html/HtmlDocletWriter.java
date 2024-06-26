@@ -126,7 +126,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
-import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;

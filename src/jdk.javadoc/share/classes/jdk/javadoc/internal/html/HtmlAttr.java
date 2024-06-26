@@ -1,77 +1,130 @@
-/*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 package jdk.javadoc.internal.html;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
 
-/**
- * Enum representing HTML tag attributes.
- */
 public enum HtmlAttr {
+
+    ABBR,
+    ACCESSKEY(true),
+    ALIGN,
+    ALINK,
     ALT,
-    ARIA_CONTROLS("aria-controls"),
-    ARIA_EXPANDED("aria-expanded"),
-    ARIA_LABEL("aria-label"),
-    ARIA_LABELLEDBY("aria-labelledby"),
-    ARIA_ORIENTATION("aria-orientation"),
-    ARIA_SELECTED("aria-selected"),
+    ARIA_ACTIVEDESCENDANT(true),
+    ARIA_CONTROLS(true),
+    ARIA_DESCRIBEDBY(true),
+    ARIA_EXPANDED(true),
+    ARIA_LABEL(true),
+    ARIA_LABELLEDBY(true),
+    ARIA_LEVEL(true),
+    ARIA_MULTISELECTABLE(true),
+    ARIA_ORIENTATION,
+    ARIA_OWNS(true),
+    ARIA_POSINSET(true),
+    ARIA_READONLY(true),
+    ARIA_REQUIRED(true),
+    ARIA_SELECTED(true),
+    ARIA_SETSIZE(true),
+    ARIA_SORT(true),
+    AUTOCAPITALIZE(true),
     AUTOCOMPLETE,
+    AUTOFOCUS(true),
+    AXIS,
+    BACKGROUND,
+    BGCOLOR,
+    BORDER,
+    CELLPADDING,
+    CELLSPACING,
+    CHAR,
+    CHAROFF,
+    CHARSET,
     CHECKED,
-    CLASS,
+    CITE,
+    CLASS(true),
     CLEAR,
+    COLOR,
     COLS,
+    COLSPAN,
+    COMPACT,
     CONTENT,
-    DATA_COPIED("data-copied"), // custom HTML5 data attribute
+    CONTENTEDITABLE(true),
+    COORDS,
+    CROSSORIGIN,
+    DATA_COPIED, // custom HTML5 data attribute
+    DATETIME,
+    DIR(true),
     DISABLED,
+    DRAGGABLE(true),
+    ENTERKEYHINT(true),
+    FACE,
     FOR,
+    FRAME,
+    FRAMEBORDER,
+    HEADERS,
+    HEIGHT,
+    HIDDEN(true),
     HREF,
-    HTTP_EQUIV("http-equiv"),
-    ID,
-    LANG,
+    HSPACE,
+    HTTP_EQUIV,
+    ID(true),
+    INERT(true),
+    INPUTMODE(true),
+    IS(true),
+    ITEMID(true),
+    ITEMPROP(true),
+    ITEMREF(true),
+    ITEMSCOPE(true),
+    ITEMTYPE(true),
+    LANG(true),
+    LINK,
+    LONGDESC,
+    MARGINHEIGHT,
+    MARGINWIDTH,
     NAME,
+    NONCE(true),
+    NOSHADE,
+    NOWRAP,
     ONCLICK,
     ONKEYDOWN,
     ONLOAD,
     PLACEHOLDER,
+    POPOVER(true),
+    PROFILE,
     REL,
+    REV,
+    REVERSED,
     ROLE,
     ROWS,
+    ROWSPAN,
+    RULES,
+    SCHEME,
     SCOPE,
     SCROLLING,
+    SHAPE,
+    SIZE,
+    SPACE,
+    SPELLCHECK(true),
     SRC,
-    STYLE,
+    START,
+    STYLE(true),
     SUMMARY,
-    TABINDEX,
+    TABINDEX(true),
     TARGET,
-    TITLE,
+    TEXT,
+    TITLE(true),
+    TRANSLATE(true),
     TYPE,
+    VALIGN,
     VALUE,
-    WIDTH;
+    VERSION,
+    VLINK,
+    VSPACE,
+    WIDTH,
+    WRITINGSUGGESTIONS(true);
 
-    private final String value;
+    private final String text;
+    private final boolean isGlobal;
 
     public enum Role {
 
@@ -110,14 +163,39 @@ public enum HtmlAttr {
     }
 
     HtmlAttr() {
-        this.value = name().toLowerCase(Locale.ROOT);
+        this(false);
     }
 
-    HtmlAttr(String name) {
-        this.value = name;
+    HtmlAttr(boolean flag) {
+        text = name().toLowerCase(Locale.ROOT).replace("_", "-");
+        isGlobal = flag;
     }
 
+    public boolean isGlobal() {
+        return isGlobal;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    @Override
     public String toString() {
-        return value;
+        return text;
+    }
+
+    static final Map<String, HtmlAttr> index = new HashMap<>();
+
+    static {
+        for (HtmlAttr t : values()) {
+            index.put(t.getText(), t);
+        }
+    }
+
+    public enum AttrKind {
+        OK,
+        INVALID,
+        OBSOLETE,
+        HTML4
     }
 }

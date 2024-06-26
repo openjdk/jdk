@@ -31,7 +31,7 @@
 
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.TagName;
-import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTag;
 
 public class TestVoidHtmlElements {
 

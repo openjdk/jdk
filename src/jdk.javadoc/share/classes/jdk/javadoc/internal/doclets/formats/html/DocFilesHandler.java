@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclint.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTag;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;

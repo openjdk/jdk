@@ -23,20 +23,17 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclint;
+package jdk.javadoc.internal.html;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.Name;
 
-import com.sun.tools.javac.util.StringUtils;
-
-import jdk.javadoc.internal.html.TagName;
-
-import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
+import static jdk.javadoc.internal.html.HtmlAttr.*;
 
 /**
  * Enum representing HTML tags.
@@ -119,7 +116,7 @@ public enum HtmlTag {
 
     DEL(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
 
     DFN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -213,7 +210,7 @@ public enum HtmlTag {
 
     INS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
 
     KBD(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -312,7 +309,7 @@ public enum HtmlTag {
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, BORDER),
             attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING,
-                    Attr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
+                    HtmlAttr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
             switch (t) {
@@ -339,7 +336,7 @@ public enum HtmlTag {
     TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS),
-            attrs(AttrKind.HTML4, AXIS, Attr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
+            attrs(AttrKind.HTML4, AXIS, HtmlAttr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
                     WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
     TEMPLATE(BlockType.BLOCK, EndKind.REQUIRED,
@@ -355,7 +352,7 @@ public enum HtmlTag {
 
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR),
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, HtmlAttr.ABBR),
             attrs(AttrKind.HTML4, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)),
 
     THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
@@ -434,150 +431,12 @@ public enum HtmlTag {
         NO_NEST
     }
 
-    public enum Attr {
-        ABBR,
-        ACCESSKEY(true),
-        ALIGN,
-        ALINK,
-        ALT,
-        ARIA_ACTIVEDESCENDANT(true),
-        ARIA_CONTROLS(true),
-        ARIA_DESCRIBEDBY(true),
-        ARIA_EXPANDED(true),
-        ARIA_LABEL(true),
-        ARIA_LABELLEDBY(true),
-        ARIA_LEVEL(true),
-        ARIA_MULTISELECTABLE(true),
-        ARIA_OWNS(true),
-        ARIA_POSINSET(true),
-        ARIA_READONLY(true),
-        ARIA_REQUIRED(true),
-        ARIA_SELECTED(true),
-        ARIA_SETSIZE(true),
-        ARIA_SORT(true),
-        AUTOCAPITALIZE(true),
-        AUTOFOCUS(true),
-        AXIS,
-        BACKGROUND,
-        BGCOLOR,
-        BORDER,
-        CELLPADDING,
-        CELLSPACING,
-        CHAR,
-        CHAROFF,
-        CHARSET,
-        CITE,
-        CLASS(true),
-        CLEAR,
-        COLOR,
-        COLSPAN,
-        COMPACT,
-        CONTENTEDITABLE(true),
-        COORDS,
-        CROSSORIGIN,
-        DATETIME,
-        DIR(true),
-        DRAGGABLE(true),
-        ENTERKEYHINT(true),
-        FACE,
-        FRAME,
-        FRAMEBORDER,
-        HEADERS,
-        HEIGHT,
-        HIDDEN(true),
-        HREF,
-        HSPACE,
-        ID(true),
-        INERT(true),
-        INPUTMODE(true),
-        IS(true),
-        ITEMID(true),
-        ITEMPROP(true),
-        ITEMREF(true),
-        ITEMSCOPE(true),
-        ITEMTYPE(true),
-        LANG(true),
-        LINK,
-        LONGDESC,
-        MARGINHEIGHT,
-        MARGINWIDTH,
-        NAME,
-        NONCE(true),
-        NOSHADE,
-        NOWRAP,
-        POPOVER(true),
-        PROFILE,
-        REV,
-        REVERSED,
-        ROLE,
-        ROWSPAN,
-        RULES,
-        SCHEME,
-        SCOPE,
-        SCROLLING,
-        SHAPE,
-        SIZE,
-        SPACE,
-        SPELLCHECK(true),
-        SRC,
-        START,
-        STYLE(true),
-        SUMMARY,
-        TABINDEX(true),
-        TARGET,
-        TEXT,
-        TITLE(true),
-        TRANSLATE(true),
-        TYPE,
-        VALIGN,
-        VALUE,
-        VERSION,
-        VLINK,
-        VSPACE,
-        WIDTH,
-        WRITINGSUGGESTIONS(true);
-
-        private final String name;
-        private final boolean isGlobal;
-
-        Attr() {
-            this(false);
-        }
-
-        Attr(boolean flag) {
-            name = StringUtils.toLowerCase(name().replace("_", "-"));
-            isGlobal = flag;
-        }
-
-        public boolean isGlobal() {
-            return isGlobal;
-        }
-
-        public String getText() {
-            return name;
-        }
-
-        static final Map<String,Attr> index = new HashMap<>();
-        static {
-            for (Attr t: values()) {
-                index.put(t.getText(), t);
-            }
-        }
-    }
-
-    public enum AttrKind {
-        OK,
-        INVALID,
-        OBSOLETE,
-        HTML4
-    }
-
     // This class exists to avoid warnings from using parameterized vararg type
     // Map<Attr,AttrKind> in signature of HtmlTag constructor.
-    private static class AttrMap extends EnumMap<Attr,AttrKind>  {
+    private static class AttrMap extends EnumMap<HtmlAttr,AttrKind>  {
         private static final long serialVersionUID = 0;
         AttrMap() {
-            super(Attr.class);
+            super(HtmlAttr.class);
         }
     }
 
@@ -586,7 +445,7 @@ public enum HtmlTag {
     public final BlockType blockType;
     public final EndKind endKind;
     public final Set<Flag> flags;
-    private final Map<Attr,AttrKind> attrs;
+    private final Map<HtmlAttr,AttrKind> attrs;
 
     HtmlTag(BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
         this(ElemKind.OK, blockType, endKind, Set.of(), attrMaps);
@@ -605,29 +464,29 @@ public enum HtmlTag {
         this.blockType = blockType;
         this.endKind = endKind;
         this.flags = flags;
-        this.attrs = new EnumMap<>(Attr.class);
-        for (Map<Attr,AttrKind> m: attrMaps)
+        this.attrs = new EnumMap<>(HtmlAttr.class);
+        for (Map<HtmlAttr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
-        attrs.put(Attr.CLASS, AttrKind.OK);
-        attrs.put(Attr.ID, AttrKind.OK);
-        attrs.put(Attr.STYLE, AttrKind.OK);
-        attrs.put(Attr.ROLE, AttrKind.OK);
+        attrs.put(HtmlAttr.CLASS, AttrKind.OK);
+        attrs.put(HtmlAttr.ID, AttrKind.OK);
+        attrs.put(HtmlAttr.STYLE, AttrKind.OK);
+        attrs.put(HtmlAttr.ROLE, AttrKind.OK);
         // for now, assume that all ARIA attributes are allowed on all tags.
-        attrs.put(Attr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
-        attrs.put(Attr.ARIA_CONTROLS, AttrKind.OK);
-        attrs.put(Attr.ARIA_DESCRIBEDBY, AttrKind.OK);
-        attrs.put(Attr.ARIA_EXPANDED, AttrKind.OK);
-        attrs.put(Attr.ARIA_LABEL, AttrKind.OK);
-        attrs.put(Attr.ARIA_LABELLEDBY, AttrKind.OK);
-        attrs.put(Attr.ARIA_LEVEL, AttrKind.OK);
-        attrs.put(Attr.ARIA_MULTISELECTABLE, AttrKind.OK);
-        attrs.put(Attr.ARIA_OWNS, AttrKind.OK);
-        attrs.put(Attr.ARIA_POSINSET, AttrKind.OK);
-        attrs.put(Attr.ARIA_READONLY, AttrKind.OK);
-        attrs.put(Attr.ARIA_REQUIRED, AttrKind.OK);
-        attrs.put(Attr.ARIA_SELECTED, AttrKind.OK);
-        attrs.put(Attr.ARIA_SETSIZE, AttrKind.OK);
-        attrs.put(Attr.ARIA_SORT, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_CONTROLS, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_DESCRIBEDBY, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_EXPANDED, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_LABEL, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_LABELLEDBY, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_LEVEL, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_MULTISELECTABLE, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_OWNS, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_POSINSET, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_READONLY, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_REQUIRED, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_SELECTED, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_SETSIZE, AttrKind.OK);
+        attrs.put(HtmlAttr.ARIA_SORT, AttrKind.OK);
     }
 
     public boolean accepts(HtmlTag t) {
@@ -637,7 +496,7 @@ public enum HtmlTag {
             return (t.blockType == BlockType.BLOCK);
         } else if (flags.contains(Flag.ACCEPTS_INLINE)) {
             return (t.blockType == BlockType.INLINE);
-        } else
+        } else {
             switch (blockType) {
                 case BLOCK:
                 case INLINE:
@@ -651,6 +510,7 @@ public enum HtmlTag {
                     // ought to have been handled in an overriding method
                     throw new AssertionError(this + ":" + t);
             }
+        }
     }
 
     public boolean acceptsText() {
@@ -659,16 +519,16 @@ public enum HtmlTag {
         return accepts(B);
     }
 
-    public String getText() {
-        return StringUtils.toLowerCase(name());
+    public String getCSSName() {
+        return name().toLowerCase(Locale.ROOT);
     }
 
-    public Attr getAttr(Name attrName) {
-        return Attr.index.get(StringUtils.toLowerCase(attrName.toString()));
+    public HtmlAttr getAttr(Name attrName) {
+        return HtmlAttr.index.get(attrName.toString().toLowerCase(Locale.ROOT));
     }
 
     public AttrKind getAttrKind(Name attrName) {
-        Attr attr = getAttr(attrName);
+        HtmlAttr attr = getAttr(attrName);
         if (attr == null) {
             return AttrKind.INVALID;
         }
@@ -677,20 +537,20 @@ public enum HtmlTag {
                 attrs.getOrDefault(attr, AttrKind.INVALID);
     }
 
-    private static AttrMap attrs(AttrKind k, Attr... attrs) {
+    private static AttrMap attrs(AttrKind k, HtmlAttr... attrs) {
         AttrMap map = new AttrMap();
-        for (Attr a: attrs) map.put(a, k);
+        for (HtmlAttr a: attrs) map.put(a, k);
         return map;
     }
 
     private static final Map<String, HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.getText(), t);
+            index.put(t.getCSSName(), t);
         }
     }
 
     public static HtmlTag get(Name tagName) {
-        return index.get(StringUtils.toLowerCase(tagName.toString()));
+        return index.get(tagName.toString().toLowerCase(Locale.ROOT));
     }
 }
