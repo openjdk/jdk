@@ -91,10 +91,6 @@ gc/TestAlwaysPreTouchBehavior.java#ZGenerational 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#ZSinglegen 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
-gc/shenandoah/TestAllocObjectArrays.java#aggressive 8332031 linux-aarch64
-gc/shenandoah/TestAllocObjectArrays.java#iu-aggressive 8332031 linux-aarch64
-gc/shenandoah/TestAllocIntArrays.java#aggressive 8332031 linux-aarch64
-gc/shenandoah/TestAllocIntArrays.java#iu-aggressive 8332031 linux-aarch64
 
 #############################################################################
 

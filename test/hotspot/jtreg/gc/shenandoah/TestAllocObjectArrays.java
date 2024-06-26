@@ -55,6 +55,7 @@
  * @summary Acceptance tests: collector can withstand allocation
  * @key randomness
  * @requires vm.gc.Shenandoah
+ * @requires os.arch!="aarch64"
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
@@ -79,6 +80,49 @@
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      TestAllocObjectArrays
+ */
+
+/*
+ * @test id=aggressive-aarch64
+ * @summary Acceptance tests: collector can withstand allocation
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @requires os.arch=="aarch64"
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
  *      TestAllocObjectArrays
  */
 
@@ -141,6 +185,7 @@
  * @summary Acceptance tests: collector can withstand allocation
  * @key randomness
  * @requires vm.gc.Shenandoah
+ * @requires os.arch!="aarch64"
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
@@ -165,6 +210,49 @@
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      TestAllocObjectArrays
+ */
+
+/*
+ * @test id=iu-aggressive-aarch64
+ * @summary Acceptance tests: collector can withstand allocation
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @requires os.arch=="aarch64"
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
+ *      TestAllocObjectArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahNoProgressThreshold=10
+ *      -XX:ShenandoahCriticalFreeThreshold=0
  *      TestAllocObjectArrays
  */
 
