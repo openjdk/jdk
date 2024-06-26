@@ -327,15 +327,11 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
   } else {
-    if (FLAG_IS_DEFAULT(MaxVectorSize)) {
-      MaxVectorSize = _initial_vector_length;
-    } else if (!is_power_of_2(MaxVectorSize)) {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
-    } else if (MaxVectorSize > _initial_vector_length) {
-      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-              _initial_vector_length, _initial_vector_length);
-      MaxVectorSize = _initial_vector_length;
+    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
+      warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
+               (int)MaxVectorSize, _initial_vector_length);
     }
+    MaxVectorSize = _initial_vector_length;
     if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;

@@ -568,7 +568,7 @@ Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
 
   if (n > 1) {
     // Always allocate in the same order to produce deterministic archive.
-    QuickSort::sort(archived_modules->data(), n, (_sort_Fn)compare_module_by_name, true);
+    QuickSort::sort(archived_modules->data(), n, compare_module_by_name);
   }
   for (int i = 0; i < n; i++) {
     archived_modules->at_put(i, archived_modules->at(i)->allocate_archived_entry());
