@@ -25,16 +25,16 @@
 
 /**
  * Provides the means for dynamically plugging in support for accessing
- * naming and directory services through the <code>javax.naming</code>
+ * naming and directory services through the {@code javax.naming}
  * and related packages.
  *
  * <p>
  * This package defines the service provider interface (SPI) of the Java Naming
  * and Directory Interface (JNDI). &nbsp;
  * JNDI provides naming and directory functionality to applications
- * written in the Java programming language.  It is designed to be
+ * written in the Java programming language. It is designed to be
  * independent of any specific naming or directory service
- * implementation.  Thus a variety of services--new, emerging, and
+ * implementation. Thus a variety of services--new, emerging, and
  * already deployed ones--can be accessed in a common way.
  *
  * <p>
@@ -56,7 +56,7 @@
  *
  * The service provider package provides support
  * for implementors of the
- * <code>javax.naming.Context.lookup()</code>
+ * {@code javax.naming.Context.lookup()}
  * method and related methods to return Java objects that are natural
  * and intuitive for the Java programmer.
  * For example, when looking up a printer name from the directory,
@@ -67,7 +67,7 @@
  * <h2>Multiple Naming Systems (Federation)</h2>
  *
  * JNDI operations allow applications to supply names that span multiple
- * naming systems.  So in the process of completing
+ * naming systems. So in the process of completing
  * an operation, one service provider might need to interact
  * with another service provider, for example, to pass on
  * the operation to be continued in the next naming system.

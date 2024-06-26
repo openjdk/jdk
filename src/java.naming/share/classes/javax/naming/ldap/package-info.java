@@ -31,24 +31,24 @@
  * This package extends the directory operations of the Java Naming and
  * Directory Interface (JNDI). &nbsp;
  * JNDI provides naming and directory functionality to applications
- * written in the Java programming language.  It is designed to be
+ * written in the Java programming language. It is designed to be
  * independent of any specific naming or directory service
- * implementation.  Thus a variety of services--new, emerging, and
+ * implementation. Thus a variety of services--new, emerging, and
  * already deployed ones--can be accessed in a common way.
  *
  * <p>
  * This package is for applications and service providers that deal with
  * LDAPv3 extended operations and controls, as defined by
  * <a href=http://www.ietf.org/rfc/rfc2251.txt>RFC 2251</a>.
- * The core interface in this package is <code>LdapContext</code>, which defines
+ * The core interface in this package is {@code LdapContext}, which defines
  * methods on a context for performing extended operations and handling
  * controls.
  *
  * <h2>Extended Operations</h2>
  * <p>
- * This package defines the interface <code>ExtendedRequest</code>
+ * This package defines the interface {@code ExtendedRequest}
  * to represent the argument to an extended operation,
- * and the interface <code>ExtendedResponse</code> to represent the result
+ * and the interface {@code ExtendedResponse} to represent the result
  * of the extended operation.
  * An extended response is always paired with an extended request
  * but not necessarily vice versa. That is, you can have an extended request
@@ -69,18 +69,18 @@
  * <p>
  * For example, suppose an LDAP server supports a "get time" extended operation.
  * It would supply classes such as
- * <code>GetTimeRequest</code> and <code>GetTimeResponse</code>,
+ * {@code GetTimeRequest} and {@code GetTimeResponse},
  * so that applications can use this feature.
  * An application would use these classes as follows:
- * <blockquote><pre>
+ * {@snippet :
  * GetTimeResponse resp =
  *     (GetTimeResponse) ectx.extendedOperation(new GetTimeRequest());
  * long time = resp.getTime();
- * </pre></blockquote>
+ * }
  * <p>
- * The <code>GetTimeRequest</code> and <code>GetTimeResponse</code> classes might
+ * The {@code GetTimeRequest} and {@code GetTimeResponse} classes might
  * be defined as follows:
- * <blockquote><pre>
+ * {@snippet :
  * public class GetTimeRequest implements ExtendedRequest {
  *     // User-friendly constructor
  *     public GetTimeRequest() {
@@ -98,7 +98,7 @@
  *         return new GetTimeResponse(id, berValue, offset, length);
  *     }
  * }
- * public class GetTimeResponse() implements ExtendedResponse {
+ * public class GetTimeResponse implements ExtendedResponse {
  *     long time;
  *     // called by GetTimeRequest.createExtendedResponse()
  *     public GetTimeResponse(String id, byte[] berValue, int offset, int length)
@@ -119,16 +119,16 @@
  *         return GETTIME_RESP_OID;
  *     }
  * }
- * </pre></blockquote>
+ * }
  *
  * <h2>Controls</h2>
  *
- * This package defines the interface <code>Control</code> to represent an LDAPv3
+ * This package defines the interface {@code Control} to represent an LDAPv3
  * control. It can be a control that is sent to an LDAP server
  * (<em>request control</em>) or a control returned by an LDAP server
- * (<em>response control</em>).  Unlike extended requests and responses,
+ * (<em>response control</em>). Unlike extended requests and responses,
  * there is not necessarily any pairing between request controls and
- * response controls.  You can send request controls and expect no
+ * response controls. You can send request controls and expect no
  * response controls back, or receive response controls without sending
  * any request controls.
  * <p>
@@ -136,28 +136,26 @@
  * Instead, it deals with classes that <em>implement</em> this interface.
  * The application gets control classes either as part of a repertoire of
  * controls standardized through the IETF, or from directory vendors for
- * vendor-specific controls.  The request control classes should have
+ * vendor-specific controls. The request control classes should have
  * constructors that accept arguments in a type-safe and user-friendly
  * manner, while the response control classes should have access methods
  * for getting the data of the response in a type-safe and user-friendly
- * manner.  Internally, the request/response control classes deal with
+ * manner. Internally, the request/response control classes deal with
  * encoding and decoding BER values.
  * <p>
  * For example, suppose an LDAP server supports a "signed results"
  * request control, which when sent with a request, asks the
  * server to digitally sign the results of an operation.
- * It would supply a class <code>SignedResultsControl</code>  so that applications
+ * It would supply a class {@code SignedResultsControl} so that applications
  * can use this feature.
- * An application  would use this class as follows:
- * <blockquote>
- * <pre>
+ * An application would use this class as follows:
+ * {@snippet :
  * Control[] reqCtls = new Control[] {new SignedResultsControl(Control.CRITICAL)};
  * ectx.setRequestControls(reqCtls);
  * NamingEnumeration enum = ectx.search(...);
- * </pre>
- * </blockquote>
- * The <code>SignedResultsControl</code> class might be defined as follows:
- * <blockquote><pre>
+ * }
+ * The {@code SignedResultsControl} class might be defined as follows:
+ * {@snippet :
  * public class SignedResultsControl implements Control {
  *     // User-friendly constructor
  *     public SignedResultsControl(boolean criticality) {
@@ -173,25 +171,25 @@
  *     }
  *     ...
  * }
- * </pre></blockquote>
+ * }
  * <p>
  * When a service provider receives response controls, it uses
- * the <code>ControlFactory</code> class to produce specific classes
- * that implement the <code>Control</code> interface.
+ * the {@code ControlFactory} class to produce specific classes
+ * that implement the {@code Control} interface.
  * <p>
  * An LDAP server can send back response controls with an LDAP operation
  * and also with enumeration results, such as those returned
  * by a list or search operation.
- * The <code>LdapContext</code> provides a method (<code>getResponseControls()</code>)
+ * The {@code LdapContext} provides a method ({@code getResponseControls()})
  * for getting the response controls sent with an LDAP operation,
- * while the <code>HasControls</code> interface is used to retrieve
+ * while the {@code HasControls} interface is used to retrieve
  * response controls associated with enumeration results.
  * <p>
  * For example, suppose an LDAP server sends back a "change ID" control in response
- * to a successful modification. It would supply a class <code>ChangeIDControl</code>
+ * to a successful modification. It would supply a class {@code ChangeIDControl}
  * so that the application can use this feature.
  * An application would perform an update, and then try to get the change ID.
- * <blockquote><pre>
+ * {@snippet :
  * // Perform update
  * Context ctx = ectx.createSubsubcontext("cn=newobj");
  *
@@ -199,19 +197,19 @@
  * Control[] respCtls = ectx.getResponseControls();
  * if (respCtls != null) {
  *     // Find the one we want
- *     for (int i = 0; i &lt; respCtls; i++) {
+ *     for (int i = 0; i < respCtls.length; i++) {
  *         if(respCtls[i] instanceof ChangeIDControl) {
  *      ChangeIDControl cctl = (ChangeIDControl)respCtls[i];
  *      System.out.println(cctl.getChangeID());
  *         }
  *     }
  * }
- * </pre></blockquote>
- * The vendor might supply the following <code>ChangeIDControl</code> and
- * <code>VendorXControlFactory</code> classes. The <code>VendorXControlFactory</code>
+ * }
+ * The vendor might supply the following {@code ChangeIDControl} and
+ * {@code VendorXControlFactory} classes. The {@code VendorXControlFactory}
  * will be used by the service provider when the provider receives response
  * controls from the LDAP server.
- * <blockquote><pre>
+ * {@snippet :
  * public class ChangeIDControl implements Control {
  *     long id;
  *
@@ -249,7 +247,7 @@
  *         return null;  // not one of ours
  *     }
  * }
- * </pre></blockquote>
+ * }
  *
  * <h2>Package Specification</h2>
  *
