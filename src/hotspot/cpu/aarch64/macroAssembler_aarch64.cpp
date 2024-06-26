@@ -232,12 +232,12 @@ public:
               Instruction_aarch64::extract(_insn, 4, 0) ==
               Instruction_aarch64::extract(insn2, 9, 5)) {
             instructions = adrp(insn_addr, target, adrpMem());
-          } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
+          } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 && // add Rd imm, lsl #0
                      Instruction_aarch64::extract(_insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
             instructions = adrp(insn_addr, target, adrpAdd());
-          } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
-                     Instruction_aarch64::extract(_insn, 4, 0) ==
+          } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 && // movk Rd imm, lsl #32
+                     Instruction_aarch64::extract(_insn, 4, 0) ==            // adrp & movk have the same Rd
                      Instruction_aarch64::extract(insn2, 4, 0)) {
             instructions = adrp(insn_addr, target, adrpMovk());
           } else {
@@ -323,6 +323,16 @@ public:
     offset >>= 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
+
+    bool is_add_insn3 = ((insn_at(insn_addr, 2) >> 24) & 0b11111) == 0b10001;
+    if (is_add_insn3) {
+      bool same_Rd_insn3 = (_insn & 0xf) == (insn_at(insn_addr, 2) & 0xf);
+      if (same_Rd_insn3) {  // we have adrp+movk+add sequence
+        adrpAdd_impl(insn_addr + 4, target);
+        instructions = 3;
+      }
+    }
+
     return instructions;
   }
   static int adrpMem_impl(address insn_addr, address &target) {
