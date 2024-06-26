@@ -82,6 +82,13 @@ gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ZGenerational 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ZSinglegen 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 
 #############################################################################
@@ -101,6 +108,7 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
+runtime/ClassInitErrors/TestStackOverflowDuringInit.java 8334545 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 

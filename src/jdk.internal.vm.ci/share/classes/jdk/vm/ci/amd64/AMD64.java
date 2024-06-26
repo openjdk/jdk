@@ -66,6 +66,24 @@ public class AMD64 extends Architecture {
     public static final Register r14 = new Register(14, 14, "r14", CPU);
     public static final Register r15 = new Register(15, 15, "r15", CPU);
 
+    public static final Register r16 = new Register(16, 16, "r16", CPU);
+    public static final Register r17 = new Register(17, 17, "r17", CPU);
+    public static final Register r18 = new Register(18, 18, "r18", CPU);
+    public static final Register r19 = new Register(19, 19, "r19", CPU);
+    public static final Register r20 = new Register(20, 20, "r20", CPU);
+    public static final Register r21 = new Register(21, 21, "r21", CPU);
+    public static final Register r22 = new Register(22, 22, "r22", CPU);
+    public static final Register r23 = new Register(23, 23, "r23", CPU);
+    public static final Register r24 = new Register(24, 24, "r24", CPU);
+    public static final Register r25 = new Register(25, 25, "r25", CPU);
+    public static final Register r26 = new Register(26, 26, "r26", CPU);
+    public static final Register r27 = new Register(27, 27, "r27", CPU);
+    public static final Register r28 = new Register(28, 28, "r28", CPU);
+    public static final Register r29 = new Register(29, 29, "r29", CPU);
+    public static final Register r30 = new Register(30, 30, "r30", CPU);
+    public static final Register r31 = new Register(31, 31, "r31", CPU);
+
+    // The set of common CPU registers available on all x64 platforms.
     public static final Register[] cpuRegisters = {
         rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi,
         r8, r9, r10, r11, r12, r13, r14, r15
@@ -74,41 +92,41 @@ public class AMD64 extends Architecture {
     public static final RegisterCategory XMM = new RegisterCategory("XMM");
 
     // XMM registers
-    public static final Register xmm0 = new Register(16, 0, "xmm0", XMM);
-    public static final Register xmm1 = new Register(17, 1, "xmm1", XMM);
-    public static final Register xmm2 = new Register(18, 2, "xmm2", XMM);
-    public static final Register xmm3 = new Register(19, 3, "xmm3", XMM);
-    public static final Register xmm4 = new Register(20, 4, "xmm4", XMM);
-    public static final Register xmm5 = new Register(21, 5, "xmm5", XMM);
-    public static final Register xmm6 = new Register(22, 6, "xmm6", XMM);
-    public static final Register xmm7 = new Register(23, 7, "xmm7", XMM);
+    public static final Register xmm0 = new Register(32, 0, "xmm0", XMM);
+    public static final Register xmm1 = new Register(33, 1, "xmm1", XMM);
+    public static final Register xmm2 = new Register(34, 2, "xmm2", XMM);
+    public static final Register xmm3 = new Register(35, 3, "xmm3", XMM);
+    public static final Register xmm4 = new Register(36, 4, "xmm4", XMM);
+    public static final Register xmm5 = new Register(37, 5, "xmm5", XMM);
+    public static final Register xmm6 = new Register(38, 6, "xmm6", XMM);
+    public static final Register xmm7 = new Register(39, 7, "xmm7", XMM);
 
-    public static final Register xmm8  = new Register(24,  8, "xmm8",  XMM);
-    public static final Register xmm9  = new Register(25,  9, "xmm9",  XMM);
-    public static final Register xmm10 = new Register(26, 10, "xmm10", XMM);
-    public static final Register xmm11 = new Register(27, 11, "xmm11", XMM);
-    public static final Register xmm12 = new Register(28, 12, "xmm12", XMM);
-    public static final Register xmm13 = new Register(29, 13, "xmm13", XMM);
-    public static final Register xmm14 = new Register(30, 14, "xmm14", XMM);
-    public static final Register xmm15 = new Register(31, 15, "xmm15", XMM);
+    public static final Register xmm8  = new Register(40,  8, "xmm8",  XMM);
+    public static final Register xmm9  = new Register(41,  9, "xmm9",  XMM);
+    public static final Register xmm10 = new Register(42, 10, "xmm10", XMM);
+    public static final Register xmm11 = new Register(43, 11, "xmm11", XMM);
+    public static final Register xmm12 = new Register(44, 12, "xmm12", XMM);
+    public static final Register xmm13 = new Register(45, 13, "xmm13", XMM);
+    public static final Register xmm14 = new Register(46, 14, "xmm14", XMM);
+    public static final Register xmm15 = new Register(47, 15, "xmm15", XMM);
 
-    public static final Register xmm16 = new Register(32, 16, "xmm16", XMM);
-    public static final Register xmm17 = new Register(33, 17, "xmm17", XMM);
-    public static final Register xmm18 = new Register(34, 18, "xmm18", XMM);
-    public static final Register xmm19 = new Register(35, 19, "xmm19", XMM);
-    public static final Register xmm20 = new Register(36, 20, "xmm20", XMM);
-    public static final Register xmm21 = new Register(37, 21, "xmm21", XMM);
-    public static final Register xmm22 = new Register(38, 22, "xmm22", XMM);
-    public static final Register xmm23 = new Register(39, 23, "xmm23", XMM);
+    public static final Register xmm16 = new Register(48, 16, "xmm16", XMM);
+    public static final Register xmm17 = new Register(49, 17, "xmm17", XMM);
+    public static final Register xmm18 = new Register(50, 18, "xmm18", XMM);
+    public static final Register xmm19 = new Register(51, 19, "xmm19", XMM);
+    public static final Register xmm20 = new Register(52, 20, "xmm20", XMM);
+    public static final Register xmm21 = new Register(53, 21, "xmm21", XMM);
+    public static final Register xmm22 = new Register(54, 22, "xmm22", XMM);
+    public static final Register xmm23 = new Register(55, 23, "xmm23", XMM);
 
-    public static final Register xmm24 = new Register(40, 24, "xmm24", XMM);
-    public static final Register xmm25 = new Register(41, 25, "xmm25", XMM);
-    public static final Register xmm26 = new Register(42, 26, "xmm26", XMM);
-    public static final Register xmm27 = new Register(43, 27, "xmm27", XMM);
-    public static final Register xmm28 = new Register(44, 28, "xmm28", XMM);
-    public static final Register xmm29 = new Register(45, 29, "xmm29", XMM);
-    public static final Register xmm30 = new Register(46, 30, "xmm30", XMM);
-    public static final Register xmm31 = new Register(47, 31, "xmm31", XMM);
+    public static final Register xmm24 = new Register(56, 24, "xmm24", XMM);
+    public static final Register xmm25 = new Register(57, 25, "xmm25", XMM);
+    public static final Register xmm26 = new Register(58, 26, "xmm26", XMM);
+    public static final Register xmm27 = new Register(59, 27, "xmm27", XMM);
+    public static final Register xmm28 = new Register(60, 28, "xmm28", XMM);
+    public static final Register xmm29 = new Register(61, 29, "xmm29", XMM);
+    public static final Register xmm30 = new Register(62, 30, "xmm30", XMM);
+    public static final Register xmm31 = new Register(63, 31, "xmm31", XMM);
 
     public static final Register[] xmmRegistersSSE = {
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
@@ -124,14 +142,14 @@ public class AMD64 extends Architecture {
 
     public static final RegisterCategory MASK = new RegisterCategory("MASK", false);
 
-    public static final Register k0 = new Register(48, 0, "k0", MASK);
-    public static final Register k1 = new Register(49, 1, "k1", MASK);
-    public static final Register k2 = new Register(50, 2, "k2", MASK);
-    public static final Register k3 = new Register(51, 3, "k3", MASK);
-    public static final Register k4 = new Register(52, 4, "k4", MASK);
-    public static final Register k5 = new Register(53, 5, "k5", MASK);
-    public static final Register k6 = new Register(54, 6, "k6", MASK);
-    public static final Register k7 = new Register(55, 7, "k7", MASK);
+    public static final Register k0 = new Register(64, 0, "k0", MASK);
+    public static final Register k1 = new Register(65, 1, "k1", MASK);
+    public static final Register k2 = new Register(66, 2, "k2", MASK);
+    public static final Register k3 = new Register(67, 3, "k3", MASK);
+    public static final Register k4 = new Register(68, 4, "k4", MASK);
+    public static final Register k5 = new Register(69, 5, "k5", MASK);
+    public static final Register k6 = new Register(70, 6, "k6", MASK);
+    public static final Register k7 = new Register(71, 7, "k7", MASK);
 
     public static final RegisterArray valueRegistersSSE = new RegisterArray(
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
@@ -153,11 +171,13 @@ public class AMD64 extends Architecture {
     /**
      * Register used to construct an instruction-relative address.
      */
-    public static final Register rip = new Register(56, -1, "rip", SPECIAL);
+    public static final Register rip = new Register(72, -1, "rip", SPECIAL);
 
     public static final RegisterArray allRegisters = new RegisterArray(
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
         r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
+        r16,  r17,  r18,   r19,   r20,   r21,   r22,   r23,
+        r24,  r25,  r26,   r27,   r28,   r29,   r30,   r31,
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
         xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,

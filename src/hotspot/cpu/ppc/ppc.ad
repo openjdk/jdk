@@ -3429,6 +3429,7 @@ encode %{
     call->_oop_map           = _oop_map;
     call->_jvms              = _jvms;
     call->_jvmadj            = _jvmadj;
+    call->_has_ea_local_in_scope = _has_ea_local_in_scope;
     call->_in_rms            = _in_rms;
     call->_nesting           = _nesting;
     call->_override_symbolic_info = _override_symbolic_info;

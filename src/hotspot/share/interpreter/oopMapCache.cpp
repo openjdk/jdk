@@ -592,10 +592,13 @@ bool OopMapCache::has_cleanup_work() {
   return Atomic::load(&_old_entries) != nullptr;
 }
 
-void OopMapCache::trigger_cleanup() {
-  if (has_cleanup_work()) {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+void OopMapCache::try_trigger_cleanup() {
+  // See we can take the lock for the notification without blocking.
+  // This allows triggering the cleanup from GC paths, that can hold
+  // the service lock for e.g. oop iteration in service thread.
+  if (has_cleanup_work() && Service_lock->try_lock_without_rank_check()) {
     Service_lock->notify_all();
+    Service_lock->unlock();
   }
 }
 
