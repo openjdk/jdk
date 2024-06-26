@@ -276,13 +276,6 @@ bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   return (n != -1);
 }
 
-#if !defined(LINUX) && !defined(_WINDOWS)
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  committed_start = start;
-  committed_size = size;
-  return true;
-}
-#endif
 
 // Helper for dll_locate_lib.
 // Pass buffer and printbuffer as we already printed the path to buffer
