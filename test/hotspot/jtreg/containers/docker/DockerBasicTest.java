@@ -30,20 +30,29 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build HelloDocker
- * @run driver DockerBasicTest
+ * @build HelloDocker jdk.test.whitebox.WhiteBox
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DockerBasicTest
  */
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class DockerBasicTest {
     private static final String imageNameAndTag = Common.imageName("basic");
 
     public static void main(String[] args) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        if (wb.isUbsanEnabled()) {
+            System.out.println("ubsan is enabled, avoid docker tests");
+            return;
+        }
+
         if (!DockerTestUtils.canTestDocker()) {
             return;
         }
