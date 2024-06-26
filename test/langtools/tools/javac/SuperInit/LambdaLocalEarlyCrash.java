@@ -22,25 +22,36 @@
  */
 /*
  * @test
- * @bug 8334252
- * @summary Test lambda declared in early construction context
+ * @bug 8334037
+ * @summary Test for compiler crash when local class created in early lambda
  * @enablePreview
  */
 
-public class LambdaOuterCapture {
+public class LambdaLocalEarlyCrash {
+    interface A { }
 
-    public class Inner {
+    class Inner {
+       Inner() {
+          this(() -> {
+             class Local {
+                void g() {
+                   m();
+                }
+             }
+             new Local().g(); // error
+          });
+       }
 
-        public Inner() {
-            Runnable r = () -> System.out.println(LambdaOuterCapture.this);
-            this(r);
-        }
+       Inner(Runnable tr) {
+          tr.run();
+       }
+    }
 
-        public Inner(Runnable r) {
-        }
+    void m() {
+       System.out.println("Hello");
     }
 
     public static void main(String[] args) {
-        new LambdaOuterCapture().new Inner();
+       new LambdaLocalEarlyCrash().new Inner();
     }
 }

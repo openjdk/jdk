@@ -22,25 +22,26 @@
  */
 /*
  * @test
- * @bug 8334252
- * @summary Test lambda declared in early construction context
+ * @bug 8333313
+ * @summary Verify references to local classes declared in early construction contexts
  * @enablePreview
  */
+public class EarlyLocalTest4 {
 
-public class LambdaOuterCapture {
-
-    public class Inner {
-
-        public Inner() {
-            Runnable r = () -> System.out.println(LambdaOuterCapture.this);
-            this(r);
-        }
-
-        public Inner(Runnable r) {
+    class Test {
+        Test() {
+            class InnerLocal { }
+            Runnable r = new Runnable() {
+                public void run() {
+                    new InnerLocal();
+                }
+            };
+            r.run();
+            super();
         }
     }
 
     public static void main(String[] args) {
-        new LambdaOuterCapture().new Inner();
+        new EarlyLocalTest4().new Test();
     }
 }

@@ -22,25 +22,21 @@
  */
 /*
  * @test
- * @bug 8334252
- * @summary Test lambda declared in early construction context
- * @enablePreview
+ * @bug 8333766
+ * @summary Test for compiler crash when anonymous class created in early lambda
  */
 
-public class LambdaOuterCapture {
-
-    public class Inner {
-
-        public Inner() {
-            Runnable r = () -> System.out.println(LambdaOuterCapture.this);
-            this(r);
+public class AnonSuperLambdaCrash {
+    class Inner {
+        Inner() {
+            this(() -> new Object() { { AnonSuperLambdaCrash.this.hashCode(); } });
         }
-
-        public Inner(Runnable r) {
+        Inner(Runnable r) {
+            r.run();
         }
     }
 
     public static void main(String[] args) {
-        new LambdaOuterCapture().new Inner();
+        new AnonSuperLambdaCrash().new Inner();
     }
 }
