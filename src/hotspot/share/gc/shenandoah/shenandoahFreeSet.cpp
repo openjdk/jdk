@@ -1136,6 +1136,7 @@ void ShenandoahFreeSet::log_status() {
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
   if (LogTarget(Debug, gc, free)::is_enabled()) {
+    ShenandoahHeapLocker locker(_heap->lock());
 #define BUFFER_SIZE 80
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     size_t consumed_collector = 0;
@@ -1189,6 +1190,7 @@ void ShenandoahFreeSet::log_status() {
 
   LogTarget(Info, gc, free) lt;
   if (lt.is_enabled()) {
+    ShenandoahHeapLocker locker(_heap->lock());
     ResourceMark rm;
     LogStream ls(lt);
 
