@@ -31,7 +31,7 @@ public class InetSocketAddress extends SocketAddress {
     @java.io.Serial
     private static final long serialVersionUID = 5076001401234631237L;
 
-    public static boolean enableDelay;
+    private static boolean enableDelay;
 
     static {
         System.out.println("patched InetSocketAddress class in use");
