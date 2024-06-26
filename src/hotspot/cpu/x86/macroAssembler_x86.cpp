@@ -4536,7 +4536,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                            Label& L_success) {
   Label L_failure;
   check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg,        &L_success, &L_failure, nullptr);
-  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, noreg, &L_success, nullptr);
+  check_klass_subtype_slow_path
+    (sub_klass, super_klass, temp_reg, noreg, noreg, noreg, &L_success, nullptr);
   bind(L_failure);
 }
 
@@ -4736,6 +4737,39 @@ void MacroAssembler::check_klass_subtype_slow_path_1(Register sub_klass,
   bind(L_fallthrough);
 }
 
+#ifndef _LP64
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  check_klass_subtype_slow_path_1
+    (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
+}
+
+#else // _LP64
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Register temp3_reg,
+                                                   Register temp4_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure) {
+  if (! UseSecondarySupersTable) {
+    check_klass_subtype_slow_path_1
+      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
+  } else {
+    check_klass_subtype_slow_path_2
+      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
+       L_success, L_failure, /*set_cond_codes*/false);
+  }
+}
+
 Register MacroAssembler::allocate_if_noreg(Register r,
                                   RegSetIterator<Register> &available_regs,
                                   RegSet &regs_to_push) {
@@ -4746,7 +4780,6 @@ Register MacroAssembler::allocate_if_noreg(Register r,
   }
   return r;
 }
-
 
 void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
                                                      Register super_klass,
@@ -4769,7 +4802,7 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
   if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1, "at most one null in the batch");
 
-  BLOCK_COMMENT("check_klass_subtype_slow_path");
+  BLOCK_COMMENT("check_klass_subtype_slow_path_2");
 
   RegSetIterator<Register> available_regs
     = (RegSet::of(rax, rcx, rdx, r8) + r9 + r10 + r11 + r12 - temps - sub_klass - super_klass).begin();
@@ -4814,25 +4847,6 @@ void MacroAssembler::check_klass_subtype_slow_path_2(Register sub_klass,
 
   bind(L_fallthrough);
 }
-
-void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
-                                                   Register super_klass,
-                                                   Register temp_reg,
-                                                   Register temp2_reg,
-                                                   Label* L_success,
-                                                   Label* L_failure,
-                                                   bool set_cond_codes) {
-  if (! UseSecondarySupersTable) {
-    check_klass_subtype_slow_path_1
-      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
-  } else {
-    check_klass_subtype_slow_path_2
-      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
-       L_success, L_failure, set_cond_codes);
-  }
-}
-
-#ifdef _LP64
 
 // population_count variant for running without the POPCNT
 // instruction, which was introduced with SSE4.2 in 2008.
@@ -4926,7 +4940,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   RegSetIterator<Register> available_regs = (temps - rcx).begin();
 
-  // We need to have our shift count in rcx. If rcx is one of our
+  // We prefer to have our shift count in rcx. If rcx is one of our
   // temps, use it for slot. If not, pick any of our temps.
   Register slot;
   if (!temps.contains(rcx)) {

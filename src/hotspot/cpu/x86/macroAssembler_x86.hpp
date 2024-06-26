@@ -647,6 +647,15 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Register temp3_reg,
+                                     Register temp4_reg,
+                                     Label* L_success,
+                                     Label* L_failure);
+
   void check_klass_subtype_slow_path_1(Register sub_klass,
                                        Register super_klass,
                                        Register temp_reg,
@@ -681,6 +690,7 @@ public:
                                      Register result,
                                      u1 super_klass_slot);
 
+#ifdef _LP64
   using Assembler::salq;
   void salq(Register dest, Register count);
   using Assembler::rorq;
@@ -708,6 +718,7 @@ public:
                                      Register temp1,
                                      Register temp2,
                                      Register temp3);
+#endif
 
   void repne_scanq(Register addr, Register value, Register count, Register limit,
                    Label* L_success,
