@@ -254,6 +254,10 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   // Now we have to CAS in the header.
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
   oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_relaxed);
   if (forwardee == nullptr) {  // forwardee is null when forwarding is successful
     // We won any races, we "own" this object.
