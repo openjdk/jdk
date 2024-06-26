@@ -97,8 +97,8 @@ abstract public class TLSBase {
     private static KeyManager[] getKeyManager(boolean empty) throws Exception {
         FileInputStream fis = null;
         if (!empty) {
-            fis = new FileInputStream(System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile);
+            fis = new FileInputStream(System.getProperty("test.src", "./") +
+                "/" + pathToStores + "/" + keyStoreFile);
         }
         // Load the keystore
         char[] pwd = passwd.toCharArray();
@@ -113,8 +113,8 @@ abstract public class TLSBase {
     private static TrustManager[] getTrustManager(boolean empty) throws Exception {
         FileInputStream fis = null;
         if (!empty) {
-            fis = new FileInputStream(System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile);
+            fis = new FileInputStream(System.getProperty("test.src", "./") +
+                "/" + pathToStores + "/" + trustStoreFile);
         }
         // Load the keystore
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -148,7 +148,6 @@ abstract public class TLSBase {
         // Clients sockets are kept in a hash table with the port as the key.
         ConcurrentHashMap<Integer, SSLSocket> clientMap =
                 new ConcurrentHashMap<>();
-        boolean exit = false;
         Thread t;
         List<Exception> exceptionList = new ArrayList<>();
 
@@ -157,13 +156,14 @@ abstract public class TLSBase {
             name = "server";
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(builder.km), TLSBase.getTrustManager(builder.tm), null);
+                sslContext.init(TLSBase.getKeyManager(builder.km),
+                    TLSBase.getTrustManager(builder.tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(builder.clientauth);
                 serverPort = ssock.getLocalPort();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                System.err.println("Failure during server initialization");
                 e.printStackTrace();
             }
 
@@ -178,6 +178,7 @@ abstract public class TLSBase {
                         try {
                             write(c, read(c));
                         } catch (Exception e) {
+                            System.out.println("Caught " + e.getMessage());
                             e.printStackTrace();
                             exceptionList.add(e);
                         }
@@ -203,13 +204,14 @@ abstract public class TLSBase {
             name = "server";
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
+                sslContext.init(TLSBase.getKeyManager(km),
+                    TLSBase.getTrustManager(tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(true);
                 serverPort = ssock.getLocalPort();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                System.err.println("Failure during server initialization");
                 e.printStackTrace();
             }
 
@@ -224,7 +226,9 @@ abstract public class TLSBase {
                             try {
                                 write(c, read(c));
                             } catch (Exception e) {
+                                System.out.println("Caught " + e.getMessage());
                                 e.printStackTrace();
+                                exceptionList.add(e);
                             }
                         }
                     } catch (Exception ex) {
@@ -239,7 +243,7 @@ abstract public class TLSBase {
         // test or the test will never end.
         void done() {
             try {
-                t.interrupt();
+                t.join(5000);
                 ssock.close();
             } catch (Exception e) {
                 System.err.println(e.getMessage());
