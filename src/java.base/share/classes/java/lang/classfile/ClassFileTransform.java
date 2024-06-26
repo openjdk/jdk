@@ -121,11 +121,10 @@ public sealed interface ClassFileTransform<
      * this transform will become the input to the next transform.
      *
      * @apiNote This API is exposed for users' convenience to compose transforms.
-     * It's rarely proper for users to implement this method, as users cannot
-     * obtain a correct builder to pass to this transform after composition. Users
-     * can only pass the builder to the composed transform down to this transform
-     * if the {@code next} transform is known to preserve the elements presented
-     * by this transform as-is.
+     * The builder received by the resulting transform (or {@code next}) is
+     * suitable for this transform only if {@code next} simply passes through results
+     * without any side effects; otherwise {@code next} will fail to intercept
+     * or process some elements.
      *
      * @param next the downstream transform
      * @return the chained transform
