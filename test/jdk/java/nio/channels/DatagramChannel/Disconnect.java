@@ -35,7 +35,6 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 
 public class Disconnect {
@@ -71,23 +70,34 @@ public class Disconnect {
         }
     }
 
+    static int getLocalPort(DatagramChannel ch) throws IOException {
+        return ((InetSocketAddress) ch.getLocalAddress()).getPort();
+    }
+
     /**
      * Connect DatagramChannel to a server, write a datagram and disconnect. Invoke
      * a second or subsequent time with the same DatagramChannel instance to check
      * that disconnect works as expected.
      */
-    static void test(DatagramChannel dc, InetAddress l0) throws IOException {
+    static void test(DatagramChannel dc, InetAddress lo) throws IOException {
         try (DatagramChannel server = DatagramChannel.open()) {
-            server.bind(new InetSocketAddress(l0, 0));
+            server.bind(new InetSocketAddress(lo, 0));
 
-            dc.connect(new InetSocketAddress(l0, server.socket().getLocalPort()));
-            System.out.println("dc connected from " +
+            SocketAddress dcbound = dc.getLocalAddress();
+            dc.connect(new InetSocketAddress(lo, server.socket().getLocalPort()));
+            System.out.println("dc bound to " + dcbound + " and connected from " +
                     dc.getLocalAddress() + " to " + dc.getRemoteAddress());
 
             dc.write(ByteBuffer.wrap("hello".getBytes()));
 
-            ByteBuffer bb = ByteBuffer.allocate(100);
-            server.receive(bb);
+            if (getLocalPort(dc) == getLocalPort(server)) {
+                ByteBuffer bb = ByteBuffer.allocate(100);
+                server.receive(bb);
+            } else {
+                // some systems may allow dc and server to bind to the same port.
+                // when that happen the datagram may never be received
+                System.out.println("Server and clients are bound to the same port: skipping receive");
+            }
 
             dc.disconnect();
 
