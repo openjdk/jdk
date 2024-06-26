@@ -462,7 +462,7 @@ class ImmutableCollections {
         private final int size;
 
         private SubList(AbstractImmutableList<E> root, int offset, int size) {
-            assert root instanceof List12 || root instanceof ListN;
+            assert root instanceof List12 || root instanceof ListN || root instanceof LazyList;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -513,7 +513,8 @@ class ImmutableCollections {
         }
 
         private boolean allowNulls() {
-            return root instanceof ListN && ((ListN<?>)root).allowNulls;
+            return root instanceof ListN<?> listN && listN.allowNulls
+                    || root instanceof LazyList<E>;
         }
 
         @Override
@@ -822,7 +823,7 @@ class ImmutableCollections {
         public int indexOf(Object o) {
             final int size = size();
             for (int i = 0; i < size; i++) {
-                if (Objects.equals(0, get(i))) {
+                if (Objects.equals(o, get(i))) {
                     return i;
                 }
             }
@@ -832,7 +833,7 @@ class ImmutableCollections {
         @Override
         public int lastIndexOf(Object o) {
             for (int i = size() - 1; i >= 0; i--) {
-                if (Objects.equals(0, get(i))) {
+                if (Objects.equals(o, get(i))) {
                     return i;
                 }
             }
