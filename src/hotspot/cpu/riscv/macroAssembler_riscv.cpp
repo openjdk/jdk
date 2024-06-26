@@ -1318,7 +1318,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  */
 void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
         Register table0, Register table1, Register table2, Register table3, bool upper) {
-  assert_different_registers(crc, v, tmp1, tmp2, table0, table1, table2, table3);
+  assert_different_registers(crc, v, tmp1, tmp2, tmp3, table0, table1, table2, table3);
 
   if (upper)
     srli(v, v, 32);
@@ -1365,7 +1365,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
-  assert_different_registers(crc, buf, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5);
+  assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
   Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   const int64_t unroll = 16;
