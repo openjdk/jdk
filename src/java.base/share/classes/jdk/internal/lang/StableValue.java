@@ -25,12 +25,13 @@
 
 package jdk.internal.lang;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.CachedFunction;
 import jdk.internal.lang.stable.CachedIntFunction;
 import jdk.internal.lang.stable.CachedSupplier;
-import jdk.internal.lang.stable.LazyList;
 import jdk.internal.lang.stable.StableValueImpl;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -357,21 +358,22 @@ public sealed interface StableValue<T>
     /**
      * {@return a lazy, immutable, stable List of the provided {@code size} where the
      * individual elements of the list are lazily computed vio the provided
-     * {@code mapper} whenever an element is first accessed (directly or indirectly) via
-     * {@linkplain List#get(int)}}
+     * {@code mapper} whenever an element is first accessed (directly or indirectly),
+     * for example via {@linkplain List#get(int)}}
      * <p>
      * The provided {@code mapper} IntFunction is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain IntFunction#apply(int)} method when a value is
-     * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread.
+     * threads accessing an element already under computation will block until an element
+     * is computed or an exception is thrown by the computing thread.
      * <p>
      * If the {@code mapper} IntFunction invokes the returned IntFunction recursively
-     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * for a particular index, a StackOverflowError will be thrown when the returned
      * List's {@linkplain List#get(int)} method is invoked.
      * <p>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
-     * to the initial caller.
+     * to the initial caller and no element is computed.
+     * <p>
+     * The returned List is not {@linkplain Serializable}
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed
@@ -382,27 +384,28 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(mapper);
-        return LazyList.of(size, mapper);
+        return SharedSecrets.getJavaUtilCollectionAccess().lazyList(size, mapper);
     }
 
     /**
      * {@return a lazy, immutable, stable Map of the provided {@code keys} where the
      * associated values of the maps are lazily computed vio the provided
-     * {@code mapper} whenever a value is first accessed (directly or indirectly) via
-     * {@linkplain Map#get(Object)}}
+     * {@code mapper} whenever a value is first accessed (directly or indirectly), for
+     * example via {@linkplain Map#get(Object)}}
      * <p>
      * The provided {@code mapper} Function is guaranteed to be successfully invoked
      * at most once per key, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain Map#get(Object)} method when a value is
-     * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread.
+     * threads accessing an associated value already under computation will block until
+     * an associated value is computed or an exception is thrown by the computing thread.
      * <p>
      * If the {@code mapper} Function invokes the returned Map recursively
      * for a particular key, a StackOverflowError will be thrown when the returned
      * Map's {@linkplain Map#get(Object)}} method is invoked.
      * <p>
      * If the provided {@code mapper} Function throws an exception, it is relayed
-     * to the initial caller.
+     * to the initial caller and no value is computed.
+     * <p>
+     * The returned Map is not {@linkplain Serializable}
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
@@ -412,7 +415,7 @@ public sealed interface StableValue<T>
     static <K, V> Map<K, V> lazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        throw new UnsupportedOperationException();
+        return SharedSecrets.getJavaUtilCollectionAccess().lazyMap(keys, mapper);
     }
 
 }

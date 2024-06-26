@@ -115,54 +115,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value() != null;
     }
 
-/*    @ForceInline
-    @Override
-    public T computeIfUnset(Supplier<? extends T> supplier) {
-        final T t = value();
-        if (t != null) {
-            return unwrap(t);
-        }
-        return tryCompute(null, supplier);
-    }
-
-    @ForceInline
-    @Override
-    public <I> T mapIfUnset(I input, Function<? super I, ? extends T> function) {
-        final T t = value();
-        if (t != null) {
-            return unwrap(t);
-        }
-        return tryCompute(input, function);
-    }
-
-    @SuppressWarnings("unchecked")
-    @DontInline
-    private <I> T tryCompute(I input, Object provider) {
-        Object m = acquireMutex();
-        if (m == TOMBSTONE) {
-            // A holder value must already be set as a holder value store
-            // happens before a mutex TOMBSTONE store
-            return unwrap(value());
-        }
-        synchronized (m) {
-            // The one-and-only update of the `value` field is always made under
-            // `mutex` synchronization meaning plain memory semantics is enough here.
-            T t = valuePlain();
-            if (t != null) {
-                return unwrap(t);
-            }
-            if (provider instanceof Supplier<?> supplier) {
-                t = (T) supplier.get();
-            } else {
-                t = ((Function<I, T>) provider).apply(input);
-            }
-            set0(t);
-            // The holder value store must happen before the mutex release
-            releaseMutex();
-            return t;
-        }
-    }*/
-
     @Override
     public int hashCode() {
         return Objects.hashCode(value());
@@ -216,7 +168,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
-    // Factory for creating new StableValue instances
+    // Factories
+
     public static <T> StableValueImpl<T> newInstance() {
         return new StableValueImpl<>();
     }
