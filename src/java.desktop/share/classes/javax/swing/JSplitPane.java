@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,6 +362,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     }
 
+
     /**
      * {@inheritDoc}
      * @param enabled {@inheritDoc}
@@ -369,7 +370,9 @@ public class JSplitPane extends JComponent implements Accessible
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-        ((BasicSplitPaneUI)(this.getUI())).getDivider().setEnabled(enabled);
+        if (this.getUI() instanceof BasicSplitPaneUI) {
+            ((BasicSplitPaneUI)(this.getUI())).getDivider().setEnabled(enabled);
+        }
     }
 
     /**
@@ -584,6 +587,7 @@ public class JSplitPane extends JComponent implements Accessible
         firePropertyChange(ONE_TOUCH_EXPANDABLE_PROPERTY, oldValue, newValue);
         repaint();
     }
+
 
     /**
      * Gets the <code>oneTouchExpandable</code> property.
