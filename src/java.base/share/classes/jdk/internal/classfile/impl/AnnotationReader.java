@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ class AnnotationReader {
     }
 
     private static Annotation readAnnotation(ClassReader classReader, int p) {
-        Utf8Entry annotationClass = classReader.utf8EntryByIndex(classReader.readU2(p));
+        Utf8Entry annotationClass = classReader.entryByIndex(classReader.readU2(p), Utf8Entry.class);
         p += 2;
         List<AnnotationElement> elems = readAnnotationElementValuePairs(classReader, p);
         return new AnnotationImpl(annotationClass, elems);

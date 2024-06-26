@@ -950,7 +950,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   ResourceMark rm(thread);
   InterpreterOopMap mask;
   if (query_oop_map_cache) {
-    m->mask_for(bci, &mask);
+    m->mask_for(m, bci, &mask);
   } else {
     OopMapCache::compute_one_oop_map(m, bci, &mask);
   }

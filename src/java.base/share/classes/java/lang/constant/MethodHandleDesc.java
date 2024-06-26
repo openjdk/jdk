@@ -28,6 +28,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import jdk.internal.constant.DirectMethodHandleDescImpl;
+
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
 

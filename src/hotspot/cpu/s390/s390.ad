@@ -10675,10 +10675,49 @@ instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr
 
 // bit count
 
+instruct popCountI_Ext3(iRegI dst, iRegI src, flagsReg cr) %{
+  match(Set dst (PopCountI src));
+  effect(TEMP_DEF dst, KILL cr);
+  predicate(UsePopCountInstruction &&
+            VM_Version::has_PopCount() &&
+            VM_Version::has_MiscInstrExt3());
+  ins_cost(DEFAULT_COST);
+  size(8); // popcnt + llgfr
+  format %{ "POPCNT  $dst,$src\t # pop count int" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+
+    __ pop_count_int_with_ext3(Rdst, Rsrc);
+
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct popCountL_Ext3(iRegI dst, iRegL src, flagsReg cr) %{
+  match(Set dst (PopCountL src));
+  effect(TEMP_DEF dst, KILL cr);
+  predicate(UsePopCountInstruction &&
+            VM_Version::has_PopCount() &&
+            VM_Version::has_MiscInstrExt3());
+  ins_cost(DEFAULT_COST);
+  size(4); // popcnt
+  format %{ "POPCNT  $dst,$src\t # pop count long" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+
+    __ pop_count_long_with_ext3(Rdst, Rsrc);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct popCountI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
   match(Set dst (PopCountI src));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  predicate(UsePopCountInstruction && VM_Version::has_PopCount());
+  predicate(UsePopCountInstruction &&
+            VM_Version::has_PopCount() &&
+            (!VM_Version::has_MiscInstrExt3()));
   ins_cost(DEFAULT_COST);
   size(24);
   format %{ "POPCNT  $dst,$src\t # pop count int" %}
@@ -10687,17 +10726,8 @@ instruct popCountI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
 
-    // Prefer compile-time assertion over run-time SIGILL.
-    assert(VM_Version::has_PopCount(), "bad predicate for countLeadingZerosI");
-    assert_different_registers(Rdst, Rtmp);
+    __ pop_count_int_without_ext3(Rdst, Rsrc, Rtmp);
 
-    // Version 2: shows 10%(z196) improvement over original.
-    __ z_popcnt(Rdst, Rsrc);
-    __ z_srlg(Rtmp, Rdst, 16); // calc  byte4+byte6 and byte5+byte7
-    __ z_alr(Rdst, Rtmp);      //   into byte6 and byte7
-    __ z_srlg(Rtmp, Rdst,  8); // calc (byte4+byte6) + (byte5+byte7)
-    __ z_alr(Rdst, Rtmp);      //   into byte7
-    __ z_llgcr(Rdst, Rdst);    // zero-extend sum
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10705,27 +10735,18 @@ instruct popCountI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
 instruct popCountL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
   match(Set dst (PopCountL src));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  predicate(UsePopCountInstruction && VM_Version::has_PopCount());
+  predicate(UsePopCountInstruction &&
+            VM_Version::has_PopCount() &&
+            (!VM_Version::has_MiscInstrExt3()));
   ins_cost(DEFAULT_COST);
-  // TODO: s390 port size(FIXED_SIZE);
+  size(34);
   format %{ "POPCNT  $dst,$src\t # pop count long" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
 
-    // Prefer compile-time assertion over run-time SIGILL.
-    assert(VM_Version::has_PopCount(), "bad predicate for countLeadingZerosI");
-    assert_different_registers(Rdst, Rtmp);
-
-    // Original version. Using LA instead of algr seems to be a really bad idea (-35%).
-    __ z_popcnt(Rdst, Rsrc);
-    __ z_ahhlr(Rdst, Rdst, Rdst);
-    __ z_sllg(Rtmp, Rdst, 16);
-    __ z_algr(Rdst, Rtmp);
-    __ z_sllg(Rtmp, Rdst,  8);
-    __ z_algr(Rdst, Rtmp);
-    __ z_srlg(Rdst, Rdst, 56);
+    __ pop_count_long_without_ext3(Rdst, Rsrc, Rtmp);
   %}
   ins_pipe(pipe_class_dummy);
 %}

@@ -28,6 +28,7 @@ package java.io;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.event.FileReadEvent;
 import sun.nio.ch.FileChannelImpl;
 
 /**
@@ -58,6 +59,12 @@ import sun.nio.ch.FileChannelImpl;
 public class FileInputStream extends InputStream
 {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file reads should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
@@ -222,10 +229,35 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read() throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceRead0();
+        }
         return read0();
     }
 
     private native int read0() throws IOException;
+
+    private int traceRead0() throws IOException {
+        int result = 0;
+        boolean endOfFile = false;
+        long bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            result = read0();
+            if (result < 0) {
+                endOfFile = true;
+            } else {
+                bytesRead = 1;
+            }
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
+            }
+        }
+        return result;
+    }
 
     /**
      * Reads a subarray as a sequence of bytes.
@@ -235,6 +267,25 @@ public class FileInputStream extends InputStream
      * @throws    IOException If an I/O error has occurred.
      */
     private native int readBytes(byte[] b, int off, int len) throws IOException;
+
+    private int traceReadBytes(byte b[], int off, int len) throws IOException {
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = readBytes(b, off, len);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
@@ -249,6 +300,9 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes(b, 0, b.length);
+        }
         return readBytes(b, 0, b.length);
     }
 
@@ -268,6 +322,9 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes(b, off, len);
+        }
         return readBytes(b, off, len);
     }
 

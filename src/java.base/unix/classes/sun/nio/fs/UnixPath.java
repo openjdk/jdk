@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -803,8 +803,7 @@ class UnixPath implements Path {
         // OK if two or more threads compute hash
         int h = hash;
         if (h == 0) {
-            h = ArraysSupport.vectorizedHashCode(path, 0, path.length, 0,
-                    /* unsigned bytes */ ArraysSupport.T_BOOLEAN);
+            h = ArraysSupport.hashCodeOfUnsigned(path, 0, path.length, 0);
             hash = h;
         }
         return h;

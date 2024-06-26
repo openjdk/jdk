@@ -165,6 +165,7 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
+        java.management.rmi,
         java.naming,
         java.rmi,
         jdk.charsets,
@@ -418,20 +419,5 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
-
-    provides java.util.random.RandomGenerator with
-        java.security.SecureRandom,
-        java.util.Random,
-        java.util.SplittableRandom,
-        jdk.internal.random.L32X64MixRandom,
-        jdk.internal.random.L64X128MixRandom,
-        jdk.internal.random.L64X128StarStarRandom,
-        jdk.internal.random.L64X256MixRandom,
-        jdk.internal.random.L64X1024MixRandom,
-        jdk.internal.random.L128X128MixRandom,
-        jdk.internal.random.L128X256MixRandom,
-        jdk.internal.random.L128X1024MixRandom,
-        jdk.internal.random.Xoroshiro128PlusPlus,
-        jdk.internal.random.Xoshiro256PlusPlus;
 
 }

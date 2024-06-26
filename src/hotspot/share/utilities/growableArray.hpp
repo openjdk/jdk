@@ -153,17 +153,31 @@ public:
     return &_data[i];
   }
 
-  E first() const {
+  E& first() {
     assert(_len > 0, "empty");
     return _data[0];
   }
 
-  E top() const {
+  E const& first() const {
     assert(_len > 0, "empty");
-    return _data[_len-1];
+    return _data[0];
   }
 
-  E last() const {
+  E& top() {
+    assert(_len > 0, "empty");
+    return _data[_len - 1];
+  }
+
+  E const& top() const {
+    assert(_len > 0, "empty");
+    return _data[_len - 1];
+  }
+
+  E& last() {
+    return top();
+  }
+
+  E const& last() const {
     return top();
   }
 
@@ -287,10 +301,12 @@ public:
   }
 
   void sort(int f(E*, E*)) {
+    if (_data == nullptr) return;
     qsort(_data, length(), sizeof(E), (_sort_Fn)f);
   }
   // sort by fixed-stride sub arrays:
   void sort(int f(E*, E*), int stride) {
+    if (_data == nullptr) return;
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
@@ -408,7 +424,7 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  E at_grow(int i, const E& fill = E()) {
+  E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);

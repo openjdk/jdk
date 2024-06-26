@@ -148,10 +148,6 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   if (!m.is_forwarded()) {
     return copy_unmarked_to_survivor_space<promote_immediately>(o, m);
   } else {
-    // Ensure any loads from the forwardee follow all changes that precede
-    // the release-cmpxchg that performed the forwarding, possibly in some
-    // other thread.
-    OrderAccess::acquire();
     // Return the already installed forwardee.
     return m.forwardee();
   }
@@ -258,8 +254,11 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   // Now we have to CAS in the header.
-  // Make copy visible to threads reading the forwardee.
-  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_release);
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
+  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_relaxed);
   if (forwardee == nullptr) {  // forwardee is null when forwarding is successful
     // We won any races, we "own" this object.
     assert(new_obj == o->forwardee(), "Sanity");
@@ -295,9 +294,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-    // Ensure loads from the forwardee follow all changes that preceded the
-    // release-cmpxchg that performed the forwarding in another thread.
-    OrderAccess::acquire();
 
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
     assert(o->forwardee() == forwardee, "invariant");

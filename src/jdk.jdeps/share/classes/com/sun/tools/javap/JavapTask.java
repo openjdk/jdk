@@ -221,6 +221,13 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
         },
 
+        new Option(false, "-verify") {
+            @Override
+            void process(JavapTask task, String opt, String arg) {
+                task.options.verify = true;
+            }
+        },
+
         new Option(false, "-XDdetails") {
             @Override
             void process(JavapTask task, String opt, String arg) {
@@ -674,7 +681,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         if (options.showInnerClasses) {
             ClassModel cm = cfInfo.cm;
-            var a = cm.findAttribute(java.lang.classfile.Attributes.INNER_CLASSES);
+            var a = cm.findAttribute(java.lang.classfile.Attributes.innerClasses());
             if (a.isPresent()) {
                 var inners = a.get();
                 try {

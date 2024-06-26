@@ -90,13 +90,13 @@ public class LocalVariableTable {
             return;
         }
 
-        CodeAttribute code = m.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute code = m.findAttribute(Attributes.code()).orElse(null);
         if (code == null) {
             error("Code attribute not found");
             return;
         }
 
-        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null);
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.localVariableTable()).orElse(null);
         if (lvt == null) {
             error("LocalVariableTable attribute not found");
             return;

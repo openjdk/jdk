@@ -94,7 +94,9 @@
   product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
           "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
                                                                         \
-
+  product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
+          "Print an annotated memory map at exit")                      \
+                                                                        \
 // end of RUNTIME_OS_FLAGS
 
 //

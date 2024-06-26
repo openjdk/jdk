@@ -31,6 +31,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@linkplain MethodType} constant.
@@ -64,7 +69,7 @@ public sealed interface MethodTypeDesc
      * @since 21
      */
     static MethodTypeDesc of(ClassDesc returnDesc) {
-        return MethodTypeDescImpl.ofTrusted(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+        return MethodTypeDescImpl.ofValidated(requireNonNull(returnDesc), ConstantUtils.EMPTY_CLASSDESC);
     }
 
     /**

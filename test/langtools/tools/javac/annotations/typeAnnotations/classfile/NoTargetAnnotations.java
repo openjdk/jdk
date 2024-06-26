@@ -71,8 +71,8 @@ public class NoTargetAnnotations extends ClassfileTestHelper {
 
 
     void testDeclaration(AttributedElement m) {
-        testDecl(m, Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
-        testDecl(m, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
+        testDecl(m, Attributes.runtimeVisibleAnnotations());
+        testDecl(m, Attributes.runtimeInvisibleAnnotations());
     }
 
     // test the result of AttributedElement.findAttribute according to expectations

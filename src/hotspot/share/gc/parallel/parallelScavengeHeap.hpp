@@ -243,12 +243,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // generation may be expanded in preparation for the resize.
   void resize_old_gen(size_t desired_free_space);
 
-  // Save the tops of the spaces in all generations
-  void record_gen_tops_before_GC() PRODUCT_RETURN;
-
-  // Mangle the unused parts of all spaces in the heap
-  void gen_mangle_unused_area() PRODUCT_RETURN;
-
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
 

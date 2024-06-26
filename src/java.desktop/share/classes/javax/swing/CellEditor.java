@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,12 +85,12 @@ public interface CellEditor {
 
     /**
      * Returns true if the editing cell should be selected, false otherwise.
-     * Typically, the return value is true, because is most cases the editing
+     * Typically, the return value is true, because in most cases the editing
      * cell should be selected.  However, it is useful to return false to
-     * keep the selection from changing for some types of edits.
-     * eg. A table that contains a column of check boxes, the user might
+     * keep the selection from changing for some types of edits,
+     * e.g. in a table that contains a column of check boxes, the user might
      * want to be able to change those checkboxes without altering the
-     * selection.  (See Netscape Communicator for just such an example)
+     * selection.
      * Of course, it is up to the client of the editor to use the return
      * value, but it doesn't need to if it doesn't want to.
      *
