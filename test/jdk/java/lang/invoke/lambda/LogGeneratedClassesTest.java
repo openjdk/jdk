@@ -225,7 +225,7 @@ public class LogGeneratedClassesTest {
         }
         if (!fs.supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
-            // Same as above, return instead of SkipException("Posix not supported")
+            // Same as above, return instead of throw SkipException("Posix not supported")
             System.out.println("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
             return;
         }
