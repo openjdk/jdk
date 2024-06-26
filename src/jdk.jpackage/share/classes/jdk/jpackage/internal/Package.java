@@ -99,6 +99,18 @@ interface Package {
         return app().appLayout();
     }
 
+    default ApplicationLayout installedAppLayout() {
+        Path root = relativeInstallDir();
+        if (type() instanceof StandardPackageType type) {
+            switch (type) {
+                case LinuxDeb, LinuxRpm, MacDmg, MacPkg -> {
+                    root = Path.of("/").resolve(root);
+                }
+            }
+        }
+        return appLayout().resolveAt(root);
+    }
+
     /**
      * Returns package file name.
      */

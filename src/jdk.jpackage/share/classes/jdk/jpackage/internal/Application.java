@@ -34,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingBiFunction.toBiFunction;
+import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
@@ -97,6 +98,36 @@ interface Application {
         return Optional.ofNullable(mainLauncher()).map(main -> {
             return Stream.concat(Stream.of(main), additionalLaunchers().stream()).toList();
         }).orElse(List.of());
+    }
+
+    default OverridableResource createLauncherIconResource(Launcher launcher, String defaultIconName,
+            Function<String, OverridableResource> resourceSupplier) {
+        final String resourcePublicName = launcher.name() + IOUtils.getSuffix(Path.of(
+                defaultIconName));
+
+        var iconType = Internal.getLauncherIconType(launcher.icon());
+        if (iconType == Internal.IconType.NoIcon) {
+            return null;
+        }
+
+        OverridableResource resource = resourceSupplier.apply(defaultIconName)
+                .setCategory("icon")
+                .setExternal(launcher.icon())
+                .setPublicName(resourcePublicName);
+
+        if (iconType == Internal.IconType.DefaultOrResourceDirIcon && mainLauncher() != launcher) {
+            // No icon explicitly configured for this launcher.
+            // Dry-run resource creation to figure out its source.
+            final Path nullPath = null;
+            if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
+                // No icon in resource dir for this launcher, inherit icon
+                // configured for the main launcher.
+                return createLauncherIconResource(mainLauncher(), defaultIconName, resourceSupplier)
+                        .setLogPublicName(resourcePublicName);
+            }
+        }
+
+        return resource;
     }
 
     static record Impl(String name, String description, String version, String vendor,
@@ -224,4 +255,23 @@ interface Application {
                 return toBiFunction(Application::createFromParams).apply(params,
                         Launcher::createFromParams);
             }, null);
+
+    static class Internal {
+
+        private enum IconType {
+            DefaultOrResourceDirIcon, CustomIcon, NoIcon
+        };
+
+        private static IconType getLauncherIconType(Path iconPath) {
+            if (iconPath == null) {
+                return IconType.DefaultOrResourceDirIcon;
+            }
+
+            if (iconPath.toFile().getName().isEmpty()) {
+                return IconType.NoIcon;
+            }
+
+            return IconType.CustomIcon;
+        }
+    }
 }
