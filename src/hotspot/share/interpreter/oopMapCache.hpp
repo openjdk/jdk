@@ -183,8 +183,8 @@ class OopMapCache : public CHeapObj<mtClass> {
   // Check if we need to clean up old entries
   static bool has_cleanup_work();
 
-  // Request cleanup if work is needed
-  static void trigger_cleanup();
+  // Request cleanup if work is needed and notification is currently possible
+  static void try_trigger_cleanup();
 
   // Clean up the old entries
   static void cleanup();
