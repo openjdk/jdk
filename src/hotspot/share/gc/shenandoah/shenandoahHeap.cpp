@@ -378,7 +378,6 @@ jint ShenandoahHeap::initialize() {
 
     _free_set->rebuild();
   }
-
   _free_set->log_status();
 
   if (AlwaysPreTouch) {
