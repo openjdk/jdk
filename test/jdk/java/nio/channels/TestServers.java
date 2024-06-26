@@ -497,6 +497,7 @@ public class TestServers {
             implements Runnable, Closeable {
 
         protected final long linger; // #of ms to wait before responding
+        protected final InetAddress bindAddress; //local address to bind to; can be null.
         private Thread acceptThread; // thread waiting for packets
         private DatagramSocket serverSocket; // the server socket
         private boolean started = false; // whether the server is started
@@ -509,7 +510,19 @@ public class TestServers {
          * responding to requests.
          */
         protected AbstractUdpServer(long linger) {
+            this(linger, null);
+        }
+
+        /**
+         *
+         * @param linger the amount of time the server should wait before
+         *          responding to requests.
+         * @param bindAddress the address to bind to. If {@code null}, will
+         *                    bind to InetAddress.getLocalHost();
+         */
+        protected AbstractUdpServer(long linger, InetAddress bindAddress) {
             this.linger = linger;
+            this.bindAddress = bindAddress;
         }
 
         /**
@@ -574,8 +587,9 @@ public class TestServers {
             if (started) {
                 return;
             }
+            InetAddress lh = bindAddress == null ? InetAddress.getLocalHost() : bindAddress;
             final DatagramSocket socket =
-                    newDatagramSocket(0, InetAddress.getLocalHost());
+                    newDatagramSocket(0, lh);
             serverSocket = socket;
             acceptThread = new Thread(this);
             acceptThread.setDaemon(true);
@@ -759,7 +773,11 @@ public class TestServers {
         }
 
         public UdpEchoServer(long linger) {
-            super(linger);
+            this(linger, null);
+        }
+
+        public UdpEchoServer(long linger, InetAddress bindAddress) {
+            super(linger, bindAddress);
         }
 
         @Override
@@ -795,7 +813,11 @@ public class TestServers {
         }
 
         public static UdpEchoServer startNewServer(long linger) throws IOException {
-            final UdpEchoServer echoServer = new UdpEchoServer(linger);
+            return startNewServer(0, InetAddress.getLocalHost());
+        }
+
+        public static UdpEchoServer startNewServer(long linger, InetAddress bindAddress) throws IOException {
+            final UdpEchoServer echoServer = new UdpEchoServer(linger, bindAddress);
             echoServer.start();
             return echoServer;
         }
