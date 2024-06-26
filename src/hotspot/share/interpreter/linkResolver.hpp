@@ -243,14 +243,14 @@ class LinkResolver: AllStatic {
                                                  Handle recv,
                                                  Klass* recv_klass,
                                                  bool check_null_and_abstract,
-                                                 bool need_selected_method, TRAPS);
+                                                 bool is_abstract_interpretation, TRAPS);
   static void runtime_resolve_interface_method  (CallInfo& result,
                                                  const methodHandle& resolved_method,
                                                  Klass* resolved_klass,
                                                  Handle recv,
                                                  Klass* recv_klass,
                                                  bool check_null_and_abstract,
-                                                 bool needs_selected_methods, TRAPS);
+                                                 bool is_abstract_interpretation, TRAPS);
 
   static bool resolve_previously_linked_invokehandle(CallInfo& result,
                                                      const LinkInfo& link_info,

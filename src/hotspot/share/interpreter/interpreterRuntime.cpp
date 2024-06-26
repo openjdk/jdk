@@ -668,7 +668,6 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  ConstantPoolCache* cache = pool->cache();
   if (pool->resolved_field_entry_at(field_index)->is_resolved(bytecode)) return;
 
   // compute auxiliary field attributes
