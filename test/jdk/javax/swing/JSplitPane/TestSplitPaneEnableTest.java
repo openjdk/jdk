@@ -30,10 +30,8 @@
  */
 
 import java.awt.Point;
-import java.awt.Robot;
 import java.awt.event.InputEvent;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JSplitPane;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
@@ -44,7 +42,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class TestSplitPaneEnableTest {
     private static JButton leftOneTouchButton;
     private static JButton rightOneTouchButton;
-    private static JFrame frame;
     private static JSplitPane jsp;
     private static volatile boolean btnEnabled;
 
@@ -60,7 +57,6 @@ public class TestSplitPaneEnableTest {
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             if (laf.getClassName().toLowerCase().contains("gtk")) {
                 continue;
@@ -68,38 +64,20 @@ public class TestSplitPaneEnableTest {
             System.out.println("Testing LAF : " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame("SplitPaneTest");
-                    jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                         new JButton("Left"),
-                                         new JButton("Right"));
-
-                    frame.add(jsp);
-                    jsp.setUI(new TestSplitPaneUI());
-                    jsp.setOneTouchExpandable(true);
-
-                    jsp.setEnabled(false);
-
-                });
-
-                robot.waitForIdle();
-                robot.delay(500);
-
-                SwingUtilities.invokeAndWait(() -> {
-                    btnEnabled = leftOneTouchButton.isEnabled();
-                });
-                System.out.println("leftOneTouchButton.isEnabled " + btnEnabled);
-                if (btnEnabled) {
-                    throw new RuntimeException("Arrow buttons still enabled for disabled splitpane");
+            SwingUtilities.invokeAndWait(() -> {
+                JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                                new JButton("Left"), new JButton("Right"));
+                jsp.setUI(new TestSplitPaneUI());
+                jsp.setOneTouchExpandable(true);
+                jsp.setEnabled(false);
+                if (leftOneTouchButton.isEnabled()) {
+                    throw new RuntimeException("leftButton is enabled for disabled JSplitPane");
                 }
-            } finally {
-                SwingUtilities.invokeAndWait(() -> {
-                    if (frame != null) {
-                        frame.dispose();
-                    }
-                });
-            }
+                if (rightOneTouchButton.isEnabled()) {
+                    throw new RuntimeException("rightButton is enabled for disabled JSplitPane");
+                }
+
+            });
         }
     }
 
