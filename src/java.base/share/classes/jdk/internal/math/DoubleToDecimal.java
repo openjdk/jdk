@@ -43,13 +43,13 @@ public final class DoubleToDecimal extends ToDecimal {
      * Use LATIN1 encoding to process the in-out byte[] str
      *
      */
-    public static final DoubleToDecimal LATIN1 = new DoubleToDecimal(ToDecimal.LATIN1);
+    public static final DoubleToDecimal LATIN1 = new DoubleToDecimal(true);
 
     /**
      * Use UTF16 encoding to process the in-out byte[] str
      *
      */
-    public static final DoubleToDecimal UTF16  = new DoubleToDecimal(ToDecimal.UTF16);
+    public static final DoubleToDecimal UTF16  = new DoubleToDecimal(false);
 
     /*
      * For full details about this code see the following references:
@@ -115,8 +115,8 @@ public final class DoubleToDecimal extends ToDecimal {
      */
     public static final int MAX_CHARS = H + 7;
 
-    private DoubleToDecimal(byte coder) {
-        super(coder);
+    private DoubleToDecimal(boolean latin1) {
+        super(latin1);
     }
 
     /**
@@ -211,7 +211,7 @@ public final class DoubleToDecimal extends ToDecimal {
                  * fd != null implies str == null and bits >= 0
                  * Thus, when fd != null, control never reaches here.
                  */
-                putChar(str, index++, '-');
+                index = putChar(str, index, '-');
             }
             if (bq != 0) {
                 /* normal value. Here mq = -q */
@@ -228,12 +228,9 @@ public final class DoubleToDecimal extends ToDecimal {
             }
             if (t != 0) {
                 /* subnormal value */
-                int dk = 0;
-                if (t < C_TINY) {
-                    t *= 10;
-                    dk = -1;
-                }
-                return toDecimal(str, index, Q_MIN, t, dk, fd) - start;
+                return (t < C_TINY
+                        ? toDecimal(str, index, Q_MIN, 10 * t, -1, fd)
+                        : toDecimal(str, index, Q_MIN, t, 0, fd)) - start;
             }
             return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
         }
@@ -455,9 +452,9 @@ public final class DoubleToDecimal extends ToDecimal {
     }
 
     private int exponent(byte[] str, int index, int e) {
-        putChar(str, index++, 'E');
+        index = putChar(str, index, 'E');
         if (e < 0) {
-            putChar(str, index++, '-');
+            index = putChar(str, index, '-');
             e = -e;
         }
         if (e < 10) {
@@ -470,7 +467,7 @@ public final class DoubleToDecimal extends ToDecimal {
              *     floor(e / 100) = floor(1_311 e / 2^17)
              */
             d = e * 1_311 >>> 17;
-            putDigit(str, index++, d);
+            index = putDigit(str, index, d);
             e -= 100 * d;
         }
         /*

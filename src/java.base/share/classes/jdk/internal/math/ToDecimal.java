@@ -44,24 +44,18 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     static final int MINUS_INF   = 4 << 8;
     static final int NAN         = 5 << 8;
 
-    static final byte LATIN1 = 0;
-    static final byte UTF16  = 1;
-
     /**
-     * The identifier of the encoding used to encode the bytes. The supported values in this implementation are
-     *
-     * LATIN1
-     * UTF16
+     * The identifier of the encoding used to encode the bytes. If latin1 is true, the encoding is LATIN1, false is UTF16
      *
      */
-    private final byte coder;
+    private final boolean latin1;
 
-    ToDecimal(byte coder) {
-        this.coder = coder;
+    ToDecimal(boolean latin1) {
+        this.latin1 = latin1;
     }
 
     final int putChar(byte[] str, int index, int c) {
-        if (coder == LATIN1) {
+        if (latin1) {
             str[index] = (byte) c;
         } else {
             JLA.putCharUTF16(str, index, (char) c);
@@ -78,7 +72,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
          * Left-to-right digits extraction:
          * algorithm 1 in [3], with b = 10, k = 8, n = 28.
          */
-        if (coder == LATIN1) {
+        if (latin1) {
             put8DigitsLatin1(str, index, m);
         } else {
             put8DigitsUTF16 (str, index, m);
@@ -119,7 +113,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     }
 
     final int removeTrailingZeroes(byte[] str, int index) {
-        if (coder == LATIN1) {
+        if (latin1) {
             while (str[index - 1] == '0') {
                 --index;
             }
@@ -143,7 +137,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     final int putSpecial(byte[] str, int index, int type) {
         String s = special(type);
         int length = s.length();
-        if (coder == LATIN1) {
+        if (latin1) {
             s.getBytes(0, length, str, index);
         } else {
             for (int i = 0; i < length; ++i) {
@@ -154,7 +148,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
     }
 
     final int length(byte[] str) {
-        return str.length >> coder;
+        return str.length >> (latin1 ? 0 : 1);
     }
 
     static String special(int type) {

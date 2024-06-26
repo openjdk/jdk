@@ -43,13 +43,13 @@ public final class FloatToDecimal extends ToDecimal {
      * Use LATIN1 encoding to process the in-out byte[] str
      *
      */
-    public static final FloatToDecimal LATIN1 = new FloatToDecimal(ToDecimal.LATIN1);
+    public static final FloatToDecimal LATIN1 = new FloatToDecimal(true);
 
     /**
      * Use UTF16 encoding to process the in-out byte[] str
      *
      */
-    public static final FloatToDecimal UTF16  = new FloatToDecimal(ToDecimal.UTF16);
+    public static final FloatToDecimal UTF16  = new FloatToDecimal(false);
 
     /*
      * For full details about this code see the following references:
@@ -115,8 +115,8 @@ public final class FloatToDecimal extends ToDecimal {
      */
     public static final int MAX_CHARS = H + 6;
 
-    private FloatToDecimal(byte coder) {
-        super(coder);
+    private FloatToDecimal(boolean latin1) {
+        super(latin1);
     }
 
     /**
@@ -186,7 +186,7 @@ public final class FloatToDecimal extends ToDecimal {
         if (bq < BQ_MASK) {
             int start = index;
             if (bits < 0) {
-                putChar(str, index++, '-');
+                index = putChar(str, index, '-');
             }
             if (bq != 0) {
                 /* normal value. Here mq = -q */
