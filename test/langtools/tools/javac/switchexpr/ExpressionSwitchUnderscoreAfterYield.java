@@ -21,10 +21,9 @@
  * questions.
  */
 
-// TODO add real bug number
 /*
  * @test
- * @bug 8323057
+ * @bug 8335136
  * @summary Underscore as parameter name in one-parameter functional types fails to compile in yield statement if not enclosed in parentheses
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -35,7 +34,6 @@
 
 import toolbox.*;
 
-import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
 
