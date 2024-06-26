@@ -3597,7 +3597,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
   print_on_maybe_null(st, BULLET"class annotations:       ", class_annotations());
   print_on_maybe_null(st, BULLET"class type annotations:  ", class_type_annotations());
-  print_on_maybe_null(st, BULLET"field annotations:  ", fields_annotations());
+  print_on_maybe_null(st, BULLET"field annotations:       ", fields_annotations());
   print_on_maybe_null(st, BULLET"field type annotations:  ", fields_type_annotations());
   {
     bool have_pv = false;
