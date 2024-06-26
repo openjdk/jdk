@@ -754,7 +754,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     size_t first_old, last_old, num_old;
     heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     // Free set construction uses reserve quantities, because they are known to be valid here
-    heap->free_set()->rebuild(young_cset_regions, old_cset_regions, true);
+    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
   }
 }
 
@@ -964,7 +964,7 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   return in_use > capacity ? 0 : capacity - in_use;
 }
 
-void ShenandoahGeneration::increase_capacity(size_t increment) {
+size_t ShenandoahGeneration::increase_capacity(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
 
   // We do not enforce that new capacity >= heap->max_size_for(this).  The maximum generation size is treated as a rule of thumb
@@ -981,9 +981,16 @@ void ShenandoahGeneration::increase_capacity(size_t increment) {
   assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
          "Affiliated regions must hold more than what is currently used");
+  return _max_capacity;
 }
 
-void ShenandoahGeneration::decrease_capacity(size_t decrement) {
+size_t ShenandoahGeneration::set_capacity(size_t byte_size) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  _max_capacity = byte_size;
+  return _max_capacity;
+}
+
+size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
   shenandoah_assert_heaplocked_or_safepoint();
 
   // We do not enforce that new capacity >= heap->min_size_for(this).  The minimum generation size is treated as a rule of thumb
@@ -1006,6 +1013,7 @@ void ShenandoahGeneration::decrease_capacity(size_t decrement) {
   assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() <= _max_capacity),
          "Cannot use more than capacity");
+  return _max_capacity;
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {

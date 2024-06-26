@@ -75,7 +75,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
     HeapWord* new_top = aligned_obj + size;
     assert(new_top <= end(), "PLAB cannot span end of heap region");
     set_top(new_top);
-    req.set_actual_size(size);
+    // We do not req.set_actual_size() here.  The caller sets it.
     req.set_waste(pad_words);
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_aligned(aligned_obj, alignment_in_bytes), "obj is not aligned: " PTR_FORMAT, p2i(aligned_obj));

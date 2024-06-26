@@ -476,7 +476,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     heap->free_set()->prepare_to_rebuild(cset_young_regions, cset_old_regions, first_old, last_old, num_old);
     // This is just old-gen completion.  No future budgeting required here.  The only reason to rebuild the freeset here
     // is in case there was any immediate old garbage identified.
-    heap->free_set()->rebuild(cset_young_regions, cset_old_regions);
+    heap->free_set()->finish_rebuild(cset_young_regions, cset_old_regions, num_old);
   }
 }
 

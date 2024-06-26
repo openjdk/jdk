@@ -207,9 +207,14 @@ public class TestAllocIntArrays {
     public static void main(String[] args) throws Exception {
         final int min = 0;
         final int max = 384 * 1024;
+        // Each allocated int array is assumed to consume 16 bytes for alignment and header, plus
+        //  an average of 4 * the average number of elements in the array.
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * (min + (max - min) / 2));
 
         Random r = Utils.getRandomInstance();
+        // Repeatedly, allocate an array of int having between 0 and 384K elements, until we have
+        // allocated approximately TARGET_MB.  The largest allocated array consumes 384K*4 + 16, which is 1.5 M,
+        // which is well below the heap size of 1g.
         for (long c = 0; c < count; c++) {
             sink = new int[min + r.nextInt(max - min)];
         }

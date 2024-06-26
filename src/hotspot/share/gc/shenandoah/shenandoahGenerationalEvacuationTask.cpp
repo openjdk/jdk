@@ -209,7 +209,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     old_gen->increase_used(region_used);
 
     // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
-    _heap->free_set()->add_old_collector_free_region(region);
+    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
   }
 }
 

@@ -98,10 +98,6 @@ gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
-gc/shenandoah/TestHumongousThreshold.java#default 8327000 generic-all
-gc/shenandoah/TestHumongousThreshold.java#16b 8327000 generic-all
-gc/shenandoah/TestHumongousThreshold.java#generational 8327000 generic-all
-gc/shenandoah/TestHumongousThreshold.java#generational-16b 8327000 generic-all
 
 #############################################################################
 

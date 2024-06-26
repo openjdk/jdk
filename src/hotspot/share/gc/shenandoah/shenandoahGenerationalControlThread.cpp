@@ -523,6 +523,7 @@ bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   // is allowed to cancel a GC.
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
+    heap->notify_gc_progress();
     generation->record_success_concurrent(false);
   }
 
@@ -599,6 +600,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahHea
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
   if (gc.collect(cause)) {
     // Cycle is complete
+    heap->notify_gc_progress();
     generation->record_success_concurrent(gc.abbreviated());
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");

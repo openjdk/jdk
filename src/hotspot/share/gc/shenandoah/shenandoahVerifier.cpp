@@ -350,9 +350,10 @@ public:
 // a subset (e.g. the young generation or old generation) of the total heap.
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
-  size_t _used, _committed, _garbage, _regions, _humongous_waste;
+  size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions;
 public:
-  ShenandoahCalculateRegionStatsClosure() : _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0) {};
+  ShenandoahCalculateRegionStatsClosure() :
+      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0) {};
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     _used += r->used();
@@ -360,6 +361,9 @@ public:
     _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
     if (r->is_humongous()) {
       _humongous_waste += r->free();
+    }
+    if (r->is_trash()) {
+      _trashed_regions++;
     }
     _regions++;
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding " SIZE_FORMAT " for %s Region " SIZE_FORMAT ", yielding: " SIZE_FORMAT,
@@ -374,6 +378,7 @@ public:
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
   size_t span() const { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
+  size_t non_trashed_span() const { return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes(); }
 };
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
@@ -425,9 +430,11 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
               label, generation->name(), generation->used_regions(), stats.regions());
 
     size_t generation_capacity = generation->max_capacity();
-    guarantee(stats.span() <= generation_capacity,
-              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") must not exceed current capacity (" PROPERFMT ")",
-              label, generation->name(), stats.regions(), PROPERFMTARGS(generation_capacity));
+    guarantee(stats.non_trashed_span() <= generation_capacity,
+              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") * region size (" PROPERFMT
+              ") must not exceed current capacity (" PROPERFMT ")",
+              label, generation->name(), stats.regions(), PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()),
+              PROPERFMTARGS(generation_capacity));
 
     size_t humongous_waste = generation->get_humongous_waste();
     guarantee(stats.waste() == humongous_waste,

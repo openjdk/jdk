@@ -42,19 +42,21 @@ public class TestOldGrowthTriggers {
   public static void makeOldAllocations() {
     // Expect most of the BigInteger entries placed into array to be promoted, and most will eventually become garbage within old
 
-    final int array_size = 512 * 1024;   // 512K entries
-    BigInteger array[] = new BigInteger[array_size];
+    final int ArraySize = 512 * 1024;   // 512K entries
+    final int BitsInBigInteger = 128;
+    final int RefillIterations = 64;
+    BigInteger array[] = new BigInteger[ArraySize];
     Random r = new Random(46);
 
-    for (int i = 0; i < array_size; i++) {
-      array[i] = new BigInteger(128, r);
+    for (int i = 0; i < ArraySize; i++) {
+      array[i] = new BigInteger(BitsInBigInteger, r);
     }
 
-    for (int refill_count = 0; refill_count < 192; refill_count++) {
-      // Each refill repopulates array_size randomly selected elements within array
-      for (int i = 0; i < array_size; i++) {
-        int replace_index = r.nextInt(array_size);
-        int derive_index = r.nextInt(array_size);
+    for (int refill_count = 0; refill_count < RefillIterations; refill_count++) {
+      // Each refill repopulates ArraySize randomly selected elements within array
+      for (int i = 0; i < ArraySize; i++) {
+        int replace_index = r.nextInt(ArraySize);
+        int derive_index = r.nextInt(ArraySize);
         switch (i & 0x3) {
           case 0:
             // 50% chance of creating garbage
@@ -100,8 +102,8 @@ public class TestOldGrowthTriggers {
     }
 
     testOld("-Xlog:gc",
-            "-Xms256m",
-            "-Xmx256m",
+            "-Xms96m",
+            "-Xmx96m",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseShenandoahGC",

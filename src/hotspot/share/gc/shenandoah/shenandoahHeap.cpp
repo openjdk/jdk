@@ -415,7 +415,7 @@ jint ShenandoahHeap::initialize() {
     // We are initializing free set.  We ignore cset region tallies.
     size_t first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->rebuild(young_cset_regions, old_cset_regions);
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -987,8 +987,10 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // is testing that the GC overhead limit has not been exceeded.
     // This will notify the collector to start a cycle, but will raise
     // an OOME to the mutator if the last Full GCs have not made progress.
-    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+    // gc_no_progress_count is incremented following each degen or full GC that fails to achieve is_good_progress().
+    if ((result == nullptr) && !req.is_lab_alloc() && (get_gc_no_progress_count() > ShenandoahNoProgressThreshold)) {
       control_thread()->handle_alloc_failure(req, false);
+      req.set_actual_size(0);
       return nullptr;
     }
 
@@ -999,13 +1001,38 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // other threads have already depleted the free storage. In this case, a better
     // strategy is to try again, as long as GC makes progress (or until at least
     // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
-      control_thread()->handle_alloc_failure(req, true);
-      result = allocate_memory_under_lock(req, in_new_region);
-    }
 
+    size_t original_count = shenandoah_policy()->full_gc_count();
+
+    // Stop retrying and return nullptr to cause OOMError exception if our allocation failed even after:
+    //   a) We experienced a GC that had good progress, or
+    //   b) We experienced at least one Full GC (whether or not it had good progress)
+    //
+    // TODO: Rather than require a Full GC before throwing OOMError, it might be more appropriate for handle_alloc_failure()
+    //       to trigger a concurrent GLOBAL GC, and throw OOMError if we cannot allocate even after GLOBAL GC has finished.
+    //       There is no "perfect" solution here:
+    //
+    //        1. As currently implemented, there may be a race between multiple allocating threads, both attempting
+    //           to allocate very large objects.  The first thread to retry its allocation might succeed and the second
+    //           thread to retry its allocation might fail (because the first thread consumed the newly available memory).
+    //           So the second thread experiences OOMError even through another GC would have reclaimed the memory it wanted
+    //           to allocate.
+    //        2. A GLOBAL GC won't necessarily reclaim all garbage.  Following a concurrent Generational GLOBAL GC, we may
+    //           need to perform multiple concurrent mixed evacuations in order to reclaim all of the dead memory identified
+    //           by the GLOBAL GC mark.  However, the first evacuation performed by the GLOBAL GC will normally reclaim
+    //           a significant amount of garbage (as guided by garbage first heuristic).  If this is not enough memory
+    //           to satisfy the pending allocation request, we are in "dire straits", and a fail-fast OOMError is probably
+    //           the better remediation than repeated attempts to allocate following repeated GC cycles.
+
+    if (result == nullptr) {
+      while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
+        control_thread()->handle_alloc_failure(req, true);
+        result = allocate_memory_under_lock(req, in_new_region);
+      }
+      if ((result != nullptr) && mode()->is_generational()) {
+        notify_gc_progress();
+      }
+    }
     if (log_is_enabled(Debug, gc, alloc)) {
       ResourceMark rm;
       log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
@@ -2321,9 +2348,12 @@ private:
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
       size_t cset_regions = _heap->collection_set()->count();
-      // We cannot transfer any more regions than will be reclaimed when the existing collection set is recycled because
-      // we need the reclaimed collection set regions to replenish the collector reserves
-      _heap->free_set()->move_collector_sets_to_mutator(cset_regions);
+
+      // Now that evacuation is done, we can reassign any regions that had been reserved to hold the results of evacuation
+      // to the mutator free set.  At the end of GC, we will have cset_regions newly evacuated fully empty regions from
+      // which we will be able to replenish the Collector free set and the OldCollector free set in preparation for the
+      // next GC cycle.
+      _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
     // If !CONCURRENT, there's no value in expanding Mutator free set
     T cl;
@@ -2441,7 +2471,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // within partially consumed regions of memory.
   }
   // Rebuild free set based on adjusted generation sizes.
-  _free_set->rebuild(young_cset_regions, old_cset_regions);
+  _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
 
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
