@@ -181,7 +181,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 }
 
 ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
-  Chunk* c = _head;
+  Chunk* c = Atomic::load_acquire(&_head);
   while (c != nullptr) {
     Chunk* next = c->_next;
     delete c;
@@ -202,7 +202,7 @@ OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
 
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
     count += chunk->_size;
     chunk = chunk->_next;
@@ -258,7 +258,7 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 
 #ifndef PRODUCT
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
     if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
       return true;
