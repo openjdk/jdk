@@ -60,6 +60,11 @@ final class StringBufFactory {
         }
 
         @Override
+        public String substring(int start) {
+            return sb.substring(start);
+        }
+
+        @Override
         public Format.StringBuf append(char c) {
             sb.append(c);
             return this;
@@ -81,6 +86,17 @@ final class StringBufFactory {
         public Format.StringBuf append(char[] str, int offset, int len) {
             sb.append(str, offset, len);
             return this;
+        }
+
+        @Override
+        public Format.StringBuf append(CharSequence s, int start, int end) {
+            sb.append(s, start, end);
+            return this;
+        }
+
+        @Override
+        public boolean isProxyStringBuilder() {
+            return false;
         }
 
         @Override
@@ -117,6 +133,11 @@ final class StringBufFactory {
         }
 
         @Override
+        public String substring(int start) {
+            return sb.substring(start);
+        }
+
+        @Override
         public Format.StringBuf append(char c) {
             sb.append(c);
             return this;
@@ -138,6 +159,17 @@ final class StringBufFactory {
         public Format.StringBuf append(char[] str, int offset, int len) {
             sb.append(str, offset, len);
             return this;
+        }
+
+        @Override
+        public Format.StringBuf append(CharSequence s, int start, int end) {
+            sb.append(s, start, end);
+            return this;
+        }
+
+        @Override
+        public boolean isProxyStringBuilder() {
+            return true;
         }
 
         @Override

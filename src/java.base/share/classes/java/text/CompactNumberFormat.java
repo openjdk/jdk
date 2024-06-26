@@ -564,6 +564,35 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
+    @Override
+    StringBuilder format(Object number,
+                                     StringBuilder toAppendTo,
+                                     FieldPosition fieldPosition) {
+
+        if (number == null) {
+            throw new IllegalArgumentException("Cannot format null as a number");
+        }
+
+        if (number instanceof Long || number instanceof Integer
+                    || number instanceof Short || number instanceof Byte
+                    || number instanceof AtomicInteger
+                    || number instanceof AtomicLong
+                    || (number instanceof BigInteger
+                                && ((BigInteger) number).bitLength() < 64)) {
+            return format(((Number) number).longValue(), toAppendTo,
+                    fieldPosition);
+        } else if (number instanceof BigDecimal) {
+            return format((BigDecimal) number, toAppendTo, fieldPosition);
+        } else if (number instanceof BigInteger) {
+            return format((BigInteger) number, toAppendTo, fieldPosition);
+        } else if (number instanceof Number) {
+            return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
+        } else {
+            throw new IllegalArgumentException("Cannot format "
+                                                       + number.getClass().getName() + " as a number");
+        }
+    }
+
     /**
      * Formats a double to produce a string representing its compact form.
      * @param number    the double number to format
@@ -789,6 +818,14 @@ public final class CompactNumberFormat extends NumberFormat {
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
+    private StringBuilder format(BigDecimal number, StringBuilder result,
+                                 FieldPosition fieldPosition) {
+        Objects.requireNonNull(number);
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
+    }
+
     private StringBuf format(BigDecimal number, StringBuf result,
             FieldDelegate delegate) {
 
@@ -873,6 +910,14 @@ public final class CompactNumberFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
+    }
+
+    private StringBuilder format(BigInteger number, StringBuilder result,
+                                 FieldPosition fieldPosition) {
+        Objects.requireNonNull(number);
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuilder();
     }
 
     private StringBuf format(BigInteger number, StringBuf result,

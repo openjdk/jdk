@@ -566,6 +566,28 @@ public class DecimalFormat extends NumberFormat {
         }
     }
 
+    @Override
+    final StringBuilder format(Object number,
+                               StringBuilder toAppendTo,
+                               FieldPosition pos) {
+        if (number instanceof Long || number instanceof Integer ||
+                    number instanceof Short || number instanceof Byte ||
+                    number instanceof AtomicInteger ||
+                    number instanceof AtomicLong ||
+                    (number instanceof BigInteger &&
+                             ((BigInteger) number).bitLength() < 64)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof BigDecimal) {
+            return format((BigDecimal) number, toAppendTo, pos);
+        } else if (number instanceof BigInteger) {
+            return format((BigInteger) number, toAppendTo, pos);
+        } else if (number instanceof Number) {
+            return format(((Number) number).doubleValue(), toAppendTo, pos);
+        } else {
+            throw new IllegalArgumentException("Cannot format given Object as a Number");
+        }
+    }
+
     /**
      * Formats a double to produce a string.
      * @param number    The double to format
@@ -876,6 +898,13 @@ public class DecimalFormat extends NumberFormat {
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
     }
 
+    private StringBuilder format(BigDecimal number, StringBuilder result,
+                                FieldPosition fieldPosition) {
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuilder();
+    }
+
     /**
      * Formats a BigDecimal to produce a string.
      * @param number    The BigDecimal to format
@@ -934,6 +963,14 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setEndIndex(0);
 
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
+    }
+
+    private StringBuilder format(BigInteger number, StringBuilder result,
+                                FieldPosition fieldPosition) {
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuilder();
     }
 
     /**

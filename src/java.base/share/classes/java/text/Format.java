@@ -160,7 +160,11 @@ public abstract class Format implements Serializable, Cloneable {
      *            object
      */
     public final String format (Object obj) {
-        return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        if (isInternalSubclass()) {
+            return format(obj, new StringBuilder(), new FieldPosition(0)).toString();
+        } else {
+            return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        }
     }
 
     /**
@@ -184,6 +188,12 @@ public abstract class Format implements Serializable, Cloneable {
     public abstract StringBuffer format(Object obj,
                     StringBuffer toAppendTo,
                     FieldPosition pos);
+
+    StringBuilder format(Object obj,
+                         StringBuilder toAppendTo,
+                         FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
 
     /**
      * Formats an Object producing an {@code AttributedCharacterIterator}.
@@ -433,6 +443,8 @@ public abstract class Format implements Serializable, Cloneable {
 
         String substring(int start, int end);
 
+        String substring(int start);
+
         StringBuf append(char c);
 
         StringBuf append(String str);
@@ -440,6 +452,10 @@ public abstract class Format implements Serializable, Cloneable {
         StringBuf append(int i);
 
         StringBuf append(char[] str, int offset, int len);
+
+        StringBuf append(CharSequence s, int start, int end);
+
+        boolean isProxyStringBuilder();
 
         StringBuffer asStringBuffer();
 
