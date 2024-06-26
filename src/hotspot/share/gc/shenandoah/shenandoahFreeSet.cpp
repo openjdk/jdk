@@ -1130,6 +1130,8 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
 }
 
 void ShenandoahFreeSet::log_status() {
+  // Must not be heap locked, it acquires heap lock only when log is enabled
+  shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
   if (LogTarget(Debug, gc, free)::is_enabled()) {
