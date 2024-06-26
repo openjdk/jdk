@@ -41,7 +41,8 @@ public sealed interface ClassSignature
     /** {@return the type parameters of this class} */
     List<Signature.TypeParam> typeParameters();
 
-    /** {@return the instantiation of the superclass in this signature}
+    /**
+     * {@return the instantiation of the superclass in this signature}
      *
      * @since 23
      */
