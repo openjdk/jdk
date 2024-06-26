@@ -40,10 +40,6 @@ void GCArguments::initialize() {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }
 
-  if (!UseParallelGC && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
-    FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
-  }
-
   if (GCTimeLimit == 100) {
     // Turn off gc-overhead-limit-exceeded checks
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);

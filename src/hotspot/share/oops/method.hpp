@@ -62,7 +62,7 @@ class MethodData;
 class MethodCounters;
 class ConstMethod;
 class InlineTableSizes;
-class CompiledMethod;
+class nmethod;
 class InterpreterOopMap;
 
 class Method : public Metadata {
@@ -93,14 +93,14 @@ class Method : public Metadata {
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
-  volatile address _from_compiled_entry;        // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_entry;     // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
   // The entry point for calling both from and to compiled code is
   // "_code->entry_point()".  Because of tiered compilation and de-opt, this
   // field can come and go.  It can transition from null to not-null at any
   // time (whenever a compile completes).  It can transition from not-null to
   // null only at safepoints (because of a de-opt).
-  CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
-  volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
+  nmethod* volatile _code;                   // Points to the corresponding piece of native code
+  volatile address  _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name);
@@ -357,15 +357,15 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* code() const;
+  nmethod* code() const;
 
-  // Locks CompiledMethod_lock if not held.
-  void unlink_code(CompiledMethod *compare);
-  // Locks CompiledMethod_lock if not held.
+  // Locks NMethodState_lock if not held.
+  void unlink_code(nmethod *compare);
+  // Locks NMethodState_lock if not held.
   void unlink_code();
 
 private:
-  // Either called with CompiledMethod_lock held or from constructor.
+  // Either called with NMethodState_lock held or from constructor.
   void clear_code();
 
   void clear_method_data() {
@@ -373,7 +373,7 @@ private:
   }
 
 public:
-  static void set_code(const methodHandle& mh, CompiledMethod* code);
+  static void set_code(const methodHandle& mh, nmethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     _adapter = adapter;
   }
@@ -393,10 +393,6 @@ public:
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
   void remove_unshareable_flags() NOT_CDS_RETURN;
-
-  // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots(bool rounded = true) const {
-    return rounded ? align_up(constMethod()->num_stack_arg_slots(), 2) : constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -450,8 +446,10 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
   void print_invocation_count(outputStream* st);
@@ -700,7 +698,6 @@ public:
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.

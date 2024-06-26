@@ -31,10 +31,10 @@ public final class StackChunk {
     private StackChunk parent;
     private int size;    // in words
     private int sp;      // in words
-    private int argsize; // bottom stack-passed arguments, in words
+    private int bottom;  // in words
 
     // The stack itself is appended here by the VM, as well as some injected fields
 
     public StackChunk parent() { return parent; }
-    public boolean isEmpty()   { return sp >= (size - argsize); }
+    public boolean isEmpty()   { return sp == bottom; }
 }

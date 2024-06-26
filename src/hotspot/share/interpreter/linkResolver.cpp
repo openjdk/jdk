@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -50,11 +51,13 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -110,6 +113,27 @@ void CallInfo::set_handle(Klass* resolved_klass,
   assert(!resolved_method->has_vtable_index(), "");
   set_common(resolved_klass, resolved_method, resolved_method, CallInfo::direct_call, vtable_index, CHECK);
   _resolved_appendix = resolved_appendix;
+}
+
+// Redefinition safepoint may have updated the method. Make sure the new version of the method is returned.
+// Callers are responsible for not safepointing and storing this method somewhere safe where redefinition
+// can replace it if runs again.  Safe places are constant pool cache and code cache metadata.
+// The old method is safe in CallInfo since its a methodHandle (it won't get deleted), and accessed with these
+// accessors.
+Method* CallInfo::resolved_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _resolved_method->is_old()) {
+    return _resolved_method->get_new_method();
+  } else {
+    return _resolved_method();
+  }
+}
+
+Method* CallInfo::selected_method() const {
+  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _selected_method->is_old()) {
+    return _selected_method->get_new_method();
+  } else {
+    return _selected_method();
+  }
 }
 
 void CallInfo::set_common(Klass* resolved_klass,
@@ -950,9 +974,14 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
   }
 }
 
-void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, const methodHandle& method, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_field_access(fieldDescriptor& fd,
+                                        const constantPoolHandle& pool,
+                                        int index,
+                                        const methodHandle& method,
+                                        Bytecodes::Code byte,
+                                        bool initialize_class, TRAPS) {
   LinkInfo link_info(pool, index, method, byte, CHECK);
-  resolve_field(fd, link_info, byte, true, CHECK);
+  resolve_field(fd, link_info, byte, initialize_class, CHECK);
 }
 
 void LinkResolver::resolve_field(fieldDescriptor& fd,
@@ -1706,6 +1735,10 @@ bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, cons
 }
 
 void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
+
+  PerfTraceTimedEvent timer(ClassLoader::perf_resolve_invokehandle_time(),
+                            ClassLoader::perf_resolve_invokehandle_count());
+
   LinkInfo link_info(pool, index, Bytecodes::_invokehandle, CHECK);
   if (log_is_enabled(Info, methodhandles)) {
     ResourceMark rm(THREAD);
@@ -1757,11 +1790,13 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  int index = pool->decode_invokedynamic_index(indy_index);
-  int pool_index = pool->resolved_indy_entry_at(index)->constant_pool_index();
+  PerfTraceTimedEvent timer(ClassLoader::perf_resolve_invokedynamic_time(),
+                            ClassLoader::perf_resolve_invokedynamic_count());
+
+  int pool_index = pool->resolved_indy_entry_at(indy_index)->constant_pool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
-  BootstrapInfo bootstrap_specifier(pool, pool_index, index);
+  BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
 
   // Check if CallSite has been bound already or failed already, and short circuit:
   {
@@ -1789,7 +1824,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // the interpreter or runtime performs a serialized check of
   // the relevant ResolvedIndyEntry::method field.  This is done by the caller
   // of this method, via CPC::set_dynamic_call, which uses
-  // a lock to do the final serialization of updates
+  // an ObjectLocker to do the final serialization of updates
   // to ResolvedIndyEntry state, including method.
 
   // Log dynamic info to CDS classlist.

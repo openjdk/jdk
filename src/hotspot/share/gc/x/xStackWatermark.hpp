@@ -37,21 +37,21 @@
 class frame;
 class JavaThread;
 
-class XOnStackCodeBlobClosure : public CodeBlobClosure {
+class XOnStackNMethodClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
-  virtual void do_code_blob(CodeBlob* cb);
+  virtual void do_nmethod(nmethod* nm);
 
 public:
-  XOnStackCodeBlobClosure();
+  XOnStackNMethodClosure();
 };
 
 class XStackWatermark : public StackWatermark {
 private:
-  XLoadBarrierOopClosure  _jt_cl;
-  XOnStackCodeBlobClosure _cb_cl;
-  ThreadLocalAllocStats   _stats;
+  XLoadBarrierOopClosure _jt_cl;
+  XOnStackNMethodClosure _nm_cl;
+  ThreadLocalAllocStats  _stats;
 
   OopClosure* closure_from_context(void* context);
 

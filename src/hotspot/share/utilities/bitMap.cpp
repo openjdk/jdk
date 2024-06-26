@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,54 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
   }
 
   update(map, new_size_in_bits);
+}
+
+template <class BitMapWithAllocator>
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, idx_t end_bit) {
+  assert(start_bit < end_bit, "End bit must come after start bit");
+  assert(end_bit <= size(), "End bit not in bitmap");
+
+  // We might have extra bits at the end that we don't want to lose
+  const idx_t cutoff = bit_in_word(end_bit);
+  const idx_t start_word = to_words_align_down(start_bit);
+  const idx_t end_word = to_words_align_up(end_bit);
+  const bm_word_t* const old_map = map();
+
+  const BitMapWithAllocator* const derived = static_cast<BitMapWithAllocator*>(this);
+
+  bm_word_t* const new_map = derived->allocate(end_word - start_word);
+
+  // All words need to be shifted by this amount
+  const idx_t shift = bit_in_word(start_bit);
+  // Bits shifted out by a word need to be passed into the next
+  bm_word_t carry = 0;
+
+  // Iterate the map backwards as the shift will result in carry-out bits
+  for (idx_t i = end_word; i-- > start_word;) {
+    new_map[i-start_word] = old_map[i] >> shift;
+
+    if (shift != 0) {
+      new_map[i-start_word] |= carry;
+      carry = old_map[i] << (BitsPerWord - shift);
+    }
+  }
+
+  return new_map;
+}
+
+template <class BitMapWithAllocator>
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit) {
+  const size_t old_size_in_words = calc_size_in_words(size());
+  const idx_t new_size_in_bits = end_bit - start_bit;
+  bm_word_t* const old_map = map();
+
+  bm_word_t* const new_map = copy_of_range(start_bit, end_bit);
+
+  const BitMapWithAllocator* const derived = static_cast<BitMapWithAllocator*>(this);
+  // Free and clear old map to avoid left over bits
+  derived->free(old_map, old_size_in_words);
+  update(nullptr, 0);
+  update(new_map, new_size_in_bits);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)

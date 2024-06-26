@@ -31,6 +31,8 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 LIBS_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_LIBS)))
 CMDS_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_CMDS)))
 CONF_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_CONF)))

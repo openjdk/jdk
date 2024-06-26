@@ -27,11 +27,13 @@
 #include <shellapi.h>
 #include <memory.h>
 
+// awt_ole.h must be included before awt.h, since the latter redefines malloc
+// to Do_Not_Use_Malloc, etc, and that will break awt_ole.h.
+#include "awt_ole.h"
 #include "awt_DataTransferer.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDropTargetContextPeer.h"
 #include "awt_Container.h"
-#include "awt_ole.h"
 #include "awt_Toolkit.h"
 #include "awt_DnDDT.h"
 #include "awt_DnDDS.h"

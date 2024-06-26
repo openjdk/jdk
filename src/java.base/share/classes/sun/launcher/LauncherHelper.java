@@ -904,6 +904,9 @@ public final class LauncherHelper {
         return false;
     }
 
+    private static boolean isStaticMain = false;
+    private static boolean noArgMain = false;
+
     // Check the existence and signature of main and abort if incorrect.
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
@@ -927,19 +930,19 @@ public final class LauncherHelper {
         }
 
         int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
+        isStaticMain = Modifier.isStatic(mods);
         boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
+        noArgMain = mainMethod.getParameterCount() == 0;
 
         if (!PreviewFeatures.isEnabled()) {
-            if (!isStatic || !isPublic || noArgs) {
+            if (!isStaticMain || !isPublic || noArgMain) {
                   abort(null, "java.launcher.cls.error2", mainClass.getName(),
                        JAVAFX_APPLICATION_CLASS_NAME);
             }
             return;
         }
 
-        if (!isStatic) {
+        if (!isStaticMain) {
             String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);

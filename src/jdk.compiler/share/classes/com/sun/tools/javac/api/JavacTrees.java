@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -48,6 +49,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements.DocCommentKind;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.ForwardingFileObject;
@@ -67,7 +69,6 @@ import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
-import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
@@ -100,6 +101,7 @@ import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -169,10 +171,12 @@ public class JavacTrees extends DocTrees {
     private final Types types;
     private final DocTreeMaker docTreeMaker;
     private final JavaFileManager fileManager;
-    private final ParserFactory parser;
     private final Symtab syms;
 
     private BreakIterator breakIterator;
+    private final ParserFactory parserFactory;
+
+    private DocCommentTreeTransformer docCommentTreeTransformer;
 
     private final Map<Type, Type> extraType2OriginalMap = new WeakHashMap<>();
 
@@ -214,7 +218,7 @@ public class JavacTrees extends DocTrees {
         names = Names.instance(context);
         types = Types.instance(context);
         docTreeMaker = DocTreeMaker.instance(context);
-        parser = ParserFactory.instance(context);
+        parserFactory = ParserFactory.instance(context);
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
         var task = context.get(JavacTask.class);
@@ -259,20 +263,6 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreeMaker getDocTreeFactory() {
         return docTreeMaker;
-    }
-
-    private DocTree getLastChild(DocTree tree) {
-        final DocTree[] last = new DocTree[] {null};
-
-        tree.accept(new DocTreeScanner<Void, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
-            public Void scan(DocTree node, Void p) {
-                if (node != null) last[0] = node;
-                return null;
-            }
-        }, null);
-
-        return last[0];
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -723,8 +713,8 @@ public class JavacTrees extends DocTrees {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getTypeMirror(TreePath path) {
-        Tree t = path.getLeaf();
-        Type ty = ((JCTree)t).type;
+        Tree leaf = path.getLeaf();
+        Type ty = ((JCTree) leaf).type;
         return ty == null ? null : ty.stripMetadataIfNeeded();
     }
 
@@ -734,25 +724,39 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public DocCommentKind getDocCommentKind(TreePath path) {
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            Comment c = cu.docComments.getComment(l);
+            return (c == null) ? null : switch (c.getStyle()) {
+                case JAVADOC_BLOCK -> DocCommentKind.TRADITIONAL;
+                case JAVADOC_LINE -> DocCommentKind.END_OF_LINE;
+                default -> null;
+            };
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public String getDocComment(TreePath path) {
-        CompilationUnitTree t = path.getCompilationUnit();
-        Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-            if (compilationUnit.docComments != null) {
-                return compilationUnit.docComments.getCommentText(tree);
-            }
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            return cu.docComments.getCommentText(l);
         }
         return null;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocCommentTree getDocCommentTree(TreePath path) {
-        CompilationUnitTree t = path.getCompilationUnit();
-        Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-            if (compilationUnit.docComments != null) {
-                return compilationUnit.docComments.getCommentTree(tree);
-            }
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            return cu.docComments.getCommentTree(l);
         }
         return null;
     }
@@ -990,33 +994,40 @@ public class JavacTrees extends DocTrees {
         return flatNameForClass;
     }
 
-    static JavaFileObject asJavaFileObject(FileObject fileObject) {
-        JavaFileObject jfo = null;
+    private static boolean isHtmlFile(FileObject fo) {
+        return fo.getName().endsWith(".html");
+    }
 
-        if (fileObject instanceof JavaFileObject javaFileObject) {
-            checkHtmlKind(fileObject, Kind.HTML);
-            return javaFileObject;
+    private static boolean isMarkdownFile(FileObject fo) {
+        return fo.getName().endsWith(".md");
+    }
+
+
+    static JavaFileObject asDocFileObject(FileObject fo) {
+        if (fo instanceof JavaFileObject jfo) {
+            switch (jfo.getKind()) {
+                case HTML -> {
+                    return jfo;
+                }
+                case OTHER -> {
+                    if (isMarkdownFile(jfo)) {
+                        return jfo;
+                    }
+                }
+            }
+        } else {
+            if (isHtmlFile(fo) || isMarkdownFile(fo)) {
+                return new DocFileObject(fo);
+            }
         }
 
-        checkHtmlKind(fileObject);
-        jfo = new HtmlFileObject(fileObject);
-        return jfo;
+        throw new IllegalArgumentException(("Not a documentation file: " + fo.getName()));
     }
 
-    private static void checkHtmlKind(FileObject fileObject) {
-        checkHtmlKind(fileObject, BaseFileManager.getKind(fileObject.getName()));
-    }
-
-    private static void checkHtmlKind(FileObject fileObject, JavaFileObject.Kind kind) {
-        if (kind != JavaFileObject.Kind.HTML) {
-            throw new IllegalArgumentException("HTML file expected:" + fileObject.getName());
-        }
-    }
-
-    private static class HtmlFileObject extends ForwardingFileObject<FileObject>
+    private static class DocFileObject extends ForwardingFileObject<FileObject>
             implements JavaFileObject {
 
-        public HtmlFileObject(FileObject fileObject) {
+        public DocFileObject(FileObject fileObject) {
             super(fileObject);
         }
 
@@ -1043,7 +1054,7 @@ public class JavacTrees extends DocTrees {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocCommentTree getDocCommentTree(FileObject fileObject) {
-        JavaFileObject jfo = asJavaFileObject(fileObject);
+        JavaFileObject jfo = asDocFileObject(fileObject);
         DiagnosticSource diagSource = new DiagnosticSource(jfo, log);
 
         final Comment comment = new Comment() {
@@ -1060,27 +1071,37 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
+            public JCDiagnostic.DiagnosticPosition getPos() {
+                return null;
+            }
+
+            @Override
             public int getSourcePos(int index) {
                 return offset + index;
             }
 
             @Override
             public CommentStyle getStyle() {
-                throw new UnsupportedOperationException();
+                return isHtmlFile(fileObject) ? CommentStyle.JAVADOC_BLOCK
+                        : isMarkdownFile(fileObject) ? CommentStyle.JAVADOC_LINE
+                        : null;
             }
 
             @Override
             public boolean isDeprecated() {
-                throw new UnsupportedOperationException();
+                return false;
             }
         };
 
-        return new DocCommentParser(parser, diagSource, comment, true).parse();
+        boolean isHtmlFile = jfo.getKind() == Kind.HTML;
+
+        var dct = new DocCommentParser(parserFactory, diagSource, comment, isHtmlFile).parse();
+        return transform(dct);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreePath getDocTreePath(FileObject fileObject, PackageElement packageElement) {
-        JavaFileObject jfo = asJavaFileObject(fileObject);
+        JavaFileObject jfo = asDocFileObject(fileObject);
         DocCommentTree docCommentTree = getDocCommentTree(jfo);
         if (docCommentTree == null)
             return null;
@@ -1096,6 +1117,103 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public String getCharacters(EntityTree tree) {
         return Entity.getCharacters(tree);
+    }
+
+    /**
+     * {@return the doc comment tree for a given comment}
+     *
+     * @param diagSource the source containing the comment, used when displaying any diagnostics
+     * @param c the comment
+     */
+    public DocCommentTree getDocCommentTree(DiagnosticSource diagSource, Comment c) {
+        var dct = new DocCommentParser(parserFactory, diagSource, c).parse();
+        return transform(dct);
+    }
+
+    /**
+     * An interface for transforming a {@code DocCommentTree}.
+     * It is primarily used as the service-provider interface for an implementation
+     * that embodies the JDK extensions to CommonMark, such as reference links to
+     * program elements.
+     */
+    public interface DocCommentTreeTransformer {
+        /**
+         * The name used by the implementation that embodies the JDK extensions to CommonMark.
+         */
+        public final String STANDARD = "standard";
+
+        /**
+         * {@return the name of this transformer}
+         */
+        String name();
+
+        /**
+         * Transforms a documentation comment tree.
+         *
+         * @param trees an instance of the {@link DocTrees} utility interface.
+         * @param tree the tree to be transformed
+         * @return the transformed tree
+         */
+        DocCommentTree transform(DocTrees trees, DocCommentTree tree);
+    }
+
+    /**
+     * A class that provides the identity transform on instances of {@code DocCommentTree}.
+     */
+    public static class IdentityTransformer implements DocCommentTreeTransformer {
+        @Override
+        public String name() {
+            return "identity";
+        }
+
+        @Override
+        public DocCommentTree transform(DocTrees trees, DocCommentTree tree) {
+            return tree;
+        }
+    }
+
+    public DocCommentTreeTransformer getDocCommentTreeTransformer() {
+        return docCommentTreeTransformer;
+    }
+
+    public void setDocCommentTreeTransformer(DocCommentTreeTransformer transformer) {
+        docCommentTreeTransformer = transformer;
+    }
+
+    /**
+     * Initialize {@link #docCommentTreeTransformer} if it is {@code null},
+     * using a service provider to look up an implementation with the name "standard".
+     * If none is found, an identity transformer is used, with the name "identity".
+     */
+    public void initDocCommentTreeTransformer() {
+        if (docCommentTreeTransformer == null) {
+            var sl = ServiceLoader.load(DocCommentTreeTransformer.class);
+            docCommentTreeTransformer = sl.stream()
+                    .map(ServiceLoader.Provider::get)
+                    .filter(t -> t.name().equals(DocCommentTreeTransformer.STANDARD))
+                    .findFirst()
+                    .orElseGet(() -> new IdentityTransformer());
+        }
+    }
+
+    /**
+     * Transforms the given tree using the current {@linkplain #getDocCommentTreeTransformer() transformer},
+     * after ensuring it has been {@linkplain #initDocCommentTreeTransformer() initialized}.
+     *
+     * @param tree the tree
+     * @return the transformed tree
+     */
+    private DocCommentTree transform(DocCommentTree tree) {
+        initDocCommentTreeTransformer();
+        return docCommentTreeTransformer.transform(this, tree);
+    }
+
+    /**
+     * {@return the {@linkplain ParserFactory} parser factory}
+     * The factory can be used to create a {@link ReferenceParser}, to parse link references.
+     */
+    public ParserFactory getParserFactory() {
+        return parserFactory;
     }
 
     /**
@@ -1201,20 +1319,10 @@ public class JavacTrees extends DocTrees {
 
         try {
             switch (kind) {
-            case ERROR:
-                log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
-                break;
-
-            case WARNING:
-                log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                break;
-
-            case MANDATORY_WARNING:
-                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
-                break;
-
-            default:
-                log.note(pos, Notes.ProcMessager(msg.toString()));
+                case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
+                case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {
             if (oldSource != null)
@@ -1264,6 +1372,11 @@ public class JavacTrees extends DocTrees {
 
             @Override
             public Comment getComment(JCTree tree) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public DocCommentKind getCommentKind(JCTree tree) {
                 throw new UnsupportedOperationException();
             }
 

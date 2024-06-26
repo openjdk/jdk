@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
                          develop_pd,                                    \
                          product,                                       \
                          product_pd,                                    \
-                         notproduct,                                    \
                          range,                                         \
                          constraint)                                    \
                                                                         \
@@ -95,7 +94,9 @@
   product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
           "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
                                                                         \
-
+  product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
+          "Print an annotated memory map at exit")                      \
+                                                                        \
 // end of RUNTIME_OS_FLAGS
 
 //

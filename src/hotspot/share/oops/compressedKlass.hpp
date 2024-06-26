@@ -45,6 +45,7 @@ const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlas
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
+  friend class ArchiveBuilder;
 
   static address _base;
   static int _shift;
@@ -63,6 +64,11 @@ class CompressedKlassPointers : public AllStatic {
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
 
   DEBUG_ONLY(static void assert_is_valid_encoding(address addr, size_t len, address base, int shift);)
+
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v, address base, int shift);
+  static inline Klass* decode_not_null(narrowKlass v, address base, int shift);
+
+  static inline narrowKlass encode_not_null(Klass* v, address base, int shift);
 
 public:
 
@@ -92,15 +98,15 @@ public:
   static bool is_null(Klass* v)      { return v == nullptr; }
   static bool is_null(narrowKlass v) { return v == 0; }
 
-  static inline Klass* decode_raw(narrowKlass v, address base, int shift);
-  static inline Klass* decode_raw(narrowKlass v);
-  static inline Klass* decode_not_null(narrowKlass v);
-  static inline Klass* decode_not_null(narrowKlass v, address base, int shift);
-  static inline Klass* decode(narrowKlass v);
-  static inline narrowKlass encode_not_null(Klass* v);
-  static inline narrowKlass encode_not_null(Klass* v, address base, int shift);
-  static inline narrowKlass encode(Klass* v);
+  // Versions without asserts
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v);
+  static inline Klass* decode_without_asserts(narrowKlass v);
 
+  static inline Klass* decode_not_null(narrowKlass v);
+  static inline Klass* decode(narrowKlass v);
+
+  static inline narrowKlass encode_not_null(Klass* v);
+  static inline narrowKlass encode(Klass* v);
 };
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.function.DoublePredicate;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
@@ -263,43 +264,46 @@ abstract class DoublePipeline<E_IN>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                final DoubleConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof DoubleConsumer dc)
+                                ? dc
+                                : sink::accept;
+                final class FlatMap implements Sink.OfDouble, DoublePredicate {
+                    boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    DoubleConsumer downstreamAsDouble = downstream::accept;
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(double t) {
-                        try (DoubleStream result = mapper.apply(t)) {
+                    public void accept(double e) {
+                        try (DoubleStream result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsDouble);
-                                } else {
-                                    var s = result.sequential().spliterator();
-                                    do {
-                                    } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsDouble));
-                                }
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        // If this method is called then an operation within the stream
-                        // pipeline is short-circuiting (see AbstractPipeline.copyInto).
-                        // Note that we cannot differentiate between an upstream or
-                        // downstream operation
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(double output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }

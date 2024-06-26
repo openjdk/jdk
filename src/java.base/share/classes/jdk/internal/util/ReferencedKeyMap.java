@@ -100,6 +100,21 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final ReferenceQueue<K> stale;
 
     /**
+     * @return a supplier to create a {@code ConcurrentHashMap} appropriate for use in the
+     *         create methods.
+     * @param <K> the type of keys maintained by the new map
+     * @param <V> the type of mapped values
+     */
+    public static <K, V> Supplier<Map<ReferenceKey<K>, V>> concurrentHashMapSupplier() {
+        return new Supplier<>() {
+            @Override
+            public Map<ReferenceKey<K>, V> get() {
+                return new ConcurrentHashMap<>();
+            }
+        };
+    }
+
+    /**
      * Private constructor.
      *
      * @param isSoft          true if {@link SoftReference} keys are to

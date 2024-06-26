@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1294,7 +1294,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">电话簿排序</type>
 			<type key="collation" type="phonetic">语音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
-			<type key="collation" type="reformed">改良排序</type>
 			<type key="collation" type="search">常规搜索</type>
 			<type key="collation" type="searchjl">按韩文字开首辅音来搜索</type>
 			<type key="collation" type="standard">标准排序</type>
@@ -3560,9 +3559,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">{0}夏令时间</regionFormat>
 			<regionFormat type="standard">{0}标准时间</regionFormat>
 			<fallbackFormat>{1}（{0}）</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>圣伊萨贝尔</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>协调世界时</standard>
@@ -3684,9 +3680,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>墨尔本</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>柯里</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>霍巴特</exemplarCity>
@@ -3841,9 +3834,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>克雷斯顿</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>耶洛奈夫</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>埃德蒙顿</exemplarCity>
 			</zone>
@@ -3862,29 +3852,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>雷索卢特</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>雷尼河</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>兰今湾</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>阿蒂科肯</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>桑德贝</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>尼皮贡</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>多伦多</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>伊魁特</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>旁涅唐</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>蒙克顿</exemplarCity>
@@ -4699,17 +4677,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>达累斯萨拉姆</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>乌日哥罗德</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>基辅</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>辛菲罗波尔</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>扎波罗热</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>坎帕拉</exemplarCity>
@@ -4728,9 +4700,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>檀香山</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>约翰斯顿</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>安克雷奇</exemplarCity>
@@ -5431,11 +5400,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>澳门夏令时间</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>麦夸里岛时间</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>马加丹时间</generic>
@@ -5473,13 +5437,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>莫森时间</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>墨西哥西北部时间</generic>
-					<standard>墨西哥西北部标准时间</standard>
-					<daylight>墨西哥西北部夏令时间</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -34,7 +34,7 @@ serviceability/sa/ClhsdbJstackWithConcurrentLock.java         8276539   generic-
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8276539   generic-all
 
 serviceability/sa/ClhsdbFindPC.java#xcomp-core                8284045   generic-all
-serviceability/sa/TestJmapCore.java                           8268283,8270202   linux-aarch64,linux-x64,macosx-aarch64
+serviceability/sa/TestJmapCore.java                           8268283,8270202   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8268636   generic-all
 
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
@@ -47,5 +47,4 @@ serviceability/sa/TestHeapDumpForInvokeDynamic.java           8315646   generic-
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
 vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64

@@ -450,9 +450,9 @@ static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_kla
   assert(writer != nullptr, "invariant");
   assert(_artifacts != nullptr, "invariant");
   writer->write(primitive_id(type_array_klass));
-  writer->write(cld_id(get_cld(Universe::boolArrayKlassObj()), false));
+  writer->write(cld_id(get_cld(Universe::boolArrayKlass()), false));
   writer->write(mark_symbol(primitive_symbol(type_array_klass), false));
-  writer->write(package_id(Universe::boolArrayKlassObj(), false));
+  writer->write(package_id(Universe::boolArrayKlass(), false));
   writer->write(get_primitive_flags());
   writer->write<bool>(false);
 }
@@ -468,14 +468,14 @@ static bool is_initial_typeset_for_chunk() {
 // It will use a reserved constant.
 static void do_primitives() {
   assert(is_initial_typeset_for_chunk(), "invariant");
-  write_primitive(_writer, Universe::boolArrayKlassObj());
-  write_primitive(_writer, Universe::byteArrayKlassObj());
-  write_primitive(_writer, Universe::charArrayKlassObj());
-  write_primitive(_writer, Universe::shortArrayKlassObj());
-  write_primitive(_writer, Universe::intArrayKlassObj());
-  write_primitive(_writer, Universe::longArrayKlassObj());
-  write_primitive(_writer, Universe::floatArrayKlassObj());
-  write_primitive(_writer, Universe::doubleArrayKlassObj());
+  write_primitive(_writer, Universe::boolArrayKlass());
+  write_primitive(_writer, Universe::byteArrayKlass());
+  write_primitive(_writer, Universe::charArrayKlass());
+  write_primitive(_writer, Universe::shortArrayKlass());
+  write_primitive(_writer, Universe::intArrayKlass());
+  write_primitive(_writer, Universe::longArrayKlass());
+  write_primitive(_writer, Universe::floatArrayKlass());
+  write_primitive(_writer, Universe::doubleArrayKlass());
   write_primitive(_writer, nullptr); // void.class
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,25 +231,25 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         return (CodeBuilder cob, CodeElement coe) -> {
             switch (coe) {
                 case FieldInstruction fai ->
-                    cob.fieldInstruction(fai.opcode(), map(fai.owner().asSymbol()),
+                    cob.fieldAccess(fai.opcode(), map(fai.owner().asSymbol()),
                             fai.name().stringValue(), map(fai.typeSymbol()));
                 case InvokeInstruction ii ->
-                    cob.invokeInstruction(ii.opcode(), map(ii.owner().asSymbol()),
+                    cob.invoke(ii.opcode(), map(ii.owner().asSymbol()),
                             ii.name().stringValue(), mapMethodDesc(ii.typeSymbol()),
                             ii.isInterface());
                 case InvokeDynamicInstruction idi ->
-                    cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
-                            idi.bootstrapMethod(), idi.name().stringValue(),
+                    cob.invokedynamic(DynamicCallSiteDesc.of(
+                            mapDirectMethodHandle(idi.bootstrapMethod()), idi.name().stringValue(),
                             mapMethodDesc(idi.typeSymbol()),
                             idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)));
                 case NewObjectInstruction c ->
-                    cob.newObjectInstruction(map(c.className().asSymbol()));
+                    cob.new_(map(c.className().asSymbol()));
                 case NewReferenceArrayInstruction c ->
                     cob.anewarray(map(c.componentType().asSymbol()));
                 case NewMultiArrayInstruction c ->
                     cob.multianewarray(map(c.arrayType().asSymbol()), c.dimensions());
                 case TypeCheckInstruction c ->
-                    cob.typeCheckInstruction(c.opcode(), map(c.type().asSymbol()));
+                    cob.with(TypeCheckInstruction.of(c.opcode(), map(c.type().asSymbol())));
                 case ExceptionCatch c ->
                     cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(),c.catchType()
                             .map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
@@ -260,7 +260,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                     cob.localVariableType(c.slot(), c.name().stringValue(),
                             mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
                 case LoadConstantInstruction ldc ->
-                    cob.constantInstruction(ldc.opcode(),
+                    cob.loadConstant(ldc.opcode(),
                             mapConstantValue(ldc.constantValue()));
                 case RuntimeVisibleTypeAnnotationsAttribute aa ->
                     cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(
@@ -369,11 +369,11 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 Signature.ClassTypeSig.of(
                         cts.outerType().map(this::mapSignature).orElse(null),
                         map(cts.classDesc()),
-                        cts.typeArgs().stream()
-                                .map(ta -> Signature.TypeArg.of(
-                                        ta.wildcardIndicator(),
-                                        ta.boundType().map(this::mapSignature)))
-                                .toArray(Signature.TypeArg[]::new));
+                        cts.typeArgs().stream().map(ta -> switch (ta) {
+                            case Signature.TypeArg.Unbounded u -> u;
+                            case Signature.TypeArg.Bounded bta -> Signature.TypeArg.bounded(
+                                    bta.wildcardIndicator(), mapSignature(bta.boundType()));
+                        }).toArray(Signature.TypeArg[]::new));
             default -> signature;
         };
     }

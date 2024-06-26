@@ -27,6 +27,7 @@
  * @summary VM crash caused by unloaded FillerObject_klass
  * @library /test/lib
  * @requires vm.cds
+ * @requires vm.flagless
  * @run driver FillerObjectLoadTest
  */
 

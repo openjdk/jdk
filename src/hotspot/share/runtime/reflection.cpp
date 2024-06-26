@@ -328,7 +328,7 @@ static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
     THROW_0(vmSymbols::java_lang_IllegalArgumentException());
   }
   else {
-    return Universe::typeArrayKlassObj(type);
+    return Universe::typeArrayKlass(type);
   }
 }
 

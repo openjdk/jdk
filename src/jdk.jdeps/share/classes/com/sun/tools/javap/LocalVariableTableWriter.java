@@ -80,7 +80,7 @@ public class LocalVariableTableWriter extends InstructionDetailWriter {
     public void reset(CodeModel attr) {
         codeAttr = attr;
         pcMap = new HashMap<>();
-        var lvt = attr.findAttribute(Attributes.LOCAL_VARIABLE_TABLE);
+        var lvt = attr.findAttribute(Attributes.localVariableTable());
 
         if (lvt.isEmpty())
             return;

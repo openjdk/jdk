@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
   // Compiled frame
   CodeBlob* cb = f->cb();
   if (cb != nullptr) {
-    if (cb->is_compiled()) {
-      CompiledMethod* nm = (CompiledMethod*)cb;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
       return new compiledVFrame(f, reg_map, thread, nm);
     }
 
@@ -205,8 +205,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
-    else if (thread()->osthread()->get_state() == CONDVAR_WAIT) {
-      // We are waiting on the native class initialization monitor.
+    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+      // We are waiting on an Object monitor but Object.wait() isn't the
+      // top-frame, so we should be waiting on a Class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
       if (k != nullptr) {
         st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());

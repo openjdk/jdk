@@ -133,7 +133,7 @@ public class CharImmediateValue implements Plugin {
 
         Path testClass = classes.resolve("Test.class");
         ClassModel cf = ClassFile.of().parse(testClass);
-        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.code()).orElseThrow();
         boolean seenCast = false;
         for (CodeElement i : codeAttr.elementList()) {
             if (i instanceof Instruction ins && ins.opcode() == Opcode.I2C) {

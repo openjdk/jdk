@@ -29,7 +29,7 @@ import java.util.List;
 
 import javax.lang.model.element.Element;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SinceTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -79,21 +79,17 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected void addContentSelectors(Content content) {
-        List<String> releases = configuration.newAPIPageBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
-            for (int i = 0; i < releases.size(); i++) {
-                int releaseIndex = i + 1;
-                String release = releases.get(i);
-                HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(Text.of(" ")).add(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
-                                        .put(HtmlAttr.CHECKED, "")
-                                        .put(HtmlAttr.ONCLICK,
-                                                "toggleGlobal(this, '" + releaseIndex + "', 3)"))
-                        .add(HtmlTree.SPAN(Text.of(release))));
+            // Table column ids are 1-based
+            int index = 1;
+            for (String release : releases) {
+                tabs.add(Text.of(" ")).add(getCheckbox(Text.of(release), String.valueOf(index++), "release-"));
             }
+            Content label = contents.getContent("doclet.New_API_Checkbox_All_Releases");
+            tabs.add(Text.of(" ")).add(getCheckbox(label, ID_ALL, "release-"));
             content.add(tabs);
         }
     }
@@ -104,7 +100,6 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
         List<String> releases = builder.releases;
         if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
-                    .setAlwaysShowDefaultTab(true)
                     .setRenderTabs(false);
             for (String release : releases) {
                 table.addTab(
@@ -112,7 +107,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                                 ? getTableCaption(headingKey)
                                 : Text.of(release),
                         element -> {
-                            List<? extends DocTree> since = getSinceTree(element);
+                            List<? extends SinceTree> since = utils.getBlockTags(element, SINCE, SinceTree.class);
                             if (since.isEmpty()) {
                                 return false;
                             }
@@ -135,10 +130,10 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected Content getExtraContent(Element element) {
-        List<? extends DocTree> sinceTree = getSinceTree(element);
-        if (!sinceTree.isEmpty()) {
-            CommentHelper ch = utils.getCommentHelper(element);
-            return Text.of(ch.getBody(sinceTree.get(0)).toString());
+        var sinceTrees = utils.getBlockTags(element, SINCE, SinceTree.class);
+        if (!sinceTrees.isEmpty()) {
+            // assumes a simple string value with no formatting
+            return Text.of(sinceTrees.getFirst().getBody().getFirst().toString());
         }
         return Text.EMPTY;
     }
@@ -155,10 +150,6 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     @Override
     protected HtmlStyle[] getColumnStyles() {
         return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
-    }
-
-    private List<? extends DocTree> getSinceTree(Element element) {
-        return utils.hasDocCommentTree(element) ? utils.getBlockTags(element, SINCE) : List.of();
     }
 
     private static String getHeading(HtmlConfiguration configuration) {

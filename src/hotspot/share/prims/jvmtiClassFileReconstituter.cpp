@@ -119,10 +119,10 @@ void JvmtiClassFileReconstituter::write_field_infos() {
       write_signature_attribute(generic_signature_index);
     }
     if (anno != nullptr) {
-      write_annotations_attribute("RuntimeVisibleAnnotations", anno);
+      write_annotations_attribute("RuntimeVisibleAnnotations", "RuntimeInvisibleAnnotations", anno);
     }
     if (type_anno != nullptr) {
-      write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
+      write_annotations_attribute("RuntimeVisibleTypeAnnotations", "RuntimeInvisibleTypeAnnotations", type_anno);
     }
   }
 }
@@ -380,6 +380,20 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
   memcpy(writeable_address(length), annos->adr_at(0), length);
 }
 
+void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_name,
+                                                              const char* fallback_attr_name,
+                                                              AnnotationArray* annos) {
+  TempNewSymbol sym = SymbolTable::probe(attr_name, (int)strlen(attr_name));
+  if (sym != nullptr) {
+    if (symbol_to_cpool_index(sym) != 0) {
+      write_annotations_attribute(attr_name, annos);
+      return;
+    }
+  }
+  // use fallback name
+  write_annotations_attribute(fallback_attr_name, annos);
+}
+
 //  BootstrapMethods_attribute {
 //    u2 attribute_name_index;
 //    u4 attribute_length;
@@ -494,7 +508,6 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     RecordComponent* component = components->at(x);
     if (component->generic_signature_index() != 0) {
       length += 8; // Signature attribute size
-      assert(component->attributes_count() > 0, "Bad component attributes count");
     }
     if (component->annotations() != nullptr) {
       length += 6 + component->annotations()->length();
@@ -511,15 +524,19 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     RecordComponent* component = components->at(i);
     write_u2(component->name_index());
     write_u2(component->descriptor_index());
-    write_u2(component->attributes_count());
+    u2 attributes_count = (component->generic_signature_index() != 0 ? 1 : 0)
+                        + (component->annotations() != nullptr ? 1 : 0)
+                        + (component->type_annotations() != nullptr ? 1 : 0);
+
+    write_u2(attributes_count);
     if (component->generic_signature_index() != 0) {
       write_signature_attribute(component->generic_signature_index());
     }
     if (component->annotations() != nullptr) {
-      write_annotations_attribute("RuntimeVisibleAnnotations", component->annotations());
+      write_annotations_attribute("RuntimeVisibleAnnotations", "RuntimeInvisibleAnnotations", component->annotations());
     }
     if (component->type_annotations() != nullptr) {
-      write_annotations_attribute("RuntimeVisibleTypeAnnotations", component->type_annotations());
+      write_annotations_attribute("RuntimeVisibleTypeAnnotations", "RuntimeInvisibleTypeAnnotations", component->type_annotations());
     }
   }
 }
@@ -758,13 +775,13 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
     write_signature_attribute(generic_signature_index);
   }
   if (anno != nullptr) {
-    write_annotations_attribute("RuntimeVisibleAnnotations", anno);
+    write_annotations_attribute("RuntimeVisibleAnnotations", "RuntimeInvisibleAnnotations", anno);
   }
   if (param_anno != nullptr) {
-    write_annotations_attribute("RuntimeVisibleParameterAnnotations", param_anno);
+    write_annotations_attribute("RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", param_anno);
   }
   if (type_anno != nullptr) {
-    write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
+    write_annotations_attribute("RuntimeVisibleTypeAnnotations", "RuntimeInvisibleTypeAnnotations", type_anno);
   }
 }
 
@@ -824,10 +841,10 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
     write_source_debug_extension_attribute();
   }
   if (anno != nullptr) {
-    write_annotations_attribute("RuntimeVisibleAnnotations", anno);
+    write_annotations_attribute("RuntimeVisibleAnnotations", "RuntimeInvisibleAnnotations", anno);
   }
   if (type_anno != nullptr) {
-    write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
+    write_annotations_attribute("RuntimeVisibleTypeAnnotations", "RuntimeInvisibleTypeAnnotations", type_anno);
   }
   if (ik()->nest_host_index() != 0) {
     write_nest_host_attribute();
@@ -1049,7 +1066,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
         int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
-          pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->constant_pool_index();
+          pool_index = mh->constants()->resolved_indy_entry_at(cpci)->constant_pool_index();
         } else {
           // cache cannot be pre-fetched since some classes won't have it yet
           pool_index = mh->constants()->resolved_method_entry_at(cpci)->constant_pool_index();

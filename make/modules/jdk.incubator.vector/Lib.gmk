@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,14 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libjsvml
+################################################################################
 
 ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSVML, \
       NAME := jsvml, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_windows := -defaultlib:msvcrt, \
   ))
 
   TARGETS += $(BUILD_LIBJSVML)
 endif
-
-################################################################################

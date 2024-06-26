@@ -42,7 +42,9 @@ import javax.security.auth.callback.PasswordCallback;
 
 import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
 
+import com.sun.crypto.provider.DHParameters;
 import jdk.internal.misc.InnocuousThread;
+import sun.security.rsa.PSSParameters;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -707,6 +709,14 @@ public final class SunPKCS11 extends AuthProvider {
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters",
                 m(CKM_CHACHA20_POLY1305));
 
+        dA(AGP, "RSASSA-PSS",
+                "sun.security.rsa.PSSParameters",
+                m(CKM_RSA_PKCS_PSS));
+
+        dA(AGP, "DiffieHellman",
+                "com.sun.crypto.provider.DHParameters",
+                m(CKM_DH_PKCS_DERIVE));
+
         d(KA, "DH",             P11KeyAgreement,
                 dhAlias,
                 m(CKM_DH_PKCS_DERIVE));
@@ -1212,25 +1222,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    private static boolean isLegacy(CK_MECHANISM_INFO mechInfo)
-            throws PKCS11Exception {
-        // assume full support if no mech info available
-        // For vendor-specific mechanisms, often no mech info is provided
-        boolean partialSupport = false;
-
-        if (mechInfo != null) {
-            if ((mechInfo.flags & CKF_DECRYPT) != 0) {
-                // non-legacy cipher mechs should support encryption
-                partialSupport |= ((mechInfo.flags & CKF_ENCRYPT) == 0);
-            }
-            if ((mechInfo.flags & CKF_VERIFY) != 0) {
-                // non-legacy signature mechs should support signing
-                partialSupport |= ((mechInfo.flags & CKF_SIGN) == 0);
-            }
-        }
-        return partialSupport;
-    }
-
     // test if a token is present and initialize this provider for it if so.
     // does nothing if no token is found
     // called from constructor and by poller
@@ -1299,12 +1290,6 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-            if (isLegacy(mechInfo)) {
-                if (showInfo) {
-                    System.out.println("DISABLED due to legacy");
-                }
-                continue;
-            }
 
             if (brokenMechanisms.contains(longMech)) {
                 if (showInfo) {
@@ -1326,6 +1311,7 @@ public final class SunPKCS11 extends AuthProvider {
             if (ds == null) {
                 continue;
             }
+            boolean allowLegacy = config.getAllowLegacy();
             descLoop:
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
@@ -1339,6 +1325,21 @@ public final class SunPKCS11 extends AuthProvider {
                                     requiredMech & 0xFFFFFFFFL) == null) {
                                 continue descLoop;
                             }
+                        }
+                    }
+
+                    // assume full support if no mech info available
+                    if (!allowLegacy && mechInfo != null) {
+                        if ((d.type == CIP &&
+                                (mechInfo.flags & CKF_ENCRYPT) == 0) ||
+                                (d.type == SIG &&
+                                (mechInfo.flags & CKF_SIGN) == 0)) {
+                            if (showInfo) {
+                                System.out.println("DISABLED " +  d.type +
+                                        " " + d.algorithm +
+                                        " due to partial support");
+                            }
+                            continue;
                         }
                     }
                     supportedAlgs.put(d, integerMech);
@@ -1496,6 +1497,10 @@ public final class SunPKCS11 extends AuthProvider {
                     return new sun.security.util.GCMParameters();
                 } else if (algorithm == "ChaCha20-Poly1305") {
                     return new ChaCha20Poly1305Parameters(); // from SunJCE
+                } else if (algorithm == "RSASSA-PSS") {
+                    return new PSSParameters(); // from SunRsaSign
+                } else if (algorithm == "DiffieHellman") {
+                    return new DHParameters(); // from SunJCE
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);

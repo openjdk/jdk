@@ -52,7 +52,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import jdk.internal.misc.Blocker;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
@@ -682,7 +681,6 @@ abstract class UnixFileSystem
                 // Some forms of direct copy do not work on zero size files
                 if (!directCopyNotSupported && attrs.size() > 0) {
                     // copy bytes to target using platform function
-                    long comp = Blocker.begin();
                     try {
                         int res = directCopy(fo, fi, addressToPollForCancel);
                         if (res == 0) {
@@ -692,8 +690,6 @@ abstract class UnixFileSystem
                         }
                     } catch (UnixException x) {
                         x.rethrowAsIOException(source, target);
-                    } finally {
-                        Blocker.end(comp);
                     }
                 }
 
@@ -703,14 +699,11 @@ abstract class UnixFileSystem
                     ByteBuffer buf =
                         sun.nio.ch.Util.getTemporaryDirectBuffer(bufferSize);
                     try {
-                        long comp = Blocker.begin();
                         try {
                             bufferedCopy(fo, fi, ((DirectBuffer)buf).address(),
                                           bufferSize, addressToPollForCancel);
                         } catch (UnixException x) {
                             x.rethrowAsIOException(source, target);
-                        } finally {
-                            Blocker.end(comp);
                         }
                     } finally {
                         sun.nio.ch.Util.releaseTemporaryDirectBuffer(buf);

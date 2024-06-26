@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,6 @@
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
-serviceability/dcmd/thread/PrintConcurrentLocksTest.java 8308033 generic-all
-serviceability/dcmd/thread/PrintTest.java 8308033 generic-all
-serviceability/dcmd/thread/ThreadDumpToFileTest.java 8308033 generic-all
-serviceability/tmtools/jstack/DaemonThreadTest.java 8308033 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -2078,9 +2078,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Melbourne">
 				<exemplarCity>मेलबौर्न</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>करी</exemplarCity>
-			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>हबार्ट</exemplarCity>
 			</zone>
@@ -2234,9 +2231,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>क्रेस्टन</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>येल्ल’नाईफ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>एडमन्टन</exemplarCity>
 			</zone>
@@ -2255,29 +2249,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>रेजल्युत</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>रैनी रिभार</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>रेनकिन इनलेट</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>आतिककान</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>थान्डार गाथोन</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>निपिग’न</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>टरन्ट’</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>इकालुईत</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>पांग्नीरटुं</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>मक्ट’न</exemplarCity>
@@ -3089,17 +3071,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>दार एस सलाम</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ऊज्ह’र’ड</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>कीभ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>सिम्फेर’प’ल</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>झाप’र’झ्ये</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>काम्पाला</exemplarCity>
@@ -3118,9 +3094,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>हनलुलु</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ज’नस्ट’न</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>एंकरेज</exemplarCity>
@@ -3819,11 +3792,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>माकाऊ समर टाईम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>माक्वारी द्वीप सम</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मागादान सम</generic>
@@ -3861,13 +3829,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>मौसन सम</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>साहा-सोनाब मेक्सिक’ सम</generic>
-					<standard>साहा-सोनाब मेक्सिक’ थाखोआरि सम</standard>
-					<daylight>साहा-सोनाब मेक्सिक’ सानारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

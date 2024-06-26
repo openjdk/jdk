@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -49,32 +48,28 @@ public class LightweightCliprect {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("LightweightCliprect Instructions Frame")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(10)
                 .columns(45)
-                .build();
+                .testUI(LightweightCliprect::createUI)
+                .build()
+                .awaitAndCheck();
+    }
 
-        EventQueue.invokeAndWait(() -> {
-            Frame frame = new Frame("DefaultSize");
+    private static Frame createUI() {
+        Frame frame = new Frame("DefaultSize");
 
-            Container panel = new MyContainer();
-            MyComponent c = new MyComponent();
-            panel.add(c);
+        Container panel = new MyContainer();
+        MyComponent c = new MyComponent();
+        panel.add(c);
 
-            frame.add(panel);
-            frame.setSize(400, 300);
+        frame.add(panel);
+        frame.setSize(400, 300);
 
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame
-                    .positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+        return frame;
     }
 }
 

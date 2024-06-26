@@ -197,14 +197,8 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject implementationMember,
                                       jobject dynamicMethodType);
 
-JNIEXPORT jboolean JNICALL
-JVM_IsCDSDumpingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsSharingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsDumpingClassList(JNIEnv* env);
+JNIEXPORT jint JNICALL
+JVM_GetCDSConfigStatus();
 
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
