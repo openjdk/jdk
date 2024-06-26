@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  */
 package jdk.jpackage.test;
 
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.Log;
 
 /**
  * jpackage type traits.
@@ -91,7 +94,7 @@ public enum PackageType {
         return null;
     }
 
-    private static boolean isBundlerSupported(String bundlerClass) {
+    private static boolean isBundlerSupportedImpl(String bundlerClass) {
         try {
             Class clazz = Class.forName(bundlerClass);
             Method supported = clazz.getMethod("supported", boolean.class);
@@ -103,6 +106,30 @@ public enum PackageType {
             Functional.rethrowUnchecked(ex);
         }
         return false;
+    }
+
+    private static boolean isBundlerSupported(String bundlerClass) {
+        AtomicBoolean reply = new AtomicBoolean();
+        try {
+            // Capture jpackage's activity on configuring bundlers.
+            // Log configuration is thread-local.
+            // Call Log.setPrintWriter and Log.setVerbose in a separate
+            // thread to keep the main log configuration intact.
+            var thread = new Thread(() -> {
+                Log.setPrintWriter(new PrintWriter(System.out), new PrintWriter(System.err));
+                Log.setVerbose();
+                try {
+                    reply.set(isBundlerSupportedImpl(bundlerClass));
+                } finally {
+                    Log.flush();
+                }
+            });
+            thread.run();
+            thread.join();
+        } catch (InterruptedException ex) {
+            Functional.rethrowUnchecked(ex);
+        }
+        return reply.get();
     }
 
     private final String name;

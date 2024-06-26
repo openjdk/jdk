@@ -31,14 +31,10 @@
 
 class PSVirtualSpace;
 
-class ParMarkBitMap: public CHeapObj<mtGC>
-{
-public:
+class ParMarkBitMap: public CHeapObj<mtGC> {
   typedef BitMap::idx_t idx_t;
 
-  // Values returned by the iterate() methods.
-  enum IterationStatus { incomplete, complete, full };
-
+public:
   inline ParMarkBitMap();
   bool initialize(MemRegion covered_region);
 
@@ -46,9 +42,6 @@ public:
   inline bool mark_obj(HeapWord* addr);
   inline bool mark_obj(oop obj);
 
-  // Traditional interface for testing whether an object is marked or not (these
-  // test only the begin bits).
-  inline bool is_marked(idx_t bit)      const;
   inline bool is_marked(HeapWord* addr) const;
   inline bool is_marked(oop obj)        const;
 
@@ -57,18 +50,13 @@ public:
 
   size_t reserved_byte_size() const { return _reserved_byte_size; }
 
-  // Convert a heap address to/from a bit index.
-  inline idx_t     addr_to_bit(HeapWord* addr) const;
-  inline HeapWord* bit_to_addr(idx_t bit) const;
-
   inline HeapWord* find_obj_beg(HeapWord* beg, HeapWord* end) const;
 
   // Return the address of the last obj-start in the range [beg, end).  If no
   // object is found, return end.
   inline HeapWord* find_obj_beg_reverse(HeapWord* beg, HeapWord* end) const;
-  // Clear a range of bits or the entire bitmap (both begin and end bits are
-  // cleared).
-  inline void clear_range(idx_t beg, idx_t end);
+  // Clear a range of bits corresponding to heap address range [beg, end).
+  inline void clear_range(HeapWord* beg, HeapWord* end);
 
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
@@ -86,16 +74,11 @@ private:
   // granularity is 2, 64-bit is 1.
   static inline int obj_granularity_shift() { return LogMinObjAlignment; }
 
-  HeapWord*       _region_start;
-  size_t          _region_size;
+  HeapWord*       _heap_start;
+  size_t          _heap_size;
   BitMapView      _beg_bits;
   PSVirtualSpace* _virtual_space;
   size_t          _reserved_byte_size;
-
-  // Return the number of bits required to represent the specified number of
-  // HeapWords, or the specified region.
-  static inline idx_t bits_required(size_t words);
-  static inline idx_t bits_required(MemRegion covered_region);
 
   // Convert sizes from bits to HeapWords and back.  An object that is n bits
   // long will be bits_to_words(n) words long.  An object that is m words long
@@ -106,10 +89,14 @@ private:
   // Return word-aligned up range_end, which must not be greater than size().
   inline idx_t align_range_end(idx_t range_end) const;
 
-  inline HeapWord* region_start() const;
-  inline HeapWord* region_end() const;
-  inline size_t    region_size() const;
+  inline HeapWord* heap_start() const;
+  inline HeapWord* heap_end() const;
+  inline size_t    heap_size() const;
   inline size_t    size() const;
+
+  // Convert a heap address to/from a bit index.
+  inline idx_t     addr_to_bit(HeapWord* addr) const;
+  inline HeapWord* bit_to_addr(idx_t bit) const;
 
 #ifdef  ASSERT
   inline void verify_bit(idx_t bit) const;

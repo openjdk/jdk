@@ -1749,6 +1749,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_ClearArray:
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {
@@ -7235,14 +7236,24 @@ instruct vxor_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- VectorCast --------------------------------------
 
 instruct vcastBtoX(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
-    assert(UseAVX > 0, "required");
-
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
     __ vconvert_b2x(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcastBtoD(legVec dst, legVec src) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (VectorCastB2X src));
+  format %{ "vector_cast_b2x $dst,$src\t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vconvert_b2x(T_DOUBLE, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

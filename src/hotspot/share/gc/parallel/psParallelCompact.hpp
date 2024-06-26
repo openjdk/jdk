@@ -44,7 +44,6 @@ class PSOldGen;
 class ParCompactionManager;
 class PSParallelCompact;
 class MoveAndUpdateClosure;
-class RefProcTaskExecutor;
 class ParallelOldTracer;
 class STWGCTimer;
 
@@ -166,7 +165,7 @@ inline bool SplitInfo::is_split(size_t region_idx) const
 
 class SpaceInfo
 {
- public:
+public:
   MutableSpace* space() const { return _space; }
 
   // Where the free space will start after the collection.  Valid only after the
@@ -190,9 +189,7 @@ class SpaceInfo
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
   void set_start_array(ObjectStartArray* s) { _start_array = s; }
 
-  void publish_new_top() const              { _space->set_top(_new_top); }
-
- private:
+private:
   MutableSpace*     _space;
   HeapWord*         _new_top;
   HeapWord*         _dense_prefix;
@@ -520,7 +517,7 @@ inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
-  // would mistakenly return 0 for _region_end
+  // This method would mistakenly return 0 for _heap_end; hence exclusive.
   assert(addr < _heap_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
@@ -528,8 +525,8 @@ ParallelCompactData::region_offset(const HeapWord* addr) const
 inline size_t
 ParallelCompactData::addr_to_region_idx(const HeapWord* addr) const
 {
-  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
-  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
+  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _heap_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
+  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _heap_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
   return pointer_delta(addr, _heap_start) >> Log2RegionSize;
 }
 
@@ -586,75 +583,6 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 // single subclass that uses it to avoid making is_full() virtual, and thus
 // adding a virtual call per live object.
 
-class ParMarkBitMapClosure: public StackObj {
- public:
-  typedef ParMarkBitMap::idx_t idx_t;
-  typedef ParMarkBitMap::IterationStatus IterationStatus;
-
- public:
-  inline ParMarkBitMapClosure(ParMarkBitMap* mbm, ParCompactionManager* cm,
-                              size_t words = max_uintx);
-
-  inline ParCompactionManager* compaction_manager() const;
-  inline ParMarkBitMap*        bitmap() const;
-  inline size_t                words_remaining() const;
-  inline bool                  is_full() const;
-  inline HeapWord*             source() const;
-
-  inline void                  set_source(HeapWord* addr);
-
-  virtual IterationStatus do_addr(HeapWord* addr, size_t words) = 0;
-
- protected:
-  inline void decrement_words_remaining(size_t words);
-
- private:
-  ParMarkBitMap* const        _bitmap;
-  ParCompactionManager* const _compaction_manager;
-  size_t                      _words_remaining; // Words left to copy.
-
- protected:
-  HeapWord*                   _source;          // Next addr that would be read.
-};
-
-inline
-ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
-                                           ParCompactionManager* cm,
-                                           size_t words):
-  _bitmap(bitmap), _compaction_manager(cm)
-{
-  _words_remaining = words;
-  _source = nullptr;
-}
-
-inline ParCompactionManager* ParMarkBitMapClosure::compaction_manager() const {
-  return _compaction_manager;
-}
-
-inline ParMarkBitMap* ParMarkBitMapClosure::bitmap() const {
-  return _bitmap;
-}
-
-inline size_t ParMarkBitMapClosure::words_remaining() const {
-  return _words_remaining;
-}
-
-inline bool ParMarkBitMapClosure::is_full() const {
-  return words_remaining() == 0;
-}
-
-inline HeapWord* ParMarkBitMapClosure::source() const {
-  return _source;
-}
-
-inline void ParMarkBitMapClosure::set_source(HeapWord* addr) {
-  _source = addr;
-}
-
-inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
-  assert(_words_remaining >= words, "processed too many words");
-  _words_remaining -= words;
-}
 
 // The Parallel collector is a stop-the-world garbage collector that
 // does parts of the collection using parallel threads.  The collection includes
@@ -750,9 +678,8 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // https://doi.org/10.1145/3313808.3313820
 
 class PSParallelCompact : AllStatic {
- public:
+public:
   // Convenient access to type names.
-  typedef ParMarkBitMap::idx_t idx_t;
   typedef ParallelCompactData::RegionData RegionData;
 
   typedef enum {
@@ -768,9 +695,7 @@ public:
     virtual bool do_object_b(oop p);
   };
 
-  friend class PSParallelCompactTest;
-
- private:
+private:
   static STWGCTimer           _gc_timer;
   static ParallelOldTracer    _gc_tracer;
   static elapsedTimer         _accumulated_time;
@@ -785,10 +710,10 @@ public:
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
- public:
+public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
- private:
+private:
 
   static void initialize_space_info();
 
@@ -828,16 +753,9 @@ public:
   // Add available regions to the stack and draining tasks to the task queue.
   static void prepare_region_draining_tasks(uint parallel_gc_threads);
 
-#ifndef PRODUCT
-  // Print generic summary data
-  static void print_generic_summary_data(ParallelCompactData& summary_data,
-                                         HeapWord* const beg_addr,
-                                         HeapWord* const end_addr);
-#endif  // #ifndef PRODUCT
-
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
- public:
+public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
   static bool invoke(bool maximum_heap_compaction);
@@ -867,16 +785,9 @@ public:
 
   static CollectorCounters* counters()    { return _counters; }
 
-  // Marking support
-  static inline bool mark_obj(oop obj);
   static inline bool is_marked(oop obj);
 
   template <class T> static inline void adjust_pointer(T* p);
-
-  // Compaction support.
-  // Return true if p is in the range [beg_addr, end_addr).
-  static inline bool is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr);
-  static inline bool is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr);
 
   // Convenience wrappers for per-space data kept in _space_info.
   static inline MutableSpace*     space(SpaceId space_id);
@@ -937,16 +848,6 @@ public:
 
   static void print_on_error(outputStream* st);
 
-#ifndef PRODUCT
-  // Debugging support.
-  static const char* space_names[last_space_id];
-  static void print_region_ranges();
-  static void summary_phase_msg(SpaceId dst_space_id,
-                                HeapWord* dst_beg, HeapWord* dst_end,
-                                SpaceId src_space_id,
-                                HeapWord* src_beg, HeapWord* src_end);
-#endif  // #ifndef PRODUCT
-
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.
   static inline void check_new_location(HeapWord* old_addr, HeapWord* new_addr);
@@ -955,39 +856,52 @@ public:
 #endif  // #ifdef ASSERT
 };
 
-class MoveAndUpdateClosure: public ParMarkBitMapClosure {
+class MoveAndUpdateClosure: public StackObj {
+private:
+  ParMarkBitMap* const        _bitmap;
+  size_t                      _words_remaining; // Words left to copy.
   static inline size_t calculate_words_remaining(size_t region);
- public:
-  inline MoveAndUpdateClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
-                              size_t region);
+
+protected:
+  HeapWord*               _source;          // Next addr that would be read.
+  HeapWord*               _destination;     // Next addr to be written.
+  ObjectStartArray* const _start_array;
+  size_t                  _offset;
+
+  inline void decrement_words_remaining(size_t words);
+  // Update variables to indicate that word_count words were processed.
+  inline void update_state(size_t words);
+
+public:
+  ParMarkBitMap*        bitmap() const { return _bitmap; }
+
+  size_t    words_remaining()    const { return _words_remaining; }
+  bool      is_full()            const { return _words_remaining == 0; }
+  HeapWord* source()             const { return _source; }
+  void      set_source(HeapWord* addr) { _source = addr; }
+
+  // If the object will fit (size <= words_remaining()), copy it to the current
+  // destination, update the interior oops and the start array.
+  void do_addr(HeapWord* addr, size_t words);
+
+  inline MoveAndUpdateClosure(ParMarkBitMap* bitmap, size_t region);
 
   // Accessors.
   HeapWord* destination() const         { return _destination; }
   HeapWord* copy_destination() const    { return _destination + _offset; }
-
-  // If the object will fit (size <= words_remaining()), copy it to the current
-  // destination, update the interior oops and the start array and return either
-  // full (if the closure is full) or incomplete.  If the object will not fit,
-  // return would_overflow.
-  IterationStatus do_addr(HeapWord* addr, size_t size);
 
   // Copy enough words to fill this closure or to the end of an object,
   // whichever is smaller, starting at source(). The start array is not
   // updated.
   void copy_partial_obj(size_t partial_obj_size);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
-
-protected:
-  // Update variables to indicate that word_count words were processed.
-  inline void update_state(size_t word_count);
-
- protected:
-  HeapWord*               _destination;         // Next addr to be written.
-  ObjectStartArray* const _start_array;
-  size_t                  _offset;
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 };
+
+inline void MoveAndUpdateClosure::decrement_words_remaining(size_t words) {
+  assert(_words_remaining >= words, "processed too many words");
+  _words_remaining -= words;
+}
 
 inline size_t MoveAndUpdateClosure::calculate_words_remaining(size_t region) {
   HeapWord* dest_addr = PSParallelCompact::summary_data().region_to_addr(region);
@@ -999,14 +913,13 @@ inline size_t MoveAndUpdateClosure::calculate_words_remaining(size_t region) {
 }
 
 inline
-MoveAndUpdateClosure::MoveAndUpdateClosure(ParMarkBitMap* bitmap,
-                                           ParCompactionManager* cm,
-                                           size_t region_idx) :
-  ParMarkBitMapClosure(bitmap, cm, calculate_words_remaining(region_idx)),
+MoveAndUpdateClosure::MoveAndUpdateClosure(ParMarkBitMap* bitmap, size_t region_idx) :
+  _bitmap(bitmap),
+  _words_remaining(calculate_words_remaining(region_idx)),
+  _source(nullptr),
   _destination(PSParallelCompact::summary_data().region_to_addr(region_idx)),
   _start_array(PSParallelCompact::start_array(PSParallelCompact::space_id(_destination))),
-  _offset(0) { }
-
+  _offset(0) {}
 
 inline void MoveAndUpdateClosure::update_state(size_t words)
 {
@@ -1018,11 +931,9 @@ inline void MoveAndUpdateClosure::update_state(size_t words)
 class MoveAndUpdateShadowClosure: public MoveAndUpdateClosure {
   inline size_t calculate_shadow_offset(size_t region_idx, size_t shadow_idx);
 public:
-  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
-                       size_t region, size_t shadow);
+  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 
 private:
   size_t _shadow;
@@ -1036,11 +947,8 @@ inline size_t MoveAndUpdateShadowClosure::calculate_shadow_offset(size_t region_
 }
 
 inline
-MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
-                                                       ParCompactionManager *cm,
-                                                       size_t region,
-                                                       size_t shadow) :
-  MoveAndUpdateClosure(bitmap, cm, region),
+MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow) :
+  MoveAndUpdateClosure(bitmap, region),
   _shadow(shadow) {
   _offset = calculate_shadow_offset(region, shadow);
 }

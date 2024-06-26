@@ -30,7 +30,6 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 
@@ -213,8 +212,8 @@ class MacroAssembler: public Assembler {
   // Alignment
   void align32();
   void align64();
-  void align(int modulus);
-  void align(int modulus, int target);
+  void align(uint modulus);
+  void align(uint modulus, uint target);
 
   void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
@@ -2018,7 +2017,7 @@ public:
                                Register yz_idx, Register idx, Register jdx,
                                Register carry, Register product,
                                Register carry2);
-  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
@@ -2151,6 +2150,11 @@ public:
 
   void lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
   void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+
+#ifdef _LP64
+  void save_legacy_gprs();
+  void restore_legacy_gprs();
+#endif
 };
 
 /**

@@ -557,6 +557,7 @@ class SerializeClosure;
   template(bool_array_signature,                      "[Z")                                       \
   template(byte_array_signature,                      "[B")                                       \
   template(char_array_signature,                      "[C")                                       \
+  template(int_array_signature,                       "[I")                                       \
   template(runnable_signature,                        "Ljava/lang/Runnable;")                     \
   template(continuation_signature,                    "Ljdk/internal/vm/Continuation;")           \
   template(continuationscope_signature,               "Ljdk/internal/vm/ContinuationScope;")      \

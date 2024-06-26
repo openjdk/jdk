@@ -31,43 +31,33 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline ParMarkBitMap::ParMarkBitMap():
-  _region_start(nullptr), _region_size(0), _beg_bits(), _virtual_space(nullptr), _reserved_byte_size(0)
+  _heap_start(nullptr), _heap_size(0), _beg_bits(), _virtual_space(nullptr), _reserved_byte_size(0)
 { }
 
-inline void ParMarkBitMap::clear_range(idx_t beg, idx_t end) {
-  _beg_bits.clear_range(beg, end);
+inline void ParMarkBitMap::clear_range(HeapWord* beg, HeapWord* end) {
+  const idx_t beg_bit = addr_to_bit(beg);
+  const idx_t end_bit = addr_to_bit(end);
+  _beg_bits.clear_range(beg_bit, end_bit);
 }
 
-inline ParMarkBitMap::idx_t ParMarkBitMap::bits_required(size_t words) {
-  return words_to_bits(words);
+inline HeapWord* ParMarkBitMap::heap_start() const {
+  return _heap_start;
 }
 
-inline ParMarkBitMap::idx_t ParMarkBitMap::bits_required(MemRegion covered_region) {
-  return bits_required(covered_region.word_size());
+inline HeapWord* ParMarkBitMap::heap_end() const {
+  return heap_start() + heap_size();
 }
 
-inline HeapWord* ParMarkBitMap::region_start() const {
-  return _region_start;
-}
-
-inline HeapWord* ParMarkBitMap::region_end() const {
-  return region_start() + region_size();
-}
-
-inline size_t ParMarkBitMap::region_size() const {
-  return _region_size;
+inline size_t ParMarkBitMap::heap_size() const {
+  return _heap_size;
 }
 
 inline size_t ParMarkBitMap::size() const {
   return _beg_bits.size();
 }
 
-inline bool ParMarkBitMap::is_marked(idx_t bit) const {
-  return _beg_bits.at(bit);
-}
-
 inline bool ParMarkBitMap::is_marked(HeapWord* addr) const {
-  return is_marked(addr_to_bit(addr));
+  return _beg_bits.at(addr_to_bit(addr));
 }
 
 inline bool ParMarkBitMap::is_marked(oop obj) const {
@@ -100,12 +90,12 @@ inline bool ParMarkBitMap::mark_obj(oop obj) {
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::addr_to_bit(HeapWord* addr) const {
   DEBUG_ONLY(verify_addr(addr);)
-  return words_to_bits(pointer_delta(addr, region_start()));
+  return words_to_bits(pointer_delta(addr, heap_start()));
 }
 
 inline HeapWord* ParMarkBitMap::bit_to_addr(idx_t bit) const {
   DEBUG_ONLY(verify_bit(bit);)
-  return region_start() + bits_to_words(bit);
+  return heap_start() + bits_to_words(bit);
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::align_range_end(idx_t range_end) const {
@@ -138,10 +128,10 @@ inline void ParMarkBitMap::verify_bit(idx_t bit) const {
 
 inline void ParMarkBitMap::verify_addr(HeapWord* addr) const {
   // Allow one past the last valid address; useful for loop bounds.
-  assert(addr >= region_start(),
-         "addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, p2i(addr), p2i(region_start()));
-  assert(addr <= region_end(),
-         "addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, p2i(addr), p2i(region_end()));
+  assert(addr >= heap_start(),
+         "addr too small, addr: " PTR_FORMAT " heap start: " PTR_FORMAT, p2i(addr), p2i(heap_start()));
+  assert(addr <= heap_end(),
+         "addr too big, addr: " PTR_FORMAT " heap end: " PTR_FORMAT, p2i(addr), p2i(heap_end()));
 }
 #endif  // #ifdef ASSERT
 
