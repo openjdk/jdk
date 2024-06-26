@@ -7580,8 +7580,6 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
   return true;
 }
 

@@ -717,9 +717,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
-sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
-
 ############################################################################
 
 # jdk_instrument
