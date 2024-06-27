@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 5021949
- * @key headful
  * @summary  Verifies JSplitPane setEnabled(false) disables one touch expandable clicks
  * @run main TestSplitPaneEnableTest
  */
@@ -42,8 +41,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class TestSplitPaneEnableTest {
     private static JButton leftOneTouchButton;
     private static JButton rightOneTouchButton;
-    private static JSplitPane jsp;
-    private static volatile boolean btnEnabled;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -62,9 +59,9 @@ public class TestSplitPaneEnableTest {
                 continue;
             }
             System.out.println("Testing LAF : " + laf.getClassName());
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
             SwingUtilities.invokeAndWait(() -> {
+                setLookAndFeel(laf);
                 JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                                                 new JButton("Left"), new JButton("Right"));
                 jsp.setUI(new TestSplitPaneUI());
