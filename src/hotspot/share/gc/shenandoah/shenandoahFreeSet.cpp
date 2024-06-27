@@ -1137,7 +1137,7 @@ void ShenandoahFreeSet::log_status_under_lock() {
       DEBUG_ONLY(|| LogTarget(Debug, gc, free)::is_enabled())) {
     ShenandoahHeapLocker locker(_heap->lock());
     log_status();
-   }
+  }
 }
 
 void ShenandoahFreeSet::log_status() {
