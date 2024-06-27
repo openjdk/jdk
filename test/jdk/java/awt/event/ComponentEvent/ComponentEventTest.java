@@ -63,7 +63,7 @@ public class ComponentEventTest {
     private volatile static Point compAt;
     private volatile static Dimension compSize;
     private volatile static ArrayList<ComponentEvent> events =
-        new ArrayList<ComponentEvent>();
+        new ArrayList<>();
 
     private static final ComponentListener componentListener =
         new ComponentListener() {
@@ -161,7 +161,7 @@ public class ComponentEventTest {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-     // Hide all components and check if the ComponentEvent is triggered
+        // Hide all components and check if the ComponentEvent is triggered
         for (int i = 0; i < components.length; i++) {
             doTestForComponent(i);
         }
@@ -184,7 +184,7 @@ public class ComponentEventTest {
             System.err.print("Events triggered are: ");
             for (int j = 0; j < events.size();
                 System.err.print(events.get(j) + "; "), j++);
-            System.err.println("");
+            System.err.println();
             throw new RuntimeException(
                 "FAIL: ComponentEvent triggered when frame is iconified");
         }
@@ -199,7 +199,7 @@ public class ComponentEventTest {
             System.err.print("Events triggered are: ");
             for (int j = 0; j < events.size();
                 System.err.print(events.get(j) + "; "), j++);
-            System.err.println("");
+            System.err.println();
             throw new RuntimeException(
                 "FAIL: ComponentEvent triggered when frame is set to normal state");
         }
