@@ -291,11 +291,6 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
       }
     }
 
-    if (PrintCodeCache) {
-      tty->print_cr("- BufferBlob malloc %i [%p %p]. offset to CodeCache: %li GB",
-        size, ptr, ptr+size, offset_to_codecache(ptr)/1024/1024/1024);
-    }
-
     // this is to avoid "copy must preserve alignment" assert in CodeBuffer::compute_final_layout:
     // usual BufferBlob start position is ~ segment alignment + 16 due to HeapBlock header size
     BufferBlob* blob = (BufferBlob*) ((char*)ptr + 16);

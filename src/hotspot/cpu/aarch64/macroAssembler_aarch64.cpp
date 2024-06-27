@@ -714,7 +714,6 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   // destination within the code cache.
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    if (PrintCodeCache) { tty->print_cr("call: %p->%p", entry.target(), entry.target() - delta); }
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -744,10 +743,6 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
   if (!CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
     intptr_t offset = (intptr_t)pc() - (intptr_t)code_section()->start();
-    if (PrintCodeCache) {
-      tty->print_cr("jump: %p->%p | sect: %p, pc:%p, offset:%p",
-        entry.target(), entry.target() - delta, code_section()->start(), pc(), (void*)offset);
-    }
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -949,11 +944,6 @@ address MacroAssembler::trampoline_call(Address entry) {
 
   if (!CodeCache::contains(pc()) && target != pc()) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    intptr_t offset = (intptr_t)pc() - (intptr_t)code_section()->start();
-    if (PrintCodeCache) {
-       tty->print_cr("trmp: %p->%p | sect: %p, pc:%p, offset:%p",
-       entry.target(), entry.target() - delta, code_section()->start(), pc(), (void*)offset);
-    }
     target = entry.target() - delta;
   };
 
