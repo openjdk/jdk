@@ -445,7 +445,7 @@ inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int 
 OopMapCacheEntry* volatile OopMapCache::_old_entries = nullptr;
 
 OopMapCache::OopMapCache() {
-  for(int i = 0; i < _size; i++) _array[i] = nullptr;
+  for(int i = 0; i < size; i++) _array[i] = nullptr;
 }
 
 
@@ -455,15 +455,15 @@ OopMapCache::~OopMapCache() {
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return Atomic::load_acquire(&(_array[i % _size]));
+  return Atomic::load_acquire(&(_array[i % size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(&_array[i % _size], old, entry) == old;
+  return Atomic::cmpxchg(&_array[i % size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr) {
       _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
@@ -474,7 +474,7 @@ void OopMapCache::flush() {
 
 void OopMapCache::flush_obsolete_entries() {
   assert(SafepointSynchronize::is_at_safepoint(), "called by RedefineClasses in a safepoint");
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr && !entry->is_empty() && entry->method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
@@ -509,7 +509,7 @@ void OopMapCache::lookup(const methodHandle& method,
   // Need a critical section to avoid race against concurrent reclamation.
   {
     GlobalCounter::CriticalSection cs(Thread::current());
-    for (int i = 0; i < _probe_depth; i++) {
+    for (int i = 0; i < probe_depth; i++) {
       OopMapCacheEntry *entry = entry_at(probe + i);
       if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
         entry_for->resource_copy(entry);
@@ -538,7 +538,7 @@ void OopMapCache::lookup(const methodHandle& method,
   }
 
   // First search for an empty slot
-  for (int i = 0; i < _probe_depth; i++) {
+  for (int i = 0; i < probe_depth; i++) {
     OopMapCacheEntry* entry = entry_at(probe + i);
     if (entry == nullptr) {
       if (put_at(probe + i, tmp, nullptr)) {

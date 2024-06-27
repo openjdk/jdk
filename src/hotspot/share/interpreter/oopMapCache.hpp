@@ -152,11 +152,10 @@ class InterpreterOopMap: ResourceObj {
 class OopMapCache : public CHeapObj<mtClass> {
  static OopMapCacheEntry* volatile _old_entries;
  private:
-  enum { _size        = 32,     // Use fixed size for now
-         _probe_depth = 3       // probe depth in case of collisions
-  };
+  static constexpr int size = 32;        // Use fixed size for now
+  static constexpr int probe_depth = 3;  // probe depth in case of collisions
 
-  OopMapCacheEntry* volatile _array[_size];
+  OopMapCacheEntry* volatile _array[size];
 
   unsigned int hash_value_for(const methodHandle& method, int bci) const;
   OopMapCacheEntry* entry_at(int i) const;
