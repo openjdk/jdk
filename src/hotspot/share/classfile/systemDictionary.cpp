@@ -1585,7 +1585,7 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
   {
     MutexLocker ml(ClassLoaderDataGraph_lock);
-    ClassLoaderDataGraph::methods_do_no_keepalive(f);
+    ClassLoaderDataGraph::methods_do(f);
   }
 
   auto doit = [&] (InvokeMethodKey key, Method* method) {
