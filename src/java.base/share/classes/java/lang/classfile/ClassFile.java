@@ -434,7 +434,7 @@ public sealed interface ClassFile
      * This method behaves as if:
      * {@snippet lang=java :
      *     this.build(model.thisClass(), ConstantPoolBuilder.of(model),
-     *                     b -> b.transformClass(model, transform));
+     *                     clb -> clb.transform(model, transform));
      * }
      *
      * @param model the class model to transform
