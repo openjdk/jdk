@@ -5492,7 +5492,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
 
-  Node* elementType     = null_check(argument(0));
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
   Node* offset          = argument(2);
   Node* fromIndex       = argument(4);
@@ -5502,29 +5502,44 @@ bool LibraryCallKit::inline_array_partition() {
 
   Node* pivotIndices = nullptr;
 
+  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
+  if (elem_klass == nullptr) {
+    return false;  // dead path (elementType->is_top()).
+  }
+  if (obj == nullptr || obj->is_top()) {
+    return false;  // dead path
+  }
+  // java_mirror_type() returns non-null for compile-time Class constants only.
+  ciType* elem_type = elem_klass->java_mirror_type();
+  if (elem_type == nullptr) {
+    return false;
+  }
+  BasicType bt = elem_type->basic_type();
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
+  address stubAddr = nullptr;
+  stubAddr = StubRoutines::select_array_partition_function();
+  // stub not loaded
+  if (stubAddr == nullptr) {
+    return false;
+  }
+  // get the address of the array
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
+    return false; // failed input validation
+  }
+
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped())  return true;
+
   // Set the original stack and the reexecute bit for the interpreter to reexecute
   // the bytecode that invokes DualPivotQuicksort.partition() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-    ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-    BasicType bt = elem_type->basic_type();
-    // Disable the intrinsic if the CPU does not support SIMD sort
-    if (!Matcher::supports_simd_sort(bt)) {
-      return false;
-    }
-    address stubAddr = nullptr;
-    stubAddr = StubRoutines::select_array_partition_function();
-    // stub not loaded
-    if (stubAddr == nullptr) {
-      return false;
-    }
-    // get the address of the array
-    const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-    if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-      return false; // failed input validation
-    }
     Node* obj_adr = make_unsafe_address(obj, offset);
 
     // create the pivotIndices array of type int and size = 2
@@ -5558,14 +5573,24 @@ bool LibraryCallKit::inline_array_partition() {
 //------------------------------inline_array_sort-----------------------
 bool LibraryCallKit::inline_array_sort() {
 
-  Node* elementType     = null_check(argument(0));
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
   Node* offset          = argument(2);
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
 
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (elem_klass == nullptr) {
+    return false;  // dead path (elementType->is_top()).
+  }
+  if (obj == nullptr || obj->is_top()) {
+    return false;  // dead path
+  }
+  // java_mirror_type() returns non-null for compile-time Class constants only.
+  ciType* elem_type = elem_klass->java_mirror_type();
+  if (elem_type == nullptr) {
+    return false;
+  }
   BasicType bt = elem_type->basic_type();
   // Disable the intrinsic if the CPU does not support SIMD sort
   if (!Matcher::supports_simd_sort(bt)) {
@@ -5583,6 +5608,11 @@ bool LibraryCallKit::inline_array_sort() {
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
     return false; // failed input validation
   }
+
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped())  return true;
+
   Node* obj_adr = make_unsafe_address(obj, offset);
 
   // pass the basic type enum to the stub
