@@ -3539,9 +3539,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       }
     }
   }
-  if (default_vtable_indices() != nullptr) {
-    st->print(BULLET"default vtable indices:   "); default_vtable_indices()->print_value_on(st);       st->cr();
-  }
+  print_on_maybe_null(st, BULLET"default vtable indices:   ", default_vtable_indices());
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
@@ -3568,25 +3566,18 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
-  if (class_loader_data() != nullptr) {
-    st->print(BULLET"class loader data:  ");
-    class_loader_data()->print_value_on(st);
-    st->cr();
-  }
-  if (source_file_name() != nullptr) {
-    st->print(BULLET"source file:       ");
-    source_file_name()->print_value_on(st);
-    st->cr();
-  }
+
+  print_on_maybe_null(st, BULLET"class loader data:  ", class_loader_data());
+  print_on_maybe_null(st, BULLET"source file:       ", source_file_name());
   if (source_debug_extension() != nullptr) {
     st->print(BULLET"source debug extension:       ");
     st->print("%s", source_debug_extension());
     st->cr();
   }
-  st->print(BULLET"class annotations:       "); class_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"class type annotations:  "); class_type_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
+  print_on_maybe_null(st, BULLET"class annotations:       ", class_annotations());
+  print_on_maybe_null(st, BULLET"class type annotations:  ", class_type_annotations());
+  print_on_maybe_null(st, BULLET"field annotations:       ", fields_annotations());
+  print_on_maybe_null(st, BULLET"field type annotations:  ", fields_type_annotations());
   {
     bool have_pv = false;
     // previous versions are linked together through the InstanceKlass
@@ -3601,16 +3592,10 @@ void InstanceKlass::print_on(outputStream* st) const {
     if (have_pv) st->cr();
   }
 
-  if (generic_signature() != nullptr) {
-    st->print(BULLET"generic signature: ");
-    generic_signature()->print_value_on(st);
-    st->cr();
-  }
+  print_on_maybe_null(st, BULLET"generic signature: ", generic_signature());
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
   st->print(BULLET"nest members:     "); nest_members()->print_value_on(st);     st->cr();
-  if (record_components() != nullptr) {
-    st->print(BULLET"record components:     "); record_components()->print_value_on(st);     st->cr();
-  }
+  print_on_maybe_null(st, BULLET"record components:     ", record_components());
   st->print(BULLET"permitted subclasses:     "); permitted_subclasses()->print_value_on(st);     st->cr();
   if (java_mirror() != nullptr) {
     st->print(BULLET"java mirror:       ");
