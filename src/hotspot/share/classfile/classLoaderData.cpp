@@ -190,13 +190,15 @@ ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
 }
 
 OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
-  if (_head == nullptr || _head->_size == Chunk::CAPACITY) {
+  juint size = 0;
+  if (_head == nullptr || (size = Atomic::load(&_head->_size)) == Chunk::CAPACITY) {
+    size = 0;
     Chunk* next = new Chunk(_head);
     Atomic::release_store(&_head, next);
   }
-  oop* handle = &_head->_data[_head->_size];
+  oop* handle = &_head->_data[size];
   NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, o);
-  Atomic::release_store(&_head->_size, _head->_size + 1);
+  Atomic::release_store(&_head->_size, size + 1);
   return OopHandle(handle);
 }
 
@@ -204,7 +206,7 @@ int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
   Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    count += chunk->_size;
+    count += Atomic::load(&chunk->_size);
     chunk = chunk->_next;
   }
   return count;
@@ -222,7 +224,7 @@ void ClassLoaderData::ChunkedHandleList::oops_do(OopClosure* f) {
     // Must be careful when reading size of head
     oops_do_chunk(f, head, Atomic::load_acquire(&head->_size));
     for (Chunk* c = head->_next; c != nullptr; c = c->_next) {
-      oops_do_chunk(f, c, c->_size);
+      oops_do_chunk(f, c, Atomic::load_acquire(&c->_size));
     }
   }
 }
