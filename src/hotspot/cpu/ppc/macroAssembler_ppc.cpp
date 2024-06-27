@@ -343,26 +343,29 @@ long MacroAssembler::get_const(address a) {
   }
   return (long) x;
 }
-// Branch-free implementation to convert !0 to false
-// Set register dst to true if dst is non zero using temp for calculations on Power Version<10.
-// Set register dst to true if dst is non zero for Power 10 and above machines.
-void MacroAssembler::normalize_bool(Register dst, Register temp, bool use_64bit) {
+// Branch-free implementation to convert !=0 to 1
+// Set register dst to 1 if dst is non-zero. Use setbcr instruction on Power10.
+void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
 
   if (VM_Version::has_brw()) {
-    if(use_64bit)
+    if(is_64bit) {
       cmpdi(CCR0, dst, 0);
-    else
+    }
+    else {
       cmpwi(CCR0, dst, 0);
+    }
     setbcr(dst, CCR0, Assembler::zero);
   }
   else {
     neg(temp, dst);
     orr(temp, dst, temp);
-    if(use_64bit)
+    if(is_64bit) {
       srdi(dst, temp, 63);
-    else
+    }
+    else {
       srwi(dst, temp, 31);
     }
+  }  
 }
 
 // Patch the 64 bit constant of a `load_const' sequence. This is a low
@@ -2415,9 +2418,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   bind(failure);
 
   // convert !=0 to 1
-  neg(R0, linear_result);
-  orr(linear_result, linear_result, R0);
-  srdi(linear_result, linear_result, 63);
+  normalize_bool(linear_result, R0, true);
 
   cmpd(CCR0, result, linear_result);
   beq(CCR0, passed);
