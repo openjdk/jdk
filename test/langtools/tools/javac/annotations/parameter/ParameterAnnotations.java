@@ -305,6 +305,90 @@ public class ParameterAnnotations extends TestRunner {
                "T$1I",
                 NO_SIGNATURE_NO_METHOD_PARAMETERS,
                "T, @Invisible @Visible long, int");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public class T {
+                   {
+                       int i = 0;
+                       class I {
+                           public I(@Visible @Invisible long l) {}
+                           public String toString() {
+                               return T.this.toString() + i; //force outer this capture
+                           }
+                       }
+                   }
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "T$1I",
+                MethodTransform.ACCEPT_ALL,
+               "@Invisible @Visible long");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public class T {
+                   {
+                       int i = 0;
+                       class I {
+                           public <T> I(@Visible @Invisible long l) {}
+                           public String toString() {
+                               return T.this.toString() + i; //force outer this capture
+                           }
+                       }
+                   }
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "T$1I",
+                MethodTransform.ACCEPT_ALL,
+               "@Invisible @Visible long");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public class T {
+                   {
+                       int i = 0;
+                       class I {
+                           public I(@Visible @Invisible long l) {}
+                           public String toString() {
+                               return T.this.toString() + i; //force outer this capture
+                           }
+                       }
+                   }
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "T$1I",
+                NO_SIGNATURE,
+               "T, @Invisible @Visible long, int");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public class T {
+                   {
+                       int i = 0;
+                       class I {
+                           public I(@Visible @Invisible long l) {}
+                           public String toString() {
+                               return T.this.toString() + i; //force outer this capture
+                           }
+                       }
+                   }
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "T$1I",
+                NO_SIGNATURE_NO_METHOD_PARAMETERS,
+               "T, @Invisible @Visible long, int");
     }
 
     @Test
@@ -438,22 +522,93 @@ public class ParameterAnnotations extends TestRunner {
                "1 warning");
     }
 
-    private MethodTransform NO_SIGNATURE = (builder, element) -> {
-        if (element instanceof SignatureAttribute) {
-            //ignore
-        } else {
-            builder.with(element);
-        }
-    };
+    @Test
+    public void testRecord(Path base) throws Exception {
+        //implicit constructor:
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                MethodTransform.ACCEPT_ALL,
+               "int, @Invisible @Visible long, java.lang.String");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                NO_SIGNATURE,
+               "int, @Invisible @Visible long, java.lang.String");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                NO_SIGNATURE_NO_METHOD_PARAMETERS,
+               "int, @Invisible @Visible long, java.lang.String");
+        //compact constructor:
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+                   public R {}
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                MethodTransform.ACCEPT_ALL,
+               "int, @Invisible @Visible long, java.lang.String");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+                   public R {}
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                NO_SIGNATURE,
+               "int, @Invisible @Visible long, java.lang.String");
+        doTest(base,
+               """
+               import java.lang.annotation.*;
+               public record R(int i, @Visible @Invisible long l, String s) {
+                   public R {}
+               }
+               @Retention(RetentionPolicy.RUNTIME)
+               @interface Visible {}
+               @interface Invisible {}
+               """,
+               "R",
+                NO_SIGNATURE_NO_METHOD_PARAMETERS,
+               "int, @Invisible @Visible long, java.lang.String");
+    }
 
-    private MethodTransform NO_SIGNATURE_NO_METHOD_PARAMETERS = (builder, element) -> {
-        if (element instanceof SignatureAttribute ||
-            element instanceof MethodParametersAttribute) {
-            //ignore
-        } else {
-            builder.with(element);
-        }
-    };
+    private MethodTransform NO_SIGNATURE =
+            MethodTransform.dropping(element -> element instanceof SignatureAttribute);
+
+    private MethodTransform NO_SIGNATURE_NO_METHOD_PARAMETERS =
+            MethodTransform.dropping(element -> element instanceof SignatureAttribute ||
+                                     element instanceof MethodParametersAttribute);
 
     private void doTest(Path base, String code, String binaryNameToCheck,
                         MethodTransform changeConstructor, String expectedOutput,

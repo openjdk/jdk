@@ -2673,6 +2673,7 @@ public class ClassReader {
             }
         }
         validateMethodType(name, type);
+        boolean forceLocal = false;
         if (name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so
@@ -2680,7 +2681,8 @@ public class ClassReader {
             // ditto for local classes. Local classes that have an enclosing method set
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
-            boolean local = !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
+            boolean local = forceLocal =
+                    !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
                                       type.getReturnType(),
@@ -2701,7 +2703,7 @@ public class ClassReader {
             currentOwner = prevOwner;
         }
         validateMethodType(name, m.type);
-        adjustParameterAnnotations(m, descriptorType);
+        adjustParameterAnnotations(m, descriptorType, forceLocal);
         setParameters(m, type);
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
@@ -2840,7 +2842,8 @@ public class ClassReader {
         parameterAccessFlags = null;
     }
 
-    void adjustParameterAnnotations(MethodSymbol sym, Type methodDescriptor) {
+    void adjustParameterAnnotations(MethodSymbol sym, Type methodDescriptor,
+                                    boolean forceLocal) {
         if (parameterAnnotations == null) {
             return ;
         }
@@ -2939,7 +2942,7 @@ public class ClassReader {
                 parameterAnnotations = newParameterAnnotations;
                 return ;
             }
-        } else if (sym.owner.isDirectlyOrIndirectlyLocal()) {
+        } else if (sym.owner.isDirectlyOrIndirectlyLocal() || forceLocal) {
             //local class may capture the enclosing instance (as the first parameter),
             //and local variables (as trailing parameters)
             //if there are less parameter annotations than parameters, put the existing
