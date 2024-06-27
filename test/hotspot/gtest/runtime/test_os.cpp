@@ -167,6 +167,9 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
 }
 #endif
 
+#ifndef AIX
+// Test relies on the ability to protect memory allocated with os::reserve_memory. AIX may not be able
+// to do that (mprotect won't work on System V shm).
 static void do_test_print_hex_dump(const_address from, const_address to, int unitsize, int bytes_per_line,
                                    const_address logical_start, const char* expected) {
   char buf[2048];
@@ -252,6 +255,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   os::release_memory(two_pages, ps * 2);
 }
+#endif // not AIX
 
 //////////////////////////////////////////////////////////////////////////////
 // Test os::vsnprintf and friends.
