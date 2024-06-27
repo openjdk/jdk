@@ -453,6 +453,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           # MSVC produces a warning if you pass -fsanitize=address to the linker. It also complains
           $ if -DEBUG is not passed to the linker when building with ASan.
           ASAN_LDFLAGS="-debug"
+          # -fsanitize-address-use-after-return is off by default in MS Visual Studio 22 (19.37.32824).
+          # cl : Command line warning D9002 : ignoring unknown option '-fno-sanitize-address-use-after-return'
         fi
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
