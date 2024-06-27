@@ -1324,7 +1324,7 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
   IfTrueNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
-                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
+                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::InitValue));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(opaque_init->outcnt() > 0, "should be used");
 
@@ -1350,7 +1350,7 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
   new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
-                                         false NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
+                                         false NOT_PRODUCT(COMMA AssertionPredicateType::LastValue));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
   assert(assertion_predicate_has_loop_opaque_node(new_proj->in(0)->as_If()), "unexpected");
