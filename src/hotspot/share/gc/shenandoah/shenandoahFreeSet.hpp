@@ -342,7 +342,6 @@ public:
   void move_regions_from_collector_to_mutator(size_t cset_regions);
 
   void recycle_trash();
-
   void log_status();
 
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
