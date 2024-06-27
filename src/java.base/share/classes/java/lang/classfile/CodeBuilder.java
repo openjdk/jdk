@@ -365,15 +365,16 @@ public sealed interface CodeBuilder
          * <p>
          * The caught exception will be on top of the operand stack when the catch block is entered.
          *
+         * @apiNote No exception handler will be executed after the catch-all block. Thus, this
+         * method does not support chaining.
+         *
          * @param catchAllHandler handler that receives a {@linkplain CodeBuilder} to
          *                        generate the body of the catch block
-         * @return this builder
          * @throws IllegalArgumentException if an existing catch block catches all exceptions.
          * @see #catching
          * @see #catchingMulti
-         * @since 24
          */
-        CatchBuilder catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
+        void catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
     }
 
     /**
