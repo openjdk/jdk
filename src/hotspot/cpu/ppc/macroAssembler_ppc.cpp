@@ -365,7 +365,7 @@ void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) 
     else {
       srwi(dst, temp, 31);
     }
-  }  
+  }
 }
 
 // Patch the 64 bit constant of a `load_const' sequence. This is a low
