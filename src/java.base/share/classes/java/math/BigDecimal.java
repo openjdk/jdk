@@ -2219,7 +2219,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 final int scaleAdjust = (int) scale;
                 if (scaleAdjust != scale)
-                    new ArithmeticException("Overflow");
+                    throw new ArithmeticException("Overflow");
 
                 BigDecimal working = stripped.scaleByPowerOfTen(scaleAdjust);
                 BigInteger workingInt = working.toBigInteger();
