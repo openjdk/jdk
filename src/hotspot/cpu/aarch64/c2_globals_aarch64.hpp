@@ -71,7 +71,9 @@ define_pd_global(bool, IdealizeClearArrayNode,       true);
 define_pd_global(intx, ReservedCodeCacheSize,        48*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      21*M);
 define_pd_global(intx, ProfiledCodeHeapSize,         22*M);
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
+
+ // ## todo: what is the max amount of interpreter+stubs? check the 2MB limit is OK for all applications and VM builds
+define_pd_global(intx, NonNMethodCodeHeapSize,       2*M );
 define_pd_global(uintx, CodeCacheMinBlockLength,     6);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 
