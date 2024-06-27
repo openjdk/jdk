@@ -518,9 +518,9 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     @Override
-    StringBuilder format(long number, StringBuilder toAppendTo,
-                         FieldPosition status) {
-        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
+    StringBuf format(long number, StringBuf toAppendTo,
+                     FieldPosition status) {
+        return format((double) number, toAppendTo, status);
     }
 
     /**
@@ -541,13 +541,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     @Override
-    StringBuilder format(double number,
-                         StringBuilder toAppendTo,
-                         FieldPosition status) {
-        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
-    }
-
-    private StringBuf format(double number, StringBuf toAppendTo,
+    StringBuf format(double number, StringBuf toAppendTo,
                          FieldPosition status) {
         // find the number
         int i;
@@ -741,11 +735,6 @@ public class ChoiceFormat extends NumberFormat {
             throw new InvalidObjectException(
                     "limits and format arrays of different length.");
         }
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
     }
 
     // ===============privates===========================

@@ -972,10 +972,10 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     @Override
-    final StringBuilder format(Date date, StringBuilder toAppendTo,
-                         FieldPosition pos) {
+    final StringBuf format(Date date, StringBuf toAppendTo,
+                           FieldPosition pos) {
         pos.beginIndex = pos.endIndex = 0;
-        return format(date, StringBufFactory.of(toAppendTo), pos.getFieldDelegate()).asStringBuilder();
+        return format(date, toAppendTo, pos.getFieldDelegate());
     }
 
     // Called from Format after creating a FieldDelegate
@@ -1031,15 +1031,15 @@ public class SimpleDateFormat extends DateFormat {
      */
     @Override
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
-        StringBuilder sb = new StringBuilder();
+        StringBuf sb = StringBufFactory.of();
         CharacterIteratorFieldDelegate delegate = new
                          CharacterIteratorFieldDelegate();
 
         if (obj instanceof Date) {
-            format((Date)obj, StringBufFactory.of(sb), delegate);
+            format((Date)obj, sb, delegate);
         }
         else if (obj instanceof Number) {
-            format(new Date(((Number)obj).longValue()), StringBufFactory.of(sb), delegate);
+            format(new Date(((Number)obj).longValue()), sb, delegate);
         }
         else if (obj == null) {
             throw new NullPointerException(
@@ -1445,9 +1445,15 @@ public class SimpleDateFormat extends DateFormat {
         numberFormat.setMinimumIntegerDigits(minDigits);
         numberFormat.setMaximumIntegerDigits(maxDigits);
         if (buffer.isProxyStringBuilder()) {
-            numberFormat.format((long)value, buffer.asStringBuilder(), DontCareFieldPosition.INSTANCE);
+            //User can set numberFormat with a user-defined NumberFormat which
+            //not override format(long, StringBuf, FieldPosition).
+            if ("java.text".equals(numberFormat.getClass().getPackageName())) {
+                numberFormat.format((long) value, buffer, DontCareFieldPosition.INSTANCE);
+            } else {
+                buffer.append(numberFormat.format((long) value, new StringBuffer(), DontCareFieldPosition.INSTANCE));
+            }
         } else {
-            numberFormat.format((long)value, buffer.asStringBuffer(), DontCareFieldPosition.INSTANCE);
+            numberFormat.format((long) value, buffer.asStringBuffer(), DontCareFieldPosition.INSTANCE);
         }
     }
 
@@ -2587,10 +2593,5 @@ public class SimpleDateFormat extends DateFormat {
             }
             originalNumberFormat = numberFormat;
         }
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
     }
 }

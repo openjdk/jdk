@@ -160,8 +160,8 @@ public abstract class Format implements Serializable, Cloneable {
      *            object
      */
     public final String format (Object obj) {
-        if (isInternalSubclass()) {
-            return format(obj, new StringBuilder(), new FieldPosition(0)).toString();
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(obj, StringBufFactory.of(), new FieldPosition(0)).toString();
         } else {
             return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
         }
@@ -189,9 +189,9 @@ public abstract class Format implements Serializable, Cloneable {
                     StringBuffer toAppendTo,
                     FieldPosition pos);
 
-    StringBuilder format(Object obj,
-                         StringBuilder toAppendTo,
-                         FieldPosition pos) {
+    StringBuf format(Object obj,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
@@ -421,23 +421,12 @@ public abstract class Format implements Serializable, Cloneable {
                               int start, int end, StringBuf buffer);
     }
 
-
     /**
-     * Used to distinguish JDK internal subclass and user-defined subclass
-     * of {code Format}.
-     *
-     * @return {@code true}  if current class is a JDK internal subclass of {code Format};
-     *         {@code false} otherwise
+     * StringBuf is the minimal common interface of {@code StringBuffer} and {@code StringBuilder}.
+     * It is used by the various {@code Format} implementations as the internal string buffer.
      */
-    boolean isInternalSubclass() {
-        return false;
-    }
-
-    /**
-     * StringBuf is the minimal common interface of {code StringBuffer} and {code StringBuilder}.
-     * It used by the various {code Format} implementations as the internal string buffer.
-     */
-    interface StringBuf {
+    sealed interface StringBuf
+            permits StringBufFactory.StringBufferImpl, StringBufFactory.StringBuilderImpl {
 
         int length();
 
@@ -454,6 +443,8 @@ public abstract class Format implements Serializable, Cloneable {
         StringBuf append(char[] str, int offset, int len);
 
         StringBuf append(CharSequence s, int start, int end);
+
+        StringBuf append(StringBuffer sb);
 
         boolean isProxyStringBuilder();
 

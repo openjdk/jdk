@@ -347,8 +347,8 @@ public abstract class DateFormat extends Format {
     }
 
     @Override
-    final StringBuilder format(Object obj, StringBuilder toAppendTo,
-                               FieldPosition fieldPosition) {
+    final StringBuf format(Object obj, StringBuf toAppendTo,
+                           FieldPosition fieldPosition) {
         if (obj instanceof Date) {
             return format((Date) obj, toAppendTo, fieldPosition);
         } else if (obj instanceof Number) {
@@ -384,8 +384,8 @@ public abstract class DateFormat extends Format {
     public abstract StringBuffer format(Date date, StringBuffer toAppendTo,
                                         FieldPosition fieldPosition);
 
-    StringBuilder format(Date date, StringBuilder toAppendTo,
-                         FieldPosition fieldPosition) {
+    StringBuf format(Date date, StringBuf toAppendTo,
+                     FieldPosition fieldPosition) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
@@ -397,8 +397,9 @@ public abstract class DateFormat extends Format {
      */
     public final String format(Date date)
     {
-        if (isInternalSubclass() && numberFormat.isInternalSubclass()) {
-            return format(date, new StringBuilder(),
+        if ("java.text".equals(getClass().getPackageName())
+                    && "java.text".equals(numberFormat.getClass().getPackageName())) {
+            return format(date, StringBufFactory.of(),
                     DontCareFieldPosition.INSTANCE).toString();
         } else {
             return format(date, new StringBuffer(),

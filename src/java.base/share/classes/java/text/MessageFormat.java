@@ -1080,11 +1080,6 @@ public class MessageFormat extends Format {
     }
 
     @Override
-    final StringBuilder format(Object arguments, StringBuilder result,
-                               FieldPosition pos) {
-        return subformat((Object[]) arguments, StringBufFactory.of(result), pos, null).asStringBuilder();
-    }
-
     final StringBuf format(Object arguments, StringBuf result,
                            FieldPosition pos) {
         return subformat((Object[]) arguments, result, pos, null);
@@ -1127,10 +1122,10 @@ public class MessageFormat extends Format {
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
         Objects.requireNonNull(arguments, "arguments must not be null");
-        StringBuilder result = new StringBuilder();
+        StringBuf result = StringBufFactory.of();
         ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
-        subformat((Object[]) arguments, StringBufFactory.of(result), null, iterators);
+        subformat((Object[]) arguments, result, null, iterators);
         if (iterators.size() == 0) {
             return createAttributedCharacterIterator("");
         }
@@ -2027,10 +2022,5 @@ public class MessageFormat extends Format {
         if (!isValid) {
             throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
         }
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
     }
 }

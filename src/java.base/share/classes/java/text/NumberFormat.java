@@ -315,9 +315,10 @@ public abstract class NumberFormat extends Format  {
         }
     }
 
-    StringBuilder format(Object number,
-                         StringBuilder toAppendTo,
-                         FieldPosition pos) {
+    @Override
+    StringBuf format(Object number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
         if (number instanceof Long || number instanceof Integer ||
                     number instanceof Short || number instanceof Byte ||
                     number instanceof AtomicInteger || number instanceof AtomicLong ||
@@ -363,8 +364,8 @@ public abstract class NumberFormat extends Format  {
         if (result != null)
             return result;
 
-        if (isInternalSubclass()) {
-            return format(number, new StringBuilder(),
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(number, StringBufFactory.of(),
                     DontCareFieldPosition.INSTANCE).toString();
         } else {
             return format(number, new StringBuffer(),
@@ -388,8 +389,8 @@ public abstract class NumberFormat extends Format  {
      * @see java.text.Format#format
      */
     public final String format(long number) {
-        if (isInternalSubclass()) {
-            return format(number, new StringBuilder(),
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(number, StringBufFactory.of(),
                     DontCareFieldPosition.INSTANCE).toString();
         } else {
             return format(number, new StringBuffer(),
@@ -420,9 +421,9 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-    StringBuilder format(double number,
-                         StringBuilder toAppendTo,
-                         FieldPosition pos) {
+    StringBuf format(double number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
@@ -449,9 +450,9 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
-    StringBuilder format(long number,
-                         StringBuilder toAppendTo,
-                         FieldPosition pos) {
+    StringBuf format(long number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
         throw new UnsupportedOperationException("Subclasses should override this method");
     }
 

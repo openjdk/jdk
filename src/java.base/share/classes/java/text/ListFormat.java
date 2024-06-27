@@ -356,13 +356,8 @@ public final class ListFormat extends Format {
     public String format(List<String> input) {
         Objects.requireNonNull(input);
 
-        if (isInternalSubclass()) {
-            return format(input, new StringBuilder(),
-                    DontCareFieldPosition.INSTANCE).toString();
-        } else {
-            return format(input, new StringBuffer(),
-                    DontCareFieldPosition.INSTANCE).toString();
-        }
+        return format(input, StringBufFactory.of(),
+                DontCareFieldPosition.INSTANCE).toString();
     }
 
     /**
@@ -386,18 +381,18 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
 
-        return format(obj, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
+        return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
     }
 
     @Override
-    StringBuilder format(Object obj, StringBuilder toAppendTo, FieldPosition pos) {
+    StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
 
-        return format(obj, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+        return format(obj, toAppendTo);
     }
 
-    private StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
+    private StringBuf format(Object obj, StringBuf toAppendTo) {
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {
@@ -583,11 +578,6 @@ public final class ListFormat extends Format {
         } catch (IllegalArgumentException iae) {
             throw new IOException("Deserialization failed.", iae);
         }
-    }
-
-    @Override
-    boolean isInternalSubclass() {
-        return true;
     }
 
     /**
