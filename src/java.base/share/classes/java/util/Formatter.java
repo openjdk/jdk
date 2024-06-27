@@ -61,11 +61,9 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
-import java.util.function.IntPredicate;
-
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
-import jdk.internal.util.ImmutableBitSetPredicate;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -4949,40 +4947,33 @@ public final class Formatter implements Closeable, Flushable {
         static final char LINE_SEPARATOR      = 'n';
         static final char PERCENT_SIGN        = '%';
 
-        static final IntPredicate VALID;
-        static {
-            char[] chars = {
-                    BOOLEAN,
-                    BOOLEAN_UPPER,
-                    STRING,
-                    STRING_UPPER,
-                    HASHCODE,
-                    HASHCODE_UPPER,
-                    CHARACTER,
-                    CHARACTER_UPPER,
-                    DECIMAL_INTEGER,
-                    OCTAL_INTEGER,
-                    HEXADECIMAL_INTEGER,
-                    HEXADECIMAL_INTEGER_UPPER,
-                    SCIENTIFIC,
-                    SCIENTIFIC_UPPER,
-                    GENERAL,
-                    GENERAL_UPPER,
-                    DECIMAL_FLOAT,
-                    HEXADECIMAL_FLOAT,
-                    HEXADECIMAL_FLOAT_UPPER,
-                    LINE_SEPARATOR,
-                    PERCENT_SIGN
-            };
-            var bitSet = new BitSet(128);
-            for (char ch : chars) {
-                bitSet.set(ch);
-            }
-            VALID = ImmutableBitSetPredicate.of(bitSet);
-        }
-
+        // The switch here will generate bytecode with size > 325 bytes, so ForceInline is required.
+        @ForceInline
         static boolean isValid(char c) {
-            return VALID.test(c);
+            return switch (c) {
+                case BOOLEAN,
+                     BOOLEAN_UPPER,
+                     STRING,
+                     STRING_UPPER,
+                     HASHCODE,
+                     HASHCODE_UPPER,
+                     CHARACTER,
+                     CHARACTER_UPPER,
+                     DECIMAL_INTEGER,
+                     OCTAL_INTEGER,
+                     HEXADECIMAL_INTEGER,
+                     HEXADECIMAL_INTEGER_UPPER,
+                     SCIENTIFIC,
+                     SCIENTIFIC_UPPER,
+                     GENERAL,
+                     GENERAL_UPPER,
+                     DECIMAL_FLOAT,
+                     HEXADECIMAL_FLOAT,
+                     HEXADECIMAL_FLOAT_UPPER,
+                     LINE_SEPARATOR,
+                     PERCENT_SIGN -> true;
+                default -> false;
+            };
         }
 
         // Returns true iff the Conversion is applicable to all objects.
