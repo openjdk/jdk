@@ -416,7 +416,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) && defined(_LP64)
     if ((sig == SIGSEGV || sig == SIGBUS) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
       // Verify that OS save/restore APX registers.
       stub = VM_Version::cpuinfo_cont_addr_apx();
