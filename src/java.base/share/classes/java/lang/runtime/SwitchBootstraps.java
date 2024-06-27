@@ -282,8 +282,8 @@ public class SwitchBootstraps {
             Object convertedLabel =
                     convertEnumConstants(lookup, enumClass, labels[i]);
             labels[i] = convertedLabel;
-            constantsOnly &=
-                    EnumDesc.class.isAssignableFrom(convertedLabel.getClass());
+            if (constantsOnly)
+                constantsOnly = EnumDesc.class.isAssignableFrom(convertedLabel.getClass());
         }
 
         MethodHandle target;
