@@ -353,9 +353,6 @@ void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) 
       cmpwi(CCR0, dst, 0);
     }
     setbcr(dst, CCR0, Assembler::equal);
-    li(R0,1);
-    cmpdi(CCR0,R0,0);
-    setbcr(R0, CCR0, Assembler::equal);
   } else {
     neg(temp, dst);
     orr(temp, dst, temp);
