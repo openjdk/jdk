@@ -378,7 +378,6 @@ jint ShenandoahHeap::initialize() {
 
     _free_set->rebuild();
   }
-  _free_set->log_status();
 
   if (AlwaysPreTouch) {
     // For NUMA, it is important to pre-touch the storage under bitmaps with worker threads,
@@ -2294,7 +2293,6 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
-  _free_set->log_status();
 }
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
