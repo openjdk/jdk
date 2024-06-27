@@ -318,8 +318,6 @@ private:
 
   void finish_rebuild(size_t cset_regions);
 
-  void log_status_with_heap_locked();
-
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
@@ -343,6 +341,7 @@ public:
 
   void recycle_trash();
   void log_status();
+  void log_status_with_heap_locked();
 
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
