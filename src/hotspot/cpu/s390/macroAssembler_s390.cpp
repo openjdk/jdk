@@ -3324,8 +3324,10 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
   z_bre(L_huge);
 
-  // NOTE: please load 0 only in r_result, as this is also being used for z_locgr down
-  clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // let's hope that search will be a success
+  // NOTE: please load 0 only in r_result, for now lookup_secondary_supers_table sets r_result to 0
+  // clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // let's hope that search will be a success
+  z_cghi(r_result, 0);
+  asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -3412,14 +3414,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 #ifdef ASSERT
   {
     // r_result should have either 0 or 1 value
-
-    // check for 0
-    z_chi(r_result, 0);
-    asm_assert(bcondNotLow, "r_result should be equal or greater than 0", 33);
-
-    // check for 1
-    z_chi(r_result, 1);
-    asm_assert(bcondNotHigh, "r_result should be equal or less than 1", 33);
+    z_srlk(r_array_base, r_result, 1); // r_array_base will be loaded again, so fine if we use it here
+    z_chi(r_array_base, 0);
+    asm_assert(bcondEqual, "r_result should be either 0 or 1", 33);
   }
 #endif // ASSERT
 
@@ -3444,8 +3441,11 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   z_cr(r_result, r_linear_result);
   z_bre(L_passed);
 
+  assert_different_registers(Z_ARG1, r_sub_klass, r_linear_result, r_result);
   lgr_if_needed(Z_ARG1, r_super_klass);
+  assert_different_registers(Z_ARG2, r_linear_result, r_result);
   lgr_if_needed(Z_ARG2, r_sub_klass);
+  assert_different_registers(Z_ARG3, r_result);
   z_lgr(Z_ARG3, r_linear_result);
   z_lgr(Z_ARG4, r_result);
   const char* msg = "mismatch";
