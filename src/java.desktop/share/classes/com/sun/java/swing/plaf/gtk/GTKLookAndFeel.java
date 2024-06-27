@@ -49,6 +49,7 @@ import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 /**
  * @author Scott Violet
@@ -865,8 +866,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                           "ctrl ENTER", "press",
                  "ctrl released ENTER", "release"
             },
-            "RootPane.altPress", true,
-
 
             "ScrollBar.squareButtons", Boolean.FALSE,
             "ScrollBar.thumbHeight", Integer.valueOf(14),
@@ -1457,6 +1456,23 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                addKeyEventPostProcessor(MnemonicHandler.altProcessor);
+
+        // By default mnemonics are hidden for GTK L&F
+        MnemonicHandler.setMnemonicHidden(true);
+    }
+
+    /**
+     * Called by UIManager when this look and feel is uninstalled.
+     */
+    @Override
+    public void uninitialize() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                removeKeyEventPostProcessor(MnemonicHandler.altProcessor);
+        MnemonicHandler.setMnemonicHidden(false);
+        super.uninitialize();
     }
 
     static ReferenceQueue<GTKLookAndFeel> queue = new ReferenceQueue<GTKLookAndFeel>();

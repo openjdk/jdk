@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.swing.plaf.synth;
 
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.plaf.*;
@@ -41,8 +40,6 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
  */
 public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
     private SynthStyle style;
-    static final AltProcessor altProcessor = new AltProcessor();
-    static boolean altProcessorInstalledFlag;
 
     /**
      *
@@ -77,11 +74,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
 
         style.uninstallDefaults(context);
         style = null;
-        if (altProcessorInstalledFlag || UIManager.getBoolean("RootPane.altPress")) {
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    removeKeyEventPostProcessor(altProcessor);
-            altProcessorInstalledFlag = false;
-        }
     }
 
     /**
@@ -109,12 +101,6 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
                 uninstallKeyboardActions((JRootPane)c);
                 installKeyboardActions((JRootPane)c);
             }
-        }
-
-        if (!altProcessorInstalledFlag && UIManager.getBoolean("RootPane.altPress")) {
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    addKeyEventPostProcessor(altProcessor);
-            altProcessorInstalledFlag = true;
         }
     }
 
@@ -186,26 +172,5 @@ public class SynthRootPaneUI extends BasicRootPaneUI implements SynthUI {
             updateStyle((JRootPane)e.getSource());
         }
         super.propertyChange(e);
-    }
-
-    static class AltProcessor implements KeyEventPostProcessor {
-        public boolean postProcessKeyEvent(KeyEvent ev) {
-            if (ev.getKeyCode() != KeyEvent.VK_ALT) {
-                return false;
-            }
-            final JRootPane root = SwingUtilities.getRootPane(ev.getComponent());
-            final Window winAncestor = (root == null ? null : SwingUtilities.getWindowAncestor(root));
-            switch(ev.getID()) {
-                case KeyEvent.KEY_PRESSED:
-                    SynthLookAndFeel.setMnemonicHidden(false);
-                    break;
-
-                case KeyEvent.KEY_RELEASED:
-                    SynthLookAndFeel.setMnemonicHidden(true);
-                    break;
-            }
-            SynthGraphicsUtils.repaintMnemonicsInWindow(winAncestor);
-            return false;
-        }
     }
 }

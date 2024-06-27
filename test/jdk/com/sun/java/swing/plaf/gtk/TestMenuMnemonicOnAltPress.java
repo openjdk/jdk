@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8326458
- * @key headful
- * @requires (os.family == "linux")
- * @library /javax/swing/regtesthelpers
- * @build Util
- * @summary Verifies if menu mnemonic toggle on Alt press in GTK LAF
- * @run main TestMenuMnemonicOnAltPress
- */
-
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -48,13 +37,22 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 
+/*
+ * @test
+ * @bug 8155030
+ * @key headful
+ * @requires (os.family == "linux")
+ * @library /javax/swing/regtesthelpers
+ * @build Util
+ * @summary Verifies if menu mnemonic toggle on Alt press in GTK LAF
+ * @run main TestMenuMnemonicOnAltPress
+ */
+
 public class TestMenuMnemonicOnAltPress {
 
     private static JFrame frame;
     private static JMenu fileMenu;
-    private static volatile Point pt;
-    private static volatile int fileMenuWidth;
-    private static volatile int fileMenuHeight;
+    private static volatile Rectangle fileMenuRect;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
@@ -67,27 +65,24 @@ public class TestMenuMnemonicOnAltPress {
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
-                pt = fileMenu.getLocationOnScreen();
-                fileMenuWidth = fileMenu.getWidth();
-                fileMenuHeight = fileMenu.getHeight();
+                fileMenuRect = new Rectangle(fileMenu.getLocationOnScreen(),
+                        fileMenu.getSize());
             });
 
             robot.keyPress(KeyEvent.VK_ALT);
             robot.waitForIdle();
 
-            BufferedImage img1 = robot.createScreenCapture(new Rectangle(pt.x, pt.y,
-                    fileMenuWidth, fileMenuHeight));
+            BufferedImage img1 = robot.createScreenCapture(fileMenuRect);
 
             robot.keyRelease(KeyEvent.VK_ALT);
             robot.waitForIdle();
 
-            BufferedImage img2 = robot.createScreenCapture(new Rectangle(pt.x, pt.y,
-                    fileMenuWidth, fileMenuHeight));
+            BufferedImage img2 = robot.createScreenCapture(fileMenuRect);
 
             if (Util.compareBufferedImages(img1, img2)) {
                 try {
-                    ImageIO.write(img1, "png", new File("img1.png"));
-                    ImageIO.write(img2, "png", new File("img2.png"));
+                    ImageIO.write(img1, "png", new File("Menu_With_Mnemonic.png"));
+                    ImageIO.write(img2, "png", new File("Menu_Without_Mnemonic.png"));
                 } catch (IOException ignored) {}
                 throw new RuntimeException("Mismatch in mnemonic show/hide on Alt press");
             }

@@ -26,28 +26,24 @@ package javax.swing.plaf.synth;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.Window;
 
-import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 /**
  * Wrapper for primitive graphics calls.
@@ -673,8 +669,7 @@ public class SynthGraphicsUtils {
 
                 int mnemIndex = lh.getMenuItem().getDisplayedMnemonicIndex();
                 // Check to see if the Mnemonic should be rendered in GTK.
-                if (UIManager.getBoolean("RootPane.altPress")
-                    && SynthLookAndFeel.isMnemonicHidden()) {
+                if (mnemIndex >= 0 && MnemonicHandler.isMnemonicHidden()) {
                     mnemIndex = -1;
                 }
 
@@ -742,43 +737,6 @@ public class SynthGraphicsUtils {
 
         public int getIconHeight() {
             return synthIcon.getIconHeight(context);
-        }
-    }
-
-    /*
-     * Repaints all the components with the mnemonics in the given window and all its owned windows.
-     */
-    static void repaintMnemonicsInWindow(final Window w) {
-        if (w == null || !w.isShowing()) {
-            return;
-        }
-
-        final Window[] ownedWindows = w.getOwnedWindows();
-        for (final Window element : ownedWindows) {
-            repaintMnemonicsInWindow(element);
-        }
-
-        repaintMnemonicsInContainer(w);
-    }
-
-    /*
-     * Repaints all the components with the mnemonics in container.
-     * Recursively searches for all the subcomponents.
-     */
-    static void repaintMnemonicsInContainer(final Container cont) {
-        final Component[] elements = cont.getComponents();
-        for (final Component c : elements) {
-            if (c == null || !c.isVisible()) {
-                continue;
-            } else if (c instanceof AbstractButton && ((AbstractButton) c).getMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            } else if (c instanceof JLabel && ((JLabel) c).getDisplayedMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            } else if (c instanceof Container){
-                repaintMnemonicsInContainer((Container) c);
-            }
         }
     }
 }
