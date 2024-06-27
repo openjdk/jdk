@@ -274,6 +274,8 @@ public class SwitchBootstraps {
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
 
+        labels = labels.clone();
+
         Class<?> enumClass = invocationType.parameterType(0);
         boolean constantsOnly = true;
         int len = labels.length;
