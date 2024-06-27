@@ -2195,7 +2195,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     working.multiply(BigInteger.TEN);
 
                 BigInteger[] sqrtRem = working.sqrtAndRemainder();
-                result = new BigDecimal(sqrtRem[0], stripped.scale / 2);
+                // Use shift to round down if stripped.scale < 0
+                result = new BigDecimal(sqrtRem[0], stripped.scale >> 1);
                 if (mc.precision != 0)
                     result = result.round(new MathContext(mc.precision, RoundingMode.DOWN));
 
