@@ -274,13 +274,19 @@ public class SwitchBootstraps {
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
 
-        labels = labels.clone();
-
         Class<?> enumClass = invocationType.parameterType(0);
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
+        boolean constantsOnly = true;
+        int len = labels.length;
+
+        for (int i = 0; i < len; i++) {
+            Object convertedLabel =
+                    convertEnumConstants(lookup, enumClass, labels[i]);
+            labels[i] = convertedLabel;
+            constantsOnly &=
+                    EnumDesc.class.isAssignableFrom(convertedLabel.getClass());
+        }
 
         MethodHandle target;
-        boolean constantsOnly = Stream.of(labels).allMatch(l -> EnumDesc.class.isAssignableFrom(l.getClass()));
 
         if (labels.length > 0 && constantsOnly) {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
@@ -333,14 +339,14 @@ public class SwitchBootstraps {
                         generatedSwitch =
                                 generateTypeSwitch(lookup, enumClass, labels)
                                         .asType(MethodType.methodType(int.class,
-                                                                      enumClass,
+                                                                      Enum.class,
                                                                       int.class));
                         enumCache.generatedSwitch = generatedSwitch;
                     }
                 }
             }
 
-            return (int) generatedSwitch.invoke(value, restartIndex);
+            return (int) generatedSwitch.invokeExact(value, restartIndex);
         }
 
         int[] constantsMap = enumCache.constantsMap;
@@ -421,9 +427,9 @@ public class SwitchBootstraps {
 
     private static final class MappedEnumCache {
         @Stable
-        public volatile int[] constantsMap;
+        public int[] constantsMap;
         @Stable
-        public volatile MethodHandle generatedSwitch;
+        public MethodHandle generatedSwitch;
     }
 
     /*
