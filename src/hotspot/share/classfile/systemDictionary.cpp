@@ -1580,7 +1580,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
   return unloading_occurred;
 }
 
-void SystemDictionary::methods_do_no_keepalive(void f(Method*)) {
+void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
 
   {
