@@ -147,7 +147,7 @@ void ShenandoahControlThread::run_service() {
       heap->set_forced_counters_update(true);
 
       // If GC was requested, we better dump freeset data for performance debugging
-      heap->free_set()->log_status();
+      heap->free_set()->log_status_under_lock();
 
       switch (mode) {
         case concurrent_normal:
@@ -175,7 +175,7 @@ void ShenandoahControlThread::run_service() {
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
-      heap->free_set()->log_status();
+      heap->free_set()->log_status_under_lock();
 
       // Notify Universe about new heap usage. This has implications for
       // global soft refs policy, and we better report it every time heap
