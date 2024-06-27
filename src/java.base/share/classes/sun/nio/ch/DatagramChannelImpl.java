@@ -1933,6 +1933,11 @@ class DatagramChannelImpl
 
     @Override
     public void kill() {
+        // wait for any read/write operations to complete before trying to close
+        readLock.lock();
+        readLock.unlock();
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
