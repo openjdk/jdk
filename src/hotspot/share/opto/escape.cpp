@@ -574,6 +574,9 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
+          // We may have Opaque4 node between If and Bool nodes.
+          // Bail out in such case - we need to preserve Opaque4 for correct
+          // processing predicates after loop opts.
           bool can_reduce = (iff->Opcode() == Op_If) && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp();
           if (can_reduce) {
             Node* iff_cmp = iff->in(1)->in(1);
