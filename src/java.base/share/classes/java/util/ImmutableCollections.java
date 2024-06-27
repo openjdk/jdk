@@ -1470,21 +1470,21 @@ class ImmutableCollections {
         @Stable
         private final Function<? super K, ? extends V> mapper;
         @Stable
-        private final Map<K, StableValueImpl<V>> backing;
+        private final Map<K, StableValueImpl<V>> delegate;
 
         LazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
-            this.backing = StableValueImpl.ofMap(keys);
+            this.delegate = StableValueImpl.ofMap(keys);
         }
 
-        @Override public boolean              containsKey(Object o) { return backing.containsKey(o); }
-        @Override public int                  size() { return backing.size(); }
+        @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
+        @Override public int                  size() { return delegate.size(); }
         @Override public Set<Map.Entry<K, V>> entrySet() { return new LazyMapEntrySet(); }
 
         @ForceInline
         @Override
         public V get(Object key) {
-            final StableValueImpl<V> stable = backing.get(key);
+            final StableValueImpl<V> stable = delegate.get(key);
             if (stable == null) {
                 return null;
             }
@@ -1516,8 +1516,8 @@ class ImmutableCollections {
             @Stable
             private final Set<Map.Entry<K, StableValueImpl<V>>> delegateEntrySet;
 
-            public LazyMapEntrySet() {
-                this.delegateEntrySet = backing.entrySet();
+            LazyMapEntrySet() {
+                this.delegateEntrySet = delegate.entrySet();
             }
 
             @Override public Iterator<Map.Entry<K, V>> iterator() { return new LazyMapIterator(); }
@@ -1533,12 +1533,12 @@ class ImmutableCollections {
             }
 
             @jdk.internal.ValueBased
-            private final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {
+            final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {
 
                 @Stable
                 private final Iterator<Map.Entry<K, StableValueImpl<V>>> delegateIterator;
 
-                private LazyMapIterator() {
+                LazyMapIterator() {
                     this.delegateIterator = delegateEntrySet.iterator();
                 }
 
@@ -1547,7 +1547,7 @@ class ImmutableCollections {
                 @Override
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
-                    final K key = delegateIterator.next().getKey();
+                    final K key = inner.getKey();
                     return new KeyValueHolder<>(key, computeIfUnset(key, inner.getValue()));
                 }
 
