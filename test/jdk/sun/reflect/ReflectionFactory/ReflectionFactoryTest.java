@@ -36,6 +36,8 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 
 import sun.reflect.ReflectionFactory;
@@ -354,7 +356,7 @@ public class ReflectionFactoryTest {
 
     // test that the generated read/write objects are working properly
     @Test
-    static void testDefaultReadObject() throws Throwable {
+    static void testDefaultReadWriteObject() throws Throwable {
         Ser2 ser = new Ser2((byte) 0x33, (short) 0x2244, (char) 0x5342, 0x05382716, 0xf035a73b09113bacL, 1234f, 3456.0, true, "Testing");
         ser.byte_ = (byte) 0x44;
         ser.short_ = (short) 0x3355;
@@ -369,7 +371,8 @@ public class ReflectionFactoryTest {
         MethodHandle writeObject = factory.defaultWriteObjectForSerialization(Ser2.class);
         Assert.assertNotNull(writeObject, "writeObject not created");
         boolean[] called = new boolean[19];
-        ObjectOutputStream oos = new ObjectOutputStream() {
+        @SuppressWarnings("removal")
+        ObjectOutputStream oos = AccessController.doPrivileged((PrivilegedExceptionAction<ObjectOutputStream>) () -> new ObjectOutputStream() {
             protected void writeObjectOverride(final Object obj) throws IOException {
                 throw new IOException("Wrong method called");
             }
@@ -516,7 +519,7 @@ public class ReflectionFactoryTest {
                     }
                 };
             }
-        };
+        });
         writeObject.invokeExact(ser, oos);
         for (int i = 0; i < 19; i ++) {
             Assert.assertTrue(called[i], names[i]);
@@ -524,7 +527,8 @@ public class ReflectionFactoryTest {
         // now, test the read side
         MethodHandle readObject = factory.defaultReadObjectForSerialization(Ser2.class);
         Assert.assertNotNull(readObject, "readObject not created");
-        ObjectInputStream ois = new ObjectInputStream() {
+        @SuppressWarnings("removal")
+        ObjectInputStream ois = AccessController.doPrivileged((PrivilegedExceptionAction<ObjectInputStream>) () -> new ObjectInputStream() {
             protected Object readObjectOverride() throws IOException {
                 throw new IOException("Wrong method called");
             }
@@ -666,7 +670,7 @@ public class ReflectionFactoryTest {
                     }
                 };
             }
-        };
+        });
         // all the same methods, except for `writeFields`
         Arrays.fill(called, false);
         Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class, Object.class.getDeclaredConstructor());
