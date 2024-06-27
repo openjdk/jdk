@@ -2241,8 +2241,6 @@ int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
   }
   int offset = __ offset();
   __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-if (! (__ offset() - offset <= (int) size_exception_handler()) )
-tty->print_cr("%i <= %i", __ offset() - offset, (int) size_exception_handler());
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
   __ end_a_stub();
   return offset;
@@ -2263,7 +2261,9 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   __ adr(lr, __ pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  //assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
+  // ## something is wrong with offsets. do we get another set of instuctions?
+  //    todo: fix that
+  // assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
   return offset;
 }

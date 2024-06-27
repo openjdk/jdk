@@ -933,9 +933,9 @@ public:
 #define INSN(NAME, opcode)                                              \
   void NAME(address dest) {                                             \
     starti;                                                             \
-    int64_t offset = dest - pc();                                       \
+    int64_t offset = (dest - pc()) >> 2;                                \
     DEBUG_ONLY(assert(reachable_from_branch_at(pc(), dest), "debug only")); \
-    f(opcode, 31), f(0b00101, 30, 26), sf(offset>>2, 25, 0);            \
+    f(opcode, 31), f(0b00101, 30, 26), sf(offset, 25, 0);               \
   }                                                                     \
   void NAME(Label &L) {                                                 \
     wrap_label(L, &Assembler::NAME);                                    \

@@ -279,6 +279,7 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
   if (!alloc_in_codecache) {
     // ##
     // ## Note. aligned_alloc is declared FORBID_C_FUNCTION("don't use") in globalDefinitions.hpp
+    // ## todo: use malloc, allocate an extra bytes and use aligned offset within the allocated range
     // ##
     char* ptr = (char*)aligned_alloc(K, size + 16); // 16 is a header gap
 
@@ -300,7 +301,8 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
 }
 
 void BufferBlob::free(BufferBlob *blob) {
-  if (!CodeCache::contains((void*)blob)) { // see alloc_in_codecache
+  if (!CodeCache::contains((void*)blob)) {
+    // see alloc_in_codecache
     std::free((char*)blob - 16);
     return;
   }
