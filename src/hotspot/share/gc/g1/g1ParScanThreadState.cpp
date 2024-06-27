@@ -247,7 +247,7 @@ public:
   }
   size_t scan_array(objArrayOop array, int from, int len) override {
     G1SkipCardEnqueueSetter x(&_scanner, _skip_enqueue);
-    array->oop_iterate_range(&_scanner, 0, len);
+    array->oop_iterate_range(&_scanner, from, len);
     return len * (UseCompressedOops ? 2 : 1);
   }
 };
