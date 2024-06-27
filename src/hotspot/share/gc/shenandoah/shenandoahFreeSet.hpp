@@ -340,7 +340,7 @@ public:
   void move_regions_from_collector_to_mutator(size_t cset_regions);
 
   void recycle_trash();
-  // log status, assuming lock has alredy been acquired by the caller.
+  // log status, assuming lock has already been acquired by the caller.
   void log_status();
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
