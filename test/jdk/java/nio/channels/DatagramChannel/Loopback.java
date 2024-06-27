@@ -22,8 +22,7 @@
  */
 
 /* @test
- * @bug 8236184
- * @key intermittent
+ * @bug 8236184 8332535
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.net.IPSupport
