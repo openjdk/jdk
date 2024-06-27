@@ -98,8 +98,8 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     }
 
     @Override
-    public void catchingAll(Consumer<CodeBuilder.BlockCodeBuilder> catchAllHandler) {
-        catchingMulti(List.of(), catchAllHandler);
+    public CodeBuilder.CatchBuilder catchingAll(Consumer<CodeBuilder.BlockCodeBuilder> catchAllHandler) {
+        return catchingMulti(List.of(), catchAllHandler);
     }
 
     public void finish() {

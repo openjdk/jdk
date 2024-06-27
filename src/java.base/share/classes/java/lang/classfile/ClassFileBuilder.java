@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * created directly; they are passed to handlers by methods such as
  * {@link ClassFile#build(ClassDesc, Consumer)} or to transforms.
  * Elements of the newly built entity can be specified
- * abstractly (by passing a {@link ClassFileElement} to {@link #with(ClassFileElement)}
+ * abstractly (by passing a {@link ClassFileElement} to {@link #with(ClassFileElement)})
  * or concretely by calling the various {@code withXxx} methods.
  *
  * @param <E> the element type
@@ -53,6 +53,9 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
 
     /**
      * Integrate the {@link ClassFileElement} into the entity being built.
+     *
+     * @apiNote {@link #with with} supports method chaining for builders.
+     *
      * @param e the element
      */
     @Override

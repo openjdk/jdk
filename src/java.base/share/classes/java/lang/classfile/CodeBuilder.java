@@ -332,7 +332,7 @@ public sealed interface CodeBuilder
          * <p>
          * If the type of exception is {@code null} then the catch block catches all exceptions.
          *
-         * @param exceptionType the type of exception to catch.
+         * @param exceptionType the type of exception to catch, may be {@code null}
          * @param catchHandler handler that receives a {@linkplain CodeBuilder} to
          *                     generate the body of the catch block.
          * @return this builder
@@ -348,7 +348,7 @@ public sealed interface CodeBuilder
          * <p>
          * The caught exception will be on top of the operand stack when the catch block is entered.
          * <p>
-         * If the type of exception is {@code null} then the catch block catches all exceptions.
+         * If the list of exception types is empty then the catch block catches all exceptions.
          *
          * @param exceptionTypes the types of exception to catch.
          * @param catchHandler handler that receives a {@linkplain CodeBuilder} to
@@ -367,11 +367,13 @@ public sealed interface CodeBuilder
          *
          * @param catchAllHandler handler that receives a {@linkplain CodeBuilder} to
          *                        generate the body of the catch block
+         * @return this builder
          * @throws IllegalArgumentException if an existing catch block catches all exceptions.
          * @see #catching
          * @see #catchingMulti
+         * @since 24
          */
-        void catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
+        CatchBuilder catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
     }
 
     /**
