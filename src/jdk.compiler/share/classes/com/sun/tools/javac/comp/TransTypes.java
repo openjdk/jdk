@@ -603,15 +603,14 @@ public class TransTypes extends TreeTranslator {
     }
 
     boolean isIntersectionOrUnionType(Type t) {
-        switch (t.getKind()) {
-            case INTERSECTION:
-            case UNION:
-                return true;
-            case TYPEVAR:
+        return switch (t.getKind()) {
+            case INTERSECTION, UNION -> true;
+            case TYPEVAR -> {
                 TypeVar tv = (TypeVar) t;
-                return isIntersectionOrUnionType(tv.getUpperBound());
-        }
-        return false;
+                yield isIntersectionOrUnionType(tv.getUpperBound());
+            }
+            default -> false;
+        };
     }
 
     private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
@@ -627,7 +626,6 @@ public class TransTypes extends TreeTranslator {
      * This method should be removed when --release 14 is not supported.
      */
     boolean isPrivateInOtherClass(JCMemberReference tree) {
-        assert !target.runtimeUseNestAccess();
         return  (tree.sym.flags() & PRIVATE) != 0 &&
                 !types.isSameType(
                         types.erasure(tree.sym.enclClass().asType()),
@@ -730,7 +728,7 @@ public class TransTypes extends TreeTranslator {
             int last = needsVarArgsConversion(tree) ? implSize - 1 : implSize;
 
             for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
-                // By default use the implementation method parameter type
+                // Use the descriptor parameter type
                 Type parmType = descPTypes.head;
                 addParameter("x$" + i, parmType, true);
 
