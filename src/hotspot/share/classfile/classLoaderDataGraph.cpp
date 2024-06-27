@@ -241,7 +241,7 @@ LockedClassesDo::~LockedClassesDo() {
 
 
 // Iterating over the CLDG needs to be locked because
-// unloading can remove entries concurrently soon.
+// unloading can remove entries concurrently.
 // This iterator does not keep the CLD alive.
 // Any CLD OopHandles (modules, mirrors, resolved refs)
 // resolved must be treated as no keepalive. And requires
