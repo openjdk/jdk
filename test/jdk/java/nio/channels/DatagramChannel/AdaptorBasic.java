@@ -36,6 +36,8 @@ import java.nio.channels.*;
 import java.util.*;
 import java.lang.reflect.Field;
 
+import jdk.test.lib.Platform;
+
 
 public class AdaptorBasic {
 
@@ -118,7 +120,13 @@ public class AdaptorBasic {
             while (true) {
                 DatagramChannel dc = DatagramChannel.open();
                 ds = dc.socket();
-                ds.bind(new InetSocketAddress(0));
+                if (Platform.isOSX() && dst.getAddress().isLoopbackAddress()) {
+                    // avoid binding to the wildcard on macOS if possible, in order to limit
+                    // potential port conflict issues
+                    ds.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                } else {
+                    ds.bind(new InetSocketAddress(0));
+                }
                 // on some systems it may be possible to bind two sockets
                 // to the same port if one of them is bound to the wildcard,
                 // if that happens, try again...
