@@ -1833,7 +1833,6 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
-  _free_set->log_status();
 }
 
 void ShenandoahHeap::do_class_unloading() {
