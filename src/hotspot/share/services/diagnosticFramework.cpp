@@ -400,9 +400,11 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
-      // Allow for "<cmd> help" to enable help diagnostic command
-      // if the only argument provided is "help"
-      if (strcmp(line.args_addr(), " help") == 0) {
+      // Allow for "<cmd> -help" or "<cmd> --help" to enable
+      // the help diagnostic command. Ignores any additional
+      // arguments.
+      const char *args = line.args_addr();
+      if (strncmp(args, " -help", 6) == 0 || strncmp(args, " --help", 7) == 0) {
         stringStream updated_line;
         reorder_help_cmd(line, updated_line);
         CmdLine updated_cmd(updated_line.base(),

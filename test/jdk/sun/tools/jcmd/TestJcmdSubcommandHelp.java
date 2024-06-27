@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8332124
- * @summary Test to verify jcmd accepts the "help" suboption as a command argument
+ * @summary Test to verify jcmd accepts the "-help" and "--help" suboptions as a command argument
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,7 +38,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestJcmdSubcommandHelp {
 
-    private static final String HELP = "help";
+    private static final String HELP_ONE_DASH = "-help";
+    private static final String HELP_TWO_DASH = "--help";
     private static final String CMD = "VM.metaspace";
 
     public static void main(String[] args) throws Exception {
@@ -48,43 +49,44 @@ public class TestJcmdSubcommandHelp {
         output.shouldContain("The following commands are available:");
 
         // Sanity check with existing usage for "help <cmd>"
-        output = JcmdBase.jcmd(HELP, CMD);
+        output = JcmdBase.jcmd("help", CMD);
         String expectedOutput = output.getOutput();
         output.shouldNotContain("Unknown diagnostic command");
 
-        // Check help as a suboption to the command is accepted i.e. "<cmd> help"
-        output = JcmdBase.jcmd(CMD, HELP);
-        String issuedOutput = output.getOutput();
-        output.shouldNotContain("Unknown diagnostic command");
+        testExpectedUsage(HELP_ONE_DASH, expectedOutput);
+        testExpectedUsage(HELP_TWO_DASH, expectedOutput);
 
-        if (!expectedOutput.equals(output.getOutput())) {
-            printDifferingOutputs(expectedOutput, issuedOutput);
-            throw new Exception("Expected jcmd to accept 'help' suboption as a command argument" +
-                                " and issue the same help output.");
-        }
+        testIgnoreAdditionalArgs(HELP_ONE_DASH, expectedOutput);
+        testIgnoreAdditionalArgs(HELP_TWO_DASH, expectedOutput);
 
-        // Issue incorrect suboption to command argument containing 'help'
-        String incorrectOpt = "helpln;n";
-        output = JcmdBase.jcmd(CMD, incorrectOpt);
-        output.shouldContain("Unknown argument \'" + incorrectOpt + "\' in diagnostic command.");
-
-        // Issue multiple suboptions along with 'help'
-        output = JcmdBase.jcmd(CMD, HELP, "basic");
-        output.shouldContain("Unknown argument \'" + HELP + "\' in diagnostic command.");
-
-        // Issue "help" suboption with trailing spaces
-        output = JcmdBase.jcmd(CMD, "help        ");
-        issuedOutput = output.getOutput();
-        if (!expectedOutput.equals(issuedOutput)) {
-            printDifferingOutputs(expectedOutput, issuedOutput);
-            throw new Exception("Expected jcmd to accept 'help' suboption with trailing spaces");
-        }
+        testIgnoreTrailingSpaces(HELP_ONE_DASH, expectedOutput);
+        testIgnoreTrailingSpaces(HELP_TWO_DASH, expectedOutput);
     }
 
-    private static void printDifferingOutputs(String expected, String issued) {
-        System.out.println("Expected output: ");
-        System.out.println(expected);
-        System.out.println("Issued output: ");
-        System.out.println(issued);
+    private static void testExpectedUsage(String helpOption, String expectedOutput) throws Exception {
+        verifyOutput(new String[] {CMD, helpOption}, expectedOutput,
+                "Expected jcmd to accept '%s' suboption as a command argument and issue the same help output.".formatted(helpOption));
+    }
+
+    private static void testIgnoreAdditionalArgs(String helpOption, String expectedOutput) throws Exception {
+        verifyOutput(new String[] {CMD, helpOption, "basic"}, expectedOutput,
+                "Expected jcmd to accept '%s' suboption with additional arguments after help.".formatted(helpOption));
+    }
+
+    private static void testIgnoreTrailingSpaces(String helpOption, String expectedOutput) throws Exception {
+        verifyOutput(new String[] {CMD, "%s    ".formatted(helpOption)}, expectedOutput,
+                "Expected jcmd to accept '%s' suboption with trailing spaces".formatted(helpOption));
+    }
+
+    private static void verifyOutput(String[] args, String expectedOutput, String errorMessage) throws Exception {
+        OutputAnalyzer output = JcmdBase.jcmd(args);
+        String issuedOutput = output.getOutput();
+        if (!expectedOutput.equals(issuedOutput)) {
+            System.out.println("Expected output: ");
+            System.out.println(expectedOutput);
+            System.out.println("Issued output: ");
+            System.out.println(issuedOutput);
+            throw new Exception(errorMessage);
+        }
     }
 }
