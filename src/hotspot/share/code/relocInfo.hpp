@@ -129,12 +129,7 @@ class nmethod;
 //   Value:  an oop, or else the address (handle) of an oop
 //   Instruction types: memory (load), set (load address)
 //   Data:  []       an oop stored in 4 bytes of instruction
-//          [n]      n is the index of an oop in the CodeBlob's oop pool
-//          [[N]n l] and l is a byte offset to be applied to the oop
-//          [Nn Ll]  both index and offset may be 32 bits if necessary
-//   Here is a special hack, used only by the old compiler:
-//          [[N]n 00] the value is the __address__ of the nth oop in the pool
-//   (Note that the offset allows optimal references to class variables.)
+//          [[N]n]   the index of an oop in the CodeBlob's oop pool
 //
 // relocInfo::internal_word_type -- an address within the same CodeBlob
 // relocInfo::section_word_type -- same, but can refer to another section
@@ -515,9 +510,6 @@ class RelocationHolder {
   Relocation* reloc() const { return (Relocation*)_relocbuf; }
   inline relocInfo::relocType type() const;
 
-  // Add a constant offset to a relocation.  Helper for class Address.
-  RelocationHolder plus(int offset) const;
-
   // Return a holder containing a relocation of type Reloc, constructed using args.
   template<typename Reloc, typename... Args>
   static RelocationHolder construct(const Args&... args) {
@@ -788,8 +780,8 @@ class Relocation {
   void       const_set_data_value    (address x);
   void       const_verify_data_value (address x);
   // platform-dependent utilities for decoding and patching instructions
-  void       pd_set_data_value       (address x, intptr_t off, bool verify_only = false); // a set or mem-ref
-  void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
+  void       pd_set_data_value       (address x, bool verify_only = false); // a set or mem-ref
+  void       pd_verify_data_value    (address x) { pd_set_data_value(x, true); }
   address    pd_call_destination     (address orig_addr = nullptr);
   void       pd_set_call_destination (address x);
 
@@ -895,41 +887,28 @@ relocInfo::relocType RelocationHolder::type() const {
 // A DataRelocation always points at a memory or load-constant instruction..
 // It is absolute on most machines, and the constant is split on RISCs.
 // The specific subtypes are oop, external_word, and internal_word.
-// By convention, the "value" does not include a separately reckoned "offset".
 class DataRelocation : public Relocation {
  public:
   DataRelocation(relocInfo::relocType type) : Relocation(type) {}
 
-  bool          is_data() override             { return true; }
+  bool    is_data() override { return true; }
 
-  // both target and offset must be computed somehow from relocation data
-  virtual int    offset()                      { return 0; }
-  address         value() override             = 0;
-  void        set_value(address x) override    { set_value(x, offset()); }
-  void        set_value(address x, intptr_t o) {
-    if (addr_in_const())
+  // target must be computed somehow from relocation data
+  address value() override = 0;
+  void    set_value(address x) override {
+    if (addr_in_const()) {
       const_set_data_value(x);
-    else
-      pd_set_data_value(x, o);
+    } else {
+      pd_set_data_value(x);
+    }
   }
-  void        verify_value(address x) {
-    if (addr_in_const())
+  void    verify_value(address x) {
+    if (addr_in_const()) {
       const_verify_data_value(x);
-    else
-      pd_verify_data_value(x, offset());
+    } else {
+      pd_verify_data_value(x);
+    }
   }
-
-  // The "o" (displacement) argument is relevant only to split relocations
-  // on RISC machines.  In some CPUs (SPARC), the set-hi and set-lo ins'ns
-  // can encode more than 32 bits between them.  This allows compilers to
-  // share set-hi instructions between addresses that differ by a small
-  // offset (e.g., different static variables in the same class).
-  // On such machines, the "x" argument to set_value on all set-lo
-  // instructions must be the same as the "x" argument for the
-  // corresponding set-hi instructions.  The "o" arguments for the
-  // set-hi instructions are ignored, and must not affect the high-half
-  // immediate constant.  The "o" arguments for the set-lo instructions are
-  // added into the low-half immediate constant, and must not overflow it.
 };
 
 class post_call_nop_Relocation : public Relocation {
@@ -976,40 +955,36 @@ class CallRelocation : public Relocation {
 
 class oop_Relocation : public DataRelocation {
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an oop in the CodeBlob's oop pool
-  static RelocationHolder spec(int oop_index, int offset = 0) {
+  // an oop in the CodeBlob's oop pool; encoded as [n] or [Nn]
+  static RelocationHolder spec(int oop_index) {
     assert(oop_index > 0, "must be a pool-resident oop");
-    return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
+    return RelocationHolder::construct<oop_Relocation>(oop_index);
   }
-  // an oop in the instruction stream
+  // an oop in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     // If no immediate oops are generated, we can skip some walks over nmethods.
     // Assert that they don't get generated accidentally!
     assert(relocInfo::mustIterateImmediateOopsInCode(),
            "Must return true so we will search for oops as roots etc. in the code.");
     const int oop_index = 0;
-    const int offset    = 0;    // if you want an offset, use the oop pool
-    return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
+    return RelocationHolder::construct<oop_Relocation>(oop_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _oop_index;                  // if > 0, index into CodeBlob::oop_at
-  jint _offset;                     // byte offset to apply to the oop itself
 
-  oop_Relocation(int oop_index, int offset)
-    : DataRelocation(relocInfo::oop_type), _oop_index(oop_index), _offset(offset) { }
+  oop_Relocation(int oop_index)
+    : DataRelocation(relocInfo::oop_type), _oop_index(oop_index) { }
 
   friend class RelocationHolder;
   oop_Relocation() : DataRelocation(relocInfo::oop_type) {}
 
  public:
   int oop_index() { return _oop_index; }
-  int offset() override { return _offset; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // oop_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
@@ -1031,27 +1006,24 @@ class oop_Relocation : public DataRelocation {
 class metadata_Relocation : public DataRelocation {
 
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an metadata in the CodeBlob's metadata pool
-  static RelocationHolder spec(int metadata_index, int offset = 0) {
+  // an metadata in the CodeBlob's metadata pool; encoded as [n] or [Nn]
+  static RelocationHolder spec(int metadata_index) {
     assert(metadata_index > 0, "must be a pool-resident metadata");
-    return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
+    return RelocationHolder::construct<metadata_Relocation>(metadata_index);
   }
-  // an metadata in the instruction stream
+  // an metadata in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     const int metadata_index = 0;
-    const int offset    = 0;    // if you want an offset, use the metadata pool
-    return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
+    return RelocationHolder::construct<metadata_Relocation>(metadata_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _metadata_index;            // if > 0, index into nmethod::metadata_at
-  jint _offset;                     // byte offset to apply to the metadata itself
 
-  metadata_Relocation(int metadata_index, int offset)
-    : DataRelocation(relocInfo::metadata_type), _metadata_index(metadata_index), _offset(offset) { }
+  metadata_Relocation(int metadata_index)
+    : DataRelocation(relocInfo::metadata_type), _metadata_index(metadata_index) { }
 
   friend class RelocationHolder;
   metadata_Relocation() : DataRelocation(relocInfo::metadata_type) { }
@@ -1063,9 +1035,8 @@ class metadata_Relocation : public DataRelocation {
 
  public:
   int metadata_index() { return _metadata_index; }
-  int offset() override { return _offset; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // metadata_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 

@@ -31,7 +31,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -69,15 +69,4 @@ void Generation::print_on(outputStream* st)  const {
               p2i(_virtual_space.low_boundary()),
               p2i(_virtual_space.high()),
               p2i(_virtual_space.high_boundary()));
-}
-
-void Generation::print_summary_info_on(outputStream* st) {
-  StatRecord* sr = stat_record();
-  double time = sr->accumulated_time.seconds();
-  st->print_cr("Accumulated %s generation GC time %3.7f secs, "
-               "%u GC's, avg GC time %3.7f",
-               SerialHeap::heap()->is_young_gen(this) ? "young" : "old" ,
-               time,
-               sr->invocations,
-               sr->invocations > 0 ? time / sr->invocations : 0.0);
 }

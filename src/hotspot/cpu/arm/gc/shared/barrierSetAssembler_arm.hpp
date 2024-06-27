@@ -40,12 +40,6 @@ enum class NMethodPatchingType {
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
-private:
-  void incr_allocated_bytes(MacroAssembler* masm,
-    RegisterOrConstant size_in_bytes,
-    Register           tmp
-);
-
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register addr, Register count, int callee_saved_regs) {}

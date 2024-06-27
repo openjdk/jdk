@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,45 +55,103 @@ public class DottedVersionTest {
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
+    private static class CtorTester {
+
+        CtorTester(String input, boolean greedy, String expectedSuffix,
+                int expectedComponentCount, String expectedToComponent) {
+            this.input = input;
+            this.greedy = greedy;
+            this.expectedSuffix = expectedSuffix;
+            this.expectedComponentCount = expectedComponentCount;
+            this.expectedToComponent = expectedToComponent;
+        }
+
+        CtorTester(String input, boolean greedy, int expectedComponentCount,
+                String expectedToComponent) {
+            this(input, greedy, "", expectedComponentCount, expectedToComponent);
+        }
+
+        CtorTester(String input, boolean greedy, int expectedComponentCount) {
+            this(input, greedy, "", expectedComponentCount, input);
+        }
+
+        static CtorTester greedy(String input, int expectedComponentCount,
+                String expectedToComponent) {
+            return new CtorTester(input, true, "", expectedComponentCount, expectedToComponent);
+        }
+
+        static CtorTester greedy(String input, int expectedComponentCount) {
+            return new CtorTester(input, true, "", expectedComponentCount, input);
+        }
+
+        static CtorTester lazy(String input, String expectedSuffix, int expectedComponentCount,
+                String expectedToComponent) {
+            return new CtorTester(input, false, expectedSuffix, expectedComponentCount,
+                    expectedToComponent);
+        }
+
+        void run() {
+            DottedVersion dv;
+            if (greedy) {
+                dv = DottedVersion.greedy(input);
+            } else {
+                dv = DottedVersion.lazy(input);
+            }
+
+            assertEquals(expectedSuffix, dv.getUnprocessedSuffix());
+            assertEquals(expectedComponentCount, dv.getComponents().length);
+            assertEquals(expectedToComponent, dv.toComponentsString());
+        }
+
+        private final String input;
+        private final boolean greedy;
+        private final String expectedSuffix;
+        private final int expectedComponentCount;
+        private final String expectedToComponent;
+    }
+
     @Test
     public void testValid() {
-        final List<String> validStrings = List.of(
-            "1.0",
-            "1",
-            "2.234.045",
-            "2.234.0",
-            "0",
-            "0.1",
-            "9".repeat(1000)
+        final List<CtorTester> validStrings = List.of(
+                new CtorTester("1.0", greedy, 2),
+                new CtorTester("1", greedy, 1),
+                new CtorTester("2.20034.045", greedy, 3, "2.20034.45"),
+                new CtorTester("2.234.0", greedy, 3),
+                new CtorTester("0", greedy, 1),
+                new CtorTester("0.1", greedy, 2),
+                new CtorTester("9".repeat(1000), greedy, 1),
+                new CtorTester("00.0.0", greedy, 3, "0.0.0")
         );
 
-        final List<String> validLazyStrings;
+        final List<CtorTester> validLazyStrings;
         if (greedy) {
             validLazyStrings = Collections.emptyList();
         } else {
             validLazyStrings = List.of(
-                "1.-1",
-                "5.",
-                "4.2.",
-                "3..2",
-                "2.a",
-                "0a",
-                ".",
-                " ",
-                " 1",
-                "1. 2",
-                "+1",
-                "-1",
-                "-0",
-                "+0"
+                    CtorTester.lazy("1.-1", ".-1", 1, "1"),
+                    CtorTester.lazy("5.", ".", 1, "5"),
+                    CtorTester.lazy("4.2.", ".", 2, "4.2"),
+                    CtorTester.lazy("3..2", "..2", 1, "3"),
+                    CtorTester.lazy("3......2", "......2", 1, "3"),
+                    CtorTester.lazy("2.a", ".a", 1, "2"),
+                    CtorTester.lazy("a", "a", 0, ""),
+                    CtorTester.lazy("2..a", "..a", 1, "2"),
+                    CtorTester.lazy("0a", "a", 1, "0"),
+                    CtorTester.lazy("120a", "a", 1, "120"),
+                    CtorTester.lazy("120abc", "abc", 1, "120"),
+                    CtorTester.lazy(".", ".", 0, ""),
+                    CtorTester.lazy("....", "....", 0, ""),
+                    CtorTester.lazy(" ", " ", 0, ""),
+                    CtorTester.lazy(" 1", " 1", 0, ""),
+                    CtorTester.lazy("678. 2", ". 2", 1, "678"),
+                    CtorTester.lazy("+1", "+1", 0, ""),
+                    CtorTester.lazy("-1", "-1", 0, ""),
+                    CtorTester.lazy("-0", "-0", 0, ""),
+                    CtorTester.lazy("+0", "+0", 0, "")
             );
         }
 
-        Stream.concat(validStrings.stream(), validLazyStrings.stream())
-        .forEach(value -> {
-            DottedVersion version = createTestee.apply(value);
-            assertEquals(version.toString(), value);
-        });
+        Stream.concat(validStrings.stream(), validLazyStrings.stream()).forEach(CtorTester::run);
     }
 
     @Test
@@ -108,8 +167,26 @@ public class DottedVersionTest {
             exceptionRule.expectMessage("Version may not be empty string");
             createTestee.apply("");
         } else {
-            assertTrue(0 == createTestee.apply("").compareTo(""));
-            assertTrue(0 == createTestee.apply("").compareTo("0"));
+            assertEquals(0, createTestee.apply("").getComponents().length);
+        }
+    }
+
+    @Test
+    public void testEquals() {
+        DottedVersion dv = createTestee.apply("1.0");
+        assertFalse(dv.equals(null));
+        assertFalse(dv.equals(Integer.valueOf(1)));
+
+        for (var ver : List.of("3", "3.4", "3.0.0")) {
+            DottedVersion a = createTestee.apply(ver);
+            DottedVersion b = createTestee.apply(ver);
+            assertTrue(a.equals(b));
+            assertTrue(b.equals(a));
+        }
+
+        if (!greedy) {
+            assertTrue(createTestee.apply("3.6+67").equals(createTestee.apply("3.6+67")));
+            assertFalse(createTestee.apply("3.6+67").equals(createTestee.apply("3.6+067")));
         }
     }
 

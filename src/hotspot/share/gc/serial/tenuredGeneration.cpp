@@ -32,6 +32,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
@@ -55,8 +56,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     // Fix for bug #4668531
     if (ZapUnusedHeapArea) {
-      MemRegion mangle_region(space()->end(),
-      (HeapWord*)_virtual_space.high());
+      MemRegion mangle_region(space()->end(), (HeapWord*)_virtual_space.high());
       SpaceMangler::mangle_region(mangle_region);
     }
 
@@ -344,37 +344,6 @@ void TenuredGeneration::gc_prologue() {
   _used_at_prologue = used();
 }
 
-bool TenuredGeneration::should_collect(bool  full,
-                                       size_t size,
-                                       bool   is_tlab) {
-  // This should be one big conditional or (||), but I want to be able to tell
-  // why it returns what it returns (without re-evaluating the conditionals
-  // in case they aren't idempotent), so I'm doing it this way.
-  // DeMorgan says it's okay.
-  if (full) {
-    log_trace(gc)("TenuredGeneration::should_collect: because full");
-    return true;
-  }
-  if (should_allocate(size, is_tlab)) {
-    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
-    return true;
-  }
-  // If we don't have very much free space.
-  // XXX: 10000 should be a percentage of the capacity!!!
-  if (free() < 10000) {
-    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
-    return true;
-  }
-  // If we had to expand to accommodate promotions from the young generation
-  if (_capacity_at_prologue < capacity()) {
-    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
-        _capacity_at_prologue, capacity());
-    return true;
-  }
-
-  return false;
-}
-
 void TenuredGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
 
@@ -389,25 +358,15 @@ void TenuredGeneration::compute_new_size() {
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
 }
 
-void TenuredGeneration::update_gc_stats(Generation* current_generation,
-                                        bool full) {
-  // If the young generation has been collected, gather any statistics
-  // that are of interest at this point.
-  bool current_is_young = SerialHeap::heap()->is_young_gen(current_generation);
-  if (!full && current_is_young) {
-    // Calculate size of data promoted from the young generation
-    // before doing the collection.
-    size_t used_before_gc = used();
-
-    // If the young gen collection was skipped, then the
-    // number of promoted bytes will be 0 and adding it to the
-    // average will incorrectly lessen the average.  It is, however,
-    // also possible that no promotion was needed.
-    if (used_before_gc >= _used_at_prologue) {
-      size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      _avg_promoted->sample(promoted_in_bytes);
-    }
+void TenuredGeneration::update_promote_stats() {
+  size_t used_after_gc = used();
+  size_t promoted_in_bytes;
+  if (used_after_gc > _used_at_prologue) {
+    promoted_in_bytes = used_after_gc - _used_at_prologue;
+  } else {
+    promoted_in_bytes = 0;
   }
+  _avg_promoted->sample(promoted_in_bytes);
 }
 
 void TenuredGeneration::update_counters() {
@@ -453,29 +412,6 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
   return new_obj;
 }
 
-void TenuredGeneration::collect(bool   full,
-                                bool   clear_all_soft_refs,
-                                size_t size,
-                                bool   is_tlab) {
-  SerialHeap* gch = SerialHeap::heap();
-
-  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
-  gc_timer->register_gc_start();
-
-  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
-  gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
-
-  gch->pre_full_gc_dump(gc_timer);
-
-  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
-
-  gch->post_full_gc_dump(gc_timer);
-
-  gc_timer->register_gc_end();
-
-  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
-}
-
 HeapWord*
 TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
@@ -508,14 +444,6 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 void TenuredGeneration::gc_epilogue() {
   // update the generation and space performance counters
   update_counters();
-  if (ZapUnusedHeapArea) {
-    _the_space->check_mangled_unused_area_complete();
-  }
-}
-
-void TenuredGeneration::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  _the_space->set_top_for_allocations();
 }
 
 void TenuredGeneration::verify() {

@@ -37,38 +37,12 @@ public:
   // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2, Register thread,
-                 RTMLockingCounters* rtm_counters,
-                 RTMLockingCounters* stack_rtm_counters,
-                 Metadata* method_data,
-                 bool use_rtm, bool profile_rtm);
-  void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+                 Metadata* method_data);
+  void fast_unlock(Register obj, Register box, Register tmp);
 
   void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
-
-#if INCLUDE_RTM_OPT
-  void rtm_counters_update(Register abort_status, Register rtm_counters);
-  void branch_on_random_using_rdtsc(Register tmp, Register scr, int count, Label& brLabel);
-  void rtm_abort_ratio_calculation(Register tmp, Register rtm_counters_reg,
-                                   RTMLockingCounters* rtm_counters,
-                                   Metadata* method_data);
-  void rtm_profiling(Register abort_status_Reg, Register rtm_counters_Reg,
-                     RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
-  void rtm_retry_lock_on_abort(Register retry_count, Register abort_status, Label& retryLabel);
-  void rtm_retry_lock_on_busy(Register retry_count, Register box, Register tmp, Register scr, Label& retryLabel);
-  void rtm_stack_locking(Register obj, Register tmp, Register scr,
-                         Register retry_on_abort_count,
-                         RTMLockingCounters* stack_rtm_counters,
-                         Metadata* method_data, bool profile_rtm,
-                         Label& DONE_LABEL, Label& IsInflated);
-  void rtm_inflated_locking(Register obj, Register box, Register tmp,
-                            Register scr, Register retry_on_busy_count,
-                            Register retry_on_abort_count,
-                            RTMLockingCounters* rtm_counters,
-                            Metadata* method_data, bool profile_rtm,
-                            Label& DONE_LABEL);
-#endif
 
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);
@@ -289,10 +263,11 @@ public:
   void count_positives(Register ary1, Register len,
                        Register result, Register tmp1,
                        XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
+
   // Compare char[] or byte[] arrays.
-  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                     Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
+  void arrays_equals(bool is_array_equ, Register ary1, Register ary2, Register limit,
+                     Register result, Register chr, XMMRegister vec1, XMMRegister vec2,
+                     bool is_char, KRegister mask = knoreg, bool expand_ary2 = false);
 
   void arrays_hashcode(Register str1, Register cnt1, Register result,
                        Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,

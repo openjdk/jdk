@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,33 +32,87 @@
   @run main KeyEventsTest
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.*;
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+import java.awt.KeyboardFocusManager;
+import java.awt.Frame;
+import java.awt.List;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 import jdk.test.lib.Platform;
 
-public class KeyEventsTest extends Frame implements ItemListener, FocusListener, KeyListener
-{
+public class KeyEventsTest {
     TestState currentState;
     final Object LOCK = new Object();
     final int ACTION_TIMEOUT = 500;
 
-    List single = new List(3, false);
-    List multiple = new List(3, true);
+    List single;
+    List multiple;
 
-    Panel p1 = new Panel ();
-    Panel p2 = new Panel ();
+    KeyFrame keyFrame;
 
-    public static void main(final String[] args) {
+    static Robot r;
+
+    public static void main(final String[] args) throws Exception {
+        r = new Robot();
         KeyEventsTest app = new KeyEventsTest();
-        app.init();
-        app.start();
+        try {
+            EventQueue.invokeAndWait(app::initAndShowGui);
+            r.waitForIdle();
+            r.delay(500);
+            app.doTest();
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (app.keyFrame != null) {
+                    app.keyFrame.dispose();
+                }
+            });
+        }
     }
 
-    public void init()
-    {
-        setLayout (new BorderLayout ());
+    class KeyFrame extends Frame implements ItemListener, FocusListener, KeyListener {
+        public void itemStateChanged(ItemEvent ie) {
+            System.out.println("itemStateChanged-" + ie);
+            currentState.setAction(true);
+        }
+
+        public void focusGained(FocusEvent e) {
+            synchronized (LOCK) {
+                LOCK.notifyAll();
+            }
+        }
+
+        public void focusLost(FocusEvent e) {
+        }
+
+        public void keyPressed(KeyEvent e) {
+            System.out.println("keyPressed-" + e);
+        }
+
+        public void keyReleased(KeyEvent e) {
+            System.out.println("keyReleased-" + e);
+        }
+
+        public void keyTyped(KeyEvent e) {
+            System.out.println("keyTyped-" + e);
+        }
+    }
+
+    public void initAndShowGui() {
+        keyFrame = new KeyFrame();
+        keyFrame.setLayout(new BorderLayout ());
+
+        single = new List(3, false);
+        multiple = new List(3, true);
 
         single.add("0");
         single.add("1");
@@ -80,161 +134,105 @@ public class KeyEventsTest extends Frame implements ItemListener, FocusListener,
         multiple.add("7");
         multiple.add("8");
 
-        single.addKeyListener(this);
-        single.addItemListener(this);
-        single.addFocusListener(this);
+        single.addKeyListener(keyFrame);
+        single.addItemListener(keyFrame);
+        single.addFocusListener(keyFrame);
+        Panel p1 = new Panel();
         p1.add(single);
-        add("North", p1);
+        keyFrame.add("North", p1);
 
-        multiple.addKeyListener(this);
-        multiple.addItemListener(this);
-        multiple.addFocusListener(this);
+        multiple.addKeyListener(keyFrame);
+        multiple.addItemListener(keyFrame);
+        multiple.addFocusListener(keyFrame);
+        Panel p2 = new Panel();
         p2.add(multiple);
-        add("South", p2);
+        keyFrame.add("South", p2);
 
-    }//End  init()
-
-    public void start ()
-    {
-
-        try{
-            setSize (200,200);
-            validate();
-            setUndecorated(true);
-            setLocationRelativeTo(null);
-            setVisible(true);
-
-            doTest();
-            System.out.println("Test passed.");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("The test failed.");
-        }
-
-    }// start()
-
-    public void itemStateChanged (ItemEvent ie) {
-        System.out.println("itemStateChanged-"+ie);
-        this.currentState.setAction(true);
+        keyFrame.setSize(200, 200);
+        keyFrame.validate();
+        keyFrame.setUndecorated(true);
+        keyFrame.setLocationRelativeTo(null);
+        keyFrame.setVisible(true);
     }
 
-    public void focusGained(FocusEvent e){
-
+    private void test(TestState currentState) throws Exception {
         synchronized (LOCK) {
-            LOCK.notifyAll();
-        }
-
-    }
-
-    public void focusLost(FocusEvent e){
-    }
-
-    public void keyPressed(KeyEvent e){
-        System.out.println("keyPressed-"+e);
-    }
-
-    public void keyReleased(KeyEvent e){
-        System.out.println("keyReleased-"+e);
-    }
-
-    public void keyTyped(KeyEvent e){
-        System.out.println("keyTyped-"+e);
-    }
-
-    private void test(TestState currentState)
-      throws InterruptedException, InvocationTargetException {
-
-        synchronized (LOCK) {
-
             this.currentState = currentState;
             System.out.println(this.currentState);
 
             List list;
-            if (currentState.getMultiple()){
+            if (currentState.getMultiple()) {
                 list = multiple;
-            }else{
+            } else {
                 list = single;
             }
 
-            Robot r;
-            try {
-                r = new Robot();
-            } catch(AWTException e) {
-                throw new RuntimeException(e.getMessage());
-            }
-
             r.delay(10);
-            Point loc = this.getLocationOnScreen();
+            Point loc = keyFrame.getLocationOnScreen();
 
-            r.mouseMove(loc.x+10, loc.y+10);
-            r.mousePress(InputEvent.BUTTON1_MASK);
+            r.mouseMove(loc.x + 10, loc.y + 10);
+            r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             r.delay(10);
-            r.mouseRelease(InputEvent.BUTTON1_MASK);
+            r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             r.delay(10);
 
             list.requestFocusInWindow();
             LOCK.wait(ACTION_TIMEOUT);
+            r.waitForIdle();
+
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != list){
                 throw new RuntimeException("Test failed - list isn't focus owner.");
             }
 
-            list.deselect(0);
-            list.deselect(1);
-            list.deselect(2);
-            list.deselect(3);
-            list.deselect(4);
-            list.deselect(5);
-            list.deselect(6);
-            list.deselect(7);
-            list.deselect(8);
+            EventQueue.invokeAndWait(() -> {
+                list.deselect(0);
+                list.deselect(1);
+                list.deselect(2);
+                list.deselect(3);
+                list.deselect(4);
+                list.deselect(5);
+                list.deselect(6);
+                list.deselect(7);
+                list.deselect(8);
 
-            int selectIndex = 0;
-            int visibleIndex = 0;
+                int selectIndex = 0;
+                int visibleIndex = 0;
 
-            if (currentState.getScrollMoved()){
-
-                if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
-                    currentState.getKeyID() == KeyEvent.VK_HOME){
-                    selectIndex = 8;
-                    visibleIndex = 8;
-                }else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
-                    currentState.getKeyID() == KeyEvent.VK_END){
-                    selectIndex = 0;
-                    visibleIndex = 0;
-                }
-
-            }else{
-
-                if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
-                    currentState.getKeyID() == KeyEvent.VK_HOME){
-
-                    if (currentState.getSelectedMoved()){
-                        selectIndex = 1;
-                        visibleIndex = 0;
-                    }else{
+                if (currentState.getScrollMoved()) {
+                    if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
+                            currentState.getKeyID() == KeyEvent.VK_HOME) {
+                        selectIndex = 8;
+                        visibleIndex = 8;
+                    } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
+                            currentState.getKeyID() == KeyEvent.VK_END) {
                         selectIndex = 0;
                         visibleIndex = 0;
                     }
-
-                }else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
-                    currentState.getKeyID() == KeyEvent.VK_END){
-
-                    if (currentState.getSelectedMoved()){
-                        selectIndex = 7;
-                        visibleIndex = 8;
-                    }else{
-                        selectIndex = 8;
+                } else {
+                    if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
+                            currentState.getKeyID() == KeyEvent.VK_HOME) {
+                        if (currentState.getSelectedMoved()) {
+                            selectIndex = 1;
+                        } else {
+                            selectIndex = 0;
+                        }
+                        visibleIndex = 0;
+                    } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
+                            currentState.getKeyID() == KeyEvent.VK_END) {
+                        if (currentState.getSelectedMoved()) {
+                            selectIndex = 7;
+                        } else {
+                            selectIndex = 8;
+                        }
                         visibleIndex = 8;
                     }
-
                 }
-
-            }
-
-            list.select(selectIndex);
-            list.makeVisible(visibleIndex);
+                list.select(selectIndex);
+                list.makeVisible(visibleIndex);
+            });
 
             r.delay(10);
+            r.waitForIdle();
 
             if (currentState.getKeyID() == KeyEvent.VK_HOME ||
                 currentState.getKeyID() == KeyEvent.VK_END){
@@ -259,11 +257,9 @@ public class KeyEventsTest extends Frame implements ItemListener, FocusListener,
                 throw new RuntimeException("Test failed.");
 
         }
-
     }
 
-    private void doTest()
-      throws InterruptedException, InvocationTargetException {
+    private void doTest() throws Exception {
 
         boolean isWin = false;
         if (Platform.isWindows()) {
@@ -310,9 +306,9 @@ public class KeyEventsTest extends Frame implements ItemListener, FocusListener,
     }
 }// class KeyEventsTest
 
-class TestState{
+class TestState {
 
-    private boolean multiple;
+    private final boolean multiple;
     // after key pressing selected item moved
     private final boolean selectedMoved;
     // after key pressing scroll moved

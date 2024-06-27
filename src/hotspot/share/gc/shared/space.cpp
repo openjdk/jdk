@@ -27,7 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -42,13 +42,7 @@
 ContiguousSpace::ContiguousSpace():
   _bottom(nullptr),
   _end(nullptr),
-  _top(nullptr) {
-  _mangler = new GenSpaceMangler(this);
-}
-
-ContiguousSpace::~ContiguousSpace() {
-  delete _mangler;
-}
+  _top(nullptr) {}
 
 void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
@@ -73,26 +67,14 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations() {
-  mangler()->set_top_for_allocations(top());
-}
-void ContiguousSpace::check_mangled_unused_area(HeapWord* limit) {
-  mangler()->check_mangled_unused_area(limit);
-}
-
-void ContiguousSpace::check_mangled_unused_area_complete() {
-  mangler()->check_mangled_unused_area_complete();
-}
-
-// Mangled only the unused space that has not previously
-// been mangled and that has not been allocated since being
-// mangled.
 void ContiguousSpace::mangle_unused_area() {
-  mangler()->mangle_unused_area();
+  mangle_unused_area(MemRegion(_top, _end));
 }
-void ContiguousSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
+
+void ContiguousSpace::mangle_unused_area(MemRegion mr) {
+  SpaceMangler::mangle_region(mr);
 }
+
 #endif  // NOT_PRODUCT
 
 void ContiguousSpace::print() const { print_on(tty); }

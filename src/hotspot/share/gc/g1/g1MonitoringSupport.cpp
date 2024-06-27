@@ -253,8 +253,8 @@ void G1MonitoringSupport::recalculate_sizes() {
   uint eden_list_max_length = young_list_target_length - survivor_list_length;
 
   // First calculate the committed sizes that can be calculated independently.
-  _survivor_space_committed = survivor_list_length * HeapRegion::GrainBytes;
-  _old_gen_committed = HeapRegion::align_up_to_region_byte_size(_old_gen_used);
+  _survivor_space_committed = survivor_list_length * G1HeapRegion::GrainBytes;
+  _old_gen_committed = G1HeapRegion::align_up_to_region_byte_size(_old_gen_used);
 
   // Next, start with the overall committed size.
   _overall_committed = _g1h->capacity();
@@ -266,7 +266,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   committed -= _survivor_space_committed + _old_gen_committed;
 
   // Next, calculate and remove the committed size for the eden.
-  _eden_space_committed = (size_t) eden_list_max_length * HeapRegion::GrainBytes;
+  _eden_space_committed = (size_t) eden_list_max_length * G1HeapRegion::GrainBytes;
   // Somewhat defensive: be robust in case there are inaccuracies in
   // the calculations
   _eden_space_committed = MIN2(_eden_space_committed, committed);

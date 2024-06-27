@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -63,7 +64,7 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 
 DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
 
-Thread::Thread() {
+Thread::Thread(MEMFLAGS flags) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -77,9 +78,9 @@ Thread::Thread() {
 
   // allocated data structures
   set_osthread(nullptr);
-  set_resource_area(new (mtThread)ResourceArea());
+  set_resource_area(new (flags) ResourceArea(flags));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (mtThread) HandleArea(nullptr));
+  set_handle_area(new (flags) HandleArea(flags, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
@@ -103,7 +104,10 @@ Thread::Thread() {
   _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
-  _hashStateX = os::random();
+  // If we are dumping, keep ihashes constant. Note that during dumping we only
+  // ever run one java thread, and no other thread should generate ihashes either,
+  // so using a constant seed should work fine.
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;

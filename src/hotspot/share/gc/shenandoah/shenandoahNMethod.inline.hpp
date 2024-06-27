@@ -39,6 +39,10 @@ ShenandoahReentrantLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
+ShenandoahReentrantLock* ShenandoahNMethod::ic_lock() {
+  return &_ic_lock;
+}
+
 bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
@@ -83,6 +87,10 @@ void ShenandoahNMethod::attach_gc_data(nmethod* nm, ShenandoahNMethod* gc_data) 
 
 ShenandoahReentrantLock* ShenandoahNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
+}
+
+ShenandoahReentrantLock* ShenandoahNMethod::ic_lock_for_nmethod(nmethod* nm) {
+  return gc_data(nm)->ic_lock();
 }
 
 bool ShenandoahNMethodTable::iteration_in_progress() const {

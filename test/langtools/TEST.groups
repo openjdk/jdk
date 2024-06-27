@@ -1,4 +1,4 @@
-#  Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
+langtools_slow = \
+    jdk/internal/shellsupport/doc/FullJavadocHelperTest.java
+
 # All tests
 
 all = \
@@ -78,11 +81,13 @@ tier1 = \
     :langtools_all \
     lib \
     tools \
-    -:langtools_jshell_unstable
+    -:langtools_jshell_unstable \
+    -:langtools_slow
 
 # (Almost) no langtools tests are tier 2.
 tier2 = \
-    :langtools_jshell_unstable
+    :langtools_jshell_unstable \
+    :langtools_slow
 
 # No langtools tests are tier 3 either.
 tier3 =

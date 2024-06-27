@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8281429
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @requires vm.debug == true & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.UseCompressedOops & vm.opt.final.EliminateAllocations
+ * @requires vm.debug == true & vm.flagless & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
@@ -39,15 +39,44 @@ public class AllocationMergesTests {
     private static Point global_escape = new Point(2022, 2023);
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
-                                   "-XX:+ReduceAllocationMerges",
-                                   "-XX:+TraceReduceAllocationMerges",
-                                   "-XX:+DeoptimizeALot",
-                                   "-XX:CompileCommand=inline,*::charAt*",
-                                   "-XX:CompileCommand=inline,*PicturePositions::*",
-                                   "-XX:CompileCommand=inline,*Point::*",
-                                   "-XX:CompileCommand=inline,*Nested::*",
-                                   "-XX:CompileCommand=exclude,*::dummy*");
+        TestFramework framework = new TestFramework();
+
+        Scenario scenario0 = new Scenario(0, "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+ReduceAllocationMerges",
+                                             "-XX:+TraceReduceAllocationMerges",
+                                             "-XX:+DeoptimizeALot",
+                                             "-XX:+UseCompressedOops",
+                                             "-XX:+UseCompressedClassPointers",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*PicturePositions::*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        Scenario scenario1 = new Scenario(1, "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+ReduceAllocationMerges",
+                                             "-XX:+TraceReduceAllocationMerges",
+                                             "-XX:+DeoptimizeALot",
+                                             "-XX:+UseCompressedOops",
+                                             "-XX:-UseCompressedClassPointers",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*PicturePositions::*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        Scenario scenario2 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+ReduceAllocationMerges",
+                                             "-XX:+TraceReduceAllocationMerges",
+                                             "-XX:+DeoptimizeALot",
+                                             "-XX:-UseCompressedOops",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*PicturePositions::*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        framework.addScenarios(scenario0, scenario1, scenario2).start();
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //
@@ -94,7 +123,8 @@ public class AllocationMergesTests {
                  "testSRAndNSR_Trap_C2",
                  "testString_one_C2",
                  "testString_two_C2",
-                 "testLoadNarrowKlass_C2",
+                 "testLoadKlassFromCast_C2",
+                 "testLoadKlassFromPhi_C2",
                  "testReReduce_C2"
                 })
     public void runner(RunInfo info) {
@@ -150,7 +180,8 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testSRAndNSR_NoTrap_Interp(cond1, x, y),                   testSRAndNSR_NoTrap_C2(cond1, x, y));
         Asserts.assertEQ(testString_one_Interp(cond1),                              testString_one_C2(cond1));
         Asserts.assertEQ(testString_two_Interp(cond1),                              testString_two_C2(cond1));
-        Asserts.assertEQ(testLoadNarrowKlass_Interp(cond1),                         testLoadNarrowKlass_C2(cond1));
+        Asserts.assertEQ(testLoadKlassFromCast_Interp(cond1),                       testLoadKlassFromCast_C2(cond1));
+        Asserts.assertEQ(testLoadKlassFromPhi_Interp(cond1),                        testLoadKlassFromPhi_C2(cond1));
         Asserts.assertEQ(testReReduce_Interp(cond1, x, y),                          testReReduce_C2(cond1, x, y));
 
         Asserts.assertEQ(testSRAndNSR_Trap_Interp(false, cond1, cond2, x, y),
@@ -771,10 +802,11 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" } )
+    @IR(counts = { IRNode.ALLOC, "2" }, applyIf = {"UseCompressedOops", "true"} )
+    @IR(failOn = { IRNode.ALLOC }, applyIf = {"UseCompressedOops", "false"} )
     // The two Picture objects will be removed. The nested Point objects won't
-    // be removed because the Phi merging them will have a DecodeN user - which
-    // currently isn't supported.
+    // be removed, if CompressedOops is enabled, because the Phi merging them will
+    // have a DecodeN user - which currently isn't supported.
     int testNestedObjectsNoEscapeObject_C2(boolean cond, int x, int y) { return testNestedObjectsNoEscapeObject(cond, x, y); }
 
     @DontCompile
@@ -1258,7 +1290,7 @@ public class AllocationMergesTests {
     // -------------------------------------------------------------------------
 
     @ForceInline
-    Class testLoadNarrowKlass(boolean cond1) {
+    Class testLoadKlassFromCast(boolean cond1) {
         Object p = new Circle(10);
 
         if (cond1) {
@@ -1270,12 +1302,32 @@ public class AllocationMergesTests {
 
     @Test
     @IR(counts = { IRNode.ALLOC, "1" })
-    // The allocation won't be reduced because we don't support NarrowKlass
-    // loads under CastPPs.
-    Class testLoadNarrowKlass_C2(boolean cond1) { return testLoadNarrowKlass(cond1); }
+    // The allocation won't be reduced because we don't support [Narrow]Klass loads
+    Class testLoadKlassFromCast_C2(boolean cond1) { return testLoadKlassFromCast(cond1); }
 
     @DontCompile
-    Class testLoadNarrowKlass_Interp(boolean cond1) { return testLoadNarrowKlass(cond1); }
+    Class testLoadKlassFromCast_Interp(boolean cond1) { return testLoadKlassFromCast(cond1); }
+
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    Class testLoadKlassFromPhi(boolean cond1) {
+        Shape p = new Square(20);
+
+        if (cond1) {
+            p = new Circle(10);
+        }
+
+        return p.getClass();
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "2" })
+    // The allocation won't be reduced because we don't support [Narrow]Klass loads
+    Class testLoadKlassFromPhi_C2(boolean cond1) { return testLoadKlassFromPhi(cond1); }
+
+    @DontCompile
+    Class testLoadKlassFromPhi_Interp(boolean cond1) { return testLoadKlassFromPhi(cond1); }
 
     // -------------------------------------------------------------------------
 

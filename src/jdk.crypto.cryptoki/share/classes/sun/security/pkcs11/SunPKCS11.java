@@ -860,6 +860,15 @@ public final class SunPKCS11 extends AuthProvider {
         dA(CIP, "AES_256/KWP/NoPadding",        P11KeyWrapCipher,
                 m(CKM_AES_KEY_WRAP_KWP));
 
+        d(CIP, "AES/CTS/NoPadding",             P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_128/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_192/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_256/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+
         d(CIP, "AES/GCM/NoPadding",             P11AEADCipher,
                 m(CKM_AES_GCM));
         dA(CIP, "AES_128/GCM/NoPadding",        P11AEADCipher,
@@ -1222,25 +1231,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    private static boolean isLegacy(CK_MECHANISM_INFO mechInfo)
-            throws PKCS11Exception {
-        // assume full support if no mech info available
-        // For vendor-specific mechanisms, often no mech info is provided
-        boolean partialSupport = false;
-
-        if (mechInfo != null) {
-            if ((mechInfo.flags & CKF_DECRYPT) != 0) {
-                // non-legacy cipher mechs should support encryption
-                partialSupport |= ((mechInfo.flags & CKF_ENCRYPT) == 0);
-            }
-            if ((mechInfo.flags & CKF_VERIFY) != 0) {
-                // non-legacy signature mechs should support signing
-                partialSupport |= ((mechInfo.flags & CKF_SIGN) == 0);
-            }
-        }
-        return partialSupport;
-    }
-
     // test if a token is present and initialize this provider for it if so.
     // does nothing if no token is found
     // called from constructor and by poller
@@ -1309,13 +1299,13 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-            if (isLegacy(mechInfo)) {
+            if (longMech == CKM_AES_CTS && token.ctsVariant == null) {
                 if (showInfo) {
-                    System.out.println("DISABLED due to legacy");
+                    System.out.println("DISABLED due to an unspecified " +
+                            "cipherTextStealingVariant in configuration");
                 }
                 continue;
             }
-
             if (brokenMechanisms.contains(longMech)) {
                 if (showInfo) {
                     System.out.println("DISABLED due to known issue with NSS");
@@ -1336,6 +1326,7 @@ public final class SunPKCS11 extends AuthProvider {
             if (ds == null) {
                 continue;
             }
+            boolean allowLegacy = config.getAllowLegacy();
             descLoop:
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
@@ -1349,6 +1340,21 @@ public final class SunPKCS11 extends AuthProvider {
                                     requiredMech & 0xFFFFFFFFL) == null) {
                                 continue descLoop;
                             }
+                        }
+                    }
+
+                    // assume full support if no mech info available
+                    if (!allowLegacy && mechInfo != null) {
+                        if ((d.type == CIP &&
+                                (mechInfo.flags & CKF_ENCRYPT) == 0) ||
+                                (d.type == SIG &&
+                                (mechInfo.flags & CKF_SIGN) == 0)) {
+                            if (showInfo) {
+                                System.out.println("DISABLED " +  d.type +
+                                        " " + d.algorithm +
+                                        " due to partial support");
+                            }
+                            continue;
                         }
                     }
                     supportedAlgs.put(d, integerMech);

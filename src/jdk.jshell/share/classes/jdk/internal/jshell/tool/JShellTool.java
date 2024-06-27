@@ -80,6 +80,7 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.internal.jshell.tool.IOContext.InputInterruptedException;
+import jdk.internal.org.jline.terminal.Size;
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Diag;
 import jdk.jshell.EvalException;
@@ -166,6 +167,7 @@ public class JShellTool implements MessageHandler {
     final Map<String, String> envvars;
     final Locale locale;
     final boolean interactiveTerminal;
+    final Size windowSize;
 
     final Feedback feedback = new Feedback();
 
@@ -181,12 +183,13 @@ public class JShellTool implements MessageHandler {
      * @param prefs persistence implementation to use
      * @param envvars environment variable mapping to use
      * @param locale locale to use
+     * @param windowSize window size hint, or null
      */
     JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
             PersistentStorage prefs, Map<String, String> envvars, Locale locale,
-            boolean interactiveTerminal) {
+            boolean interactiveTerminal, Size windowSize) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -203,6 +206,7 @@ public class JShellTool implements MessageHandler {
         this.envvars = envvars;
         this.locale = locale;
         this.interactiveTerminal = interactiveTerminal;
+        this.windowSize = windowSize;
     }
 
     private ResourceBundle versionRB = null;
@@ -998,7 +1002,7 @@ public class JShellTool implements MessageHandler {
             };
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
-            try (IOContext in = new ConsoleIOContext(this, cmdin, console, interactiveTerminal)) {
+            try (IOContext in = new ConsoleIOContext(this, cmdin, console, interactiveTerminal, windowSize)) {
                 int indent;
                 try {
                     String indentValue = indent();
