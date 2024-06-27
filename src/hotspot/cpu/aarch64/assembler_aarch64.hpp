@@ -934,7 +934,6 @@ public:
   void NAME(address dest) {                                             \
     starti;                                                             \
     int64_t offset = dest - pc();                                       \
-    if (offset > 128*1024*1024 || offset < -128*1024*1024) { tty->print_cr("BL"); }     \
     DEBUG_ONLY(assert(reachable_from_branch_at(pc(), dest), "debug only")); \
     f(opcode, 31), f(0b00101, 30, 26), sf(offset>>2, 25, 0);            \
   }                                                                     \

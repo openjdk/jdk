@@ -367,7 +367,6 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   // On some platforms, the reference is absolute (not self-relative).
   // The enhanced use of pd_call_destination sorts this all out.
   address orig_addr = old_addr_for(addr(), src, dest);
-
   address callee    = pd_call_destination(orig_addr);
 
   bool is_pc_relative = NativeInstruction::is_pc_relative_at(addr());

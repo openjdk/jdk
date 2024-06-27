@@ -270,17 +270,19 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
 
 static intptr_t offset_to_codecache(char* ptr) {
   intptr_t offset = ((uintptr_t)ptr < (uintptr_t)CodeCache::low_bound()) ?
-            ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) :
-            ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
+    ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) :
+    ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
   return offset;
 }
 
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
   if (!alloc_in_codecache) {
+    // ##
+    // ## Note. aligned_alloc is declared FORBID_C_FUNCTION("don't use") in globalDefinitions.hpp
+    // ##
     char* ptr = (char*)aligned_alloc(K, size + 16); // 16 is a header gap
 
     if (StressCodeBuffers) {
-      //tty->print_cr("offset_to_codecache %li", offset_to_codecache(ptr));
       while (offset_to_codecache(ptr) < 4L*1000*1000*1000 &&
              offset_to_codecache(ptr) > -4L*1000*1000*1000) {
         // stress test: leave the garbage and reallocate

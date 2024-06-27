@@ -366,11 +366,7 @@ bool NativeInstruction::is_pc_relative_at(address instr) {
   if (Instruction_aarch64::extract(insn, 30, 26) == 0b00101) {
     return true; // pc-relative B/BL
   } else
-  if (Instruction_aarch64::extract(insn, 30, 26) == 0b00101) {
-    return true; // pc-relative B/BL
-  } else
   if ((Instruction_aarch64::extract(insn, 31, 24) & 0b10011111) == 0b10010000) {
-    //tty->print_cr("is_pc_rel: adrp");
     return true; // adrp
   } else
     return false;

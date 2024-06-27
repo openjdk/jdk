@@ -138,7 +138,6 @@ void Address::lea(MacroAssembler *as, Register r) const {
     break;
   }
   case literal: {
-    //tty->print_cr("lea");
     as->code_section()->relocate(as->inst_mark(), rspec());
     if (rspec().type() == relocInfo::none)
       __ mov(r, target());
