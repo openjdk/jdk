@@ -1079,7 +1079,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t cset_regions) {
 
   reserve_regions(reserve);
   _partitions.assert_bounds();
-  log_status();
+  log_status_with_heap_locked();
 }
 
 void ShenandoahFreeSet::rebuild() {
@@ -1130,7 +1130,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   }
 }
 
-void ShenandoahFreeSet::log_status_with_heap_lock() {
+void ShenandoahFreeSet::log_status() {
   // Must not be heap locked, it acquires heap lock only when log is enabled
   shenandoah_assert_not_heaplocked();
   if (LogTarget(Info, gc, free)::is_enabled()
@@ -1139,11 +1139,11 @@ void ShenandoahFreeSet::log_status_with_heap_lock() {
 #endif
    ) {
     ShenandoahHeapLocker locker(_heap->lock());
-    log_status();
+    log_status_with_heap_locked();
    }
 }
 
-void ShenandoahFreeSet::log_status() {
+void ShenandoahFreeSet::log_status_with_heap_locked() {
   shenandoah_assert_heaplocked();
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
