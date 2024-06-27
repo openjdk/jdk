@@ -174,6 +174,8 @@ class VtableStub {
  public:
   // Query
   bool is_itable_stub()                          { return !_is_vtable_stub; }
+  // We reinterpret arbitrary memory as VtableStub. This does not cause failures because the lookup/equality
+  // check will reject false objects. Disabling UBSan is a temporary workaround until JDK-8331725 is fixed.
   ATTRIBUTE_NO_UBSAN
   bool is_vtable_stub()                          { return  _is_vtable_stub; }
   bool is_abstract_method_error(address epc)     { return epc == code_begin()+_ame_offset; }
