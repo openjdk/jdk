@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /test/lib
+ * @library /test/lib /java/security/testlibrary
  * @bug 4470717
  * @summary fix default handling and other misc
  * @run main/othervm Default
@@ -37,27 +37,23 @@ import java.io.*;
 
 public class Default {
     public static void main(String args[]) throws Exception {
-
         InputStream in = System.in;
         PrintStream err = System.err;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final String defaultName = "charlie";
-        try (PipedInputStream pipedIn = new PipedInputStream();
-             PipedOutputStream pipedOut = new PipedOutputStream(pipedIn);
-             PrintStream prints = new PrintStream(baos)) {
+        final String simulatedInput = "-1\n-1\n";
+        HumanInputStream humanInputStream = new HumanInputStream(simulatedInput);
 
-            System.setIn(pipedIn);
+        try (PrintStream prints = new PrintStream(baos)) {
+            System.setIn(humanInputStream);
             System.setErr(prints);
-            TextCallbackHandler textHandler = new TextCallbackHandler();
             NameCallback nameCallback = new NameCallback("Name: ", defaultName);
             ConfirmationCallback confirmationCallback = new ConfirmationCallback(
                     "Correct?",
                     ConfirmationCallback.INFORMATION,
                     ConfirmationCallback.YES_NO_OPTION,
                     ConfirmationCallback.NO);
-
-            handleCallback(pipedOut, textHandler, nameCallback);
-            handleCallback(pipedOut, textHandler, confirmationCallback);
+            new TextCallbackHandler().handle(new Callback[]{nameCallback, confirmationCallback});
 
             Asserts.assertEquals(nameCallback.getDefaultName(), defaultName);
             Asserts.assertEquals(confirmationCallback.getSelectedIndex(), ConfirmationCallback.NO);
@@ -70,13 +66,5 @@ public class Default {
         // check that the default name and confirmation were visible in the output
         Asserts.assertTrue(baos.toString().contains(String.format("Name:  [%s]", defaultName)));
         Asserts.assertTrue(baos.toString().contains("1. No [default]"));
-    }
-
-    private static void handleCallback(PipedOutputStream pipedOut, TextCallbackHandler textHandler,
-                                       Callback callback)
-            throws IOException, UnsupportedCallbackException {
-        pipedOut.write("-1\n".getBytes());
-        pipedOut.flush();
-        textHandler.handle(new Callback[]{callback});
     }
 }
