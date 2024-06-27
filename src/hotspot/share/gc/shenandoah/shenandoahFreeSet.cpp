@@ -1142,6 +1142,7 @@ void ShenandoahFreeSet::log_status_under_lock() {
 
 void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
+
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
   if (LogTarget(Debug, gc, free)::is_enabled()) {
