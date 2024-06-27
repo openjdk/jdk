@@ -4024,7 +4024,7 @@ address MacroAssembler::trampoline_call(Address entry) {
   return call_pc;
 }
 
-address MacroAssembler::load_call(Address entry) {
+address MacroAssembler::load_and_call(Address entry) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type ||
          entry.rspec().type() == relocInfo::opt_virtual_call_type ||
          entry.rspec().type() == relocInfo::static_call_type ||

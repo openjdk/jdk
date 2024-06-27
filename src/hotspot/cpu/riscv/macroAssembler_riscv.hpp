@@ -1273,11 +1273,11 @@ public:
   //
   // Return: the call PC or null if CodeCache is full.
   address patchable_far_call(Address entry) {
-    return UseTrampolines ? trampoline_call(entry) : load_call(entry);
+    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
   }
  private:
   address trampoline_call(Address entry);
-  address load_call(Address entry);
+  address load_and_call(Address entry);
  public:
 
   address ic_call(address entry, jint method_index = 0);
