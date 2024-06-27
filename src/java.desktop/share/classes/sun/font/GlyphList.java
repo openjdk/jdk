@@ -358,12 +358,6 @@ public final class GlyphList {
         if (pixelDataAddress == 0L) {
             return graybits;
         }
-        /* unsafe is supposed to be fast, but I doubt if this loop can beat
-         * a native call which does a getPrimitiveArrayCritical and a
-         * memcpy for the typical amount of image data (30-150 bytes)
-         * Consider a native method if there is a performance problem (which
-         * I haven't seen so far).
-         */
         byte[] bytes = StrikeCache.getGlyphPixelBytes(images[glyphindex]);
         System.arraycopy(bytes, 0, graybits, 0, bytes.length);
         return graybits;
