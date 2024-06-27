@@ -32,14 +32,8 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
-import java.lang.classfile.ClassFile;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -48,11 +42,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
-import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -446,233 +437,16 @@ public class ReflectionFactory {
         if (! isValidSerializable(cl)) {
             return null;
         }
-        // TODO: this is not ideal; need a better solution
-        Field ilfField;
-        try {
-            ilfField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-        } catch (NoSuchFieldException e) {
-            throw new InternalError(e);
-        }
-        ilfField.setAccessible(true);
-        MethodHandles.Lookup impl_lookup = null;
-        try {
-            impl_lookup = (MethodHandles.Lookup) ilfField.get(null);
-        } catch (IllegalAccessException e) {
-            throw new InternalError(e);
-        }
-
-        // we have to do this late to avoid initialization cycle
-        JavaLangInvokeAccess access = SharedSecrets.getJavaLangInvokeAccess();
-
-        MethodHandles.Lookup clLookup;
-        try {
-            clLookup = MethodHandles.privateLookupIn(cl, impl_lookup);
-        } catch (IllegalAccessException e) {
-            throw new InternalError("Error in readObject generation", e);
-        }
-
-        // build an anonymous+hidden nestmate to perform the read operation
-        ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
-        List<MethodHandle> finalSetters = new ArrayList<>();
-        byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$readObject"), classBuilder -> {
-            classBuilder.withMethod("readObject",
-                MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, ObjectInputStream.class.describeConstable().orElseThrow(InternalError::new)),
-                Modifier.STATIC | Modifier.PRIVATE,
-                mb -> mb.withCode(cb -> {
-                    // get our GetField
-                    cb.aload(1);
-                    cb.invokevirtual(SerializationDescs.CD_ObjectInputStream, "readFields", SerializationDescs.MTD_ObjectInputStream_readFields);
-                    cb.astore(2);
-                    // iterate the fields of the class
-                    for (Field field : cl.getDeclaredFields()) {
-                        int fieldMods = field.getModifiers();
-                        if (Modifier.isStatic(fieldMods) || Modifier.isTransient(fieldMods)) {
-                            continue;
-                        }
-                        boolean isFinal = Modifier.isFinal(fieldMods);
-                        String fieldName = field.getName();
-                        Class<?> fieldType = field.getType();
-
-                        if (isFinal) {
-                            // special setter
-                            field.setAccessible(true);
-                            int idx = finalSetters.size();
-                            try {
-                                finalSetters.add(access.unreflectField(field, true));
-                            } catch (IllegalAccessException e) {
-                                throw new InternalError("Error generating accessor for field " + field, e);
-                            }
-                            cb.ldc(DynamicConstantDesc.ofNamed(
-                                ConstantDescs.BSM_CLASS_DATA_AT,
-                                ConstantDescs.DEFAULT_NAME,
-                                ConstantDescs.CD_MethodHandle,
-                                Integer.valueOf(idx)
-                            ));
-                            // stack: <mh>
-                        }
-                        cb.aload(0); // stack: <mh>? this
-                        cb.aload(2); // stack: <mh>? this GetField
-                        cb.ldc(fieldName); // stack: <mh>? this GetField <name>
-
-                        ClassDesc fieldDesc = fieldType.describeConstable().orElseThrow(InternalError::new);
-
-                        switch (fieldDesc.descriptorString()) {
-                            case "B" -> {
-                                cb.iconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_B);
-                            }
-                            case "C" -> {
-                                cb.iconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_C);
-                            }
-                            case "D" -> {
-                                cb.dconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_D);
-                            }
-                            case "F" -> {
-                                cb.fconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_F);
-                            }
-                            case "I" -> {
-                                cb.iconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_I);
-                            }
-                            case "J" -> {
-                                cb.lconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_J);
-                            }
-                            case "S" -> {
-                                cb.iconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_S);
-                            }
-                            case "Z" -> {
-                                cb.iconst_0();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_Z);
-                            }
-                            default -> {
-                                cb.aconst_null();
-                                cb.invokevirtual(SerializationDescs.CD_ObjectInputStream_GetField, "get", SerializationDescs.MTD_ObjectInputStream_GetField_get_L);
-                                cb.checkcast(fieldDesc);
-                            }
-                        }
-                        if (isFinal) {
-                            // stack: <mh> this <val>
-                            cb.invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact", MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, fieldDesc));
-                        } else {
-                            // non-final; store it the usual way
-                            // stack: this <val>
-                            cb.putfield(thisClass, fieldName, fieldDesc);
-                        }
-                    }
-                    cb.return_();
-                })
-            );
-        });
-        try {
-            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClassWithClassData(bytes, List.copyOf(finalSetters), false, MethodHandles.Lookup.ClassOption.NESTMATE);
-            return hcLookup.findStatic(hcLookup.lookupClass(), "readObject", MethodType.methodType(void.class, cl, ObjectInputStream.class));
-        } catch (IllegalAccessException | NoSuchMethodException e) {
-            throw new InternalError("Error in readObject generation", e);
-        }
+        // acquire this lazily due to initialization circularity between RF and JLI
+        return SharedSecrets.getJavaLangInvokeAccess().defaultReadObjectForSerialization(cl);
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
         if (! isValidSerializable(cl)) {
             return null;
         }
-
-        // TODO: this is not ideal; need a better solution
-        Field ilfField;
-        try {
-            ilfField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-        } catch (NoSuchFieldException e) {
-            throw new InternalError(e);
-        }
-        ilfField.setAccessible(true);
-        MethodHandles.Lookup impl_lookup = null;
-        try {
-            impl_lookup = (MethodHandles.Lookup) ilfField.get(null);
-        } catch (IllegalAccessException e) {
-            throw new InternalError(e);
-        }
-
-        // build an anonymous+hidden nestmate to perform the write operation
-        ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
-        byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$writeObject"), classBuilder -> {
-            classBuilder.withMethod("writeObject",
-                MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, ObjectOutputStream.class.describeConstable().orElseThrow(InternalError::new)),
-                Modifier.STATIC | Modifier.PRIVATE,
-                mb -> mb.withCode(cb -> {
-                    // get our PutField
-                    cb.aload(1);
-                    cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream, "putFields", SerializationDescs.MTD_ObjectOutputStream_putFields);
-                    cb.astore(2);
-                    // iterate the fields of the class
-                    for (Field field : cl.getDeclaredFields()) {
-                        int fieldMods = field.getModifiers();
-                        if (Modifier.isStatic(fieldMods) || Modifier.isTransient(fieldMods)) {
-                            continue;
-                        }
-                        String fieldName = field.getName();
-                        Class<?> fieldType = field.getType();
-
-                        cb.aload(2); // stack: PutField
-                        cb.ldc(fieldName); // stack: PutField fieldName
-                        cb.aload(0); // stack: PutField fieldName this
-
-                        switch (fieldType.descriptorString()) {
-                            case "B" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_byte);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_B);
-                            }
-                            case "C" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_char);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_C);
-                            }
-                            case "D" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_double);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_D);
-                            }
-                            case "F" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_float);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_F);
-                            }
-                            case "I" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_int);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_I);
-                            }
-                            case "J" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_long);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_J);
-                            }
-                            case "S" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_short);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_S);
-                            }
-                            case "Z" -> {
-                                cb.getfield(thisClass, fieldName, ConstantDescs.CD_boolean);
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_Z);
-                            }
-                            default -> {
-                                cb.getfield(thisClass, fieldName, fieldType.describeConstable().orElseThrow(InternalError::new));
-                                cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream_PutField, "put", SerializationDescs.MTD_ObjectOutputStream_PutField_put_L);
-                            }
-                        }
-                    }
-                    // commit fields to stream
-                    cb.aload(1);
-                    cb.invokevirtual(SerializationDescs.CD_ObjectOutputStream, "writeFields", ConstantDescs.MTD_void);
-                    cb.return_();
-                })
-            );
-        });
-        try {
-            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, impl_lookup);
-            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClass(bytes, false, MethodHandles.Lookup.ClassOption.NESTMATE);
-            return hcLookup.findStatic(hcLookup.lookupClass(), "writeObject", MethodType.methodType(void.class, cl, ObjectOutputStream.class));
-        } catch (IllegalAccessException | NoSuchMethodException e) {
-            throw new InternalError("Error in writeObject generation", e);
-        }
+        // acquire this lazily due to initialization circularity between RF and JLI
+        return SharedSecrets.getJavaLangInvokeAccess().defaultWriteObjectForSerialization(cl);
     }
 
     public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
@@ -923,44 +697,5 @@ public class ReflectionFactory {
 
         return cl1.getClassLoader() == cl2.getClassLoader() &&
                 cl1.getPackageName() == cl2.getPackageName();
-    }
-
-    /**
-     * Holder class for lazy init of serialization constant descriptors.
-     */
-    private static final class SerializationDescs {
-        private SerializationDescs() {
-            // no instances
-        }
-
-        private static final ClassDesc CD_ObjectInputStream = ClassDesc.of("java.io.ObjectInputStream");
-        private static final ClassDesc CD_ObjectInputStream_GetField = ClassDesc.of("java.io.ObjectInputStream$GetField");
-
-        private static final ClassDesc CD_ObjectOutputStream = ClassDesc.of("java.io.ObjectOutputStream");
-        private static final ClassDesc CD_ObjectOutputStream_PutField = ClassDesc.of("java.io.ObjectOutputStream$PutField");
-
-        private static final MethodTypeDesc MTD_ObjectInputStream_readFields = MethodTypeDesc.of(CD_ObjectInputStream_GetField);
-
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_B = MethodTypeDesc.of(ConstantDescs.CD_byte, ConstantDescs.CD_String, ConstantDescs.CD_byte);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_C = MethodTypeDesc.of(ConstantDescs.CD_char, ConstantDescs.CD_String, ConstantDescs.CD_char);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_D = MethodTypeDesc.of(ConstantDescs.CD_double, ConstantDescs.CD_String, ConstantDescs.CD_double);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_F = MethodTypeDesc.of(ConstantDescs.CD_float, ConstantDescs.CD_String, ConstantDescs.CD_float);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_I = MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_String, ConstantDescs.CD_int);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_J = MethodTypeDesc.of(ConstantDescs.CD_long, ConstantDescs.CD_String, ConstantDescs.CD_long);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_L = MethodTypeDesc.of(ConstantDescs.CD_Object, ConstantDescs.CD_String, ConstantDescs.CD_Object);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_S = MethodTypeDesc.of(ConstantDescs.CD_short, ConstantDescs.CD_String, ConstantDescs.CD_short);
-        private static final MethodTypeDesc MTD_ObjectInputStream_GetField_get_Z = MethodTypeDesc.of(ConstantDescs.CD_boolean, ConstantDescs.CD_String, ConstantDescs.CD_boolean);
-
-        private static final MethodTypeDesc MTD_ObjectOutputStream_putFields = MethodTypeDesc.of(CD_ObjectOutputStream_PutField);
-
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_B = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_byte);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_C = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_char);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_D = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_double);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_F = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_float);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_I = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_int);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_J = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_long);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_L = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_Object);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_S = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_short);
-        private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_Z = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_boolean);
     }
 }
