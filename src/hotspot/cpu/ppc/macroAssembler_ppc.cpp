@@ -348,21 +348,18 @@ long MacroAssembler::get_const(address a) {
 void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
 
   if (VM_Version::has_brw()) {
-    if(is_64bit) {
+    if (is_64bit) {
       cmpdi(CCR0, dst, 0);
-    }
-    else {
+    } else {
       cmpwi(CCR0, dst, 0);
     }
-    setbcr(dst, CCR0, Assembler::zero);
-  }
-  else {
+    setbcr(dst, CCR0, Assembler::equal);
+  } else {
     neg(temp, dst);
     orr(temp, dst, temp);
-    if(is_64bit) {
+    if (is_64bit) {
       srdi(dst, temp, 63);
-    }
-    else {
+    } else {
       srwi(dst, temp, 31);
     }
   }
