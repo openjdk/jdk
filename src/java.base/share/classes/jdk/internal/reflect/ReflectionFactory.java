@@ -35,9 +35,7 @@ import java.io.Serializable;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -50,7 +48,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -444,9 +445,16 @@ public class ReflectionFactory {
         if (! isValidSerializable(cl)) {
             return null;
         }
+        MethodHandles.Lookup clLookup;
+        try {
+            clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
+        } catch (IllegalAccessException e) {
+            throw new InternalError("Error in readObject generation", e);
+        }
 
         // build an anonymous+hidden nestmate to perform the read operation
         ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
+        List<MethodHandle> finalSetters = new ArrayList<>();
         byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$readObject"), classBuilder -> {
             classBuilder.withMethod("readObject",
                 MethodTypeDesc.of(ConstantDescs.CD_void, thisClass, ObjectInputStream.class.describeConstable().orElseThrow(InternalError::new)),
@@ -468,11 +476,18 @@ public class ReflectionFactory {
 
                         if (isFinal) {
                             // special setter
+                            field.setAccessible(true);
+                            int idx = finalSetters.size();
+                            try {
+                                finalSetters.add(clLookup.unreflectSetter(field));
+                            } catch (IllegalAccessException e) {
+                                throw new InternalError("Error generating accessor for field " + field, e);
+                            }
                             cb.ldc(DynamicConstantDesc.ofNamed(
-                                SerializationDescs.DMHD_ConstantBootstraps_fieldSetterForSerialzation,
-                                fieldName,
+                                ConstantDescs.BSM_CLASS_DATA_AT,
+                                ConstantDescs.DEFAULT_NAME,
                                 ConstantDescs.CD_MethodHandle,
-                                thisClass
+                                Integer.valueOf(idx)
                             ));
                             // stack: <mh>
                         }
@@ -535,8 +550,7 @@ public class ReflectionFactory {
             );
         });
         try {
-            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
-            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClass(bytes, false, MethodHandles.Lookup.ClassOption.NESTMATE);
+            MethodHandles.Lookup hcLookup = clLookup.defineHiddenClassWithClassData(bytes, List.copyOf(finalSetters), false, MethodHandles.Lookup.ClassOption.NESTMATE);
             return hcLookup.findStatic(hcLookup.lookupClass(), "readObject", MethodType.methodType(void.class, cl, ObjectInputStream.class));
         } catch (IllegalAccessException | NoSuchMethodException e) {
             throw new InternalError("Error in readObject generation", e);
@@ -914,18 +928,5 @@ public class ReflectionFactory {
         private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_L = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_Object);
         private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_S = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_short);
         private static final MethodTypeDesc MTD_ObjectOutputStream_PutField_put_Z = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_boolean);
-
-        private static final DirectMethodHandleDesc DMHD_ConstantBootstraps_fieldSetterForSerialzation = MethodHandleDesc.ofMethod(
-            DirectMethodHandleDesc.Kind.STATIC,
-            ConstantDescs.CD_ConstantBootstraps,
-            "fieldSetterForSerialization",
-            MethodTypeDesc.of(
-                ConstantDescs.CD_MethodHandle,
-                ConstantDescs.CD_MethodHandles_Lookup,
-                ConstantDescs.CD_String,
-                ConstantDescs.CD_Class,
-                ConstantDescs.CD_Class
-            )
-        );
     }
 }

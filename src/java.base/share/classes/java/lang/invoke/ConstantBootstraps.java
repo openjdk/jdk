@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ import sun.invoke.util.Wrapper;
 
 import static java.lang.invoke.MethodHandleNatives.mapLookupExceptionToError;
 import static java.util.Objects.requireNonNull;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 /**
  * Bootstrap methods for dynamically-computed constants.
@@ -420,51 +417,6 @@ public final class ConstantBootstraps {
             throw e; // let specified CCE and other runtime exceptions/errors through
         } catch (Throwable throwable) {
             throw new InternalError(throwable); // Not specified, throw InternalError
-        }
-    }
-
-    /**
-     * Acquires a {@link MethodHandle} which, when called, sets the value of an
-     * instance field in the given class, even if it is declared to be {@code final},
-     * according to {@linkplain Field#setAccessible(boolean) the rules defined for reflection access to final fields}.
-     * The given {@code lookup} must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess() full privilege access},
-     * and must be able to access instances of the given class {@code cl}.
-     *
-     * @param lookup a lookup which can access the field (must not be {@code null})
-     * @param name the name of the field (must not be {@code null})
-     * @param type the type of the method handle (must be {@code MethodHandle.class})
-     * @param cl the {@code Serializable} class which contains the named field (must not be {@code null})
-     * @return a method handle which accepts an instance of the class {@code cl} and the value to set (not {@code null})
-     * @throws IllegalAccessError if the field is not accessible for writing
-     * @throws NoSuchFieldError if the field is not present on {@code cl}
-     * @throws IncompatibleClassChangeError if the field is present, but is not static
-     * @throws IllegalArgumentException if {@code type} is not {@code MethodHandle}
-     *
-     * @see Field#setAccessible(boolean)
-     * @see MethodHandles.Lookup#unreflectSetter(Field)
-     *
-     * @since 24
-     */
-    public static MethodHandle fieldSetterForSerialization(MethodHandles.Lookup lookup, String name, Class<MethodHandle> type, Class<?> cl) {
-        if (type != MethodHandle.class) {
-            throw new IllegalArgumentException();
-        }
-        try {
-            // ensure that the caller has private access to {@code cl}
-            lookup = MethodHandles.privateLookupIn(cl, lookup);
-            Field field = cl.getDeclaredField(name);
-            int fieldMods = field.getModifiers();
-            if (Modifier.isStatic(fieldMods)) {
-                throw new IncompatibleClassChangeError("Field " + name + " must not be static");
-            }
-            if (Modifier.isFinal(fieldMods)) {
-                // this will fail if we are not allowed to set the field
-                field.setAccessible(true);
-                // otherwise, our privilege is sufficient
-            }
-            return lookup.unreflectSetter(field);
-        } catch (ReflectiveOperationException ex) {
-            throw mapLookupExceptionToError(ex);
         }
     }
 
