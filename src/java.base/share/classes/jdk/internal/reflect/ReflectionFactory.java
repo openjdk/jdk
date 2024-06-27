@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -445,9 +446,27 @@ public class ReflectionFactory {
         if (! isValidSerializable(cl)) {
             return null;
         }
+        // TODO: this is not ideal; need a better solution
+        Field ilfField;
+        try {
+            ilfField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+        } catch (NoSuchFieldException e) {
+            throw new InternalError(e);
+        }
+        ilfField.setAccessible(true);
+        MethodHandles.Lookup impl_lookup = null;
+        try {
+            impl_lookup = (MethodHandles.Lookup) ilfField.get(null);
+        } catch (IllegalAccessException e) {
+            throw new InternalError(e);
+        }
+
+        // we have to do this late to avoid initialization cycle
+        JavaLangInvokeAccess access = SharedSecrets.getJavaLangInvokeAccess();
+
         MethodHandles.Lookup clLookup;
         try {
-            clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
+            clLookup = MethodHandles.privateLookupIn(cl, impl_lookup);
         } catch (IllegalAccessException e) {
             throw new InternalError("Error in readObject generation", e);
         }
@@ -479,7 +498,7 @@ public class ReflectionFactory {
                             field.setAccessible(true);
                             int idx = finalSetters.size();
                             try {
-                                finalSetters.add(clLookup.unreflectSetter(field));
+                                finalSetters.add(access.unreflectField(field, true));
                             } catch (IllegalAccessException e) {
                                 throw new InternalError("Error generating accessor for field " + field, e);
                             }
@@ -562,6 +581,21 @@ public class ReflectionFactory {
             return null;
         }
 
+        // TODO: this is not ideal; need a better solution
+        Field ilfField;
+        try {
+            ilfField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+        } catch (NoSuchFieldException e) {
+            throw new InternalError(e);
+        }
+        ilfField.setAccessible(true);
+        MethodHandles.Lookup impl_lookup = null;
+        try {
+            impl_lookup = (MethodHandles.Lookup) ilfField.get(null);
+        } catch (IllegalAccessException e) {
+            throw new InternalError(e);
+        }
+
         // build an anonymous+hidden nestmate to perform the write operation
         ClassDesc thisClass = cl.describeConstable().orElseThrow(InternalError::new);
         byte[] bytes = ClassFile.of().build(ClassDesc.of(thisClass.packageName(), thisClass.displayName() + "$$writeObject"), classBuilder -> {
@@ -633,7 +667,7 @@ public class ReflectionFactory {
             );
         });
         try {
-            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, MethodHandles.lookup());
+            MethodHandles.Lookup clLookup = MethodHandles.privateLookupIn(cl, impl_lookup);
             MethodHandles.Lookup hcLookup = clLookup.defineHiddenClass(bytes, false, MethodHandles.Lookup.ClassOption.NESTMATE);
             return hcLookup.findStatic(hcLookup.lookupClass(), "writeObject", MethodType.methodType(void.class, cl, ObjectOutputStream.class));
         } catch (IllegalAccessException | NoSuchMethodException e) {
