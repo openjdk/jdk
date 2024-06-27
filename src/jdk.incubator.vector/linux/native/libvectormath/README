@@ -18,10 +18,19 @@ NOTE: The following cmake options are necessary when building SLEEF:
 * -DSLEEF_ENFORCE_SVE=ON
 
 ### Step 3: Import the SLEEF files into the JDK
-SLEEF source and generated source:
+
+SLEEF source:
+
 * ${SLEEF_SRC_DIR}/common/misc.h
+
+Generated files (aarch64):
+
 * ${SLEEF_BUILD_DIR}/include/sleefinline_advsimd.h
 * ${SLEEF_BUILD_DIR}/include/sleefinline_sve.h
+
+Generated files (riscv64):
+
+* ${SLEEF_BUILD_DIR}/include/sleefinline_rvvm1.h
 
 JDK target dir:
 * ${JDK_SRC_DIR}/jdk.incubator.vector/linux/native/libvectormath/
