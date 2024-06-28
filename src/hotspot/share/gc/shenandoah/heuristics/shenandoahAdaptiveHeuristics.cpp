@@ -132,8 +132,8 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   _allocation_rate.allocation_counter_reset();
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
-  ShenandoahHeuristics::record_success_concurrent(abbreviated);
+void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
+  ShenandoahHeuristics::record_success_concurrent();
 
   size_t available = _space_info->available();
 

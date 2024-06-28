@@ -76,7 +76,7 @@ public:
                                                      size_t actual_free);
 
   void record_cycle_start();
-  void record_success_concurrent(bool abbreviated);
+  void record_success_concurrent();
   void record_success_degenerated();
   void record_success_full();
 

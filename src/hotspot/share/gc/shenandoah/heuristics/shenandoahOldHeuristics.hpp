@@ -189,7 +189,7 @@ public:
 
   bool should_start_gc() override;
 
-  void record_success_concurrent(bool abbreviated) override;
+  void record_success_concurrent() override;
 
   void record_success_degenerated() override;
 
