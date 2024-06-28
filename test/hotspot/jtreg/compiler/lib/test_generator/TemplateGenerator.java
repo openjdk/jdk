@@ -93,7 +93,8 @@ public class TemplateGenerator {
                 Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
         };
 
-        Long[] longValues = {
+        Long[] longValues =
+                {
                 -2L, -1L, 0L, 1L, 2L,
                 Integer.MIN_VALUE - 2L, Integer.MIN_VALUE - 1L, (long) Integer.MIN_VALUE, Integer.MIN_VALUE + 1L, Integer.MIN_VALUE + 2L,
                 Integer.MAX_VALUE - 2L, Integer.MAX_VALUE - 1L, (long) Integer.MAX_VALUE, Integer.MAX_VALUE + 1L, Integer.MAX_VALUE + 2L,
