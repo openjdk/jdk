@@ -423,7 +423,7 @@ inline void Assembler::setbcr(Register d, int biint)
                                                   { emit_int32(SETBCR_OPCODE | rt(d) | bi(biint)); }
 inline void Assembler::setbcr(Register d, ConditionRegister cr, Condition cc) {
   setbcr(d, bi0(cr, cc));
- }
+}
 
 // Special purpose registers
 // Exception Register
