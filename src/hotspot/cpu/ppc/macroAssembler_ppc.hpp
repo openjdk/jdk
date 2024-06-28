@@ -295,7 +295,7 @@ class MacroAssembler: public Assembler {
   };
 
   // Branch-free implementation to convert !=0 to 1.
-  void normalize_bool(Register dst, Register src, bool use_64bit);
+  void normalize_bool(Register dst, Register temp, bool use_64bit);
   void save_volatile_gprs(   Register dst_base, int offset,
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void restore_volatile_gprs(Register src_base, int offset,
