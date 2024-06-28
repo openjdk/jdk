@@ -169,7 +169,6 @@ final class SerializationBytecodeGenerator {
                     }
                     String fieldName = field.getName();
                     Class<?> fieldType = field.getType();
-                    ClassDesc fieldDesc = fieldType.describeConstable().orElseThrow(InternalError::new);
 
                     // stack: (empty)
                     cb.aload(2);
