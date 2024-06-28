@@ -37,7 +37,7 @@ public:
   virtual void push_on_queue(G1TaskQueueEntry task) = 0;
   virtual size_t scan_array(objArrayOop array, int from, int len) = 0;
 
-  size_t process_objArray(oop obj);
+  size_t process_objArray(objArrayOop obj);
   size_t process_slice(objArrayOop array, int slice, int pow);
 };
 

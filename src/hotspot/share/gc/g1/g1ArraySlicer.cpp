@@ -30,10 +30,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
-size_t G1ArraySlicer::process_objArray(oop obj) {
-  assert(obj->is_objArray(), "precondition");
-
-  objArrayOop array = objArrayOop(obj);
+size_t G1ArraySlicer::process_objArray(objArrayOop array) {
   int len = array->length();
 
   // Mark objArray klass metadata
