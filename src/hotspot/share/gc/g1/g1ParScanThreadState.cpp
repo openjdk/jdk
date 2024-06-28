@@ -36,7 +36,6 @@
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -81,8 +80,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_objarray_chunk_size(ParGCArrayScanChunk),
-    _partial_array_stepper(num_workers),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),

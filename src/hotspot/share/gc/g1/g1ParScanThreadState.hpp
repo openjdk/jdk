@@ -33,7 +33,6 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -87,9 +86,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
-  // Size (in elements) of a partial objArray task chunk.
-  int _partial_objarray_chunk_size;
-  PartialArrayTaskStepper _partial_array_stepper;
   StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
