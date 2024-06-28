@@ -3737,45 +3737,6 @@ Example:
 Enables the use of Java Flight Recorder (JFR) during the runtime of the
 application.
 Since JDK 8u40 this option has not been required to use JFR.
-.TP
-\f[V]-XX:InitialRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the initial amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a ratio of the maximum amount
-determined as described in the \f[V]-XX:MaxRAM\f[R] option.
-The default value is 64.
-.RS
-.PP
-Use the option \f[V]-XX:InitialRAMPercentage\f[R] instead.
-.RE
-.TP
-\f[V]-XX:MaxRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the maximum amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a fraction of the maximum
-amount determined as described in the \f[V]-XX:MaxRAM\f[R] option.
-The default value is 4.
-.RS
-.PP
-Specifying this option disables automatic use of compressed oops if the
-combined result of this and other options influencing the maximum amount
-of memory is larger than the range of memory addressable by compressed
-oops.
-See \f[V]-XX:UseCompressedOops\f[R] for further information about
-compressed oops.
-.PP
-Use the option \f[V]-XX:MaxRAMPercentage\f[R] instead.
-.RE
-.TP
-\f[V]-XX:MinRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the maximum amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a fraction of the maximum
-amount determined as described in the \f[V]-XX:MaxRAM\f[R] option for
-small heaps.
-A small heap is a heap of approximately 125 MB.
-The default value is 2.
-.RS
-.PP
-Use the option \f[V]-XX:MinRAMPercentage\f[R] instead.
-.RE
 .SH OBSOLETE JAVA OPTIONS
 .PP
 These \f[V]java\f[R] options are still accepted but ignored, and a
@@ -3788,16 +3749,6 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
-.TP
-\f[V]-XX:+ScavengeBeforeFullGC\f[R]
-Enables GC of the young generation before each full GC.
-This option is enabled by default.
-It is recommended that you \f[I]don\[aq]t\f[R] disable it, because
-scavenging the young generation before a full GC can reduce the number
-of objects reachable from the old generation space into the young
-generation space.
-To disable GC of the young generation before each full GC, specify the
-option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
 .TP
 \f[V]-XX:RTMAbortRatio=\f[R]\f[I]abort_ratio\f[R]
 Specifies the RTM abort ratio is specified as a percentage (%) of all
@@ -3884,21 +3835,60 @@ results in an error of:
 \f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
 .RE
 .TP
-\f[V]-XX:+UseHugeTLBFS\f[R]
-\f[B]Linux only:\f[R] This option is the equivalent of specifying
-\f[V]-XX:+UseLargePages\f[R].
-This option is disabled by default.
-This option pre-allocates all large pages up-front, when memory is
-reserved; consequently the JVM can\[aq]t dynamically grow or shrink
-large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
-you want this behavior.
+\f[V]-XX:InitialRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the initial amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a ratio of the maximum amount
+determined as described in the \f[V]-XX:MaxRAM\f[R] option.
+The default value is 64.
+.RS
+.PP
+Use the option \f[V]-XX:InitialRAMPercentage\f[R] instead.
+.RE
 .TP
-\f[V]-XX:+UseSHM\f[R]
-\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
-large pages.
+\f[V]-XX:MaxRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[V]-XX:MaxRAM\f[R] option.
+The default value is 4.
+.RS
+.PP
+Specifying this option disables automatic use of compressed oops if the
+combined result of this and other options influencing the maximum amount
+of memory is larger than the range of memory addressable by compressed
+oops.
+See \f[V]-XX:UseCompressedOops\f[R] for further information about
+compressed oops.
+.PP
+Use the option \f[V]-XX:MaxRAMPercentage\f[R] instead.
+.RE
+.TP
+\f[V]-XX:MinRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[V]-XX:MaxRAM\f[R] option for
+small heaps.
+A small heap is a heap of approximately 125 MB.
+The default value is 2.
+.RS
+.PP
+Use the option \f[V]-XX:MinRAMPercentage\f[R] instead.
+.RE
+.TP
+\f[V]-XX:+ScavengeBeforeFullGC\f[R]
+Enables GC of the young generation before each full GC.
+This option is enabled by default.
+It is recommended that you \f[I]don\[aq]t\f[R] disable it, because
+scavenging the young generation before a full GC can reduce the number
+of objects reachable from the old generation space into the young
+generation space.
+To disable GC of the young generation before each full GC, specify the
+option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 23\f[R]
+[https://docs.oracle.com/en/java/javase/23/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 22\f[R]
 [https://docs.oracle.com/en/java/javase/22/docs/specs/man/java.html]

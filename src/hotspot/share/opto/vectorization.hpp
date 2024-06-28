@@ -129,6 +129,9 @@ public:
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
+
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
 
@@ -1318,6 +1321,14 @@ private:
                                   const int q,
                                   const int r) const;
 #endif
+};
+
+struct VTransformBoolTest {
+  const BoolTest::mask _mask;
+  const bool _is_negated;
+
+  VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
+    _mask(mask), _is_negated(is_negated) {}
 };
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP

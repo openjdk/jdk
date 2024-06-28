@@ -456,7 +456,7 @@ public:
 
     // GC thread root traversal likely used OopMapCache a lot, which
     // might have created lots of old entries. Trigger the cleanup now.
-    OopMapCache::trigger_cleanup();
+    OopMapCache::try_trigger_cleanup();
   }
 
   bool success() const {

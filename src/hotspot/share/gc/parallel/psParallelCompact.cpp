@@ -837,8 +837,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
   assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
   const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval
-                              || total_invocations == HeapFirstMaximumCompactionCount;
+  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
 
   // If all regions in old-gen are full
   const bool is_region_full =

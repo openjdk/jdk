@@ -818,7 +818,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_dumping_static_archive()) {
-    MetaspaceShared::preload_and_dump();
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+  }
+
+  if (log_is_enabled(Info, perf, class, link)) {
+    LogStreamHandle(Info, perf, class, link) log;
+    log.print_cr("At VM initialization completion:");
+    ClassLoader::print_counters(&log);
   }
 
   return JNI_OK;
@@ -1321,6 +1327,18 @@ void Threads::print_on(outputStream* st, bool print_stacks,
         p->trace_stack();
       } else {
         p->print_stack_on(st);
+        const oop thread_oop = p->threadObj();
+        if (thread_oop != nullptr) {
+          if (p->is_vthread_mounted()) {
+            const oop vt = p->vthread();
+            assert(vt != nullptr, "vthread should not be null when vthread is mounted");
+            // JavaThread._vthread can refer to the carrier thread. Print only if _vthread refers to a virtual thread.
+            if (vt != thread_oop) {
+              st->print_cr("   Mounted virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+              p->print_vthread_stack_on(st);
+            }
+          }
+        }
       }
     }
     st->cr();

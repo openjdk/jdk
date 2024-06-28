@@ -30,14 +30,6 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
 
-bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(G1HeapRegion* r) const {
-  // All non-free and non-young regions need to be scanned for references;
-  // At every gc we gather references to other regions in young.
-  // Free regions trivially do not need scanning because they do not contain live
-  // objects.
-  return !(r->is_young() || r->is_free());
-}
-
 void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),
         "Region %u with unexpected heap region type %s", r->hrm_index(), r->get_type_str());

@@ -415,6 +415,8 @@ class VM_Version: public Abstract_VM_Version {
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 
+  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
   // CPU feature query functions
   static const char* get_model_string()       { return _model_string; }
   static bool has_StoreFacilityListExtended() { return  (_features[0] & StoreFacilityListExtendedMask) == StoreFacilityListExtendedMask; }
