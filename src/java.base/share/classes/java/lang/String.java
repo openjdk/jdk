@@ -53,6 +53,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.access.JavaUtilFormatterAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -4478,7 +4480,7 @@ public final class String
      * @since  1.5
      */
     public static String format(String format, Object... args) {
-        return new Formatter().format(format, args).toString();
+        return StringFormat.JUFA.format(format, args);
     }
 
     /**
@@ -4519,7 +4521,7 @@ public final class String
      * @since  1.5
      */
     public static String format(Locale l, String format, Object... args) {
-        return new Formatter(l).format(format, args).toString();
+        return StringFormat.JUFA.format(l, format, args);
     }
 
     /**
@@ -4540,7 +4542,11 @@ public final class String
      *
      */
     public String formatted(Object... args) {
-        return new Formatter().format(this, args).toString();
+        return StringFormat.JUFA.format(this, args);
+    }
+
+    private static class StringFormat {
+        static final JavaUtilFormatterAccess JUFA = SharedSecrets.getJavaUtilFormatterAccess();
     }
 
     /**

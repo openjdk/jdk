@@ -61,8 +61,11 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import jdk.internal.access.JavaUtilFormatterAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
+import jdk.internal.util.DecimalDigits;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -2018,6 +2021,20 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @since 1.5
  */
 public final class Formatter implements Closeable, Flushable {
+    static {
+        SharedSecrets.setJavaUtilFormatterAccess(new JavaUtilFormatterAccessImpl());
+    }
+
+    private static final class JavaUtilFormatterAccessImpl implements JavaUtilFormatterAccess {
+        public String format(Locale locale, String format, Object... args) {
+            return formatImpl(locale, format, args);
+        }
+
+        public String format(String format, Object... args) {
+            return formatImpl(Locale.getDefault(Locale.Category.FORMAT), format, args);
+        }
+    }
+
     // Caching DecimalFormatSymbols. Non-volatile to avoid thread slamming.
     private static DecimalFormatSymbols DFS = null;
     private static DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
@@ -2057,6 +2074,11 @@ public final class Formatter implements Closeable, Flushable {
     private Appendable a;
     private final Locale l;
     private IOException lastException;
+
+    // index of last argument referenced
+    private int last;
+    // last ordinary index
+    private int lasto;
 
     /**
      * Returns a charset object for the given charset name.
@@ -2773,110 +2795,149 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @return  This formatter
      */
-    public Formatter format(Locale l, String format, Object ... args) {
+    public Formatter format(Locale l, String format, Object... args) {
         ensureOpen();
-
-        // index of last argument referenced
-        int last = -1;
-        // last ordinary index
-        int lasto = -1;
-
-        List<FormatString> fsa = parse(format);
-        for (FormatString fs : fsa) {
-            int index = fs.index();
-            try {
-                switch (index) {
-                    case -2 ->  // fixed string, "%n", or "%%"
-                        fs.print(this, null, l);
-                    case -1 -> {  // relative index
-                        if (last < 0 || (args != null && last > args.length - 1))
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print(this, (args == null ? null : args[last]), l);
-                    }
-                    case 0 -> {  // ordinary index
-                        lasto++;
-                        last = lasto;
-                        if (args != null && lasto > args.length - 1)
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print(this, (args == null ? null : args[lasto]), l);
-                    }
-                    default -> { // explicit index
-                        last = index - 1;
-                        if (args != null && last > args.length - 1)
-                            throw new MissingFormatArgumentException(fs.toString());
-                        fs.print(this, (args == null ? null : args[last]), l);
-                    }
-                }
-            } catch (IOException x) {
-                lastException = x;
+        // format passed by the caller may be a constant, and extracting this allows the optimizer to do more work.
+        int max = format.length();
+        int i = format.indexOf('%');
+        if (i != 0) {
+            append(format, 0, i < 0 ? max : i);
+        }
+        if (i >= 0) {
+            last = -1;
+            lasto = -1;
+            i = formatSpecifier(l, format, i + 1, max, args);
+            if (i != max) {
+                format0(l, format, i, max, args);
             }
         }
         return this;
     }
 
     /**
-     * Finds format specifiers in the format string.
+     * String.format implementation
      */
-    static List<FormatString> parse(String s) {
-        FormatSpecifierParser parser = null;
-        ArrayList<FormatString> al = new ArrayList<>();
-        int i = 0;
-        int max = s.length();
+    private static String formatImpl(Locale locale, String format, Object... args) {
+        StringBuilder sb = new StringBuilder();
+
+        int max = format.length();
+        int i = format.indexOf('%');
+        if (i != 0) {
+            sb.append(format, 0, i < 0 ? max : i);
+        }
+
+        if (i >= 0) {
+            Formatter formatter = new Formatter(locale, sb);
+            formatter.last = -1;
+            formatter.lasto = -1;
+
+            i = formatter.formatSpecifier(locale, format, i + 1, max, args);
+            if (i != max) {
+                formatter.format0(locale, format, i, max, args);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private void format0(Locale l, String format, int i, int max, Object[] args) {
         while (i < max) {
-            int n = s.indexOf('%', i);
-            if (n < 0) {
-                // No more format specifiers, but since
-                // i < max there's some trailing text
-                al.add(new FixedString(s, i, max));
-                break;
+            int n = format.indexOf('%', i);
+            if (n < 0 || i != n) {
+                append(format, i, n < 0 ? max : n);
+                if (n < 0) {
+                    break;
+                }
             }
-            if (i != n) {
-                // Previous characters were fixed text
-                al.add(new FixedString(s, i, n));
+            i = formatSpecifier(l, format, n + 1, max, args);
+        }
+    }
+
+    private int formatSpecifier(Locale l, String s, int i, int max, Object[] args) {
+        if (i >= max) {
+            // Trailing %
+            throw unknownFormatConversion('%');
+        }
+
+        char c = s.charAt(i);
+        FormatString fs = Conversion.specifier(c);
+        if (fs != null) {
+            i++;
+        } else {
+            if (c >= '1' && c <= '9' && i + 1 != max) {
+                fs = Conversion.specifier(s.charAt(i + 1), c - '0');
             }
-            i = n + 1;
-            if (i >= max) {
-                // Trailing %
-                throw new UnknownFormatConversionException("%");
-            }
-            char c = s.charAt(i);
-            if (Conversion.isValid(c)) {
-                al.add(new FormatSpecifier(c));
-                i++;
+            if (fs != null) {
+                i += 2;
             } else {
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
-                if (parser == null) {
-                    parser = new FormatSpecifierParser(al, c, i, s, max);
-                } else {
-                    parser.reset(c, i);
-                }
+                FormatSpecifierParser parser = new FormatSpecifierParser(c, i, s, max);
                 int off = parser.parse();
                 if (off > 0) {
                     i += off;
+                    fs = parser.formatSpecifier;
                 } else {
-                    throw new UnknownFormatConversionException(String.valueOf(c));
+                    throw unknownFormatConversion(c);
                 }
             }
         }
-        return al;
+
+        Object arg = null;
+        int index = fs.index();
+        if (index != -2) { // -2 : fixed string, "%n", or "%%"
+            boolean miss = false;
+            if (index == -1) { // relative index
+                miss = last < 0;
+            } else {
+                last = index == 0 ? ++lasto : index - 1;
+            }
+            if (miss || (args != null && last > args.length - 1))
+                throw fs.missingFormatArgument();
+            arg = args == null ? null : args[last];
+        }
+
+        try {
+            fs.print(this, arg, l);
+        } catch (IOException x) {
+            lastException = x;
+        }
+
+        return i;
+    }
+
+    private static UnknownFormatConversionException unknownFormatConversion(char conv) {
+        return new UnknownFormatConversionException(String.valueOf(conv));
+    }
+
+    private static void failConversion(char c, Object arg) {
+        throw new IllegalFormatConversionException(c, arg.getClass());
+    }
+
+    private void append(String str, int start, int end) {
+        if (start == end) {
+            return;
+        }
+        try {
+            a.append(str, start, end);
+        } catch (IOException x) {
+            lastException = x;
+        }
     }
 
     static final class FormatSpecifierParser {
-        final ArrayList<FormatString> al;
+        FormatSpecifier formatSpecifier;
         final String s;
         final int max;
-        char first;
-        int start;
+        final char first;
+        final int start;
         int off;
         char c;
         int argSize;
         int flagSize;
         int widthSize;
 
-        FormatSpecifierParser(ArrayList<FormatString> al, char first, int start, String s, int max) {
-            this.al = al;
-
+        FormatSpecifierParser(char first, int start, String s, int max) {
             this.first = first;
             this.c = first;
             this.start = start;
@@ -2886,19 +2947,8 @@ public final class Formatter implements Closeable, Flushable {
             this.max = max;
         }
 
-        void reset(char first, int start) {
-            this.first = first;
-            this.c = first;
-            this.start = start;
-            this.off = start;
-
-            argSize = 0;
-            flagSize = 0;
-            widthSize = 0;
-        }
-
         /**
-         * If a valid format specifier is found, construct a FormatString and add it to {@link #al}.
+         * If a valid format specifier is found, construct a FormatString and set it to {@link #formatSpecifier}.
          * The format specifiers for general, character, and numeric types have
          * the following syntax:
          *
@@ -2951,11 +3001,8 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
-                if (al != null) {
-                    FormatSpecifier formatSpecifier
-                            = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
-                    al.add(formatSpecifier);
-                }
+                formatSpecifier
+                        = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
                 return off - start;
             }
             return 0;
@@ -3019,21 +3066,9 @@ public final class Formatter implements Closeable, Flushable {
         int index();
         void print(Formatter fmt, Object arg, Locale l) throws IOException;
         String toString();
-    }
-
-    private static class FixedString implements FormatString {
-        private final String s;
-        private final int start;
-        private final int end;
-        FixedString(String s, int start, int end) {
-            this.s = s;
-            this.start = start;
-            this.end = end;
+        default MissingFormatArgumentException missingFormatArgument() {
+            return new MissingFormatArgumentException(toString());
         }
-        public int index() { return -2; }
-        public void print(Formatter fmt, Object arg, Locale l)
-            throws IOException { fmt.a.append(s, start, end); }
-        public String toString() { return s.substring(start, end); }
     }
 
     /**
@@ -3051,7 +3086,260 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    static class FormatSpecifier implements FormatString {
+    private static record FormatText1(char conv) implements FormatString {
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            if (conv == '%') {
+                fmt.a.append('%');
+            } else {
+                fmt.a.append(System.lineSeparator());
+            }
+        }
+
+        public int index() { return -2; }
+        public String toString() { return Character.toString(conv); }
+    }
+
+    private static record FormatString1(boolean ucase) implements FormatString {
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            if (arg instanceof Formattable) {
+                if (fmt.locale() != l)
+                    fmt = new Formatter(fmt.out(), l);
+                ((Formattable)arg).formatTo(fmt, Flags.NONE, -1, -1);
+            } else {
+                Appendable a = fmt.a;
+                String str = String.valueOf(arg);
+                if (ucase) {
+                    str = str.toUpperCase(l);
+                }
+                a.append(str);
+            }
+        }
+
+        public int index() { return 0; }
+        public String toString() { return ucase ? "%S" : "%s"; }
+    }
+
+    private static record FormatStringWidth(boolean ucase, int width) implements FormatString {
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            if (arg instanceof Formattable) {
+                if (fmt.locale() != l)
+                    fmt = new Formatter(fmt.out(), l);
+                ((Formattable)arg).formatTo(fmt, ucase ? Flags.UPPERCASE : Flags.NONE, width, -1);
+            } else {
+                Appendable a = fmt.a;
+                String str = String.valueOf(arg);
+                if (ucase) {
+                    str = str.toUpperCase(l);
+                }
+                padding(a, width - str.length());
+                a.append(str);
+            }
+        }
+
+        public int index() { return 0; }
+        public String toString() { return "%" + width + (ucase ? "S" : "s"); }
+    }
+
+    private static void padding(Appendable a, int sp) throws IOException {
+        if (sp <= 0) {
+            return;
+        }
+
+        if (a instanceof StringBuilder sb) {
+            sb.repeat(' ', sp);
+        } else {
+            a.append(String.valueOf(' ').repeat(sp));
+        }
+    }
+
+    private static final record FormatDecimal1() implements FormatString {
+        public int index() { return 0; }
+        public String toString() { return "%d"; }
+
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            Appendable a = fmt.a;
+            if (arg == null) {
+                a.append("null");
+                return;
+            }
+
+            char zero = getZero(l);
+            if (zero == '0'
+                    && (arg instanceof Integer
+                    || arg instanceof Long
+                    || arg instanceof Short
+                    || arg instanceof Byte)) {
+                long value = ((Number) arg).longValue();
+                if (a instanceof StringBuilder sb) {
+                    sb.append(value);
+                } else {
+                    a.append(Long.toString(value));
+                }
+                return;
+            }
+
+            print(a, arg, l, zero);
+        }
+
+        public void print(Appendable a, Object arg, Locale l, char zero) throws IOException {
+            boolean negative = false;
+            String str;
+            if (arg instanceof Integer
+                    || arg instanceof Long
+                    || arg instanceof Short
+                    || arg instanceof Byte) {
+                long value = ((Number) arg).longValue();
+                if (value < 0) {
+                    negative = true;
+                    value = -value;
+                }
+                str = Long.toString(value);
+            } else if (arg instanceof BigInteger) {
+                if (zero == '0') {
+                    str = arg.toString();
+                    a.append(str);
+                    return;
+                }
+                BigInteger bigInt = (BigInteger) arg;
+                if (bigInt.signum() < 0) {
+                    negative = true;
+                    bigInt = bigInt.negate();
+                }
+                str = bigInt.toString();
+            } else {
+                failConversion('d', arg);
+                return;
+            }
+
+            if (negative) {
+                a.append(getMinusSign(l));
+            }
+
+            printDigits(a, str, zero);
+        }
+    }
+
+    private static final record FormatDecimalWidth(int width) implements FormatString {
+        public int index() { return 0; }
+        public String toString() { return "%" + width + "d"; }
+
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            Appendable a = fmt.a;
+            if (arg == null) {
+                padding(a, width - 4);
+                a.append("null");
+                return;
+            }
+
+            char zero = getZero(l);
+            if (zero == '0'
+                    && (arg instanceof Integer
+                    || arg instanceof Long
+                    || arg instanceof Short
+                    || arg instanceof Byte)) {
+                long value = ((Number) arg).longValue();
+                padding(a, width - DecimalDigits.stringSize(value));
+                if (a instanceof StringBuilder sb) {
+                    sb.append(value);
+                } else {
+                    a.append(Long.toString(value));
+                }
+                return;
+            }
+
+            print(a, arg, l, zero);
+        }
+
+        void print(Appendable a, Object arg, Locale l, char zero) throws IOException {
+            boolean negative = false;
+            String str;
+            if (arg instanceof Integer
+                    || arg instanceof Long
+                    || arg instanceof Short
+                    || arg instanceof Byte) {
+                long value = ((Number) arg).longValue();
+                if (value < 0) {
+                    negative = true;
+                    value = -value;
+                }
+                str = Long.toString(value);
+            } else if (arg instanceof BigInteger) {
+                if (zero == '0') {
+                    str = arg.toString();
+                    padding(a, width - str.length());
+                    a.append(str);
+                    return;
+                }
+                BigInteger bigInt = (BigInteger) arg;
+                if (bigInt.signum() < 0) {
+                    negative = true;
+                    bigInt = bigInt.negate();
+                }
+                str = bigInt.toString();
+            } else {
+                failConversion('d', arg);
+                return;
+            }
+
+            padding(a, width - str.length() + (negative ? 1 : 0));
+            if (negative) {
+                a.append(getMinusSign(l));
+            }
+
+            printDigits(a, str, zero);
+        }
+    }
+
+    private static void printDigits(Appendable a, String str, char zero) throws IOException {
+        for (int i = 0, len = str.length(); i < len; i++) {
+            char c = str.charAt(i);
+            a.append((char) ((c - '0') + zero));
+        }
+    }
+
+    private static record FormatHex1(boolean ucase) implements FormatString {
+        public void print(Formatter fmt, Object arg, Locale l) throws IOException {
+            Appendable a = fmt.a;
+            if (arg == null) {
+                a.append(ucase ? "NULL" : "null");
+                return;
+            }
+
+            String str;
+            if (arg instanceof Byte
+                    || arg instanceof Short
+                    || arg instanceof Integer
+                    || arg instanceof Long
+            ) {
+                long v = ((Number) arg).longValue();
+                if (v < 0) {
+                    if (arg instanceof Byte) {
+                        v += (1L << 8);
+                    } else if (arg instanceof Short) {
+                        v += (1L << 16);
+                    } else if (arg instanceof Integer) {
+                        v += (1L << 32);
+                    }
+                }
+                str = Long.toHexString(v);
+            } else if (arg instanceof BigInteger) {
+                str = ((BigInteger) arg).toString(16);
+            } else {
+                failConversion('x', arg);
+                return;
+            }
+
+            if (ucase) {
+                str = str.toUpperCase(l);
+            }
+            a.append(str);
+        }
+
+        public int index() { return 0; }
+        public String toString() { return ucase ? "%X" : "%x"; }
+    }
+
+    private static final class FormatSpecifier implements FormatString {
         private static final double SCALEUP = Math.scalb(1.0, 54);
 
         int index = 0;
@@ -4706,10 +4994,6 @@ public final class Formatter implements Closeable, Flushable {
             throw new FormatFlagsConversionMismatchException(fs, c);
         }
 
-        private void failConversion(char c, Object arg) {
-            throw new IllegalFormatConversionException(c, arg.getClass());
-        }
-
         private StringBuilder localizedMagnitude(Formatter fmt, StringBuilder sb,
                 long value, int flags, int width, Locale l) {
             return localizedMagnitude(fmt, sb, Long.toString(value, 10), 0, flags, width, l);
@@ -4970,6 +5254,47 @@ public final class Formatter implements Closeable, Flushable {
                      LINE_SEPARATOR -> true;
                 // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
                 default -> c == PERCENT_SIGN;
+            };
+        }
+
+        static final FormatString[] specifiers = new FormatString[128];
+        static {
+            for(char c : new char[] {
+                    BOOLEAN,
+                    BOOLEAN_UPPER,
+                    HASHCODE,
+                    HASHCODE_UPPER,
+                    CHARACTER,
+                    CHARACTER_UPPER,
+                    OCTAL_INTEGER,
+                    SCIENTIFIC,
+                    SCIENTIFIC_UPPER,
+                    GENERAL,
+                    GENERAL_UPPER,
+                    DECIMAL_FLOAT,
+                    HEXADECIMAL_FLOAT,
+                    HEXADECIMAL_FLOAT_UPPER
+            }) {
+                specifiers[c] = new FormatSpecifier(c);
+            }
+            specifiers[DECIMAL_INTEGER] = new FormatDecimal1();
+            specifiers[HEXADECIMAL_INTEGER] = new FormatHex1(false);
+            specifiers[HEXADECIMAL_INTEGER_UPPER] = new FormatHex1(true);
+            specifiers[LINE_SEPARATOR] = new FormatText1(LINE_SEPARATOR);
+            specifiers[PERCENT_SIGN] = new FormatText1(PERCENT_SIGN);
+            specifiers[STRING] = new FormatString1(false);
+            specifiers[STRING_UPPER] = new FormatString1(true);
+        }
+
+        static FormatString specifier(char c) {
+            return specifiers[c & 0x7f];
+        }
+
+        static FormatString specifier(char c, int width) {
+            return switch (c) {
+                case DECIMAL_INTEGER      -> new FormatDecimalWidth(width);
+                case STRING, STRING_UPPER -> new FormatStringWidth(c == STRING_UPPER, width);
+                default                   -> null;
             };
         }
 

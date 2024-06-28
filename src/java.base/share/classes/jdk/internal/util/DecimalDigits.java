@@ -84,4 +84,30 @@ public final class DecimalDigits {
     public static short digitPair(int i) {
         return DIGITS[i];
     }
+
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
+    public static int stringSize(long x) {
+        int d = 1;
+        if (x >= 0) {
+            d = 0;
+            x = -x;
+        }
+        long p = -10;
+        for (int i = 1; i < 19; i++) {
+            if (x > p)
+                return i + d;
+            p = 10 * p;
+        }
+        return 19 + d;
+    }
 }
