@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 /*
  * @test
  * @summary It tests (almost) all keytool behaviors with NSS.
- * @library /test/lib /test/jdk/sun/security/pkcs11
+ * @library /test/lib /test/jdk/sun/security/pkcs11 /java/security/testlibrary
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
