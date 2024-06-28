@@ -63,7 +63,6 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
-import jdk.internal.vm.annotation.ForceInline;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -4947,9 +4946,8 @@ public final class Formatter implements Closeable, Flushable {
         static final char LINE_SEPARATOR      = 'n';
         static final char PERCENT_SIGN        = '%';
 
-        // The switch here will generate bytecode with size > 325 bytes, so ForceInline is required.
-        @ForceInline
         static boolean isValid(char c) {
+            // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
             return switch (c) {
                 case BOOLEAN,
                      BOOLEAN_UPPER,
@@ -4970,9 +4968,8 @@ public final class Formatter implements Closeable, Flushable {
                      DECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT_UPPER,
-                     LINE_SEPARATOR,
-                     PERCENT_SIGN -> true;
-                default -> false;
+                     LINE_SEPARATOR -> true;
+                default -> c == PERCENT_SIGN;
             };
         }
 
