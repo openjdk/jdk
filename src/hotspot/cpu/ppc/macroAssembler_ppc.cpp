@@ -63,7 +63,6 @@
 bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
 
-
 void MacroAssembler::ld_largeoffset_unchecked(Register d, int si31, Register a, int emit_filler_nop) {
   assert(Assembler::is_simm(si31, 31) && si31 >= 0, "si31 out of range");
   if (Assembler::is_simm(si31, 16)) {
