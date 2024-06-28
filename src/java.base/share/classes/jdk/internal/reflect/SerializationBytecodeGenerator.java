@@ -181,10 +181,10 @@ final class SerializationBytecodeGenerator {
                     MethodHandle getter;
                     try {
                         getter = lookup.unreflectGetter(field);
-                        if (! fieldType.isPrimitive()) {
-                            getter = getter.asType(MethodType.methodType(Object.class, Object.class));
-                        } else {
+                        if (fieldType.isPrimitive()) {
                             getter = getter.asType(MethodType.methodType(fieldType, Object.class));
+                        } else {
+                            getter = getter.asType(MethodType.methodType(Object.class, Object.class));
                         }
                         getters.add(getter);
                     } catch (IllegalAccessException e) {
