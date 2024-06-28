@@ -25,8 +25,8 @@
 
 /**
  *
- * Extends the {@code javax.naming.ldap} package to provide the classes
- * and interfaces for the Service Provider Interface (SPI) for LDAP
+ * Provides the Service Provider Interface for DNS lookups when
+ * performing LDAP operations.
  *
  * @since 12
  */
