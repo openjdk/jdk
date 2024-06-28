@@ -54,6 +54,8 @@ class MacroAssembler: public Assembler {
   inline static int largeoffset_si16_si16_hi(int si31) { return (si31 + (1<<15)) >> 16; }
   inline static int largeoffset_si16_si16_lo(int si31) { return si31 - (((si31 + (1<<15)) >> 16) << 16); }
 
+  // Branch-free implementation to convert !=0 to 1.
+  void normalize_bool(Register dst, Register temp, bool use_64bit);
   // load d = *[a+si31]
   // Emits several instructions if the offset is not encodable in one instruction.
   void ld_largeoffset_unchecked(Register d, int si31, Register a, int emit_filler_nop);
@@ -294,8 +296,6 @@ class MacroAssembler: public Assembler {
     num_volatile_regs = num_volatile_gp_regs + num_volatile_fp_regs
   };
 
-  // Branch-free implementation to convert !=0 to 1.
-  void normalize_bool(Register dst, Register temp, bool use_64bit);
   void save_volatile_gprs(   Register dst_base, int offset,
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void restore_volatile_gprs(Register src_base, int offset,

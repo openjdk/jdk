@@ -63,6 +63,28 @@
 bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
 
+// Branch-free implementation to convert !=0 to 1
+// Set register dst to 1 if dst is non-zero. Use setbcr instruction on Power10.
+void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
+
+  if (VM_Version::has_brw()) {
+    if (is_64bit) {
+      cmpdi(CCR0, dst, 0);
+    } else {
+      cmpwi(CCR0, dst, 0);
+    }
+    setbcr(dst, CCR0, Assembler::equal);
+  } else {
+    neg(temp, dst);
+    orr(temp, dst, temp);
+    if (is_64bit) {
+      srdi(dst, temp, 63);
+    } else {
+      srwi(dst, temp, 31);
+    }
+  }
+}
+
 void MacroAssembler::ld_largeoffset_unchecked(Register d, int si31, Register a, int emit_filler_nop) {
   assert(Assembler::is_simm(si31, 31) && si31 >= 0, "si31 out of range");
   if (Assembler::is_simm(si31, 16)) {
@@ -341,27 +363,6 @@ long MacroAssembler::get_const(address a) {
     return (long) 0;
   }
   return (long) x;
-}
-// Branch-free implementation to convert !=0 to 1
-// Set register dst to 1 if dst is non-zero. Use setbcr instruction on Power10.
-void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
-
-  if (VM_Version::has_brw()) {
-    if (is_64bit) {
-      cmpdi(CCR0, dst, 0);
-    } else {
-      cmpwi(CCR0, dst, 0);
-    }
-    setbcr(dst, CCR0, Assembler::equal);
-  } else {
-    neg(temp, dst);
-    orr(temp, dst, temp);
-    if (is_64bit) {
-      srdi(dst, temp, 63);
-    } else {
-      srwi(dst, temp, 31);
-    }
-  }
 }
 
 // Patch the 64 bit constant of a `load_const' sequence. This is a low
