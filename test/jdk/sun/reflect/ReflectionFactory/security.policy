@@ -8,4 +8,5 @@ grant {
         permission java.lang.RuntimePermission "accessDeclaredMembers";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.reflect";
         permission java.lang.RuntimePermission "reflectionFactoryAccess";
+        permission java.io.SerializablePermission "enableSubclassImplementation";
 };
