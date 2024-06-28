@@ -49,7 +49,7 @@ final class CachingIntFunctionTest {
         assertEquals(1, cached.apply(1));
         assertEquals(1, cif.cnt());
         assertEquals("CachedIntFunction[stables=[StableValue.unset, StableValue[1]], original=" + cif + "]", cached.toString());
-        assertThrows(IndexOutOfBoundsException.class, () -> cached.apply(SIZE + 1));
+        assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE + 1));
     }
 
     @Test

@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 
 final class JepTest {
 
-    class Bar {
+    class Foo {
         // 1. Declare a Stable field
         private static final StableValue<Logger> LOGGER = StableValue.newInstance();
 
@@ -52,7 +52,7 @@ final class JepTest {
 
             if (!LOGGER.isSet()) {
                 // 2. Set the stable value _after_ the field was declared
-                LOGGER.trySet(Logger.getLogger("com.foo.Bar"));
+                LOGGER.trySet(Logger.getLogger("com.company.Foo"));
             }
 
             // 3. Access the stable value with as-declared-final performance
@@ -60,31 +60,62 @@ final class JepTest {
         }
     }
 
-    class Bar2 {
+    class Foo2 {
 
-        // 1. Declare a caching supplier
+        // 1. Centrally declare a caching supplier and define how it should be computed
         private static final Supplier<Logger> LOGGER =
-                StableValue.newCachingSupplier( () -> Logger.getLogger("com.foo.Bar"), null );
+                StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo"), null );
 
 
         static Logger logger() {
-            // 2. Access the stable value with as-declared-final performance
+            // 2. Access the cached value with as-declared-final performance
             //    (single evaluation made before the first access)
             return LOGGER.get();
         }
     }
 
+    class MapDemo {
 
-    class Memoized {
+        // 1. Declare a lazy stable map of loggers with two allowable keys:
+        //    "com.company.Bar" and "com.company.Baz"
+        static final Map<String, Logger> LOGGERS =
+                StableValue.lazyMap(Set.of("com.company.Foo", "com.company.Bar"), Logger::getLogger);
 
-        // 1. Declare a memoized (cached) function backed by a stable map
+        // 2. Access the lazy map with as-declared-final performance
+        //    (evaluation made before the first access)
+        static Logger logger(String name) {
+            return LOGGERS.get(name);
+        }
+    }
+
+
+    class Cached {
+
+        // 1. Centrally declare a cached function backed by a map of stable values
         private static final Function<String, Logger> LOGGERS =
-                StableValue.newCachingFunction(Set.of("com.foo.Bar", "com.foo.Baz"),
+                StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
                 Logger::getLogger, null);
 
-        private static final String NAME = "com.foo.Baz";
+        private static final String NAME = "com.company.Foo";
 
-        // 2. Access the memoized value via the function with as-declared-final
+        // 2. Access the cached value via the function with as-declared-final
+        //    performance (evaluation made before the first access)
+        Logger logger = LOGGERS.apply(NAME);
+    }
+
+    class CachedBackground {
+
+        // 1. Centrally declare a cached function backed by a map of stable values
+        //    computed in the background by two distinct virtual threads.
+        private static final Function<String, Logger> LOGGERS =
+                StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
+                Logger::getLogger,
+                // Create cheap virtual threads for background computation
+                Thread.ofVirtual().factory());
+
+        private static final String NAME = "com.company.Foo";
+
+        // 2. Access the cached value via the function with as-declared-final
         //    performance (evaluation made before the first access)
         Logger logger = LOGGERS.apply(NAME);
     }
@@ -95,7 +126,7 @@ final class JepTest {
         class ErrorMessages {
             private static final int SIZE = 8;
 
-            // 1. Declare a memoized IntFunction backed by a stable list
+            // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
             private static final IntFunction<String> ERROR_FUNCTION =
                     StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile, null);
 
@@ -109,7 +140,7 @@ final class JepTest {
                 }
             }
 
-            // 3. Access the memoized list element with as-declared-final performance
+            // 3. Access the cached element with as-declared-final performance
             //    (evaluation made before the first access)
             String msg = ERROR_FUNCTION.apply(2);
         }

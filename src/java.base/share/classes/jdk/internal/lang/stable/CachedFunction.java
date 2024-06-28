@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+// Note: It would be possible to just use `LazyMap::get` with some additional logic
+// instead of this class but explicitly providing a class like this provides better
+// debug capability, exception handling, and may provide better performance.
 public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
                                    Function<? super T, ? extends R> original) implements Function<T, R> {
     @ForceInline

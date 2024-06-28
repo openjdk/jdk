@@ -59,8 +59,8 @@ import java.util.function.Supplier;
  * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
  * <p>
- * The utility class {@linkplain StableValues} contains a number of convenience methods
- * for creating constructs involving StableValue:
+ * This class contains a number of convenience methods for creating constructs
+ * involving StableValue:
  *
  * A <em>cached</em> (also called "memoized") Supplier, where a given {@code original}
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
