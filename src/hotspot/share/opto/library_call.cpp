@@ -5491,7 +5491,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 
 // Common checks for array sorting intrinsics arguments.
 // Returns `true` if checks passed.
-bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, BasicType* bt) {
+bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt) {
   // check address of the class
   if (elementType == nullptr || elementType->is_top()) {
     return false;  // dead path
@@ -5505,9 +5505,9 @@ bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, Ba
   if (elem_type == nullptr) {
     return false;
   }
-  BasicType ebt = elem_type->basic_type();
+  bt = elem_type->basic_type();
   // Disable the intrinsic if the CPU does not support SIMD sort
-  if (!Matcher::supports_simd_sort(ebt)) {
+  if (!Matcher::supports_simd_sort(bt)) {
     return false;
   }
   // check address of the array
@@ -5518,7 +5518,6 @@ bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, Ba
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM) {
     return false; // failed input validation
   }
-  *bt = ebt;
   return true;
 }
 
@@ -5543,7 +5542,7 @@ bool LibraryCallKit::inline_array_partition() {
   Node* pivotIndices = nullptr;
   BasicType bt = T_ILLEGAL;
 
-  if (!check_array_sort_arguments(elementType, obj, &bt)) {
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
     return false;
   }
   null_check(obj);
@@ -5604,7 +5603,7 @@ bool LibraryCallKit::inline_array_sort() {
 
   BasicType bt = T_ILLEGAL;
 
-  if (!check_array_sort_arguments(elementType, obj, &bt)) {
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
     return false;
   }
   null_check(obj);
