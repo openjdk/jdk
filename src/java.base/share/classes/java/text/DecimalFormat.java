@@ -556,9 +556,9 @@ public class DecimalFormat extends NumberFormat {
                     ((BigInteger)number).bitLength () < 64)) {
             return format(((Number)number).longValue(), toAppendTo, pos);
         } else if (number instanceof BigDecimal) {
-            return format((BigDecimal)number, toAppendTo, pos);
+            return format((BigDecimal)number, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
         } else if (number instanceof BigInteger) {
-            return format((BigInteger)number, toAppendTo, pos);
+            return format((BigInteger)number, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
         } else if (number instanceof Number) {
             return format(((Number)number).doubleValue(), toAppendTo, pos);
         } else {
@@ -885,13 +885,6 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    private StringBuffer format(BigDecimal number, StringBuffer result,
-                                FieldPosition fieldPosition) {
-        fieldPosition.setBeginIndex(0);
-        fieldPosition.setEndIndex(0);
-        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
-    }
-
     private StringBuf format(BigDecimal number, StringBuf result,
                              FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
@@ -951,14 +944,6 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    private StringBuffer format(BigInteger number, StringBuffer result,
-                               FieldPosition fieldPosition) {
-        fieldPosition.setBeginIndex(0);
-        fieldPosition.setEndIndex(0);
-
-        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
-    }
-
     private StringBuf format(BigInteger number, StringBuf result,
                              FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);

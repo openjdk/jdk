@@ -553,9 +553,9 @@ public final class CompactNumberFormat extends NumberFormat {
             return format(((Number) number).longValue(), toAppendTo,
                     fieldPosition);
         } else if (number instanceof BigDecimal) {
-            return format((BigDecimal) number, toAppendTo, fieldPosition);
+            return format((BigDecimal) number, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
         } else if (number instanceof BigInteger) {
-            return format((BigInteger) number, toAppendTo, fieldPosition);
+            return format((BigInteger) number, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
         } else if (number instanceof Number) {
             return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
         } else {
@@ -804,22 +804,13 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         of the prefix and the suffix fields can be
      *                         obtained using {@link NumberFormat.Field#PREFIX}
      *                         and {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigDecimal number, StringBuffer result,
-            FieldPosition fieldPosition) {
-
-        Objects.requireNonNull(number);
-        fieldPosition.setBeginIndex(0);
-        fieldPosition.setEndIndex(0);
-        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
-    }
-
     private StringBuf format(BigDecimal number, StringBuf result,
                              FieldPosition fieldPosition) {
 
@@ -899,22 +890,13 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         prefix and the suffix fields can be obtained
      *                         using {@link NumberFormat.Field#PREFIX} and
      *                         {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigInteger number, StringBuffer result,
-            FieldPosition fieldPosition) {
-
-        Objects.requireNonNull(number);
-        fieldPosition.setBeginIndex(0);
-        fieldPosition.setEndIndex(0);
-        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate(), false).asStringBuffer();
-    }
-
     private StringBuf format(BigInteger number, StringBuf result,
                              FieldPosition fieldPosition) {
 
