@@ -4947,7 +4947,6 @@ public final class Formatter implements Closeable, Flushable {
         static final char PERCENT_SIGN        = '%';
 
         static boolean isValid(char c) {
-            // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
             return switch (c) {
                 case BOOLEAN,
                      BOOLEAN_UPPER,
@@ -4969,6 +4968,7 @@ public final class Formatter implements Closeable, Flushable {
                      HEXADECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT_UPPER,
                      LINE_SEPARATOR -> true;
+                // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
                 default -> c == PERCENT_SIGN;
             };
         }
