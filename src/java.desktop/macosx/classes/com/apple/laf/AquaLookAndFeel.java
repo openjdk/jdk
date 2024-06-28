@@ -57,6 +57,8 @@ import apple.laf.JRSUIControl;
 import apple.laf.JRSUIUtils;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
+import sun.swing.AltProcessor;
 
 import static javax.swing.UIDefaults.LazyValue;
 
@@ -174,7 +176,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         spf.setActive(true);
         PopupFactory.setSharedInstance(spf);
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(true);
     }
 
     /**
@@ -185,7 +189,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #initialize
      */
     public void uninitialize() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
         if (popupFactory instanceof ScreenPopupFactory spf) {

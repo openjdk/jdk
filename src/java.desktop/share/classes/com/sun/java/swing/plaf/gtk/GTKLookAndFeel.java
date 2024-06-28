@@ -50,6 +50,7 @@ import sun.swing.DefaultLayoutStyle;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.MnemonicHandler;
+import sun.swing.AltProcessor;
 
 /**
  * @author Scott Violet
@@ -1414,6 +1415,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         return c.getComponentOrientation().isLeftToRight();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void initialize() {
         /*
          * We need to call loadGTK() to ensure that the native GTK
@@ -1457,20 +1462,20 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                addKeyEventPostProcessor(MnemonicHandler.altProcessor);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
 
         // By default mnemonics are hidden for GTK L&F
         MnemonicHandler.setMnemonicHidden(true);
     }
 
     /**
-     * Called by UIManager when this look and feel is uninstalled.
+     * {@inheritDoc}
      */
     @Override
     public void uninitialize() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                removeKeyEventPostProcessor(MnemonicHandler.altProcessor);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
         MnemonicHandler.setMnemonicHidden(false);
         super.uninitialize();
     }

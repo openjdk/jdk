@@ -47,6 +47,7 @@ import com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.swing.MenuItemCheckIconFactory;
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 /**
  * Windows rendition of the component.
@@ -203,7 +204,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
             FontMetrics fm = SwingUtilities2.getFontMetrics(menuItem, g);
             int mnemIndex = menuItem.getDisplayedMnemonicIndex();
             // W2K Feature: Check to see if the Underscore should be rendered.
-            if (WindowsLookAndFeel.isMnemonicHidden() == true) {
+            if (MnemonicHandler.isMnemonicHidden()) {
                 mnemIndex = -1;
             }
             WindowsGraphicsUtils.paintXPText(menuItem,

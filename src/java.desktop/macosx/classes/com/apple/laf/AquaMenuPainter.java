@@ -34,6 +34,7 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 import apple.laf.JRSUIConstants.*;
 
@@ -287,7 +288,7 @@ public class AquaMenuPainter {
             if (v != null) {
                 v.paint(g, textRect);
             } else {
-                final int mnemonic = (AquaMnemonicHandler.isMnemonicHidden() ? -1 : model.getMnemonic());
+                final int mnemonic = (MnemonicHandler.isMnemonicHidden() ? -1 : model.getMnemonic());
                 drawString(g, c, text, mnemonic, textRect.x, textRect.y + fm.getAscent(), isEnabled, isSelected);
             }
         }

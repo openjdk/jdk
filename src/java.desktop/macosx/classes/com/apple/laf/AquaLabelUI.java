@@ -32,6 +32,7 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
@@ -55,7 +56,7 @@ public class AquaLabelUI extends BasicLabelUI {
 
     protected void paintEnabledText(final JLabel l, final Graphics g, final String s, final int textX, final int textY) {
         int mnemIndex = l.getDisplayedMnemonicIndex();
-        if (AquaMnemonicHandler.isMnemonicHidden()) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemIndex = -1;
         }
 
@@ -72,7 +73,7 @@ public class AquaLabelUI extends BasicLabelUI {
      */
     protected void paintDisabledText(final JLabel l, final Graphics g, final String s, final int textX, final int textY) {
         int accChar = l.getDisplayedMnemonicIndex();
-        if (AquaMnemonicHandler.isMnemonicHidden()) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             accChar = -1;
         }
 

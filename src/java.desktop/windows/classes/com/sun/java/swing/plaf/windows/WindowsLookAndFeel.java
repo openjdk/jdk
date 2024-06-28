@@ -98,6 +98,7 @@ import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.icon.SortArrowIcon;
 import sun.swing.plaf.windows.ClassicSortArrowIcon;
+import sun.swing.MnemonicHandler;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
@@ -196,6 +197,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             addKeyEventPostProcessor(WindowsRootPaneUI.altProcessor);
+        MnemonicHandler.setMnemonicHidden(true);
 
     }
 

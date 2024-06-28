@@ -27,20 +27,17 @@ package sun.swing;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.KeyEventPostProcessor;
 import java.awt.Window;
-import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractButton;
 import javax.swing.JLabel;
-import javax.swing.JRootPane;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-public class MnemonicHandler {
-    public static final AltProcessor altProcessor = new AltProcessor();
+public final class MnemonicHandler {
 
-    protected static boolean isMnemonicHidden;
+    private static boolean isMnemonicHidden;
+
+    private MnemonicHandler() {}
 
     /**
      * Gets the state of the hide mnemonic flag.
@@ -73,34 +70,10 @@ public class MnemonicHandler {
         }
     }
 
-    static class AltProcessor implements KeyEventPostProcessor {
-        public boolean postProcessKeyEvent(final KeyEvent ev) {
-            if (ev.getKeyCode() != KeyEvent.VK_ALT) {
-                return false;
-            }
-
-            final JRootPane root = SwingUtilities.getRootPane(ev.getComponent());
-            final Window winAncestor = (root == null ? null : SwingUtilities.getWindowAncestor(root));
-
-            switch(ev.getID()) {
-                case KeyEvent.KEY_PRESSED:
-                    setMnemonicHidden(false);
-                    break;
-                case KeyEvent.KEY_RELEASED:
-                    setMnemonicHidden(true);
-                    break;
-            }
-
-            repaintMnemonicsInWindow(winAncestor);
-
-            return false;
-        }
-    }
-
     /*
      * Repaints all the components with the mnemonics in the given window and all its owned windows.
      */
-    static void repaintMnemonicsInWindow(final Window w) {
+    public static void repaintMnemonicsInWindow(final Window w) {
         if (w == null || !w.isShowing()) {
             return;
         }
@@ -117,17 +90,16 @@ public class MnemonicHandler {
      * Repaints all the components with the mnemonics in container.
      * Recursively searches for all the subcomponents.
      */
-    static void repaintMnemonicsInContainer(final Container cont) {
+    private static void repaintMnemonicsInContainer(final Container cont) {
         final Component[] elements = cont.getComponents();
         for (final Component c : elements) {
             if (c == null || !c.isVisible()) {
                 continue;
-            } else if (c instanceof AbstractButton && ((AbstractButton) c).getMnemonic() != '\0') {
+            }
+
+            if ((c instanceof AbstractButton b && b.getMnemonic() != '\0')
+                || (c instanceof JLabel l && l.getDisplayedMnemonic() != '\0')) {
                 c.repaint();
-                continue;
-            } else if (c instanceof JLabel && ((JLabel) c).getDisplayedMnemonic() != '\0') {
-                c.repaint();
-                continue;
             } else if (c instanceof Container) {
                 repaintMnemonicsInContainer((Container) c);
             }

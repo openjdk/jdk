@@ -41,10 +41,10 @@ import javax.swing.plaf.synth.SynthLookAndFeel;
  * @test
  * @bug 8155030
  * @key headful
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "mac")
  * @library /javax/swing/regtesthelpers
  * @build Util
- * @summary Verifies if menu mnemonic toggle on Alt press in GTK LAF
+ * @summary Verifies if menu mnemonic toggle on Alt press in GTK and Aqua LAF
  * @run main TestMenuMnemonicOnAltPress
  */
 
@@ -55,43 +55,54 @@ public class TestMenuMnemonicOnAltPress {
     private static volatile Rectangle fileMenuRect;
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        Robot robot = new Robot();
-        robot.setAutoDelay(200);
-
-        try {
-            SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::createAndShowUI);
-            robot.waitForIdle();
-            robot.delay(1000);
-
-            SwingUtilities.invokeAndWait(() -> {
-                fileMenuRect = new Rectangle(fileMenu.getLocationOnScreen(),
-                        fileMenu.getSize());
-            });
-
-            robot.keyPress(KeyEvent.VK_ALT);
-            robot.waitForIdle();
-
-            BufferedImage img1 = robot.createScreenCapture(fileMenuRect);
-
-            robot.keyRelease(KeyEvent.VK_ALT);
-            robot.waitForIdle();
-
-            BufferedImage img2 = robot.createScreenCapture(fileMenuRect);
-
-            if (Util.compareBufferedImages(img1, img2)) {
-                try {
-                    ImageIO.write(img1, "png", new File("Menu_With_Mnemonic.png"));
-                    ImageIO.write(img2, "png", new File("Menu_Without_Mnemonic.png"));
-                } catch (IOException ignored) {}
-                throw new RuntimeException("Mismatch in mnemonic show/hide on Alt press");
+        for (UIManager.LookAndFeelInfo laf :
+                UIManager.getInstalledLookAndFeels()) {
+            if (laf.getName().contains("GTK")) {
+                UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+            } else if (laf.getName().contains("Aqua")) {
+                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
+            } else {
+                continue;
             }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
+
+            Robot robot = new Robot();
+            robot.setAutoDelay(200);
+
+            try {
+                SwingUtilities.invokeAndWait(TestMenuMnemonicOnAltPress::createAndShowUI);
+                robot.waitForIdle();
+                robot.delay(1000);
+
+                SwingUtilities.invokeAndWait(() -> {
+                    fileMenuRect = new Rectangle(fileMenu.getLocationOnScreen(),
+                            fileMenu.getSize());
+                });
+
+                robot.keyPress(KeyEvent.VK_ALT);
+                robot.waitForIdle();
+
+                BufferedImage img1 = robot.createScreenCapture(fileMenuRect);
+
+                robot.keyRelease(KeyEvent.VK_ALT);
+                robot.waitForIdle();
+
+                BufferedImage img2 = robot.createScreenCapture(fileMenuRect);
+
+                if (Util.compareBufferedImages(img1, img2)) {
+                    try {
+                        ImageIO.write(img1, "png", new File("Menu_With_Mnemonic.png"));
+                        ImageIO.write(img2, "png", new File("Menu_Without_Mnemonic.png"));
+                    } catch (IOException ignored) {
+                    }
+                    throw new RuntimeException("Mismatch in mnemonic show/hide on Alt press");
                 }
-            });
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                });
+            }
         }
     }
 

@@ -26,6 +26,7 @@
 package com.sun.java.swing.plaf.windows;
 
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 import java.awt.*;
 
@@ -60,7 +61,7 @@ public class WindowsGraphicsUtils {
 
         int mnemIndex = b.getDisplayedMnemonicIndex();
         // W2K Feature: Check to see if the Underscore should be rendered.
-        if (WindowsLookAndFeel.isMnemonicHidden() == true) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemIndex = -1;
         }
 
@@ -191,46 +192,4 @@ public class WindowsGraphicsUtils {
         return c.getComponentOrientation().isLeftToRight();
     }
 
-    /*
-     * Repaints all the components with the mnemonics in the given window and
-     * all its owned windows.
-     */
-    static void repaintMnemonicsInWindow(Window w) {
-        if(w == null || !w.isShowing()) {
-            return;
-        }
-
-        Window[] ownedWindows = w.getOwnedWindows();
-        for(int i=0;i<ownedWindows.length;i++) {
-            repaintMnemonicsInWindow(ownedWindows[i]);
-        }
-
-        repaintMnemonicsInContainer(w);
-    }
-
-    /*
-     * Repaints all the components with the mnemonics in container.
-     * Recursively searches for all the subcomponents.
-     */
-    static void repaintMnemonicsInContainer(Container cont) {
-        Component c;
-        for(int i=0; i<cont.getComponentCount(); i++) {
-            c = cont.getComponent(i);
-            if(c == null || !c.isVisible()) {
-                continue;
-            }
-            if(c instanceof AbstractButton
-               && ((AbstractButton)c).getMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            } else if(c instanceof JLabel
-                      && ((JLabel)c).getDisplayedMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            }
-            if(c instanceof Container) {
-                repaintMnemonicsInContainer((Container)c);
-            }
-        }
-    }
 }

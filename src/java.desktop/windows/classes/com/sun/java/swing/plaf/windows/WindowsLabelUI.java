@@ -36,6 +36,7 @@ import javax.swing.plaf.basic.BasicLabelUI;
 
 import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 /**
  * Windows rendition of the component.
@@ -62,7 +63,7 @@ public class WindowsLabelUI extends BasicLabelUI {
                                     int textX, int textY) {
         int mnemonicIndex = l.getDisplayedMnemonicIndex();
         // W2K Feature: Check to see if the Underscore should be rendered.
-        if (WindowsLookAndFeel.isMnemonicHidden() == true) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemonicIndex = -1;
         }
 
@@ -75,7 +76,7 @@ public class WindowsLabelUI extends BasicLabelUI {
                                      int textX, int textY) {
         int mnemonicIndex = l.getDisplayedMnemonicIndex();
         // W2K Feature: Check to see if the Underscore should be rendered.
-        if (WindowsLookAndFeel.isMnemonicHidden() == true) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemonicIndex = -1;
         }
         if ( UIManager.getColor("Label.disabledForeground") instanceof Color &&

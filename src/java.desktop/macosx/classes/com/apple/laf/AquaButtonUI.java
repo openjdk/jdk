@@ -76,6 +76,7 @@ import com.apple.laf.AquaUtilControlSize.Sizeable;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private static final String BUTTON_TYPE = "JButton.buttonType";
@@ -492,7 +493,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
         final FontMetrics fm = g.getFontMetrics();
-        final int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
+        final int mnemonicIndex = MnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
 
         /* Draw the Text */
         if (model.isEnabled()) {
