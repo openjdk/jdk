@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ inline void MacroAssembler::set_cmpu3(Register dst, bool treat_unordered_like_le
 }
 
 // Branch-free implementation to convert !=0 to 1
-// Set register dst to 1 if dst is non-zero. Use setbcr instruction on Power10.
+// Set register dst to 1 if dst is non-zero. Uses setbcr instruction on Power10.
 inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
 
   if (VM_Version::has_brw()) {
@@ -275,6 +275,8 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
       cmpwi(CCR0, dst, 0);
     }
     setbcr(dst, CCR0, Assembler::equal);
+    if(UseNewCode)
+	    stop("check here");
   } else {
     neg(temp, dst);
     orr(temp, dst, temp);
