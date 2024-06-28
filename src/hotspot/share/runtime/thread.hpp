@@ -639,6 +639,11 @@ protected:
 
  private:
   VMErrorCallback* _vm_error_callbacks;
+
+  bool  _profile_vm_locks;
+ public:
+   bool     profile_vm_locks() const { return _profile_vm_locks; }
+   void set_profile_vm_locks()       { _profile_vm_locks = true; }
 };
 
 class ThreadInAsgct {

@@ -98,6 +98,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
  protected:                              // Monitor-Mutex metadata
   PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
+  int _id;                               // ID for named mutexes
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
@@ -193,6 +194,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   bool owned_by_self() const;
 
   const char *name() const                  { return _name; }
+
+  int      id() const { return _id; }
+  void set_id(int id) { _id = id; }
 
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
