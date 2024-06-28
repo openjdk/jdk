@@ -181,7 +181,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 }
 
 ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
-  Chunk* c = Atomic::load_acquire(&_head);
+  Chunk* c = _head;
   while (c != nullptr) {
     Chunk* next = c->_next;
     delete c;
