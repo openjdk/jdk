@@ -3792,7 +3792,7 @@ public class Resolve {
         Assert.check(name == names._this);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
-        Symbol bestSoFar = varNotFound;
+        Symbol firstError = varNotFound;
         while (env1.outer != null) {
             if (isStatic(env1)) staticOnly = true;
             if (env1.enclClass.sym.isSubClass(c, types)) {
@@ -3800,10 +3800,10 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly) {
                         // static error, stop search
-                        return bestSoFar.exists() ? bestSoFar : new StaticError(sym);
+                        return firstError.exists() ? firstError : new StaticError(sym);
                     } else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym)) {
                         // early construction context, keep searching
-                        bestSoFar = bestSoFar.exists() ? bestSoFar : new RefBeforeCtorCalledError(sym);
+                        firstError = firstError.exists() ? firstError : new RefBeforeCtorCalledError(sym);
                     } else {
                         // found it
                         return sym;
@@ -3813,7 +3813,7 @@ public class Resolve {
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
         }
-        return bestSoFar;
+        return firstError;
     }
 
     /**
