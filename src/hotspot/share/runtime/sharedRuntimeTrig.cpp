@@ -884,3 +884,7 @@ JRT_LEAF(jdouble, SharedRuntime::dtan(jdouble x))
                                                      -1 -- n odd */
   }
 JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::dtanh(jdouble x))
+  return 0.0; // dummy
+JRT_END

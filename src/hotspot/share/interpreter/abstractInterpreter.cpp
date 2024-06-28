@@ -138,6 +138,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      //case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
