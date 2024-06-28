@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8236184 8332535
+ * @bug 8236184
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.net.IPSupport
