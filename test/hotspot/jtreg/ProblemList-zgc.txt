@@ -46,5 +46,3 @@ serviceability/sa/TestSysProps.java                           8302055   generic-
 serviceability/sa/TestHeapDumpForInvokeDynamic.java           8315646   generic-all
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
-
-vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64
