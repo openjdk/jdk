@@ -267,7 +267,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   assert(obj->is_objArray(), "precondition");
   objArrayOop array = objArrayOop(obj);
   // Skip the card enqueue iff the object (to_array) is in survivor region.
-  // However, HeapRegion::is_survivor() is too expensive here.
+  // However, G1HeapRegion::is_survivor() is too expensive here.
   // Instead, we use dest_attr.is_young() because the two values are always
   // equal: successfully allocated young regions must be survivor regions.
   assert(dest_attr.is_young() == _g1h->heap_region_containing(array)->is_survivor(), "must be");
