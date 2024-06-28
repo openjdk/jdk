@@ -2472,7 +2472,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     case T_ARRAY:   break;
 
     case T_BOOLEAN: {             // 0 -> false(0); !0 -> true(1)
-      __ normalize_bool(R3_RET, R0);
+      __ normalize_bool(R3_RET);
       break;
       }
     case T_BYTE: {                // sign extension
