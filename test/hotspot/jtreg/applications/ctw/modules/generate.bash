@@ -27,16 +27,10 @@
 for module in $@
 do
     file=${module//./_}.java
-    current_year=$(date +%Y)
-    if [[ -f $file ]]
-    then
-        echo "the file $file for module $module already exists. Just updating the copyright year..."
-        sed -E "s/(Copyright \(c\) ....,) ....,/\1 $current_year,/" -i $file
-    else
-        echo creating $file for $module...
+    echo creating $file for $module...
     cat > $file <<EOF
 /*
- * Copyright (c) $current_year, $current_year, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +68,5 @@ do
  * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:$module
  */
 EOF
-    fi
 
 done
