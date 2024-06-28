@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import static compiler.lib.test_generator.InputTemplate.*;
+
 
 public class TemplateGenerator {
 
@@ -56,7 +58,8 @@ public class TemplateGenerator {
     static final Random RAND = new Random();
 
     public static void main(String[] args) throws NoSuchMethodException {
-        testMethod = TemplateGenerator.class.getMethod("genNewTest", BigInteger.class, int.class, int.class, int.class, String.class);
+        InputTemplate loadedTemplate = new InputTemplate1( num,  init, limit, stride,  arithm);
+        testMethod = TemplateGenerator.class.getMethod("genNewTest", InputTemplate.class);
 
         ThreadPoolExecutor threadPool = initializeThreadPool();
         List<Object[]> values = generateParameterValues();
@@ -242,9 +245,10 @@ public class TemplateGenerator {
         return template;
     }
 
-    public static Result genNewTest(BigInteger num, @IntParam int init, @IntParam int limit, @IntParam(nonZero = true) int stride, @StringParam(values = {"+", "-"}) String arithm) {
-        Result res = new Result();
-        res.statics = """
+    public static CodeSegment genNewTest(InputTemplate Template) {
+
+        //Result res = new Result();
+       /* res.statics = """
                 static long lFld;
                 static A a = new A();
                 static boolean flag;
@@ -287,7 +291,10 @@ public class TemplateGenerator {
         );
         res.method = fillTemplate(res.method, replacements);
 
-        return res;
+        return res;*/
+
+
+        return getTemplate();
     }
 
     private static String assembleJavaCode(CodeSegments segments) {
@@ -406,11 +413,13 @@ public class TemplateGenerator {
         String[] values() default {};
     }
 
-    public static class Result {
+   /* public static class Result {
         public String statics;
         public String call;
         public String method;
     }
+
+    */
 
     public static class CodeSegments {
         private final String statics;
