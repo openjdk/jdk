@@ -22,13 +22,7 @@
  */
 package org.openjdk.bench.java.text;
 
-import java.text.DateFormat;
-import java.text.ListFormat;
-import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -58,31 +52,14 @@ public class DefFormatterBench {
 
     public double[] values;
 
-    private Date date;
-
-    private Object[] data;
-
-    private List<String> listData;
-
     @Setup
     public void setup() {
         values = new double[] {
             1.23, 1.49, 1.80, 1.7, 0.0, -1.49, -1.50, 9999.9123, 1.494, 1.495, 1.03, 25.996, -25.996
         };
-        date = new Date();
-        int fileCount = 1273;
-        String diskName = "MyDisk";
-        data = new Object[]{Long.valueOf(fileCount), diskName};
-        listData = List.of("Foo", "Bar", "Baz");
     }
 
     private DefNumberFormat dnf = new DefNumberFormat();
-
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-    private MessageFormat messageFormat = new MessageFormat("The disk \"{1}\" contains {0} file(s).");
-
-    private ListFormat listFormat = ListFormat.getInstance();
 
     @Benchmark
     @OperationsPerInvocation(13)
@@ -90,21 +67,6 @@ public class DefFormatterBench {
         for (double value : values) {
             blackhole.consume(this.dnf.format(value));
         }
-    }
-
-    @Benchmark
-    public void testDateFormat(final Blackhole blackhole) {
-        blackhole.consume(dateFormat.format(date));
-    }
-
-    @Benchmark
-    public void testMessageFormat(final Blackhole blackhole) {
-        blackhole.consume(messageFormat.format(data));
-    }
-
-    @Benchmark
-    public void testListFormat(final Blackhole blackhole) {
-        blackhole.consume(listFormat.format(listData));
     }
 
     public static void main(String... args) throws Exception {
