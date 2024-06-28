@@ -119,7 +119,6 @@ public class TestAlwaysPreTouchBehavior {
     final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     final static long M = 1024 * 1024;
-    final static long G = M * 1024L;
     final static long heapsize = M * 128;
     final static long expectedMaxNonHeapRSS = M * 256;
     final static  long requiredAvailableBefore = heapsize * 2 + expectedMaxNonHeapRSS;
