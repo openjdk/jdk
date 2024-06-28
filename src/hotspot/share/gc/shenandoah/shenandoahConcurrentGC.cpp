@@ -153,10 +153,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // the space. This would be the last action if there is nothing to evacuate.
   entry_cleanup_early();
 
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->log_status();
-  }
+  heap->free_set()->log_status_under_lock();
 
   // Perform concurrent class unloading
   if (heap->unload_classes() &&
