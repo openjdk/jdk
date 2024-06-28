@@ -3193,7 +3193,7 @@ do {                                                            \
         (r_result       == Z_R11  || r_result      == noreg), "registers must match s390.ad"); \
 } while(0)
 
-// Note: this method also kills Z_R1_scratch register; Beware of Register clobbering in future
+// Note: this method also kills Z_R1_scratch register on machines older than z15
 void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register r_temp1,
@@ -3224,7 +3224,9 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   z_sllg(r_array_index, r_bitmap, shift_count); // take the bit to 63rd location
 
-  clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // r_result = 0, let's hope that search will be a success
+  // load 0 in r_result by default. In case search fails, r_result will be loaded
+  // with value 1 (failure) at the end of this method.
+  clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // r_result = 0
 
   // We test the MSB of r_array_index, i.e., its sign bit
   testbit(r_array_index, 63);
@@ -3324,8 +3326,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
   z_bre(L_huge);
 
-  // NOTE: please load 0 only in r_result, for now lookup_secondary_supers_table sets r_result to 0
-  // clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // let's hope that search will be a success
+  // r_result is set to 0 by lookup_secondary_supers_table.
+  // clear_reg(r_result, true /* whole_reg */, false /* set_cc */);
   z_cghi(r_result, 0);
   asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
 
@@ -3356,7 +3358,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
     // Check for wraparound.
     z_cgr(r_array_index, r_array_length);
-    z_locgr(r_array_index, r_result, bcondHigh); // r_result is containing 0, so we're good :)
+    z_locgr(r_array_index, r_result, bcondHigh); // r_result is containing 0
 
     z_cg(r_super_klass, Address(r_array_base, r_array_index));
     z_bre(L_done); // success
@@ -3379,7 +3381,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     bind(L_huge);
     repne_scan(r_array_base, r_super_klass, r_array_length, r_result);
 
-    z_bru(L_done); // whatever we got from repne_scan, forward it
+    z_bru(L_done); // forward the result we got from repne_scan
   }
 
   bind(L_failure);
@@ -3414,7 +3416,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 #ifdef ASSERT
   {
     // r_result should have either 0 or 1 value
-    z_srlk(r_array_base, r_result, 1); // r_array_base will be loaded again, so fine if we use it here
+    z_srlk(r_array_base, r_result, 1); // r_array_base is free here
     z_chi(r_array_base, 0);
     asm_assert(bcondEqual, "r_result should be either 0 or 1", 33);
   }
