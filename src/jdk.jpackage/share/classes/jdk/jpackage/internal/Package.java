@@ -26,17 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 
 interface Package {
 
@@ -198,33 +188,7 @@ interface Package {
         }
     }
 
-    static Package createFromParams(Map<String, ? super Object> params, Application app,
-            PackageType pkgType) throws ConfigException {
-        var packageName = Optional.ofNullable(INSTALLER_NAME.fetchFrom(params)).orElseGet(app::name);
-        var description = Optional.ofNullable(DESCRIPTION.fetchFrom(params)).orElseGet(app::name);
-        var version = Optional.ofNullable(VERSION.fetchFrom(params)).orElseGet(app::version);
-        var aboutURL = ABOUT_URL.fetchFrom(params);
-        var licenseFile = Optional.ofNullable(LICENSE_FILE.fetchFrom(params)).map(Path::of).orElse(null);
-        var predefinedAppImage = getPredefinedAppImage(params);
-
-        var relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
-            return toSupplier(() -> mapInstallDir(Path.of(v), pkgType)).get();
-        }).orElseGet(() -> {
-            if (pkgType instanceof StandardPackageType stdPkgType) {
-                return defaultInstallDir(app, stdPkgType);
-            } else {
-                return app.appImageDirName();
-            }
-        });
-        if (relativeInstallDir.isAbsolute()) {
-            relativeInstallDir = relativeInstallDir.relativize(Path.of("/"));
-        }
-
-        return new Impl(app, pkgType, packageName, description, version, aboutURL, licenseFile,
-                predefinedAppImage, relativeInstallDir);
-    }
-
-    private static Path defaultInstallDir(Application app, StandardPackageType type) {
+    static Path defaultInstallDir(Application app, StandardPackageType type) {
         switch (type) {
             case WinExe, WinMsi -> {
                 return app.appImageDirName();
@@ -247,7 +211,7 @@ interface Package {
         }
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
+    static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
         var ex = new ConfigException(MessageFormat.format(I18N.getString("error.invalid-install-dir"),
                 installDir), null);
 
@@ -279,15 +243,4 @@ interface Package {
 
         return installDir;
     }
-
-    final static String PARAM_ID = "target.package";
-
-    static final StandardBundlerParam<Package> TARGET_PACKAGE = new StandardBundlerParam<>(
-            PARAM_ID, Package.class, params -> {
-                return toSupplier(() -> {
-                    return Package.createFromParams(params, Application.TARGET_APPLICATION
-                            .fetchFrom(params), StandardPackageType.fromCmdLineType(
-                            Workshop.PACKAGE_TYPE.fetchFrom(params)));
-                }).get();
-            }, null);
 }

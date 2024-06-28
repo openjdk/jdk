@@ -46,8 +46,8 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
             Path outputDir) throws IOException {
         
         // Order is important!
-        var pkg = Package.TARGET_PACKAGE.fetchFrom(params);
-        var workshop = Workshop.WORKSHOP.fetchFrom(params);
+        var pkg = PackageFromParams.PACKAGE.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
         
         if (pkg.isRuntimeInstaller()) {
             return null;

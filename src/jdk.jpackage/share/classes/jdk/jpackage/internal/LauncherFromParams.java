@@ -24,10 +24,28 @@
  */
 package jdk.jpackage.internal;
 
-interface WinApplication extends Application {
-    static class Impl extends Application.Proxy<Application> implements WinApplication {
-        Impl(Application app) {
-            super(app);
+import java.util.Map;
+import jdk.jpackage.internal.Launcher.Impl;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+
+final class LauncherFromParams {
+
+    static Launcher create(Map<String, ? super Object> params) {
+        var name = APP_NAME.fetchFrom(params);
+
+        LauncherStartupInfo startupInfo = null;
+        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
+            startupInfo = LauncherStartupInfo.createFromParams(params);
         }
+
+        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
+        var description = DESCRIPTION.fetchFrom(params);
+        var icon = StandardBundlerParam.ICON.fetchFrom(params);
+        var fa = FileAssociation.fetchFrom(params);
+
+        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
 }

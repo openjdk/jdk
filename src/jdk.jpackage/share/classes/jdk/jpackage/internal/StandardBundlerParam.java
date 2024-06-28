@@ -43,8 +43,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.Functional.ThrowingFunction;
+import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 
 /**
  * StandardBundlerParam
@@ -613,6 +615,12 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                 }
             }
         }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static <T2> StandardBundlerParam<T2> createBundlerParam(String id,
+            ThrowingFunction<Map<String, ? super Object>, T2> valueFunc) {
+        return new StandardBundlerParam(id, Object.class, toFunction(valueFunc), null);
     }
 
     private static List<Path> getDefaultModulePath() {

@@ -26,11 +26,6 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 interface Launcher {
 
@@ -94,21 +89,5 @@ interface Launcher {
         public Path icon() {
             return target.icon();
         }
-    }
-
-    static Launcher createFromParams(Map<String, ? super Object> params) {
-        var name = APP_NAME.fetchFrom(params);
-
-        LauncherStartupInfo startupInfo = null;
-        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
-            startupInfo = LauncherStartupInfo.createFromParams(params);
-        }
-
-        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
-        var description = DESCRIPTION.fetchFrom(params);
-        var icon = StandardBundlerParam.ICON.fetchFrom(params);
-        var fa = FileAssociation.fetchFrom(params);
-
-        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
 }

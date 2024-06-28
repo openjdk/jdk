@@ -24,10 +24,27 @@
  */
 package jdk.jpackage.internal;
 
-interface WinApplication extends Application {
-    static class Impl extends Application.Proxy<Application> implements WinApplication {
-        Impl(Application app) {
-            super(app);
-        }
+import java.util.Map;
+import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
+import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
+
+final class LinuxDebPackageFromParams {
+
+    private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
+        var pkg = LinuxPackageFromParams.create(params, LinuxDeb);
+
+        var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
+
+        return new LinuxDebPackage.Impl(pkg, maintainerEmail);
     }
+
+    static final StandardBundlerParam<LinuxDebPackage> PACKAGE = createBundlerParam(
+            LinuxDebPackageFromParams::create);
+
+    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new StandardBundlerParam<>(
+            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
+            String.class,
+            params -> "Unknown",
+            (s, p) -> s);
+
 }

@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.text.MessageFormat;
@@ -34,21 +33,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 
-    LinuxPackageBundler(BundlerParamInfo<String> packageName) {
-        this.packageName = packageName;
+    LinuxPackageBundler(BundlerParamInfo<? extends LinuxPackage> pkgParam) {
+        this.pkgParam = pkgParam;
         appImageBundler = new LinuxAppBundler().setDependentTask(true);
         customActions = List.of(new CustomActionInstance(
                 DesktopIntegration::create), new CustomActionInstance(
@@ -58,6 +50,10 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     @Override
     public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
+        
+        // Order is important!
+        LinuxPackage pkg = pkgParam.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
         // run basic validation to ensure requirements are met
         // we are not interested in return code, only possible exception
@@ -65,12 +61,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         FileAssociation.verify(FileAssociation.fetchFrom(params));
 
-        // If package name has some restrictions, the string converter will
-        // throw an exception if invalid
-        packageName.getStringConverter().apply(packageName.fetchFrom(params),
-            params);
-
-        for (var validator: getToolValidators(params)) {
+        for (var validator: getToolValidators()) {
             ConfigException ex = validator.validate();
             if (ex != null) {
                 throw ex;
@@ -98,7 +89,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
 
         // Packaging specific validation
-        doValidate(params);
+        doValidate(workshop, pkg);
 
         return true;
     }
@@ -114,13 +105,8 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         IOUtils.writableOutputDir(outputParentDir);
 
         // Order is important!
-        LinuxPackage pkg;
-        if (Package.TARGET_PACKAGE.fetchFrom(params) instanceof LinuxPackage linuxPkg) {
-            pkg = linuxPkg;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-        var workshop = Workshop.WORKSHOP.fetchFrom(params);
+        LinuxPackage pkg = pkgParam.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
         Workshop pkgWorkshop = new Workshop.Proxy(workshop) {
             @Override
@@ -129,7 +115,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             }
         };
         
-        params.put(Workshop.WORKSHOP.getID(), pkgWorkshop);
+        params.put(WorkshopFromParams.WORKSHOP.getID(), pkgWorkshop);
 
         Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
             ApplicationLayout layout = pkg.app().appLayout();
@@ -166,12 +152,12 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                         create());
             }
 
-            data.putAll(createReplacementData(params));
+            data.putAll(createReplacementData(workshop, pkg));
 
             Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                    data), params, outputParentDir);
+                    data), workshop, pkg, outputParentDir);
 
-            verifyOutputBundle(params, packageBundle).stream()
+            verifyOutputBundle(workshop, pkg, packageBundle).stream()
                     .filter(Objects::nonNull)
                     .forEachOrdered(ex -> {
                 Log.verbose(ex.getLocalizedMessage());
@@ -233,25 +219,24 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     protected abstract List<ConfigException> verifyOutputBundle(
-            Map<String, ? super Object> params, Path packageBundle);
+            Workshop workshop, LinuxPackage pkg, Path packageBundle);
 
     protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
-    protected abstract List<ToolValidator> getToolValidators(
-            Map<String, ? super Object> params);
+    protected abstract List<ToolValidator> getToolValidators();
 
-    protected abstract void doValidate(Map<String, ? super Object> params)
+    protected abstract void doValidate(Workshop workshop, LinuxPackage pkg)
             throws ConfigException;
 
     protected abstract Map<String, String> createReplacementData(
-            Map<String, ? super Object> params) throws IOException;
+            Workshop workshop, LinuxPackage pkg) throws IOException;
 
     protected abstract Path buildPackageBundle(
             Map<String, String> replacementData,
-            Map<String, ? super Object> params, Path outputParentDir) throws
+            Workshop workshop, LinuxPackage pkg, Path outputParentDir) throws
             PackagerException, IOException;
 
-    private final BundlerParamInfo<String> packageName;
+    private final BundlerParamInfo<? extends LinuxPackage> pkgParam;
     private final Bundler appImageBundler;
     private boolean withFindNeededPackages;
     private final List<CustomActionInstance> customActions;

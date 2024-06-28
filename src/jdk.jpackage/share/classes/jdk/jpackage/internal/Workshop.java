@@ -25,9 +25,6 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
-import java.util.Map;
-import jdk.internal.util.OperatingSystem;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 
 interface Workshop {
 
@@ -74,42 +71,4 @@ interface Workshop {
 
         private final Workshop target;
     }
-
-    static Workshop createFromParams(Map<String, ? super Object> params) throws ConfigException {
-        var root = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
-        var resourceDir = StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
-
-        var defaultWorkshop = new Impl(root, resourceDir);
-
-        Path appImageDir;
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            appImageDir = StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-            appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
-        } else {
-            Path dir;
-            if (PACKAGE_TYPE.fetchFrom(params).equals("app-image") || OperatingSystem.isWindows()) {
-                dir = Application.TARGET_APPLICATION.fetchFrom(params).appImageDirName();
-            } else {
-                dir = Package.TARGET_PACKAGE.fetchFrom(params).relativeInstallDir();
-            }
-
-            appImageDir = defaultWorkshop.buildRoot().resolve("image").resolve(dir);
-        }
-
-        return new Proxy(defaultWorkshop) {
-            @Override
-            public Path appImageDir() {
-                return appImageDir;
-            }
-        };
-    }
-
-    static final StandardBundlerParam<Workshop> WORKSHOP = new StandardBundlerParam<>(
-            "workshop", Workshop.class, params -> {
-                return toFunction(Workshop::createFromParams).apply(params);
-            }, null);
-
-    static final StandardBundlerParam<String> PACKAGE_TYPE = new StandardBundlerParam<>(
-            Arguments.CLIOptions.PACKAGE_TYPE.getId(), String.class, null, null);
 }

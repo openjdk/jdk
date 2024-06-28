@@ -166,7 +166,7 @@ class AppImageBundler extends AbstractBundler {
             Path outputDirectory) throws PackagerException, IOException,
             ConfigException {
 
-        var app = Application.TARGET_APPLICATION.fetchFrom(params);
+        var app = ApplicationFromParams.APPLICATION.fetchFrom(params);
 
         boolean hasAppImage =
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null;

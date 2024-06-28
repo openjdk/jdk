@@ -24,10 +24,28 @@
  */
 package jdk.jpackage.internal;
 
-interface WinApplication extends Application {
-    static class Impl extends Application.Proxy<Application> implements WinApplication {
-        Impl(Application app) {
-            super(app);
-        }
+import java.util.Map;
+import jdk.jpackage.internal.LinuxRpmPackage.Impl;
+import static jdk.jpackage.internal.Package.StandardPackageType.LinuxRpm;
+import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
+
+final class LinuxRpmPackageFromParams {
+
+    private static LinuxRpmPackage create(Map<String, ? super Object> params) throws ConfigException {
+        var pkg = LinuxPackageFromParams.create(params, LinuxRpm);
+
+        var licenseType = LICENSE_TYPE.fetchFrom(params);
+
+        return new Impl(pkg, licenseType);
     }
+
+    static final StandardBundlerParam<LinuxRpmPackage> PACKAGE = createBundlerParam(
+            LinuxRpmPackageFromParams::create);
+
+    private static final BundlerParamInfo<String> LICENSE_TYPE = new StandardBundlerParam<>(
+            Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId(),
+            String.class,
+            params -> I18N.getString("param.license-type.default"),
+            (s, p) -> s);
+
 }

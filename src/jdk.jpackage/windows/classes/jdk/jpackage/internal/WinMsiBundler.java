@@ -207,8 +207,8 @@ public class WinMsiBundler  extends AbstractBundler {
                 throws PackagerException, IOException {
 
         // Order is important!
-        var pkg = WinMsiPackage.TARGET_PACKAGE.fetchFrom(params);
-        var workshop = Workshop.WORKSHOP.fetchFrom(params);
+        var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
         Path appImage = pkg.predefinedAppImage();
 
@@ -254,8 +254,8 @@ public class WinMsiBundler  extends AbstractBundler {
             Path outputParentDir) throws PackagerException {
 
         // Order is important!
-        var pkg = WinMsiPackage.TARGET_PACKAGE.fetchFrom(params);
-        var workshop = Workshop.WORKSHOP.fetchFrom(params);
+        var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
         IOUtils.writableOutputDir(outputParentDir);
 

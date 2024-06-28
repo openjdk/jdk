@@ -24,8 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.Map;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
+import java.nio.file.Path;
 
 interface LinuxDebPackage extends LinuxPackage {
 
@@ -35,7 +34,22 @@ interface LinuxDebPackage extends LinuxPackage {
         return String.format("%s <%s>", app().vendor(), maintainerEmail());
     }
 
-    static class Impl extends LinuxPackage.Proxy implements LinuxDebPackage {
+    default String versionWithRelease() {
+        return String.format("%s-%s", version(), release());
+    }
+
+    default Path relativeCopyrightFilePath() {
+        if (isRuntimeInstaller()) {
+            return null;
+        } else if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith(
+                "/usr/")) {
+            return Path.of("/usr/share/doc/", packageName(), "copyright");
+        } else {
+            return relativeInstallDir().resolve("share/doc/copyright");
+        }
+    }
+
+    static class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxDebPackage {
 
         public Impl(LinuxPackage target, String maintainerEmail) {
             super(target);
@@ -49,27 +63,4 @@ interface LinuxDebPackage extends LinuxPackage {
 
         private final String maintainerEmail;
     }
-
-    private static LinuxDebPackage createFromParams(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackage.createFromParams(params, StandardPackageType.LinuxDeb);
-
-        var maintainerEmail = Internal.MAINTAINER_EMAIL.fetchFrom(params);
-
-        return new Impl(pkg, maintainerEmail);
-    }
-
-    final static class Internal {
-
-        private static final BundlerParamInfo<String> MAINTAINER_EMAIL
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
-                        String.class,
-                        params -> "Unknown",
-                        (s, p) -> s);
-    }
-
-    static final StandardBundlerParam<LinuxDebPackage> TARGET_PACKAGE = new StandardBundlerParam<>(
-            Package.PARAM_ID, LinuxDebPackage.class, params -> {
-                return toFunction(LinuxDebPackage::createFromParams).apply(params);
-            }, null);
 }

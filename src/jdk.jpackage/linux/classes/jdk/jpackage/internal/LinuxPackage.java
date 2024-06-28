@@ -117,45 +117,7 @@ interface LinuxPackage extends Package {
         }
     }
 
-    static LinuxPackage createFromParams(Map<String, ? super Object> params,
-            StandardPackageType pkgType) throws ConfigException {
-        var pkg = Package.createFromParams(params, LinuxApplication.createFromParams(params), pkgType);
-        var menuGroupName = Internal.LINUX_MENU_GROUP.fetchFrom(params);
-        var category = Internal.LINUX_CATEGORY.fetchFrom(params);
-        var additionalDependencies = Internal.LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params);
-        var release = Internal.RELEASE.fetchFrom(params);
-
-        var packageName = mapPackageName(pkg.packageName(), pkgType);
-        var arch = LinuxPackageArch.getValue(pkgType);
-
-        return new Impl(pkg, menuGroupName, category, additionalDependencies, release) {
-            @Override
-            public String packageName() {
-                return packageName;
-            }
-
-            @Override
-            public Path packageFileName() {
-                String packageFileNameTemlate;
-                switch (asStandardPackageType()) {
-                    case LinuxDeb -> {
-                        packageFileNameTemlate = "%s_%s-%s_%s.deb";
-                    }
-                    case LinuxRpm -> {
-                        packageFileNameTemlate = "%s-%s-%s.%s.rpm";
-                    }
-                    default -> {
-                        throw new UnsupportedOperationException();
-                    }
-                }
-
-                return Path.of(String.format(packageFileNameTemlate, packageName(), version(),
-                        release(), arch));
-            }
-        };
-    }
-
-    private static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
+    static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
         // make sure to lower case and spaces/underscores become dashes
         packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
 
@@ -200,36 +162,5 @@ interface LinuxPackage extends Package {
         }
 
         return packageName;
-    }
-
-    final static class Internal {
-
-        private static final BundlerParamInfo<String> LINUX_CATEGORY
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.LINUX_CATEGORY.getId(),
-                        String.class,
-                        params -> "misc",
-                        (s, p) -> s);
-
-        private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId(),
-                        String.class,
-                        params -> null,
-                        (s, p) -> s);
-
-        private static final BundlerParamInfo<String> LINUX_MENU_GROUP
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.LINUX_MENU_GROUP.getId(),
-                        String.class,
-                        params -> I18N.getString("param.menu-group.default"),
-                        (s, p) -> s);
-
-        private static final StandardBundlerParam<String> RELEASE
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.RELEASE.getId(),
-                        String.class,
-                        params -> "1",
-                        (s, p) -> s);
     }
 }

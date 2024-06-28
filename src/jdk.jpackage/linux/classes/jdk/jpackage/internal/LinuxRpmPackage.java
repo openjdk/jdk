@@ -24,14 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.Map;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
-
 interface LinuxRpmPackage extends LinuxPackage {
 
     String licenseType();
 
-    static class Impl extends LinuxPackage.Proxy implements LinuxRpmPackage {
+    static class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
 
         public Impl(LinuxPackage target, String licenseType) {
             super(target);
@@ -45,27 +42,4 @@ interface LinuxRpmPackage extends LinuxPackage {
 
         private final String licenseType;
     }
-
-    private static LinuxRpmPackage createFromParams(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackage.createFromParams(params, StandardPackageType.LinuxRpm);
-
-        var licenseType = Internal.LICENSE_TYPE.fetchFrom(params);
-
-        return new Impl(pkg, licenseType);
-    }
-
-    final static class Internal {
-
-        private static final BundlerParamInfo<String> LICENSE_TYPE
-                = new StandardBundlerParam<>(
-                        Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId(),
-                        String.class,
-                        params -> I18N.getString("param.license-type.default"),
-                        (s, p) -> s);
-    }
-
-    static final StandardBundlerParam<LinuxRpmPackage> TARGET_PACKAGE = new StandardBundlerParam<>(
-            Package.PARAM_ID, LinuxRpmPackage.class, params -> {
-                return toFunction(LinuxRpmPackage::createFromParams).apply(params);
-            }, null);
 }

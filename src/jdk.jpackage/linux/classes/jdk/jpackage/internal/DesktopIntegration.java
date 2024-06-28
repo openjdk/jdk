@@ -45,7 +45,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.LinuxAppImageBuilder.DEFAULT_ICON;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 /**
  * Helper to create files for desktop integration.
@@ -60,7 +59,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(Workshop workshop, Package pkg, Launcher launcher) throws IOException {
+    private DesktopIntegration(Workshop workshop, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
 
         associations = launcher.fileAssociations().stream()
                 .filter(fa -> !fa.mimeTypes.isEmpty())
@@ -73,7 +72,7 @@ final class DesktopIntegration extends ShellCustomAction {
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitly requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || LINUX_SHORTCUT_HINT.fetchFrom(params);
+        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut();
 
         var curIconResource = pkg.app().createLauncherIconResource(launcher, DEFAULT_ICON,
                 workshop::createResource);
@@ -128,7 +127,7 @@ final class DesktopIntegration extends ShellCustomAction {
             nestedIntegrations = List.of();
         } else {
             nestedIntegrations = pkg.app().additionalLaunchers().stream().map(toFunction(l -> {
-                return new DesktopIntegration(workshop, pkg, l);
+                return new DesktopIntegration(workshop, pkg, (LinuxLauncher)l);
             })).toList();
         }
     }
@@ -137,7 +136,8 @@ final class DesktopIntegration extends ShellCustomAction {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
-        return new DesktopIntegration(workshop, pkg, pkg.app().mainLauncher());
+        return new DesktopIntegration(workshop, (LinuxPackage) pkg, (LinuxLauncher) pkg.app()
+                .mainLauncher());
     }
 
     @Override
@@ -228,7 +228,7 @@ final class DesktopIntegration extends ShellCustomAction {
         data.put("APPLICATION_DESCRIPTION", launcher.description());
         data.put("APPLICATION_ICON", Optional.ofNullable(iconFile).map(
                 f -> f.installPath().toString()).orElse(null));
-        data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
+        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(pkg
                 .installedAppLayout().launchersDirectory().resolve(launcher.executableName())
                 .toString()));
@@ -488,7 +488,7 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private final Workshop workshop;
-    private final Package pkg;
+    private final LinuxPackage pkg;
     private final Launcher launcher;
 
     private final List<LinuxFileAssociation> associations;
@@ -503,21 +503,4 @@ final class DesktopIntegration extends ShellCustomAction {
     private final List<DesktopIntegration> nestedIntegrations;
 
     private final Map<String, String> desktopFileData;
-
-    private static final BundlerParamInfo<String> MENU_GROUP =
-        new StandardBundlerParam<>(
-                Arguments.CLIOptions.LINUX_MENU_GROUP.getId(),
-                String.class,
-                params -> I18N.getString("param.menu-group.default"),
-                (s, p) -> s
-        );
-
-    private static final StandardBundlerParam<Boolean> LINUX_SHORTCUT_HINT =
-        new StandardBundlerParam<>(
-                Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
-                Boolean.class,
-                params -> false,
-                (s, p) -> (s == null || "null".equalsIgnoreCase(s))
-                        ? false : Boolean.valueOf(s)
-        );
 }
