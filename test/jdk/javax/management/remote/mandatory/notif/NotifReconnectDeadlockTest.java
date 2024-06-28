@@ -27,6 +27,8 @@
  * @summary Tests reconnection done by a fetching notif thread.
  * @author Shanliang JIANG
  * @requires vm.compMode != "Xcomp"
+ * @comment Running with -Xcomp is likely to cause a timeout from ServerCommunicatorAdmin
+ *          before addNotificationListener can complete.
  *
  * @run clean NotifReconnectDeadlockTest
  * @run build NotifReconnectDeadlockTest
