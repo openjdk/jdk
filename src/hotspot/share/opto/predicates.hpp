@@ -193,6 +193,15 @@
  * Main Loop Head
  */
 
+#ifndef PRODUCT
+// Assertion Predicates are either emitted to check the initial value of a range check in the first iteration or the last
+// value of a range check in the last iteration of a loop.
+enum class AssertionPredicateType {
+  None, // Not an Assertion Predicate
+  Init_value,
+  Last_value
+};
+#endif // NOT PRODUCT
 
 // Class to represent Assertion Predicates with a HaltNode instead of an UCT (i.e. either an Initialized Assertion
 // Predicate or a Template Assertion Predicate created after the initial one at Loop Predication).

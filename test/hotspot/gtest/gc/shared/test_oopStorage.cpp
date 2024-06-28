@@ -461,7 +461,7 @@ public:
       *to_release[i] = nullptr;
     }
     if (sorted) {
-      QuickSort::sort(to_release, nrelease, PointerCompare(), false);
+      QuickSort::sort(to_release, nrelease, PointerCompare());
     }
 
     storage().release(to_release, nrelease);
