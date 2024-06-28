@@ -191,8 +191,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 new PackageProperty("Version", ((LinuxDebPackage)pkg).versionWithRelease(),
                         "APPLICATION_VERSION_WITH_RELEASE",
                         controlFileName),
-                new PackageProperty("Architecture", LinuxPackageArch.getValue(LinuxDeb),
-                        "APPLICATION_ARCH", controlFileName));
+                new PackageProperty("Architecture", pkg.arch(), "APPLICATION_ARCH", controlFileName));
 
         List<String> cmdline = new ArrayList<>(List.of(TOOL_DPKG_DEB, "-f",
                 packageBundle.toString()));
@@ -343,7 +342,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_SECTION", pkg.category());
         data.put("APPLICATION_COPYRIGHT", pkg.app().copyright());
         data.put("APPLICATION_LICENSE_TEXT", licenseText);
-        data.put("APPLICATION_ARCH", LinuxPackageArch.getValue(LinuxDeb));
+        data.put("APPLICATION_ARCH", pkg.arch());
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(pkg.appLayout().resolveAt(workshop
                 .appImageDir()).sizeInBytes() >> 10));
         data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(pkg.aboutURL()).map(

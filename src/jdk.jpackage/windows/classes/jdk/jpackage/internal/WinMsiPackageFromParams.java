@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -46,26 +45,14 @@ final class WinMsiPackageFromParams {
         var isSystemWideInstall = MSI_SYSTEM_WIDE.fetchFrom(params);
         var upgradeCode = getUpgradeCode(params);
 
-        try {
-            MsiVersion.of(pkg.version());
-        } catch (IllegalArgumentException ex) {
-            throw new ConfigException(ex.getMessage(), I18N.getString(
-                    "error.version-string-wrong-format.advice"), ex);
-        }
-
-        Path serviceInstaller = null;
+        final Path serviceInstaller;
         if (!pkg.app().isService()) {
             serviceInstaller = null;
         } else {
-            Path resourceDir = RESOURCE_DIR.fetchFrom(params);
-            if (resourceDir != null) {
-                serviceInstaller = resourceDir.resolve("service-installer.exe");
-                if (!Files.exists(serviceInstaller)) {
-                    throw new ConfigException(I18N.getString(
-                            "error.missing-service-installer"), I18N.getString(
-                                    "error.missing-service-installer.advice"));
-                }
-            }
+            serviceInstaller = Optional.ofNullable(RESOURCE_DIR.fetchFrom(params)).map(
+                    resourceDir -> {
+                        return resourceDir.resolve("service-installer.exe");
+                    }).orElse(null);
         }
 
         return new Impl(pkg, withInstallDirChooser, withShortcutPrompt, helpURL, updateURL,
@@ -74,8 +61,7 @@ final class WinMsiPackageFromParams {
 
     private static UUID getUpgradeCode(Map<String, ? super Object> params) throws ConfigException {
         try {
-            return Optional.ofNullable(UPGRADE_UUID.fetchFrom(params))
-                    .map(UUID::fromString).orElse(
+            return Optional.ofNullable(UPGRADE_UUID.fetchFrom(params)).map(UUID::fromString).orElse(
                     null);
         } catch (IllegalArgumentException ex) {
             throw new ConfigException(ex);

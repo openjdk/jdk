@@ -24,13 +24,9 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
 import java.util.Map;
 import jdk.jpackage.internal.LinuxPackage.Impl;
-import static jdk.jpackage.internal.LinuxPackage.mapPackageName;
 import jdk.jpackage.internal.Package.StandardPackageType;
-import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
-import static jdk.jpackage.internal.Package.StandardPackageType.LinuxRpm;
 
 final class LinuxPackageFromParams {
 
@@ -41,34 +37,7 @@ final class LinuxPackageFromParams {
         var additionalDependencies = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params);
         var release = RELEASE.fetchFrom(params);
 
-        var packageName = mapPackageName(pkg.packageName(), pkgType);
-        var arch = LinuxPackageArch.getValue(pkgType);
-
-        return new Impl(pkg, menuGroupName, category, additionalDependencies, release) {
-            @Override
-            public String packageName() {
-                return packageName;
-            }
-
-            @Override
-            public Path packageFileName() {
-                String packageFileNameTemlate;
-                switch (asStandardPackageType()) {
-                    case LinuxDeb -> {
-                        packageFileNameTemlate = "%s_%s-%s_%s.deb";
-                    }
-                    case LinuxRpm -> {
-                        packageFileNameTemlate = "%s-%s-%s.%s.rpm";
-                    }
-                    default -> {
-                        throw new UnsupportedOperationException();
-                    }
-                }
-
-                return Path.of(String.format(packageFileNameTemlate, packageName(), version(),
-                        release(), arch));
-            }
-        };
+        return new Impl(pkg, menuGroupName, category, additionalDependencies, release);
     }
 
     private static final BundlerParamInfo<String> LINUX_CATEGORY = new StandardBundlerParam<>(

@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -39,6 +38,8 @@ interface LinuxPackage extends Package {
     String additionalDependencies();
 
     String release();
+
+    String arch();
 
     @Override
     default ApplicationLayout appLayout() {
@@ -55,13 +56,49 @@ interface LinuxPackage extends Package {
 
     static class Impl extends Package.Proxy<Package> implements LinuxPackage {
 
-        public Impl(Package target, String menuGroupName, String category,
-                String additionalDependencies, String release) {
+        Impl(Package target, String menuGroupName, String category, String additionalDependencies,
+                String release) throws ConfigException {
+            this(target, menuGroupName, category, additionalDependencies, release, LinuxPackageArch
+                    .getValue(target.asStandardPackageType()));
+        }
+
+        Impl(Package target, String menuGroupName, String category,
+                String additionalDependencies, String release, String arch) throws ConfigException {
             super(target);
+            if (target.type() instanceof StandardPackageType type) {
+                packageName = mapPackageName(target.packageName(), type);
+            } else {
+                packageName = target.packageName();
+            }
             this.menuGroupName = menuGroupName;
             this.category = category;
             this.additionalDependencies = additionalDependencies;
             this.release = release;
+            this.arch = arch;
+        }
+
+        @Override
+        public String packageName() {
+            return packageName;
+        }
+
+        @Override
+        public Path packageFileName() {
+            String packageFileNameTemlate;
+            switch (asStandardPackageType()) {
+                case LinuxDeb -> {
+                    packageFileNameTemlate = "%s_%s-%s_%s.deb";
+                }
+                case LinuxRpm -> {
+                    packageFileNameTemlate = "%s-%s-%s.%s.rpm";
+                }
+                default -> {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            return Path.of(String.format(packageFileNameTemlate, packageName(), version(),
+                    release(), arch()));
         }
 
         @Override
@@ -84,10 +121,18 @@ interface LinuxPackage extends Package {
             return release;
         }
 
+        @Override
+        public String arch() {
+            return arch;
+        }
+
+        private final String packageName;
+
         private final String menuGroupName;
         private final String category;
         private final String additionalDependencies;
         private final String release;
+        private final String arch;
     }
 
     static class Proxy<T extends LinuxPackage> extends Package.Proxy<T> implements LinuxPackage {
@@ -115,9 +160,14 @@ interface LinuxPackage extends Package {
         public String release() {
             return target.release();
         }
+
+        @Override
+        public String arch() {
+            return target.arch();
+        }
     }
 
-    static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
+    private static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
         // make sure to lower case and spaces/underscores become dashes
         packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
 

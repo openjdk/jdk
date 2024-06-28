@@ -25,7 +25,9 @@
 package jdk.jpackage.internal;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 
 interface WinMsiPackage extends Package {
@@ -56,8 +58,21 @@ interface WinMsiPackage extends Package {
 
         Impl(Package pkg, boolean withInstallDirChooser, boolean withShortcutPrompt, String helpURL,
                 String updateURL, String startMenuGroupName, boolean isSystemWideInstall,
-                UUID upgradeCode, Path serviceInstaller) {
+                UUID upgradeCode, Path serviceInstaller) throws ConfigException {
             super(pkg);
+
+            try {
+                MsiVersion.of(pkg.version());
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigException(ex.getMessage(), I18N.getString(
+                        "error.version-string-wrong-format.advice"), ex);
+            }
+
+            if (pkg.app().isService() && serviceInstaller == null || !Files.exists(serviceInstaller)) {
+                throw new ConfigException(I18N.getString("error.missing-service-installer"), I18N
+                        .getString("error.missing-service-installer.advice"));
+            }
+
             this.withInstallDirChooser = withInstallDirChooser;
             this.withShortcutPrompt = withShortcutPrompt;
             this.helpURL = helpURL;
@@ -100,11 +115,7 @@ interface WinMsiPackage extends Package {
 
         @Override
         public UUID upgradeCode() {
-            if (upgradeCode == null) {
-                return WinMsiPackage.super.upgradeCode();
-            } else {
-                return upgradeCode;
-            }
+            return Optional.ofNullable(upgradeCode).orElseGet(WinMsiPackage.super::upgradeCode);
         }
 
         @Override

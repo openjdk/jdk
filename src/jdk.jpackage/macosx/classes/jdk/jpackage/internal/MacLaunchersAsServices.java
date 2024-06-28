@@ -44,11 +44,11 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
     static ShellCustomAction create(Map<String, Object> params,
             Path outputDir) throws IOException {
-        
+
         // Order is important!
         var pkg = PackageFromParams.PACKAGE.fetchFrom(params);
         var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
-        
+
         if (pkg.isRuntimeInstaller()) {
             return null;
         }

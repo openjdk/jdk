@@ -156,8 +156,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                             "APPLICATION_VERSION", specFileName),
                     new PackageProperty("Release", pkg.release(),
                             "APPLICATION_RELEASE", specFileName),
-                    new PackageProperty("Arch", LinuxPackageArch.getValue(
-                            Package.StandardPackageType.LinuxRpm), null, specFileName));
+                    new PackageProperty("Arch", pkg.arch(), null, specFileName));
 
             List<String> actualValues = Executor.of(TOOL_RPM, "-qp", "--queryformat",
                     properties.stream().map(entry -> String.format("%%{%s}",

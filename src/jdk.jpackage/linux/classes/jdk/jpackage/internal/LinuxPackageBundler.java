@@ -50,7 +50,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     @Override
     public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
-        
+
         // Order is important!
         LinuxPackage pkg = pkgParam.fetchFrom(params);
         var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
@@ -114,7 +114,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 return buildRoot().resolve("pkg-image");
             }
         };
-        
+
         params.put(WorkshopFromParams.WORKSHOP.getID(), pkgWorkshop);
 
         Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {

@@ -28,6 +28,6 @@ abstract class ProxyBase<T> {
     ProxyBase(T target) {
         this.target = target;
     }
-    
+
     protected final T target;
 }
