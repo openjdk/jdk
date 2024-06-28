@@ -30,6 +30,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolvedModule;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -65,8 +66,7 @@ class JNativeScanTask {
         if (rootModules.contains("ALL-MODULE-PATH")) {
             rootModules = allModuleNames(moduleFinder);
         }
-        Configuration config = Configuration.resolveAndBind(moduleFinder, List.of(systemConfiguration()),
-                ModuleFinder.of(), rootModules);
+        Configuration config = systemConfiguration().resolveAndBind(ModuleFinder.of(), moduleFinder, rootModules);
         for (ResolvedModule m : config.modules()) {
             toScan.add(new ClassFileSource.Module(m.reference()));
         }

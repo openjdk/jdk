@@ -30,13 +30,13 @@
  *     cases.classpath.lib.Lib
  *     cases.classpath.app.App
  *     cases.classpath.unnamed_package.UnnamedPackage
- * @run testng TestJNativeScan
+ * @run junit TestJNativeScan
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,47 +46,47 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TestJNativeScan extends JNativeScanTestBase {
 
-    Path testClasses;
+    static Path TEST_CLASSES;
 
-    Path classPathApp;
-    Path singleJarClassPath;
-    Path singleJarModular;
-    Path orgMyapp;
-    Path orgLib;
-    Path unnamedPackageJar;
-    Path libJar;
+    static Path CLASS_PATH_APP;
+    static Path SINGLE_JAR_CLASS_PATH;
+    static Path SINGLE_JAR_MODULAR;
+    static Path ORG_MYAPP;
+    static Path ORG_LIB;
+    static Path UNNAMED_PACKAGE_JAR;
+    static Path LIB_JAR;
 
-    @BeforeClass
-    public void before() throws IOException {
-        singleJarClassPath = Path.of("singleJar.jar");
-        testClasses = Path.of(System.getProperty("test.classes", ""));
-        JarUtils.createJarFile(singleJarClassPath, testClasses, Path.of("main", "Main.class"));
+    @BeforeAll
+    public static void before() throws IOException {
+        SINGLE_JAR_CLASS_PATH = Path.of("singleJar.jar");
+        TEST_CLASSES = Path.of(System.getProperty("test.classes", ""));
+        JarUtils.createJarFile(SINGLE_JAR_CLASS_PATH, TEST_CLASSES, Path.of("main", "Main.class"));
 
-        libJar = Path.of("lib.jar");
-        JarUtils.createJarFile(libJar, testClasses, Path.of("lib", "Lib.class"));
+        LIB_JAR = Path.of("lib.jar");
+        JarUtils.createJarFile(LIB_JAR, TEST_CLASSES, Path.of("lib", "Lib.class"));
         Manifest manifest = new Manifest();
         Attributes mainAttrs = manifest.getMainAttributes();
         mainAttrs.put(Attributes.Name.MANIFEST_VERSION, "1.0"); // need version or other attributes will be ignored
         mainAttrs.putValue("Class-Path", "lib.jar non-existent.jar");
-        classPathApp = Path.of("app.jar");
-        JarUtils.createJarFile(classPathApp, manifest, testClasses, Path.of("app", "App.class"));
+        CLASS_PATH_APP = Path.of("app.jar");
+        JarUtils.createJarFile(CLASS_PATH_APP, manifest, TEST_CLASSES, Path.of("app", "App.class"));
 
-        singleJarModular = makeModularJar("org.singlejar");
-        orgMyapp = makeModularJar("org.myapp");
-        orgLib = makeModularJar("org.lib");
+        SINGLE_JAR_MODULAR = makeModularJar("org.singlejar");
+        ORG_MYAPP = makeModularJar("org.myapp");
+        ORG_LIB = makeModularJar("org.lib");
         makeModularJar("org.service");
 
-        unnamedPackageJar = Path.of("unnamed_package.jar");
-        JarUtils.createJarFile(unnamedPackageJar, testClasses, Path.of("UnnamedPackage.class"));
+        UNNAMED_PACKAGE_JAR = Path.of("unnamed_package.jar");
+        JarUtils.createJarFile(UNNAMED_PACKAGE_JAR, TEST_CLASSES, Path.of("UnnamedPackage.class"));
     }
 
     @Test
     public void testSingleJarClassPath() {
-        assertSuccess(jnativescan("--class-path", singleJarClassPath.toString()))
+        assertSuccess(jnativescan("--class-path", SINGLE_JAR_CLASS_PATH.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("ALL-UNNAMED")
                 .stdoutShouldContain("main.Main")
@@ -133,7 +133,7 @@ class TestJNativeScan extends JNativeScanTestBase {
 
     @Test
     public void testClassPathAttribute() {
-        assertSuccess(jnativescan("--class-path", classPathApp.toString()))
+        assertSuccess(jnativescan("--class-path", CLASS_PATH_APP.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("ALL-UNNAMED")
                 .stdoutShouldContain("lib.Lib")
@@ -162,7 +162,7 @@ class TestJNativeScan extends JNativeScanTestBase {
 
     @Test
     public void testModuleNotAJarFile() {
-        String modulePath = moduleRoot("org.myapp").toString() + File.pathSeparator + orgLib.toString();
+        String modulePath = moduleRoot("org.myapp").toString() + File.pathSeparator + ORG_LIB.toString();
         assertSuccess(jnativescan("--module-path", modulePath,
                         "--add-modules", "ALL-MODULE-PATH"))
                 .stdoutShouldContain("lib.Lib")
@@ -181,7 +181,7 @@ class TestJNativeScan extends JNativeScanTestBase {
 
     @Test
     public void testNoDuplicateNames() {
-        String classPath = singleJarClassPath + File.pathSeparator + classPathApp;
+        String classPath = SINGLE_JAR_CLASS_PATH + File.pathSeparator + CLASS_PATH_APP;
         OutputAnalyzer output = assertSuccess(jnativescan("--class-path", classPath, "--print-native-access"));
         String[] moduleNames = output.getStdout().split(",");
         Set<String> names = new HashSet<>();
@@ -192,7 +192,7 @@ class TestJNativeScan extends JNativeScanTestBase {
 
     @Test
     public void testUnnamedPackage() {
-        assertSuccess(jnativescan("--class-path", unnamedPackageJar.toString()))
+        assertSuccess(jnativescan("--class-path", UNNAMED_PACKAGE_JAR.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("ALL-UNNAMED")
                 .stdoutShouldNotContain(".UnnamedPackage")
@@ -218,7 +218,7 @@ class TestJNativeScan extends JNativeScanTestBase {
 
     @Test
     public void testClassPathDirectory() {
-        assertSuccess(jnativescan("--class-path", testClasses.toString()))
+        assertSuccess(jnativescan("--class-path", TEST_CLASSES.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("ALL-UNNAMED")
                 .stdoutShouldContain("UnnamedPackage")
@@ -236,17 +236,17 @@ class TestJNativeScan extends JNativeScanTestBase {
     @Test
     public void testMultipleClassPathJars() {
         // make sure all of these are reported, even when they are all in the ALL-UNNAMED module
-        String classPath = unnamedPackageJar
-                + File.pathSeparator + singleJarClassPath
-                + File.pathSeparator + libJar;
+        String classPath = UNNAMED_PACKAGE_JAR
+                + File.pathSeparator + SINGLE_JAR_CLASS_PATH
+                + File.pathSeparator + LIB_JAR;
         assertSuccess(jnativescan("--class-path", classPath))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("ALL-UNNAMED")
                 .stdoutShouldContain("UnnamedPackage")
-                .stdoutShouldContain(unnamedPackageJar.toString())
+                .stdoutShouldContain(UNNAMED_PACKAGE_JAR.toString())
                 .stdoutShouldContain("lib.Lib")
-                .stdoutShouldContain(libJar.toString())
+                .stdoutShouldContain(LIB_JAR.toString())
                 .stdoutShouldContain("main.Main")
-                .stdoutShouldContain(singleJarClassPath.toString());
+                .stdoutShouldContain(SINGLE_JAR_CLASS_PATH.toString());
     }
 }

@@ -26,30 +26,30 @@
  * @library /test/lib .. ./cases/modules
  * @build JNativeScanTestBase
  *     cases.classpath.arrayref.App
- * @run testng TestArrayTypeRefs
+ * @run junit TestArrayTypeRefs
  */
 
 import jdk.test.lib.util.JarUtils;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class TestArrayTypeRefs extends JNativeScanTestBase {
 
-    Path arrayRef;
+    static Path ARRAY_REF;
 
-    @BeforeClass
-    public void before() throws IOException {
-        arrayRef = Path.of("arrayref.jar");
+    @BeforeAll
+    public static void before() throws IOException {
+        ARRAY_REF = Path.of("arrayref.jar");
         Path testClasses = Path.of(System.getProperty("test.classes", ""));
-        JarUtils.createJarFile(arrayRef, testClasses, Path.of("arrayref", "App.class"));
+        JarUtils.createJarFile(ARRAY_REF, testClasses, Path.of("arrayref", "App.class"));
     }
 
     @Test
     public void testSingleJarClassPath() {
-        assertSuccess(jnativescan("--class-path", arrayRef.toString()))
+        assertSuccess(jnativescan("--class-path", ARRAY_REF.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("<no restricted methods>");
     }

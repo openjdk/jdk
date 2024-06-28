@@ -26,30 +26,30 @@
  * @library /test/lib .. ./cases/modules
  * @build JNativeScanTestBase
  * @compile --release 20 cases/classpath/missingsystem/App.java
- * @run testng TestMissingSystemClass
+ * @run junit TestMissingSystemClass
  */
 
 import jdk.test.lib.util.JarUtils;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class TestMissingSystemClass extends JNativeScanTestBase {
 
-    Path missingsystem;
+    static Path MISSING_SYSTEM;
 
-    @BeforeClass
-    public void before() throws IOException {
-        missingsystem = Path.of("missingsystem.jar");
+    @BeforeAll
+    public static void before() throws IOException {
+        MISSING_SYSTEM = Path.of("missingsystem.jar");
         Path testClasses = Path.of(System.getProperty("test.classes", ""));
-        JarUtils.createJarFile(missingsystem, testClasses, Path.of("missingsystem", "App.class"));
+        JarUtils.createJarFile(MISSING_SYSTEM, testClasses, Path.of("missingsystem", "App.class"));
     }
 
     @Test
     public void testSingleJarClassPath() {
-        assertFailure(jnativescan("--class-path", missingsystem.toString(), "--release", "21"))
+        assertFailure(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
                 .stdoutShouldBeEmpty()
                 .stderrShouldContain("Error while processing method")
                 .stderrShouldContain("missingsystem.App::main(String[])void")

@@ -26,30 +26,30 @@
  * @library /test/lib .. ./cases/modules
  * @build JNativeScanTestBase
  *     cases.classpath.subclassref.App
- * @run testng TestSubclassRefs
+ * @run junit TestSubclassRefs
  */
 
 import jdk.test.lib.util.JarUtils;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class TestSubclassRefs extends JNativeScanTestBase {
 
-    Path subclassRef;
+    static Path SUBCLASS_REF;
 
-    @BeforeClass
-    public void before() throws IOException {
-        subclassRef = Path.of("subclassref.jar");
+    @BeforeAll
+    public static void before() throws IOException {
+        SUBCLASS_REF = Path.of("subclassref.jar");
         Path testClasses = Path.of(System.getProperty("test.classes", ""));
-        JarUtils.createJarFile(subclassRef, testClasses, Path.of("subclassref", "App.class"));
+        JarUtils.createJarFile(SUBCLASS_REF, testClasses, Path.of("subclassref", "App.class"));
     }
 
     @Test
     public void testSingleJarClassPath() {
-        assertSuccess(jnativescan("--class-path", subclassRef.toString()))
+        assertSuccess(jnativescan("--class-path", SUBCLASS_REF.toString()))
                 .stderrShouldBeEmpty()
                 .stdoutShouldContain("<no restricted methods>");
     }
