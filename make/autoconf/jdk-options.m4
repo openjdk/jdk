@@ -437,12 +437,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           # It's harmless to be suppressed in clang as well.
           ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
           ASAN_LDFLAGS="-fsanitize=address"
+          # detect_stack_use_after_return causes ASAN to offload stack-local
+          # variables to c-heap and therefore breaks assumptions in hotspot
+          # that rely on data (e.g. Marks) living in thread stacks.
+          if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+            ASAN_CFLAGS="$ASAN_CFLAGS --param asan-use-after-return=0"
+          fi
+          if test "x$TOOLCHAIN_TYPE" = "xclang"; then
+            ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
+          fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
           ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"
           # MSVC produces a warning if you pass -fsanitize=address to the linker. It also complains
           $ if -DEBUG is not passed to the linker when building with ASan.
           ASAN_LDFLAGS="-debug"
+          # -fsanitize-address-use-after-return is off by default in MS Visual Studio 22 (19.37.32824).
+          # cl : Command line warning D9002 : ignoring unknown option '-fno-sanitize-address-use-after-return'
         fi
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
