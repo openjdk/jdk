@@ -103,7 +103,6 @@ public final class JVMSupport {
 
     static long getChunkStartNanos() {
         long nanos = JVM.getChunkStartNanos();
-        // JVM::getChunkStartNanos() may return a bumped timestamp, +1 ns or +2 ns.
         // Spin here to give Instant.now() a chance to catch up.
         awaitUniqueTimestamp();
         return nanos;

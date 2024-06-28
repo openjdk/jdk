@@ -42,9 +42,16 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#endif
+#if INCLUDE_ZGC
+#include "gc/x/xBarrierSetRuntime.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
@@ -66,6 +73,7 @@
   static_field(CompilerToVM::Data,             thread_disarmed_guard_value_offset, int)                                              \
   static_field(CompilerToVM::Data,             thread_address_bad_mask_offset, int)                                                  \
   AARCH64_ONLY(static_field(CompilerToVM::Data, BarrierSetAssembler_nmethod_patching_type, int))                                     \
+  AARCH64_ONLY(static_field(CompilerToVM::Data, BarrierSetAssembler_patching_epoch_addr, address))                                   \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded, address)                      \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded, address)                 \
@@ -75,6 +83,10 @@
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded, address)         \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_array, address)                                \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_clone, address)                                                    \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             ZPointerVectorLoadBadMask_address, address)                                           \
+  static_field(CompilerToVM::Data,             ZPointerVectorStoreBadMask_address, address)                                          \
+  static_field(CompilerToVM::Data,             ZPointerVectorStoreGoodMask_address, address)                                         \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             continuations_enabled, bool)                                                          \
                                                                                                                                      \
@@ -109,6 +121,7 @@
   static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
+  ZGC_ONLY(static_field(CompilerToVM::Data,    sizeof_ZStoreBarrierEntry,              int))                                         \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
@@ -784,7 +797,12 @@
   declare_constant(markWord::no_hash_in_place)                            \
   declare_constant(markWord::no_lock_in_place)                            \
 
-#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function) \
+// Helper macro to support ZGC pattern where the function itself isn't exported
+#define DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, name) \
+  declare_function_with_value(name, name##_addr())
+
+
+#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_function(SharedRuntime::register_finalizer)                     \
   declare_function(SharedRuntime::exception_handler_for_return_address)   \
   declare_function(SharedRuntime::OSR_migration_end)                      \
@@ -800,6 +818,26 @@
   declare_function(os::dll_lookup)                                        \
   declare_function(os::javaTimeMillis)                                    \
   declare_function(os::javaTimeNanos)                                     \
+                                                                          \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded))            \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded))         \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_array))                                \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::clone))                                                    \
+                                                                                                                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good))           \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_weak_oop_field_preloaded))    \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_phantom_oop_field_preloaded)) \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing))        \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing))                  \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing))               \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_array))                                \
                                                                           \
   declare_function(Deoptimization::fetch_unroll_info)                     \
   declare_function(Deoptimization::uncommon_trap)                         \
@@ -851,9 +889,35 @@
 #endif // INCLUDE_G1GC
 
 
+#if INCLUDE_ZGC
+
+#define VM_INT_CONSTANTS_JVMCI_ZGC(declare_constant, declare_constant_with_value, declare_preprocessor_constant)                           \
+  declare_constant_with_value("ZThreadLocalData::store_good_mask_offset" , in_bytes(ZThreadLocalData::store_good_mask_offset()))           \
+  declare_constant_with_value("ZThreadLocalData::store_bad_mask_offset" , in_bytes(ZThreadLocalData::store_bad_mask_offset()))             \
+  declare_constant_with_value("ZThreadLocalData::store_barrier_buffer_offset" , in_bytes(ZThreadLocalData::store_barrier_buffer_offset())) \
+  declare_constant_with_value("ZStoreBarrierBuffer::current_offset" , in_bytes(ZStoreBarrierBuffer::current_offset()))                     \
+  declare_constant_with_value("ZStoreBarrierBuffer::buffer_offset" , in_bytes(ZStoreBarrierBuffer::buffer_offset()))                       \
+  declare_constant_with_value("ZStoreBarrierEntry::p_offset" , in_bytes(ZStoreBarrierEntry::p_offset()))                                   \
+  declare_constant_with_value("ZStoreBarrierEntry::prev_offset" , in_bytes(ZStoreBarrierEntry::prev_offset()))                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_AFTER_TEST))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_CMP))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_AFTER_TEST))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_OR))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV))                                            \
+  AARCH64_ONLY(declare_constant(ZPointerLoadShift))                                                                                        \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X))                                         \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_BEFORE_MOV))                                           \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_BEFORE_MOV))                                         \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV))
+
+#endif // INCLUDE_ZGC
+
+
 #ifdef LINUX
 
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
 #endif
@@ -861,7 +925,7 @@
 
 #ifdef BSD
 
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
 #endif
@@ -912,12 +976,16 @@
 #endif
 
 #ifndef VM_ADDRESSES_OS
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function)
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value)
 #endif
 
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
+
+#define GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY(name, value) \
+  { QUOTE(name), CAST_FROM_FN_PTR(void*, value) },
+
 
 // These initializers are allowed to access private fields in classes
 // as long as class VMStructs is a friend
@@ -969,6 +1037,11 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
+#if INCLUDE_ZGC
+  VM_INT_CONSTANTS_JVMCI_ZGC(GENERATE_VM_INT_CONSTANT_ENTRY,
+                              GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
+                              GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#endif
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -994,10 +1067,12 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-               GENERATE_VM_FUNCTION_ENTRY)
+               GENERATE_VM_FUNCTION_ENTRY,
+               GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
                   GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-                  GENERATE_VM_FUNCTION_ENTRY)
+                  GENERATE_VM_FUNCTION_ENTRY,
+                  GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY)
 
   GENERATE_VM_ADDRESS_LAST_ENTRY()
 };

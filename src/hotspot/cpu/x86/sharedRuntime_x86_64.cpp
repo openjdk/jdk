@@ -95,6 +95,7 @@ class RegisterSaver {
   // units because compiler frame slots are jints.
 #define XSAVE_AREA_BEGIN 160
 #define XSAVE_AREA_YMM_BEGIN 576
+#define XSAVE_AREA_EGPRS 960
 #define XSAVE_AREA_OPMASK_BEGIN 1088
 #define XSAVE_AREA_ZMM_BEGIN 1152
 #define XSAVE_AREA_UPPERBANK 1664
@@ -104,8 +105,8 @@ class RegisterSaver {
 #define DEF_OPMASK_OFFS(regnum)    opmask ## regnum ## _off = opmask_off + (regnum)*8/BytesPerInt,     opmask ## regnum ## H_off
 #define DEF_ZMM_UPPER_OFFS(regnum) zmm ## regnum ## _off = zmm_upper_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
   enum layout {
-    fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt, // fxsave save area
-    xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,            // offset in fxsave save area
+    fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt,    // fxsave save area
+    xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,  // offset in fxsave save area
     DEF_XMM_OFFS(0),
     DEF_XMM_OFFS(1),
     // 2..15 are implied in range usage
@@ -113,7 +114,24 @@ class RegisterSaver {
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
     // 2..15 are implied in range usage
-    opmask_off         = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r31_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r31H_off,
+    r30_off, r30H_off,
+    r29_off, r29H_off,
+    r28_off, r28H_off,
+    r27_off, r27H_off,
+    r26_off, r26H_off,
+    r25_off, r25H_off,
+    r24_off, r24H_off,
+    r23_off, r23H_off,
+    r22_off, r22H_off,
+    r21_off, r21H_off,
+    r20_off, r20H_off,
+    r19_off, r19H_off,
+    r18_off, r18H_off,
+    r17_off, r17H_off,
+    r16_off, r16H_off,
+    opmask_off   = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_OPMASK_OFFS(0),
     DEF_OPMASK_OFFS(1),
     // 2..7 are implied in range usage
@@ -199,7 +217,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // to be under the return like a normal enter.
 
   __ enter();          // rsp becomes 16-byte aligned here
-  __ push_CPU_state(); // Push a multiple of 16 bytes
+  __ pushf();
+  // Make sure rsp stays 16-byte aligned
+  __ subq(rsp, 8);
+  // Push CPU state in multiple of 16 bytes
+  __ save_legacy_gprs();
+  __ push_FPU_state();
+
 
   // push cpu state handles this on EVEX enabled targets
   if (save_wide_vectors) {
@@ -247,6 +271,17 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #endif
     }
   }
+
+#if COMPILER2_OR_JVMCI
+  if (UseAPX) {
+      int base_addr = XSAVE_AREA_EGPRS;
+      off = 0;
+      for(int n = 16; n < Register::number_of_registers; n++) {
+        __ movq(Address(rsp, base_addr+(off++*8)), as_Register(n));
+      }
+  }
+#endif
+
   __ vzeroupper();
   if (frame::arg_reg_save_area_bytes != 0) {
     // Allocate argument register save area
@@ -279,6 +314,25 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   map->set_callee_saved(STACK_OFFSET( r13_off ), r13->as_VMReg());
   map->set_callee_saved(STACK_OFFSET( r14_off ), r14->as_VMReg());
   map->set_callee_saved(STACK_OFFSET( r15_off ), r15->as_VMReg());
+
+  if (UseAPX) {
+    map->set_callee_saved(STACK_OFFSET( r16_off ), r16->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r17_off ), r17->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r18_off ), r18->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r19_off ), r19->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r20_off ), r20->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r21_off ), r21->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r22_off ), r22->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r23_off ), r23->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r24_off ), r24->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r25_off ), r25->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r26_off ), r26->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r27_off ), r27->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r28_off ), r28->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r29_off ), r29->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r30_off ), r30->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r31_off ), r31->as_VMReg());
+  }
   // For both AVX and EVEX we will use the legacy FXSAVE area for xmm0..xmm15,
   // on EVEX enabled targets, we get it included in the xsave area
   off = xmm0_off;
@@ -339,6 +393,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(STACK_OFFSET( r13H_off ), r13->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET( r14H_off ), r14->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET( r15H_off ), r15->as_VMReg()->next());
+    if (UseAPX) {
+      map->set_callee_saved(STACK_OFFSET( r16H_off ), r16->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r17H_off ), r17->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r18H_off ), r18->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r19H_off ), r19->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r20H_off ), r20->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r21H_off ), r21->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r22H_off ), r22->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r23H_off ), r23->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r24H_off ), r24->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r25H_off ), r25->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r26H_off ), r26->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r27H_off ), r27->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r28H_off ), r28->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r29H_off ), r29->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r30H_off ), r30->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r31H_off ), r31->as_VMReg()->next());
+    }
     // For both AVX and EVEX we will use the legacy FXSAVE area for xmm0..xmm15,
     // on EVEX enabled targets, we get it included in the xsave area
     off = xmm0H_off;
@@ -428,8 +500,21 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wi
     }
   }
 
+#if COMPILER2_OR_JVMCI
+  if (UseAPX) {
+    int base_addr = XSAVE_AREA_EGPRS;
+    int off = 0;
+    for (int n = 16; n < Register::number_of_registers; n++) {
+      __ movq(as_Register(n), Address(rsp, base_addr+(off++*8)));
+    }
+  }
+#endif
+
   // Recover CPU state
-  __ pop_CPU_state();
+  __ pop_FPU_state();
+  __ restore_legacy_gprs();
+  __ addq(rsp, 8);
+  __ popf();
   // Get the rbp described implicitly by the calling convention (no oopMap)
   __ pop(rbp);
 }
@@ -2543,6 +2628,9 @@ void SharedRuntime::generate_deopt_blob() {
   if (UseAVX > 2) {
     pad += 1024;
   }
+  if (UseAPX) {
+    pad += 1024;
+  }
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     pad += 512; // Increase the buffer size when compiling for JVMCI
@@ -3091,7 +3179,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   OopMap* map;
 
   // Allocate space for the code.  Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  CodeBuffer buffer("handler_blob", 2348, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   address start   = __ pc();
@@ -3247,7 +3335,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // allocate space for the code
   ResourceMark rm;
 
-  CodeBuffer buffer(name, 1200, 512);
+  CodeBuffer buffer(name, 1552, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   int frame_size_in_words;
