@@ -275,8 +275,6 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
       cmpwi(CCR0, dst, 0);
     }
     setbcr(dst, CCR0, Assembler::equal);
-    if(UseNewCode)
-	    stop("check here");
   } else {
     neg(temp, dst);
     orr(temp, dst, temp);
