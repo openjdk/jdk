@@ -437,16 +437,16 @@ public class ReflectionFactory {
         if (! isValidSerializable(cl)) {
             return null;
         }
-        // acquire this lazily due to initialization circularity between RF and JLI
-        return SharedSecrets.getJavaLangInvokeAccess().defaultReadObjectForSerialization(cl);
+
+        return SerializationBytecodeGenerator.defaultReadObjectForSerialization(cl);
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
         if (! isValidSerializable(cl)) {
             return null;
         }
-        // acquire this lazily due to initialization circularity between RF and JLI
-        return SharedSecrets.getJavaLangInvokeAccess().defaultWriteObjectForSerialization(cl);
+
+        return SerializationBytecodeGenerator.defaultWriteObjectForSerialization(cl);
     }
 
     public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
