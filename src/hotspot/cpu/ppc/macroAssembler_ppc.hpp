@@ -54,8 +54,6 @@ class MacroAssembler: public Assembler {
   inline static int largeoffset_si16_si16_hi(int si31) { return (si31 + (1<<15)) >> 16; }
   inline static int largeoffset_si16_si16_lo(int si31) { return si31 - (((si31 + (1<<15)) >> 16) << 16); }
 
-  // Branch-free implementation to convert !=0 to 1.
-  void normalize_bool(Register dst, Register temp, bool use_64bit);
   // load d = *[a+si31]
   // Emits several instructions if the offset is not encodable in one instruction.
   void ld_largeoffset_unchecked(Register d, int si31, Register a, int emit_filler_nop);
@@ -180,7 +178,8 @@ class MacroAssembler: public Assembler {
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
-
+  // Branch-free implementation to convert !=0 to 1.
+  void inline normalize_bool(Register dst, Register temp, bool use_64bit);
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)
 
