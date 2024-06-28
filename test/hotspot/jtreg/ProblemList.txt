@@ -70,6 +70,8 @@ compiler/startup/StartupOutput.java 8326615 generic-x64
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
+compiler/uncommontrap/DeoptReallocFailure.java 8335308 windows-x64
+
 #############################################################################
 
 # :hotspot_gc
