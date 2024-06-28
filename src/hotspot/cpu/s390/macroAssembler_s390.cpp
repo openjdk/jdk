@@ -3326,11 +3326,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
   z_bre(L_huge);
 
-  // r_result is set to 0 by lookup_secondary_supers_table.
-  // clear_reg(r_result, true /* whole_reg */, false /* set_cc */);
-  z_cghi(r_result, 0);
-  asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
-
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
   // been inspected, and r_array_index may be out of bounds if we
@@ -3343,11 +3338,16 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     // eventually terminates.
 
 #ifdef ASSERT
+    // r_result is set to 0 by lookup_secondary_supers_table.
+    // clear_reg(r_result, true /* whole_reg */, false /* set_cc */);
+    z_cghi(r_result, 0);
+    asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
+
     // We should only reach here after having found a bit in the bitmap.
     // Invariant: array_length == popcount(bitmap)
     z_ltgr(r_array_length, r_array_length);
     asm_assert(bcondHigh, "array_length > 0, should hold", 22);
-#endif
+#endif // ASSERT
 
     // Compute limit in r_array_length
     add2reg(r_array_length, -1);
