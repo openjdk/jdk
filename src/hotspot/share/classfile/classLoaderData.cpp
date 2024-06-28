@@ -260,7 +260,7 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
   Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
+    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[Atomic::load(&chunk->_size)])) {
       return true;
     }
     chunk = chunk->_next;
