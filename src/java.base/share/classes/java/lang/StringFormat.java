@@ -45,43 +45,41 @@ final class StringFormat {
 
     static String format(String format, Object... args) {
         if (args != null) {
-            String s = null;
-            if (args.length == 1) {
-                s = format1(format, args[0]);
-            } else if (args.length == 2) {
-                s = format2(format, args[0], args[1]);
+            int off = format.indexOf('%');
+            if (off == -1) {
+                // no formatting to be done
+                return format;
             }
-            if (s != null) {
-                return s;
+
+            int len = format.length();
+            if (off + 1 != len) {
+                int off1 = format.indexOf('%', off + 2);
+                String s = null;
+                if (args.length == 1) {
+                    if (off1 == -1) {
+                        s = format1(format, off, args[0]);
+                    }
+                } else if (args.length == 2) {
+                    if (off1 != -1 && off1 + 1 != len) {
+                        s = format2(format, off, off1, args[0], args[1]);
+                    }
+                }
+                if (s != null) {
+                    return s;
+                }
             }
         }
 
         return new Formatter().format(format, args).toString();
     }
 
-    private static String format1(String format, Object arg) {
-        int off = format.indexOf('%');
-        if (off == -1) {
-            // no formatting to be done
-            return format;
-        }
-
-        int max = format.length();
-        if (off + 1 == max) {
-            return null;
-        }
-
-        if (off + 2 < max) {
-            if (format.indexOf('%', off + 2) != -1) {
-                return null;
-            }
-        }
-
+    private static String format1(String format, int off, Object arg) {
+        int len = format.length();
         char conv = format.charAt(off + 1);
         int width = 0;
         if (conv >= '1' && conv <= '9') {
             width = conv - '0';
-            if (off + 2 < max) {
+            if (off + 2 < len) {
                 conv = format.charAt(off + 2);
             }
         }
@@ -101,40 +99,27 @@ final class StringFormat {
         return format1(format, off, conv, arg, width, size);
     }
 
-    private static String format2(String format, Object arg0, Object arg1) {
-        int off0 = format.indexOf('%');
-        if (off0 == -1) {
-            // no formatting to be done
-            return format;
-        }
-
-        int max = format.length();
-        if (off0 + 1 == max) {
-            return null;
-        }
+    private static String format2(String format, int off0, int off1, Object arg0, Object arg1) {
+        final int len = format.length();
         char conv0 = format.charAt(off0 + 1);
         int width0 = 0;
         if (conv0 >= '1' && conv0 <= '9') {
             width0 = conv0 - '0';
-            if (off0 + 2 < max) {
+            if (off0 + 2 < len) {
                 conv0 = format.charAt(off0 + 2);
             }
         }
 
-        int off1 = format.indexOf('%', off0 + 1);
-        if (off1 == -1 || off1 + 1 == max) {
-            return null;
-        }
         char conv1 = format.charAt(off1 + 1);
         int width1 = 0;
         if (conv1 >= '1' && conv1 <= '9') {
             width1 = conv1 - '0';
-            if (off1 + 2 < max) {
+            if (off1 + 2 < len) {
                 conv1 = format.charAt(off1 + 2);
             }
         }
 
-        if (off1 + 2 < max) {
+        if (off1 + 2 < len) {
             if (format.indexOf('%', off1 + 2) != -1) {
                 return null;
             }
@@ -171,9 +156,19 @@ final class StringFormat {
             return null;
         }
 
+        int specifierSize0 = 2 + (width0 != 0 ? 1 : 0);
+        int specifierSize1 = 2 + (width1 != 0 ? 1 : 0);
+
+        int strlen = len
+                + Math.max(width0, size0)
+                + Math.max(width1, size1)
+                - specifierSize0
+                - specifierSize1;
         return coder == String.LATIN1
-                ? format2Latin1(format, off0, conv0, arg0, width0, size0, off1, conv1, arg1, width1, size1)
-                : format2UTF16( format, off0, conv0, arg0, width0, size0, off1, conv1, arg1, width1, size1);
+                ? format2Latin1(format, strlen, off0, conv0, arg0, width0, size0, specifierSize0,
+                                                off1, conv1, arg1, width1, size1, specifierSize1)
+                : format2UTF16( format, strlen, off0, conv0, arg0, width0, size0, specifierSize0,
+                                                off1, conv1, arg1, width1, size1, specifierSize1);
     }
 
     static int stringSize(char conv, Object arg) {
@@ -219,17 +214,10 @@ final class StringFormat {
     }
 
     static String format2Latin1(
-            String format,
-            int off0, char conv0, Object arg0, int width0, int size0,
-            int off1, char conv1, Object arg1, int width1, int size1
+            String format, int length,
+            int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
+            int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
     ) {
-        int specifierSize0 = 2 + (width0 != 0 ? 1 : 0);
-        int specifierSize1 = 2 + (width1 != 0 ? 1 : 0);
-        int length = format.length()
-                + Math.max(width0, size0)
-                + Math.max(width1, size1)
-                - specifierSize0
-                - specifierSize1;
         byte[] bytes = new byte[length];
         if (off0 > 0) {
             format.getBytes(bytes, 0, 0, String.LATIN1, off0);
@@ -253,18 +241,11 @@ final class StringFormat {
     }
 
     static String format2UTF16(
-            String format,
-            int off0, char conv0, Object arg0, int width0, int size0,
-            int off1, char conv1, Object arg1, int width1, int size1
+            String format, int length,
+            int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
+            int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
     ) {
         byte coder = String.UTF16;
-        int specifierSize0 = 2 + (width0 != 0 ? 1 : 0);
-        int specifierSize1 = 2 + (width1 != 0 ? 1 : 0);
-        int length = format.length()
-                + Math.max(width0, size0)
-                + Math.max(width1, size1)
-                - specifierSize0
-                - specifierSize1;
         byte[] bytes = new byte[length << coder];
         if (off0 > 0) {
             format.getBytes(bytes, 0, 0, coder, off0);
