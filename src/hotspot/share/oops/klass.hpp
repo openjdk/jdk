@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -161,7 +162,6 @@ class Klass : public Metadata {
 
   // Bitmap and hash code used by hashed secondary supers.
   uintx    _bitmap;
-  uint8_t  _hash_slot;
 
   static uint8_t compute_hash_slot(Symbol* s);
 
@@ -172,6 +172,8 @@ class Klass : public Metadata {
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
+  uint8_t  _hash_slot;
+  DEFINE_PAD_MINUS_SIZE(1, 4, sizeof(uint8_t)); //3 bytes padding after 1 byte _hash_slot for better layout
 
 private:
   // This is an index into FileMapHeader::_shared_path_table[], to
