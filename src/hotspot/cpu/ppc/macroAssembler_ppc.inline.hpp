@@ -276,6 +276,7 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
     }
     setbcr(dst, CCR0, Assembler::equal);
   } else {
+    assert_different_registers(temp, dst);
     neg(temp, dst);
     orr(temp, dst, temp);
     if (is_64bit) {
