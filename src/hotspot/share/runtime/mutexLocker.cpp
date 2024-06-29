@@ -435,7 +435,7 @@ int MutexLockerImpl::name2id(const char* name) {
 void MutexLockerImpl::print_counter_on(outputStream* st, const char* name, bool is_unique, int idx) {
   jlong count = _perf_lock_count[idx]->get_value();
   if (count > 0) {
-    st->print_cr("  %3d: %s%40s = %5ldms (%5ldms) / %9ld events", idx, (is_unique ? " " : "M"), name,
+    st->print_cr("  %3d: %s%40s = " JLONG_FORMAT_W(5) "ms (" JLONG_FORMAT_W(5) "ms) / " JLONG_FORMAT_W(9) " events", idx, (is_unique ? " " : "M"), name,
                  Management::ticks_to_ms(_perf_lock_hold_time[idx]->get_value()),
                  Management::ticks_to_ms(_perf_lock_wait_time[idx]->get_value()),
                  count);
