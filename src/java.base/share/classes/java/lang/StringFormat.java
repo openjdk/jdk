@@ -86,12 +86,12 @@ final class StringFormat {
             }
         }
 
-        if (conv == STRING && isBigInt(arg)) {
-            conv = DECIMAL_INTEGER;
-        }
-
         if (conv == STRING) {
-            arg = String.valueOf(arg);
+            if (isBigInt(arg)) {
+                conv = DECIMAL_INTEGER;
+            } else {
+                arg = String.valueOf(arg);
+            }
         }
 
         int size = stringSize(conv, arg);
