@@ -205,6 +205,7 @@ public class ClassReader {
       * @param classFileOffset the offset in byteBuffer of the first byte of the ClassFile to be read.
       * @param classFileLength the length in bytes of the ClassFile to be read.
       */
+    @SuppressWarnings("this-escape")
     public ClassReader(
             final byte[] classFileBuffer,
             final int classFileOffset,
@@ -226,7 +227,7 @@ public class ClassReader {
         this.b = classFileBuffer;
         // Check the class' major_version. This field is after the magic and minor_version fields, which
         // use 4 and 2 bytes respectively.
-        if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V23) {
+        if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V24) {
             throw new IllegalArgumentException(
                     "Unsupported class file major version " + readShort(classFileOffset + 6));
         }

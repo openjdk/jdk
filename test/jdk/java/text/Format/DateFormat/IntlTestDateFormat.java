@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary test International Date Format
- * @bug 8008577
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI IntlTestDateFormat
+ * @bug 8008577 8174269
+ * @run junit IntlTestDateFormat
  * @key randomness
  */
 /*

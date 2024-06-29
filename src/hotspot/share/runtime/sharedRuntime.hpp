@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,6 @@ class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
-  static bool resolve_sub_helper_internal(methodHandle callee_method, const frame& caller_frame,
-                                          CompiledMethod* caller_nm, bool is_virtual, bool is_optimized,
-                                          Handle receiver, CallInfo& call_info, Bytecodes::Code invoke_code, TRAPS);
-  static methodHandle resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS);
-
   // Shared stub locations
 
   static RuntimeStub*        _wrong_method_blob;
@@ -184,7 +179,7 @@ class SharedRuntime: AllStatic {
   static address exception_handler_for_return_address(JavaThread* current, address return_address);
 
   // exception handling and implicit exceptions
-  static address compute_compiled_exc_handler(CompiledMethod* nm, address ret_pc, Handle& exception,
+  static address compute_compiled_exc_handler(nmethod* nm, address ret_pc, Handle& exception,
                                               bool force_unwind, bool top_frame_only, bool& recursive_exception_occurred);
   enum ImplicitExceptionKind {
     IMPLICIT_NULL,
@@ -331,7 +326,7 @@ class SharedRuntime: AllStatic {
   // deopt blob
   static void generate_deopt_blob(void);
 
-  static bool handle_ic_miss_helper_internal(Handle receiver, CompiledMethod* caller_nm, const frame& caller_frame,
+  static bool handle_ic_miss_helper_internal(Handle receiver, nmethod* caller_nm, const frame& caller_frame,
                                              methodHandle callee_method, Bytecodes::Code bc, CallInfo& call_info,
                                              bool& needs_ic_stub_refill, TRAPS);
 
@@ -351,6 +346,9 @@ class SharedRuntime: AllStatic {
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
+
+  // Issue UL warning for unlocked JNI monitor on virtual thread termination
+  static void log_jni_monitor_still_held();
 
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -499,6 +497,7 @@ class SharedRuntime: AllStatic {
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
+  static address get_resolved_entry        (JavaThread* current, methodHandle callee_method);
   static address resolve_static_call_C     (JavaThread* current);
   static address resolve_virtual_call_C    (JavaThread* current);
   static address resolve_opt_virtual_call_C(JavaThread* current);
@@ -544,6 +543,8 @@ class SharedRuntime: AllStatic {
   static uint _unsafe_array_copy_ctr;      // Slow-path includes alignment checks
   static uint _generic_array_copy_ctr;     // Slow-path includes type decoding
   static uint _slow_array_copy_ctr;        // Slow-path failed out to a method call
+
+  static uint _unsafe_set_memory_ctr;      // Slow-path includes alignment checks
 
   static uint _new_instance_ctr;           // 'new' object requires GC
   static uint _new_array_ctr;              // 'new' array requires GC

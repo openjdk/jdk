@@ -55,6 +55,7 @@ import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * JFR.start
@@ -317,84 +318,110 @@ final class DCmdStart extends AbstractDCmd {
         return false;
     }
 
+    public String[] getStartupHelp() {
+        Map<String, String> parameters = Map.of(
+            "$SYNTAX", "-XX:StartFlightRecording:[options]",
+            "$SOURCE_NO_ARGUMENTS", "-XX:StartFlightRecording",
+            "$SOURCE", "-XX:StartFlightRecording:",
+            "$DELIMITER", ",",
+            "$DELIMITER_NAME", "comma",
+            "$DIRECTORY", exampleDirectory(),
+            "$JFC_OPTIONS", jfcOptions()
+        );
+        return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+    }
+
     @Override
-    public String[] printHelp() {
-        // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+    public String[] getHelp() {
+        Map<String, String> parameters = Map.of(
+           "$SYNTAX", "JFR.start [options]",
+           "$SOURCE_NO_ARGUMENTS", "$ jcmd <pid> JFR.start",
+           "$SOURCE", "$ jcmd <pid> JFR.start ",
+           "$DELIMITER", " ",
+           "$DELIMITER_NAME", "whitespace",
+           "$DIRECTORY", exampleDirectory(),
+           "$JFC_OPTIONS", jfcOptions()
+        );
+        return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+    }
+
+    private static String helpTemplate() {
+            // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
-               Syntax : JFR.start [options]
+               Syntax : $SYNTAX
 
                Options:
 
-                 delay           (Optional) Length of time to wait before starting to record
-                                 (INTEGER followed by 's' for seconds 'm' for minutes or h' for
-                                 hours, 0s)
+                 delay            (Optional) Length of time to wait before starting to record
+                                  (INTEGER followed by 's' for seconds 'm' for minutes or h' for
+                                  hours, 0s)
 
-                 disk            (Optional) Flag for also writing the data to disk while recording
-                                 (BOOLEAN, true)
+                 disk             (Optional) Flag for also writing the data to disk while recording
+                                  (BOOLEAN, true)
 
-                 dumponexit      (Optional) Flag for writing the recording to disk when the Java
-                                 Virtual Machine (JVM) shuts down. If set to 'true' and no value
-                                 is given for filename, the recording is written to a file in the
-                                 directory where the process was started. The file name is a
-                                 system-generated name that contains the process ID, the recording
-                                 ID and the current time stamp. (For example:
-                                 id-1-2021_09_14_09_00.jfr) (BOOLEAN, false)
+                 dumponexit       (Optional) Flag for writing the recording to disk when the Java
+                                  Virtual Machine (JVM) shuts down. If set to 'true' and no value
+                                  is given for filename, the recording is written to a file in the
+                                  directory where the process was started. The file name is a
+                                  system-generated name that contains the process ID, the recording
+                                  ID and the current time stamp. (For example:
+                                  id-1-2021_09_14_09_00.jfr) (BOOLEAN, false)
 
-                 duration        (Optional) Length of time to record. Note that 0s means forever
-                                 (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
-                                 hours, 0s)
+                 duration         (Optional) Length of time to record. Note that 0s means forever
+                                  (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
+                                  hours, 0s)
 
-                 filename        (Optional) Name of the file to which the flight recording data is
-                                 written when the recording is stopped. If no filename is given, a
-                                 filename is generated from the PID and the current date and is
-                                 placed in the directory where the process was started. The
-                                 filename may also be a directory in which case, the filename is
-                                 generated from the PID and the current date in the specified
-                                 directory. (STRING, no default value)
+                 filename         (Optional) Name of the file to which the flight recording data is
+                                  written when the recording is stopped. If no filename is given, a
+                                  filename is generated from the PID and the current date and is
+                                  placed in the directory where the process was started. The
+                                  filename may also be a directory in which case, the filename is
+                                  generated from the PID and the current date in the specified
+                                  directory. (STRING, no default value)
 
-                                 Note: If a filename is given, '%%p' in the filename will be
-                                 replaced by the PID, and '%%t' will be replaced by the time in
-                                 'yyyy_MM_dd_HH_mm_ss' format.
+                                  Note: If a filename is given, '%p' in the filename will be
+                                  replaced by the PID, and '%t' will be replaced by the time in
+                                  'yyyy_MM_dd_HH_mm_ss' format.
 
-                 maxage          (Optional) Maximum time to keep the recorded data on disk. This
-                                 parameter is valid only when the disk parameter is set to true.
-                                 Note 0s means forever. (INTEGER followed by 's' for seconds 'm'
-                                 for minutes or 'h' for hours, 0s)
+                 maxage           (Optional) Maximum time to keep the recorded data on disk. This
+                                  parameter is valid only when the disk parameter is set to true.
+                                  Note 0s means forever. (INTEGER followed by 's' for seconds 'm'
+                                  for minutes or 'h' for hours, 0s)
 
-                 maxsize         (Optional) Maximum size of the data to keep on disk in bytes if
-                                 one of the following suffixes is not used: 'm' or 'M' for
-                                 megabytes OR 'g' or 'G' for gigabytes. This parameter is valid
-                                 only when the disk parameter is set to 'true'. The value must not
-                                 be less than the value for the maxchunksize parameter set with
-                                 the JFR.configure command. (STRING, 0 (no max size))
+                 maxsize          (Optional) Maximum size of the data to keep on disk in bytes if
+                                  one of the following suffixes is not used: 'm' or 'M' for
+                                  megabytes OR 'g' or 'G' for gigabytes. This parameter is valid
+                                  only when the disk parameter is set to 'true'. The value must not
+                                  be less than the value for the maxchunksize parameter set with
+                                  the JFR.configure command. (STRING, 0 (no max size))
 
-                 name            (Optional) Name of the recording. If no name is provided, a name
-                                 is generated. Make note of the generated name that is shown in
-                                 the response to the command so that you can use it with other
-                                 commands. (STRING, system-generated default name)
+                 name             (Optional) Name of the recording. If no name is provided, a name
+                                  is generated. Make note of the generated name that is shown in
+                                  the response to the command so that you can use it with other
+                                  commands. (STRING, system-generated default name)
 
-                 path-to-gc-root (Optional) Flag for saving the path to garbage collection (GC)
-                                 roots at the end of a recording. The path information is useful
-                                 for finding memory leaks but collecting it is time consuming.
-                                 Turn on this flag only when you have an application that you
-                                 suspect has a memory leak. If the settings parameter is set to
-                                 'profile', then the information collected includes the stack
-                                 trace from where the potential leaking object was allocated.
-                                 (BOOLEAN, false)
+                 path-to-gc-roots (Optional) Flag for saving the path to garbage collection (GC)
+                                  roots at the end of a recording. The path information is useful
+                                  for finding memory leaks but collecting it is time consuming.
+                                  Turn on this flag only when you have an application that you
+                                  suspect has a memory leak. If the settings parameter is set to
+                                  'profile', then the information collected includes the stack
+                                  trace from where the potential leaking object was allocated.
+                                  (BOOLEAN, false)
 
-                 settings        (Optional) Name of the settings file that identifies which events
-                                 to record. To specify more than one file, use the settings
-                                 parameter repeatedly. Include the path if the file is not in
-                                 JAVA-HOME/lib/jfr. The following profiles are included with the
-                                 JDK in the JAVA-HOME/lib/jfr directory: 'default.jfc': collects a
-                                 predefined set of information with low overhead, so it has minimal
-                                 impact on performance and can be used with recordings that run
-                                 continuously; 'profile.jfc': Provides more data than the
-                                 'default.jfc' profile, but with more overhead and impact on
-                                 performance. Use this configuration for short periods of time
-                                 when more information is needed. Use none to start a recording
-                                 without a predefined configuration file. (STRING,
-                                 JAVA-HOME/lib/jfr/default.jfc)
+                 settings         (Optional) Name of the settings file that identifies which events
+                                  to record. To specify more than one file, use the settings
+                                  parameter repeatedly. Include the path if the file is not in
+                                  JAVA-HOME/lib/jfr. The following profiles are included with the
+                                  JDK in the JAVA-HOME/lib/jfr directory: 'default.jfc': collects a
+                                  predefined set of information with low overhead, so it has minimal
+                                  impact on performance and can be used with recordings that run
+                                  continuously; 'profile.jfc': Provides more data than the
+                                  'default.jfc' profile, but with more overhead and impact on
+                                  performance. Use this configuration for short periods of time
+                                  when more information is needed. Use none to start a recording
+                                  without a predefined configuration file. (STRING,
+                                  JAVA-HOME/lib/jfr/default.jfc)
 
                Event settings and .jfc options can also be specified using the following syntax:
 
@@ -409,27 +436,28 @@ final class DCmdStart extends AbstractDCmd {
                take  precedence. The whitespace character can be omitted for timespan values,
                i.e. 20s. For more information about the settings syntax, see Javadoc of the
                jdk.jfr package.
-               %s
-               Options must be specified using the <key> or <key>=<value> syntax.
+               $JFC_OPTIONS
+               Options must be specified using the <key> or <key>=<value> syntax. Multiple
+               options are separated with a $DELIMITER_NAME.
 
                Example usage:
 
-                $ jcmd <pid> JFR.start
-                $ jcmd <pid> JFR.start filename=dump.jfr
-                $ jcmd <pid> JFR.start filename=%s
-                $ jcmd <pid> JFR.start dumponexit=true
-                $ jcmd <pid> JFR.start maxage=1h,maxsize=1000M
-                $ jcmd <pid> JFR.start settings=profile
-                $ jcmd <pid> JFR.start delay=5m,settings=my.jfc
-                $ jcmd <pid> JFR.start gc=high method-profiling=high
-                $ jcmd <pid> JFR.start jdk.JavaMonitorEnter#threshold=1ms
-                $ jcmd <pid> JFR.start +HelloWorld#enabled=true +HelloWorld#stackTrace=true
-                $ jcmd <pid> JFR.start settings=user.jfc com.example.UserDefined#enabled=true
-                $ jcmd <pid> JFR.start settings=none +Hello#enabled=true
+                $SOURCE_NO_ARGUMENTS
+                $SOURCEfilename=dump.jfr
+                $SOURCEfilename=$DIRECTORY
+                $SOURCEdumponexit=true
+                $SOURCEmaxage=1h$DELIMITERmaxsize=1000M
+                $SOURCEsettings=profile
+                $SOURCEdelay=5m$DELIMITERsettings=my.jfc
+                $SOURCEgc=high$DELIMITERmethod-profiling=high
+                $SOURCEjdk.JavaMonitorEnter#threshold=1ms
+                $SOURCE+HelloWorld#enabled=true$DELIMITER+HelloWorld#stackTrace=true
+                $SOURCEsettings=user.jfc$DELIMITERcom.example.UserDefined#enabled=true
+                $SOURCEsettings=none$DELIMITER+Hello#enabled=true
 
-               Note, if the default event settings are modified, overhead may exceed 1%%.
+               Note, if the default event settings are modified, overhead may exceed 1%.
 
-               """.formatted(jfcOptions(), exampleDirectory()).lines().toArray(String[]::new);
+               """;
     }
 
     private static String jfcOptions() {

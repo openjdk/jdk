@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,7 +668,7 @@ JfrThreadSampling::~JfrThreadSampling() {
 }
 
 #ifdef ASSERT
-void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
+static void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
   assert(sampler != nullptr, "invariant");
   assert(sampler->get_java_period() == java_period_millis, "invariant");
   assert(sampler->get_native_period() == native_period_millis, "invariant");

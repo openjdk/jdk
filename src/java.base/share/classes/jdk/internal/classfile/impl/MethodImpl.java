@@ -118,7 +118,7 @@ public final class MethodImpl
 
     @Override
     public Optional<CodeModel> code() {
-        return findAttribute(Attributes.CODE).map(a -> (CodeModel) a);
+        return findAttribute(Attributes.code()).map(a -> (CodeModel) a);
     }
 
     @Override

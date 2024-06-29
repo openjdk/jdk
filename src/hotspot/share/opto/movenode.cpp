@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,12 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
     return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
+
+  Node* minmax = Ideal_minmax(phase, this);
+  if (minmax != nullptr) {
+    return minmax;
+  }
+
   return nullptr;
 }
 
@@ -163,6 +169,13 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(IfTrue)) == Type::TOP || phase->type(in(IfFalse)) == Type::TOP) {
     return Type::TOP;
   }
+  if (phase->type(in(Condition)) == TypeInt::ZERO) {
+    return phase->type(in(IfFalse))->filter(_type); // Always pick left (false) input
+  }
+  if (phase->type(in(Condition)) == TypeInt::ONE) {
+    return phase->type(in(IfTrue))->filter(_type);  // Always pick right (true) input
+  }
+
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }
@@ -182,6 +195,64 @@ CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Ty
     default:
     ShouldNotReachHere();
     return nullptr;
+  }
+}
+
+// Try to identify min/max patterns in CMoves
+Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
+  // Only create MinL/MaxL if we are allowed to create macro nodes.
+  if (!phase->C->allow_macro_nodes()) {
+    return nullptr;
+  }
+
+  // The BoolNode may have been idealized into a constant. If that's the case, then Identity should take care of it instead.
+  BoolNode* bol = cmove->in(CMoveNode::Condition)->isa_Bool();
+  if (bol == nullptr) {
+    return nullptr;
+  }
+
+  Node* cmp = bol->in(1);
+  int cmove_op = cmove->Opcode();
+  int cmp_op = cmp->Opcode();
+
+  // Ensure comparison is an integral type, and that the cmove is of the same type.
+  if (!((cmp_op == Op_CmpI && cmove_op == Op_CMoveI) || (cmp_op == Op_CmpL && cmove_op == Op_CMoveL))) {
+    return nullptr;
+  }
+
+  // Only accept canonicalized le and lt comparisons
+  int test = bol->_test._test;
+  if (test != BoolTest::le && test != BoolTest::lt) {
+    return nullptr;
+  }
+
+  // The values being compared
+  Node* cmp_l = cmp->in(1);
+  Node* cmp_r = cmp->in(2);
+
+  // The values being selected
+  Node* cmove_l = cmove->in(CMoveNode::IfTrue);
+  Node* cmove_r = cmove->in(CMoveNode::IfFalse);
+
+  // For this transformation to be valid, the values being compared must be the same as the values being selected.
+  // We accept two different forms, "a < b ? a : b" and "a < b ? b : a". For the first form, the lhs and rhs of the
+  // comparison and cmove are the same, resulting in a minimum. For the second form, the lhs and rhs of both are flipped,
+  // resulting in a maximum. If neither form is found, bail out.
+
+  bool is_max;
+  if (cmp_l == cmove_l && cmp_r == cmove_r) {
+    is_max = false;
+  } else if (cmp_l == cmove_r && cmp_r == cmove_l) {
+    is_max = true;
+  } else {
+    return nullptr;
+  }
+
+  // Create the Min/Max node based on the type and kind
+  if (cmp_op == Op_CmpL) {
+    return MaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
+  } else {
+    return MaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
   }
 }
 

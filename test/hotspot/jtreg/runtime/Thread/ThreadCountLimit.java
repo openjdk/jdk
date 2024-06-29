@@ -26,6 +26,7 @@
  * @summary Stress test that reaches the process limit for thread count, or time limit.
  * @requires os.family != "aix"
  * @key stress
+ * @library /test/lib
  * @run main/othervm -Xmx1g ThreadCountLimit
  */
 
@@ -34,11 +35,16 @@
  * @summary Stress test that reaches the process limit for thread count, or time limit.
  * @requires os.family == "aix"
  * @key stress
+ * @library /test/lib
  * @run main/othervm -Xmx1g -XX:MaxExpectedDataSegmentSize=16g ThreadCountLimit
  */
 
 import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ThreadCountLimit {
 
@@ -61,21 +67,42 @@ public class ThreadCountLimit {
     }
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
+    if (args.length == 0) {
+      // Called from the driver process so exec a new JVM on Linux.
+      if (Platform.isLinux()) {
+        // On Linux this test sometimes hits the limit for the maximum number of memory mappings,
+        // which leads to various other failure modes. Run this test with a limit on how many
+        // threads the process is allowed to create, so we hit that limit first.
+
+        final String ULIMIT_CMD = "ulimit -u 4096";
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(ThreadCountLimit.class.getName());
+        String javaCmd = ProcessTools.getCommandLine(pb);
+        // Relaunch the test with args.length > 0, and the ulimit set
+        ProcessTools.executeCommand("bash", "-c", ULIMIT_CMD + " && " + javaCmd + " dummy")
+                    .shouldHaveExitValue(0);
+      } else {
+        // Not Linux so run directly.
+        test();
+      }
+    } else {
+      // This is the exec'd process so run directly.
+      test();
+    }
+  }
+
+  static void test() {
     CountDownLatch startSignal = new CountDownLatch(1);
     ArrayList<Worker> workers = new ArrayList<Worker>();
 
-    boolean reachedTimeLimit = false;
     boolean reachedNativeOOM = false;
-    int countAtTimeLimit = -1;
-    int countAtNativeOOM = -1;
 
     // This is dangerous loop: it depletes system resources,
     // so doing additional things there that may end up allocating
     // Java/native memory risks failing the VM prematurely.
     // Avoid doing unnecessary calls, printouts, etc.
 
-    int count = 1;
+    int count = 0;
     long start = System.currentTimeMillis();
     try {
       while (true) {
@@ -86,16 +113,15 @@ public class ThreadCountLimit {
 
         long end = System.currentTimeMillis();
         if ((end - start) > TIME_LIMIT_MS) {
-          reachedTimeLimit = true;
-          countAtTimeLimit = count;
+          // Windows always gets here, but we also get here if
+          // ulimit is set high enough.
           break;
         }
       }
     } catch (OutOfMemoryError e) {
       if (e.getMessage().contains("unable to create native thread")) {
-        // Linux, macOS path
+        // Linux, macOS path if we hit ulimit
         reachedNativeOOM = true;
-        countAtNativeOOM = count;
       } else {
         throw e;
       }
@@ -113,13 +139,12 @@ public class ThreadCountLimit {
 
     // Now that all threads have joined, we are away from dangerous
     // VM state and have enough memory to perform any other things.
-    if (reachedTimeLimit) {
-       // Windows path or a system with very large ulimit
-       System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
-                          " ms, with " + countAtTimeLimit + " threads created");
-    } else if (reachedNativeOOM) {
-       System.out.println("INFO: reached this process thread count limit with " +
-                           countAtNativeOOM + " threads created");
+    if (reachedNativeOOM) {
+      System.out.println("INFO: reached this process thread count limit with " +
+                         count + " threads created");
+    } else {
+      System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
+                         " ms, with " + count + " threads created");
     }
   }
 }

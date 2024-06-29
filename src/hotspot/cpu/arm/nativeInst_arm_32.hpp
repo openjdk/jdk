@@ -385,7 +385,7 @@ class NativeMovConstReg: public NativeInstruction {
   }
   void set_pc_relative_offset(address addr, address pc);
   address next_instruction_address() const {
-    // NOTE: CompiledStaticCall::set_to_interpreted() calls this but
+    // NOTE: CompiledDirectCall::set_to_interpreted() calls this but
     // are restricted to single-instruction ldr. No need to jump over
     // several instructions.
     assert(is_ldr_literal(), "Should only use single-instructions load");
@@ -415,6 +415,7 @@ inline NativeJump* nativeJump_at(address address) {
 
 class NativeCall: public RawNativeCall {
 public:
+  static int byte_size() { return instruction_size; }
   // NativeCall::next_instruction_address() is used only to define the
   // range where to look for the relocation information. We need not
   // walk over composed instructions (as long as the relocation information

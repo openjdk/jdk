@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @run testng BadCanonicalCtrTest
  */
 
@@ -38,19 +38,22 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -203,33 +206,9 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] removeConstructor(byte[] classBytes) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(new RemoveCanonicalCtrVisitor(writer), 0);
-        return writer.toByteArray();
-    }
-
-    /** Removes the <init> method. */
-    static class RemoveCanonicalCtrVisitor extends ClassVisitor {
-        static final String CTR_NAME = "<init>";
-        RemoveCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM8, cv);
-        }
-        volatile boolean foundCanonicalCtr;
-        @Override
-        public MethodVisitor visitMethod(final int access,
-                                         final String name,
-                                         final String descriptor,
-                                         final String signature,
-                                         final String[] exceptions) {
-            if (name.equals(CTR_NAME)) {  // assume just a single constructor
-                assert foundCanonicalCtr == false;
-                foundCanonicalCtr = true;
-                return null;
-            } else {
-                return cv.visitMethod(access, name, descriptor, signature, exceptions);
-            }
-        }
+        var cf = ClassFile.of();
+        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
+                ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
 
     /**
@@ -237,55 +216,15 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] modifyConstructor(byte[] classBytes) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(new ModifyCanonicalCtrVisitor(writer), 0);
-        return writer.toByteArray();
-    }
-
-    /** Replaces whatever <init> method it finds with <init>(Ljava/lang/Object;)V. */
-    static class ModifyCanonicalCtrVisitor extends ClassVisitor {
-        ModifyCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM8, cv);
-        }
-        boolean foundCanonicalCtr;
-        String className;
-        @Override
-        public void visit(final int version,
-                          final int access,
-                          final String name,
-                          final String signature,
-                          final String superName,
-                          final String[] interfaces) {
-            this.className = name;
-            cv.visit(version, access, name, signature, superName, interfaces);
-        }
-        @Override
-        public MethodVisitor visitMethod(final int access,
-                                         final String name,
-                                         final String descriptor,
-                                         final String signature,
-                                         final String[] exceptions) {
-            if (name.equals("<init>")) {  // assume just a single constructor
-                assert foundCanonicalCtr == false;
-                foundCanonicalCtr = true;
-                return null;
-            } else {
-                return cv.visitMethod(access, name, descriptor, signature, exceptions);
-            }
-        }
-        @Override
-        public void visitEnd() {
-            // must have a signature that is not the same as the test record constructor
-            MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Record", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-
-            cv.visitEnd();
-        }
+        var cf = ClassFile.of();
+        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
+                        ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
+                .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
+                        MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
+                            cob.aload(0);
+                            cob.invokespecial(Record.class.describeConstable().orElseThrow(),
+                                    INIT_NAME, MTD_void);
+                            cob.return_();
+                        }))));
     }
 }

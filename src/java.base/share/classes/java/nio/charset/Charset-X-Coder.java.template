@@ -184,6 +184,7 @@ public abstract class Charset$Coder$ {
      *          If the preconditions on the parameters do not hold
      */
     {#if[encoder]?protected:private}
+    @SuppressWarnings("this-escape")
     Charset$Coder$(Charset cs,
                    float average$ItypesPerOtype$,
                    float max$ItypesPerOtype$,
@@ -227,6 +228,7 @@ public abstract class Charset$Coder$ {
      * @throws  IllegalArgumentException
      *          If the preconditions on the parameters do not hold
      */
+    @SuppressWarnings("this-escape")
     protected Charset$Coder$(Charset cs,
                              float average$ItypesPerOtype$,
                              float max$ItypesPerOtype$)

@@ -7424,7 +7424,7 @@ public final class AccessBridge {
      * A helper class to handle coordinate conversion between screen and user spaces.
      * See {@link sun.java2d.SunGraphicsEnvironment}
      */
-    private static abstract class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
+    private abstract static class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
         /**
          * Returns the graphics configuration which bounds contain the given point in the user's space.
          *

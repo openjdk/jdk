@@ -349,7 +349,7 @@ will most likely need to install developer packages.
 For apt-based distributions (Debian, Ubuntu, etc), try this:
 
 ```
-sudo apt-get install build-essential
+sudo apt-get install build-essential autoconf
 ```
 
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
@@ -382,7 +382,7 @@ one-to-one correlation between target operating system and toolchain.
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
-| AIX                | IBM XL C/C++              |
+| AIX                | IBM Open XL C/C++         |
 | Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
@@ -403,7 +403,7 @@ C, and C++14 for C++.
 
 ### gcc
 
-The minimum accepted version of gcc is 6.0. Older versions will not be accepted
+The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
 The JDK is currently known to compile successfully with gcc version 13.2 or
@@ -413,14 +413,14 @@ In general, any version between these two should be usable.
 
 ### clang
 
-The minimum accepted version of clang is 3.5. Older versions will not be
+The minimum accepted version of clang is 13. Older versions will not be
 accepted by `configure`.
 
 To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 ### Apple Xcode
 
-The oldest supported version of Xcode is 8.
+The oldest supported version of Xcode is 13.0.
 
 You will need the Xcode command line developer tools to be able to build the
 JDK. (Actually, *only* the command line tools are needed, not the IDE.) The
@@ -487,11 +487,10 @@ that the " characters are essential)
 accordingly. If you have not installed the `BuildTools`, but e.g.
 `Professional`, adjust the product ID accordingly.
 
-### IBM XL C/C++
+### IBM Open XL C/C++
 
-Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK Build
-Wiki page for details about which versions of XLC are supported.
+The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
+15, and will be treated as such by the OpenJDK build system.
 
 ## Boot JDK Requirements
 
@@ -684,6 +683,14 @@ The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
+
+### Graphviz and Pandoc
+
+In order to build the full docs (see the `--enable-full-docs`
+configure option) [Graphviz](https://www.graphviz.org) and
+[Pandoc](https://pandoc.org) are required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
 
 ## Running Configure
 
@@ -1944,12 +1951,25 @@ configuration with the name `<name>`. Alternatively, you can create a directory
 under `build` and run `configure` from there, e.g. `mkdir build/<name> && cd
 build/<name> && bash ../../configure`.
 
-Then you can build that configuration using `make CONF_NAME=<name>` or `make
-CONF=<pattern>`, where `<pattern>` is a substring matching one or several
-configurations, e.g. `CONF=debug`. The special empty pattern (`CONF=`) will
-match *all* available configuration, so `make CONF= hotspot` will build the
-`hotspot` target for all configurations. Alternatively, you can execute `make`
-in the configuration directory, e.g. `cd build/<name> && make`.
+Then you can build that configuration using `make CONF=<selector>`, where
+`<selector>` is interpreted as follows:
+
+* If `<selector>` exacly matches the name of a configuration, this and only
+  this configuration will be selected.
+* If `<selector>` matches (i.e. is a substring of) the names of several
+  configurations, then all these configurations will be selected.
+* If `<selector>` is empty (i.e. `CONF=`), then all configurations will be
+  selected.
+* If `<selector>` begins with `!`, then all configurations **not** matching the
+  string following `!` will be selected.
+
+A more specialized version, `CONF_NAME=<name>` also exists, which will only
+match if the given `<name>` exactly matches a single configuration.
+
+Alternatively, you can execute `make` in the configuration directory, e.g. `cd
+build/<name> && make`.
+
+`make CONF_NAME=<name>` or
 
 ### Handling Reconfigurations
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,6 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 
 com/sun/jdi/ExceptionEvents.java 8278470 generic-all
 com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
-com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
-com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
-com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
-
-sun/tools/jcmd/JcmdOutputEncodingTest.java 8308033 generic-all
-sun/tools/jstack/BasicJStackTest.java 8308033 generic-all
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
 
@@ -75,4 +69,5 @@ java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic
 java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
-javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 0000000 generic-all
+javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
+javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all

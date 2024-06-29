@@ -59,6 +59,7 @@ public class CtrDrbg extends AbstractDrbg {
     private byte[] v;
     private byte[] k;
 
+    @SuppressWarnings("this-escape")
     public CtrDrbg(SecureRandomParameters params) {
         mechName = "CTR_DRBG";
         configure(params);

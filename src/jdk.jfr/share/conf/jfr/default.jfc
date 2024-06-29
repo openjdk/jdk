@@ -200,16 +200,6 @@
       <setting name="threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SafepointCleanup">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanupTask">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
     <event name="jdk.SafepointEnd">
       <setting name="enabled">false</setting>
       <setting name="threshold">10 ms</setting>
@@ -833,6 +823,7 @@
 
     <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 

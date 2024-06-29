@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/zipLibrary.hpp"
 
 // The VM class loader.
@@ -166,8 +167,25 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_define_appclass_selftime;
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
+  static PerfCounter* _perf_ik_link_methods_time;
+  static PerfCounter* _perf_method_adapters_time;
+  static PerfCounter* _perf_ik_link_methods_count;
+  static PerfCounter* _perf_method_adapters_count;
+
+  static PerfCounter* _perf_resolve_indy_time;
+  static PerfCounter* _perf_resolve_invokehandle_time;
+  static PerfCounter* _perf_resolve_mh_time;
+  static PerfCounter* _perf_resolve_mt_time;
+
+  static PerfCounter* _perf_resolve_indy_count;
+  static PerfCounter* _perf_resolve_invokehandle_count;
+  static PerfCounter* _perf_resolve_mh_count;
+  static PerfCounter* _perf_resolve_mt_count;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
+
+  // Count the time taken to hash the scondary superclass arrays.
+  static PerfCounter* _perf_secondary_hash_time;
 
   // The boot class path consists of 3 ordered pieces:
   //  1. the module/path pairs specified to --patch-module
@@ -269,6 +287,9 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
+  static PerfCounter* perf_secondary_hash_time() {
+    return _perf_secondary_hash_time;
+  }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }
   static PerfCounter* perf_app_classload_selftime()   { return _perf_app_classload_selftime; }
@@ -278,6 +299,23 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
+
+  static PerfCounter* perf_ik_link_methods_time() { return _perf_ik_link_methods_time; }
+  static PerfCounter* perf_method_adapters_time() { return _perf_method_adapters_time; }
+  static PerfCounter* perf_ik_link_methods_count() { return _perf_ik_link_methods_count; }
+  static PerfCounter* perf_method_adapters_count() { return _perf_method_adapters_count; }
+
+  static PerfCounter* perf_resolve_invokedynamic_time() { return _perf_resolve_indy_time; }
+  static PerfCounter* perf_resolve_invokehandle_time() { return _perf_resolve_invokehandle_time; }
+  static PerfCounter* perf_resolve_method_handle_time() { return _perf_resolve_mh_time; }
+  static PerfCounter* perf_resolve_method_type_time() { return _perf_resolve_mt_time; }
+
+  static PerfCounter* perf_resolve_invokedynamic_count() { return _perf_resolve_indy_count; }
+  static PerfCounter* perf_resolve_invokehandle_count() { return _perf_resolve_invokehandle_count; }
+  static PerfCounter* perf_resolve_method_handle_count() { return _perf_resolve_mh_count; }
+  static PerfCounter* perf_resolve_method_type_count() { return _perf_resolve_mt_count; }
+
+  static void print_counters(outputStream *st);
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
@@ -292,14 +330,14 @@ class ClassLoader: AllStatic {
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(JavaThread* current, Symbol* module_name);
 
-  // Attempt load of individual class from either the patched or exploded modules build lists
+  // Search the module list for the class file stream based on the file name and java package
   static ClassFileStream* search_module_entries(JavaThread* current,
                                                 const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                const char* const class_name,
+                                                PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                 const char* const file_name);
 
   // Load individual .class file
-  static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
+  static InstanceKlass* load_class(Symbol* class_name, PackageEntry* pkg_entry, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.

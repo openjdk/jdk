@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,15 @@
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-import jdk.internal.org.objectweb.asm.*;
+
 // Compile with -XDignore.symbol.file=true
 
 public class BogoLoader extends ClassLoader {
-
-    static interface VisitorMaker {
-    ClassVisitor make(ClassVisitor visitor);
-    }
-
 
     /**
      * Use this property to verify that the desired classloading is happening.
@@ -56,7 +53,7 @@ public class BogoLoader extends ClassLoader {
     /**
      * Map from class names to a bytecode transformer factory.
      */
-    private Map<String, VisitorMaker> replaced;
+    private Map<String, ClassTransform> replaced;
 
     /**
      * Keep track (not terribly efficiently) of which classes have already
@@ -68,7 +65,7 @@ public class BogoLoader extends ClassLoader {
         return ! nonSystem.contains(name) && ! replaced.containsKey(name);
     }
 
-    public BogoLoader(Set<String> non_system, Map<String, VisitorMaker> replaced) {
+    public BogoLoader(Set<String> non_system, Map<String, ClassTransform> replaced) {
         super(Thread.currentThread().getContextClassLoader());
         this.nonSystem = non_system;
         this.replaced = replaced;
@@ -127,11 +124,8 @@ public class BogoLoader extends ClassLoader {
                     if (verbose) {
                         System.err.println("Replacing class " + name);
                     }
-                    ClassReader cr = new ClassReader(classData);
-                    ClassWriter cw = new ClassWriter(0);
-                    VisitorMaker vm = replaced.get(name);
-                    cr.accept(vm.make(cw), 0);
-                    classData = cw.toByteArray();
+                    var cf = ClassFile.of();
+                    classData = cf.transform(cf.parse(classData), replaced.get(name));
                 }
                 clazz = defineClass(name, classData, 0, classData.length);
             } catch (java.io.EOFException ioe) {

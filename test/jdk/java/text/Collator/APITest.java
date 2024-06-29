@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,6 @@
  */
 
 /*
- * @test
- * @library /java/text/testlib
- * @summary test Collation API
- * @modules jdk.localedata
- * @run junit APITest
- */
-/*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
 (C) Copyright IBM Corp. 1996 - All Rights Reserved
 
@@ -39,6 +32,14 @@ technology is protected by multiple US and International patents. This notice an
 attribution to Taligent may not be removed.
   Taligent is a registered trademark of Taligent, Inc.
 */
+
+/*
+ * @test
+ * @library /java/text/testlib
+ * @summary test Collation API
+ * @modules jdk.localedata
+ * @run junit APITest
+ */
 
 import java.util.Locale;
 import java.text.Collator;
@@ -59,6 +60,7 @@ public class APITest {
         }
     }
 
+    @Test
     public final void TestProperty( )
     {
         Collator col = null;
@@ -134,6 +136,7 @@ public class APITest {
         System.out.println("Collator property test ended.");
     }
 
+    @Test
     public final void TestHashCode( )
     {
         System.out.println("hashCode tests begin.");
@@ -175,6 +178,7 @@ public class APITest {
     //----------------------------------------------------------------------------
     // ctor -- Tests the constructor methods
     //
+    @Test
     public final void TestCollationKey( )
     {
         System.out.println("testing CollationKey begins...");
@@ -214,6 +218,7 @@ public class APITest {
     //----------------------------------------------------------------------------
     // ctor -- Tests the constructor methods
     //
+    @Test
     public final void TestElemIter( )
     {
         System.out.println("testing sortkey begins...");
@@ -306,6 +311,7 @@ public class APITest {
         System.out.println("testing CollationElementIterator ends...");
     }
 
+    @Test
     public final void TestGetAll()
     {
         Locale[] list = Collator.getAvailableLocales();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,7 +407,8 @@ public abstract class DateFormat extends Format {
 
     /**
      * Parse a date/time string according to the given parse position.  For
-     * example, a time text {@code "07/10/96 4:5 PM, PDT"} will be parsed into a {@code Date}
+     * example, if {@code this} has the pattern {@code "M/d/yy h:m a, z"},
+     * then a time text {@code "07/10/96 4:5 PM, PDT"} will be parsed into a {@code Date}
      * that is equivalent to {@code Date(837039900000L)}.
      *
      * <p> By default, parsing is lenient: If the input is not in the form used
@@ -481,6 +482,31 @@ public abstract class DateFormat extends Format {
      * Constant for default style pattern.  Its value is MEDIUM.
      */
     public static final int DEFAULT = MEDIUM;
+
+    /**
+     * A DateFormat style.
+     * {@code Style} is an enum which corresponds to the DateFormat style
+     * constants. Use {@code getValue()} to retrieve the associated int style
+     * value.
+     */
+    enum Style {
+
+        FULL(DateFormat.FULL),
+        LONG(DateFormat.LONG),
+        MEDIUM(DateFormat.MEDIUM),
+        SHORT(DateFormat.SHORT),
+        DEFAULT(DateFormat.MEDIUM);
+
+        private final int value;
+
+        Style(int value){
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
 
     /**
      * Gets the time formatter with the default formatting style
@@ -746,6 +772,10 @@ public abstract class DateFormat extends Format {
      * <p>This leniency value is overwritten by a call to {@link
      * #setCalendar(java.util.Calendar) setCalendar()}.
      *
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with lenient parsing; otherwise, it will not match.
+     *
      * @param lenient when {@code true}, parsing is lenient
      * @see java.util.Calendar#setLenient(boolean)
      */
@@ -933,6 +963,7 @@ public abstract class DateFormat extends Format {
          *        be used, but {@code -1} should be used for values
          *        that don't correspond to legal {@code Calendar} values
          */
+        @SuppressWarnings("this-escape")
         protected Field(String name, int calendarField) {
             super(name);
             this.calendarField = calendarField;

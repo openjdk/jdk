@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -58,6 +57,7 @@ void mutex_init();
 void universe_oopstorage_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
+void ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 
 // Initialization done by Java thread in init_globals()
 void management_init();
@@ -83,7 +83,6 @@ void jni_handles_init();
 void vmStructs_init() NOT_DEBUG_RETURN;
 
 void vtableStubs_init();
-void InlineCacheBuffer_init();
 bool compilerOracle_init();
 bool compileBroker_init();
 void dependencyContext_init();
@@ -109,6 +108,7 @@ void vm_init_globals() {
   universe_oopstorage_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
+  ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 }
 
 
@@ -163,7 +163,6 @@ jint init_globals2() {
 #endif // INCLUDE_VM_STRUCTS
 
   vtableStubs_init();
-  InlineCacheBuffer_init();
   if (!compilerOracle_init()) {
     return JNI_EINVAL;
   }

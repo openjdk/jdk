@@ -26,13 +26,10 @@
 # This file is in the public domain.
 
 # This file is generated automatically from the data in the public-domain
-# NIST format leap-seconds.list file, which can be copied from
-# <ftp://ftp.nist.gov/pub/time/leap-seconds.list>
-# or <ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list>.
-# The NIST file is used instead of its IERS upstream counterpart
+# NIST/IERS format leap-seconds.list file, which can be copied from
 # <https://hpiers.obspm.fr/iers/bul/bulc/ntp/leap-seconds.list>
-# because under US law the NIST file is public domain
-# whereas the IERS file's copyright and license status is unclear.
+# or, in a variant with different comments, from
+# <ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list>.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
 # <https://www.eecis.udel.edu/~mills/leap.html>.
@@ -95,11 +92,11 @@ Leap	2016	Dec	31	23:59:60	+	S
 # Any additional leap seconds will come after this.
 # This Expires line is commented out for now,
 # so that pre-2020a zic implementations do not reject this file.
-#Expires 2024	Jun	28	00:00:00
+#Expires 2024	Dec	28	00:00:00
 
 # POSIX timestamps for the data in this file:
-#updated 1467936000 (2016-07-08 00:00:00 UTC)
-#expires 1719532800 (2024-06-28 00:00:00 UTC)
+#updated 1704708379 (2024-01-08 10:06:19 UTC)
+#expires 1735344000 (2024-12-28 00:00:00 UTC)
 
-#	Updated through IERS Bulletin C66
-#	File expires on:  28 June 2024
+#	Updated through IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.dat)
+#	File expires on 28 December 2024

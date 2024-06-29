@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -717,17 +718,10 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   {
     MutexLocker locker(Compile_lock);
     InstanceKlass* context = actual_recv->get_instanceKlass();
-    if (UseVtableBasedCHA) {
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
-                                                                              root_m->get_Method(),
-                                                                              callee_holder->get_Klass(),
-                                                                              this->get_Method()));
-    } else {
-      if (root_m->is_abstract()) {
-        return nullptr; // not supported
-      }
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
-    }
+    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
+                                                                            root_m->get_Method(),
+                                                                            callee_holder->get_Klass(),
+                                                                            this->get_Method()));
     assert(target() == nullptr || !target()->is_abstract(), "not allowed");
     // %%% Should upgrade this ciMethod API to look for 1 or 2 concrete methods.
   }
@@ -1062,7 +1056,7 @@ MethodCounters* ciMethod::ensure_method_counters() {
 // ------------------------------------------------------------------
 // ciMethod::has_option
 //
-bool ciMethod::has_option(enum CompileCommand option) {
+bool ciMethod::has_option(CompileCommandEnum option) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
@@ -1072,7 +1066,7 @@ bool ciMethod::has_option(enum CompileCommand option) {
 // ------------------------------------------------------------------
 // ciMethod::has_option_value
 //
-bool ciMethod::has_option_value(enum CompileCommand option, double& value) {
+bool ciMethod::has_option_value(CompileCommandEnum option, double& value) {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
@@ -1129,7 +1123,7 @@ int ciMethod::code_size_for_inlining() {
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-      CompiledMethod* code = get_Method()->code();
+      nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
         int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
@@ -1145,7 +1139,7 @@ int ciMethod::inline_instructions_size() {
 // ciMethod::log_nmethod_identity
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
-    CompiledMethod* code = get_Method()->code();
+    nmethod* code = get_Method()->code();
     if (code != nullptr) {
       code->log_identity(log);
     }

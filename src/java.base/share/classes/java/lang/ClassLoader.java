@@ -431,6 +431,7 @@ public abstract class ClassLoader {
      *
      * @since  9
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader(String name, ClassLoader parent) {
         this(checkCreateClassLoader(name), name, parent);
     }
@@ -457,6 +458,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader(ClassLoader parent) {
         this(checkCreateClassLoader(), null, parent);
     }
@@ -476,6 +478,7 @@ public abstract class ClassLoader {
      *          {@code checkCreateClassLoader} method doesn't allow creation
      *          of a new class loader.
      */
+    @SuppressWarnings("this-escape")
     protected ClassLoader() {
         this(checkCreateClassLoader(), null, getSystemClassLoader());
     }

@@ -1,4 +1,4 @@
-Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@ This directory contains source files of testbase_nsk native
 framework, which provides support for native tests.
 
     Source files:
-        nsk_tools.h
-        nsk_tools.c
+        nsk_tools.hpp
+        nsk_tools.cpp
 
     Naming conventions:
         macroses:  NSK_*
@@ -36,8 +36,8 @@ Also this directory provides support for running native threads
 in a platform independent manner.
 
     Source files:
-        native_thread.h
-        native_thread.c
+        native_thread.hpp
+        native_thread.cpp
 
     Naming conventions:
         functions: THREAD_*
@@ -46,15 +46,15 @@ The following source files declares a set of functions which
 provides support for lists of various objects
 
     Source files:
-        nsk_list.h
-        nsk_list.c
+        nsk_list.hpp
+        nsk_list.cpp
 
     Naming conventions:
         functions: nsk_list_*
 
 ---------------------------------------------------------------------------------
 
-nsk_tools.h
+nsk_tools.hpp
 
 Provides functions and macroses for the most usefull actions:
 
@@ -100,7 +100,7 @@ use special macroses defined in share/jni and share/jvmti frameworks.
 
 ---------------------------------------------------------------------------------
 
-native_thread.h
+native_thread.hpp
 
 Provides platform-independent support for running native threads:
 
@@ -119,7 +119,7 @@ Provides platform-independent support for running native threads:
 
 ---------------------------------------------------------------------------------
 
-nsk_list.h
+nsk_list.hpp
 
 Provides support for lists of various objects:
 

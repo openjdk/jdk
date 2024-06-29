@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,9 @@ public class SignatureUtil {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
             } else {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.endsWith("INP1363FORMAT")) {
+                keyAlgorithm = keyAlgorithm.substring(0, keyAlgorithm.length() - 13);
             }
             if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
                 keyAlgorithm = "EC";

@@ -1232,11 +1232,9 @@ final class FilePermissionCollection extends PermissionCollection
     };
 
     /**
-     * @serialData "permissions" field (a Vector containing the FilePermissions).
-     */
-    /**
      * Writes the contents of the perms field out as a Vector for
      * serialization compatibility with earlier releases.
+     * @serialData "permissions" field (a Vector containing the FilePermissions).
      *
      * @param  out the {@code ObjectOutputStream} to which data is written
      * @throws IOException if an I/O error occurs

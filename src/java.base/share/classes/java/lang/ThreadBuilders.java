@@ -272,7 +272,7 @@ class ThreadBuilders {
     /**
      * Base ThreadFactory implementation.
      */
-    private static abstract class BaseThreadFactory implements ThreadFactory {
+    private abstract static class BaseThreadFactory implements ThreadFactory {
         private static final VarHandle COUNT;
         static {
             try {

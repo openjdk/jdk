@@ -35,25 +35,23 @@
 m4_include([toolchain_microsoft.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
-VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
+VALID_TOOLCHAINS_all="gcc clang microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
 VALID_TOOLCHAINS_macosx="clang"
-VALID_TOOLCHAINS_aix="xlc clang"
+VALID_TOOLCHAINS_aix="clang"
 VALID_TOOLCHAINS_windows="microsoft"
 
 # Toolchain descriptions
 TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
 TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
-TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
-TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
+TOOLCHAIN_MINIMUM_VERSION_clang="13.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="10.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
-TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -176,40 +174,23 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     LIBRARY_PREFIX=
     SHARED_LIBRARY_SUFFIX='.dll'
     STATIC_LIBRARY_SUFFIX='.lib'
-    SHARED_LIBRARY='[$]1.dll'
-    STATIC_LIBRARY='[$]1.lib'
     OBJ_SUFFIX='.obj'
     EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
-    SHARED_LIBRARY_SUFFIX='.so'
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      SHARED_LIBRARY_SUFFIX='.dylib'
+    else
+      SHARED_LIBRARY_SUFFIX='.so'
+    fi
     STATIC_LIBRARY_SUFFIX='.a'
-    SHARED_LIBRARY='lib[$]1.so'
-    STATIC_LIBRARY='lib[$]1.a'
     OBJ_SUFFIX='.o'
     EXECUTABLE_SUFFIX=''
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # For full static builds, we're overloading the SHARED_LIBRARY
-      # variables in order to limit the amount of changes required.
-      # It would be better to remove SHARED and just use LIBRARY and
-      # LIBRARY_SUFFIX for libraries that can be built either
-      # shared or static and use STATIC_* for libraries that are
-      # always built statically.
-      if test "x$STATIC_BUILD" = xtrue; then
-        SHARED_LIBRARY='lib[$]1.a'
-        SHARED_LIBRARY_SUFFIX='.a'
-      else
-        SHARED_LIBRARY='lib[$]1.dylib'
-        SHARED_LIBRARY_SUFFIX='.dylib'
-      fi
-    fi
   fi
 
   AC_SUBST(LIBRARY_PREFIX)
   AC_SUBST(SHARED_LIBRARY_SUFFIX)
   AC_SUBST(STATIC_LIBRARY_SUFFIX)
-  AC_SUBST(SHARED_LIBRARY)
-  AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
   AC_SUBST(EXECUTABLE_SUFFIX)
 ])
@@ -233,25 +214,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
 
   # First toolchain type in the list is the default
   DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
-
-  # On AIX the default toolchain depends on the installed (found) compiler
-  #   xlclang++     -> xlc toolchain
-  #   ibm-clang++_r -> clang toolchain
-  # The compiler is searched on the PATH and TOOLCHAIN_PATH
-  # xlclang++ has precedence over ibm-clang++_r if both are installed
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    DEFAULT_TOOLCHAIN="clang"
-    if test "x$TOOLCHAIN_PATH" != x; then
-      if test -e ${TOOLCHAIN_PATH}/xlclang++; then
-        DEFAULT_TOOLCHAIN="xlc"
-      fi
-    else
-      UTIL_LOOKUP_PROGS(XLCLANG_TEST_PATH, xlclang++)
-      if test "x$XLCLANG_TEST_PATH" != x; then
-        DEFAULT_TOOLCHAIN="xlc"
-      fi
-    fi
-  fi
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -277,48 +239,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   AC_SUBST(TOOLCHAIN_TYPE)
 
-  # on AIX, check for xlclang++ on the PATH and TOOLCHAIN_PATH and use it if it is available
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    if test "x$TOOLCHAIN_PATH" != x; then
-      XLC_TEST_PATH=${TOOLCHAIN_PATH}/
-    fi
-    if test "x$TOOLCHAIN_TYPE" = xclang; then
-      TOOLCHAIN_DESCRIPTION_clang="IBM Open XL C/C++"
-      XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}ibm-clang++_r --version 2>&1 | $HEAD -n 1`
-      $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
-      if test $? -eq 0; then
-        AC_MSG_NOTICE([ibm-clang++_r output: $XLCLANG_VERSION_OUTPUT])
-      else
-        AC_MSG_ERROR([ibm-clang++_r version output check failed, output: $XLCLANG_VERSION_OUTPUT])
-      fi
-    else
-      XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
-      $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
-      if test $? -eq 0; then
-        AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
-      else
-        AC_MSG_ERROR([xlclang++ version output check failed, output: $XLCLANG_VERSION_OUTPUT])
-      fi
-    fi
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    TOOLCHAIN_CC_BINARY_clang="ibm-clang_r"
-  else
-    TOOLCHAIN_CC_BINARY_clang="clang"
-  fi
+  TOOLCHAIN_CC_BINARY_clang="ibm-clang_r clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl"
-  TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    TOOLCHAIN_CXX_BINARY_clang="ibm-clang++_r"
-  else
-    TOOLCHAIN_CXX_BINARY_clang="clang++"
-  fi
+  TOOLCHAIN_CXX_BINARY_clang="ibm-clang++_r clang++"
   TOOLCHAIN_CXX_BINARY_gcc="g++"
   TOOLCHAIN_CXX_BINARY_microsoft="cl"
-  TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
 
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
@@ -408,25 +335,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
   COMPILER=[$]$1
   COMPILER_NAME=$2
 
-  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
-    # xlc -qversion output typically looks like
-    #     IBM XL C/C++ for AIX, V11.1 (5724-X13)
-    #     Version: 11.01.0000.0015
-    COMPILER_VERSION_OUTPUT=`$COMPILER -qversion 2>&1`
-    # Check that this is likely to be the IBM XL C compiler.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "IBM XL C" > /dev/null
-    if test $? -ne 0; then
-      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
-      AC_MSG_NOTICE([The result from running with -qversion was: "$COMPILER_VERSION_OUTPUT"])
-      AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
-      AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
-    fi
-    # Collapse compiler output into a single line
-    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
-    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*Version: \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
-  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
@@ -465,12 +374,22 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
         $SED -e 's/^.* \(@<:@1-9@:>@<:@0-9@:>@*\.@<:@0-9.@:>@*\)@<:@^0-9.@:>@.*$/\1/'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
-    #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
-    #    clang version 3.3 (tags/RELEASE_33/final)
+    #    Apple clang version 15.0.0 (clang-1500.3.9.4)
+    #    Target: arm64-apple-darwin23.2.0
+    #    Thread model: posix
+    #    InstalledDir: /Library/Developer/CommandLineTools/usr/bin
     # or
-    #    Debian clang version 3.2-7ubuntu1 (tags/RELEASE_32/final) (based on LLVM 3.2)
+    #    clang version 10.0.0-4ubuntu1
     #    Target: x86_64-pc-linux-gnu
     #    Thread model: posix
+    #    InstalledDir: /usr/bin
+    #    Target: x86_64-pc-linux-gnu
+    #    Thread model: posix
+    # or
+    #    IBM Open XL C/C++ for AIX 17.1.0 (5725-C72, 5765-J18), clang version 13.0.0
+    #    Target: powerpc-ibm-aix7.2.0.0
+    #    Thread model: posix
+    #    InstalledDir: /opt/IBM/openxlC/17.1.0/bin
     COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
     # Check that this is likely to be clang
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "clang" > /dev/null
@@ -479,10 +398,12 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
       AC_MSG_NOTICE([The result from running with --version was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
-    # Collapse compiler output into a single line
-    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    # Remove "Thread model:" and further details from the version string, and
+    # collapse into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *Thread model: .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
+        $SED -e 's/^.*clang version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
   else
       AC_MSG_ERROR([Unknown toolchain type $TOOLCHAIN_TYPE.])
   fi
@@ -575,10 +496,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
   LINKER=[$]$1
   LINKER_NAME="$2"
 
-  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
-    LINKER_VERSION_STRING="Unknown"
-    LINKER_VERSION_NUMBER="0.0"
-  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     #   Microsoft (R) Incremental Linker Version 12.00.31101.0
@@ -732,11 +650,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   AC_SUBST(AS)
 
   #
-  # Setup the archiver (AR)
+  # Setup tools for creating static libraries (AR/LIB)
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LIB, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else
@@ -1001,6 +918,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
       fi
     fi
   fi
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    # Make sure we have the Open XL version of clang on AIX
+
+    $ECHO "$CC_VERSION_STRING" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
+    if test $? -ne 0; then
+      AC_MSG_ERROR([ibm-clang_r version output check failed, output: $CC_VERSION_OUTPUT])
+    fi
+  fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # Check if linker has -z noexecstack.
@@ -1011,11 +936,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xaix; then
-      HOTSPOT_TOOLCHAIN_TYPE=xlc
-    else
-      HOTSPOT_TOOLCHAIN_TYPE=gcc
-    fi
+    HOTSPOT_TOOLCHAIN_TYPE=gcc
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi

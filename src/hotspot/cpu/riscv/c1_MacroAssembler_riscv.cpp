@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -69,13 +69,12 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     bnez(temp, slow_case, true /* is_far */);
   }
 
-  // Load object header
-  ld(hdr, Address(obj, hdr_offset));
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    ld(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     ori(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -134,9 +133,6 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    ld(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
-    test_bit(temp, hdr, exact_log2(markWord::monitor_value));
-    bnez(temp, slow_case, /* is_far */ true);
     lightweight_unlock(obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
@@ -181,6 +177,12 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     sw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
+    int base_offset = arrayOopDesc::length_offset_in_bytes() + BytesPerInt;
+    if (!is_aligned(base_offset, BytesPerWord)) {
+      assert(is_aligned(base_offset, BytesPerInt), "must be 4-byte aligned");
+      // Clear gap/first 4 bytes following the length field.
+      sw(zr, Address(obj, base_offset));
+    }
   } else if (UseCompressedClassPointers) {
     store_klass_gap(obj, zr);
   }
@@ -280,7 +282,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int header_size, int f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int base_offset_in_bytes, int f, Register klass, Label& slow_case, bool zero_array) {
   assert_different_registers(obj, len, tmp1, tmp2, klass);
 
   // determine alignment mask
@@ -292,7 +294,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   const Register arr_size = tmp2; // okay to be the same
   // align object end
-  mv(arr_size, (int32_t)header_size * BytesPerWord + MinObjAlignmentInBytesMask);
+  mv(arr_size, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
   shadd(arr_size, len, arr_size, t0, f);
   andi(arr_size, arr_size, ~(uint)MinObjAlignmentInBytesMask);
 
@@ -300,9 +302,15 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   initialize_header(obj, klass, len, tmp1, tmp2);
 
+  // Align-up to word boundary, because we clear the 4 bytes potentially
+  // following the length field in initialize_header().
+  int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
+
   // clear rest of allocated space
   const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  if (zero_array) {
+    initialize_body(obj, arr_size, base_offset, len_zero);
+  }
 
   membar(MacroAssembler::StoreStore);
 
@@ -312,15 +320,6 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
   }
 
   verify_oop(obj);
-}
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache, Label &L) {
-  verify_oop(receiver);
-  // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-  assert_different_registers(receiver, iCache, t0, t2);
-  cmp_klass(receiver, iCache, t0, t2 /* call-clobbered t2 as a tmp */, L);
 }
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {

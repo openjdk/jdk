@@ -5,7 +5,7 @@
   <title>AWT Threading Issues</title>
 </head>
 <!--
- Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@
 <a id="ListenersThreads"></a>
 <h2>Listeners and threads</h2>
 
-Unless otherwise noted all AWT listeners are notified on the event
+Unless otherwise noted, all AWT listeners are notified on the event
 dispatch thread. It is safe to remove/add listeners from any thread
-during dispatching, but the changes only effect subsequent notification.
-<br>For example, if a key listeners is added from another key listener, the
+during dispatching, but the changes only affect subsequent notification.
+<p>For example, if a key listener is added from another key listener, the
 newly added listener is only notified on subsequent key events.
 
 <a id="Autoshutdown"></a>

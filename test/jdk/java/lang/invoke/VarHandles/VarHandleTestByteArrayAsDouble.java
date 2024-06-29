@@ -72,12 +72,12 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                 arrayType = int[].class;
             }
             VarHandleSource aeh = new VarHandleSource(
-                    MethodHandles.byteArrayViewVarHandle(arrayType, bo),
+                    MethodHandles.byteArrayViewVarHandle(arrayType, bo), false,
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
-                    MethodHandles.byteBufferViewVarHandle(arrayType, bo),
+                    MethodHandles.byteBufferViewVarHandle(arrayType, bo), true,
                     endianess, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
@@ -114,38 +114,62 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        if (vhs.supportsAtomicAccess) {
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        } else {
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        }
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
+        if (vhs.supportsAtomicAccess) {
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
+        } else {
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
+        }
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
+
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
     @Test(dataProvider = "typesProvider")
@@ -180,9 +204,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "index out of bounds", bav, vh, h -> testArrayIndexOutOfBounds(bas, h),
                                 false));
-                        cases.add(new VarHandleSourceAccessTestCase(
-                                "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bas, h),
-                                false));
                     }
                     else {
                         ByteBufferSource bbs = (ByteBufferSource) bav;
@@ -207,9 +228,11 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "index out of bounds", bav, vh, h -> testArrayIndexOutOfBounds(bbs, h),
                                 false));
-                        cases.add(new VarHandleSourceAccessTestCase(
-                                "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bbs, h),
-                                false));
+                        if (bbs.s.isDirect()) {
+                            cases.add(new VarHandleSourceAccessTestCase(
+                                    "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bbs, h),
+                                    false));
+                        }
                     }
                 }
             }
@@ -243,76 +266,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         checkNPE(() -> {
             vh.set(array, ci, VALUE_1);
         });
-
-        checkNPE(() -> {
-            double x = (double) vh.getVolatile(array, ci);
-        });
-
-        checkNPE(() -> {
-            double x = (double) vh.getAcquire(array, ci);
-        });
-
-        checkNPE(() -> {
-            double x = (double) vh.getOpaque(array, ci);
-        });
-
-        checkNPE(() -> {
-            vh.setVolatile(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            vh.setRelease(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            vh.setOpaque(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-        });
-
-        checkNPE(() -> {
-            double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
-        });
-
-        checkNPE(() -> {
-            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
-        });
-
-        checkNPE(() -> {
-            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
-        });
-
-        checkNPE(() -> {
-            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
-        });
-
-        checkNPE(() -> {
-            double o = (double) vh.getAndSet(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
-        });
-
-
     }
 
     static void testArrayNPE(ByteBufferSource bs, VarHandleSource vhs) {
@@ -404,6 +357,49 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         byte[] array = bs.s;
         int ci = 1;
 
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
+            double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkUOE(() -> {
+            double o = (double) vh.getAndSet(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkUOE(() -> {
+            double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
 
         checkUOE(() -> {
             double o = (double) vh.getAndAdd(array, ci, VALUE_1);
@@ -466,7 +462,7 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             });
         }
 
-        if (readOnly) {
+        if (readOnly && array.isDirect()) {
             checkROBE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
@@ -478,7 +474,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
             checkROBE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -524,6 +519,9 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             });
 
 
+        }
+
+        if (array.isDirect()) {
             checkUOE(() -> {
                 double o = (double) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -535,7 +533,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 double o = (double) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 double o = (double) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
@@ -571,8 +568,61 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 double o = (double) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
-        }
-        else {
+        } else {
+            checkISE(() -> {
+                vh.setVolatile(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                vh.setRelease(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                vh.setOpaque(array, ci, VALUE_1);
+            });
+            checkISE(() -> {
+                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                double o = (double) vh.getAndSet(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
             checkUOE(() -> {
                 double o = (double) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -638,77 +688,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             checkAIOOBE(() -> {
                 vh.set(array, ci, VALUE_1);
             });
-
-            checkAIOOBE(() -> {
-                double x = (double) vh.getVolatile(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                double x = (double) vh.getAcquire(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                double x = (double) vh.getOpaque(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setVolatile(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setRelease(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setOpaque(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-            });
-
-            checkAIOOBE(() -> {
-                double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
-            });
-
-            checkAIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
-            });
-
-            checkAIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
-            });
-
-            checkAIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
-            });
-
-            checkAIOOBE(() -> {
-                double o = (double) vh.getAndSet(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
-            });
-
-
-
         }
     }
 
@@ -732,161 +711,78 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                 });
             }
 
-            checkIOOBE(() -> {
-                double x = (double) vh.getVolatile(array, ci);
-            });
-
-            checkIOOBE(() -> {
-                double x = (double) vh.getAcquire(array, ci);
-            });
-
-            checkIOOBE(() -> {
-                double x = (double) vh.getOpaque(array, ci);
-            });
-
-            if (!readOnly) {
+            if (array.isDirect()) {
                 checkIOOBE(() -> {
-                    vh.setVolatile(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    vh.setRelease(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    vh.setOpaque(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-                });
-
-                checkIOOBE(() -> {
-                    double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
-                });
-
-                checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
-                });
-
-                checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
-                });
-
-                checkIOOBE(() -> {
-                    boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
-                });
-
-                checkIOOBE(() -> {
-                    double o = (double) vh.getAndSet(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
-                });
-
-
-            }
-        }
-    }
-
-    static void testArrayMisalignedAccess(ByteArraySource bs, VarHandleSource vhs) throws Throwable {
-        VarHandle vh = vhs.s;
-        byte[] array = bs.s;
-
-        int misalignmentAtZero = ByteBuffer.wrap(array).alignmentOffset(0, SIZE);
-
-        int length = array.length - SIZE + 1;
-        for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
-            final int ci = i;
-
-            if (!iAligned) {
-                checkISE(() -> {
                     double x = (double) vh.getVolatile(array, ci);
                 });
 
-                checkISE(() -> {
+                checkIOOBE(() -> {
                     double x = (double) vh.getAcquire(array, ci);
                 });
 
-                checkISE(() -> {
+                checkIOOBE(() -> {
                     double x = (double) vh.getOpaque(array, ci);
                 });
 
-                checkISE(() -> {
-                    vh.setVolatile(array, ci, VALUE_1);
-                });
+                if (!readOnly) {
+                    checkIOOBE(() -> {
+                        vh.setVolatile(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    vh.setRelease(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        vh.setRelease(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    vh.setOpaque(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        vh.setOpaque(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
-                });
+                    checkIOOBE(() -> {
+                        boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+                    });
 
-                checkISE(() -> {
-                    double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
-                });
+                    checkIOOBE(() -> {
+                        boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+                    });
 
-                checkISE(() -> {
-                    boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
-                });
+                    checkIOOBE(() -> {
+                        boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+                    });
 
-                checkISE(() -> {
-                    boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
-                });
+                    checkIOOBE(() -> {
+                        boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+                    });
 
-                checkISE(() -> {
-                    boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
-                });
+                    checkIOOBE(() -> {
+                        boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+                    });
 
-                checkISE(() -> {
-                    double o = (double) vh.getAndSet(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double o = (double) vh.getAndSet(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
+                    });
 
 
+                }
             }
         }
     }
@@ -928,7 +824,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     checkISE(() -> {
                         vh.setOpaque(array, ci, VALUE_1);
                     });
-
                     checkISE(() -> {
                         boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
                     });
@@ -972,8 +867,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     checkISE(() -> {
                         double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
                     });
-
-
                 }
             }
         }
@@ -983,203 +876,14 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         byte[] array = bs.s;
 
-        int misalignmentAtZero = ByteBuffer.wrap(array).alignmentOffset(0, SIZE);
-
         bs.fill((byte) 0xff);
         int length = array.length - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
-
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 double x = (double) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get double value");
-            }
-
-
-            if (iAligned) {
-                // Volatile
-                {
-                    vh.setVolatile(array, i, VALUE_2);
-                    double x = (double) vh.getVolatile(array, i);
-                    assertEquals(x, VALUE_2, "setVolatile double value");
-                }
-
-                // Lazy
-                {
-                    vh.setRelease(array, i, VALUE_1);
-                    double x = (double) vh.getAcquire(array, i);
-                    assertEquals(x, VALUE_1, "setRelease double value");
-                }
-
-                // Opaque
-                {
-                    vh.setOpaque(array, i, VALUE_2);
-                    double x = (double) vh.getOpaque(array, i);
-                    assertEquals(x, VALUE_2, "setOpaque double value");
-                }
-
-                vh.set(array, i, VALUE_1);
-
-                // Compare
-                {
-                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, true, "success compareAndSet double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndSet double value");
-                }
-
-                {
-                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
-                    assertEquals(r, false, "failing compareAndSet double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndSet double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchange double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchange double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchange double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchange double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
-                    assertEquals(r, VALUE_1, "success compareAndExchangeAcquire double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
-                    assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
-                    assertEquals(r, VALUE_2, "success compareAndExchangeRelease double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease double value");
-                }
-
-                {
-                    double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
-                    assertEquals(r, VALUE_1, "failing compareAndExchangeRelease double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease double value");
-                }
-
-                {
-                    boolean success = false;
-                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
-                        if (!success) weakDelay();
-                    }
-                    assertEquals(success, true, "success weakCompareAndSetPlain double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain double value");
-                }
-
-                {
-                    boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
-                    assertEquals(success, false, "failing weakCompareAndSetPlain double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain double value");
-                }
-
-                {
-                    boolean success = false;
-                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
-                        if (!success) weakDelay();
-                    }
-                    assertEquals(success, true, "success weakCompareAndSetAcquire double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire double");
-                }
-
-                {
-                    boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
-                    assertEquals(success, false, "failing weakCompareAndSetAcquire double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire double value");
-                }
-
-                {
-                    boolean success = false;
-                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
-                        if (!success) weakDelay();
-                    }
-                    assertEquals(success, true, "success weakCompareAndSetRelease double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease double");
-                }
-
-                {
-                    boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
-                    assertEquals(success, false, "failing weakCompareAndSetRelease double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease double value");
-                }
-
-                {
-                    boolean success = false;
-                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
-                        if (!success) weakDelay();
-                    }
-                    assertEquals(success, true, "success weakCompareAndSet double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSet double");
-                }
-
-                {
-                    boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
-                    assertEquals(success, false, "failing weakCompareAndSet double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSet double value");
-                }
-
-                // Compare set and get
-                {
-                    vh.set(array, i, VALUE_1);
-
-                    double o = (double) vh.getAndSet(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSet double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSet double value");
-                }
-
-                {
-                    vh.set(array, i, VALUE_1);
-
-                    double o = (double) vh.getAndSetAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetAcquire double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetAcquire double value");
-                }
-
-                {
-                    vh.set(array, i, VALUE_1);
-
-                    double o = (double) vh.getAndSetRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetRelease double");
-                    double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetRelease double value");
-                }
-
-
             }
         }
     }
@@ -1189,12 +893,10 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         ByteBuffer array = bs.s;
 
-        int misalignmentAtZero = array.alignmentOffset(0, SIZE);
-
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
 
             // Plain
             {
@@ -1393,15 +1095,13 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         ByteBuffer array = bs.s;
 
-        int misalignmentAtZero = array.alignmentOffset(0, SIZE);
-
         ByteBuffer bb = ByteBuffer.allocate(SIZE);
         bb.order(MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes) ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
         bs.fill(bb.putDouble(0, VALUE_2).array());
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
 
             double v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)

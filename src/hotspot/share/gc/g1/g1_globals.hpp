@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
                                        develop_pd,                          \
                                        product,                             \
                                        product_pd,                          \
-                                       notproduct,                          \
                                        range,                               \
                                        constraint)                          \
                                                                             \
@@ -85,7 +84,6 @@
                                        develop_pd,                          \
                                        product,                             \
                                        product_pd,                          \
-                                       notproduct,                          \
                                        range,                               \
                                        constraint)
 #endif
@@ -97,7 +95,6 @@
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
@@ -152,12 +149,11 @@
           "Number of completed buffers that triggers log processing.")      \
           range(0, max_jint)                                                \
                                                                             \
-  product(uint, G1SATBBufferEnqueueingThresholdPercent, 60,                \
+  product(uint, G1SATBBufferEnqueueingThresholdPercent, 60,                 \
           "Before enqueueing them, each mutator thread tries to do some "   \
           "filtering on the SATB buffers it generates. If post-filtering "  \
           "the percentage of retained entries is over this threshold "      \
-          "the buffer will be enqueued for processing. A value of 0 "       \
-          "specifies that mutator threads should not do such filtering.")   \
+          "the buffer will be enqueued for processing.")                    \
           range(0, 100)                                                     \
                                                                             \
   product(uint, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
@@ -342,7 +338,6 @@
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)
 

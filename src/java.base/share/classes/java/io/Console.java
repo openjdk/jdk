@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -62,6 +63,11 @@ import sun.security.action.GetPropertyAction;
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
  * <p>
+ * Operations that format strings are locale sensitive, using either the
+ * specified {@code Locale}, or the
+ * {@link Locale##default_locale default format Locale} to produce localized
+ * formatted strings.
+ * <p>
  * Invoking {@code close()} on the objects returned by the {@link #reader()}
  * and the {@link #writer()} will not close the underlying stream of those
  * objects.
@@ -86,7 +92,7 @@ import sun.security.action.GetPropertyAction;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
  *     (passwd = cons.readPassword("[%s]", "Password:")) != null) {
- *     code: // @replace substring="code:" replacement="..."
+ *     ...
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
@@ -146,12 +152,76 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Writes a formatted string to this console's output stream using
-     * the specified format string and arguments.
+     * Writes a string representation of the specified object to this console's
+     * output stream, terminates the line using {@link System#lineSeparator()}
+     * and then flushes the console.
      *
-     * @param  fmt
-     *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>.
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream and then flushes the console.
+     *
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
+     *
+     * @param  obj
+     *         An object whose string representation is to be written,
+     *         may be {@code null}.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console print(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a prompt as if by calling {@code print}, then reads a single line
+     * of text from this console.
+     *
+     * @param  prompt
+     *         A prompt string, may be {@code null}.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln(String prompt) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a formatted string to this console's output stream using
+     * the specified format string and arguments with the
+     * {@link Locale##default_locale default format locale}.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
@@ -160,39 +230,75 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
-     *         {@code null} argument depends on the <a
-     *         href="../util/Formatter.html#syntax">conversion</a>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
      *          illegal conditions.  For specification of all possible
-     *          formatting errors, see the <a
-     *          href="../util/Formatter.html#detail">Details</a> section
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section
      *          of the formatter class specification.
      *
      * @return  This console
      */
-    public Console format(String fmt, Object ...args) {
+    public Console format(String format, Object ... args) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a formatted string to this console's output stream using
+     * the specified format string and arguments with the specified
+     * {@code locale}.
+     *
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section
+     *          of the formatter class specification.
+     *
+     * @return  This console
+     * @since   23
+     */
+    public Console format(Locale locale, String format, Object ... args) {
         throw newUnsupportedOperationException();
     }
 
     /**
      * A convenience method to write a formatted string to this console's
-     * output stream using the specified format string and arguments.
+     * output stream using the specified format string and arguments with
+     * the {@link Locale##default_locale default format locale}.
      *
-     * <p> An invocation of this method of the form
-     * {@code con.printf(format, args)} behaves in exactly the same way
-     * as the invocation of
-     * {@snippet lang=java :
-     *     con.format(format, args)
-     * }
+     * @implSpec This is the same as calling {@code format(format, args)}.
      *
      * @param  format
-     *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>.
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
@@ -201,17 +307,17 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
-     *         The behaviour on a
-     *         {@code null} argument depends on the <a
-     *         href="../util/Formatter.html#syntax">conversion</a>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
      *          illegal conditions.  For specification of all possible
-     *          formatting errors, see the <a
-     *          href="../util/Formatter.html#detail">Details</a> section of the
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
      *          formatter class specification.
      *
      * @return  This console
@@ -221,28 +327,76 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Provides a formatted prompt, then reads a single line of text from the
-     * console.
+     * A convenience method to write a formatted string to this console's
+     * output stream using the specified format string and arguments with
+     * the specified {@code locale}.
      *
-     * @param  fmt
-     *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>.
+     * @implSpec This is the same as calling
+     *         {@code format(locale, format, args)}.
+     *
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
      *          illegal conditions.  For specification of all possible
-     *          formatting errors, see the <a
-     *          href="../util/Formatter.html#detail">Details</a> section
-     *          of the formatter class specification.
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
+     *          formatter class specification.
+     *
+     * @return  This console
+     * @since   23
+     */
+    public Console printf(Locale locale, String format, Object ... args) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Provides a formatted prompt using the
+     * {@link Locale##default_locale default format locale}, then reads a
+     * single line of text from the console.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
+     *          formatter class specification.
      *
      * @throws IOError
      *         If an I/O error occurs.
@@ -251,7 +405,51 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *          including any line-termination characters, or {@code null}
      *          if an end of stream has been reached.
      */
-    public String readLine(String fmt, Object ... args) {
+    public String readLine(String format, Object ... args) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Provides a formatted prompt using the specified {@code locale}, then
+     * reads a single line of text from the console.
+     *
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}.
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
+     *          formatter class specification.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached.
+     * @since   23
+     */
+    public String readLine(Locale locale, String format, Object ... args) {
         throw newUnsupportedOperationException();
     }
 
@@ -270,29 +468,34 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Provides a formatted prompt, then reads a password or passphrase from
-     * the console with echoing disabled.
+     * Provides a formatted prompt using the
+     * {@link Locale##default_locale default format locale}, then reads a
+     * password or passphrase from the console with echoing disabled.
      *
-     * @param  fmt
-     *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}
      *         for the prompt text.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
      *         string.  If there are more arguments than format specifiers, the
-     *         extra arguments are ignored.  The maximum number of arguments is
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
      *          specifier that is incompatible with the given arguments,
      *          insufficient arguments given the format string, or other
      *          illegal conditions.  For specification of all possible
-     *          formatting errors, see the <a
-     *          href="../util/Formatter.html#detail">Details</a>
-     *          section of the formatter class specification.
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
+     *          formatter class specification.
      *
      * @throws IOError
      *         If an I/O error occurs.
@@ -301,7 +504,52 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *          from the console, not including any line-termination characters,
      *          or {@code null} if an end of stream has been reached.
      */
-    public char[] readPassword(String fmt, Object ... args) {
+    public char[] readPassword(String format, Object ... args) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Provides a formatted prompt using the specified {@code locale}, then
+     * reads a password or passphrase from the console with echoing disabled.
+     *
+     * @param  locale The {@linkplain Locale locale} to apply during
+     *         formatting.  If {@code locale} is {@code null} then no localization
+     *         is applied.
+     *
+     * @param  format
+     *         A format string as described in {@link
+     *         Formatter##syntax Format string syntax}
+     *         for the prompt text.
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in the format
+     *         string.  If there are more arguments than format specifiers, the
+     *         extra arguments are ignored.  The number of arguments is
+     *         variable and may be zero.  The maximum number of arguments is
+     *         limited by the maximum dimension of a Java array as defined by
+     *         <cite>The Java Virtual Machine Specification</cite>.
+     *         The behavior on a
+     *         {@code null} argument depends on the {@link
+     *         Formatter##syntax conversion}.
+     *
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors, see the {@link
+     *          Formatter##detail Details} section of the
+     *          formatter class specification.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A character array containing the password or passphrase read
+     *          from the console, not including any line-termination characters,
+     *          or {@code null} if an end of stream has been reached.
+     * @since   23
+     */
+    public char[] readPassword(Locale locale, String format, Object ... args) {
         throw newUnsupportedOperationException();
     }
 
@@ -388,7 +636,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         CHARSET = cs;
 
-        cons = instantiateConsole(istty);
+        cons = instantiateConsole();
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
@@ -399,31 +647,37 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     @SuppressWarnings("removal")
-    private static Console instantiateConsole(boolean istty) {
+    private static Console instantiateConsole() {
         Console c;
 
         try {
             /*
              * The JdkConsole provider used for Console instantiation can be specified
              * with the system property "jdk.console", whose value designates the module
-             * name of the implementation, and which defaults to "java.base". If no
-             * providers are available, or instantiation failed, java.base built-in
+             * name of the implementation, and which defaults to the value of
+             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If multiple
+             * provider implementations exist in that module, the first one found is used.
+             * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            PrivilegedAction<Console> pa = () -> {
-                var consModName = System.getProperty("jdk.console",
-                        JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
-                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                        .map(jcp -> jcp.console(istty, CHARSET))
-                        .filter(Objects::nonNull)
-                        .findAny()
-                        .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(null);
-            };
-            c = AccessController.doPrivileged(pa);
-        } catch (ServiceConfigurationError ignore) {
+            c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
+                public Console run() {
+                    var consModName = System.getProperty("jdk.console",
+                            JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+
+                    for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                        if (consModName.equals(jcp.getClass().getModule().getName())) {
+                            var jc = jcp.console(istty, CHARSET);
+                            if (jc != null) {
+                                return new ProxyingConsole(jc);
+                            }
+                            break;
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (ServiceConfigurationError _) {
             c = null;
         }
 

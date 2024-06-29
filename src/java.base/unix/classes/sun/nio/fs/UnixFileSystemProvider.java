@@ -74,6 +74,7 @@ public abstract class UnixFileSystemProvider
     private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
+    @SuppressWarnings("this-escape")
     public UnixFileSystemProvider() {
         theFileSystem = newFileSystem(StaticProperty.userDir());
     }

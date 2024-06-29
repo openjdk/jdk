@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ import java.io.IOException;
 /**
  * This class implements a stream filter for writing compressed data in
  * the GZIP file format.
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ *
  * @author      David Connelly
  * @since 1.1
  *
@@ -208,7 +212,9 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      */
     private void writeTrailer(byte[] buf, int offset) throws IOException {
         writeInt((int)crc.getValue(), buf, offset); // CRC-32 of uncompr. data
-        writeInt(def.getTotalIn(), buf, offset + 4); // Number of uncompr. bytes
+        // RFC 1952: Size of the original (uncompressed) input data modulo 2^32
+        int iSize = (int) def.getBytesRead();
+        writeInt(iSize, buf, offset + 4);
     }
 
     /*

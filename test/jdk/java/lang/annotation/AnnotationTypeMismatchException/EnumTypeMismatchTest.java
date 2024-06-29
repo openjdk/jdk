@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,21 @@
  * @bug 8228988 8266598
  * @summary An enumeration-typed property of an annotation that is represented as an
  *          incompatible property of another type should yield an AnnotationTypeMismatchException.
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @run main EnumTypeMismatchTest
  */
-
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.constant.ClassDesc;
+
+import static java.lang.constant.ConstantDescs.CD_Object;
 
 public class EnumTypeMismatchTest {
 
@@ -46,12 +49,14 @@ public class EnumTypeMismatchTest {
          * @AnAnnotation(value = @AnAnnotation) // would now be: value = AnEnum.VALUE
          * class Carrier { }
          */
-        ClassWriter writer = new ClassWriter(0);
-        writer.visit(Opcodes.V1_8, 0, "sample/Carrier", null, Type.getInternalName(Object.class), null);
-        AnnotationVisitor v = writer.visitAnnotation(Type.getDescriptor(AnAnnotation.class), true);
-        v.visitAnnotation("value", Type.getDescriptor(AnAnnotation.class)).visitEnd();
-        writer.visitEnd();
-        byte[] b = writer.toByteArray();
+        ClassDesc anAnnotationDesc = AnAnnotation.class.describeConstable().orElseThrow();
+        byte[] b = ClassFile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                    Annotation.of(anAnnotationDesc, AnnotationElement.of("value",
+                            AnnotationValue.ofAnnotation(Annotation.of(anAnnotationDesc))))
+            ));
+        });
         ByteArrayClassLoader cl = new ByteArrayClassLoader(EnumTypeMismatchTest.class.getClassLoader());
         cl.init(b);
         AnAnnotation sample = cl.loadClass("sample.Carrier").getAnnotation(AnAnnotation.class);

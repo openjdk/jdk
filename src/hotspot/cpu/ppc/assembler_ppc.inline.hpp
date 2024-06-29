@@ -451,7 +451,7 @@ inline void Assembler::bcctrl(int boint, int biint, int bhint, relocInfo::relocT
 
 // helper function for b
 inline bool Assembler::is_within_range_of_b(address a, address pc) {
-  // Guard against illegal branch targets, e.g. -1 (see CompiledStaticCall and ad-file).
+  // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
   const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
@@ -465,7 +465,7 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
 
 // helper functions for bcxx.
 inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
-  // Guard against illegal branch targets, e.g. -1 (see CompiledStaticCall and ad-file).
+  // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
   const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.

@@ -25,13 +25,13 @@ This directory contains source files of testbase_nsk JVMTI framework,
 which provides support for JVMTI tests and accessing JVMTI environment.
 
     Source files:
-        jvmti_tools.h
-        jvmti_tools.c
-        agent_tools.c
+        jvmti_tools.hpp
+        jvmti_tools.cpp
+        agent_tools.cpp
         Injector.hpp
         Injector.cpp
-        JVMTITools.h
-        JVMTITools.c
+        JVMTITools.hpp
+        JVMTITools.cpp
 
     Naming conventions:
         macroses:  NSK_JVMTI_*
@@ -39,7 +39,7 @@ which provides support for JVMTI tests and accessing JVMTI environment.
 
 ---------------------------------------------------------------------------------
 
-jvmti_tools.h
+jvmti_tools.hpp
 
 Provides functions and macroses for invocation of JVMTI functions
 and checking JVMTI errors:
@@ -135,7 +135,7 @@ or with saving error code:
 
 ---------------------------------------------------------------------------------
 
-JVMTITools.h
+JVMTITools.hpp
 
 Provides set of functions which convert JVMTI binary data to
 a null-terminated character string:

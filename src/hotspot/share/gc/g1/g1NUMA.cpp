@@ -173,7 +173,7 @@ uint G1NUMA::index_of_address(HeapWord *address) const {
   }
 }
 
-uint G1NUMA::index_for_region(HeapRegion* hr) const {
+uint G1NUMA::index_for_region(G1HeapRegion* hr) const {
   if (!is_enabled()) {
     return 0;
   }
@@ -194,15 +194,15 @@ uint G1NUMA::index_for_region(HeapRegion* hr) const {
 // nodes. Which node to request for a given address is given by the
 // region size and the page size. Below are two examples on 4 NUMA nodes system:
 //   1. G1HeapRegionSize(_region_size) is larger than or equal to page size.
-//      * Page #:       |-0--||-1--||-2--||-3--||-4--||-5--||-6--||-7--||-8--||-9--||-10-||-11-||-12-||-13-||-14-||-15-|
-//      * HeapRegion #: |----#0----||----#1----||----#2----||----#3----||----#4----||----#5----||----#6----||----#7----|
-//      * NUMA node #:  |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
+//      * Page #:         |-0--||-1--||-2--||-3--||-4--||-5--||-6--||-7--||-8--||-9--||-10-||-11-||-12-||-13-||-14-||-15-|
+//      * G1HeapRegion #: |----#0----||----#1----||----#2----||----#3----||----#4----||----#5----||----#6----||----#7----|
+//      * NUMA node #:    |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
 //   2. G1HeapRegionSize(_region_size) is smaller than page size.
 //      Memory will be touched one page at a time because G1RegionToSpaceMapper commits
 //      pages one by one.
-//      * Page #:       |-----0----||-----1----||-----2----||-----3----||-----4----||-----5----||-----6----||-----7----|
-//      * HeapRegion #: |-#0-||-#1-||-#2-||-#3-||-#4-||-#5-||-#6-||-#7-||-#8-||-#9-||#10-||#11-||#12-||#13-||#14-||#15-|
-//      * NUMA node #:  |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
+//      * Page #:         |-----0----||-----1----||-----2----||-----3----||-----4----||-----5----||-----6----||-----7----|
+//      * G1HeapRegion #: |-#0-||-#1-||-#2-||-#3-||-#4-||-#5-||-#6-||-#7-||-#8-||-#9-||#10-||#11-||#12-||#13-||#14-||#15-|
+//      * NUMA node #:    |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
 void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes, uint region_index) {
   if (!is_enabled()) {
     return;
@@ -288,7 +288,7 @@ G1NodeIndexCheckClosure::~G1NodeIndexCheckClosure() {
   FREE_C_HEAP_ARRAY(uint, _total);
 }
 
-bool G1NodeIndexCheckClosure::do_heap_region(HeapRegion* hr) {
+bool G1NodeIndexCheckClosure::do_heap_region(G1HeapRegion* hr) {
   // Preferred node index will only have valid node index.
   uint preferred_node_index = _numa->preferred_node_index_for_index(hr->hrm_index());
   // Active node index may have UnknownNodeIndex.

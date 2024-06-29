@@ -1702,24 +1702,25 @@ public class Thread implements Runnable {
     public void interrupt() {
         if (this != Thread.currentThread()) {
             checkAccess();
+        }
 
-            // thread may be blocked in an I/O operation
+        // Setting the interrupt status must be done before reading nioBlocker.
+        interrupted = true;
+        interrupt0();  // inform VM of interrupt
+
+        // thread may be blocked in an I/O operation
+        if (this != Thread.currentThread()) {
             Interruptible blocker;
             synchronized (interruptLock) {
                 blocker = nioBlocker;
                 if (blocker != null) {
-                    interrupted = true;
-                    interrupt0();  // inform VM of interrupt
                     blocker.interrupt(this);
                 }
             }
             if (blocker != null) {
                 blocker.postInterrupt();
-                return;
             }
         }
-        interrupted = true;
-        interrupt0();  // inform VM of interrupt
     }
 
     /**

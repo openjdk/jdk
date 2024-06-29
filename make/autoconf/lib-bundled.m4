@@ -69,11 +69,13 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBJPEG],
         [ AC_MSG_ERROR([--with-libjpeg=system specified, but no libjpeg found])])
 
     USE_EXTERNAL_LIBJPEG=true
+    LIBJPEG_LIBS="-ljpeg"
   else
     AC_MSG_ERROR([Invalid use of --with-libjpeg: ${with_libjpeg}, use 'system' or 'bundled'])
   fi
 
   AC_SUBST(USE_EXTERNAL_LIBJPEG)
+  AC_SUBST(LIBJPEG_LIBS)
 ])
 
 ################################################################################
@@ -102,11 +104,13 @@ AC_DEFUN_ONCE([LIB_SETUP_GIFLIB],
         [ AC_MSG_ERROR([--with-giflib=system specified, but no giflib found!])])
 
     USE_EXTERNAL_LIBGIF=true
+    GIFLIB_LIBS=-lgif
   else
     AC_MSG_ERROR([Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'])
   fi
 
   AC_SUBST(USE_EXTERNAL_LIBGIF)
+  AC_SUBST(GIFLIB_LIBS)
 ])
 
 ################################################################################

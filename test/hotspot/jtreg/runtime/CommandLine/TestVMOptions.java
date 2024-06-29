@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,5 +59,11 @@ public class TestVMOptions {
     output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
     output.shouldContain("VM option '-IgnoreUnrecognizedVMOptions'");
+
+    pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:UnlockExperimentalVMOptions");
+    output = new OutputAnalyzer(pb.start());
+    output.stderrShouldContain("VM option 'UnlockExperimentalVMOptions' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.");
+    output.stderrShouldContain("Missing +/- setting for VM option 'UnlockExperimentalVMOptions'");
   }
 }

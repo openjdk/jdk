@@ -57,6 +57,7 @@ public class PipedWriter extends Writer {
      * @param      snk   The piped reader to connect to.
      * @throws     IOException  if an I/O error occurs.
      */
+    @SuppressWarnings("this-escape")
     public PipedWriter(PipedReader snk)  throws IOException {
         connect(snk);
     }

@@ -31,7 +31,7 @@ import java.io.InputStream;
 // without the need to load classes or have an impact on security
 // related events, like SecureRandom::getAlgorithm("NativePRNGNonBlocking") does
 public final class EventWriterKey {
-    private final static long KEY = createKey();
+    private static final long KEY = createKey();
     private static boolean loaded;
     private static boolean logged;
 

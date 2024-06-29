@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -707,7 +707,7 @@ class Heap$Type$Buffer$RW$
     }
 
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
     }
 
 #end[byte]
@@ -738,7 +738,7 @@ class Heap$Type$Buffer$RW$
     }
 
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_CHAR);
+        return ArraysSupport.hashCode(hb, ix(position()), remaining(), 1);
     }
 #end[char]
 

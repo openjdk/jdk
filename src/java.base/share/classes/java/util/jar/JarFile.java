@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -826,7 +826,7 @@ public class JarFile extends ZipFile {
 
     /**
      * Returns an input stream for reading the contents of the specified
-     * zip file entry.
+     * ZIP file entry.
      *
      * @apiNote The {@code InputStream} returned by this method can wrap an
      * {@link java.util.zip.InflaterInputStream InflaterInputStream}, whose
@@ -834,11 +834,11 @@ public class JarFile extends ZipFile {
      * read(byte[], int, int)} method can modify any element of the output
      * buffer.
      *
-     * @param ze the zip file entry
+     * @param ze the ZIP file entry
      * @return an input stream for reading the contents of the specified
-     *         zip file entry or null if the zip file entry does not exist
+     *         ZIP file entry or null if the ZIP file entry does not exist
      *         within the jar file
-     * @throws ZipException if a zip file format error has occurred
+     * @throws ZipException if a ZIP file format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException if any of the jar file entries
      *         are incorrectly signed.

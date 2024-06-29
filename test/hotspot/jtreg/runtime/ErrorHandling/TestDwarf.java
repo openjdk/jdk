@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,13 +108,12 @@ public class TestDwarf {
     // Crash the VM in different ways in order to verify that DWARF parsing is able to print the source information
     // in the hs_err_files for each VM and C stack frame.
     private static void test() throws Exception {
-        runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
+        runAndCheck(new Flags("-Xcomp", "-XX:+CICountNative", "-XX:CICrashAt=1", "--version"));
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
-        // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
-        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
+        runAndCheck(new Flags("-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
                               TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
@@ -125,7 +124,7 @@ public class TestDwarf {
                         new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
-                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));
+                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
     }
 
     // The full pattern accepts lines like:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
 
-    off64_t offset = (off64_t)position;
+    loff_t offset = (loff_t)position;
     size_t len = (size_t)count;
     jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
     if (n < 0) {
@@ -91,7 +91,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
     if (append == JNI_TRUE)
         return IOS_UNSUPPORTED_CASE;
 
-    off64_t offset = (off64_t)position;
+    loff_t offset = (loff_t)position;
     jlong n;
     if (my_copy_file_range_func != NULL) {
         size_t len = (size_t)count;

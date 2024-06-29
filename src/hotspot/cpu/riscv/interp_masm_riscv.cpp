@@ -216,13 +216,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     }
   } else if (index_size == sizeof(u4)) {
     load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    xori(index, index, -1);
-    sign_extend(index, index, 32);
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(xbcp, bcp_offset));
   } else {
@@ -763,7 +756,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
@@ -860,24 +852,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
-
-      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-      // must handle it.
-      Register tmp1 = t0;
-      Register tmp2 = header_reg;
-      // First check for lock-stack underflow.
-      lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-      mv(tmp2, (unsigned)LockStack::start_offset());
-      ble(tmp1, tmp2, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      subw(tmp1, tmp1, oopSize);
-      add(tmp1, xthread, tmp1);
-      ld(tmp1, Address(tmp1, 0));
-      bne(tmp1, obj_reg, slow_case);
-
-      ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
-      bnez(t0, slow_case);
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
       j(count);
 
@@ -1907,6 +1881,8 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
+  // Prevents stale data from being read after the bytecode is patched to the fast bytecode
+  membar(MacroAssembler::LoadLoad);
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,

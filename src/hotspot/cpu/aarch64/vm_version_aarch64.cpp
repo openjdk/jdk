@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -143,10 +143,18 @@ void VM_Version::initialize() {
     }
   }
 
-  // Ampere CPUs: Ampere-1 and Ampere-1A
-  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1) || (_model == CPU_MODEL_AMPERE_1A))) {
+  // Ampere CPUs
+  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1)  ||
+                             (_model == CPU_MODEL_AMPERE_1A) ||
+                             (_model == CPU_MODEL_AMPERE_1B))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+    if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+    }
+    if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
   }
 
@@ -182,9 +190,6 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
-    }
-    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
-      FLAG_SET_DEFAULT(AlwaysMergeDMB, true);
     }
   }
 
@@ -224,6 +229,9 @@ void VM_Version::initialize() {
 
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
+    }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
   }
 

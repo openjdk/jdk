@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -932,7 +932,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">ܫܒܘܥܐ w ܕܫܢܬܐ Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0}  –  {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1550,9 +1550,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>ܟܪܝܣܬܘܢ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ܝܠܘܢܝܦ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ܐܕܡܘܢܬܘܢ</exemplarCity>
 			</zone>
@@ -1571,29 +1568,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>ܪܝܣܘܠܘܬ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ܢܗܪܐ ܕܪܥܢܝ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ܪܐܢܟܢ ܐܢܠܝܬ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ܐܬܝܟܘܟܐܢ</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ܬܐܢܕܐܪ ܒܐܝ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ܢܝܦܝܓܘܢ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ܬܘܪܘܢܬܘ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ܐܝܩܠܘܝܬ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ܦܐܢܓܢܝܪܬܘܢܓ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ܡܘܢܟܬܘܢ</exemplarCity>
@@ -2405,17 +2390,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ܕܐܪ ܫܠܡܐ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ܐܘܙܓܘܪܘܕ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ܟܝܝܒ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>ܣܡܦܪܘܦܠ</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ܙܐܦܘܪܝܓܝ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ܟܐܡܦܐܠܐ</exemplarCity>
@@ -2431,9 +2410,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>ܢܘܡ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ܓܘܢܣܬܘܢ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ܐܢܟܘܪܓ</exemplarCity>
@@ -3134,11 +3110,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܐܟܐܘ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ܥܕܢܐ ܕܓܙܪܬܐ ܡܐܟܐܘܪܝ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ܥܕܢܐ ܕܡܐܓܐܕܐܢ</generic>
@@ -3176,13 +3147,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>ܥܕܢܐ ܕܡܐܘܣܘܢ</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>ܥܕܢܐ ܓܪܒܝ ܡܥܪܒ ܡܟܣܝܩܘ</generic>
-					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܓܪܒܝ ܡܥܪܒ ܡܟܣܝܩܘ</standard>
-					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܓܪܒܝ ܡܥܪܒ ܡܟܣܝܩܘ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -95,7 +95,7 @@ class AdaptCodeTest {
                     if ((val instanceof Integer) && ((Integer) val) == 13) {
                         val = 7;
                     }
-                    codeB.constantInstruction(i.opcode(), val);
+                    codeB.loadConstant(i.opcode(), val);
                 }
                 default -> codeB.with(codeE);
             }

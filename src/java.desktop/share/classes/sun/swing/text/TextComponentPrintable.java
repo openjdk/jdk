@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,9 +780,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     if (height != 0
                             && (y != previousY || height != previousHeight)) {
                         /*
-                         * we do not store the same value as previous. in our
-                         * documents it is often for consequent positions to have
-                         * the same modelToView y and height.
+                         * We do not store the same value as previous.
+                         * In our documents, it is common for consecutive
+                         * positions to have the same modelToView y and height.
                          */
                         previousY = y;
                         previousHeight = height;

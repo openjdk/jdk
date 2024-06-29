@@ -56,4 +56,9 @@ public class BreakIteratorTest {
      */
     public void fe(){}
 
+    /**
+     * Inline tags <i><a href="{@docRoot}/index-all.html">extending
+     * beyond the first sentence. Tags are closed here.</a></i>
+     */
+    public void meh(){}
 }

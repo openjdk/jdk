@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         // or one of it's superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
-        THROW_OOP_(Universe::virtual_machine_error_instance(), false);
+        THROW_OOP_(Universe::internal_error_instance(), false);
       }
       kls = kls->super();
     }

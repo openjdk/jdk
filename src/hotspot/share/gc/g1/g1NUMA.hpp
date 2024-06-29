@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_G1_NUMA_HPP
 #define SHARE_VM_GC_G1_NUMA_HPP
 
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 
@@ -46,7 +46,7 @@ class G1NUMA: public CHeapObj<mtGC> {
   // Total number of node ids.
   uint _num_active_node_ids;
 
-  // HeapRegion size
+  // G1HeapRegion size
   size_t _region_size;
   // Necessary when touching memory.
   size_t _page_size;
@@ -94,9 +94,9 @@ public:
   // Returns node index of current calling thread.
   uint index_of_current_thread() const;
 
-  // Returns the preferred index for the given HeapRegion index.
+  // Returns the preferred index for the given G1HeapRegion index.
   // This assumes that HeapRegions are evenly spit, so we can decide preferred index
-  // with the given HeapRegion index.
+  // with the given G1HeapRegion index.
   // Result is less than num_active_nodes().
   uint preferred_node_index_for_index(uint region_index) const;
 
@@ -107,7 +107,7 @@ public:
 
   // If AlwaysPreTouch is enabled, return actual node index via system call.
   // If disabled, return preferred node index of the given heap region.
-  uint index_for_region(HeapRegion* hr) const;
+  uint index_for_region(G1HeapRegion* hr) const;
 
   // Requests the given memory area to be located at the given node index.
   void request_memory_on_node(void* aligned_address, size_t size_in_bytes, uint region_index);
@@ -143,7 +143,7 @@ public:
   G1NodeIndexCheckClosure(const char* desc, G1NUMA* numa, LogStream* ls);
   ~G1NodeIndexCheckClosure();
 
-  bool do_heap_region(HeapRegion* hr);
+  bool do_heap_region(G1HeapRegion* hr);
 };
 
 #endif // SHARE_VM_GC_G1_NUMA_HPP

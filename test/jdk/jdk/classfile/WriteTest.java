@@ -54,10 +54,10 @@ class WriteTest {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>",
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>",
                                                                  MethodTypeDesc.ofDescriptor("()V"), false)
-                                              .returnInstruction(VoidType)
+                                              .return_()
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
@@ -66,25 +66,25 @@ class WriteTest {
                                   Label loopTop = c0.newLabel();
                                   Label loopEnd = c0.newLabel();
                                   c0
-                                          .constantInstruction(ICONST_1, 1)         // 0
-                                          .storeInstruction(TypeKind.IntType, 1)          // 1
-                                          .constantInstruction(ICONST_1, 1)         // 2
-                                          .storeInstruction(TypeKind.IntType, 2)          // 3
+                                          .iconst_1()         // 0
+                                          .istore(1)          // 1
+                                          .iconst_1()         // 2
+                                          .istore(2)          // 3
                                           .labelBinding(loopTop)
-                                          .loadInstruction(TypeKind.IntType, 2)           // 4
-                                          .constantInstruction(BIPUSH, 10)         // 5
-                                          .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                          .loadInstruction(TypeKind.IntType, 1)           // 7
-                                          .loadInstruction(TypeKind.IntType, 2)           // 8
-                                          .operatorInstruction(IMUL)             // 9
-                                          .storeInstruction(TypeKind.IntType, 1)          // 10
-                                          .incrementInstruction(2, 1)    // 11
-                                          .branchInstruction(GOTO, loopTop)     // 12
+                                          .iload(2)           // 4
+                                          .bipush(10)         // 5
+                                          .if_icmpge(loopEnd) // 6
+                                          .iload(1)           // 7
+                                          .iload(2)           // 8
+                                          .imul()             // 9
+                                          .istore(1)          // 10
+                                          .iinc(2, 1)    // 11
+                                          .goto_(loopTop)     // 12
                                           .labelBinding(loopEnd)
-                                          .fieldInstruction(GETSTATIC, TestConstants.CD_System, "out", TestConstants.CD_PrintStream)   // 13
-                                          .loadInstruction(TypeKind.IntType, 1)
-                                          .invokeInstruction(INVOKEVIRTUAL, TestConstants.CD_PrintStream, "println", TestConstants.MTD_INT_VOID, false)  // 15
-                                          .returnInstruction(VoidType);
+                                          .getstatic(TestConstants.CD_System, "out", TestConstants.CD_PrintStream)   // 13
+                                          .iload(1)
+                                          .invokevirtual(TestConstants.CD_PrintStream, "println", TestConstants.MTD_INT_VOID)  // 15
+                                          .return_();
                               }));
         });
     }
@@ -96,9 +96,9 @@ class WriteTest {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
@@ -107,25 +107,25 @@ class WriteTest {
                                   Label loopTop = c0.newLabel();
                                   Label loopEnd = c0.newLabel();
                                   c0
-                                          .constantInstruction(ICONST_1, 1)        // 0
-                                          .storeInstruction(IntType, 1)          // 1
-                                          .constantInstruction(ICONST_1, 1)        // 2
-                                          .storeInstruction(IntType, 2)          // 3
+                                          .iconst_1()        // 0
+                                          .istore(1)          // 1
+                                          .iconst_1()        // 2
+                                          .istore(2)          // 3
                                           .labelBinding(loopTop)
-                                          .loadInstruction(IntType, 2)           // 4
-                                          .constantInstruction(BIPUSH, 10)         // 5
-                                          .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                          .loadInstruction(IntType, 1)           // 7
-                                          .loadInstruction(IntType, 2)           // 8
-                                          .operatorInstruction(IMUL)             // 9
-                                          .storeInstruction(IntType, 1)          // 10
-                                          .incrementInstruction(2, 1)    // 11
-                                          .branchInstruction(GOTO, loopTop)     // 12
+                                          .iload(2)           // 4
+                                          .bipush(10)         // 5
+                                          .if_icmpge(loopEnd) // 6
+                                          .iload(1)           // 7
+                                          .iload(2)           // 8
+                                          .imul()             // 9
+                                          .istore(1)          // 10
+                                          .iinc(2, 1)    // 11
+                                          .goto_(loopTop)     // 12
                                           .labelBinding(loopEnd)
-                                          .fieldInstruction(GETSTATIC, TestConstants.CD_System, "out", TestConstants.CD_PrintStream)   // 13
-                                          .loadInstruction(IntType, 1)
-                                          .invokeInstruction(INVOKEVIRTUAL, TestConstants.CD_PrintStream, "println", TestConstants.MTD_INT_VOID, false)  // 15
-                                          .returnInstruction(VoidType);
+                                          .getstatic(TestConstants.CD_System, "out", TestConstants.CD_PrintStream)   // 13
+                                          .iload(1)
+                                          .invokevirtual(TestConstants.CD_PrintStream, "println", TestConstants.MTD_INT_VOID)  // 15
+                                          .return_();
                               }));
         });
     }

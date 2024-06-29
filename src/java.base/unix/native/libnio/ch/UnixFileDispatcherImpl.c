@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,7 @@
 #include <sys/statvfs.h>
 
 #if defined(_ALLBSD_SOURCE)
-#define lseek64 lseek
-#define stat64 stat
-#define flock64 flock
-#define off64_t off_t
-#define F_SETLKW64 F_SETLKW
-#define F_SETLK64 F_SETLK
-#define pread64 pread
-#define pwrite64 pwrite
-#define ftruncate64 ftruncate
-#define fstat64 fstat
 #define fdatasync fsync
-#define mmap64 mmap
-#define statvfs64 statvfs
-#define fstatvfs64 fstatvfs
 #endif
 
 #if defined(__linux__)
@@ -56,6 +43,11 @@
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
 #include "java_lang_Long.h"
 #include <assert.h>
+
+#if defined(_AIX)
+  #define statvfs statvfs64
+  #define fstatvfs fstatvfs64
+#endif
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
@@ -74,7 +66,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
 
-    return convertReturnVal(env, pread64(fd, buf, len, offset), JNI_TRUE);
+    return convertReturnVal(env, pread(fd, buf, len, offset), JNI_TRUE);
 }
 
 JNIEXPORT jlong JNICALL
@@ -103,7 +95,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobjec
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
 
-    return convertReturnVal(env, pwrite64(fd, buf, len, offset), JNI_FALSE);
+    return convertReturnVal(env, pwrite(fd, buf, len, offset), JNI_FALSE);
 }
 
 JNIEXPORT jlong JNICALL
@@ -131,13 +123,13 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
                                          jobject fdo, jlong offset)
 {
     jint fd = fdval(env, fdo);
-    off64_t result;
+    off_t result;
     if (offset < 0) {
-        result = lseek64(fd, 0, SEEK_CUR);
+        result = lseek(fd, 0, SEEK_CUR);
     } else {
-        result = lseek64(fd, offset, SEEK_SET);
+        result = lseek(fd, offset, SEEK_SET);
     }
-    return handle(env, (jlong)result, "lseek64 failed");
+    return handle(env, (jlong)result, "lseek failed");
 }
 
 JNIEXPORT jint JNICALL
@@ -161,7 +153,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
                                              jobject fdo, jlong size)
 {
     return handle(env,
-                  ftruncate64(fdval(env, fdo), size),
+                  ftruncate(fdval(env, fdo), size),
                   "Truncation failed");
 }
 
@@ -169,9 +161,9 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 {
     jint fd = fdval(env, fdo);
-    struct stat64 fbuf;
+    struct stat fbuf;
 
-    if (fstat64(fd, &fbuf) < 0)
+    if (fstat(fd, &fbuf) < 0)
         return handle(env, -1, "Size failed");
 
 #if defined(__linux__)
@@ -194,28 +186,28 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject 
     jint fd = fdval(env, fdo);
     jint lockResult = 0;
     int cmd = 0;
-    struct flock64 fl;
+    struct flock fl;
 
     fl.l_whence = SEEK_SET;
     if (size == (jlong)java_lang_Long_MAX_VALUE) {
-        fl.l_len = (off64_t)0;
+        fl.l_len = (off_t)0;
     } else {
-        fl.l_len = (off64_t)size;
+        fl.l_len = (off_t)size;
     }
-    fl.l_start = (off64_t)pos;
+    fl.l_start = (off_t)pos;
     if (shared == JNI_TRUE) {
         fl.l_type = F_RDLCK;
     } else {
         fl.l_type = F_WRLCK;
     }
     if (block == JNI_TRUE) {
-        cmd = F_SETLKW64;
+        cmd = F_SETLKW;
     } else {
-        cmd = F_SETLK64;
+        cmd = F_SETLK;
     }
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
-        if ((cmd == F_SETLK64) && (errno == EAGAIN || errno == EACCES))
+        if ((cmd == F_SETLK) && (errno == EAGAIN || errno == EACCES))
             return sun_nio_ch_UnixFileDispatcherImpl_NO_LOCK;
         if (errno == EINTR)
             return sun_nio_ch_UnixFileDispatcherImpl_INTERRUPTED;
@@ -230,16 +222,16 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_release0(JNIEnv *env, jobject this,
 {
     jint fd = fdval(env, fdo);
     jint lockResult = 0;
-    struct flock64 fl;
-    int cmd = F_SETLK64;
+    struct flock fl;
+    int cmd = F_SETLK;
 
     fl.l_whence = SEEK_SET;
     if (size == (jlong)java_lang_Long_MAX_VALUE) {
-        fl.l_len = (off64_t)0;
+        fl.l_len = (off_t)0;
     } else {
-        fl.l_len = (off64_t)size;
+        fl.l_len = (off_t)size;
     }
-    fl.l_start = (off64_t)pos;
+    fl.l_start = (off_t)pos;
     fl.l_type = F_UNLCK;
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
@@ -319,7 +311,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject f
 #endif
     }
 
-    mapAddress = mmap64(
+    mapAddress = mmap(
         0,                    /* Let OS decide location */
         len,                  /* Number of bytes to map */
         protections,          /* File permissions */
@@ -359,7 +351,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
 {
     jint fd = fdval(env, fdo);
     jint result;
-    struct statvfs64 file_stat;
+    struct statvfs file_stat;
 
 #if defined(O_DIRECT) || defined(F_NOCACHE) || defined(DIRECTIO_ON)
 #ifdef O_DIRECT
@@ -387,7 +379,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
         return result;
     }
 #endif
-    result = fstatvfs64(fd, &file_stat);
+    result = fstatvfs(fd, &file_stat);
     if(result == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
         return result;

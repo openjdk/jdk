@@ -485,8 +485,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
 void CodeInstaller::record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
   oop javaMirror = JNIHandles::resolve(sv->klass()->as_ConstantOopWriteValue()->value());
   Klass* klass = java_lang_Class::as_Klass(javaMirror);
-  bool isLongArray = klass == Universe::longArrayKlassObj();
-  bool isByteArray = klass == Universe::byteArrayKlassObj();
+  bool isLongArray = klass == Universe::longArrayKlass();
+  bool isByteArray = klass == Universe::byteArrayKlass();
 
   u2 length = stream->read_u2("values:length");
   for (jint i = 0; i < length; i++) {
@@ -704,6 +704,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject compiled_code,
     objArrayHandle object_pool,
     CodeBlob*& cb,
+    JVMCINMethodHandle& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -770,11 +771,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode object must be a HotSpotNmethod when installing a HotSpotCompiledNmethod", JVMCI::ok);
     }
 
-    // We would like to be strict about the nmethod entry barrier but there are various test
-    // configurations which generate assembly without being a full compiler. So for now we enforce
-    // that JIT compiled methods must have an nmethod barrier.
-    bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(installed_code) != 0;
-    if (_nmethod_entry_patch_offset == -1 && install_default) {
+    // Enforce that compiled methods have an nmethod barrier.
+    if (_nmethod_entry_patch_offset == -1) {
       JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is missing", JVMCI::ok);
     }
 
@@ -805,6 +803,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         speculations_len,
                                         _nmethod_entry_patch_offset);
     if (result == JVMCI::ok) {
+      guarantee(nm != nullptr, "successful compile must produce an nmethod");
+      nmethod_handle.set_nmethod(nm);
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
@@ -813,15 +813,12 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectivesStack::release(directive);
       }
 
-      if (nm != nullptr) {
-        if (_nmethod_entry_patch_offset != -1) {
-          err_msg msg("");
-          BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-          if (!bs_nm->verify_barrier(nm, msg)) {
-            JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
-          }
-        }
+      // an empty error buffer for use by the verify_barrier code
+      err_msg msg("");
+      if (!bs_nm->verify_barrier(nm, msg)) {
+        JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
       }
     }
   }
@@ -896,8 +893,8 @@ int CodeInstaller::estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_
   // Estimate the number of static call stubs that might be emitted.
   u2 static_call_stubs = stream->read_u2("numStaticCallStubs");
   u2 trampoline_stubs = stream->read_u2("numTrampolineStubs");
-  int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
-  size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
+  int size = static_call_stubs * CompiledDirectCall::to_interp_stub_size();
+  size += trampoline_stubs * CompiledDirectCall::to_trampoline_stub_size();
   return size;
 }
 
@@ -1243,7 +1240,8 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
-      if (CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset) == nullptr) {
+      MacroAssembler masm(&buffer);
+      if (CompiledDirectCall::emit_to_interp_stub(&masm, _instructions->start() + pc_offset) == nullptr) {
         JVMCI_ERROR("could not emit to_interp stub - code cache is full");
       }
     }
@@ -1299,6 +1297,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
   u1 id = stream->read_u1("mark:id");
   address pc = _instructions->start() + pc_offset;
 
+  if (pd_relocate(pc, id)) {
+    return;
+  }
+
   switch (id) {
     case UNVERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Entry, pc_offset);
@@ -1332,12 +1334,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       _next_call_type = (MarkId) id;
       _invoke_mark_pc = pc;
       break;
-    case POLL_NEAR:
-    case POLL_FAR:
-    case POLL_RETURN_NEAR:
-    case POLL_RETURN_FAR:
-      pd_relocate_poll(pc, id, JVMCI_CHECK);
-      break;
     case CARD_TABLE_SHIFT:
     case CARD_TABLE_ADDRESS:
     case HEAP_TOP_ADDRESS:
@@ -1352,6 +1348,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
       break;
+
     default:
       JVMCI_ERROR("invalid mark id: %d%s", id, stream->context());
       break;

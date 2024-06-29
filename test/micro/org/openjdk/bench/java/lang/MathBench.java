@@ -142,6 +142,11 @@ public class MathBench {
     }
 
     @Benchmark
+    public double  addCeilFloorDouble() {
+        return  Math.ceil(double4Dot1) + Math.floor(double4Dot1);
+    }
+
+    @Benchmark
     public double  copySignDouble() {
         return  Math.copySign(double81, doubleNegative12);
     }

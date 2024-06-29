@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,28 +37,15 @@
 #include <unistd.h>
 
 #include "jvm.h"
+#include "jni_util.h"
 #include "TimeZone_md.h"
 #include "path_util.h"
 
 static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
-#define SKIP_SPACE(p)   while (*p == ' ' || *p == '\t') p++;
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 #define fileopen        fopen
 #define filegets        fgets
 #define fileclose       fclose
-
-#if defined(_ALLBSD_SOURCE)
-#define stat64 stat
-#define lstat64 lstat
-#define fstat64 fstat
-#endif
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
 static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
@@ -219,12 +206,12 @@ static char *
 isFileIdentical(char *buf, size_t size, char *pathname)
 {
     char *possibleMatch = NULL;
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *dbuf = NULL;
     int fd = -1;
     int res;
 
-    RESTARTABLE(stat64(pathname, &statbuf), res);
+    RESTARTABLE(stat(pathname, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -264,7 +251,7 @@ isFileIdentical(char *buf, size_t size, char *pathname)
 static char *
 getPlatformTimeZoneID()
 {
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *tz = NULL;
     FILE *fp;
     int fd;
@@ -301,7 +288,7 @@ getPlatformTimeZoneID()
     /*
      * Next, try /etc/localtime to find the zone ID.
      */
-    RESTARTABLE(lstat64(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -343,7 +330,7 @@ getPlatformTimeZoneID()
         return NULL;
     }
 
-    RESTARTABLE(fstat64(fd, &statbuf), res);
+    RESTARTABLE(fstat(fd, &statbuf), res);
     if (res == -1) {
         (void) close(fd);
         return NULL;

@@ -1446,12 +1446,12 @@ int LinearScan::interval_cmp(Interval** a, Interval** b) {
   }
 }
 
-#ifndef PRODUCT
-int interval_cmp(Interval* const& l, Interval* const& r) {
+#ifdef ASSERT
+static int interval_cmp(Interval* const& l, Interval* const& r) {
   return l->from() - r->from();
 }
 
-bool find_interval(Interval* interval, IntervalArray* intervals) {
+static bool find_interval(Interval* interval, IntervalArray* intervals) {
   bool found;
   int idx = intervals->find_sorted<Interval*, interval_cmp>(interval, found);
 
@@ -2303,11 +2303,11 @@ void assert_no_register_values(GrowableArray<MonitorValue*>* values) {
   }
 }
 
-void assert_equal(Location l1, Location l2) {
+static void assert_equal(Location l1, Location l2) {
   assert(l1.where() == l2.where() && l1.type() == l2.type() && l1.offset() == l2.offset(), "");
 }
 
-void assert_equal(ScopeValue* v1, ScopeValue* v2) {
+static void assert_equal(ScopeValue* v1, ScopeValue* v2) {
   if (v1->is_location()) {
     assert(v2->is_location(), "");
     assert_equal(((LocationValue*)v1)->location(), ((LocationValue*)v2)->location());
@@ -2328,12 +2328,12 @@ void assert_equal(ScopeValue* v1, ScopeValue* v2) {
   }
 }
 
-void assert_equal(MonitorValue* m1, MonitorValue* m2) {
+static void assert_equal(MonitorValue* m1, MonitorValue* m2) {
   assert_equal(m1->owner(), m2->owner());
   assert_equal(m1->basic_lock(), m2->basic_lock());
 }
 
-void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
+static void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
   assert(d1->scope() == d2->scope(), "not equal");
   assert(d1->bci() == d2->bci(), "not equal");
 
@@ -2375,7 +2375,7 @@ void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
   }
 }
 
-void check_stack_depth(CodeEmitInfo* info, int stack_end) {
+static void check_stack_depth(CodeEmitInfo* info, int stack_end) {
   if (info->stack()->bci() != SynchronizationEntryBCI && !info->scope()->method()->is_native()) {
     Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->stack()->bci());
     switch (code) {

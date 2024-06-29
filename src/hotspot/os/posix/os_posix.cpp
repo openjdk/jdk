@@ -93,6 +93,9 @@
   #define MAP_ANONYMOUS MAP_ANON
 #endif
 
+/* Input/Output types for mincore(2) */
+typedef LINUX_ONLY(unsigned) char mincore_vec_t;
+
 static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
@@ -146,6 +149,94 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
   VMError::record_coredump_status(buffer, success);
 }
 
+bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+
+#ifdef _AIX
+  committed_start = start;
+  committed_size = size;
+  return true;
+#else
+
+  int mincore_return_value;
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  mincore_vec_t vec [stripe + 1];
+
+  // set a guard
+  DEBUG_ONLY(vec[stripe] = 'X');
+
+  size_t page_sz = os::vm_page_size();
+  uintx pages = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  committed_start = nullptr;
+
+  int loops = checked_cast<int>((pages + stripe - 1) / stripe);
+  int committed_pages = 0;
+  address loop_base = start;
+  bool found_range = false;
+
+  for (int index = 0; index < loops && !found_range; index ++) {
+    assert(pages > 0, "Nothing to do");
+    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
+    pages -= pages_to_query;
+
+    // Get stable read
+    int fail_count = 0;
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN){
+      if (++fail_count == 1000){
+        return false;
+      }
+    }
+
+    // During shutdown, some memory goes away without properly notifying NMT,
+    // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
+    // Bailout and return as not committed for now.
+    if (mincore_return_value == -1 && errno == ENOMEM) {
+      return false;
+    }
+
+    // If mincore is not supported.
+    if (mincore_return_value == -1 && errno == ENOSYS) {
+      return false;
+    }
+
+    assert(vec[stripe] == 'X', "overflow guard");
+    assert(mincore_return_value == 0, "Range must be valid");
+    // Process this stripe
+    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+        // End of current contiguous region
+        if (committed_start != nullptr) {
+          found_range = true;
+          break;
+        }
+      } else { // committed
+        // Start of region
+        if (committed_start == nullptr) {
+          committed_start = loop_base + page_sz * vecIdx;
+        }
+        committed_pages ++;
+      }
+    }
+
+    loop_base += pages_to_query * page_sz;
+  }
+
+  if (committed_start != nullptr) {
+    assert(committed_pages > 0, "Must have committed region");
+    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
+    assert(committed_start >= start && committed_start < start + size, "Out of range");
+    committed_size = page_sz * committed_pages;
+    return true;
+  } else {
+    assert(committed_pages == 0, "Should not have committed region");
+    return false;
+  }
+#endif
+}
+
 int os::get_native_stack(address* stack, int frames, int toSkip) {
   int frame_idx = 0;
   int num_of_frames;  // number of frames captured
@@ -185,6 +276,17 @@ size_t os::lasterror(char *buf, size_t len) {
   ::strncpy(buf, s, n);
   buf[n] = '\0';
   return n;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// breakpoint support
+
+void os::breakpoint() {
+  BREAKPOINT;
+}
+
+extern "C" void breakpoint() {
+  // use debugger to set breakpoint here
 }
 
 // Return true if user is running as root.
@@ -265,7 +367,7 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
-static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
+static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MEMFLAGS flag) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
   if (requested_addr != nullptr) {
@@ -280,7 +382,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
-    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC, flag);
     return addr;
   }
   return nullptr;
@@ -393,7 +495,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
   // - we later chop away parts of the mapping using os::release_memory and that could fail if the
@@ -401,7 +503,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
   //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
   //   chopping off and unmapping excess bits back and front (see below) would not work.
-  char* extra_base = reserve_mmapped_memory(extra_size, nullptr);
+  char* extra_base = reserve_mmapped_memory(extra_size, nullptr, flag);
   if (extra_base == nullptr) {
     return nullptr;
   }
@@ -412,17 +514,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
-}
-
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // All supported POSIX platforms provide C99 semantics.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
 }
 
 int os::get_fileno(FILE* fp) {
@@ -497,7 +588,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 #if defined(AIX)
   st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
+  st->print("%ld", sysconf(_SC_CHILD_MAX));
 
   print_rlimit(st, ", THREADS", RLIMIT_THREADS);
 #else
@@ -610,9 +701,14 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
-  uname(&name);
-  jio_snprintf(buf, buflen, "%s", name.nodename);
-  return true;
+  int retcode = uname(&name);
+  if (retcode != -1) {
+    jio_snprintf(buf, buflen, "%s", name.nodename);
+    return true;
+  }
+  const char* errmsg = os::strerror(errno);
+  log_warning(os)("Failed to get host name, error message: %s", errmsg);
+  return false;
 }
 
 #ifndef _LP64
@@ -711,7 +807,16 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
+  ::dlerror(); // Clear any previous error
+  void* ret = ::dlsym(handle, name);
+  if (ret == nullptr) {
+    const char* tmp = ::dlerror();
+    // It is possible that we found a NULL symbol, hence no error.
+    if (tmp != nullptr) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    }
+  }
+  return ret;
 }
 
 void os::dll_unload(void *lib) {
@@ -827,6 +932,14 @@ void os::exit(int num) {
 
 void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
+}
+
+bool os::dont_yield() {
+  return DontYieldALot;
+}
+
+void os::naked_yield() {
+  sched_yield();
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -2031,3 +2144,53 @@ void os::die() {
 const char* os::file_separator() { return "/"; }
 const char* os::line_separator() { return "\n"; }
 const char* os::path_separator() { return ":"; }
+
+// Map file into memory; uses mmap().
+// Notes:
+// - if caller specifies addr, MAP_FIXED is used. That means existing
+//   mappings will be replaced.
+// - The file descriptor must be valid (to create anonymous mappings, use
+//   os::reserve_memory()).
+// Returns address to mapped memory, nullptr on error
+char* os::pd_map_memory(int fd, const char* unused,
+                        size_t file_offset, char *addr, size_t bytes,
+                        bool read_only, bool allow_exec) {
+
+  assert(fd != -1, "Specify a valid file descriptor");
+
+  int prot;
+  int flags = MAP_PRIVATE;
+
+  if (read_only) {
+    prot = PROT_READ;
+  } else {
+    prot = PROT_READ | PROT_WRITE;
+  }
+
+  if (allow_exec) {
+    prot |= PROT_EXEC;
+  }
+
+  if (addr != nullptr) {
+    flags |= MAP_FIXED;
+  }
+
+  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
+                                     fd, file_offset);
+  if (mapped_address == MAP_FAILED) {
+    return nullptr;
+  }
+
+  // If we did specify an address, and the mapping succeeded, it should
+  // have returned that address since we specify MAP_FIXED
+  assert(addr == nullptr || addr == mapped_address,
+         "mmap+MAP_FIXED returned " PTR_FORMAT ", expected " PTR_FORMAT,
+         p2i(mapped_address), p2i(addr));
+
+  return mapped_address;
+}
+
+// Unmap a block of memory. Uses munmap.
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
+  return munmap(addr, bytes) == 0;
+}

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ case ${OS} in
         ;;
 esac
 
-"$JAVA" ${TESTVMOPTS} -classpath "${TESTCLASSES}" Setup "${TESTCLASSES}" Agent "${CYGWIN}"
+"$JAVA" ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath "${TESTCLASSES}" Setup "${TESTCLASSES}" Agent "${CYGWIN}"
 
 BOOTDIR=`cat ${TESTCLASSES}/boot.dir`
 
@@ -94,13 +94,13 @@ echo "Creating agent jar file..."
 
 echo "Running test..."
 
-"${JAVA}" ${TESTVMOPTS} -javaagent:"${TESTCLASSES}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} -javaagent:"${TESTCLASSES}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
 result=$?
 
 echo "Cleanup..."
 
 "$JAVAC" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d "${TESTCLASSES}" \
     "${TESTSRC}"/Cleanup.java
-"$JAVA" ${TESTVMOPTS} -classpath "${TESTCLASSES}" Cleanup "${BOOTDIR}"
+"$JAVA" ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath "${TESTCLASSES}" Cleanup "${BOOTDIR}"
 
 exit $result

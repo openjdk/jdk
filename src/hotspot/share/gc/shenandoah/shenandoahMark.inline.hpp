@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -56,7 +57,7 @@ void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
   }
 }
 
-template <class T, StringDedupMode STRING_DEDUP>
+template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
@@ -94,7 +95,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness(live_data, obj);
+      count_liveness<GENERATION>(live_data, obj);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -102,6 +103,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   }
 }
 
+template <ShenandoahGenerationType GENERATION>
 inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   size_t region_idx = heap->heap_region_index_containing(obj);
@@ -229,6 +231,7 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
   array->oop_iterate_range(cl, from, to);
 }
 
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -246,12 +249,12 @@ public:
     assert(size == 0 || !_heap->has_forwarded_objects(), "Forwarded objects are not expected here");
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop>(p, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION>(p, _queue, _mark_context, false);
     }
   }
 };
 
-template<class T>
+template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {

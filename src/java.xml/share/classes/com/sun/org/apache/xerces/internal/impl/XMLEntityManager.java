@@ -94,7 +94,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Jan 2024
+ * @LastModified: Feb 2024
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -1118,8 +1118,9 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * this method attempts to resolve the resource as an EntityResolver first
      * and then URIResolver if no match is found.
      */
-    private XMLInputSource resolveEntityOrURI(CatalogResolver cr, String publicId, String systemId, String base) {
-        XMLInputSource xis = resolveEntity(cr, publicId, systemId, base);
+    private XMLInputSource resolveEntityOrURI(String catalogName, CatalogResolver cr,
+            String publicId, String systemId, String base) {
+        XMLInputSource xis = resolveEntity(catalogName, cr, publicId, systemId, base);
 
         if (xis != null) {
             return xis;
@@ -1137,13 +1138,21 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         return null;
     }
 
-    private XMLInputSource resolveEntity(CatalogResolver cr, String publicId, String systemId, String base) {
+    private XMLInputSource resolveEntity(String catalogName, CatalogResolver cr,
+            String publicId, String systemId, String base) {
         InputSource is = null;
         try {
             if (publicId != null || systemId != null) {
                 is = cr.resolveEntity(publicId, systemId);
             }
-        } catch (CatalogException e) {}
+        } catch (CatalogException e) {
+            //Note: XSDHandler does not set ErrorReporter on EntityManager
+            if (fErrorReporter != null) {
+                fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
+                    new Object[]{SecuritySupport.sanitizePath(catalogName)},
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
+            }
+        }
 
         if (is != null && !is.isEmpty()) {
             return new XMLInputSource(is, true);
@@ -1216,7 +1225,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
             }
             String pid = (publicId != null? publicId : resourceIdentifier.getNamespace());
-            xmlInputSource = resolveEntityOrURI(fCatalogResolver, pid, literalSystemId, baseSystemId);
+            xmlInputSource = resolveEntityOrURI(fCatalogFile, fCatalogResolver, pid, literalSystemId, baseSystemId);
         }
 
         // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
@@ -1225,7 +1234,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();
             // unlike a custom catalog, the JDK Catalog only contains entity references
-            xmlInputSource = resolveEntity(fDefCR, publicId, literalSystemId, baseSystemId);
+            xmlInputSource = resolveEntity("JDKCatalog", fDefCR, publicId, literalSystemId, baseSystemId);
         }
 
         // Step 4: default resolution if not resolved by a resolver and the RESOLVE

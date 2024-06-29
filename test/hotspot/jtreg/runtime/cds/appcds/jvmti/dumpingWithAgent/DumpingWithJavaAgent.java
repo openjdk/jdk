@@ -28,7 +28,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
  * @requires vm.jvmti
- * @build SimpleAgent Hello
+ * @build SimpleAgent Hello AppWithBMH
  * @run main/othervm DumpingWithJavaAgent
  */
 
@@ -40,9 +40,11 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 public class DumpingWithJavaAgent {
     public static String appClasses[] = {
         "Hello",
+        "AppWithBMH",
     };
     public static String agentClasses[] = {
         "SimpleAgent",
+        "SimpleAgent$1"
     };
 
     public static String warningMessages[] = {
@@ -65,8 +67,18 @@ public class DumpingWithJavaAgent {
         String appJar =
             ClassFileInstaller.writeJar("DumpingWithJavaAgent.jar", appClasses);
 
+        // CDS dumping with a java agent performing class transformation on BoundMethodHandle$Species classes
+        OutputAnalyzer output = TestCommon.testDump(appJar, TestCommon.list("AppWithBMH"),
+            "-XX:+UnlockDiagnosticVMOptions", diagnosticOption,
+            "-javaagent:" + agentJar + "=doTransform",
+            "AppWithBMH");
+        TestCommon.checkDump(output);
+        output.shouldContain(warningMessages[0]);
+        output.shouldContain(warningMessages[1]);
+        output.shouldContain("inside SimpleAgent");
+
         // CDS dumping with a java agent with the AllowArchvingWithJavaAgent diagnostic option.
-        OutputAnalyzer output = TestCommon.testDump(appJar, TestCommon.list("Hello"),
+        output = TestCommon.testDump(appJar, TestCommon.list("Hello"),
             "-XX:+UnlockDiagnosticVMOptions", diagnosticOption,
             "-javaagent:" + agentJar);
         TestCommon.checkDump(output);

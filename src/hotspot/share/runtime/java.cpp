@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -46,6 +48,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -78,6 +81,7 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -100,7 +104,7 @@
 
 GrowableArray<Method*>* collected_profiled_methods;
 
-int compare_methods(Method** a, Method** b) {
+static int compare_methods(Method** a, Method** b) {
   // compiled_invocation_count() returns int64_t, forcing the entire expression
   // to be evaluated as int64_t. Overflow is not an issue.
   int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
@@ -108,7 +112,7 @@ int compare_methods(Method** a, Method** b) {
   return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
-void collect_profiled_methods(Method* m) {
+static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
@@ -117,7 +121,7 @@ void collect_profiled_methods(Method* m) {
   }
 }
 
-void print_method_profiling_data() {
+static void print_method_profiling_data() {
   if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
@@ -155,14 +159,13 @@ void print_method_profiling_data() {
   }
 }
 
-
 #ifndef PRODUCT
 
 // Statistics printing (method invocation histogram)
 
 GrowableArray<Method*>* collected_invoked_methods;
 
-void collect_invoked_methods(Method* m) {
+static void collect_invoked_methods(Method* m) {
   if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
@@ -172,7 +175,7 @@ void collect_invoked_methods(Method* m) {
 // Invocation count accumulators should be unsigned long to shift the
 // overflow border. Longer-running workloads tend to create invocation
 // counts which already overflow 32-bit counters for individual methods.
-void print_method_invocation_histogram() {
+static void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
   SystemDictionary::methods_do(collect_invoked_methods);
@@ -226,7 +229,7 @@ void print_method_invocation_histogram() {
   SharedRuntime::print_call_statistics(comp_total);
 }
 
-void print_bytecode_count() {
+static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
     tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
   }
@@ -234,8 +237,8 @@ void print_bytecode_count() {
 
 #else
 
-void print_method_invocation_histogram() {}
-void print_bytecode_count() {}
+static void print_method_invocation_histogram() {}
+static void print_bytecode_count() {}
 
 #endif // PRODUCT
 
@@ -264,7 +267,7 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
-  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -316,10 +319,12 @@ void print_statistics() {
     CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
+#ifndef PRODUCT
   if (PrintCodeCache2) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_internals();
   }
+#endif
 
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());
@@ -353,6 +358,8 @@ void print_statistics() {
   }
 
   ThreadsSMRSupport::log_statistics();
+
+  ClassLoader::print_counters(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads
@@ -363,6 +370,8 @@ void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
+
+  Events::log(thread, "Before exit entered");
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
@@ -426,6 +435,10 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
+#if INCLUDE_CDS
+  ClassListWriter::write_resolved_constants();
+#endif
+
   // Hang forever on exit if we're reporting an error.
   if (ShowMessageBoxOnError && VMError::is_error_reported()) {
     os::infinite_sleep();
@@ -472,6 +485,9 @@ void before_exit(JavaThread* thread, bool halt) {
 #ifdef LINUX
   if (DumpPerfMapAtExit) {
     CodeCache::write_perf_map();
+  }
+  if (PrintMemoryMapAtExit) {
+    MemMapPrinter::print_all_mappings(tty, false);
   }
 #endif
 
@@ -570,7 +586,7 @@ void vm_direct_exit(int code, const char* message) {
   vm_direct_exit(code);
 }
 
-void vm_perform_shutdown_actions() {
+static void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != nullptr && thread->is_Java_thread()) {
@@ -605,7 +621,7 @@ void vm_abort(bool dump_core) {
   ShouldNotReachHere();
 }
 
-void vm_notify_during_cds_dumping(const char* error, const char* message) {
+static void vm_notify_during_cds_dumping(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during CDS dumping");
     tty->print("%s", error);
@@ -625,7 +641,7 @@ void vm_exit_during_cds_dumping(const char* error, const char* message) {
   vm_abort(false);
 }
 
-void vm_notify_during_shutdown(const char* error, const char* message) {
+static void vm_notify_during_shutdown(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during initialization of VM");
     tty->print("%s", error);

@@ -28,6 +28,7 @@
 #include <ffi.h>
 
 #include <errno.h>
+#include <stdalign.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <wchar.h>
@@ -274,4 +275,14 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1long(JNIEnv* env
 JNIEXPORT jint JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1wchar(JNIEnv* env, jclass cls) {
   return sizeof(wchar_t);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1long_1long(JNIEnv* env, jclass cls) {
+  return alignof(long long);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1double(JNIEnv* env, jclass cls) {
+  return alignof(double);
 }

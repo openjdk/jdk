@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1004,7 +1004,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
@@ -1016,6 +1022,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   // LinearScan will fail allocation (because arraycopy always needs a
   // call)
 
+  int flags;
+  ciArrayKlass* expected_type;
+  arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
+
 #ifndef _LP64
   src.load_item_force     (FrameMap::rcx_oop_opr);
   src_pos.load_item_force (FrameMap::rdx_opr);
@@ -1023,6 +1036,11 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   dst_pos.load_item_force (FrameMap::rbx_opr);
   length.load_item_force  (FrameMap::rdi_opr);
   LIR_Opr tmp =           (FrameMap::rsi_opr);
+
+  if (expected_type != nullptr && flags == 0) {
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(3 * BytesPerWord);
+  }
 #else
 
   // The java calling convention will give us enough registers
@@ -1043,10 +1061,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 #endif // LP64
 
   set_no_result(x);
-
-  int flags;
-  ciArrayKlass* expected_type;
-  arraycopy_helper(x, &flags, &expected_type);
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
@@ -1207,9 +1221,10 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   __ move(result_reg, result);
 }
 
+#ifndef _LP64
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
-LIR_Opr fixed_register_for(BasicType type) {
+static LIR_Opr fixed_register_for(BasicType type) {
   switch (type) {
     case T_FLOAT:  return FrameMap::fpu0_float_opr;
     case T_DOUBLE: return FrameMap::fpu0_double_opr;
@@ -1218,6 +1233,7 @@ LIR_Opr fixed_register_for(BasicType type) {
     default:       ShouldNotReachHere(); return LIR_OprFact::illegalOpr;
   }
 }
+#endif
 
 void LIRGenerator::do_Convert(Convert* x) {
 #ifdef _LP64
@@ -1308,7 +1324,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::rbx_opr);
@@ -1325,7 +1347,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,27 @@ public class G1CollectedHeap extends CollectedHeap {
         return VMObjectFactory.newObject(HeapRegionSetBase.class, humongousSetAddr);
     }
 
-    private Iterator<HeapRegion> heapRegionIterator() {
+    private Iterator<G1HeapRegion> heapRegionIterator() {
         return hrm().heapRegionIterator();
     }
 
     public void heapRegionIterate(HeapRegionClosure hrcl) {
-        Iterator<HeapRegion> iter = heapRegionIterator();
+        Iterator<G1HeapRegion> iter = heapRegionIterator();
         while (iter.hasNext()) {
-            HeapRegion hr = iter.next();
+            G1HeapRegion hr = iter.next();
             hrcl.doHeapRegion(hr);
         }
+    }
+
+    public G1HeapRegion heapRegionForAddress(Address addr) {
+        Iterator<G1HeapRegion> iter = heapRegionIterator();
+        while (iter.hasNext()) {
+            G1HeapRegion hr = iter.next();
+            if (hr.isInRegion(addr)) {
+                return hr;
+            }
+        }
+        return null;
     }
 
     public CollectedHeapName kind() {
@@ -128,9 +139,9 @@ public class G1CollectedHeap extends CollectedHeap {
 
     @Override
     public void liveRegionsIterate(LiveRegionsClosure closure) {
-        Iterator<HeapRegion> iter = heapRegionIterator();
+        Iterator<G1HeapRegion> iter = heapRegionIterator();
         while (iter.hasNext()) {
-            HeapRegion hr = iter.next();
+            G1HeapRegion hr = iter.next();
             closure.doLiveRegions(hr);
         }
     }
@@ -141,7 +152,7 @@ public class G1CollectedHeap extends CollectedHeap {
 
         tty.print("garbage-first heap");
         tty.print(" [" + mr.start() + ", " + mr.end() + "]");
-        tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
+        tty.println(" region size " + (G1HeapRegion.grainBytes() / 1024) + "K");
 
         HeapSummary sum = new HeapSummary();
         sum.printG1HeapSummary(tty, this);

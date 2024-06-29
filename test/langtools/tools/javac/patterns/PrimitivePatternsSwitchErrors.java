@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8304487
+ * @bug 8304487 8325653 8332463
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile/fail/ref=PrimitivePatternsSwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitivePatternsSwitchErrors.java
@@ -59,7 +59,7 @@ public class PrimitivePatternsSwitchErrors {
         int i = 42;
         return switch (i) {
             case Integer ib  -> ib;
-            case byte ip     -> ip; // Error - dominated!
+            case byte ip     -> ip; // OK - not dominated!
         };
     }
 
@@ -216,5 +216,53 @@ public class PrimitivePatternsSwitchErrors {
             case null    -> System.out.println("oops");
             default      -> System.out.println("any other integral value");
         }
+    }
+
+    public static int nonExhaustive4() {
+        Number n = Byte.valueOf((byte) 42);
+        return switch (n) { // Error - not exhaustive
+            case byte  b when b == 42 -> 1;
+            case byte  b -> -1 ;
+        };
+    }
+
+    public static int nonExhaustive5() {
+        Object n = 42;
+        return switch (n) { // Error - not exhaustive
+            case int  b when b == 42 -> 1;
+            case int  b -> -1 ;
+        };
+    }
+
+    public static int nonExhaustive6() {
+        Object n = 42;
+        return switch (n) { // Error - not exhaustive
+            case byte b -> -1 ;
+            case int b -> -2 ;
+        };
+    }
+
+    public static int disallowedUnboxingAndNarrowing1() {
+        Long n = 42l;
+        return switch (n) { // Error - not exhaustive and not allowed
+            case char c -> -1 ;
+        };
+    }
+
+    public static int disallowedUnboxingAndNarrowing2() {
+        Long n = 42l;
+        return switch (n) { // Error - not exhaustive and not allowed
+            case int c -> -1 ;
+        };
+    }
+
+    public static char disallowedUnboxingAndWidening(Short test) {
+        return switch (test) {
+            case char c -> c; // Error - not exhaustive and not allowed
+        };
+    }
+
+    public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndNarrowingPrimitive(T i) {
+        return i instanceof byte b;  // not allowed as a conversion
     }
 }

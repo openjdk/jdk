@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
-#include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -98,6 +97,10 @@ void XNMethod::attach_gc_data(nmethod* nm) {
 
 XReentrantLock* XNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
+}
+
+XReentrantLock* XNMethod::ic_lock_for_nmethod(nmethod* nm) {
+  return gc_data(nm)->ic_lock();
 }
 
 void XNMethod::log_register(const nmethod* nm) {
@@ -296,18 +299,19 @@ public:
       return;
     }
 
-    XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
+    {
+      XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
 
-    if (XNMethod::is_armed(nm)) {
-      // Heal oops and arm phase invariantly
-      XNMethod::nmethod_oops_barrier(nm);
-      XNMethod::set_guard_value(nm, 0);
+      if (XNMethod::is_armed(nm)) {
+        // Heal oops and arm phase invariantly
+        XNMethod::nmethod_oops_barrier(nm);
+        XNMethod::set_guard_value(nm, 0);
+      }
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
+    XLocker<XReentrantLock> locker(XNMethod::ic_lock_for_nmethod(nm));
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 
   bool failed() const {
@@ -318,13 +322,11 @@ public:
 class XNMethodUnlinkTask : public XTask {
 private:
   XNMethodUnlinkClosure _cl;
-  ICRefillVerifier*     _verifier;
 
 public:
-  XNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
+  XNMethodUnlinkTask(bool unloading_occurred) :
       XTask("XNMethodUnlinkTask"),
-      _cl(unloading_occurred),
-      _verifier(verifier) {
+      _cl(unloading_occurred) {
     XNMethodTable::nmethods_do_begin();
   }
 
@@ -333,33 +335,13 @@ public:
   }
 
   virtual void work() {
-    ICRefillVerifierMark mark(_verifier);
     XNMethodTable::nmethods_do(&_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void XNMethod::unlink(XWorkers* workers, bool unloading_occurred) {
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      XNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  XNMethodUnlinkTask task(unloading_occurred);
+  workers->run(&task);
 }
 
 void XNMethod::purge() {

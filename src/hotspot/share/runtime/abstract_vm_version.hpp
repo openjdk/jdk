@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,12 @@ class Abstract_VM_Version: AllStatic {
 
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
+
+  // Is recursive lightweight locking implemented for this platform?
+  constexpr static bool supports_recursive_lightweight_locking() { return false; }
+
+  // Does platform support secondary supers table lookup?
+  constexpr static bool supports_secondary_supers_table() { return false; }
 
   // Does platform support float16 instructions?
   static bool supports_float16() { return false; }

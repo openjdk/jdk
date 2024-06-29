@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,20 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libmanagement
+################################################################################
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux), true)
-  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    LIBMANAGEMENT_OPTIMIZATION := LOW
-  endif
+ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
+  LIBMANAGEMENT_OPTIMIZATION := LOW
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(JDKLIB_LIBS), \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat,\
-    LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    LIBS_windows := advapi32.lib psapi.lib, \
 ))
-
-$(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMANAGEMENT)

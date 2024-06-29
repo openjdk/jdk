@@ -82,6 +82,7 @@ public:
           _t_vector_pru,
       _t_renumberLive,
       _t_idealLoop,
+        _t_autoVectorize,
       _t_idealLoopVerify,
       _t_ccp,
       _t_iterGVN2,

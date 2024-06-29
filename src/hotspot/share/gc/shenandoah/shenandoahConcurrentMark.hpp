@@ -25,14 +25,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
-  friend class ShenandoahConcurrentMarkingTask;
-  friend class ShenandoahFinalMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
   ShenandoahConcurrentMark();

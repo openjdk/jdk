@@ -68,9 +68,10 @@
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
-  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
-  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,       "AutoVectorization 1, Before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,      "AutoVectorization 2, After Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_APPLY,        "AutoVectorization 4, After Apply") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
@@ -84,7 +85,9 @@
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
-  flags(MACRO_EXPANSION,                "Macro expand") \
+  flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
+  flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
+  flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
   flags(BARRIER_EXPANSION,              "Barrier expand") \
   flags(OPTIMIZE_FINISHED,              "Optimize finished") \
   flags(BEFORE_MATCHING,                "Before matching") \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ public class CheckPermissions {
                 delete(target);
             }
 
-            if (TestUtil.supportsLinks(testdir)) {
+            if (TestUtil.supportsSymbolicLinks(testdir)) {
                 Path link = testdir.resolve("link1234");
                 createSymbolicLink(link, file);
                 try {
@@ -297,7 +297,7 @@ public class CheckPermissions {
 
             // -- createSymbolicLink --
 
-            if (TestUtil.supportsLinks(testdir)) {
+            if (TestUtil.supportsSymbolicLinks(testdir)) {
                 prepare();
                 Path link = testdir.resolve("link1234");
                 createSymbolicLink(link, file);
@@ -311,7 +311,7 @@ public class CheckPermissions {
 
             // -- createLink --
 
-            if (TestUtil.supportsLinks(testdir)) {
+            if (TestUtil.supportsHardLinks(testdir)) {
                 prepare();
                 Path link = testdir.resolve("entry234");
                 createLink(link, file);

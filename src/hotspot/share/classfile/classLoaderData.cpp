@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,9 +407,6 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
-  // To call this, one must have the MultiArray_lock held, but the _klasses list still has lock free reads.
-  assert_locked_or_safepoint(MultiArray_lock);
-
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the

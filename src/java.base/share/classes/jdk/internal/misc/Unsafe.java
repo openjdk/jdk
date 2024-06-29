@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ public final class Unsafe {
         return theUnsafe;
     }
 
-    /// peek and poke operations
-    /// (compilers should optimize these to memory ops)
+    //--- peek and poke operations
+    // (compilers should optimize these to memory ops)
 
     // These work on object fields in the Java heap.
     // They will not work on elements of packed arrays.
@@ -420,7 +420,7 @@ public final class Unsafe {
 
 
 
-    /// helper methods for validating various types of objects/values
+    //--- helper methods for validating various types of objects/values
 
     /**
      * Create an exception reflecting that some of the input was invalid
@@ -581,7 +581,7 @@ public final class Unsafe {
     }
 
 
-    /// wrappers for malloc, realloc, free:
+    //--- wrappers for malloc, realloc, free:
 
     /**
      * Round up allocation size to a multiple of HeapWordSize.
@@ -597,9 +597,10 @@ public final class Unsafe {
     /**
      * Allocates a new block of native memory, of the given size in bytes.  The
      * contents of the memory are uninitialized; they will generally be
-     * garbage.  The resulting native pointer will never be zero, and will be
-     * aligned for all value types.  Dispose of this memory by calling {@link
-     * #freeMemory}, or resize it with {@link #reallocateMemory}.
+     * garbage.  The resulting native pointer will be zero if and only if the
+     * requested size is zero.  The resulting native pointer will be aligned for
+     * all value types.   Dispose of this memory by calling {@link #freeMemory}
+     * or resize it with {@link #reallocateMemory}.
      *
      * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
@@ -1031,7 +1032,7 @@ public final class Unsafe {
     @IntrinsicCandidate
     private native void writebackPostSync0();
 
-    /// random queries
+    //--- random queries
 
     /**
      * This constant differs from all results that will ever be returned from
@@ -1311,7 +1312,7 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
-    /// random trusted operations from JNI:
+    //--- random trusted operations from JNI:
 
     /**
      * Tells the VM to define a class, without security checks.  By default, the
@@ -3823,6 +3824,7 @@ public final class Unsafe {
     private native long allocateMemory0(long bytes);
     private native long reallocateMemory0(long address, long bytes);
     private native void freeMemory0(long address);
+    @IntrinsicCandidate
     private native void setMemory0(Object o, long offset, long bytes, byte value);
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
@@ -3859,92 +3861,5 @@ public final class Unsafe {
         if (cleaner != null) {
             cleaner.clean();
         }
-    }
-
-    // The following deprecated methods are used by JSR 166.
-
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObject(Object o, long offset) {
-        return getReference(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectVolatile(Object o, long offset) {
-        return getReferenceVolatile(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectAcquire(Object o, long offset) {
-        return getReferenceAcquire(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectOpaque(Object o, long offset) {
-        return getReferenceOpaque(o, offset);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObject(Object o, long offset, Object x) {
-        putReference(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectVolatile(Object o, long offset, Object x) {
-        putReferenceVolatile(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectOpaque(Object o, long offset, Object x) {
-        putReferenceOpaque(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectRelease(Object o, long offset, Object x) {
-        putReferenceRelease(o, offset, x);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObject(Object o, long offset, Object newValue) {
-        return getAndSetReference(o, offset, newValue);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObjectAcquire(Object o, long offset, Object newValue) {
-        return getAndSetReferenceAcquire(o, offset, newValue);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObjectRelease(Object o, long offset, Object newValue) {
-        return getAndSetReferenceRelease(o, offset, newValue);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean compareAndSetObject(Object o, long offset, Object expected, Object x) {
-        return compareAndSetReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObject(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObjectAcquire(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReferenceAcquire(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObjectRelease(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReferenceRelease(o, offset, expected, x);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObject(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectAcquire(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferenceAcquire(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectPlain(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferencePlain(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectRelease(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferenceRelease(o, offset, expected, x);
     }
 }

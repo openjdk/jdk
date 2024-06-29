@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ import jdk.internal.access.JavaUtilResourceBundleAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.ReferencedKeyMap;
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
-import sun.util.locale.LocaleObjectCache;
 import sun.util.resources.Bundles;
 
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
@@ -508,8 +508,8 @@ public abstract class ResourceBundle {
      * Gets a string for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
-     *     (String[]) getObject(key);
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
+     *     (String) getObject(key);
      * }
      *
      * @param key the key for the desired string
@@ -526,7 +526,7 @@ public abstract class ResourceBundle {
      * Gets a string array for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
      *     (String[]) getObject(key);
      * }
      *
@@ -2425,7 +2425,7 @@ public abstract class ResourceBundle {
      * {@snippet lang=java :
      * import java.util.*;
      * import static java.util.ResourceBundle.Control.*;
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      * ResourceBundle bundle =
      *   ResourceBundle.getBundle("MyResources", Locale.forLanguageTag("fr-CH"),
      *                            ResourceBundle.Control.getControl(FORMAT_PROPERTIES));
@@ -2494,7 +2494,7 @@ public abstract class ResourceBundle {
      *         }
      *     });
      *
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      *
      * private static class XMLResourceBundle extends ResourceBundle {
      *     private Properties props;
@@ -2506,7 +2506,7 @@ public abstract class ResourceBundle {
      *         return props.getProperty(key);
      *     }
      *     public Enumeration<String> getKeys() {
-     *         code: // @replace substring="code:" replacement="..."
+     *         ...
      *     }
      * }
      * }
@@ -2867,123 +2867,122 @@ public abstract class ResourceBundle {
             if (baseName == null) {
                 throw new NullPointerException();
             }
-            return new ArrayList<>(CANDIDATES_CACHE.get(locale.getBaseLocale()));
+            return new ArrayList<>(CANDIDATES_CACHE.computeIfAbsent(locale.getBaseLocale(),
+                    Control::createCandidateList));
         }
 
-        private static final CandidateListCache CANDIDATES_CACHE = new CandidateListCache();
+        private static final ReferencedKeyMap<BaseLocale, List<Locale>> CANDIDATES_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
 
-        private static class CandidateListCache extends LocaleObjectCache<BaseLocale, List<Locale>> {
-            protected List<Locale> createObject(BaseLocale base) {
-                String language = base.getLanguage();
-                String script = base.getScript();
-                String region = base.getRegion();
-                String variant = base.getVariant();
+        private static List<Locale> createCandidateList(BaseLocale base) {
+            String language = base.getLanguage();
+            String script = base.getScript();
+            String region = base.getRegion();
+            String variant = base.getVariant();
 
-                // Special handling for Norwegian
-                boolean isNorwegianBokmal = false;
-                boolean isNorwegianNynorsk = false;
-                if (language.equals("no")) {
-                    if (region.equals("NO") && variant.equals("NY")) {
-                        variant = "";
-                        isNorwegianNynorsk = true;
-                    } else {
-                        isNorwegianBokmal = true;
+            // Special handling for Norwegian
+            boolean isNorwegianBokmal = false;
+            boolean isNorwegianNynorsk = false;
+            if (language.equals("no")) {
+                if (region.equals("NO") && variant.equals("NY")) {
+                    variant = "";
+                    isNorwegianNynorsk = true;
+                } else {
+                    isNorwegianBokmal = true;
+                }
+            }
+            if (language.equals("nb") || isNorwegianBokmal) {
+                List<Locale> tmpList = getDefaultList("nb", script, region, variant);
+                // Insert a locale replacing "nb" with "no" for every list entry with precedence
+                List<Locale> bokmalList = new ArrayList<>();
+                for (Locale l_nb : tmpList) {
+                    var isRoot = l_nb.getLanguage().isEmpty();
+                    var l_no = Locale.getInstance(isRoot ? "" : "no",
+                            l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
+                    bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
+                    if (isRoot) {
+                        break;
+                    }
+                    bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
+                }
+                return bokmalList;
+            } else if (language.equals("nn") || isNorwegianNynorsk) {
+                // Insert no_NO_NY, no_NO, no after nn
+                List<Locale> nynorskList = getDefaultList("nn", script, region, variant);
+                int idx = nynorskList.size() - 1;
+                nynorskList.add(idx++, Locale.getInstance("no", "NO", "NY"));
+                nynorskList.add(idx++, Locale.getInstance("no", "NO", ""));
+                nynorskList.add(idx++, Locale.getInstance("no", "", ""));
+                return nynorskList;
+            }
+            // Special handling for Chinese
+            else if (language.equals("zh")) {
+                if (script.isEmpty() && !region.isEmpty()) {
+                    // Supply script for users who want to use zh_Hans/zh_Hant
+                    // as bundle names (recommended for Java7+)
+                    switch (region) {
+                        case "TW", "HK", "MO" -> script = "Hant";
+                        case "CN", "SG"       -> script = "Hans";
                     }
                 }
-                if (language.equals("nb") || isNorwegianBokmal) {
-                    List<Locale> tmpList = getDefaultList("nb", script, region, variant);
-                    // Insert a locale replacing "nb" with "no" for every list entry with precedence
-                    List<Locale> bokmalList = new ArrayList<>();
-                    for (Locale l_nb : tmpList) {
-                        var isRoot = l_nb.getLanguage().isEmpty();
-                        var l_no = Locale.getInstance(isRoot ? "" : "no",
-                                l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
-                        bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
-                        if (isRoot) {
-                            break;
-                        }
-                        bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
-                    }
-                    return bokmalList;
-                } else if (language.equals("nn") || isNorwegianNynorsk) {
-                    // Insert no_NO_NY, no_NO, no after nn
-                    List<Locale> nynorskList = getDefaultList("nn", script, region, variant);
-                    int idx = nynorskList.size() - 1;
-                    nynorskList.add(idx++, Locale.getInstance("no", "NO", "NY"));
-                    nynorskList.add(idx++, Locale.getInstance("no", "NO", ""));
-                    nynorskList.add(idx++, Locale.getInstance("no", "", ""));
-                    return nynorskList;
-                }
-                // Special handling for Chinese
-                else if (language.equals("zh")) {
-                    if (script.isEmpty() && !region.isEmpty()) {
-                        // Supply script for users who want to use zh_Hans/zh_Hant
-                        // as bundle names (recommended for Java7+)
-                        switch (region) {
-                            case "TW", "HK", "MO" -> script = "Hant";
-                            case "CN", "SG"       -> script = "Hans";
-                        }
-                    }
-                }
-
-                return getDefaultList(language, script, region, variant);
             }
 
-            private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
-                List<String> variants = null;
+            return getDefaultList(language, script, region, variant);
+        }
 
-                if (!variant.isEmpty()) {
-                    variants = new ArrayList<>();
-                    int idx = variant.length();
-                    while (idx != -1) {
-                        variants.add(variant.substring(0, idx));
-                        idx = variant.lastIndexOf('_', --idx);
+        private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
+            List<String> variants = null;
+
+            if (!variant.isEmpty()) {
+                variants = new ArrayList<>();
+                int idx = variant.length();
+                while (idx != -1) {
+                    variants.add(variant.substring(0, idx));
+                    idx = variant.lastIndexOf('_', --idx);
+                }
+            }
+
+            List<Locale> list = new ArrayList<>();
+
+            if (variants != null) {
+                for (String v : variants) {
+                    list.add(Locale.getInstance(language, script, region, v, null));
+                }
+            }
+            if (!region.isEmpty()) {
+                list.add(Locale.getInstance(language, script, region, "", null));
+            }
+            if (!script.isEmpty()) {
+                list.add(Locale.getInstance(language, script, "", "", null));
+                // Special handling for Chinese
+                if (language.equals("zh")) {
+                    if (region.isEmpty()) {
+                        // Supply region(country) for users who still package Chinese
+                        // bundles using old convention.
+                        switch (script) {
+                            case "Hans" -> region = "CN";
+                            case "Hant" -> region = "TW";
+                        }
                     }
                 }
 
-                List<Locale> list = new ArrayList<>();
-
+                // With script, after truncating variant, region and script,
+                // start over without script.
                 if (variants != null) {
                     for (String v : variants) {
-                        list.add(Locale.getInstance(language, script, region, v, null));
+                        list.add(Locale.getInstance(language, "", region, v, null));
                     }
                 }
                 if (!region.isEmpty()) {
-                    list.add(Locale.getInstance(language, script, region, "", null));
+                    list.add(Locale.getInstance(language, "", region, "", null));
                 }
-                if (!script.isEmpty()) {
-                    list.add(Locale.getInstance(language, script, "", "", null));
-                    // Special handling for Chinese
-                    if (language.equals("zh")) {
-                        if (region.isEmpty()) {
-                            // Supply region(country) for users who still package Chinese
-                            // bundles using old convention.
-                            switch (script) {
-                                case "Hans" -> region = "CN";
-                                case "Hant" -> region = "TW";
-                            }
-                        }
-                    }
-
-                    // With script, after truncating variant, region and script,
-                    // start over without script.
-                    if (variants != null) {
-                        for (String v : variants) {
-                            list.add(Locale.getInstance(language, "", region, v, null));
-                        }
-                    }
-                    if (!region.isEmpty()) {
-                        list.add(Locale.getInstance(language, "", region, "", null));
-                    }
-                }
-                if (!language.isEmpty()) {
-                    list.add(Locale.getInstance(language, "", "", "", null));
-                }
-                // Add root locale at the end
-                list.add(Locale.ROOT);
-
-                return list;
             }
+            if (!language.isEmpty()) {
+                list.add(Locale.getInstance(language, "", "", "", null));
+            }
+            // Add root locale at the end
+            list.add(Locale.ROOT);
+
+            return list;
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public final class SunNativeProvider extends Provider {
         if (message == null) {
             throw new NullPointerException();
         }
-        System.out.println(NAME + ": " + message);
+        System.err.println(NAME + ": " + message);
     }
 
     @SuppressWarnings("removal")

@@ -53,6 +53,10 @@
 # Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
 # https://www.jstor.org/stable/1774359
 #
+# For the 1911/1912 establishment of standard time in French possessions, see:
+# Société Française de Physique, Recueil de constantes physiques (1913),
+# page 752, 18b.
+#
 # European-style abbreviations are commonly used along the Mediterranean.
 # For sub-Saharan Africa abbreviations were less standardized.
 # Previous editions of this database used WAT, CAT, SAT, and EAT
@@ -136,7 +140,7 @@ Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
 
 # Chad
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
+Zone	Africa/Ndjamena	1:00:12 -	LMT	1912 Jan  1 # N'Djamena
 			1:00	-	WAT	1979 Oct 14
 			1:00	1:00	WAST	1980 Mar  8
 			1:00	-	WAT
@@ -162,7 +166,7 @@ Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
 #	Inaccessible, Nightingale: uninhabited
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Abidjan	-0:16:08 -	LMT	1912
+Zone	Africa/Abidjan	-0:16:08 -	LMT	1912 Jan  1
 			 0:00	-	GMT
 
 ###############################################################################

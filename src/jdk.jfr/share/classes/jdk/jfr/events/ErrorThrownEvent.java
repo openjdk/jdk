@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,8 @@ import jdk.jfr.internal.Type;
 @Label("Java Error")
 @Category("Java Application")
 @Description("An object derived from java.lang.Error has been created. OutOfMemoryErrors are ignored")
-@MirrorEvent(className = "jdk.internal.event.ErrorThrownEvent")
 @RemoveFields("duration")
-public final class ErrorThrownEvent extends AbstractJDKEvent {
+public final class ErrorThrownEvent extends MirrorEvent {
 
     @Label("Message")
     public String message;

@@ -421,7 +421,7 @@ public class TestSearch extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-files/jquery-3.6.1.min.js"></script>
+                    <script type="text/javascript" src="script-files/jquery-3.7.1.min.js"></script>
                     """,
                 """
                     <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
@@ -434,7 +434,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <div class="nav-list-search">
                     <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    earch in documentation" autocomplete="off">
                     <input type="reset" id="reset-search" disabled value="Reset">
                     </div>""");
     }
@@ -672,7 +672,7 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "script-files/search.js",
-                "script-files/jquery-3.6.1.min.js",
+                "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
                 "resource-files/jquery-ui.min.css",
                 "resource-files/x.png",

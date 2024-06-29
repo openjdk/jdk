@@ -748,12 +748,15 @@ cases where dynamic initialization or destruction are essential. See <a
 href="https://bugs.openjdk.org/browse/JDK-8282469">JDK-8282469</a> for
 further discussion.</p>
 <h3 id="nullptr">nullptr</h3>
-<p>Prefer <code>nullptr</code> (<a
+<p>Use <code>nullptr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">n2431</a>)
-to <code>NULL</code>. Don't use (constexpr or literal) 0 for
-pointers.</p>
-<p>For historical reasons there are widespread uses of both
-<code>NULL</code> and of integer 0 as a pointer value.</p>
+rather than <code>NULL</code>. See the paper for reasons to avoid
+<code>NULL</code>.</p>
+<p>Don't use (constant expression or literal) 0 for pointers. Note that
+C++14 removed non-literal 0 constants from <em>null pointer
+constants</em>, though some compilers continue to treat them as such.
+For historical reasons there may be lingering uses of 0 as a
+pointer.</p>
 <h3 id="atomic">&lt;atomic&gt;</h3>
 <p>Do not use facilities provided by the <code>&lt;atomic&gt;</code>
 header (<a

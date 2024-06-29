@@ -1463,9 +1463,10 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 //==============  SafePointScalarObjectNode  ==============
 
-SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields) :
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint depth, uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
+  _depth(depth),
   _n_fields(n_fields),
   _alloc(alloc)
 {
@@ -1949,6 +1950,22 @@ bool AbstractLockNode::find_unlocks_for_region(const RegionNode* region, LockNod
 
 }
 
+// Check that all locks/unlocks associated with object come from balanced regions.
+bool AbstractLockNode::is_balanced() {
+  Node* obj = obj_node();
+  for (uint j = 0; j < obj->outcnt(); j++) {
+    Node* n = obj->raw_out(j);
+    if (n->is_AbstractLock() &&
+        n->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
+      BoxLockNode* n_box = n->as_AbstractLock()->box_node()->as_BoxLock();
+      if (n_box->is_unbalanced()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
 
 const char * AbstractLockNode::kind_as_string() const {
@@ -2001,7 +2018,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are locking an non-escaped object, the lock/unlock is unnecessary
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    if (cgr != nullptr && cgr->not_global_escape(obj_node())) {
+    if (cgr != nullptr && cgr->can_eliminate_lock(this)) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag
@@ -2055,6 +2072,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           int unlocks = 0;
           if (Verbose) {
             tty->print_cr("=== Locks coarsening ===");
+            tty->print("Obj: ");
+            obj_node()->dump();
           }
           for (int i = 0; i < lock_ops.length(); i++) {
             AbstractLockNode* lock = lock_ops.at(i);
@@ -2063,6 +2082,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             else
               unlocks++;
             if (Verbose) {
+              tty->print("Box %d: ", i);
+              box_node()->dump();
               tty->print(" %d: ", i);
               lock->dump();
             }
@@ -2164,6 +2185,7 @@ bool LockNode::is_nested_lock_region(Compile * c) {
       obj_node = bs->step_over_gc_barrier(obj_node);
       BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
+        box->set_nested();
         return true;
       }
     }
@@ -2197,7 +2219,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are unlocking an non-escaped object, the lock/unlock is unnecessary.
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    if (cgr != nullptr && cgr->not_global_escape(obj_node())) {
+    if (cgr != nullptr && cgr->can_eliminate_lock(this)) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag

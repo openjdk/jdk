@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,12 @@ inline int ObjectMonitor::contentions() const {
 // Add value to the contentions field.
 inline void ObjectMonitor::add_to_contentions(int value) {
   Atomic::add(&_contentions, value);
+}
+
+inline void ObjectMonitor::set_recursions(size_t recursions) {
+  assert(_recursions == 0, "must be");
+  assert(has_owner(), "must be owned");
+  _recursions = checked_cast<intx>(recursions);
 }
 
 // Clear _owner field; current value must match old_value.

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022, IBM Corp.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
   }
 
   len = fread(&psinfo, 1, sizeof(psinfo_t), fp);
+  fclose(fp);
   return len == sizeof(psinfo_t);
 }
 

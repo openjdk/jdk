@@ -1020,4 +1020,20 @@ CGGlyphImages_GetGlyphMetrics(const CTFontRef font,
             CTFontGetAdvancesForGlyphs(font, kCTFontDefaultOrientation, glyphs, advances, count);
         }
     }
+    int MAX_SIZE = 1 << 30;
+    if (bboxes) {
+        for (int i = 0; i < count; i++) {
+           if (bboxes[i].origin.x > (double)MAX_SIZE) bboxes[i].origin.x = 0;
+           if (bboxes[i].origin.y > (double)MAX_SIZE) bboxes[i].origin.y = 0;
+           if (bboxes[i].size.width > (double)MAX_SIZE) bboxes[i].size.width = 0;
+           if (bboxes[i].size.height > (double)MAX_SIZE) bboxes[i].size.height = 0;
+        }
+    }
+    if (advances) {
+        for (int i = 0; i < count; i++) {
+           if (advances[i].width > (double)MAX_SIZE) advances[i].width = 0;
+           if (advances[i].height > (double)MAX_SIZE) advances[i].height = 0;
+        }
+    }
 }
+

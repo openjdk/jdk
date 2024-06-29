@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,21 +82,6 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
   }
 #endif
   return index;
-}
-
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-inline unsigned count_trailing_zeros_32(uint32_t x) {
-  return __cnttz4(x);
-}
-
-inline unsigned count_trailing_zeros_64(uint64_t x) {
-  return __cnttz8(x);
 }
 
 /*****************************************************************************

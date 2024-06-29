@@ -291,7 +291,8 @@ public class TestPosix {
         return fs;
     }
 
-    private FileSystem createEmptyZipFile(Path zpath, Map<String, Object> env) throws IOException {
+    // The caller is responsible for closing the FileSystem returned by this method
+    private FileSystem createEmptyZipFileSystem(Path zpath, Map<String, Object> env) throws IOException {
         if (Files.exists(zpath)) {
             System.out.println("Deleting old " + zpath + "...");
             Files.delete(zpath);
@@ -480,7 +481,7 @@ public class TestPosix {
     public void testCopy() throws IOException {
         // copy zip to zip with default options
         try (FileSystem zipIn = createTestZipFile(ZIP_FILE, ENV_DEFAULT);
-             FileSystem zipOut = createEmptyZipFile(ZIP_FILE_COPY, ENV_DEFAULT)) {
+             FileSystem zipOut = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_DEFAULT)) {
             Path from = zipIn.getPath("/");
             Files.walkFileTree(from, new CopyVisitor(from, zipOut.getPath("/")));
         }
@@ -516,7 +517,7 @@ public class TestPosix {
 
         // the target zip file is opened with Posix support
         // but we expect no permission data to be copied using the default copy method
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             Files.walkFileTree(UNZIP_DIR, new CopyVisitor(UNZIP_DIR, tgtZip.getPath("/")));
         }
 
@@ -559,7 +560,7 @@ public class TestPosix {
         // permissions should have been propagated to file system
         checkEntries(UNZIP_DIR, checkExpects.permsPosix);
 
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             // Make some files owner readable to be able to copy them into the zipfs
             addOwnerRead(UNZIP_DIR);
 
@@ -742,8 +743,7 @@ public class TestPosix {
     @Test
     public void setPermissionsShouldConvertToUnix() throws IOException {
         // The default environment creates MS-DOS entries, with zero 'external file attributes'
-        createEmptyZipFile(ZIP_FILE, ENV_DEFAULT);
-        try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+        try (FileSystem fs = createEmptyZipFileSystem(ZIP_FILE, ENV_DEFAULT)) {
             Path path = fs.getPath("hello.txt");
             Files.createFile(path);
         }
