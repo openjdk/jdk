@@ -594,6 +594,50 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   return TypeLong::LONG;
 }
 
+template<typename IntegerType>
+static const IntegerType* and_value(const IntegerType* r0, const IntegerType* r1) {
+  typedef typename IntegerType::NativeType NativeType;
+
+  int widen = MAX2(r0->_widen,r1->_widen);
+
+  // If both are constants, we can calculate a precise result.
+  if(r0->is_con() && r1->is_con()) {
+    return IntegerType::make(r0->get_con() & r1->get_con());
+  }
+
+  // If both ranges are positive, the result will range from 0 up to the maximum value of the smaller range.
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+    return IntegerType::make(0, MIN2(r0->_hi, r1->_hi), widen);
+  }
+
+  // If only one range is positive, the result will range from 0 up to that range's maximum value.
+  if (r0->_lo >= 0) {
+    return IntegerType::make(0, r0->_hi, widen);
+  }
+
+  if (r1->_lo >= 0) {
+    return IntegerType::make(0, r1->_hi, widen);
+  }
+
+  // At this point, all positive ranges will have already been handled, so the only remaining cases will be negative ranges
+  // and constants.
+
+  assert(r0->_lo < 0 && r1->_lo < 0, "positive ranges should already be handled!");
+  static_assert(std::is_signed<NativeType>::value, "native type of IntegerType must be signed!");
+
+  // The lower bound of both ranges will contain the common leading 1-bits. In order to count them with count_leading_zeros,
+  // the bits are inverted.
+  NativeType sel_val = ~MIN2(r0->_lo, r1->_lo);
+
+  // To get the number of bits to shift, we count the leading 0-bits and then subtract one, as the sign bit is already set.
+  // Since count_leading_zeros is undefined at 0 (~(-1)) the number of digits in the native type can be used instead,
+  // as it returns 31 and 63 for signed integers and longs respectively.
+  int shift_bits = sel_val == 0 ? std::numeric_limits<NativeType>::digits : count_leading_zeros(sel_val) - 1;
+
+  // Since the result of bitwise-and can be as high as the largest value of each range, the result should find the maximum.
+  return IntegerType::make(std::numeric_limits<NativeType>::min() >> shift_bits, MAX2(r0->_hi, r1->_hi), widen);
+}
+
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Supplied function returns the product of the inputs IN THE CURRENT RING.
@@ -601,29 +645,10 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int widen = MAX2(r0->_widen,r1->_widen);
+  const TypeInt* r0 = t0->is_int();
+  const TypeInt* r1 = t1->is_int();
 
-  // If either input is a constant, might be able to trim cases
-  if( !r0->is_con() && !r1->is_con() )
-    return TypeInt::INT;        // No constants to be had
-
-  // Both constants?  Return bits
-  if( r0->is_con() && r1->is_con() )
-    return TypeInt::make( r0->get_con() & r1->get_con() );
-
-  if( r0->is_con() && r0->get_con() > 0 )
-    return TypeInt::make(0, r0->get_con(), widen);
-
-  if( r1->is_con() && r1->get_con() > 0 )
-    return TypeInt::make(0, r1->get_con(), widen);
-
-  if( r0 == TypeInt::BOOL || r1 == TypeInt::BOOL ) {
-    return TypeInt::BOOL;
-  }
-
-  return TypeInt::INT;          // No constants to be had
+  return and_value<TypeInt>(r0, r1);
 }
 
 const Type* AndINode::Value(PhaseGVN* phase) const {
@@ -751,25 +776,10 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-  int widen = MAX2(r0->_widen,r1->_widen);
+  const TypeLong* r0 = t0->is_long();
+  const TypeLong* r1 = t1->is_long();
 
-  // If either input is a constant, might be able to trim cases
-  if( !r0->is_con() && !r1->is_con() )
-    return TypeLong::LONG;      // No constants to be had
-
-  // Both constants?  Return bits
-  if( r0->is_con() && r1->is_con() )
-    return TypeLong::make( r0->get_con() & r1->get_con() );
-
-  if( r0->is_con() && r0->get_con() > 0 )
-    return TypeLong::make(CONST64(0), r0->get_con(), widen);
-
-  if( r1->is_con() && r1->get_con() > 0 )
-    return TypeLong::make(CONST64(0), r1->get_con(), widen);
-
-  return TypeLong::LONG;        // No constants to be had
+  return and_value<TypeLong>(r0, r1);
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
