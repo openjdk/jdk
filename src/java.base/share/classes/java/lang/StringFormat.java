@@ -102,9 +102,14 @@ final class StringFormat {
     }
 
     private static String format2(String format, Object arg0, Object arg1) {
-        int max = format.length();
         int off0 = format.indexOf('%');
-        if (off0 == -1 || off0 + 1 == max) {
+        if (off0 == -1) {
+            // no formatting to be done
+            return format;
+        }
+
+        int max = format.length();
+        if (off0 + 1 == max) {
             return null;
         }
         char conv0 = format.charAt(off0 + 1);
