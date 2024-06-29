@@ -287,9 +287,9 @@ final class StringFormat {
         return new String(bytes, coder);
     }
 
-    private static int getCharsLatin1(byte[] bytes, int index, Object arg, char conv, int digit, int size) {
-        if (size < digit) {
-            for (int i = size; i < digit; i++) {
+    private static int getCharsLatin1(byte[] bytes, int index, Object arg, char conv, int width, int size) {
+        if (size < width) {
+            for (int i = size; i < width; i++) {
                 bytes[index++] = ' ';
             }
         }
@@ -312,9 +312,9 @@ final class StringFormat {
         return index;
     }
 
-    private static int getCharsUTF16(byte[] bytes, int index, Object arg, char conv, int digit, int size) {
-        if (size < digit) {
-            for (int i = size; i < digit; i++) {
+    private static int getCharsUTF16(byte[] bytes, int index, Object arg, char conv, int width, int size) {
+        if (size < width) {
+            for (int i = size; i < width; i++) {
                 StringUTF16.putChar(bytes, index++, ' ');
             }
         }
