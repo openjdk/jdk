@@ -828,9 +828,6 @@ public:
   void set_jni_ids(JNIid* ids)                   { _jni_ids = ids; }
   JNIid* jni_id_for(int offset);
 
- private:
-  void add_to_hierarchy_impl(JavaThread* current);
-
  public:
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
