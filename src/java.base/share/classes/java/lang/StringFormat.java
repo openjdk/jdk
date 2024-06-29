@@ -60,9 +60,14 @@ final class StringFormat {
     }
 
     private static String format1(String format, Object arg) {
-        int max = format.length();
         int off = format.indexOf('%');
-        if (off == -1 || off + 1 == max) {
+        if (off == -1) {
+            // no formatting to be done
+            return format;
+        }
+
+        int max = format.length();
+        if (off + 1 == max) {
             return null;
         }
 
