@@ -118,12 +118,13 @@ class MutableBigInteger {
      * the long val.
      */
     MutableBigInteger(long val) {
-        if ((val & LONG_MASK) == val) {
+        int hi = (int) (val >>> 32);
+        if (hi == 0) {
             init((int) val);
         } else {
             value = new int[2];
             intLen = 2;
-            value[0] = (int) (val >>> 32);
+            value[0] = hi;
             value[1] = (int) val;
         }
     }
