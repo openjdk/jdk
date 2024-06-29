@@ -574,18 +574,23 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+          // We may have Opaque4 node between If and Bool nodes.
+          // Bail out in such case - we need to preserve Opaque4 for correct
+          // processing predicates after loop opts.
+          bool can_reduce = (iff->Opcode() == Op_If) && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp();
+          if (can_reduce) {
             Node* iff_cmp = iff->in(1)->in(1);
             int opc = iff_cmp->Opcode();
-            if ((opc == Op_CmpP || opc == Op_CmpN) && !can_reduce_cmp(n, iff_cmp)) {
+            can_reduce = (opc == Op_CmpP || opc == Op_CmpN) && can_reduce_cmp(n, iff_cmp);
+          }
+          if (!can_reduce) {
 #ifndef PRODUCT
-              if (TraceReduceAllocationMerges) {
-                tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
-                n->dump(5);
-              }
-#endif
-              return false;
+            if (TraceReduceAllocationMerges) {
+              tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+              n->dump(5);
             }
+#endif
+            return false;
           }
         }
       }
@@ -651,7 +656,12 @@ Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
   if (curr_ctrl == nullptr || curr_ctrl->is_Region()) {
     con = _igvn->zerocon(t->basic_type());
   } else {
-    Node* curr_cmp = curr_ctrl->in(0)->in(1)->in(1); // true/false -> if -> bool -> cmp
+    // can_reduce_check_users() verified graph: true/false -> if -> bool -> cmp
+    assert(curr_ctrl->in(0)->Opcode() == Op_If, "unexpected node %s", curr_ctrl->in(0)->Name());
+    Node* bol = curr_ctrl->in(0)->in(1);
+    assert(bol->is_Bool(), "unexpected node %s", bol->Name());
+    Node* curr_cmp = bol->in(1);
+    assert(curr_cmp->Opcode() == Op_CmpP || curr_cmp->Opcode() == Op_CmpN, "unexpected node %s", curr_cmp->Name());
     con = curr_cmp->in(1)->is_Con() ? curr_cmp->in(1) : curr_cmp->in(2);
   }
 
