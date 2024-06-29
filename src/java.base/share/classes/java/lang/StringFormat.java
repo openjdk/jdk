@@ -38,10 +38,10 @@ import java.util.function.ToIntFunction;
  * Utility class for string format fastpath
  */
 final class StringFormat {
-    static final char DECIMAL_INTEGER           = 'd';
-    static final char HEXADECIMAL_INTEGER       = 'x';
-    static final char HEXADECIMAL_INTEGER_UPPER = 'X';
-    static final char STRING                    = 's';
+    private static final char DECIMAL_INTEGER           = 'd';
+    private static final char HEXADECIMAL_INTEGER       = 'x';
+    private static final char HEXADECIMAL_INTEGER_UPPER = 'X';
+    private static final char STRING                    = 's';
 
     static String format(String format, Object... args) {
         if (args != null) {
@@ -171,7 +171,7 @@ final class StringFormat {
                                                 off1, conv1, arg1, width1, size1, specifierSize1);
     }
 
-    static int stringSize(char conv, Object arg) {
+    private static int stringSize(char conv, Object arg) {
         int size = -1;
         if (isBigInt(arg)) {
             long longValue = ((Number) arg).longValue();
@@ -186,11 +186,11 @@ final class StringFormat {
         return size;
     }
 
-    static boolean isBigInt(Object arg) {
+    private static boolean isBigInt(Object arg) {
         return arg instanceof Byte || arg instanceof Short || arg instanceof Integer || arg instanceof Long;
     }
 
-    static String format1(String format, int off, char conv, Object arg, int width, int size) {
+    private static String format1(String format, int off, char conv, Object arg, int width, int size) {
         byte coder = format.coder();
         if (arg instanceof String) {
             coder |= ((String) arg).coder();
@@ -213,7 +213,7 @@ final class StringFormat {
         return new String(bytes, coder);
     }
 
-    static String format2Latin1(
+    private static String format2Latin1(
             String format, int length,
             int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
             int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
@@ -240,7 +240,7 @@ final class StringFormat {
         return new String(bytes, String.LATIN1);
     }
 
-    static String format2UTF16(
+    private static String format2UTF16(
             String format, int length,
             int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
             int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
