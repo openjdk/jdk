@@ -140,24 +140,26 @@ final class StringFormat {
             }
         }
 
+        String str;
         byte coder = format.coder();
-        if (conv0 == STRING && isBigInt(arg0)) {
-            conv0 = DECIMAL_INTEGER;
-        }
-        if (conv1 == STRING && isBigInt(arg1)) {
-            conv1 = DECIMAL_INTEGER;
+        if (conv0 == STRING) {
+            if (isBigInt(arg0)) {
+                conv0 = DECIMAL_INTEGER;
+            } else {
+                str = String.valueOf(arg0);
+                coder |= str.coder();
+                arg0 = str;
+            }
         }
 
-        String str;
-        if (conv0 == STRING) {
-            str = String.valueOf(arg0);
-            coder |= str.coder();
-            arg0 = str;
-        }
         if (conv1 == STRING) {
-            str = String.valueOf(arg1);
-            coder |= str.coder();
-            arg1 = String.valueOf(str);
+            if (isBigInt(arg1)) {
+                conv1 = DECIMAL_INTEGER;
+            } else {
+                str = String.valueOf(arg1);
+                coder |= str.coder();
+                arg1 = String.valueOf(str);
+            }
         }
 
         int size0 = stringSize(conv0, arg0);
