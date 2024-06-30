@@ -104,7 +104,7 @@ final class StringFormat {
         }
 
         if (conv == STRING) {
-            if (isBigInt(arg)) {
+            if (isLong(arg)) {
                 conv = DECIMAL_INTEGER;
             } else {
                 arg = String.valueOf(arg);
@@ -147,7 +147,7 @@ final class StringFormat {
         String str;
         byte coder = format.coder();
         if (conv0 == STRING) {
-            if (isBigInt(arg0)) {
+            if (isLong(arg0)) {
                 conv0 = DECIMAL_INTEGER;
             } else {
                 str = String.valueOf(arg0);
@@ -157,7 +157,7 @@ final class StringFormat {
         }
 
         if (conv1 == STRING) {
-            if (isBigInt(arg1)) {
+            if (isLong(arg1)) {
                 conv1 = DECIMAL_INTEGER;
             } else {
                 str = String.valueOf(arg1);
@@ -192,7 +192,7 @@ final class StringFormat {
 
     private static int stringSize(char conv, Object arg) {
         int size = -1;
-        if (isBigInt(arg)) {
+        if (isLong(arg)) {
             long longValue = ((Number) arg).longValue();
             if (conv == DECIMAL_INTEGER) {
                 if (FAST_PATH_FORMAT_LOCALE == Locale.getDefault(Locale.Category.FORMAT)) {
@@ -207,8 +207,11 @@ final class StringFormat {
         return size;
     }
 
-    private static boolean isBigInt(Object arg) {
-        return arg instanceof Byte || arg instanceof Short || arg instanceof Integer || arg instanceof Long;
+    private static boolean isLong(Object arg) {
+        return arg instanceof Long
+            || arg instanceof Integer
+            || arg instanceof Short
+            || arg instanceof Byte;
     }
 
     private static String format1(String format, int off, char conv, Object arg, int width, int size) {
