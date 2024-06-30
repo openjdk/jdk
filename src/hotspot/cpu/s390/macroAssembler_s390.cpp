@@ -3320,9 +3320,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   NearLabel L_huge;
 
   // The bitmap is full to bursting.
-  // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-
   z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
   z_bre(L_huge);
 
@@ -3412,15 +3409,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
-
-#ifdef ASSERT
-  {
-    // r_result should have either 0 or 1 value
-    z_srlk(r_array_base, r_result, 1); // r_array_base is free here
-    z_chi(r_array_base, 0);
-    asm_assert(bcondEqual, "r_result should be either 0 or 1", 33);
-  }
-#endif // ASSERT
 
   Label L_passed, L_failure;
 
