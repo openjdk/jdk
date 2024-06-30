@@ -137,9 +137,8 @@ final class StringFormat {
             if (isLong(arg1)) {
                 conv1 = DECIMAL_INTEGER;
             } else {
-                str = String.valueOf(arg1);
+                arg1 = str = String.valueOf(arg1);
                 coder |= str.coder();
-                arg1 = String.valueOf(str);
             }
         }
 
