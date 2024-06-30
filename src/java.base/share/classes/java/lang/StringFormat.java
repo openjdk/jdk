@@ -25,14 +25,10 @@
 
 package java.lang;
 
-import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.util.HexDigits;
-import java.math.BigInteger;
-import java.util.Arrays;
+import java.text.DecimalFormatSymbols;
 import java.util.Formatter;
-import java.util.IllegalFormatConversionException;
-import java.util.function.LongToIntFunction;
-import java.util.function.ToIntFunction;
+import java.util.Locale;
 
 /**
  * Utility class for string format fastpath
@@ -42,6 +38,29 @@ final class StringFormat {
     private static final char HEXADECIMAL_INTEGER       = 'x';
     private static final char HEXADECIMAL_INTEGER_UPPER = 'X';
     private static final char STRING                    = 's';
+
+    private static final Locale FAST_PATH_FORMAT_LOCALE;
+    static {
+        Locale locale = Locale.getDefault(Locale.Category.FORMAT);
+
+        boolean zero = false;
+
+        //Avoid expensive initialization of DecimalFormatSymbols in the following languages
+        String[] fast_path_languages = {"en", "fr", "de", "it", "ja", "ko", "zh"};
+        for (String lange : fast_path_languages) {
+            if (lange.equals(locale.getLanguage())) {
+                zero = true;
+                break;
+            }
+        }
+
+        if (!zero) {
+            DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
+            zero = dfs.getZeroDigit() == '0';
+        }
+
+        FAST_PATH_FORMAT_LOCALE = zero ? locale : null;
+    }
 
     static String format(String format, Object... args) {
         if (args != null) {
@@ -176,7 +195,9 @@ final class StringFormat {
         if (isBigInt(arg)) {
             long longValue = ((Number) arg).longValue();
             if (conv == DECIMAL_INTEGER) {
-                size = Long.stringSize(longValue);
+                if (FAST_PATH_FORMAT_LOCALE == Locale.getDefault(Locale.Category.FORMAT)) {
+                    size = Long.stringSize(longValue);
+                }
             } else if (conv == HEXADECIMAL_INTEGER || conv == HEXADECIMAL_INTEGER_UPPER) {
                 size = HexDigits.stringSize(longValue);
             }
