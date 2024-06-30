@@ -39,29 +39,6 @@ final class StringFormat {
     private static final char HEXADECIMAL_INTEGER_UPPER = 'X';
     private static final char STRING                    = 's';
 
-    private static final Locale FAST_PATH_FORMAT_LOCALE;
-    static {
-        Locale locale = Locale.getDefault(Locale.Category.FORMAT);
-
-        boolean zero = false;
-
-        //Avoid expensive initialization of DecimalFormatSymbols in the following languages
-        String[] fast_path_languages = {"en", "fr", "de", "it", "ja", "ko", "zh"};
-        for (String lange : fast_path_languages) {
-            if (lange.equals(locale.getLanguage())) {
-                zero = true;
-                break;
-            }
-        }
-
-        if (!zero) {
-            DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
-            zero = dfs.getZeroDigit() == '0';
-        }
-
-        FAST_PATH_FORMAT_LOCALE = zero ? locale : null;
-    }
-
     static String format(String format, Object... args) {
         if (args != null) {
             int off = format.indexOf('%');
@@ -195,7 +172,7 @@ final class StringFormat {
         if (isLong(arg)) {
             long longValue = ((Number) arg).longValue();
             if (conv == DECIMAL_INTEGER) {
-                if (FAST_PATH_FORMAT_LOCALE == Locale.getDefault(Locale.Category.FORMAT)) {
+                if (defaultLocaleDecimalSupport()) {
                     size = Long.stringSize(longValue);
                 }
             } else if (conv == HEXADECIMAL_INTEGER || conv == HEXADECIMAL_INTEGER_UPPER) {
@@ -340,5 +317,34 @@ final class StringFormat {
             StringUTF16.getChars(value, index, bytes);
         }
         return index;
+    }
+
+    private static boolean defaultLocaleDecimalSupport() {
+        return Locale.getDefault(Locale.Category.FORMAT) == DecimalFormat.FAST_PATH_FORMAT_LOCALE;
+    }
+
+    private static class DecimalFormat {
+        static final Locale FAST_PATH_FORMAT_LOCALE;
+        static {
+            Locale locale = Locale.getDefault(Locale.Category.FORMAT);
+
+            boolean zero = false;
+
+            //Avoid expensive initialization of DecimalFormatSymbols in the following languages
+            String[] fast_path_languages = {"en", "fr", "de", "it", "ja", "ko", "zh"};
+            for (String lange : fast_path_languages) {
+                if (lange.equals(locale.getLanguage())) {
+                    zero = true;
+                    break;
+                }
+            }
+
+            if (!zero) {
+                DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
+                zero = dfs.getZeroDigit() == '0';
+            }
+
+            FAST_PATH_FORMAT_LOCALE = zero ? locale : null;
+        }
     }
 }
