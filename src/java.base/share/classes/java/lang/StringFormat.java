@@ -25,10 +25,11 @@
 
 package java.lang;
 
-import jdk.internal.util.HexDigits;
 import java.text.DecimalFormatSymbols;
 import java.util.Formatter;
 import java.util.Locale;
+
+import jdk.internal.util.HexDigits;
 
 /**
  * Utility class for string format fastpath
@@ -80,11 +81,14 @@ final class StringFormat {
             }
         }
 
+        byte coder = format.coder();
         if (conv == STRING) {
             if (isLong(arg)) {
                 conv = DECIMAL_INTEGER;
             } else {
-                arg = String.valueOf(arg);
+                String str = String.valueOf(arg);
+                coder |= str.coder();
+                arg = str;
             }
         }
 
@@ -92,7 +96,7 @@ final class StringFormat {
         if (size == -1) {
             return null;
         }
-        return format1(format, off, conv, arg, width, size);
+        return format1(format, coder, off, conv, arg, width, size);
     }
 
     private static String format2(String format, int off0, int off1, Object arg0, Object arg1) {
@@ -137,8 +141,9 @@ final class StringFormat {
             if (isLong(arg1)) {
                 conv1 = DECIMAL_INTEGER;
             } else {
-                arg1 = str = String.valueOf(arg1);
+                str = String.valueOf(arg1);
                 coder |= str.coder();
+                arg1 = str;
             }
         }
 
@@ -190,14 +195,10 @@ final class StringFormat {
             || arg instanceof Byte;
     }
 
-    private static String format1(String format, int off, char conv, Object arg, int width, int size) {
-        byte coder = format.coder();
-        if (arg instanceof String) {
-            coder |= ((String) arg).coder();
-        }
+    private static String format1(String format, byte coder, int off, char conv, Object arg, int width, int size) {
         int specifierSize = 2 + (width != 0 ? 1 : 0);
-        int length = format.length() + Math.max(width, size) - specifierSize;
-        byte[] bytes = new byte[length << coder];
+        int strlen = format.length() + Math.max(width, size) - specifierSize;
+        byte[] bytes = new byte[strlen << coder];
         if (off > 0) {
             format.getBytes(bytes, 0, 0, coder, off);
         }
@@ -214,11 +215,11 @@ final class StringFormat {
     }
 
     private static String format2Latin1(
-            String format, int length,
+            String format, int strlen,
             int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
             int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
     ) {
-        byte[] bytes = new byte[length];
+        byte[] bytes = new byte[strlen];
         if (off0 > 0) {
             format.getBytes(bytes, 0, 0, String.LATIN1, off0);
         }
@@ -241,12 +242,12 @@ final class StringFormat {
     }
 
     private static String format2UTF16(
-            String format, int length,
+            String format, int strlen,
             int off0, char conv0, Object arg0, int width0, int size0, int specifierSize0,
             int off1, char conv1, Object arg1, int width1, int size1, int specifierSize1
     ) {
         byte coder = String.UTF16;
-        byte[] bytes = new byte[length << coder];
+        byte[] bytes = new byte[strlen << coder];
         if (off0 > 0) {
             format.getBytes(bytes, 0, 0, coder, off0);
         }
