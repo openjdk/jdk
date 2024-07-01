@@ -304,7 +304,7 @@ public class CtwRunner {
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressIncrementalInlining",
                 "-XX:+StressBailout",
-                "-XX:StressBailoutProbability=100_000_000",
+                "-XX:StressBailoutMean=100_000_000",
                 "-XX:+CaptureBailoutInformation",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));

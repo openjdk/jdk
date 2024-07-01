@@ -5123,8 +5123,9 @@ bool Compile::randomized_select(int count) {
 }
 
 #ifdef ASSERT
+// Failures are geometrically distributed with probability 1/StressBailoutMean.
 bool Compile::fail_randomly() {
-  if (!_stress_seed_is_initialized || ((random() % StressBailoutProbability) != 0)) {
+  if (!_stress_seed_is_initialized || ((random() % StressBailoutMean) != 0)) {
     return false;
   }
   record_failure("StressBailout");
