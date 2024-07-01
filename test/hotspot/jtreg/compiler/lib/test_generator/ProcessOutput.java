@@ -23,26 +23,28 @@
 
 package compiler.lib.test_generator;
 
-public class CodeSegment {
-    private final String statics;
-    private final String calls;
-    private final String methods;
+import java.util.Objects;
 
-    public CodeSegment(String statics, String calls, String methods) {
-        this.statics = statics;
-        this.calls = calls;
-        this.methods = methods;
+public class ProcessOutput {
+    private final int exitCode;
+    private final String output;
+
+    public ProcessOutput(int exitCode, String output) {
+        this.exitCode = exitCode;
+        this.output = output;
     }
 
-    public String getStatics() {
-        return statics;
-    }
-
-    public String getCalls() {
-        return calls;
-    }
-
-    public String getMethods() {
-        return methods;
+    /* TODO:
+     * improve error handling:
+     * - What kind of error is it? error in Template and cannot parse with javac
+     * - or runtime crash in Java (e.g. Null-pointer Exception) nor JVM (compiler bug?)
+     **/
+    public void checkExecutionOutput() {
+        if (exitCode == 0 && Objects.requireNonNull(output).contains("Passed")) {
+            System.out.println("Test passed successfully.");
+        } else {
+            System.err.println("Test failed:");
+            System.err.println(output);
+        }
     }
 }

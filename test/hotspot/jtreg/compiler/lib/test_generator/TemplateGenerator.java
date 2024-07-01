@@ -26,313 +26,85 @@ package compiler.lib.test_generator;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.annotation.*;
-import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-
-import static compiler.lib.test_generator.InputTemplate.*;
-
 
 public class TemplateGenerator {
 
     static final String JAVA_HOME = System.getProperty("java.home");
     static final String[] FLAGS = {
-            "-Xcomp",
             "-XX:CompileCommand=compileonly,GeneratedTest::test*",
-            "-XX:-TieredCompilation",
-            "-XX:-CreateCoredumpOnCrash"
+            "-XX:-TieredCompilation"
     };
-    private static Method testMethod;
     static final int TIMEOUT = 60;
     static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
     static final int TESTS_PER_TASK = 10;
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 2;
-    static final Random RAND = new Random();
 
-    public static void main(String[] args) throws NoSuchMethodException {
-        InputTemplate loadedTemplate = new InputTemplate1( num,  init, limit, stride,  arithm);
-        testMethod = TemplateGenerator.class.getMethod("genNewTest", InputTemplate.class);
+    static String[] TEMPLATE_FILES = {
+            "InputTemplate1.java"
+    };
 
-        ThreadPoolExecutor threadPool = initializeThreadPool();
-        List<Object[]> values = generateParameterValues();
-        submitTestTasks(values, threadPool);
+    private static long testId = 0L;
+
+    public static long getID() {
+        return testId++;
+    }
+
+    /* TODO:
+     * Measure performance: we want to generate and execute as many tests as possible
+     * - Would in memory execution speed up test execution
+     * - How to maximize generated+executed tests on multiple cores
+     * - Where are the bottleneck?
+    **/
+    public static void main(String[] args) {
+        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE));
+        for (String filePath : TEMPLATE_FILES) {
+            try {
+                Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
+                InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
+                runTestGen(inputTemplate, threadPool);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         threadPool.shutdown();
     }
 
-    private static ThreadPoolExecutor initializeThreadPool() {
-        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE));
-        threadPool.setRejectedExecutionHandler((r, executor) -> {
-            try {
-                executor.getQueue().put(r);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread was interrupted", e);
-            }
-        });
-        return threadPool;
-    }
-
-    public static List<Object[]> generateParameterValues() {
-        Integer[] integerValues = {
-                -2, -1, 0, 1, 2,
-                Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
-                Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
-        };
-
-        Integer[] integerValuesNonZero = {
-                -2, -1, 1, 2,
-                Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
-                Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
-        };
-
-        Long[] longValues =
-                {
-                -2L, -1L, 0L, 1L, 2L,
-                Integer.MIN_VALUE - 2L, Integer.MIN_VALUE - 1L, (long) Integer.MIN_VALUE, Integer.MIN_VALUE + 1L, Integer.MIN_VALUE + 2L,
-                Integer.MAX_VALUE - 2L, Integer.MAX_VALUE - 1L, (long) Integer.MAX_VALUE, Integer.MAX_VALUE + 1L, Integer.MAX_VALUE + 2L,
-                Long.MIN_VALUE - 2L, Long.MIN_VALUE - 1L, Long.MIN_VALUE, Long.MIN_VALUE + 1L, Long.MIN_VALUE + 2L,
-                Long.MAX_VALUE - 2L, Long.MAX_VALUE - 1L, Long.MAX_VALUE, Long.MAX_VALUE + 1L, Long.MAX_VALUE + 2L
-        };
-
-        Long[] longValuesNonZero = {
-                -2L, -1L, 1L, 2L,
-                Integer.MIN_VALUE - 2L, Integer.MIN_VALUE - 1L, (long) Integer.MIN_VALUE, Integer.MIN_VALUE + 1L, Integer.MIN_VALUE + 2L,
-                Integer.MAX_VALUE - 2L, Integer.MAX_VALUE - 1L, (long) Integer.MAX_VALUE, Integer.MAX_VALUE + 1L, Integer.MAX_VALUE + 2L,
-                Long.MIN_VALUE - 2L, Long.MIN_VALUE - 1L, Long.MIN_VALUE, Long.MIN_VALUE + 1L, Long.MIN_VALUE + 2L,
-                Long.MAX_VALUE - 2L, Long.MAX_VALUE - 1L, Long.MAX_VALUE, Long.MAX_VALUE + 1L, Long.MAX_VALUE + 2L
-        };
-
-        List<Object[]> values = new ArrayList<>();
-        for (Annotation[] annotations : testMethod.getParameterAnnotations()) {
-            for (Annotation annotation : annotations) {
-                switch (annotation) {
-                    case IntParam p -> {
-                        if (p.values().length == 0) {
-                            values.add(p.nonZero() ? integerValuesNonZero : integerValues);
-                        } else {
-                            Integer[] boxed = IntStream.of(p.values()).boxed().toArray(Integer[]::new);
-                            values.add(boxed);
-                        }
-                    }
-                    case LongParam p -> {
-                        if (p.values().length == 0) {
-                            values.add(p.nonZero() ? longValues : longValuesNonZero);
-                        } else {
-                            // If specific values are provided, use them instead.
-                            Long[] boxed = LongStream.of(p.values()).boxed().toArray(Long[]::new);
-                            values.add(boxed);
-                        }
-                    }
-                    case StringParam p -> values.add(p.values());
-                    case null, default -> throw new RuntimeException("Unexpected annotation: %s".formatted(annotation));
-                }
-            }
-        }
-        return values;
-    }
-
-    private static BigInteger computeTotalTestCases(List<Object[]> values) {
-        BigInteger numCases = BigInteger.ONE;
-
-        for (Object[] vals : values) {
-            numCases = numCases.multiply(BigInteger.valueOf(vals.length));
-        }
-
-        if (numCases.signum() < 0) {
-            throw new RuntimeException("Negative number of cases (overflow?)");
-        }
-        System.out.printf("%d cases%n", numCases);
-        return numCases;
-    }
-
-    private static void submitTestTasks(List<Object[]> values, ThreadPoolExecutor threadPool) {
-        BigInteger num = BigInteger.ZERO;
-        BigInteger numCases = computeTotalTestCases(values);
-        while (num.compareTo(numCases) < 0) {
-            ArrayList<Object[]> testCases = new ArrayList<>();
-
-            for (int j = 0; j < TESTS_PER_TASK; ++j) {
-                BigInteger randomNumber = new BigInteger(numCases.bitLength(), RAND).mod(numCases);
-                if (randomNumber.compareTo(numCases) >= 0) {
-                    throw new RuntimeException("Invalid test case number %s".formatted(randomNumber));
-                }
-                testCases.add(getTestCase(values, randomNumber, numCases));
-            }
-
-            Runnable task = () -> doWork(testCases);
-            threadPool.submit(task);
+    public static void runTestGen(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
+        CodeSegment template = inputTemplate.getTemplate();
+        for (int i = 0; i < TESTS_PER_TASK; i++) {
+            Map<String, String> replacements = inputTemplate.getRandomReplacements();
+            String[] compileFlags = inputTemplate.getCompileFlags();
+            long id = getID();
+            threadPool.submit(() -> doWork(template, replacements, compileFlags, id));
         }
     }
 
-    public static Object[] getTestCase(List<Object[]> values, BigInteger num, BigInteger numCases) {
-        int numParams = values.size();
-        Object[] res = new Object[numParams + 1];
-        res[0] = num;
-
-        BigInteger remainder = num;
-        BigInteger divisor = numCases;
-
-        for (int i = 0; i < numParams; ++i) {
-            Object[] vals = values.get(i);
-            divisor = divisor.divide(BigInteger.valueOf(vals.length));
-            BigInteger valIdx = remainder.divide(divisor);
-            int idx = valIdx.intValue();
-            remainder = remainder.mod(divisor);
-            res[i + 1] = vals[idx];
-        }
-
-        return res;
-    }
-
-    public static void doWork(ArrayList<Object[]> testCases) {
+    public static void doWork(CodeSegment template, Map<String, String> replacements, String[] compileFlags, long num) {
         try {
-            CodeSegments segments = prepareCodeSegments(testCases);
-            String javaCode = assembleJavaCode(segments);
-            String fileName = writeJavaCodeToFile(javaCode);
-            ProcessOutput processOutput = executeJavaFile(fileName);
-            checkExecutionOutput(processOutput, segments.num);
+            String javaCode = InputTemplate.getJavaCode(template, replacements, num);
+            String fileName = writeJavaCodeToFile(javaCode, num);
+            ProcessOutput processOutput = executeJavaFile(fileName, compileFlags);
+            processOutput.checkExecutionOutput();
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find test method: ", e);
         }
     }
 
-    private static CodeSegments prepareCodeSegments(ArrayList<Object[]> testCases) {
-        String statics = "";
-        StringBuilder calls = new StringBuilder();
-        StringBuilder methods = new StringBuilder();
-        int num = 0;
-
-        for (Object[] testCase : testCases) {
-            try {
-                Result res = (Result) testMethod.invoke(null, testCase);
-                statics = res.statics;
-                calls.append(res.call);
-                methods.append(res.method);
-                methods.append("\n");
-                num++;
-            } catch (Exception e) {
-                throw new RuntimeException("Test generation failed", e);
-            }
-        }
-        return new CodeSegments(statics, calls.toString(), methods.toString(), num);
-    }
-
-    public static String fillTemplate(String template, Map<String, String> replacements) {
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            String pattern = "\\{%s}".formatted(entry.getKey());
-            String replacement = entry.getValue();
-
-            // Find the pattern in the template and determine its indentation level
-            int index = template.indexOf(pattern);
-            if (index != -1) {
-                int lineStart = template.lastIndexOf('\n', index);
-                String indentation = template.substring(lineStart + 1, index).replaceAll("\\S", "");
-
-                // Add indentation to all lines of the replacement (except the first one)
-                String indentedReplacement = replacement.lines()
-                        .collect(Collectors.joining("\n%s".formatted(indentation)));
-
-                template = template.replace(pattern, indentedReplacement);
-            }
-        }
-        return template;
-    }
-
-    public static CodeSegment genNewTest(InputTemplate Template) {
-
-        //Result res = new Result();
-       /* res.statics = """
-                static long lFld;
-                static A a = new A();
-                static boolean flag;
-                static class A {
-                    int i;
-                }
-                """;
-
-        res.call = "test\\{num}();\n";
-        res.call = fillTemplate(res.call, Map.of(
-                "num", num.toString()
-        ));
-
-
-        String thing = "synchronized (new Object()) { }\n";
-
-        res.method = """
-                 public static void test\\{num}() {
-                     long limit = lFld;
-                     for (int i =\\{init}; i < \\{limit}; i \\{arithm}= \\{stride}) {
-                         // Use stride > Integer.MAX_VALUE such that LongCountedLoopNode is not split further into loop nests.
-                         for (long j = 0; j < limit; j+=2147483648L) {
-                             a.i += 34; // NullCheck with a trap on the false path as a reason to peel
-                             \\{thing}
-                             if (j > 0) { // After peeling: condition always true, loop is folded away.
-                                 break;
-                             }
-                         }
-                     }
-                 }
-                """;
-
-        Map<String, String> replacements = Map.ofEntries(
-                Map.entry("num", num.toString()),
-                Map.entry("init", Integer.toString(init)),
-                Map.entry("limit", Integer.toString(limit)),
-                Map.entry("arithm", arithm),
-                Map.entry("stride", Integer.toString(stride)),
-                Map.entry("thing", thing)
-        );
-        res.method = fillTemplate(res.method, replacements);
-
-        return res;*/
-
-
-        return getTemplate();
-    }
-
-    private static String assembleJavaCode(CodeSegments segments) {
-        String template = """
-                import java.util.Objects;
-
-                public class GeneratedTest {
-                    \\{statics}
-
-                    public static void main(String args[]) throws Exception {
-                        \\{calls}
-                        System.out.println("Passed");
-                    }
-
-                    \\{methods}
-                }
-                """;
-
-        Map<String, String> replacements = Map.ofEntries(
-                Map.entry("statics", segments.statics),
-                Map.entry("calls", segments.calls),
-                Map.entry("methods", segments.methods)
-        );
-
-        return fillTemplate(template, replacements);
-    }
-
-    private static String writeJavaCodeToFile(String javaCode) throws IOException {
-        String fileName = String.format("GeneratedTest%d.java", Thread.currentThread().threadId());
+    private static String writeJavaCodeToFile(String javaCode, long num) throws IOException {
+        String fileName = String.format("GeneratedTest%d.java", num);
         BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
         writer.write(javaCode);
         writer.close();
         return fileName;
     }
 
-    private static ProcessOutput executeJavaFile(String fileName) throws IOException, InterruptedException {
-        ProcessBuilder builder = getProcessBuilder(fileName);
+    private static ProcessOutput executeJavaFile(String fileName, String[] compileFlags) throws Exception {
+        ProcessBuilder builder = getProcessBuilder(fileName, compileFlags);
 
         Process process = builder.start();
         boolean exited = process.waitFor(TIMEOUT, TimeUnit.SECONDS);
@@ -347,12 +119,14 @@ public class TemplateGenerator {
         return new ProcessOutput(exitCode, output);
     }
 
-    private static ProcessBuilder getProcessBuilder(String fileName) {
+    private static ProcessBuilder getProcessBuilder(String fileName, String[] compileFlags) {
         List<String> command = new ArrayList<>();
 
-        String javaPath = "%s/bin/java".formatted(JAVA_HOME);
-        command.add(javaPath);
+        command.add("%s/bin/java".formatted(JAVA_HOME));
         command.addAll(Arrays.asList(FLAGS));
+        if (compileFlags != null) {
+            command.addAll(Arrays.asList(compileFlags));
+        }
         command.add("-cp");
         command.add(".");
         command.add(fileName);
@@ -361,88 +135,5 @@ public class TemplateGenerator {
 
         builder.redirectErrorStream(true);
         return builder;
-    }
-
-    private static void checkExecutionOutput(ProcessOutput output, int num) {
-        System.out.printf("Processed %d test cases.%n", num);
-        if (output.getExitCode() == 0 && Objects.requireNonNull(output.getOutput()).contains("Passed")) {
-            System.out.println("All tests passed successfully.");
-        } else {
-            System.err.println("Some tests failed:");
-            System.err.println(output.getOutput());
-        }
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    public @interface IntParams {
-        IntParam[] value();
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    @Repeatable(IntParams.class)
-    public @interface IntParam {
-        boolean nonZero() default false;
-        int[] values() default {};
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    public @interface LongParams {
-        LongParam[] value();
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    @Repeatable(LongParams.class)
-    public @interface LongParam {
-        boolean nonZero() default false;
-        long[] values() default {};
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    public @interface StringParams {
-        StringParam[] value();
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
-    @Repeatable(StringParams.class)
-    public @interface StringParam {
-        String[] values() default {};
-    }
-
-   /* public static class Result {
-        public String statics;
-        public String call;
-        public String method;
-    }
-
-    */
-
-    public static class CodeSegments {
-        private final String statics;
-        private final String calls;
-        private final String methods;
-        private final int num;
-
-        public CodeSegments(String statics, String calls, String methods, int num) {
-            this.statics = statics;
-            this.calls = calls;
-            this.methods = methods;
-            this.num = num;
-        }
-    }
-
-    public record ProcessOutput(int exitCode, String output) {
-        public String getOutput() {
-            return output;
-        }
-
-        public int getExitCode() {
-            return exitCode;
-        }
     }
 }

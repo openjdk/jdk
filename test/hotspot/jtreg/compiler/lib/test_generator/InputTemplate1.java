@@ -1,21 +1,48 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package compiler.lib.test_generator;
 
-import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
-import static compiler.lib.test_generator.TemplateGenerator.fillTemplate;
-
 public class InputTemplate1 extends InputTemplate {
-    public InputTemplate1(BigInteger num, @TemplateGenerator.IntParam int init, @TemplateGenerator.IntParam int limit, @TemplateGenerator.IntParam(nonZero = true) int stride, @TemplateGenerator.StringParam(values = {"+", "-"}) String arithm) {
-        super(num,init,limit,stride,arithm);
+
+    public InputTemplate1() {
     }
-    static String thing = "synchronized (new Object()) { }\n";
 
+    @Override
+    public CodeSegment getTemplate() {
+        /* TODO:
+         * use $limit, $i, $lFld for variables
+         * all defined functions should use uniqueId to avoid conflict
+         * Nesting : we want to be able to nest CodeTemplate in another CodeTemplate e.g. at \{thing}
+         *           this would require replacing conflicting variables e.g. $i with $i1 and $i2,
+         *           and also replace \{init} from the inner CodeTemplate with a var $limit from outer CodeTemplate
+        **/
 
-    public static CodeSegment getTemplate() {
-        Result res=new Result();
-        res.statics = """
-               static long lFld;
+        String statics = """
+                static long lFld;
                 static A a = new A();
                 static boolean flag;
                 static class A {
@@ -23,17 +50,17 @@ public class InputTemplate1 extends InputTemplate {
                 }
                 """;
 
-        res.call = "test\\{num}();\n";
+        String call = "test_\\{uniqueId}();\n";
 
-        res.method = """
-                 public static void test\\{num}() {
+        String method = """
+                 public static void test_\\{uniqueId}() {
                      long limit = lFld;
                      for (int i =\\{init}; i < \\{limit}; i \\{arithm}= \\{stride}) {
                          // Use stride > Integer.MAX_VALUE such that LongCountedLoopNode is not split further into loop nests.
                          for (long j = 0; j < limit; j+=2147483648L) {
-                             a.i += 34; // NullCheck with a trap on the false path as a reason to peel
+                             a.i += 34; // NullCheck with trap on false path -> reason to peel
                              \\{thing}
-                             if (j > 0) { // After peeling: condition always true, loop is folded away.
+                             if (j > 0) { // After peeling: j > 0 always true -> loop folded away
                                  break;
                              }
                          }
@@ -41,23 +68,34 @@ public class InputTemplate1 extends InputTemplate {
                  }
                 """;
 
-        Map<String, String> replacements = getRandomReplacements(num);
-        res.call =fillTemplate(res.call, Map.of(
-                "num", num.toString()));
-        res.method = fillTemplate(res.method, replacements);
-
-        return new CodeSegment(res.statics,res.call,res.method,num);// String with replacements or a class with statics, call and method as fields;
-
+        return new CodeSegment(statics, call, method);
     }
-    private static Map<String, String> getRandomReplacements(BigInteger num) {
-        Map<String, String> replacement= Map.ofEntries(
-                Map.entry("num", num.toString()),
-                Map.entry("init", Integer.toString(init)),
-                Map.entry("limit", Integer.toString(limit)),
-                Map.entry("arithm", arithm),
-                Map.entry("stride", Integer.toString(stride)),
-                Map.entry("thing", thing)
-        );
-        return replacement;
+
+    @Override
+    public Map<String, String> getRandomReplacements() {
+        Map<String, String> replacements = new HashMap<>();
+
+        String init = getRandomValueAsString(integerValues);
+        String limit = getRandomValueAsString(integerValues);
+        String stride = getRandomValueAsString(integerValuesNonZero);
+        String arithm = getRandomValue(new String[]{"+", "-"});
+        String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
+        String uniqueId = getUniqueId();
+
+        replacements.put("init", init);
+        replacements.put("limit", limit);
+        replacements.put("arithm", arithm);
+        replacements.put("stride", stride);
+        replacements.put("thing", thing);
+        replacements.put("uniqueId", uniqueId);
+        return replacements;
+    }
+
+    @Override
+    public String[] getCompileFlags() {
+        return new String[] {
+                "-Xcomp",
+                "-XX:-CreateCoredumpOnCrash"
+        };
     }
 }
