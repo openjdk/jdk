@@ -5110,7 +5110,7 @@ class StubGenerator: public StubCodeGenerator {
    *   index VectorRegister's:  idxV1-V4, for m2 they could be v8, v10, v12, v14, for m1 they could be v4, v5, v6, v7
    *   output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v8, v9, v10, v11
    *
-   * NOTE: each field will occupy a single vector register group
+   * NOTE: each field will occupy a vector register group
    */
   void encodeVector(Register src, Register dst, Register codec, Register step,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
@@ -5118,12 +5118,12 @@ class StubGenerator: public StubCodeGenerator {
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
                     Assembler::LMUL lmul) {
     // set vector register type/len
-    __ vsetvli(x0, step, Assembler::e8, lmul, Assembler::ma, Assembler::ta);
+    __ vsetvli(x0, step, Assembler::e8, lmul);
 
     // segmented load src into v registers: mem(src) => vr(3)
     __ vlseg3e8_v(inputV1, src);
 
-    // src = src + VLENB * 3 // vlen == register length in bytes
+    // src = src + register_group_len_bytes * 3
     __ slli(t0, step, 1);
     __ add(t0, t0, step);
     __ add(src, src, t0);
@@ -5154,7 +5154,7 @@ class StubGenerator: public StubCodeGenerator {
     // segmented store encoded data in v registers back to dst: vr(4) => mem(dst)
     __ vsseg4e8_v(outputV1, dst);
 
-    // dst = dst + vlen * 4 // vlen == register length in bytes
+    // dst = dst + register_group_len_bytes * 4
     __ slli(t0, step, 2);
     __ add(dst, dst, t0);
   }
@@ -5206,11 +5206,13 @@ class StubGenerator: public StubCodeGenerator {
     RegSet saved_regs;
     __ push_reg(saved_regs, sp);
 
+    // length should be multiple of 3
+    __ sub(length, send, soff);
+    __ mv(t0, 3);
+    __ div(length, length, t0);
+    // real src/dst to process data
     __ add(src, src, soff);
     __ add(dst, dst, doff);
-    // length should be multiple of 3.
-    // So, this implementation does not consider padding "=".
-    __ sub(length, send, soff);
 
     // load the codec base address
     __ la(codec, ExternalAddress((address) toBase64));
@@ -5218,17 +5220,14 @@ class StubGenerator: public StubCodeGenerator {
     __ la(codec, ExternalAddress((address) toBase64URL));
     __ BIND(ProcessData);
 
-    __ mv(t0, 3);
-    __ div(length, length, t0);
-
     Label ProcessScalar, ProcessM2, ProcessM1;
 
     // vector version
     {
-      Register tmp1 = x28;
-      Register tmp2 = x29;
-      Register limitM1 = x30;
-      Register limitM2 = x31;
+      Register tmp1 = x28; // t3
+      Register tmp2 = x29; // t4
+      Register limitM1 = x30; // t5
+      Register limitM2 = x31; // t6
 
       __ mv(limitM1, MaxVectorSize);
       __ slli(limitM2, limitM1, 1);
@@ -5262,8 +5261,7 @@ class StubGenerator: public StubCodeGenerator {
       Register byte1 = soff, byte0 = send, byte2 = doff;
       Register combined24Bits = x28;
 
-      __ mv(t1, 1);
-      __ blt(length, t1, Exit);
+      __ beqz(length, Exit);
 
       Label ScalarLoop;
       __ BIND(ScalarLoop);
@@ -5309,10 +5307,10 @@ class StubGenerator: public StubCodeGenerator {
         __ sb(byte2, Address(dst, 2));
         __ sb(combined24Bits, Address(dst, 3));
 
-        // loop
         __ sub(length, length, 1);
         __ addi(dst, dst, 4);
-        __ bge(length, t1, ScalarLoop);
+        // loop back
+        __ bgtz(length, ScalarLoop);
       }
     }
 
