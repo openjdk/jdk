@@ -838,7 +838,7 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  bool failing(DEBUG_ONLY(bool no_stress_bailout=false)) {
+  bool failing(DEBUG_ONLY(bool no_stress_bailout = false)) {
     if (failing_internal()) {
       return true;
     }
@@ -866,8 +866,8 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures=false));
-  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures=false)) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
     record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
