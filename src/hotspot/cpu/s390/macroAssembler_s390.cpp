@@ -3174,7 +3174,7 @@ void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_co
   z_brct(r_count, L_loop);
 
   // z_brct above doesn't change CC.
-  // If the search operation is unsuccessful, then it's a failure case.
+  // If we reach here, then the value in r_value is not present. Set r_result to 1.
   z_lghi(r_result, 1);
 
   bind(L_exit);
