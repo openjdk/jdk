@@ -287,6 +287,8 @@ julong os::physical_memory() {
   return Aix::physical_memory();
 }
 
+size_t os::rss() { return (size_t)0; }
+
 // Cpu architecture string
 #if defined(PPC32)
 static char cpu_arch[] = "ppc";
@@ -2059,15 +2061,6 @@ size_t os::vm_min_address() {
   return _vm_min_address_default;
 }
 
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-void os::naked_yield() {
-  sched_yield();
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
 
@@ -2449,13 +2442,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 
   return fd;
-}
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer

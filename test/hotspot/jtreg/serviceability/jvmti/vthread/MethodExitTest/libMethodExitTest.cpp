@@ -197,12 +197,8 @@ breakpoint_hit2(jvmtiEnv *jvmti, JNIEnv* jni,
                 jboolean is_virtual, char* mname) {
   jvmtiError err;
 
-  // Verify that we did not get a METHOD_EXIT events when enabled on the cthread.
-  if (received_method_exit_event) {
-    passed = JNI_FALSE;
-    received_method_exit_event = JNI_FALSE;
-    LOG("FAILED: got METHOD_EXIT event on the cthread: %p\n", cthread);
-  }
+  // need to reset this value after the breakpoint_hit1
+  received_method_exit_event = JNI_FALSE;
 
   // Disable METHOD_EXIT events on the cthread.
   LOG("Hit #2: Breakpoint: %s: disabling MethodExit events on carrier thread: %p\n",

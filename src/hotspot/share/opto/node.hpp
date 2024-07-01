@@ -138,6 +138,7 @@ class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
 class Opaque4Node;
+class OpaqueInitializedAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -174,14 +175,15 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
-class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
 class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
+class LoadVectorGatherMaskedNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class StoreVectorScatterMaskedNode;
 class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
@@ -736,7 +738,6 @@ public:
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
-          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
         DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
@@ -795,9 +796,10 @@ public:
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
     DEFINE_CLASS_ID(Opaque4,  Node, 17)
-    DEFINE_CLASS_ID(Move,     Node, 18)
-    DEFINE_CLASS_ID(LShift,   Node, 19)
-    DEFINE_CLASS_ID(Neg,      Node, 20)
+    DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
+    DEFINE_CLASS_ID(Move,     Node, 19)
+    DEFINE_CLASS_ID(LShift,   Node, 20)
+    DEFINE_CLASS_ID(Neg,      Node, 21)
 
     _max_classes  = ClassMask_Neg
   };
@@ -966,6 +968,7 @@ public:
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
@@ -986,7 +989,6 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
-  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -996,8 +998,12 @@ public:
   DEFINE_CLASS_QUERY(CompressM)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
+  DEFINE_CLASS_QUERY(LoadVectorMasked)
+  DEFINE_CLASS_QUERY(LoadVectorGatherMasked)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(StoreVectorMasked)
+  DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1569,8 +1575,8 @@ Node* Node::last_out(DUIterator_Last& i) const {
 class SimpleDUIterator : public StackObj {
  private:
   Node* node;
-  DUIterator_Fast i;
   DUIterator_Fast imax;
+  DUIterator_Fast i;
  public:
   SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
   bool has_next() { return i < imax; }

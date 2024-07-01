@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1291,7 +1291,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefoniraamatu sortimisjärjestus</type>
 			<type key="collation" type="phonetic">foneetiline sortimisjärjestus</type>
 			<type key="collation" type="pinyin">pinyin’i sortimisjärjestus</type>
-			<type key="collation" type="reformed">reformitud sortimisjärjestus</type>
 			<type key="collation" type="search">üldeesmärgiline otsing</type>
 			<type key="collation" type="searchjl">otsing korea alguskonsonandi järgi</type>
 			<type key="collation" type="standard">standardne järjestus</type>
@@ -2600,9 +2599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<hourFormat>+HH:mm;−HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
 			<regionFormat>({0})</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordineeritud maailmaaeg</standard>
@@ -2628,9 +2624,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Viin</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>Maarianhamina</exemplarCity>
@@ -2945,14 +2938,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Istanbul">
 				<exemplarCity>İstanbul</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporožje</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -3548,11 +3535,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Macau suveaeg</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie saare aeg</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadani aeg</generic>
@@ -3590,13 +3572,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawsoni aeg</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Loode-Mehhiko aeg</generic>
-					<standard>Loode-Mehhiko standardaeg</standard>
-					<daylight>Loode-Mehhiko suveaeg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

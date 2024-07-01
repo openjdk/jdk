@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,57 +434,76 @@ public enum HtmlTag {
 
     public enum Attr {
         ABBR,
+        ACCESSKEY(true),
         ALIGN,
         ALINK,
         ALT,
-        ARIA_ACTIVEDESCENDANT,
-        ARIA_CONTROLS,
-        ARIA_DESCRIBEDBY,
-        ARIA_EXPANDED,
-        ARIA_LABEL,
-        ARIA_LABELLEDBY,
-        ARIA_LEVEL,
-        ARIA_MULTISELECTABLE,
-        ARIA_OWNS,
-        ARIA_POSINSET,
-        ARIA_SETSIZE,
-        ARIA_READONLY,
-        ARIA_REQUIRED,
-        ARIA_SELECTED,
-        ARIA_SORT,
+        ARIA_ACTIVEDESCENDANT(true),
+        ARIA_CONTROLS(true),
+        ARIA_DESCRIBEDBY(true),
+        ARIA_EXPANDED(true),
+        ARIA_LABEL(true),
+        ARIA_LABELLEDBY(true),
+        ARIA_LEVEL(true),
+        ARIA_MULTISELECTABLE(true),
+        ARIA_OWNS(true),
+        ARIA_POSINSET(true),
+        ARIA_READONLY(true),
+        ARIA_REQUIRED(true),
+        ARIA_SELECTED(true),
+        ARIA_SETSIZE(true),
+        ARIA_SORT(true),
+        AUTOCAPITALIZE(true),
+        AUTOFOCUS(true),
         AXIS,
         BACKGROUND,
         BGCOLOR,
         BORDER,
-        CELLSPACING,
         CELLPADDING,
+        CELLSPACING,
         CHAR,
         CHAROFF,
         CHARSET,
         CITE,
+        CLASS(true),
         CLEAR,
-        CLASS,
         COLOR,
         COLSPAN,
         COMPACT,
+        CONTENTEDITABLE(true),
         COORDS,
         CROSSORIGIN,
         DATETIME,
+        DIR(true),
+        DRAGGABLE(true),
+        ENTERKEYHINT(true),
         FACE,
         FRAME,
         FRAMEBORDER,
         HEADERS,
         HEIGHT,
+        HIDDEN(true),
         HREF,
         HSPACE,
-        ID,
+        ID(true),
+        INERT(true),
+        INPUTMODE(true),
+        IS(true),
+        ITEMID(true),
+        ITEMPROP(true),
+        ITEMREF(true),
+        ITEMSCOPE(true),
+        ITEMTYPE(true),
+        LANG(true),
         LINK,
         LONGDESC,
         MARGINHEIGHT,
         MARGINWIDTH,
         NAME,
+        NONCE(true),
         NOSHADE,
         NOWRAP,
+        POPOVER(true),
         PROFILE,
         REV,
         REVERSED,
@@ -497,24 +516,39 @@ public enum HtmlTag {
         SHAPE,
         SIZE,
         SPACE,
+        SPELLCHECK(true),
         SRC,
         START,
-        STYLE,
+        STYLE(true),
         SUMMARY,
+        TABINDEX(true),
         TARGET,
         TEXT,
+        TITLE(true),
+        TRANSLATE(true),
         TYPE,
         VALIGN,
         VALUE,
         VERSION,
         VLINK,
         VSPACE,
-        WIDTH;
+        WIDTH,
+        WRITINGSUGGESTIONS(true);
 
         private final String name;
+        private final boolean isGlobal;
 
         Attr() {
+            this(false);
+        }
+
+        Attr(boolean flag) {
             name = StringUtils.toLowerCase(name().replace("_", "-"));
+            isGlobal = flag;
+        }
+
+        public boolean isGlobal() {
+            return isGlobal;
         }
 
         public String getText() {
@@ -632,8 +666,13 @@ public enum HtmlTag {
     }
 
     public AttrKind getAttrKind(Name attrName) {
-        AttrKind k = attrs.get(getAttr(attrName)); // null-safe
-        return (k == null) ? AttrKind.INVALID : k;
+        Attr attr = getAttr(attrName);
+        if (attr == null) {
+            return AttrKind.INVALID;
+        }
+        return attr.isGlobal() ?
+                AttrKind.OK :
+                attrs.getOrDefault(attr, AttrKind.INVALID);
     }
 
     private static AttrMap attrs(AttrKind k, Attr... attrs) {

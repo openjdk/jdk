@@ -403,7 +403,7 @@ protected:
   inline void patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp);
 
   // slow path
-  virtual stackChunkOop allocate_chunk_slow(size_t stack_size) = 0;
+  virtual stackChunkOop allocate_chunk_slow(size_t stack_size, int argsize_md) = 0;
 
   int cont_size() { return pointer_delta_as_int(_cont_stack_bottom, _cont_stack_top); }
 
@@ -438,20 +438,12 @@ private:
 protected:
   void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_JFR_ONLY(COMMA bool chunk_is_allocated));
   bool freeze_fast_new_chunk(stackChunkOop chunk);
-
-#ifdef ASSERT
-  bool is_empty(stackChunkOop chunk) {
-    // during freeze, the chunk is in an intermediate state (after setting the chunk's argsize but before setting its
-    // ultimate sp) so we use this instead of stackChunkOopDesc::is_empty
-    return chunk->sp() >= chunk->stack_size() - chunk->argsize() - frame::metadata_words_at_top;
-  }
-#endif
 };
 
 template <typename ConfigT>
 class Freeze : public FreezeBase {
 private:
-  stackChunkOop allocate_chunk(size_t stack_size);
+  stackChunkOop allocate_chunk(size_t stack_size, int argsize_md);
 
 public:
   inline Freeze(JavaThread* thread, ContinuationWrapper& cont, intptr_t* frame_sp)
@@ -460,7 +452,7 @@ public:
   freeze_result try_freeze_fast();
 
 protected:
-  virtual stackChunkOop allocate_chunk_slow(size_t stack_size) override { return allocate_chunk(stack_size); }
+  virtual stackChunkOop allocate_chunk_slow(size_t stack_size, int argsize_md) override { return allocate_chunk(stack_size, argsize_md); }
 };
 
 FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* frame_sp) :
@@ -543,7 +535,7 @@ freeze_result Freeze<ConfigT>::try_freeze_fast() {
   DEBUG_ONLY(_fast_freeze_size = size_if_fast_freeze_available();)
   assert(_fast_freeze_size == 0, "");
 
-  stackChunkOop chunk = allocate_chunk(cont_size() + frame::metadata_words);
+  stackChunkOop chunk = allocate_chunk(cont_size() + frame::metadata_words, _cont.argsize() + frame::metadata_words_at_top);
   if (freeze_fast_new_chunk(chunk)) {
     return freeze_ok;
   }
@@ -572,7 +564,7 @@ int FreezeBase::size_if_fast_freeze_available() {
   // so we subtract it only if we overlap with the caller, i.e. the current chunk isn't empty.
   // Consider leaving the chunk's argsize set when emptying it and removing the following branch,
   // although that would require changing stackChunkOopDesc::is_empty
-  if (chunk_sp < chunk->stack_size()) {
+  if (!chunk->is_empty()) {
     total_size_needed -= _cont.argsize() + frame::metadata_words_at_top;
   }
 
@@ -585,14 +577,13 @@ int FreezeBase::size_if_fast_freeze_available() {
 
 void FreezeBase::freeze_fast_existing_chunk() {
   stackChunkOop chunk = _cont.tail();
-  DEBUG_ONLY(_orig_chunk_sp = chunk->sp_address();)
 
   DEBUG_ONLY(_fast_freeze_size = size_if_fast_freeze_available();)
   assert(_fast_freeze_size > 0, "");
 
-  if (chunk->sp() < chunk->stack_size()) { // we are copying into a non-empty chunk
+  if (!chunk->is_empty()) { // we are copying into a non-empty chunk
     DEBUG_ONLY(_empty = false;)
-    assert(chunk->sp() < (chunk->stack_size() - chunk->argsize()), "");
+    DEBUG_ONLY(_orig_chunk_sp = chunk->sp_address();)
 #ifdef ASSERT
     {
       intptr_t* retaddr_slot = (chunk->sp_address()
@@ -630,13 +621,14 @@ void FreezeBase::freeze_fast_existing_chunk() {
 
     freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   } else { // the chunk is empty
-    DEBUG_ONLY(_empty = true;)
-    const int chunk_start_sp = chunk->sp();
+    const int chunk_start_sp = chunk->stack_size();
 
-    assert(chunk_start_sp == chunk->stack_size(), "");
+    DEBUG_ONLY(_empty = true;)
+    DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 
     chunk->set_max_thawing_size(cont_size());
-    chunk->set_argsize(_cont.argsize());
+    chunk->set_bottom(chunk_start_sp - _cont.argsize() - frame::metadata_words_at_top);
+    chunk->set_sp(chunk->bottom());
 
     freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   }
@@ -654,7 +646,6 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
   }
 
   chunk->set_max_thawing_size(cont_size());
-  chunk->set_argsize(_cont.argsize());
 
   // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
   // They'll then be stored twice: in the chunk and in the parent chunk's top frame
@@ -931,7 +922,6 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   int overlap = 0; // the args overlap the caller -- if there is one in this chunk and is of the same kind
   int unextended_sp = -1;
   if (chunk != nullptr) {
-    unextended_sp = chunk->sp();
     if (!chunk->is_empty()) {
       StackChunkFrameStream<ChunkFrames::Mixed> last(chunk);
       unextended_sp = chunk->to_offset(StackChunkFrameStream<ChunkFrames::Mixed>(chunk).unextended_sp());
@@ -939,6 +929,8 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
       if (callee.is_interpreted_frame() == top_interpreted) {
         overlap = argsize_md;
       }
+    } else {
+      unextended_sp = chunk->stack_size() - frame::metadata_words_at_top;
     }
   }
 
@@ -976,25 +968,21 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
     _freeze_size += overlap; // we're allocating a new chunk, so no overlap
     // overlap = 0;
 
-    chunk = allocate_chunk_slow(_freeze_size);
+    chunk = allocate_chunk_slow(_freeze_size, argsize_md);
     if (chunk == nullptr) {
       return freeze_exception;
     }
 
     // Install new chunk
     _cont.set_tail(chunk);
-
-    int sp = chunk->stack_size() - argsize_md;
-    chunk->set_sp(sp);
-    chunk->set_argsize(argsize);
-    assert(is_empty(chunk), "");
+    assert(chunk->is_empty(), "");
   } else {
     // REUSE EXISTING CHUNK
     log_develop_trace(continuations)("Reusing chunk mixed: %d empty: %d", chunk->has_mixed_frames(), chunk->is_empty());
     if (chunk->is_empty()) {
       int sp = chunk->stack_size() - argsize_md;
       chunk->set_sp(sp);
-      chunk->set_argsize(argsize);
+      chunk->set_bottom(sp);
       _freeze_size += overlap;
       assert(chunk->max_thawing_size() == 0, "");
     } DEBUG_ONLY(else empty_chunk = false;)
@@ -1004,10 +992,10 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   chunk->set_has_mixed_frames(true);
 
   assert(chunk->requires_barriers() == _barriers, "");
-  assert(!_barriers || is_empty(chunk), "");
+  assert(!_barriers || chunk->is_empty(), "");
 
-  assert(!is_empty(chunk) || StackChunkFrameStream<ChunkFrames::Mixed>(chunk).is_done(), "");
-  assert(!is_empty(chunk) || StackChunkFrameStream<ChunkFrames::Mixed>(chunk).to_frame().is_empty(), "");
+  assert(!chunk->is_empty() || StackChunkFrameStream<ChunkFrames::Mixed>(chunk).is_done(), "");
+  assert(!chunk->is_empty() || StackChunkFrameStream<ChunkFrames::Mixed>(chunk).to_frame().is_empty(), "");
 
   // We unwind frames after the last safepoint so that the GC will have found the oops in the frames, but before
   // writing into the chunk. This is so that an asynchronous stack walk (not at a safepoint) that suspends us here
@@ -1053,7 +1041,7 @@ void FreezeBase::patch(const frame& f, frame& hf, const frame& caller, bool is_b
     // If we're the bottom frame, we need to replace the return barrier with the real
     // caller's pc.
     address last_pc = caller.pc();
-    assert((last_pc == nullptr) == is_empty(_cont.tail()), "");
+    assert((last_pc == nullptr) == _cont.tail()->is_empty(), "");
     ContinuationHelper::Frame::patch_pc(caller, last_pc);
   } else {
     assert(!caller.is_empty(), "");
@@ -1306,6 +1294,7 @@ inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive
 
 class StackChunkAllocator : public MemAllocator {
   const size_t                                 _stack_size;
+  int                                          _argsize_md;
   ContinuationWrapper&                         _continuation_wrapper;
   JvmtiSampledObjectAllocEventCollector* const _jvmti_event_collector;
   mutable bool                                 _took_slow_path;
@@ -1321,8 +1310,11 @@ class StackChunkAllocator : public MemAllocator {
     const size_t hs = oopDesc::header_size();
     Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
 
+    int bottom = (int)_stack_size - _argsize_md;
+
     jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
-    jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
+    jdk_internal_vm_StackChunk::set_bottom(mem, bottom);
+    jdk_internal_vm_StackChunk::set_sp(mem, bottom);
 
     return finish(mem);
   }
@@ -1346,10 +1338,12 @@ public:
                       size_t word_size,
                       Thread* thread,
                       size_t stack_size,
+                      int argsize_md,
                       ContinuationWrapper& continuation_wrapper,
                       JvmtiSampledObjectAllocEventCollector* jvmti_event_collector)
     : MemAllocator(klass, word_size, thread),
       _stack_size(stack_size),
+      _argsize_md(argsize_md),
       _continuation_wrapper(continuation_wrapper),
       _jvmti_event_collector(jvmti_event_collector),
       _took_slow_path(false) {}
@@ -1383,7 +1377,7 @@ public:
 };
 
 template <typename ConfigT>
-stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
+stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md) {
   log_develop_trace(continuations)("allocate_chunk allocating new chunk");
 
   InstanceStackChunkKlass* klass = InstanceStackChunkKlass::cast(vmClasses::StackChunk_klass());
@@ -1405,7 +1399,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   // instrumentation have been deferred. This property is important for
   // some GCs, as this ensures that the allocated object is in the young
   // generation / newly allocated memory.
-  StackChunkAllocator allocator(klass, size_in_words, current, stack_size, _cont, _jvmti_event_collector);
+  StackChunkAllocator allocator(klass, size_in_words, current, stack_size, argsize_md, _cont, _jvmti_event_collector);
   stackChunkOop chunk = allocator.allocate();
 
   if (chunk == nullptr) {
@@ -1415,11 +1409,11 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   // assert that chunk is properly initialized
   assert(chunk->stack_size() == (int)stack_size, "");
   assert(chunk->size() >= stack_size, "chunk->size(): %zu size: %zu", chunk->size(), stack_size);
-  assert(chunk->sp() == chunk->stack_size(), "");
+  assert(chunk->sp() == chunk->bottom(), "");
   assert((intptr_t)chunk->start_address() % 8 == 0, "");
   assert(chunk->max_thawing_size() == 0, "");
   assert(chunk->pc() == nullptr, "");
-  assert(chunk->argsize() == 0, "");
+  assert(chunk->is_empty(), "");
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
 
@@ -1852,12 +1846,11 @@ public:
 };
 
 inline void ThawBase::clear_chunk(stackChunkOop chunk) {
-  chunk->set_sp(chunk->stack_size());
-  chunk->set_argsize(0);
+  chunk->set_sp(chunk->bottom());
   chunk->set_max_thawing_size(0);
 }
 
- int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize) {
+int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize) {
   bool empty = false;
   StackChunkFrameStream<ChunkFrames::CompiledOnly> f(chunk);
   DEBUG_ONLY(intptr_t* const chunk_sp = chunk->start_address() + chunk->sp();)
@@ -2104,8 +2097,7 @@ void ThawBase::finalize_thaw(frame& entry, int argsize) {
     chunk->set_sp(chunk->to_offset(_stream.sp()));
     chunk->set_pc(_stream.pc());
   } else {
-    chunk->set_argsize(0);
-    chunk->set_sp(chunk->stack_size());
+    chunk->set_sp(chunk->bottom());
     chunk->set_pc(nullptr);
   }
   assert(_stream.is_done() == chunk->is_empty(), "");
@@ -2377,7 +2369,6 @@ void ThawBase::finish_thaw(frame& f) {
       chunk->set_has_mixed_frames(false);
     }
     chunk->set_max_thawing_size(0);
-    assert(chunk->argsize() == 0, "");
   } else {
     chunk->set_max_thawing_size(chunk->max_thawing_size() - _align_size);
   }

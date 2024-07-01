@@ -120,17 +120,16 @@ public:
 
 typedef ZArenaHashtable<intptr_t, bool, 4> ZOffsetTable;
 
-class ZBarrierSetC2State : public ArenaObj {
+class ZBarrierSetC2State : public BarrierSetC2State {
 private:
   GrowableArray<ZBarrierStubC2*>* _stubs;
-  Node_Array                      _live;
   int                             _trampoline_stubs_count;
   int                             _stubs_start_offset;
 
 public:
   ZBarrierSetC2State(Arena* arena)
-    : _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
-      _live(arena),
+    : BarrierSetC2State(arena),
+      _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
       _trampoline_stubs_count(0),
       _stubs_start_offset(0) {}
 
@@ -138,25 +137,13 @@ public:
     return _stubs;
   }
 
-  RegMask* live(const Node* node) {
-    if (!node->is_Mach()) {
-      // Don't need liveness for non-MachNodes
-      return nullptr;
-    }
+  bool needs_liveness_data(const MachNode* mach) const {
+    // Don't need liveness data for nodes without barriers
+    return mach->barrier_data() != ZBarrierElided;
+  }
 
-    const MachNode* const mach = node->as_Mach();
-    if (mach->barrier_data() == ZBarrierElided) {
-      // Don't need liveness data for nodes without barriers
-      return nullptr;
-    }
-
-    RegMask* live = (RegMask*)_live[node->_idx];
-    if (live == nullptr) {
-      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
-      _live.map(node->_idx, (Node*)live);
-    }
-
-    return live;
+  bool needs_livein_data() const {
+    return true;
   }
 
   void inc_trampoline_stubs_count() {
@@ -201,30 +188,7 @@ int ZBarrierStubC2::stubs_start_offset() {
   return barrier_set_state()->stubs_start_offset();
 }
 
-ZBarrierStubC2::ZBarrierStubC2(const MachNode* node)
-  : _node(node),
-    _entry(),
-    _continuation() {}
-
-Register ZBarrierStubC2::result() const {
-  return noreg;
-}
-
-RegMask& ZBarrierStubC2::live() const {
-  return *barrier_set_state()->live(_node);
-}
-
-Label* ZBarrierStubC2::entry() {
-  // The _entry will never be bound when in_scratch_emit_size() is true.
-  // However, we still need to return a label that is not bound now, but
-  // will eventually be bound. Any eventually bound label will do, as it
-  // will only act as a placeholder, so we return the _continuation label.
-  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
-}
-
-Label* ZBarrierStubC2::continuation() {
-  return &_continuation;
-}
+ZBarrierStubC2::ZBarrierStubC2(const MachNode* node) : BarrierStubC2(node) {}
 
 ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref) {
   AARCH64_ONLY(fatal("Should use ZLoadBarrierStubC2Aarch64::create"));
@@ -240,6 +204,9 @@ ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, R
     _ref(ref) {
   assert_different_registers(ref, ref_addr.base());
   assert_different_registers(ref, ref_addr.index());
+  // The runtime call updates the value of ref, so we should not spill and
+  // reload its outdated value.
+  dont_preserve(ref);
 }
 
 Address ZLoadBarrierStubC2::ref_addr() const {
@@ -248,10 +215,6 @@ Address ZLoadBarrierStubC2::ref_addr() const {
 
 Register ZLoadBarrierStubC2::ref() const {
   return _ref;
-}
-
-Register ZLoadBarrierStubC2::result() const {
-  return ref();
 }
 
 address ZLoadBarrierStubC2::slow_path() const {
@@ -310,10 +273,6 @@ bool ZStoreBarrierStubC2::is_native() const {
 
 bool ZStoreBarrierStubC2::is_atomic() const {
   return _is_atomic;
-}
-
-Register ZStoreBarrierStubC2::result() const {
-  return noreg;
 }
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
@@ -448,23 +407,6 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
   return type == T_OBJECT || type == T_ARRAY;
 }
 
-// This TypeFunc assumes a 64bit system
-static const TypeFunc* clone_type() {
-  // Create input type (domain)
-  const Type** const domain_fields = TypeTuple::fields(4);
-  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
-  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
-  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
-  domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
-  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
-
-  // Create result type (range)
-  const Type** const range_fields = TypeTuple::fields(0);
-  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
-
-  return TypeFunc::make(domain, range);
-}
-
 #define XTOP LP64_ONLY(COMMA phase->top())
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -520,31 +462,10 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     return;
   }
 
-  // Clone instance
-  Node* const ctrl       = ac->in(TypeFunc::Control);
-  Node* const mem        = ac->in(TypeFunc::Memory);
-  Node* const dst        = ac->in(ArrayCopyNode::Dest);
-  Node* const size       = ac->in(ArrayCopyNode::Length);
-
-  assert(size->bottom_type()->is_long(), "Should be long");
-
-  // The native clone we are calling here expects the instance size in words
-  // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
-  Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
-
-  Node* const call = phase->make_leaf_call(ctrl,
-                                           mem,
-                                           clone_type(),
-                                           ZBarrierSetRuntime::clone_addr(),
-                                           "ZBarrierSetRuntime::clone",
-                                           TypeRawPtr::BOTTOM,
-                                           src,
-                                           dst,
-                                           full_size,
-                                           phase->top());
-  phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  // Clone instance or array where 'src' is only known to be an object (ary_ptr
+  // is null). This can happen in bytecode generated dynamically to implement
+  // reflective array clones.
+  clone_in_runtime(phase, ac, ZBarrierSetRuntime::clone_addr(), "ZBarrierSetRuntime::clone");
 }
 
 #undef XTOP
@@ -882,81 +803,6 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   analyze_dominating_barriers_impl(loads, load_dominators);
   analyze_dominating_barriers_impl(stores, store_dominators);
   analyze_dominating_barriers_impl(atomics, atomic_dominators);
-}
-
-// == Reduced spilling optimization ==
-
-void ZBarrierSetC2::compute_liveness_at_stubs() const {
-  ResourceMark rm;
-  Compile* const C = Compile::current();
-  Arena* const A = Thread::current()->resource_area();
-  PhaseCFG* const cfg = C->cfg();
-  PhaseRegAlloc* const regalloc = C->regalloc();
-  RegMask* const live = NEW_ARENA_ARRAY(A, RegMask, cfg->number_of_blocks() * sizeof(RegMask));
-  ZBarrierSetAssembler* const bs = ZBarrierSet::assembler();
-  Block_List worklist;
-
-  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
-    new ((void*)(live + i)) RegMask();
-    worklist.push(cfg->get_block(i));
-  }
-
-  while (worklist.size() > 0) {
-    const Block* const block = worklist.pop();
-    RegMask& old_live = live[block->_pre_order];
-    RegMask new_live;
-
-    // Initialize to union of successors
-    for (uint i = 0; i < block->_num_succs; i++) {
-      const uint succ_id = block->_succs[i]->_pre_order;
-      new_live.OR(live[succ_id]);
-    }
-
-    // Walk block backwards, computing liveness
-    for (int i = block->number_of_nodes() - 1; i >= 0; --i) {
-      const Node* const node = block->get_node(i);
-
-      // Remove def bits
-      const OptoReg::Name first = bs->refine_register(node, regalloc->get_reg_first(node));
-      const OptoReg::Name second = bs->refine_register(node, regalloc->get_reg_second(node));
-      if (first != OptoReg::Bad) {
-        new_live.Remove(first);
-      }
-      if (second != OptoReg::Bad) {
-        new_live.Remove(second);
-      }
-
-      // Add use bits
-      for (uint j = 1; j < node->req(); ++j) {
-        const Node* const use = node->in(j);
-        const OptoReg::Name first = bs->refine_register(use, regalloc->get_reg_first(use));
-        const OptoReg::Name second = bs->refine_register(use, regalloc->get_reg_second(use));
-        if (first != OptoReg::Bad) {
-          new_live.Insert(first);
-        }
-        if (second != OptoReg::Bad) {
-          new_live.Insert(second);
-        }
-      }
-
-      // If this node tracks liveness, update it
-      RegMask* const regs = barrier_set_state()->live(node);
-      if (regs != nullptr) {
-        regs->OR(new_live);
-      }
-    }
-
-    // Now at block top, see if we have any changes
-    new_live.SUBTRACT(old_live);
-    if (new_live.is_NotEmpty()) {
-      // Liveness has refined, update and propagate to prior blocks
-      old_live.OR(new_live);
-      for (uint i = 1; i < block->num_preds(); ++i) {
-        Block* const pred = cfg->get_block_for_node(block->pred(i));
-        worklist.push(pred);
-      }
-    }
-  }
 }
 
 void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {

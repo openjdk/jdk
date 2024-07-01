@@ -26,6 +26,7 @@
 /*
  * @test
  * @summary Test container info for cgroup v2
+ * @key cgroups
  * @requires docker.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

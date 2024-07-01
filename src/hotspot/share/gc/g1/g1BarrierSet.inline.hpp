@@ -72,10 +72,6 @@ inline void G1BarrierSet::write_region(MemRegion mr) {
   write_region(JavaThread::current(), mr);
 }
 
-inline void G1BarrierSet::write_ref_array_work(MemRegion mr) {
-  write_region(mr);
-}
-
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_post(T* field) {
   volatile CardValue* byte = _card_table->byte_for(field);

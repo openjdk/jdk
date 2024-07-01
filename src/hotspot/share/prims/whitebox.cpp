@@ -29,6 +29,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/classPrinter.hpp"
@@ -403,7 +404,7 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #if INCLUDE_G1GC
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1h->heap_region_containing(p);
+    const G1HeapRegion* hr = g1h->heap_region_containing(p);
     return hr->is_old_or_humongous();
   }
 #endif
@@ -478,7 +479,7 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     oop result = JNIHandles::resolve(obj);
-    const HeapRegion* hr = g1h->heap_region_containing(result);
+    const G1HeapRegion* hr = g1h->heap_region_containing(result);
     return hr->is_humongous();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1IsHumongous: G1 GC is not enabled");
@@ -487,7 +488,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1h->heap_region_containing((void*) addr);
+    const G1HeapRegion* hr = g1h->heap_region_containing((void*) addr);
     return hr->is_humongous();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToHumongousRegion: G1 GC is not enabled");
@@ -496,7 +497,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1h->heap_region_containing((void*) addr);
+    const G1HeapRegion* hr = g1h->heap_region_containing((void*) addr);
     return hr->is_free();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToFreeRegion: G1 GC is not enabled");
@@ -539,7 +540,7 @@ WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    return (jint)HeapRegion::GrainBytes;
+    return (jint)G1HeapRegion::GrainBytes;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
 WB_END
@@ -626,11 +627,11 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
     size_t total_memory() { return _total_memory; }
     size_t total_memory_to_free() { return _total_memory_to_free; }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     if (r->is_old()) {
       size_t live = r->live_bytes();
       size_t size = r->used();
-      size_t reg_size = HeapRegion::GrainBytes;
+      size_t reg_size = G1HeapRegion::GrainBytes;
       if (size > 0 && ((int)(live * 100 / size) < _liveness)) {
         _total_memory += size;
         ++_total_count;
@@ -1884,10 +1885,6 @@ WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass 
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
 WB_END
 
-WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint index))
-  return ConstantPool::encode_invokedynamic_index(index);
-WB_END
-
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
@@ -2063,7 +2060,7 @@ WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
-  return UseSharedSpaces;
+  return CDSConfig::is_using_archive();
 WB_END
 
 WB_ENTRY(jint, WB_GetCDSGenericHeaderMinVersion(JNIEnv* env, jobject wb))
@@ -2119,7 +2116,10 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
-  return true;
+  // An exploded build inhibits use of CDS. Therefore, for the
+  // purpose of testing, the JVM can be treated as not having CDS
+  // built in at all.
+  return ClassLoader::has_jrt_entry();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -2657,6 +2657,11 @@ WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
   ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
 WB_END
 
+// Reports resident set size (RSS) in bytes
+WB_ENTRY(jlong, WB_Rss(JNIEnv* env, jobject o))
+  return os::rss();
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2845,8 +2850,6 @@ static JNINativeMethod methods[] = {
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getResolvedReferences0", CC"(Ljava/lang/Class;)[Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
-  {CC"encodeConstantPoolIndyIndex0",
-      CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
   {CC"getFieldEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getFieldEntriesLength},
   {CC"getFieldCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getFieldCPIndex},
   {CC"getMethodEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getMethodEntriesLength},
@@ -2946,6 +2949,7 @@ static JNINativeMethod methods[] = {
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
+  {CC"rss", CC"()J",                                  (void*)&WB_Rss},
 };
 
 

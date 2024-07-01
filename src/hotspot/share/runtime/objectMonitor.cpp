@@ -829,7 +829,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  int nWakeups = 0;
   int recheckInterval = 1;
 
   for (;;) {
@@ -872,15 +871,14 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     }
 
     // The lock is still contested.
+
     // Keep a tally of the # of futile wakeups.
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
-    ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == current.
     // We can defer clearing _succ until after the spin completes
@@ -981,12 +979,18 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
   assert(current->thread_state() != _thread_blocked, "invariant");
 
-  int nWakeups = 0;
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
     guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
     assert(owner_raw() != current, "invariant");
 
+    // This thread has been notified so try to reacquire the lock.
+    if (TryLock(current) == TryLockResult::Success) {
+      break;
+    }
+
+    // If that fails, spin again.  Note that spin count may be zero so the above TryLock
+    // is necessary.
     if (TrySpin(current)) {
         break;
     }
@@ -1011,11 +1015,6 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     }
 
     // The lock is still contested.
-    // Keep a tally of the # of futile wakeups.
-    // Note that the counter is not protected by a lock or updated by atomics.
-    // That is by design - we trade "lossy" counters which are exposed to
-    // races during updates for a lower probe effect.
-    ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally
     // find that _succ == current.
@@ -1025,6 +1024,10 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     // *must* retry  _owner before parking.
     OrderAccess::fence();
 
+    // Keep a tally of the # of futile wakeups.
+    // Note that the counter is not protected by a lock or updated by atomics.
+    // That is by design - we trade "lossy" counters which are exposed to
+    // races during updates for a lower probe effect.
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
@@ -1439,7 +1442,7 @@ bool ObjectMonitor::check_owner(TRAPS) {
 static inline bool is_excluded(const Klass* monitor_klass) {
   assert(monitor_klass != nullptr, "invariant");
   NOT_JFR_RETURN_(false);
-  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name();)
+  JFR_ONLY(return vmSymbols::jdk_jfr_internal_HiddenWait() == monitor_klass->name();)
 }
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,

@@ -50,7 +50,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -84,7 +84,7 @@ ParallelScavengeTracer        PSScavenge::_gc_tracer;
 CollectorCounters*            PSScavenge::_counters = nullptr;
 
 static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
   PSPromoteRootsClosure  roots_to_old_closure(pm);
@@ -115,7 +115,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 }
 
 static void steal_work(TaskTerminator& terminator, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+  assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
   PSPromotionManager* pm =
     PSPromotionManager::gc_thread_promotion_manager(worker_id);
@@ -232,11 +232,11 @@ public:
 bool PSScavenge::invoke() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!ParallelScavengeHeap::heap()->is_gc_active(), "not reentrant");
+  assert(!ParallelScavengeHeap::heap()->is_stw_gc_active(), "not reentrant");
 
   ParallelScavengeHeap* const heap = ParallelScavengeHeap::heap();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
-  IsGCActiveMark mark;
+  IsSTWGCActiveMark mark;
 
   const bool scavenge_done = PSScavenge::invoke_no_policy();
   const bool need_full_gc = !scavenge_done;
@@ -264,7 +264,7 @@ class PSThreadRootsTaskClosure : public ThreadClosure {
 public:
   PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
   virtual void do_thread(Thread* thread) {
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+    assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
@@ -418,11 +418,6 @@ bool PSScavenge::invoke_no_policy() {
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
-
-    // Verify no unmarked old->young roots
-    if (VerifyRememberedSets) {
-      heap->card_table()->verify_all_young_refs_imprecise();
-    }
 
     assert(young_gen->to_space()->is_empty(),
            "Attempt to scavenge with live objects in to_space");
@@ -627,10 +622,6 @@ bool PSScavenge::invoke_no_policy() {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
-
-    if (VerifyRememberedSets) {
-      heap->card_table()->verify_all_young_refs_imprecise();
-    }
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();

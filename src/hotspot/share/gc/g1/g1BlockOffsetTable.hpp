@@ -56,7 +56,6 @@ private:
   // For performance these have to devolve to array accesses in product builds.
   inline uint8_t offset_array(uint8_t* addr) const;
 
-  inline void set_offset_array_raw(uint8_t* addr, uint8_t offset);
   inline void set_offset_array(uint8_t* addr, uint8_t offset);
 
   inline void set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low);

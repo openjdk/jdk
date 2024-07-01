@@ -46,20 +46,20 @@ class MethodHandleNatives {
 
     private MethodHandleNatives() { } // static only
 
-    /// MemberName support
+    //--- MemberName support
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
     static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
 
-    /// Field layout queries parallel to jdk.internal.misc.Unsafe:
+    //--- Field layout queries parallel to jdk.internal.misc.Unsafe:
     static native long objectFieldOffset(MemberName self);  // e.g., returns vmindex
     static native long staticFieldOffset(MemberName self);  // e.g., returns vmindex
     static native Object staticFieldBase(MemberName self);  // e.g., returns clazz
     static native Object getMemberVMInfo(MemberName self);  // returns {vmindex,vmtarget}
 
-    /// CallSite support
+    //--- CallSite support
 
     /** Tell the JVM that we need to change the target of a CallSite. */
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);

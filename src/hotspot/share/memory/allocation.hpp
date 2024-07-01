@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "memory/allStatic.hpp"
+#include "nmt/memflags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -98,63 +99,6 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
-
-#define MEMORY_TYPES_DO(f)                                                           \
-  /* Memory type by sub systems. It occupies lower byte. */                          \
-  f(mtJavaHeap,       "Java Heap")   /* Java heap                                 */ \
-  f(mtClass,          "Class")       /* Java classes                              */ \
-  f(mtThread,         "Thread")      /* thread objects                            */ \
-  f(mtThreadStack,    "Thread Stack")                                                \
-  f(mtCode,           "Code")        /* generated code                            */ \
-  f(mtGC,             "GC")                                                          \
-  f(mtGCCardSet,      "GCCardSet")   /* G1 card set remembered set                */ \
-  f(mtCompiler,       "Compiler")                                                    \
-  f(mtJVMCI,          "JVMCI")                                                       \
-  f(mtInternal,       "Internal")    /* memory used by VM, but does not belong to */ \
-                                     /* any of above categories, and not used by  */ \
-                                     /* NMT                                       */ \
-  f(mtOther,          "Other")       /* memory not used by VM                     */ \
-  f(mtSymbol,         "Symbol")                                                      \
-  f(mtNMT,            "Native Memory Tracking")  /* memory used by NMT            */ \
-  f(mtClassShared,    "Shared class space")      /* class data sharing            */ \
-  f(mtChunk,          "Arena Chunk") /* chunk that holds content of arenas        */ \
-  f(mtTest,           "Test")        /* Test type for verifying NMT               */ \
-  f(mtTracing,        "Tracing")                                                     \
-  f(mtLogging,        "Logging")                                                     \
-  f(mtStatistics,     "Statistics")                                                  \
-  f(mtArguments,      "Arguments")                                                   \
-  f(mtModule,         "Module")                                                      \
-  f(mtSafepoint,      "Safepoint")                                                   \
-  f(mtSynchronizer,   "Synchronization")                                             \
-  f(mtServiceability, "Serviceability")                                              \
-  f(mtMetaspace,      "Metaspace")                                                   \
-  f(mtStringDedup,    "String Deduplication")                                        \
-  f(mtObjectMonitor,  "Object Monitors")                                             \
-  f(mtNone,           "Unknown")                                                     \
-  //end
-
-#define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \
-  type,
-
-/*
- * Memory types
- */
-enum class MEMFLAGS : uint8_t  {
-  MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
-  mt_number_of_types   // number of memory types (mtDontTrack
-                       // is not included as validate type)
-};
-// Extra insurance that MEMFLAGS truly has the same size as uint8_t.
-STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
-
-#define MEMORY_TYPE_SHORTNAME(type, human_readable) \
-  constexpr MEMFLAGS type = MEMFLAGS::type;
-
-// Generate short aliases for the enum values. E.g. mtGC instead of MEMFLAGS::mtGC.
-MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
-
-// Make an int version of the sentinel end value.
-constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
 extern bool NMT_track_callsite;
 

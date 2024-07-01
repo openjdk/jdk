@@ -74,8 +74,6 @@ class G1BarrierSet: public CardTableBarrierSet {
   inline void write_region(MemRegion mr);
   void write_region(JavaThread* thread, MemRegion mr);
 
-  inline void write_ref_array_work(MemRegion mr);
-
   template <DecoratorSet decorators, typename T>
   void write_ref_field_post(T* field);
   void write_ref_field_post_slow(volatile CardValue* byte);

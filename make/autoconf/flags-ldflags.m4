@@ -71,7 +71,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      BASIC_LDFLAGS="-Wl,--exclude-libs,ALL"
+      BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
@@ -118,7 +118,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -Wl,--allow-shlib-undefined"
     # Enabling pie on 32 bit builds prevents the JVM from allocating a continuous
     # java heap.
     if test "x$OPENJDK_TARGET_CPU_BITS" != "x32"; then

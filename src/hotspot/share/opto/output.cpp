@@ -1280,7 +1280,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   }
 
   // Compute prolog code size
-  _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
@@ -1322,7 +1321,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   int code_req  = _buf_sizes._code;
   int const_req = _buf_sizes._const;
 
-  int pad_req   = NativeCall::instruction_size;
+  int pad_req   = NativeCall::byte_size();
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
@@ -3389,8 +3388,7 @@ void PhaseOutput::install() {
                  C->entry_bci(),
                  CompileBroker::compiler2(),
                  C->has_unsafe_access(),
-                 SharedRuntime::is_wide_vector(C->max_vector_size()),
-                 C->rtm_state());
+                 SharedRuntime::is_wide_vector(C->max_vector_size()));
   }
 }
 
@@ -3398,8 +3396,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                int               entry_bci,
                                AbstractCompiler* compiler,
                                bool              has_unsafe_access,
-                               bool              has_wide_vectors,
-                               RTMState          rtm_state) {
+                               bool              has_wide_vectors) {
   // Check if we want to skip execution of all compiled code.
   {
 #ifndef PRODUCT
@@ -3437,8 +3434,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->has_monitors(),
-                                     0,
-                                     C->rtm_state());
+                                     0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();

@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -655,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ rt_call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -2811,6 +2808,50 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifdef COMPILER2
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,
+      r_array_base   = x11,
+      r_array_length = x12,
+      r_array_index  = x13,
+      r_sub_klass    = x14,
+      result         = x15,
+      r_bitmap       = x16;
+
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, super_klass_index, /*stub_is_near*/true);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,        // argument
+      r_array_base   = x11,        // argument
+      temp1          = x12,        // tmp
+      r_array_index  = x13,        // argument
+      result         = x15,        // argument
+      r_bitmap       = x16;        // argument
+
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, result, temp1);
+    __ ret();
+
+    return start;
+  }
+
   address generate_mulAdd()
   {
     __ align(CodeEntryAlignment);
@@ -2843,7 +2884,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen()
   {
@@ -2856,8 +2896,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = x12;
     const Register ylen  = x13;
     const Register z     = x14;
-    const Register zlen  = x15;
 
+    const Register tmp0  = x15;
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2868,7 +2908,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
@@ -2884,10 +2924,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = x10;
     const Register xlen  = x11;
     const Register z     = x12;
-    const Register zlen  = x13;
     const Register y     = x14; // == x
     const Register ylen  = x15; // == xlen
 
+    const Register tmp0  = x13; // zlen, unused
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2900,7 +2940,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ mv(y, x);
     __ mv(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave();
     __ ret();
 
@@ -5453,7 +5493,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     }
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry);
+    __ rt_call(runtime_entry);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -5569,6 +5609,18 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (bs_nm != nullptr) {
       StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
+
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
+#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 

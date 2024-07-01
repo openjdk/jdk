@@ -64,7 +64,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
     BIN := $(TEST_LIB_SUPPORT)/test-lib_classes, \
     HEADERS := $(TEST_LIB_SUPPORT)/test-lib_headers, \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \
-    DISABLED_WARNINGS := try deprecation rawtypes unchecked serial cast removal preview, \
+    DISABLED_WARNINGS := try deprecation rawtypes unchecked serial cast removal preview dangling-doc-comments, \
     JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \

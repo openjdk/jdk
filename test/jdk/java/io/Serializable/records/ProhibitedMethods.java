@@ -245,7 +245,7 @@ public class ProhibitedMethods {
         var cf = ClassFile.of();
         return cf.transform(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
             clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
-                cob.constantInstruction(name + " should not be invoked");
+                cob.loadConstant(name + " should not be invoked");
                 cob.invokestatic(Assert.class.describeConstable().orElseThrow(), "fail",
                         MethodTypeDesc.of(CD_void, CD_String));
                 cob.return_();
