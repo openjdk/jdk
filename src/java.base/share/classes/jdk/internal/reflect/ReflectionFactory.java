@@ -451,7 +451,7 @@ public class ReflectionFactory {
     }
 
     public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
-        if (! isValidSerializable(cl)) {
+        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
             return null;
         }
 
@@ -461,16 +461,19 @@ public class ReflectionFactory {
             if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
                 return null;
             }
+            if (field.getType() != ObjectStreamField[].class) {
+                return null;
+            }
             field.setAccessible(true);
             ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
-            return array == null ? null : array.clone();
+            return array != null && array.length > 0 ? array.clone() : array;
         } catch (ReflectiveOperationException e) {
             return null;
         }
     }
 
     public final long serialVersionUID(Class<?> cl) {
-        if (! isValidSerializable(cl)) {
+        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
             return 0;
         }
 

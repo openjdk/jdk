@@ -38,6 +38,7 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
@@ -702,7 +703,7 @@ public class ReflectionFactoryTest {
 
     static class Ser2 implements Serializable {
         @Serial
-        private static final long serialVersionUID = - 2852896623833548574L;
+        private static final long serialVersionUID = -2852896623833548574L;
 
         byte byte_;
         short short_;
@@ -742,7 +743,7 @@ public class ReflectionFactoryTest {
 
     static class Ser3 implements Serializable {
         @Serial
-        private static final long serialVersionUID = - 1234752876749422678L;
+        private static final long serialVersionUID = -1234752876749422678L;
 
         @Serial
         private static final ObjectStreamField[] serialPersistentFields = {
@@ -764,12 +765,73 @@ public class ReflectionFactoryTest {
         }
     }
 
+    static class SerInvalidFields implements Serializable {
+        // this is deliberately wrong
+        @SuppressWarnings({"unused", "serial"})
+        @Serial
+        private static final String serialPersistentFields = "Oops!";
+        @Serial
+        private static final long serialVersionUID = -8090960816811629489L;
+    }
+
+    static class Ext1 implements Externalizable {
+
+        @Serial
+        private static final long serialVersionUID = 7109990719266285013L;
+
+        public void writeExternal(final ObjectOutput objectOutput) {
+        }
+
+        public void readExternal(final ObjectInput objectInput) {
+        }
+    }
+
+    static class Ext2 implements Externalizable {
+        public void writeExternal(final ObjectOutput objectOutput) {
+        }
+
+        public void readExternal(final ObjectInput objectInput) {
+        }
+    }
+
+    record Rec1(int hello, boolean world) implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 12349876L;
+    }
+
+    enum Enum1 {
+        hello,
+        world,
+        ;
+        private static final long serialVersionUID = 1020304050L;
+    }
+
+    interface Proxy1 {
+        void hello();
+    }
+
     // Check our simple accessors
     @Test
     static void testAccessors() {
         Assert.assertEquals(factory.serialVersionUID(Ser3.class), -1234752876749422678L);
         Assert.assertEquals(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
         Assert.assertNotSame(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
+        Assert.assertNull(factory.serialPersistentFields(SerInvalidFields.class));
+        Assert.assertEquals(factory.serialVersionUID(Ext1.class), 7109990719266285013L);
+        Assert.assertEquals(factory.serialVersionUID(Ext2.class), 0);
+        Assert.assertEquals(factory.serialVersionUID(Rec1.class), 12349876L);
+        // make sure we cannot access the forbidden ones
+        Assert.assertEquals(factory.serialVersionUID(Object.class), 0);
+        Assert.assertEquals(factory.serialVersionUID(Enum1.class), 0);
+        Assert.assertEquals(factory.serialVersionUID(
+            Proxy.newProxyInstance(
+                ReflectionFactoryTest.class.getClassLoader(),
+                new Class<?>[] { Proxy1.class },
+                (_, _, _) -> null).getClass()
+            ), 0
+        );
+        Assert.assertEquals(factory.serialVersionUID(byte[].class), 0);
+        Assert.assertEquals(factory.serialVersionUID(Externalizable.class), 0);
     }
 
 
