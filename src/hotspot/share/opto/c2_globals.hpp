@@ -58,6 +58,9 @@
   product(bool, StressMacroExpansion, false, DIAGNOSTIC,                    \
           "Randomize macro node expansion order")                           \
                                                                             \
+  product(bool, StressUnstableIfTraps, false, DIAGNOSTIC,                   \
+          "Randomly take unstable if traps")                                \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \

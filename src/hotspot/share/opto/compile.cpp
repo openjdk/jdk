@@ -844,7 +844,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   NOT_PRODUCT( verify_graph_edges(); )
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps) {
     initialize_stress_seed(directive);
   }
 
