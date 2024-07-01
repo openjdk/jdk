@@ -3242,7 +3242,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass.
   if (bit != 0) {
-    pop_count_long(r_array_index, r_array_index, Z_R1_scratch); // all the registers are hardcoded so should be fine
+    pop_count_long(r_array_index, r_array_index, Z_R1_scratch); // kills Z_R1_scratch on machines older than z15
 
     // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
     z_sllg(r_array_index, r_array_index, LogBytesPerWord); // scale
