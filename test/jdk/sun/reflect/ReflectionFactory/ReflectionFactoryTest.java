@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.ObjectStreamException;
 import java.io.OptionalDataException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -357,7 +358,7 @@ public class ReflectionFactoryTest {
     // test that the generated read/write objects are working properly
     @Test
     static void testDefaultReadWriteObject() throws Throwable {
-        Ser2 ser = new Ser2((byte) 0x33, (short) 0x2244, (char) 0x5342, 0x05382716, 0xf035a73b09113bacL, 1234f, 3456.0, true, "Testing");
+        Ser2 ser = new Ser2((byte) 0x33, (short) 0x2244, (char) 0x5342, 0x05382716, 0xf035a73b09113bacL, 1234f, 3456.0, true, new Ser3(0x004917aa));
         ser.byte_ = (byte) 0x44;
         ser.short_ = (short) 0x3355;
         ser.char_ = (char) 0x6593;
@@ -366,7 +367,7 @@ public class ReflectionFactoryTest {
         ser.float_ = 4321f;
         ser.double_ = 6543.0;
         ser.boolean_ = false;
-        ser.str = "Other test";
+        ser.ser = new Ser3(0x70b030a0);
         // first, ensure that each field gets written
         MethodHandle writeObject = factory.defaultWriteObjectForSerialization(Ser2.class);
         Assert.assertNotNull(writeObject, "writeObject not created");
@@ -501,12 +502,12 @@ public class ReflectionFactoryTest {
 
                     public void put(final String name, final Object val) {
                         switch (name) {
-                            case "str" -> {
-                                Assert.assertEquals(val, "Other test");
+                            case "ser" -> {
+                                Assert.assertEquals(val, new Ser3(0x70b030a0));
                                 called[16] = true;
                             }
-                            case "final_str" -> {
-                                Assert.assertEquals(val, "Testing");
+                            case "final_ser" -> {
+                                Assert.assertEquals(val, new Ser3(0x004917aa));
                                 called[17] = true;
                             }
                             default -> throw new Error("Unexpected field " + name);
@@ -657,13 +658,13 @@ public class ReflectionFactoryTest {
 
                     public Object get(final String name, final Object val) {
                         return switch (name) {
-                            case "str" -> {
+                            case "ser" -> {
                                 called[16] = true;
-                                yield "The non-final string";
+                                yield new Ser3(0x44cc55dd);
                             }
-                            case "final_str" -> {
+                            case "final_ser" -> {
                                 called[17] = true;
-                                yield "The final string";
+                                yield new Ser3(0x9a8b7c6d);
                             }
                             default -> throw new Error("Unexpected field " + name);
                         };
@@ -694,9 +695,69 @@ public class ReflectionFactoryTest {
         Assert.assertEquals(ser.final_float, 0x0.882afap1f);
         Assert.assertEquals(ser.double_, 0x9.4a8fp6);
         Assert.assertEquals(ser.final_double, 0xf.881a8p4);
-        Assert.assertEquals(ser.str, "The non-final string");
-        Assert.assertEquals(ser.final_str, "The final string");
+        Assert.assertEquals(ser.ser, new Ser3(0x44cc55dd));
+        Assert.assertEquals(ser.final_ser, new Ser3(0x9a8b7c6d));
     }
+
+    static class Ser2 implements Serializable {
+        @Serial
+        private static final long serialVersionUID = - 2852896623833548574L;
+
+        byte byte_;
+        short short_;
+        char char_;
+        int int_;
+        long long_;
+        float float_;
+        double double_;
+        boolean boolean_;
+        Ser3 ser;
+
+        final byte final_byte;
+        final short final_short;
+        final char final_char;
+        final int final_int;
+        final long final_long;
+        final float final_float;
+        final double final_double;
+        final boolean final_boolean;
+        final Ser3 final_ser;
+
+        Ser2(final byte final_byte, final short final_short, final char final_char, final int final_int,
+            final long final_long, final float final_float, final double final_double,
+            final boolean final_boolean, final Ser3 final_ser) {
+
+            this.final_byte = final_byte;
+            this.final_short = final_short;
+            this.final_char = final_char;
+            this.final_int = final_int;
+            this.final_long = final_long;
+            this.final_float = final_float;
+            this.final_double = final_double;
+            this.final_boolean = final_boolean;
+            this.final_ser = final_ser;
+        }
+    }
+
+    static class Ser3 implements Serializable {
+        @Serial
+        private static final long serialVersionUID = - 1234752876749422678L;
+
+        final int value;
+
+        Ser3(final int value) {
+            this.value = value;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof Ser3 s && value == s.value;
+        }
+
+        public int hashCode() {
+            return value;
+        }
+    }
+
 
     // Main can be used to run the tests from the command line with only testng.jar.
     @SuppressWarnings("raw_types")
@@ -707,42 +768,4 @@ public class ReflectionFactoryTest {
         testng.setTestClasses(testclass);
         testng.run();
     }
-
-    static class Ser2 implements Serializable {
-        byte byte_;
-        short short_;
-        char char_;
-        int int_;
-        long long_;
-        float float_;
-        double double_;
-        boolean boolean_;
-        String str;
-
-        final byte final_byte;
-        final short final_short;
-        final char final_char;
-        final int final_int;
-        final long final_long;
-        final float final_float;
-        final double final_double;
-        final boolean final_boolean;
-        final String final_str;
-
-        Ser2(final byte final_byte, final short final_short, final char final_char, final int final_int,
-            final long final_long, final float final_float, final double final_double,
-            final boolean final_boolean, final String final_str) {
-
-            this.final_byte = final_byte;
-            this.final_short = final_short;
-            this.final_char = final_char;
-            this.final_int = final_int;
-            this.final_long = final_long;
-            this.final_float = final_float;
-            this.final_double = final_double;
-            this.final_boolean = final_boolean;
-            this.final_str = final_str;
-        }
-    }
-
 }

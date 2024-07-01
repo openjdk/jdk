@@ -189,7 +189,7 @@ public class ReflectionFactory {
      * @since 24
      */
     public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
-        return delegate.serialPersistentFieldsOf(cl);
+        return delegate.serialPersistentFields(cl);
     }
 
     /**
@@ -202,7 +202,7 @@ public class ReflectionFactory {
      * @since 24
      */
     public final long serialVersionUIDOf(Class<?> cl) {
-        return delegate.serialVersionUIDOf(cl);
+        return delegate.serialVersionUID(cl);
     }
 
     /**

@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
 import java.util.Properties;
+import java.util.Set;
 
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
@@ -449,7 +450,7 @@ public class ReflectionFactory {
         return SerializationBytecodeGenerator.defaultWriteObjectForSerialization(cl);
     }
 
-    public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
         if (! isValidSerializable(cl)) {
             return null;
         }
@@ -461,13 +462,14 @@ public class ReflectionFactory {
                 return null;
             }
             field.setAccessible(true);
-            return (ObjectStreamField[]) field.get(null);
+            ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
+            return array == null ? null : array.clone();
         } catch (ReflectiveOperationException e) {
             return null;
         }
     }
 
-    public final long serialVersionUIDOf(Class<?> cl) {
+    public final long serialVersionUID(Class<?> cl) {
         if (! isValidSerializable(cl)) {
             return 0;
         }
@@ -485,6 +487,18 @@ public class ReflectionFactory {
         }
     }
 
+    /**
+     * These are specific leaf classes which appear to be Serializable, but which
+     * have special semantics according to the serialization specification. We
+     * could theoretically include array classes here, but it is easier and clearer
+     * to just use `Class#isArray` instead.
+     */
+    private static final Set<Class<?>> nonSerializableLeafClasses = Set.of(
+        Class.class,
+        String.class,
+        ObjectStreamClass.class
+    );
+
     private static boolean isValidSerializable(Class<?> cl) {
         return Serializable.class.isAssignableFrom(cl)
             && ! cl.isInterface()
@@ -493,7 +507,8 @@ public class ReflectionFactory {
             && ! Externalizable.class.isAssignableFrom(cl)
             && ! cl.isEnum()
             && ! cl.isRecord()
-            && ! cl.isHidden();
+            && ! cl.isHidden()
+            && ! nonSerializableLeafClasses.contains(cl);
     }
 
     /**
