@@ -4967,9 +4967,9 @@ public final class Formatter implements Closeable, Flushable {
                      DECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT_UPPER,
-                     LINE_SEPARATOR,
-                     PERCENT_SIGN -> true;
-                default -> false;
+                     LINE_SEPARATOR -> true;
+                // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
+                default -> c == PERCENT_SIGN;
             };
         }
 

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_SANITIZERS_UB_HPP
-#define SHARE_SANITIZERS_UB_HPP
+/*
+ * @test
+ * @key cgroups
+ * @requires os.family == "linux"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @build TestSystemSettings
+ * @run main/othervm TestSystemSettings
+ */
 
-// ATTRIBUTE_NO_UBSAN
-//
-// Function attribute which informs the compiler to disable UBSan checks in the
-// following function or method.
-// Useful if the function or method is known to do something special or even 'dangerous', for
-// example causing desired signals/crashes.
-#ifdef UNDEFINED_BEHAVIOR_SANITIZER
-#if defined(__clang__) || defined(__GNUC__)
-#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
-#endif
-#endif
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-#ifndef ATTRIBUTE_NO_UBSAN
-#define ATTRIBUTE_NO_UBSAN
-#endif
+public class TestSystemSettings {
 
-#endif // SHARE_SANITIZERS_UB_HPP
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.shouldContain("System not containerized.");
+    }
+}
