@@ -5204,8 +5204,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
-    __ zero_extend(s1, s1, 16); // s1 = (adler & 0xffff)
     __ srliw(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
+    __ zero_extend(s1, adler, 16); // s1 = (adler & 0xffff)
 
     // The pipelined loop needs at least 16 elements for 1 iteration
     // It does check this, but it is more effective to skip to the cleanup loop
