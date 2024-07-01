@@ -387,7 +387,6 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "EliminateAllocations");
         vmOptFinalFlag(map, "UseCompressedOops");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
-        vmOptFinalFlag(map, "UseVtableBasedCHA");
         vmOptFinalFlag(map, "ZGenerational");
     }
 

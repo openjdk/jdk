@@ -31,6 +31,7 @@ import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.invoke.InnerClassLambdaMetafactory.MethodBody;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -66,6 +68,8 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
     private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final Consumer<FieldBuilder> STATIC_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_STATIC);
+    private static final Consumer<FieldBuilder> FINAL_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_FINAL);
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -613,198 +617,220 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             final ClassDesc classDesc = ClassDesc.of(className0);
             final ClassDesc superClassDesc = classDesc(speciesData.deriveSuperClass());
-            return ClassFile.of().build(classDesc, clb -> {
-                clb.withFlags(ACC_FINAL | ACC_SUPER)
-                   .withSuperclass(superClassDesc)
-                   .with(SourceFileAttribute.of(classDesc.displayName()))
+            return ClassFile.of().build(classDesc, new Consumer<ClassBuilder>() {
+                @Override
+                public void accept(ClassBuilder clb) {
+                    clb.withFlags(ACC_FINAL | ACC_SUPER)
+                       .withSuperclass(superClassDesc)
+                       .with(SourceFileAttribute.of(classDesc.displayName()))
 
-                // emit static types and BMH_SPECIES fields
-                   .withField(sdFieldName, CD_SPECIES_DATA, ACC_STATIC);
+                    // emit static types and BMH_SPECIES fields
+                       .withField(sdFieldName, CD_SPECIES_DATA, STATIC_FIELD_FLAGS);
 
-                // handy holder for dealing with groups of typed values (ctor arguments and fields)
-                class Var {
-                    final int index;
-                    final String name;
-                    final Class<?> type;
-                    final ClassDesc desc;
-                    final BasicType basicType;
-                    final int slotIndex;
-                    Var(int index, int slotIndex) {
-                        this.index = index;
-                        this.slotIndex = slotIndex;
-                        name = null; type = null; desc = null;
-                        basicType = BasicType.V_TYPE;
-                    }
-                    Var(String name, Class<?> type, Var prev) {
-                        int slotIndex = prev.nextSlotIndex();
-                        int index = prev.nextIndex();
-                        if (name == null)  name = "x";
-                        if (name.endsWith("#"))
-                            name = name.substring(0, name.length()-1) + index;
-                        assert(!type.equals(void.class));
-                        this.index = index;
-                        this.name = name;
-                        this.type = type;
-                        this.desc = classDesc(type);
-                        this.basicType = BasicType.basicType(type);
-                        this.slotIndex = slotIndex;
-                    }
-                    Var lastOf(List<Var> vars) {
-                        int n = vars.size();
-                        return (n == 0 ? this : vars.get(n-1));
-                    }
-                    <X> List<Var> fromTypes(List<X> types) {
-                        Var prev = this;
-                        ArrayList<Var> result = new ArrayList<>(types.size());
-                        int i = 0;
-                        for (X x : types) {
-                            String vn = name;
-                            Class<?> vt;
-                            if (x instanceof Class<?> cl) {
-                                vt = cl;
-                                // make the names friendlier if debugging
-                                assert((vn = vn + "_" + (i++)) != null);
-                            } else {
-                                @SuppressWarnings("unchecked")
-                                Var v = (Var) x;
-                                vn = v.name;
-                                vt = v.type;
-                            }
-                            prev = new Var(vn, vt, prev);
-                            result.add(prev);
+                    // handy holder for dealing with groups of typed values (ctor arguments and fields)
+                    class Var {
+                        final int index;
+                        final String name;
+                        final Class<?> type;
+                        final ClassDesc desc;
+                        final BasicType basicType;
+                        final int slotIndex;
+                        Var(int index, int slotIndex) {
+                            this.index = index;
+                            this.slotIndex = slotIndex;
+                            name = null; type = null; desc = null;
+                            basicType = BasicType.V_TYPE;
                         }
-                        return result;
-                    }
-
-                    int slotSize() { return basicType.basicTypeSlots(); }
-                    int nextIndex() { return index + (slotSize() == 0 ? 0 : 1); }
-                    int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
-                    boolean isInHeap() { return slotIndex < 0; }
-                    void emitLoadInstruction(CodeBuilder cob) {
-                        cob.loadLocal(basicType.btKind, slotIndex);
-                    }
-                }
-
-                final Var NO_THIS = new Var(0, 0),
-                        AFTER_THIS = new Var(0, 1),
-                        IN_HEAP = new Var(0, -1);
-
-                // figure out the field types
-                final List<Class<?>> fieldTypes = speciesData.fieldTypes();
-                final List<Var> fields = new ArrayList<>(fieldTypes.size());
-                {
-                    Var nextF = IN_HEAP;
-                    for (Class<?> ft : fieldTypes) {
-                        String fn = chooseFieldName(ft, nextF.nextIndex());
-                        nextF = new Var(fn, ft, nextF);
-                        fields.add(nextF);
-                    }
-                }
-
-                // emit bound argument fields
-                for (Var field : fields) {
-                    clb.withField(field.name, field.desc, ACC_FINAL);
-                }
-
-                // emit implementation of speciesData()
-                clb.withMethodBody(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
-                        cob -> cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
-                                  .areturn());
-
-                // figure out the constructor arguments
-                MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
-                MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
-
-                // emit constructor
-                clb.withMethodBody(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE, cob -> {
-                    cob.aload(0); // this
-
-                    final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
-                    for (Var ca : ctorArgs) {
-                        ca.emitLoadInstruction(cob);
-                    }
-
-                    // super(ca...)
-                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
-
-                    // store down fields
-                    Var lastFV = AFTER_THIS.lastOf(ctorArgs);
-                    for (Var f : fields) {
-                        // this.argL1 = argL1
-                        cob.aload(0);  // this
-                        lastFV = new Var(f.name, f.type, lastFV);
-                        lastFV.emitLoadInstruction(cob);
-                        cob.putfield(classDesc, f.name, f.desc);
-                    }
-
-                    cob.return_();
-                });
-
-                // emit make()  ...factory method wrapping constructor
-                MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                clb.withMethodBody("make", methodDesc(ftryType), ACC_STATIC, cob -> {
-                    // make instance
-                    cob.new_(classDesc)
-                       .dup();
-                    // load factory method arguments:  ctarg... and arg...
-                    for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
-                        v.emitLoadInstruction(cob);
-                    }
-
-                    // finally, invoke the constructor and return
-                    cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
-                       .areturn();
-                });
-
-                // For each transform, emit the customized override of the transform method.
-                // This method mixes together some incoming arguments (from the transform's
-                // static type signature) with the field types themselves, and passes
-                // the resulting mish-mosh of values to a method handle produced by
-                // the species itself.  (Typically this method handle is the factory
-                // method of this species or a related one.)
-                for (int i = 0; i < TRANSFORM_NAMES.size(); i++) {
-                    final int whichtm = i;
-                    final String     TNAME = TRANSFORM_NAMES.get(whichtm);
-                    final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
-                    final int        TMODS = TRANSFORM_MODS.get(whichtm);
-                    clb.withMethod(TNAME, methodDesc(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
-                        mb.with(ExceptionsAttribute.ofSymbols(CD_Throwable))
-                          .withCode(cob -> {
-                            // return a call to the corresponding "transform helper", something like this:
-                            //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
-                            cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
-                               .loadConstant(whichtm)
-                               .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_TRANFORM_HELPER);
-
-                            List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
-                            List<Var> tfields = new ArrayList<>(fields);
-                            // mix them up and load them for the transform helper:
-                            List<Var> helperArgs = speciesData.deriveTransformHelperArguments(transformMethods.get(whichtm), whichtm, targs, tfields);
-                            ClassDesc[] helperTypes = new ClassDesc[helperArgs.size()];
-                            for (int hi = 0; hi < helperTypes.length; hi++) {
-                                Var ha = helperArgs.get(hi);
-                                helperTypes[hi] = ha.basicType.basicTypeWrapper().basicClassDescriptor();
-                                if (ha.isInHeap()) {
-                                    assert(tfields.contains(ha));
-                                    cob.aload(0);
-                                    cob.getfield(classDesc, ha.name, ha.desc);
+                        Var(String name, Class<?> type, Var prev) {
+                            int slotIndex = prev.nextSlotIndex();
+                            int index = prev.nextIndex();
+                            if (name == null)  name = "x";
+                            if (name.endsWith("#"))
+                                name = name.substring(0, name.length()-1) + index;
+                            assert(!type.equals(void.class));
+                            this.index = index;
+                            this.name = name;
+                            this.type = type;
+                            this.desc = classDesc(type);
+                            this.basicType = BasicType.basicType(type);
+                            this.slotIndex = slotIndex;
+                        }
+                        Var lastOf(List<Var> vars) {
+                            int n = vars.size();
+                            return (n == 0 ? this : vars.get(n-1));
+                        }
+                        <X> List<Var> fromTypes(List<X> types) {
+                            Var prev = this;
+                            ArrayList<Var> result = new ArrayList<>(types.size());
+                            int i = 0;
+                            for (X x : types) {
+                                String vn = name;
+                                Class<?> vt;
+                                if (x instanceof Class<?> cl) {
+                                    vt = cl;
+                                    // make the names friendlier if debugging
+                                    assert((vn = vn + "_" + (i++)) != null);
                                 } else {
-                                    assert(targs.contains(ha));
-                                    ha.emitLoadInstruction(cob);
+                                    @SuppressWarnings("unchecked")
+                                    Var v = (Var) x;
+                                    vn = v.name;
+                                    vt = v.type;
                                 }
+                                prev = new Var(vn, vt, prev);
+                                result.add(prev);
                             }
+                            return result;
+                        }
 
-                            // jump into the helper (which is probably a factory method)
-                            final Class<?> rtype = TTYPE.returnType();
-                            if (!rtype.isPrimitive()) {
-                                cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDescImpl.ofValidated(CD_Object, helperTypes))
-                                   .checkcast(classDesc(rtype))
-                                   .areturn();
-                            } else {
-                                throw newInternalError("NYI: transform of type "+rtype);
+                        int slotSize() { return basicType.basicTypeSlots(); }
+                        int nextIndex() { return index + (slotSize() == 0 ? 0 : 1); }
+                        int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
+                        boolean isInHeap() { return slotIndex < 0; }
+                        void emitLoadInstruction(CodeBuilder cob) {
+                            cob.loadLocal(basicType.btKind, slotIndex);
+                        }
+                    }
+
+                    final Var NO_THIS = new Var(0, 0),
+                            AFTER_THIS = new Var(0, 1),
+                            IN_HEAP = new Var(0, -1);
+
+                    // figure out the field types
+                    final List<Class<?>> fieldTypes = speciesData.fieldTypes();
+                    final List<Var> fields = new ArrayList<>(fieldTypes.size());
+                    {
+                        Var nextF = IN_HEAP;
+                        for (Class<?> ft : fieldTypes) {
+                            String fn = chooseFieldName(ft, nextF.nextIndex());
+                            nextF = new Var(fn, ft, nextF);
+                            fields.add(nextF);
+                        }
+                    }
+
+                    // emit bound argument fields
+                    for (Var field : fields) {
+                        clb.withField(field.name, field.desc, FINAL_FIELD_FLAGS);
+                    }
+
+                    // emit implementation of speciesData()
+                    clb.withMethod(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
+                                            .areturn();
+                                }
+                            }));
+
+                    // figure out the constructor arguments
+                    MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
+                    MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
+
+                    // emit constructor
+                    clb.withMethod(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.aload(0); // this
+
+                                    final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
+                                    for (Var ca : ctorArgs) {
+                                        ca.emitLoadInstruction(cob);
+                                    }
+
+                                    // super(ca...)
+                                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
+
+                                    // store down fields
+                                    Var lastFV = AFTER_THIS.lastOf(ctorArgs);
+                                    for (Var f : fields) {
+                                        // this.argL1 = argL1
+                                        cob.aload(0);  // this
+                                        lastFV = new Var(f.name, f.type, lastFV);
+                                        lastFV.emitLoadInstruction(cob);
+                                        cob.putfield(classDesc, f.name, f.desc);
+                                    }
+
+                                    cob.return_();
+                                }
+                            }));
+
+                    // emit make()  ...factory method wrapping constructor
+                    MethodType ftryType = thisCtorType.changeReturnType(topClass());
+                    clb.withMethod("make", methodDesc(ftryType), ACC_STATIC,
+                            new MethodBody(new Consumer<CodeBuilder>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    // make instance
+                                    cob.new_(classDesc)
+                                            .dup();
+                                    // load factory method arguments:  ctarg... and arg...
+                                    for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
+                                        v.emitLoadInstruction(cob);
+                                    }
+
+                                    // finally, invoke the constructor and return
+                                    cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
+                                            .areturn();
+                                }
+                            }));
+
+                    // For each transform, emit the customized override of the transform method.
+                    // This method mixes together some incoming arguments (from the transform's
+                    // static type signature) with the field types themselves, and passes
+                    // the resulting mish-mosh of values to a method handle produced by
+                    // the species itself.  (Typically this method handle is the factory
+                    // method of this species or a related one.)
+                    for (int i = 0; i < TRANSFORM_NAMES.size(); i++) {
+                        final int whichtm = i;
+                        final String     TNAME = TRANSFORM_NAMES.get(whichtm);
+                        final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
+                        final int        TMODS = TRANSFORM_MODS.get(whichtm);
+                        clb.withMethod(TNAME, methodDesc(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, new Consumer<MethodBuilder>() {
+                            @Override
+                            public void accept(MethodBuilder mb) {
+                                mb.with(ExceptionsAttribute.ofSymbols(CD_Throwable))
+                                  .withCode(new Consumer<CodeBuilder>() {
+                                    @Override
+                                    public void accept(CodeBuilder cob) {
+                                        // return a call to the corresponding "transform helper", something like this:
+                                        //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
+                                        cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
+                                                .loadConstant(whichtm)
+                                                .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_TRANFORM_HELPER);
+
+                                        List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
+                                        List<Var> tfields = new ArrayList<>(fields);
+                                        // mix them up and load them for the transform helper:
+                                        List<Var> helperArgs = speciesData.deriveTransformHelperArguments(transformMethods.get(whichtm), whichtm, targs, tfields);
+                                        ClassDesc[] helperTypes = new ClassDesc[helperArgs.size()];
+                                        for (int hi = 0; hi < helperTypes.length; hi++) {
+                                            Var ha = helperArgs.get(hi);
+                                            helperTypes[hi] = ha.basicType.basicTypeWrapper().basicClassDescriptor();
+                                            if (ha.isInHeap()) {
+                                                assert(tfields.contains(ha));
+                                                cob.aload(0);
+                                                cob.getfield(classDesc, ha.name, ha.desc);
+                                            } else {
+                                                assert(targs.contains(ha));
+                                                ha.emitLoadInstruction(cob);
+                                            }
+                                        }
+
+                                        // jump into the helper (which is probably a factory method)
+                                        final Class<?> rtype = TTYPE.returnType();
+                                        if (!rtype.isPrimitive()) {
+                                            cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDescImpl.ofValidated(CD_Object, helperTypes))
+                                                    .checkcast(classDesc(rtype))
+                                                    .areturn();
+                                        } else {
+                                            throw newInternalError("NYI: transform of type "+rtype);
+                                        }
+                                    }
+                                });
                             }
                         });
-                    });
+                    }
                 }
             });
         }

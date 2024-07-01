@@ -1724,7 +1724,7 @@ public final class CompactNumberFormat extends NumberFormat {
         // Call DecimalFormat.subparseNumber() method to parse the
         // number part of the input text
         position = decimalFormat.subparseNumber(text, position,
-                digitList, false, false, status);
+                digitList, false, false, status).fullPos();
 
         if (position == -1) {
             // Unable to parse the number successfully
@@ -1732,26 +1732,6 @@ public final class CompactNumberFormat extends NumberFormat {
             pos.errorIndex = oldStart;
             return null;
         }
-
-        // If parse integer only is true and the parsing is broken at
-        // decimal point, then pass/ignore all digits and move pointer
-        // at the start of suffix, to process the suffix part
-        if (isParseIntegerOnly() && position < text.length()
-                && text.charAt(position) == symbols.getDecimalSeparator()) {
-            position++; // Pass decimal character
-            for (; position < text.length(); ++position) {
-                char ch = text.charAt(position);
-                int digit = ch - symbols.getZeroDigit();
-                if (digit < 0 || digit > 9) {
-                    digit = Character.digit(ch, 10);
-                    // Parse all digit characters
-                    if (!(digit >= 0 && digit <= 9)) {
-                        break;
-                    }
-                }
-            }
-        }
-
         // Number parsed successfully; match prefix and
         // suffix to obtain multiplier
         pos.index = position;
@@ -2372,6 +2352,8 @@ public final class CompactNumberFormat extends NumberFormat {
      * parsed as the value {@code 1234000} (1234 (integer part) * 1000
      * (thousand)) and the fractional part would be skipped.
      * The exact format accepted by the parse operation is locale dependent.
+     * @implSpec This implementation does not set the {@code ParsePosition} index
+     * to the position of the decimal symbol, but rather the end of the string.
      *
      * @return {@code true} if compact numbers should be parsed as integers
      *         only; {@code false} otherwise
