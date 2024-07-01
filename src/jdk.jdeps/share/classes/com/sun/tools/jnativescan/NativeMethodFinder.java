@@ -72,7 +72,7 @@ class NativeMethodFinder {
                              code.forEach(e -> {
                                  switch (e) {
                                      case InvokeInstruction invoke -> {
-                                         MethodRef ref = MethodRef.ofMemberRefEntry(invoke.method());
+                                         MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
                                          if (isRestrictedMethod(ref)) {
                                              perMethod.add(ref);
                                          }
