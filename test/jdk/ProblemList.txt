@@ -609,18 +609,14 @@ sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-
 sun/security/smartcardio/TestPresent.java                       8039280 generic-all
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
 com/sun/crypto/provider/Cipher/DES/PerformanceTest.java         8039280 generic-all
-com/sun/security/auth/callback/TextCallbackHandler/Default.java 8039280 generic-all
 com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic-all
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
-javax/net/ssl/SSLSession/CertMsgCheck.java                      8326705 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
-
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliasonerarootcav1  8333640 generic-all
 
 ############################################################################
 
@@ -719,9 +715,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
-sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
-
 ############################################################################
 
 # jdk_instrument
@@ -783,7 +776,6 @@ java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
-java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
 java/awt/Frame/FrameStateTest/FrameStateTest.java 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all

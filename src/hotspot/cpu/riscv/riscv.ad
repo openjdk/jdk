@@ -242,7 +242,7 @@ reg_def V0_H  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next()   );
 reg_def V0_J  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(2)  );
 reg_def V0_K  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(3)  );
 
-reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg() 	        );
+reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()           );
 reg_def V1_H  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next()   );
 reg_def V1_J  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(2)  );
 reg_def V1_K  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(3)  );
@@ -262,7 +262,7 @@ reg_def V4_H  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next()   );
 reg_def V4_J  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(2)  );
 reg_def V4_K  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(3)  );
 
-reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg() 	        );
+reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()           );
 reg_def V5_H  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next()   );
 reg_def V5_J  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(2)  );
 reg_def V5_K  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(3)  );
@@ -272,7 +272,7 @@ reg_def V6_H  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next()   );
 reg_def V6_J  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(2)  );
 reg_def V6_K  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(3)  );
 
-reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg() 	        );
+reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()           );
 reg_def V7_H  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next()   );
 reg_def V7_J  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(2)  );
 reg_def V7_K  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(3)  );
@@ -1916,6 +1916,8 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:
@@ -7864,35 +7866,6 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
   %}
 
   ins_pipe(ialu_reg_imm);
-%}
-
-// ============================================================================
-// BSWAP Instructions
-
-instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesUS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short" %}
-
-  ins_encode %{
-    __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short" %}
-
-  ins_encode %{
-    __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
 %}
 
 // ============================================================================

@@ -1339,9 +1339,10 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                          Deoptimization::DeoptReason reason, int opcode,
-                                          bool rewire_uncommon_proj_phi_inputs = false);
+  IfTrueNode* create_new_if_for_predicate(
+      ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
+      bool rewire_uncommon_proj_phi_inputs = false
+      NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1377,13 +1378,14 @@ public:
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
-  Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, int stride_con, Node* value,
-                                                        bool is_template);
+  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
+  Node* add_range_check_elimination_assertion_predicate(
+      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
+      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1535,6 +1537,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,24 @@ public interface JavaShellToolBuilder {
     }
 
     /**
+     * Provide a hint of the display window's dimensions when using an interactive terminal.
+     *
+     * <p>
+     * When the input stream for this Java Shell is {@code System.in}, this setting is ignored.
+     *
+     * @implSpec Implementations may choose to ignore this method. The default implementation
+     * of this method returns {@code this}.
+     *
+     * @param columns number of displayed columns
+     * @param rows number of displayed rows
+     * @return the {@code JavaShellToolBuilder} instance
+     * @since 24
+     */
+    default JavaShellToolBuilder windowSize(int columns, int rows) {
+        return this;
+    }
+
+    /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
      * this method may be made from a configured builder. The  exit code from
@@ -232,6 +250,8 @@ public interface JavaShellToolBuilder {
      * @throws Exception an unexpected fatal exception
      * @return the exit status with which the tool explicitly exited (if any),
      * otherwise 0 for success or 1 for failure
+     *
+     * @since 10
      */
     default int start(String... arguments) throws Exception {
         run(arguments);

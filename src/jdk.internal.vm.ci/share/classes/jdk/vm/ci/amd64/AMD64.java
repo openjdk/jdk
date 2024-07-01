@@ -83,11 +83,10 @@ public class AMD64 extends Architecture {
     public static final Register r30 = new Register(30, 30, "r30", CPU);
     public static final Register r31 = new Register(31, 31, "r31", CPU);
 
+    // The set of common CPU registers available on all x64 platforms.
     public static final Register[] cpuRegisters = {
         rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi,
-        r8, r9, r10, r11, r12, r13, r14, r15,
-        r16, r17, r18, r19, r20, r21, r22, r23,
-        r24, r25, r26, r27, r28, r29, r30, r31
+        r8, r9, r10, r11, r12, r13, r14, r15
     };
 
     public static final RegisterCategory XMM = new RegisterCategory("XMM");
@@ -162,8 +161,6 @@ public class AMD64 extends Architecture {
     public static final RegisterArray valueRegistersAVX512 = new RegisterArray(
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
         r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
-        r16,  r17,  r18,   r19,   r20,   r21,   r22,   r23,
-        r24,  r25,  r26,   r27,   r28,   r29,   r30,   r31,
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
         xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
@@ -179,6 +176,8 @@ public class AMD64 extends Architecture {
     public static final RegisterArray allRegisters = new RegisterArray(
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
         r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
+        r16,  r17,  r18,   r19,   r20,   r21,   r22,   r23,
+        r24,  r25,  r26,   r27,   r28,   r29,   r30,   r31,
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
         xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,

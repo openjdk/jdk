@@ -121,7 +121,7 @@
   static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
-  static_field(CompilerToVM::Data,             sizeof_ZStoreBarrierEntry,              int)                                          \
+  ZGC_ONLY(static_field(CompilerToVM::Data,    sizeof_ZStoreBarrierEntry,              int))                                         \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
