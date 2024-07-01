@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8335390
- * @summary Test merge stores, when the index can overflow.
+ * @summary Test merge stores for some Unsafe store address patterns.
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestMergeStoresUnsafeArrayPointer::test*
  *                   -Xbatch
