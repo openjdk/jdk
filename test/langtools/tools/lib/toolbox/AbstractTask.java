@@ -112,7 +112,8 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
      */
     protected void expect(Expect expect, int expectedExitCode) {
         expect(expect, (exitCode, testName) -> {
-            if (exitCode != expectedExitCode) {
+            if (expectedExitCode != Integer.MIN_VALUE &&
+                exitCode != expectedExitCode) {
                 throw new TaskError("Task " + testName + "failed with unexpected exit code "
                     + exitCode + ", expected " + expectedExitCode);
             }
