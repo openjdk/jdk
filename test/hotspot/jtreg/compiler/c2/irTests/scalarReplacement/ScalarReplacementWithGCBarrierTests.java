@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Tests that dead barrier control flows do not affect the scalar replacement.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
+ * @requires vm.gc.G1
  * @run driver compiler.c2.irTests.scalarReplacement.ScalarReplacementWithGCBarrierTests
  */
 public class ScalarReplacementWithGCBarrierTests {
