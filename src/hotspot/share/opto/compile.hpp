@@ -855,18 +855,8 @@ private:
   }
 
 #ifdef ASSERT
-  bool fail_randomly() {
-    if (!_stress_seed_is_initialized || (random() % StressBailoutProbability)) {
-      return false;
-    }
-    record_failure("StressBailout");
-    return true;
-  }
-
-  bool failure_is_artificial() {
-    assert(failing_internal(), "not failing.");
-    return C->failure_reason_is("StressBailout");
-  }
+  bool fail_randomly();
+  bool failure_is_artificial();
 #endif
 
   bool failure_reason_is(const char* r) const {

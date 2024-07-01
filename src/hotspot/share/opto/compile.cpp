@@ -5122,6 +5122,21 @@ bool Compile::randomized_select(int count) {
   return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
+#ifdef ASSERT
+bool Compile::fail_randomly() {
+  if (!_stress_seed_is_initialized || ((random() % StressBailoutProbability) != 0)) {
+    return false;
+  }
+  record_failure("StressBailout");
+  return true;
+}
+
+bool Compile::failure_is_artificial() {
+  assert(failing_internal(), "should be failing");
+  return C->failure_reason_is("StressBailout");
+}
+#endif
+
 CloneMap&     Compile::clone_map()                 { return _clone_map; }
 void          Compile::set_clone_map(Dict* d)      { _clone_map._dict = d; }
 
