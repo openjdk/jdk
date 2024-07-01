@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
+#include "sanitizers/ub.hpp"
 #include "utilities/checkedCast.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
@@ -173,6 +174,9 @@ class VtableStub {
  public:
   // Query
   bool is_itable_stub()                          { return !_is_vtable_stub; }
+  // We reinterpret arbitrary memory as VtableStub. This does not cause failures because the lookup/equality
+  // check will reject false objects. Disabling UBSan is a temporary workaround until JDK-8331725 is fixed.
+  ATTRIBUTE_NO_UBSAN
   bool is_vtable_stub()                          { return  _is_vtable_stub; }
   bool is_abstract_method_error(address epc)     { return epc == code_begin()+_ame_offset; }
   bool is_null_pointer_exception(address epc)    { return epc == code_begin()+_npe_offset; }

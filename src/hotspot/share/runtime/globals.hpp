@@ -968,9 +968,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
                                                                             \
-  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
-          "Use vtable information during CHA")                              \
-                                                                            \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
                                                                             \
