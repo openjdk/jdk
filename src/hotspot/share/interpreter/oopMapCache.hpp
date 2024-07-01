@@ -88,11 +88,11 @@ class InterpreterOopMap: ResourceObj {
   unsigned short _bci;            // the bci    for which the mask is valid
 
  protected:
- int            _num_oops;
 #ifdef ASSERT
- bool _resource_allocate_bit_mask;
+  bool _resource_allocate_bit_mask;
 #endif
- intptr_t       _bit_mask[N];    // the bit mask if
+  int            _num_oops;
+  intptr_t       _bit_mask[N];    // the bit mask if
                                   // mask_size <= small_mask_limit,
                                   // ptr to bit mask otherwise
                                   // "protected" so that sub classes can
