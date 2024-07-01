@@ -3341,7 +3341,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
 
     // We should only reach here after having found a bit in the bitmap.
-    // Invariant: array_length == popcount(bitmap)
     z_ltgr(r_array_length, r_array_length);
     asm_assert(bcondHigh, "array_length > 0, should hold", 22);
 #endif // ASSERT
