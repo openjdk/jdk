@@ -3224,8 +3224,8 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   z_sllg(r_array_index, r_bitmap, shift_count); // take the bit to 63rd location
 
-  // load 0 in r_result by default. In case search fails, r_result will be loaded
-  // with value 1 (failure) at the end of this method.
+  // Initialize r_result with 0 (indicating success). If searching fails, r_result will be loaded
+  // with 1 (failure) at the end of this method.
   clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // r_result = 0
 
   // We test the MSB of r_array_index, i.e., its sign bit
