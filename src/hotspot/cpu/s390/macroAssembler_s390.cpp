@@ -3359,7 +3359,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     z_cg(r_super_klass, Address(r_array_base, r_array_index));
     z_bre(L_done); // success
 
-    // look-ahead check (Bit 2), if bit-2 is also 0, we're done
+    // look-ahead check: if Bit 2 is 0, we're done
     testbit(r_bitmap, 2);
     z_bfalse(L_failure);
 
