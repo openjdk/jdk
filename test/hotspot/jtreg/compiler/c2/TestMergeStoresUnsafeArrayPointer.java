@@ -26,10 +26,13 @@
  * @bug 8335390
  * @summary Test merge stores for some Unsafe store address patterns.
  * @modules java.base/jdk.internal.misc
+ * @requires os.maxMemory > 8G
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestMergeStoresUnsafeArrayPointer::test*
  *                   -Xbatch
+ *                   -Xmx8g
  *                   compiler.c2.TestMergeStoresUnsafeArrayPointer
- * @run main compiler.c2.TestMergeStoresUnsafeArrayPointer
+ * @run main/othervm -Xmx8g
+ *                   compiler.c2.TestMergeStoresUnsafeArrayPointer
  */
 
 package compiler.c2;
