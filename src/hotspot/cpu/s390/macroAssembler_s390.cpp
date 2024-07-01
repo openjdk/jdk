@@ -3328,7 +3328,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   // been inspected, and r_array_index may be out of bounds if we
   // wrapped around the end of the array.
 
-  { // This is conventional linear probing, but instead of terminating,
+  { // This is conventional linear probing, but instead of terminating
     // when a null entry is found in the table, we maintain a bitmap
     // in which a 0 indicates missing entries.
     // The check above guarantees there are 0s in the bitmap, so the loop
