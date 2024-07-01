@@ -51,6 +51,7 @@ class CgroupV2Controller: public CgroupController {
     CgroupV2Controller(const CgroupV2Controller& o) :
                                             _mount_path(o._mount_path),
                                             _cgroup_path(o._cgroup_path),
+                                            _read_only(o._read_only),
                                             _path(o._path) {
     }
     ~CgroupV2Controller() {
@@ -123,9 +124,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong pids_current() override;
 
     bool is_containerized() override;
-    void print_version_specific_info(outputStream* st) override;
 
-    const char * container_type() {
+    const char * container_type() override {
       return "cgroupv2";
     }
     CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }

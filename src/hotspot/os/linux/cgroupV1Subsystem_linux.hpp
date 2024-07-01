@@ -52,6 +52,7 @@ class CgroupV1Controller: public CgroupController {
     // Shallow copy constructor
     CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
                                                       _mount_point(o._mount_point),
+                                                      _read_only(o._read_only),
                                                       _path(o._path) {
     }
     ~CgroupV1Controller() {
@@ -84,6 +85,9 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong kernel_memory_limit_in_bytes(julong host_mem);
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem) override;
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
   private:
     /* Some container runtimes set limits via cgroup
      * hierarchy. If set to true consider also memory.stat
@@ -113,6 +117,9 @@ class CgroupV1CpuController final : public CgroupCpuController {
     int cpu_shares() override;
     void set_subsystem_path(char *cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
+    }
+    bool is_read_only() override {
+      return reader()->is_read_only();
     }
 
   public:
