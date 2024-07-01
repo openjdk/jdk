@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @test
  * @key stress randomness
  * @bug 8330157
- * @requires vm.debug == true & vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compiler2.enabled & (vm.opt.AbortVMOnCompilationFailure == "null" | !vm.opt.AbortVMOnCompilationFailure)
  * @summary Basic tests for bailout stress flag.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressBailout
