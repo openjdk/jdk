@@ -204,27 +204,24 @@ public abstract class JdbTest {
                     }
                 }
 
-            } catch (Exception e) {
-                failure("Caught unexpected exception: " + e);
-                e.printStackTrace(out);
-
+            } catch (Throwable t) {
+                failure("Caught unexpected exception: " + t);
+                t.printStackTrace(out);
+            } finally {
                 if (jdb != null) {
+                    log.complain("jdb reference is not null, check for exception in the logs.");
                     try {
                         jdb.close();
                     } catch (Throwable ex) {
                         failure("Caught exception/error while closing jdb streams:\n\t" + ex);
                         ex.printStackTrace(log.getOutStream());
                     }
-                } else {
-                    log.complain("jdb reference is null, cannot run jdb.close() method");
                 }
 
-                if (debuggee != null) {
+                if (debuggee != null && !debuggee.terminated()) {
+                    log.complain("debuggee is still running, check for exception in the logs.");
                     debuggee.killDebuggee();
-                } else {
-                    log.complain("debuggee reference is null, cannot run debuggee.killDebuggee() method");
                 }
-
             }
 
             if (!success) {
@@ -232,9 +229,9 @@ public abstract class JdbTest {
                 return FAILED;
             }
 
-        } catch (Exception e) {
-            out.println("Caught unexpected exception while starting the test: " + e);
-            e.printStackTrace(out);
+        } catch (Throwable t) {
+            out.println("Caught unexpected exception while starting the test: " + t);
+            t.printStackTrace(out);
             out.println("TEST FAILED");
             return FAILED;
         }

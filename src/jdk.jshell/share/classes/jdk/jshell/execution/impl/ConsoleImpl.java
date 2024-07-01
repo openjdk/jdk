@@ -35,6 +35,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
@@ -218,10 +219,11 @@ public class ConsoleImpl {
          */
         @Override
         public String readln(String prompt) {
+            char[] chars = (prompt == null ? "null" : prompt).toCharArray();
+
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());
-                    char[] chars = (prompt == null ? "null" : prompt).toCharArray();
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
                     return new String(line);
@@ -245,11 +247,14 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine(Locale locale, String format, Object... args) {
+            Objects.requireNonNull(format, "the format String must be non-null");
+
+            String prompt = String.format(locale, format, args);
+            char[] chars = prompt.toCharArray();
+
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());
-                    String prompt = String.format(locale, format, args);
-                    char[] chars = prompt.toCharArray();
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
                     return new String(line);
@@ -272,11 +277,14 @@ public class ConsoleImpl {
          */
         @Override
         public char[] readPassword(Locale locale, String format, Object... args) {
+            Objects.requireNonNull(format, "the format String must be non-null");
+
+            String prompt = String.format(locale, format, args);
+            char[] chars = prompt.toCharArray();
+
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_PASSWORD.ordinal());
-                    String prompt = String.format(locale, format, args);
-                    char[] chars = prompt.toCharArray();
                     sendChars(chars, 0, chars.length);
                     return readChars();
                 });

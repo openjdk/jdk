@@ -279,6 +279,7 @@ class LibraryCallKit : public GraphKit {
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
+  bool check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt);
   bool inline_array_sort();
   bool inline_array_partition();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
@@ -350,6 +351,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
   bool inline_vector_shuffle_iota();
+  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);

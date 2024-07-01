@@ -404,11 +404,9 @@ const ciTypeFlow::StateVector* ciTypeFlow::get_start_state() {
     state->push_translate(str.type());
   }
   // Set the rest of the locals to bottom.
-  Cell cell = state->next_cell(state->tos());
-  state->set_stack_size(0);
-  int limit = state->limit_cell();
-  for (; cell < limit; cell = state->next_cell(cell)) {
-    state->set_type_at(cell, state->bottom_type());
+  assert(state->stack_size() <= 0, "stack size should not be strictly positive");
+  while (state->stack_size() < 0) {
+    state->push(state->bottom_type());
   }
   // Lock an object, if necessary.
   state->set_monitor_count(method()->is_synchronized() ? 1 : 0);

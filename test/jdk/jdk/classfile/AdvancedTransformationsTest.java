@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Testing ClassFile advanced transformations.
+ * @bug 8332505
  * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
@@ -65,6 +66,7 @@ import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.runtime.ObjectMethods;
 import java.util.ArrayDeque;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
@@ -187,9 +189,10 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
+        var objectMethods = ClassDesc.ofDescriptor(ObjectMethods.class.descriptorString());
         var cc = ClassFile.of();
         var remapped = cc.parse(
-                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno, objectMethods, bar)).remapClass(
                         cc,
                         cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
@@ -211,7 +214,8 @@ class AdvancedTransformationsTest {
                 "PUTSTATIC, owner: AdvancedTransformationsTest$Bar, field name: fooField, field type: LAdvancedTransformationsTest$Bar;",
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
-                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;",
+                "bootstrap method: STATIC AdvancedTransformationsTest$Bar::bootstrap");
         assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 

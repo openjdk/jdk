@@ -220,4 +220,104 @@ class ModuleSourceLauncherTests {
                 () -> assertTrue(err.isEmpty())
         );
     }
+
+    @Test
+    void testServiceLoading(@TempDir Path base) throws Exception {
+        var packageFolder = Files.createDirectories(base.resolve("p"));
+        var mainFile = Files.writeString(packageFolder.resolve("Main.java"),
+                """
+                package p;
+
+                import java.util.ServiceLoader;
+                import java.util.spi.ToolProvider;
+
+                class Main {
+                    public static void main(String... args) throws Exception {
+                        System.out.println(Main.class + " in " + Main.class.getModule());
+                        System.out.println("1");
+                        System.out.println(Main.class.getResource("/p/Main.java"));
+                        System.out.println(Main.class.getResource("/p/Main.class"));
+                        System.out.println("2");
+                        System.out.println(Main.class.getResource("/p/Tool.java"));
+                        System.out.println(Main.class.getResource("/p/Tool.class"));
+                        System.out.println("3");
+                        System.out.println(ToolProvider.findFirst("p.Tool")); // empty due to SCL being used
+                        System.out.println("4");
+                        listToolProvidersIn(Main.class.getModule().getLayer());
+                        System.out.println("5");
+                        Class.forName("p.Tool"); // trigger compilation of "p/Tool.java"
+                        System.out.println(Main.class.getResource("/p/Tool.class"));
+                        System.out.println("6");
+                        listToolProvidersIn(Main.class.getModule().getLayer());
+                    }
+
+                    static void listToolProvidersIn(ModuleLayer layer) {
+                        try {
+                            ServiceLoader.load(layer, ToolProvider.class).stream()
+                                .filter(service -> service.type().getModule().getLayer() == layer)
+                                .map(ServiceLoader.Provider::get)
+                                .forEach(System.out::println);
+                        } catch (java.util.ServiceConfigurationError error) {
+                            error.printStackTrace(System.err);
+                        }
+                    }
+                }
+                """);
+        Files.writeString(packageFolder.resolve("Tool.java"),
+                """
+                package p;
+
+                import java.io.PrintWriter;
+                import java.util.spi.ToolProvider;
+
+                public record Tool(String name) implements ToolProvider {
+                   public static void main(String... args) {
+                     System.exit(new Tool().run(System.out, System.err, args));
+                   }
+
+                   public Tool() {
+                     this(Tool.class.getName());
+                   }
+
+                   @Override
+                   public int run(PrintWriter out, PrintWriter err, String... args) {
+                     out.println(name + "/out");
+                     err.println(name + "/err");
+                     return 0;
+                   }
+                }
+                """);
+        Files.writeString(base.resolve("module-info.java"),
+                """
+                module m {
+                    uses java.util.spi.ToolProvider;
+                    provides java.util.spi.ToolProvider with p.Tool;
+                }
+                """);
+
+        var run = Run.of(mainFile);
+        assertAll("Run -> " + run,
+                () -> assertLinesMatch(
+                        """
+                        class p.Main in module m
+                        1
+                        .*/p/Main.java
+                        .*:p/Main.class
+                        2
+                        .*/p/Tool.java
+                        null
+                        3
+                        Optional.empty
+                        4
+                        Tool[name=p.Tool]
+                        5
+                        .*:p/Tool.class
+                        6
+                        Tool[name=p.Tool]
+                        """.lines(),
+                        run.stdOut().lines()),
+                () -> assertTrue(run.stdErr().isEmpty()),
+                () -> assertNull(run.exception())
+        );
+    }
 }
