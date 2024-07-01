@@ -44,7 +44,7 @@ public class TestStressBailout {
     static void runTest(int invprob) throws Exception {
         String[] procArgs = {"-Xcomp", "-XX:-TieredCompilation", "-XX:+StressBailout",
                              "-XX:StressBailoutProbability=" + invprob, "-version"};
-        ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
+        ProcessBuilder pb  = ProcessTools.createTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
     }
