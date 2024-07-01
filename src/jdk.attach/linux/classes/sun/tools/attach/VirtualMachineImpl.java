@@ -271,59 +271,53 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         while (ph.isPresent()) {
             final var curPid = ph.get().pid();
-
             final var procPidPath = PROC.resolve(Long.toString(curPid));
-
             Optional<Path> targetMountNS = Optional.empty();
 
             try {
-                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT))); // attempt to read the target's mnt ns id...
-            } catch (
-                    IOException _) { // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
+                // attempt to read the target's mnt ns id
+                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT)));
+            } catch (IOException _) {
+                // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
                 if (!Files.exists(procPidPath)) {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
-
-                // ok so if we get here we have failed to read the target's mnt ns, but the target process still exists ... we do not have privileges to read its procfs
+                // the process still exists, but we don't have privileges to read its procfs
             }
 
-            final var sameMountNS = SELF_MNT_NS.isPresent() && SELF_MNT_NS.equals(targetMountNS); // will be false  if we did not read the target's mnt ns
+            final var sameMountNS = SELF_MNT_NS.isPresent() && SELF_MNT_NS.equals(targetMountNS);
 
             if (sameMountNS) {
                 return TMPDIR.toString(); // we share TMPDIR in common!
             } else {
+                // we could not read the target's mnt ns
                 final var procPidRootTmp = procPidPath.resolve(ROOT_TMP);
-
                 if (Files.isReadable(procPidRootTmp)) {
-                    return procPidRootTmp.toString(); // not in the same mnt ns but tmp is accessible via /proc...
+                    return procPidRootTmp.toString(); // not in the same mnt ns but tmp is accessible via /proc
                 }
             }
 
-            // let's attempt to obtain the pid NS... best efforts to avoid crossing pid ns boundaries (as with a container)
-
+            // let's attempt to obtain the pid NS, best efforts to avoid crossing pid ns boundaries (as with a container)
             Optional<Path> curPidNS = Optional.empty();
 
             try {
-                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID))); // attempt to read the target's mnt ns id...
-            } catch (IOException _) { // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
+                // attempt to read the target's pid ns id
+                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID)));
+            } catch (IOException _) {
+                // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
                 if (!Files.exists(procPidPath)) {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
-
-                // ok so if we get here we have failed to read the target's pid ns, but the target process still exists ... we do not have privileges to read its procfs
+                // the process still exists, but we don't have privileges to read its procfs
             }
 
-            // recurse "up" the process hierarchy... if appropriate
-
+            // recurse "up" the process hierarchy, if appropriate
             final var havePidNSes = prevPidNS.isPresent() && curPidNS.isPresent();
-
             final var ppid = ph.get().parent();
 
             if (ppid.isPresent() && (havePidNSes && curPidNS.equals(prevPidNS)) || (!havePidNSes && nsPid > 1)) {
                 ph = ppid;
-
-                nsPid = getNamespacePid(ph.get().pid()); // get the ns pid of the parent...
-
+                nsPid = getNamespacePid(ph.get().pid()); // get the ns pid of the parent
                 prevPidNS = curPidNS;
             } else {
                 ph = Optional.empty();
@@ -350,7 +344,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         b[0] = 0;
         write(fd, b, 0, 1);
     }
-
 
     // Return the inner most namespaced PID if there is one,
     // otherwise return the original PID.
