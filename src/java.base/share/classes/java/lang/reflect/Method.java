@@ -526,6 +526,16 @@ public final class Method extends Executable {
      * underlying method return type is void, the invocation returns
      * null.
      *
+     * @apiNote
+     * {@link Throwable}s thrown by the underlying method, including
+     * {@link Error}s like {@link AbstractMethodError}, are wrapped
+     * in {@link InvocationTargetException}s.
+     * The wrapped throwable should be handled; ignoring the wrapped
+     * throwable, such as passing the {@link InvocationTargetException}
+     * as the cause to construct a new throwable, may fail in cases
+     * like {@link OutOfMemoryError} or {@link StackOverflowError}.
+     * The JVM may throw new errors that hide the original ones.
+     *
      * @param obj  the object the underlying method is invoked from
      * @param args the arguments used for the method call
      * @return the result of dispatching the method represented by
@@ -546,7 +556,7 @@ public final class Method extends Executable {
      *              cannot be converted to the corresponding formal
      *              parameter type by a method invocation conversion.
      * @throws    InvocationTargetException if the underlying method
-     *              throws an exception.
+     *              throws any {@link Throwable}.
      * @throws    NullPointerException      if the specified object is null
      *              and the method is an instance method.
      * @throws    ExceptionInInitializerError if the initialization
