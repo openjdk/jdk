@@ -95,6 +95,10 @@ int CgroupV2CpuController::cpu_quota() {
   return limit;
 }
 
+bool CgroupV2Subsystem::is_containerized() {
+  return _unified->is_read_only();
+}
+
 char* CgroupV2Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(unified(), "/cpuset.cpus", "cpuset.cpus", cpus, 1024);

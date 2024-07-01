@@ -105,6 +105,7 @@
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char* subsystem_path() = 0;
+    virtual bool is_read_only() = 0;
 
     /* Read a numerical value as unsigned long
      *
@@ -224,15 +225,17 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
 
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;
+    virtual bool is_containerized() = 0;
 
-    int cpu_quota();
-    int cpu_period();
-    int cpu_shares();
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
     virtual const char * container_type() = 0;
     virtual CachingCgroupController<CgroupMemoryController>* memory_controller() = 0;
     virtual CachingCgroupController<CgroupCpuController>* cpu_controller() = 0;
+
+    int cpu_quota();
+    int cpu_period();
+    int cpu_shares();
 
     jlong memory_usage_in_bytes();
     jlong memory_and_swap_limit_in_bytes();
@@ -255,6 +258,7 @@ class CgroupInfo : public StackObj {
     char* _name;
     int _hierarchy_id;
     bool _enabled;
+    bool _read_only;            // whether or not the mount path is mounted read-only
     bool _data_complete;    // indicating cgroup v1 data is complete for this controller
     char* _cgroup_path;     // cgroup controller path from /proc/self/cgroup
     char* _root_mount_path; // root mount path from /proc/self/mountinfo. Unused for cgroup v2
@@ -265,6 +269,7 @@ class CgroupInfo : public StackObj {
       _name = nullptr;
       _hierarchy_id = -1;
       _enabled = false;
+      _read_only = false;
       _data_complete = false;
       _cgroup_path = nullptr;
       _root_mount_path = nullptr;
@@ -296,7 +301,8 @@ class CgroupSubsystemFactory: AllStatic {
                                      int controller,
                                      const char* name,
                                      char* mount_path,
-                                     char* root_path);
+                                     char* root_path,
+                                     bool read_only);
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,

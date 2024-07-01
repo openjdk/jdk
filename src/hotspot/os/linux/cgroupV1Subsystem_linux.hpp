@@ -36,13 +36,18 @@ class CgroupV1Controller: public CgroupController {
     /* mountinfo contents */
     char* _root;
     char* _mount_point;
+    bool _read_only;
+
     /* Constructed subsystem directory */
     char* _path;
 
   public:
-    CgroupV1Controller(char *root, char *mountpoint) : _root(os::strdup(root)),
-                                                       _mount_point(os::strdup(mountpoint)),
-                                                       _path(nullptr) {
+    CgroupV1Controller(char *root,
+                       char *mountpoint,
+                       bool ro) : _root(os::strdup(root)),
+                                  _mount_point(os::strdup(mountpoint)),
+                                  _read_only(ro),
+                                  _path(nullptr) {
     }
     // Shallow copy constructor
     CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
@@ -56,6 +61,7 @@ class CgroupV1Controller: public CgroupController {
 
     void set_subsystem_path(char *cgroup_path);
     char *subsystem_path() override { return _path; }
+    bool is_read_only() { return _read_only; }
 };
 
 class CgroupV1MemoryController final : public CgroupMemoryController {
@@ -126,6 +132,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
     jlong pids_max();
     jlong pids_current();
+    bool is_containerized();
 
     const char * container_type() {
       return "cgroupv1";

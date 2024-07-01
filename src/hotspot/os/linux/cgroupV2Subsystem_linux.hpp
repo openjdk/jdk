@@ -33,16 +33,19 @@ class CgroupV2Controller: public CgroupController {
     char *_mount_path;
     /* The cgroup path for the controller */
     char *_cgroup_path;
+    bool _read_only;
 
     /* Constructed full path to the subsystem directory */
     char *_path;
     static char* construct_path(char* mount_path, char *cgroup_path);
 
   public:
-    CgroupV2Controller(char* mount_path, char *cgroup_path) :
-                                            _mount_path(os::strdup(mount_path)),
-                                            _cgroup_path(os::strdup(cgroup_path)),
-                                            _path(construct_path(mount_path, cgroup_path)) {
+    CgroupV2Controller(char* mount_path,
+                       char *cgroup_path,
+                       bool ro) :  _mount_path(os::strdup(mount_path)),
+                                   _cgroup_path(os::strdup(cgroup_path)),
+                                   _read_only(ro),
+                                   _path(construct_path(mount_path, cgroup_path)) {
     }
     // Shallow copy constructor
     CgroupV2Controller(const CgroupV2Controller& o) :
@@ -55,6 +58,7 @@ class CgroupV2Controller: public CgroupController {
     }
 
     char *subsystem_path() override { return _path; }
+    bool is_read_only() override { return _read_only; }
 };
 
 class CgroupV2CpuController: public CgroupCpuController {
@@ -64,9 +68,12 @@ class CgroupV2CpuController: public CgroupCpuController {
   public:
     CgroupV2CpuController(const CgroupV2Controller& reader) : _reader(reader) {
     }
-    int cpu_quota();
-    int cpu_period();
-    int cpu_shares();
+    int cpu_quota() override;
+    int cpu_period() override;
+    int cpu_shares() override;
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
 };
 
 class CgroupV2MemoryController final: public CgroupMemoryController {
@@ -86,6 +93,9 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
     void print_version_specific_info(outputStream* st, julong host_mem) override;
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {
@@ -107,10 +117,13 @@ class CgroupV2Subsystem: public CgroupSubsystem {
         _cpu(new CachingCgroupController<CgroupCpuController>(cpu)) {
     }
 
-    char * cpu_cpuset_cpus();
-    char * cpu_cpuset_memory_nodes();
-    jlong pids_max();
-    jlong pids_current();
+    char * cpu_cpuset_cpus() override;
+    char * cpu_cpuset_memory_nodes() override;
+    jlong pids_max() override;
+    jlong pids_current() override;
+
+    bool is_containerized() override;
+    void print_version_specific_info(outputStream* st) override;
 
     const char * container_type() {
       return "cgroupv2";
