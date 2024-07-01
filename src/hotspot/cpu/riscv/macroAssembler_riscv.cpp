@@ -3799,7 +3799,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
     // Check for wraparound.
     Label skip;
-    bge(r_array_length, r_array_index, skip);
+    blt(r_array_index, r_array_length, skip);
     mv(r_array_index, zr);
     bind(skip);
 

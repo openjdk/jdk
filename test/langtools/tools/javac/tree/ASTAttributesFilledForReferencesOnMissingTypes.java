@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8198378
+ * @bug 8335385
  * @summary Verify that BadClassFile related to imports are handled properly.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,10 +33,7 @@
  */
 
 import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.tree.Tree.Kind;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
@@ -218,7 +215,8 @@ public class ASTAttributesFilledForReferencesOnMissingTypes {
                         }
                     });
                 })
-                .run(expectedOutput != null ? Task.Expect.FAIL : Task.Expect.SUCCESS)
+                .run(expectedOutput != null ? Task.Expect.FAIL : Task.Expect.SUCCESS,
+                     expectedOutput != null ? 1 : 0)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 

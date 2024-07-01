@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8198378
+ * @bug 8198378 8335385
  * @summary Verify that BadClassFile related to imports are handled properly.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -232,8 +232,9 @@ public class BadClassFileDuringImport {
         List<String> log = new JavacTask(tb)
                 .classpath(".")
                 .sources("\n" + importText + " public class Test { " + useText + " }")
-                .options("-XDrawDiagnostics", "-XDdev")
-                .run(expectedOutput != null ? Task.Expect.FAIL : Task.Expect.SUCCESS)
+                .options("-XDrawDiagnostics")
+                .run(expectedOutput != null ? Task.Expect.FAIL : Task.Expect.SUCCESS,
+                     expectedOutput != null ? 1 : 0)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
