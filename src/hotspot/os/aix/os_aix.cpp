@@ -67,9 +67,9 @@
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -99,7 +99,7 @@
 #include <sys/mman.h>
 // sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
 #ifndef MAP_ANON_64K
-  #define MAP_ANON_64K  0x400
+  #define MAP_ANON_64K 0x400
 #else
   STATIC_ASSERT(MAP_ANON_64K == 0x400);
 #endif
@@ -2743,6 +2743,10 @@ void os::Aix::initialize_libperfstat() {
   } else {
     trcVerbose("libperfstat initialized.");
   }
+}
+
+bool os::Aix::supports_64K_mmap_pages() {
+  return g_multipage_support.can_use_64K_mmap_pages;
 }
 
 /////////////////////////////////////////////////////////////////////////////
