@@ -5222,6 +5222,10 @@ class StubGenerator: public StubCodeGenerator {
 
     Label ProcessScalar, ProcessM2, ProcessM1;
 
+    if (!UseRVV) {
+      __ j(ProcessScalar);
+    }
+
     // vector version
     {
       Register tmp1 = x28; // t3

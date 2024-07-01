@@ -234,15 +234,8 @@ void VM_Version::initialize() {
   //       in some situations.
 
   // Base64
-  if (UseRVV) {
-    if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
-      FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
-    }
-  } else if (UseBASE64Intrinsics) {
-    if (!FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
-      warning("Base64 intrinsic requires RVV instructions (not available on this CPU)");
-    }
-    FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
   }
 
   // ChaCha20
