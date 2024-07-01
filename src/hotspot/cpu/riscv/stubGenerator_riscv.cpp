@@ -5103,6 +5103,226 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+
+  /**
+   * vector registers:
+   *   input VectorRegister's:  intputV1-V3, for m2 they could be v2, v4, v6, for m1 they could be v1, v2, v3
+   *   index VectorRegister's:  idxV1-V4, for m2 they could be v8, v10, v12, v14, for m1 they could be v4, v5, v6, v7
+   *   output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v8, v9, v10, v11
+   *
+   * NOTE: each field will occupy a single vector register group
+   */
+  void encodeVector(Register src, Register dst, Register codec, Register step,
+                    VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
+                    VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
+                    VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
+                    Assembler::LMUL lmul) {
+    // set vector register type/len
+    __ vsetvli(x0, step, Assembler::e8, lmul, Assembler::ma, Assembler::ta);
+
+    // segmented load src into v registers: mem(src) => vr(3)
+    __ vlseg3e8_v(inputV1, src);
+
+    // src = src + VLENB * 3 // vlen == register length in bytes
+    __ slli(t0, step, 1);
+    __ add(t0, t0, step);
+    __ add(src, src, t0);
+
+    // encoding
+    //   1. compute index into lookup table: vr(3) => vr(4)
+    __ vsrl_vi(idxV1, inputV1, 2);
+
+    __ vsrl_vi(idxV2, inputV2, 2);
+    __ vsll_vi(inputV1, inputV1, 6);
+    __ vor_vv(idxV2, idxV2, inputV1);
+    __ vsrl_vi(idxV2, idxV2, 2);
+
+    __ vsrl_vi(idxV3, inputV3, 4);
+    __ vsll_vi(inputV2, inputV2, 4);
+    __ vor_vv(idxV3, inputV2, idxV3);
+    __ vsrl_vi(idxV3, idxV3, 2);
+
+    __ vsll_vi(idxV4, inputV3, 2);
+    __ vsrl_vi(idxV4, idxV4, 2);
+
+    //   2. indexed load: vr(4) => vr(4)
+    __ vluxei8_v(outputV1, codec, idxV1);
+    __ vluxei8_v(outputV2, codec, idxV2);
+    __ vluxei8_v(outputV3, codec, idxV3);
+    __ vluxei8_v(outputV4, codec, idxV4);
+
+    // segmented store encoded data in v registers back to dst: vr(4) => mem(dst)
+    __ vsseg4e8_v(outputV1, dst);
+
+    // dst = dst + vlen * 4 // vlen == register length in bytes
+    __ slli(t0, step, 2);
+    __ add(dst, dst, t0);
+  }
+
+  /**
+   *  void j.u.Base64.Encoder.encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL)
+   *
+   *  Input arguments:
+   *  c_rarg0   - src, source array
+   *  c_rarg1   - sp, src start offset
+   *  c_rarg2   - sl, src end offset
+   *  c_rarg3   - dst, dest array
+   *  c_rarg4   - dp, dst start offset
+   *  c_rarg5   - isURL, Base64 or URL character set
+   */
+  address generate_base64_encodeBlock() {
+    static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+
+    Register src = c_rarg0;
+    Register soff = c_rarg1;
+    Register send = c_rarg2;
+    Register dst = c_rarg3;
+    Register doff = c_rarg4;
+    Register isURL = c_rarg5;
+
+    Register codec = c_rarg6;
+    Register length = c_rarg7; // total length of src data in bytes
+
+    Label ProcessData, Exit, Greater;
+
+    RegSet saved_regs;
+    __ push_reg(saved_regs, sp);
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    // length should be multiple of 3.
+    // So, this implementation does not consider padding "=".
+    __ sub(length, send, soff);
+
+    // load the codec base address
+    __ la(codec, ExternalAddress((address) toBase64));
+    __ beqz(isURL, ProcessData);
+    __ la(codec, ExternalAddress((address) toBase64URL));
+    __ BIND(ProcessData);
+
+    __ mv(t0, 3);
+    __ div(length, length, t0);
+
+    Label ProcessScalar, ProcessM2, ProcessM1;
+
+    // vector version
+    {
+      Register tmp1 = x28;
+      Register tmp2 = x29;
+      Register limitM1 = x30;
+      Register limitM2 = x31;
+
+      __ mv(limitM1, MaxVectorSize);
+      __ slli(limitM2, limitM1, 1);
+
+      __ BIND(ProcessM2);
+      __ blt(length, limitM1, ProcessScalar);
+
+      __ blt(length, limitM2, ProcessM1);
+
+      encodeVector(src, dst, codec, limitM2,
+                    v2, v4, v6,         // inputs
+                    v8, v10, v12, v14,  // indexes
+                    v16, v18, v20, v22, // outputs
+                    Assembler::m2);
+
+      __ sub(length, length, limitM2);
+      __ j(ProcessM2);
+
+      __ BIND(ProcessM1);
+      encodeVector(src, dst, codec, limitM1,
+                    v1, v2, v3,         // inputs
+                    v4, v5, v6, v7,     // indexes
+                    v8, v9, v10, v11,   // outputs
+                    Assembler::m1);
+      __ sub(length, length, limitM1);
+    }
+
+    // scalar version
+    __ BIND(ProcessScalar);
+    {
+      Register byte1 = soff, byte0 = send, byte2 = doff;
+      Register combined24Bits = x28;
+
+      __ mv(t1, 1);
+      __ blt(length, t1, Exit);
+
+      Label ScalarLoop;
+      __ BIND(ScalarLoop);
+      {
+        // plain:   [byte0[7:0] : byte1[7:0] : byte2[7:0]] =>
+        // encoded: [byte0[7:2] : byte0[1:0]+byte1[7:4] : byte1[3:0]+byte2[7:6] : byte2[5:0]]
+
+        // load 3 bytes src data
+        __ lbu(byte0, Address(src, 0));
+        __ lbu(byte1, Address(src, 1));
+        __ lbu(byte2, Address(src, 2));
+        __ addi(src, src, 3);
+
+        // construct 24 bits from 3 bytes
+        __ slliw(byte0, byte0, 16);
+        __ slliw(byte1, byte1, 8);
+        __ orr(combined24Bits, byte0, byte1);
+        __ orr(combined24Bits, combined24Bits, byte2);
+
+        // get codec index and encode(ie. load from codec by index)
+        __ slliw(byte0, combined24Bits, 8);
+        __ srliw(byte0, byte0, 26);
+        __ add(byte0, codec, byte0);
+        __ lbu(byte0, byte0);
+
+        __ slliw(byte1, combined24Bits, 14);
+        __ srliw(byte1, byte1, 26);
+        __ add(byte1, codec, byte1);
+        __ lbu(byte1, byte1);
+
+        __ slliw(byte2, combined24Bits, 20);
+        __ srliw(byte2, byte2, 26);
+        __ add(byte2, codec, byte2);
+        __ lbu(byte2, byte2);
+
+        __ andi(combined24Bits, combined24Bits, 0x3f);
+        __ add(combined24Bits, codec, combined24Bits);
+        __ lbu(combined24Bits, combined24Bits);
+
+        // store 4 bytes encoded data
+        __ sb(byte0, Address(dst, 0));
+        __ sb(byte1, Address(dst, 1));
+        __ sb(byte2, Address(dst, 2));
+        __ sb(combined24Bits, Address(dst, 3));
+
+        // loop
+        __ sub(length, length, 1);
+        __ addi(dst, dst, 4);
+        __ bge(length, t1, ScalarLoop);
+      }
+    }
+
+    __ BIND(Exit);
+    __ pop_reg(saved_regs, sp);
+    __ ret();
+
+    return (address) start;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -5692,6 +5912,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+
+    if (UseBASE64Intrinsics) {
+      StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 
 #endif // COMPILER2_OR_JVMCI
