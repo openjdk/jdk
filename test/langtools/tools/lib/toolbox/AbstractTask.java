@@ -146,27 +146,22 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
      *      does not match the expected outcome and exit code.
      */
     protected Result checkExit(Result result) throws TaskError {
-        try {
-            switch (expect) {
-                case SUCCESS:
-                    if (result.exitCode != 0) {
-                        throw new TaskError("Task " + name() + " failed: rc=" + result.exitCode);
-                    }
-                    break;
+        switch (expect) {
+            case SUCCESS:
+                if (result.exitCode != 0) {
+                    throw new TaskError("Task " + name() + " failed: rc=" + result.exitCode);
+                }
+                break;
 
-                case FAIL:
-                    if (result.exitCode == 0) {
-                        throw new TaskError("Task " + name() + " succeeded unexpectedly");
-                    }
+            case FAIL:
+                if (result.exitCode == 0) {
+                    throw new TaskError("Task " + name() + " succeeded unexpectedly");
+                }
 
-                    exitCodeValidator.accept(result.exitCode, name());
-                    break;
-            }
-            return result;
-        } catch (Throwable t) {
-            result.writeAll();
-            throw t;
+                exitCodeValidator.accept(result.exitCode, name());
+                break;
         }
+        return result;
     }
 
     /**
