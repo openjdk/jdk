@@ -48,10 +48,10 @@ final class LinuxApplicationFromParams {
         return new Impl(app);
     }
 
-    static final StandardBundlerParam<LinuxApplication> APPLICATION = createBundlerParam(
+    static final BundlerParamInfo<LinuxApplication> APPLICATION = createBundlerParam(
             LinuxApplicationFromParams::create);
 
-    private static final StandardBundlerParam<Boolean> LINUX_SHORTCUT_HINT = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> LINUX_SHORTCUT_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
             Boolean.class,
             params -> false,

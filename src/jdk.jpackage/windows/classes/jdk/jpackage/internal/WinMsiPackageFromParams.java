@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.Package.StandardPackageType.WinMsi;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
@@ -68,31 +69,31 @@ final class WinMsiPackageFromParams {
         }
     }
 
-    static final StandardBundlerParam<WinMsiPackage> PACKAGE = createBundlerParam(
+    static final BundlerParamInfo<WinMsiPackage> PACKAGE = createBundlerParam(
             WinMsiPackageFromParams::create);
 
-    private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_DIR_CHOOSER.getId(),
             Boolean.class,
             params -> false,
             (s, p) -> Boolean.valueOf(s)
     );
 
-    private static final StandardBundlerParam<Boolean> SHORTCUT_PROMPT = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> SHORTCUT_PROMPT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_SHORTCUT_PROMPT.getId(),
             Boolean.class,
             params -> false,
             (s, p) -> Boolean.valueOf(s)
     );
 
-    private static final StandardBundlerParam<String> MENU_GROUP = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<String> MENU_GROUP = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_MENU_GROUP.getId(),
             String.class,
             params -> I18N.getString("param.menu-group.default"),
             (s, p) -> s
     );
 
-    private static final StandardBundlerParam<Boolean> MSI_SYSTEM_WIDE = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> MSI_SYSTEM_WIDE = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
             Boolean.class,
             params -> true, // MSIs default to system wide
@@ -102,21 +103,12 @@ final class WinMsiPackageFromParams {
             : Boolean.valueOf(s)
     );
 
-    private static final BundlerParamInfo<String> HELP_URL = new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_HELP_URL.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> HELP_URL = createStringBundlerParam(
+            Arguments.CLIOptions.WIN_HELP_URL.getId());
 
-    private static final BundlerParamInfo<String> UPDATE_URL = new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_UPDATE_URL.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> UPDATE_URL = createStringBundlerParam(
+            Arguments.CLIOptions.WIN_UPDATE_URL.getId());
 
-    private static final BundlerParamInfo<String> UPGRADE_UUID = new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_UPGRADE_UUID.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> UPGRADE_UUID = createStringBundlerParam(
+            Arguments.CLIOptions.WIN_UPGRADE_UUID.getId());
 }

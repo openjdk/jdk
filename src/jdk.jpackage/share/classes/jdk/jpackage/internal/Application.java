@@ -25,6 +25,8 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -43,8 +45,6 @@ interface Application {
     String vendor();
 
     String copyright();
-
-    Path predefinedRuntimeImage();
 
     RuntimeBuilder runtimeBuilder();
 
@@ -116,10 +116,24 @@ interface Application {
     }
 
     static record Impl(String name, String description, String version, String vendor,
-            String copyright, Path predefinedRuntimeImage, RuntimeBuilder runtimeBuilder,
-            Launcher mainLauncher, List<Launcher> additionalLaunchers) implements Application {
+            String copyright, RuntimeBuilder runtimeBuilder, Launcher mainLauncher,
+            List<Launcher> additionalLaunchers) implements Application {
+        public Impl        {
+            name = Optional.ofNullable(name).orElseGet(mainLauncher::name);
+            description = Optional.ofNullable(description).orElseGet(DEFAULTS::description);
+            version = Optional.ofNullable(version).orElseGet(DEFAULTS::version);
+            vendor = Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor);
+            copyright = Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright);
+        }
+    }
+
+    static record Defaults(String description, String version, String vendor, String copyright) {
 
     }
+
+    static final Defaults DEFAULTS = new Defaults(I18N.getString("param.description.default"), "1.0",
+            I18N.getString("param.vendor.default"), MessageFormat.format(I18N.getString(
+            "param.copyright.default"), new Date()));
 
     static class Proxy<T extends Application> extends ProxyBase<T> implements Application {
 
@@ -150,11 +164,6 @@ interface Application {
         @Override
         public String copyright() {
             return target.copyright();
-        }
-
-        @Override
-        public Path predefinedRuntimeImage() {
-            return target.predefinedRuntimeImage();
         }
 
         @Override

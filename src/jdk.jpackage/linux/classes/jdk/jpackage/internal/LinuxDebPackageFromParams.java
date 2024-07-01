@@ -38,10 +38,10 @@ final class LinuxDebPackageFromParams {
         return new LinuxDebPackage.Impl(pkg, maintainerEmail);
     }
 
-    static final StandardBundlerParam<LinuxDebPackage> PACKAGE = createBundlerParam(
+    static final BundlerParamInfo<LinuxDebPackage> PACKAGE = createBundlerParam(
             LinuxDebPackageFromParams::create);
 
-    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new BundlerParamInfo<>(
             Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
             String.class,
             params -> "Unknown",

@@ -170,7 +170,6 @@ class AppImageBundler extends AbstractBundler {
 
         boolean hasAppImage =
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null;
-        boolean hasRuntimeImage = app.predefinedRuntimeImage() != null;
 
         Path rootDirectory = hasAppImage ?
                 PREDEFINED_APP_IMAGE.fetchFrom(params) :
@@ -178,12 +177,7 @@ class AppImageBundler extends AbstractBundler {
 
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
         if (!hasAppImage) {
-            if (!hasRuntimeImage) {
-                app.runtimeBuilder().execute(appBuilder.getAppLayout().runtimeHomeDirectory());
-            } else {
-                StandardBundlerParam.copyPredefinedRuntimeImage(
-                        params, appBuilder.getAppLayout());
-            }
+            app.runtimeBuilder().createRuntime(appBuilder.getAppLayout());            
         }
 
         appBuilder.prepareApplicationFiles(params);

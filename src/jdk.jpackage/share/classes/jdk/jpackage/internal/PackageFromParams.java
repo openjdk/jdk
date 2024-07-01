@@ -45,7 +45,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 final class PackageFromParams {
 
     static Package create(Map<String, ? super Object> params,
-            StandardBundlerParam<? extends Application> appParam, PackageType pkgType) throws ConfigException {
+            BundlerParamInfo<? extends Application> appParam, PackageType pkgType) throws ConfigException {
         var app = appParam.fetchFrom(params);
         var packageName = Optional.ofNullable(INSTALLER_NAME.fetchFrom(params)).orElseGet(app::name);
         var description = Optional.ofNullable(DESCRIPTION.fetchFrom(params)).orElseGet(app::name);
@@ -71,12 +71,12 @@ final class PackageFromParams {
                 predefinedAppImage, relativeInstallDir);
     }
 
-    static <T extends Package> StandardBundlerParam<T> createBundlerParam(
+    static <T extends Package> BundlerParamInfo<T> createBundlerParam(
             ThrowingFunction<Map<String, ? super Object>, T> valueFunc) {
-        return StandardBundlerParam.createBundlerParam("target.package", valueFunc);
+        return BundlerParamInfo.createBundlerParam("target.package", valueFunc);
     }
 
-    static final StandardBundlerParam<Package> PACKAGE = createBundlerParam(params -> {
+    static final BundlerParamInfo<Package> PACKAGE = createBundlerParam(params -> {
         return PackageFromParams.create(params, ApplicationFromParams.APPLICATION,
                 StandardPackageType.fromCmdLineType(WorkshopFromParams.PACKAGE_TYPE
                         .fetchFrom(params)));

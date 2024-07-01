@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -70,6 +71,11 @@ interface LinuxPackage extends Package {
             } else {
                 packageName = target.packageName();
             }
+
+            menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName);
+            category = Optional.ofNullable(category).orElseGet(DEFAULTS::category);
+            release = Optional.ofNullable(release).orElseGet(DEFAULTS::release);
+
             this.menuGroupName = menuGroupName;
             this.category = category;
             this.additionalDependencies = additionalDependencies;
@@ -166,6 +172,12 @@ interface LinuxPackage extends Package {
             return target.arch();
         }
     }
+
+    static record Defaults(String release, String menuGroupName, String category) {
+    }
+
+    static final Defaults DEFAULTS = new Defaults("1", I18N.getString("param.menu-group.default"),
+            "misc");
 
     private static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
         // make sure to lower case and spaces/underscores become dashes

@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.util.Map;
+import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.LinuxPackage.Impl;
 import jdk.jpackage.internal.Package.StandardPackageType;
 
@@ -40,27 +41,15 @@ final class LinuxPackageFromParams {
         return new Impl(pkg, menuGroupName, category, additionalDependencies, release);
     }
 
-    private static final BundlerParamInfo<String> LINUX_CATEGORY = new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_CATEGORY.getId(),
-            String.class,
-            params -> "misc",
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> LINUX_CATEGORY = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_CATEGORY.getId());
 
-    private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES = new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId(),
-            String.class,
-            params -> null,
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId());
 
-    private static final BundlerParamInfo<String> LINUX_MENU_GROUP = new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_MENU_GROUP.getId(),
-            String.class,
-            params -> I18N.getString("param.menu-group.default"),
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> LINUX_MENU_GROUP = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_MENU_GROUP.getId());
 
-    private static final StandardBundlerParam<String> RELEASE = new StandardBundlerParam<>(
-            Arguments.CLIOptions.RELEASE.getId(),
-            String.class,
-            params -> "1",
-            (s, p) -> s);
+    private static final BundlerParamInfo<String> RELEASE = createStringBundlerParam(
+            Arguments.CLIOptions.RELEASE.getId());
 }

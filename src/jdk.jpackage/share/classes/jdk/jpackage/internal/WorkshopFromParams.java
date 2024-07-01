@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.Map;
 import jdk.internal.util.OperatingSystem;
+import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.Workshop.Impl;
 import jdk.jpackage.internal.Workshop.Proxy;
 
@@ -62,9 +63,9 @@ final class WorkshopFromParams {
         };
     }
 
-    static final StandardBundlerParam<Workshop> WORKSHOP = StandardBundlerParam.createBundlerParam(
+    static final BundlerParamInfo<Workshop> WORKSHOP = BundlerParamInfo.createBundlerParam(
             "workshop", WorkshopFromParams::create);
 
-    static final StandardBundlerParam<String> PACKAGE_TYPE = new StandardBundlerParam<>(
-            Arguments.CLIOptions.PACKAGE_TYPE.getId(), String.class, null, null);
+    static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
+            Arguments.CLIOptions.PACKAGE_TYPE.getId());
 }

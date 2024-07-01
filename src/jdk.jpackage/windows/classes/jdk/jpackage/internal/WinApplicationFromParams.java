@@ -59,10 +59,10 @@ final class WinApplicationFromParams {
         return new WinApplication.Impl(app);
     }
 
-    static final StandardBundlerParam<WinApplication> APPLICATION = createBundlerParam(
+    static final BundlerParamInfo<WinApplication> APPLICATION = createBundlerParam(
             WinApplicationFromParams::create);
 
-    private static final StandardBundlerParam<Boolean> WIN_MENU_HINT = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_MENU_HINT.getId(),
             Boolean.class,
             p -> false,
@@ -70,7 +70,7 @@ final class WinApplicationFromParams {
             // and we actually do want null in some cases
             (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
 
-    private static final StandardBundlerParam<Boolean> WIN_SHORTCUT_HINT = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<Boolean> WIN_SHORTCUT_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_SHORTCUT_HINT.getId(),
             Boolean.class,
             p -> false,

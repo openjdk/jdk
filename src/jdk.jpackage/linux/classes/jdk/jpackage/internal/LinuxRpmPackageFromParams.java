@@ -39,10 +39,10 @@ final class LinuxRpmPackageFromParams {
         return new Impl(pkg, licenseType);
     }
 
-    static final StandardBundlerParam<LinuxRpmPackage> PACKAGE = createBundlerParam(
+    static final BundlerParamInfo<LinuxRpmPackage> PACKAGE = createBundlerParam(
             LinuxRpmPackageFromParams::create);
 
-    private static final BundlerParamInfo<String> LICENSE_TYPE = new StandardBundlerParam<>(
+    private static final BundlerParamInfo<String> LICENSE_TYPE = new BundlerParamInfo<>(
             Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId(),
             String.class,
             params -> I18N.getString("param.license-type.default"),

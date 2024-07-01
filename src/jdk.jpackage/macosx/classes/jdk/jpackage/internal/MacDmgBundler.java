@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
 
     public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
-            new StandardBundlerParam<> (
+            new BundlerParamInfo<> (
             "mac.dmg.installerName.suffix",
             String.class,
             params -> "",

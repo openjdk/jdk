@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     private static final String DEFAULT_PDF = "product-def.plist";
 
     private static final BundlerParamInfo<Path> PACKAGES_ROOT =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.pkg.packagesRoot",
             Path.class,
             params -> {
@@ -89,7 +89,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
 
     protected final BundlerParamInfo<Path> SCRIPTS_DIR =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.pkg.scriptsDir",
             Path.class,
             params -> {
@@ -106,7 +106,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
     public static final
             BundlerParamInfo<String> DEVELOPER_ID_INSTALLER_SIGNING_KEY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
@@ -139,7 +139,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             (s, p) -> s);
 
     public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
-            new StandardBundlerParam<> (
+            new BundlerParamInfo<> (
             "mac.pkg.installerName.suffix",
             String.class,
             params -> "",

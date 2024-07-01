@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 interface Package {
@@ -111,13 +112,9 @@ interface Package {
                     return Path
                             .of(String.format("%s-%s%s", packageName(), version(), type.suffix()));
                 }
-                default -> {
-                    throw new UnsupportedOperationException();
-                }
             }
-        } else {
-            throw new UnsupportedOperationException();
         }
+        throw new UnsupportedOperationException();
     }
 
     default boolean isRuntimeInstaller() {
@@ -133,7 +130,11 @@ interface Package {
     static record Impl(Application app, PackageType type, String packageName, String description,
             String version, String aboutURL, Path licenseFile, Path predefinedAppImage,
             Path relativeInstallDir) implements Package {
-
+        public Impl {
+            packageName = Optional.ofNullable(packageName).orElseGet(app::name);
+            description = Optional.ofNullable(description).orElseGet(app::description);
+            version = Optional.ofNullable(version).orElseGet(app::version);
+        }
     }
 
     static class Proxy<T extends Package> extends ProxyBase<T> implements Package {

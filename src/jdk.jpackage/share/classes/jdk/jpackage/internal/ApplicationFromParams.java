@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.Functional.ThrowingBiFunction.toBiFunction;
 import jdk.jpackage.internal.Functional.ThrowingFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -41,7 +40,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
@@ -57,7 +55,6 @@ final class ApplicationFromParams {
         var version = VERSION.fetchFrom(params);
         var vendor = VENDOR.fetchFrom(params);
         var copyright = COPYRIGHT.fetchFrom(params);
-        var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
 
         var predefinedAppImage = getPredefinedAppImage(params);
         if (name == null && predefinedAppImage == null) {
@@ -99,15 +96,11 @@ final class ApplicationFromParams {
             var startupInfos = Stream.concat(Stream.of(mainLauncher), additionalLaunchers.stream()).map(
                     Launcher::startupInfo).toList();
 
-            if (predefinedRuntimeImage == null) {
-                runtimeBuilder = RuntimeBuilder.createFromParams(params, startupInfos);
-            } else {
-                runtimeBuilder = null;
-            }
+            runtimeBuilder = RuntimeBuilderFromParams.create(params, startupInfos);
         }
 
-        return new Application.Impl(name, description, version, vendor, copyright,
-                predefinedRuntimeImage, runtimeBuilder, mainLauncher, additionalLaunchers);
+        return new Application.Impl(name, description, version, vendor, copyright, runtimeBuilder,
+                mainLauncher, additionalLaunchers);
     }
 
     private static Map<String, ? super Object> mergeParams(Map<String, ? super Object> mainParams,
@@ -121,12 +114,12 @@ final class ApplicationFromParams {
                 .getID(), FILE_ASSOCIATIONS.getID());
     }
 
-    static <T extends Application> StandardBundlerParam<T> createBundlerParam(
+    static <T extends Application> BundlerParamInfo<T> createBundlerParam(
             ThrowingFunction<Map<String, ? super Object>, T> valueFunc) {
-        return StandardBundlerParam.createBundlerParam("target.application", valueFunc);
+        return BundlerParamInfo.createBundlerParam("target.application", valueFunc);
     }
 
-    static final StandardBundlerParam<Application> APPLICATION = createBundlerParam(params -> {
+    static final BundlerParamInfo<Application> APPLICATION = createBundlerParam(params -> {
         return ApplicationFromParams.create(params, LauncherFromParams::create);
     });
 }
