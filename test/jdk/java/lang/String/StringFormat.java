@@ -243,8 +243,30 @@ public class StringFormat {
         locales(() -> {
             for (int i = 0; i < n; i++) {
                 format2("%s%d", str_args_0[i], int_args[i]);
+                format2("%s%d", str_args_0[i], int_args[i]);
+                format2("%s%x", str_args_0[i], int_args[i]);
+                format2("%s%X", str_args_0[i], int_args[i]);
+
+                format2(utf_chars[0] + "%s%d", str_args_0[i], int_args[i]);
+                format2(utf_chars[0] + "%s%d", str_args_0[i], int_args[i]);
+                format2(utf_chars[0] + "%s%x", str_args_0[i], int_args[i]);
+                format2(utf_chars[0] + "%s%X", str_args_0[i], int_args[i]);
+                format2("%s %d" + utf_chars[0], str_args_0[i], int_args[i]);
+                format2("%s %d" + utf_chars[0], str_args_0[i], int_args[i]);
+                format2("%s %x" + utf_chars[0], str_args_0[i], int_args[i]);
+                format2("%s %X" + utf_chars[0], str_args_0[i], int_args[i]);
+
+                format2("%s%d", formats_1d_utf16[i], int_args[i]);
+                format2("%s%d", formats_1d_utf16[i], int_args[i]);
+                format2("%s%x", formats_1d_utf16[i], int_args[i]);
+                format2("%s%X", formats_1d_utf16[i], int_args[i]);
             }
         });
+
+        format2("%s%", "", 12);
+        format2("%3", "", 12);
+        format2("%s%3", "", 12);
+        format2("%s%33%", "", 12);
     }
 
     static void locales(Runnable r) {
@@ -264,8 +286,34 @@ public class StringFormat {
     }
 
     private static void format2(String format, Object arg0, Object arg1) {
-        String juf = new Formatter().format(format, arg0, arg1).toString();
-        String strf = format.formatted(arg0, arg1);
+        RuntimeException jue = null;
+        String juf = null;
+        try {
+            juf = new Formatter().format(format, arg0, arg1).toString();
+        } catch (RuntimeException e) {
+            jue = e;
+        }
+
+        RuntimeException stre = null;
+        String strf = null;
+        try {
+            strf = format.formatted(arg0, arg1);
+        } catch (RuntimeException e) {
+            stre = e;
+        }
+
+        if (jue != null && stre == null) {
+            throw jue;
+        }
+
+        if (jue == null && stre != null) {
+            throw stre;
+        }
+
+        if (jue != null && stre != null) {
+            return;
+        }
+
         assertEquals(juf, strf);
     }
 
