@@ -1453,9 +1453,8 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     // If taken_trap, make sure the if is always taken
     btest = taken_trap ? BoolTest::mask::ne : BoolTest::mask::eq;
     Node* bol = _gvn.transform(new BoolNode(cmp, btest));
-    tst = _gvn.transform(bol);
     _gvn.hash_delete(iff);
-    iff->set_req(1, tst);
+    iff->set_req(1, bol);
     _gvn.transform(iff);
   }
 }
@@ -1499,7 +1498,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     // path (as opposed to the prob of the path guarded by an 'IfTrueNode').
   }
   assert(btest != BoolTest::eq, "!= is the only canonical exact test");
-
 
   Node* tst0 = new BoolNode(c, btest);
   Node* tst = _gvn.transform(tst0);
@@ -1586,9 +1584,8 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       btest = BoolTest(btest).negate();
     }
     Node* bol = _gvn.transform(new BoolNode(cmp, btest));
-    tst = _gvn.transform(bol);
     _gvn.hash_delete(iff);
-    iff->set_req(1, tst);
+    iff->set_req(1, bol);
     _gvn.transform(iff);
   }
 }

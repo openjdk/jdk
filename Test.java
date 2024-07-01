@@ -84,6 +84,6 @@ public class Test {
             test7(42);
             test8(null);
         }
-    }    
+    }
 }
 
