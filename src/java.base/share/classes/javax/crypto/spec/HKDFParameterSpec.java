@@ -32,12 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parameters for the combined Extract-Only, Expand-Only, or Extract-then-Expand
+ * Parameters for the combined Extract, Expand, or Extract-then-Expand
  * operations of the HMAC-based Key Derivation Function (HKDF). The HKDF
  * function is defined in <a href="http://tools.ietf.org/html/rfc5869">RFC
  * 5869</a>.
  * <p>
- * In the Extract-Only and Extract-then-Expand cases, the {@code addIKM} and
+ * In the Extract and Extract-then-Expand cases, the {@code addIKM} and
  * {@code addSalt} methods may be called repeatedly (and chained). This provides
  * for use-cases where a {@code SecretKey} may reside on an HSM and not be
  * exportable. The caller may wish to provide a label (or other components) of
@@ -88,7 +88,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
      * {@code addIKM} and/or {@code addSalt} may be called as needed. Finally,
      * the object is "built" by calling either {@code extractOnly} or
      * {@code thenExpand} for {@code Extract} and {@code ExtractThenExpand}
-     * use-cases respectively.
+     * use-cases respectively. Note that the {@code Builder} is not
+     * thread-safe.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Builder {
@@ -108,7 +109,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         }
 
         /**
-         * Builds an {@code Extract}.
+         * Builds an {@code Extract} from the current state of the
+         * {@code Builder}.
          *
          * @return an immutable {@code Extract}
          */
@@ -140,16 +142,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         /**
          * Adds input key material to the builder.
          * <p>
-         * {@code addIKM} may be called when the input key material value is
-         * to be assembled piece-meal or if part of the IKM is to be supplied by
-         * a hardware crypto device. This method appends to the existing list of
+         * {@code addIKM} may be called when the input key material value is to
+         * be assembled piece-meal or if part of the IKM is to be supplied by a
+         * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
          * <p>
-         * An implementation should concatenate the input key materials into
-         * a single value once all components are available.
+         * An implementation should concatenate the input key materials into a
+         * single value once all components are available.
          *
          * @param ikm
          *     the input key material value
@@ -171,16 +173,16 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
         /**
          * Adds input key material to the builder.
          * <p>
-         * {@code addIKM} may be called when the input key material value is
-         * to be assembled piece-meal or if part of the IKM is to be supplied by
-         * a hardware crypto device. This method appends to the existing list of
+         * {@code addIKM} may be called when the input key material value is to
+         * be assembled piece-meal or if part of the IKM is to be supplied by a
+         * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
          * <p>
-         * An implementation should concatenate the input key materials into
-         * a single value once all components are available.
+         * An implementation should concatenate the input key materials into a
+         * single value once all components are available.
          *
          * @param ikm
          *     the input key material value
@@ -191,7 +193,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     if the {@code ikm} is null
          */
         public Builder addIKM(byte[] ikm) {
-            if(ikm == null) {
+            if (ikm == null) {
                 throw new NullPointerException("ikm must not be null or empty");
             }
             if (ikm.length != 0) {
@@ -212,8 +214,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * This supports the use-case where a label can be applied to the salt
          * but the actual value of the salt is not yet available.
          * <p>
-         * An implementation should concatenate the salt into
-         * a single value once all components are available.
+         * An implementation should concatenate the salt into a single value
+         * once all components are available.
          *
          * @param salt
          *     the salt value
@@ -241,9 +243,9 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          * creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the salt
-         * but the actual value of the salt is not yet available.
-         * An implementation should concatenate the salt into
-         * a single value once all components are available.
+         * but the actual value of the salt is not yet available. An
+         * implementation should concatenate the salt into a single value once
+         * all components are available.
          *
          * @param salt
          *     the salt value
@@ -254,7 +256,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
          *     if the {@code salt} is null
          */
         public Builder addSalt(byte[] salt) {
-            if(salt == null) {
+            if (salt == null) {
                 throw new NullPointerException(
                     "salt must not be null or empty");
             }
@@ -267,7 +269,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Returns a builder for building {@code Extract}-Only and {@code ExtractThenExpand} objects.
+     * Returns a builder for building {@code Extract} and
+     * {@code ExtractThenExpand} objects.
      * <p>
      * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
      * be called next, before calling build methods, such as
@@ -280,18 +283,17 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an {@code Expand}-Only object
+     * Defines the input parameters of an {@code Expand} object
      *
      * @param prk
-     *     the pseudorandom key; must not be {@code null} in the Expand-Only
-     *     case
+     *     the pseudorandom key; must not be {@code null} in the Expand case
      * @param info
      *     the optional context and application specific information (may be
      *     {@code null}); the byte[] is copied to prevent subsequent
      *     modification
      * @param length
-     *     the length of the output key material (must be &gt; 0 and &lt; 255 * HMAC
-     *     length)
+     *     the length of the output key material (must be &gt; 0 and &lt; 255 *
+     *     HMAC length)
      *
      * @return a new {@code Expand} object
      *
@@ -308,7 +310,7 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an Extract-Only operation as defined in <a
+     * Defines the input parameters of an Extract operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
@@ -418,7 +420,8 @@ public interface HKDFParameterSpec extends KDFParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an ExtractThenExpand operation as defined in
+     * Defines the input parameters of an ExtractThenExpand operation as defined
+     * in
      * <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)

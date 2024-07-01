@@ -225,7 +225,7 @@ public final class KDF {
     }
 
     /**
-     * Returns a {code KDF} object that implements the specified algorithm from
+     * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified security provider.
      *
      * @param algorithm
