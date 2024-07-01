@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JCMD" "1" "2025" "JDK 24-ea" "JDK Commands"
+.TH "JCMD" "1" "2024" "JDK 24-internal" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -682,10 +682,10 @@ value)
 .RE
 .TP
 \f[V]JFR.view\f[R] [\f[I]options\f[R]]
-View aggregated event data.
+Display event data in predefined views.
 .RS
 .PP
-Impact: Low
+Impact: Medium
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -698,20 +698,31 @@ displayed.
 .IP \[bu] 2
 \f[V]cell-height\f[R]: (Optional) Maximum number of rows in a table
 cell.
-(INTEGER, default value depends on the view)
+(INT, default value depends on the view)
+.IP \[bu] 2
+\f[V]maxage\f[R]: (Optional) Length of time for the view to span.
+(INT followed by \[aq]s\[aq] for seconds \[aq]m\[aq] for minutes or
+\[aq]h\[aq] for hours, default value is 10m)
+.IP \[bu] 2
+\f[V]maxsize\f[R]: (Optional) Maximum size for the view to span in bytes
+if one of the following suffixes is not used: \[aq]m\[aq] or \[aq]M\[aq]
+for megabytes OR \[aq]g\[aq] or \[aq]G\[aq] for gigabytes.
+(STRING, default value is 32MB)
 .IP \[bu] 2
 \f[V]truncate\f[R]: (Optional) Maximum number of rows in a table cell.
-(INTEGER; default value depends on the view)
+(INT, default value depends on the view)
 .IP \[bu] 2
 \f[V]verbose\f[R]: (Optional) Displays the query that makes up the view.
-(BOOLEAN, false)
-.IP \[bu] 2
-\f[V]view\f[R]: Name of the view or event type to display.
-Use help JFR.view to see a list of available views.
-(STRING, no default value)
+(BOOLEAN, default value is false)
 .IP \[bu] 2
 \f[V]width\f[R]: (Optional) The width of the view in characters.
-(INTEGER, default value depends on the view)
+(INT, default value depends on the view)
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[V]view\f[R]: Name of the view or event type to display.
+Use \f[V]help JFR.view\f[R] to see a list of available views.
+(STRING, no default value)
 .PP
 The view parameter can be an event type name.
 Use \f[V]JFR.view types\f[R] to see a list.
