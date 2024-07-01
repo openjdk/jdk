@@ -2383,10 +2383,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   addi(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // convert !=0 to 1
-  neg(R0, result);
-  orr(result, result, R0);
-  srdi(result, result, 63);
-
+  normalize_bool(result, R0, true);
   const Register linear_result = r_array_index; // reuse
   li(linear_result, 1);
   cmpdi(CCR0, r_array_length, 0);
@@ -2395,9 +2392,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   bind(failure);
 
   // convert !=0 to 1
-  neg(R0, linear_result);
-  orr(linear_result, linear_result, R0);
-  srdi(linear_result, linear_result, 63);
+  normalize_bool(linear_result, R0, true);
 
   cmpd(CCR0, result, linear_result);
   beq(CCR0, passed);

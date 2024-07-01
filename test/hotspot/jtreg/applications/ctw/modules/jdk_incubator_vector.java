@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_SANITIZERS_UB_HPP
-#define SHARE_SANITIZERS_UB_HPP
-
-// ATTRIBUTE_NO_UBSAN
-//
-// Function attribute which informs the compiler to disable UBSan checks in the
-// following function or method.
-// Useful if the function or method is known to do something special or even 'dangerous', for
-// example causing desired signals/crashes.
-#ifdef UNDEFINED_BEHAVIOR_SANITIZER
-#if defined(__clang__) || defined(__GNUC__)
-#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
-#endif
-#endif
-
-#ifndef ATTRIBUTE_NO_UBSAN
-#define ATTRIBUTE_NO_UBSAN
-#endif
-
-#endif // SHARE_SANITIZERS_UB_HPP
+/*
+ * @test
+ * @summary run CTW for all classes from jdk.incubator.vector module
+ *
+ * @library /test/lib / /testlibrary/ctw/src
+ * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.jimage
+ *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.reflect
+ * @modules jdk.incubator.vector
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.incubator.vector
+ */
