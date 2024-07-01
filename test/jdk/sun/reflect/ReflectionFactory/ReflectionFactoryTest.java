@@ -31,6 +31,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.ObjectStreamException;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -743,6 +744,11 @@ public class ReflectionFactoryTest {
         @Serial
         private static final long serialVersionUID = - 1234752876749422678L;
 
+        @Serial
+        private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("value", int.class)
+        };
+
         final int value;
 
         Ser3(final int value) {
@@ -756,6 +762,14 @@ public class ReflectionFactoryTest {
         public int hashCode() {
             return value;
         }
+    }
+
+    // Check our simple accessors
+    @Test
+    static void testAccessors() {
+        Assert.assertEquals(factory.serialVersionUID(Ser3.class), -1234752876749422678L);
+        Assert.assertEquals(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
+        Assert.assertNotSame(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
     }
 
 
