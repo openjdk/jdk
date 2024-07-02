@@ -124,7 +124,7 @@ class HugePageConfiguration {
 
     @Override
     public String toString() {
-        return "Configuration{" +
+        return "HugePageConfiguration{" +
                 "_explicitHugePageConfigurations=" + _explicitHugePageConfigurations +
                 ", _explicitDefaultHugePageSize=" + _explicitDefaultHugePageSize +
                 ", _thpMode=" + _thpMode +
@@ -271,55 +271,52 @@ class HugePageConfiguration {
     public static HugePageConfiguration readFromJVMLog(OutputAnalyzer output) {
         // Expects output from -Xlog:pagesize
         // Example:
-        // [0.001s][info][pagesize] Explicit hugepage support:
-        // [0.001s][info][pagesize]   hugepage size: 2M
-        // [0.001s][info][pagesize]   hugepage size: 1G
-        // [0.001s][info][pagesize]   default hugepage size: 2M
-        // [0.001s][info][pagesize] Transparent hugepage (THP) support:
-        // [0.001s][info][pagesize]   THP mode: madvise
-        // [0.001s][info][pagesize]   THP pagesize: 2M
-        // [0.001s][info][pagesize] Shared memory transparent hugepage (THP) support:
-        // [0.001s][info][pagesize]   Shared memory THP mode: always
+        // [0.001s][info][pagesize] Explicit hugepage support: [2M],1G
+        // [0.001s][info][pagesize] THP support:               madvise-enabled, 2M
+        // [0.001s][info][pagesize] Shared memory THP support: never
+
         TreeSet<ExplicitHugePageConfig> explicitHugePageConfigs = new TreeSet<>();
         long defaultHugepageSize = 0;
         THPMode thpMode = THPMode.never;
         ShmemTHPMode shmemThpMode = ShmemTHPMode.unknown;
         long thpPageSize = 0;
-        Pattern patternHugepageSize = Pattern.compile(".*\\[pagesize] *hugepage size: (\\d+)([KMG])");
-        Pattern patternDefaultHugepageSize = Pattern.compile(".*\\[pagesize] *default hugepage size: (\\d+)([KMG]) *");
-        Pattern patternTHPPageSize = Pattern.compile(".*\\[pagesize] *  THP pagesize: (\\d+)([KMG])");
-        Pattern patternTHPMode = Pattern.compile(".*\\[pagesize] *  THP mode: (\\S+)");
-        Pattern patternShmemTHPMode = Pattern.compile(".*\\[pagesize] *Shared memory THP mode: (\\S+)");
+
+        String regexPageSize = "(\\d+)([KMG])";
+
+        Pattern patternHugepageSupport = Pattern.compile(".*\\[pagesize] Explicit hugepage support: +(\\S+)");
+        Pattern patternHugePageSize = Pattern.compile("\\[*" + regexPageSize + "\\]*");
+        Pattern patternTHPSupport = Pattern.compile(".*\\[pagesize] THP support: +(\\S+)-enabled, " + regexPageSize);
+        Pattern patternShmemSupport = Pattern.compile(".*\\[pagesize] *Shared memory THP support: +(\\S+)");
+
         List<String> lines = output.asLines();
         for (String s : lines) {
-            Matcher mat = patternHugepageSize.matcher(s);
+            Matcher mat = patternHugepageSupport.matcher(s);
             if (mat.matches()) {
-                ExplicitHugePageConfig config = new ExplicitHugePageConfig();
-                config.pageSize = parseSIUnit(mat.group(1), mat.group(2));
-                explicitHugePageConfigs.add(config);
+                List<String> allPageSizesList = Arrays.asList(mat.group(1).split(","));
+                for (String pageSizeString: allPageSizesList) {
+                    ExplicitHugePageConfig config = new ExplicitHugePageConfig();
+                    mat = patternHugePageSize.matcher(pageSizeString);
+                    if (!mat.matches()) {
+                        throw new RuntimeException("Invalid output: " + pageSizeString);
+                    }
+                    config.pageSize = parseSIUnit(mat.group(1), mat.group(2));
+                    explicitHugePageConfigs.add(config);
+                    if (pageSizeString.startsWith("[")) {
+                        defaultHugepageSize = config.pageSize;
+                    }
+                }
                 continue;
             }
-            if (defaultHugepageSize == 0) {
-                mat = patternDefaultHugepageSize.matcher(s);
-                if (mat.matches()) {
-                    defaultHugepageSize = parseSIUnit(mat.group(1), mat.group(2));
-                    continue;
-                }
-            }
-            if (thpPageSize == 0) {
-                mat = patternTHPPageSize.matcher(s);
-                if (mat.matches()) {
-                    thpPageSize = parseSIUnit(mat.group(1), mat.group(2));
-                    continue;
-                }
-            }
-            mat = patternTHPMode.matcher(s);
+            mat = patternTHPSupport.matcher(s);
             if (mat.matches()) {
                 thpMode = THPMode.valueOf(mat.group(1));
+                thpPageSize = parseSIUnit(mat.group(2), mat.group(3));
+                continue;
             }
-            mat = patternShmemTHPMode.matcher(s);
+            mat = patternShmemSupport.matcher(s);
             if (mat.matches()) {
                 shmemThpMode = ShmemTHPMode.valueOf(mat.group(1));
+                break; // last one
             }
         }
 
