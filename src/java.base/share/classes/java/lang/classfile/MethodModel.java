@@ -31,16 +31,14 @@ import java.util.Optional;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedMethodBuilder;
 import jdk.internal.classfile.impl.MethodImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method.  The contents of the method can be traversed via
  * a streaming view (e.g., {@link #elements()}), or via random access (e.g.,
  * {@link #flags()}), or by freely mixing the two.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
         extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {

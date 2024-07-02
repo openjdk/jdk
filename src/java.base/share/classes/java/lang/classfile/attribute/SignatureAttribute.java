@@ -36,7 +36,6 @@ import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Signature} attribute {@jvms 4.7.9}, which
@@ -51,9 +50,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface SignatureAttribute
         extends Attribute<SignatureAttribute>,
                 ClassElement, MethodElement, FieldElement

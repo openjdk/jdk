@@ -32,7 +32,6 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a return-from-method instruction in the {@code code} array of a
@@ -40,9 +39,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ReturnInstruction extends Instruction
         permits AbstractInstruction.UnboundReturnInstruction {
 

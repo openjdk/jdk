@@ -28,9 +28,7 @@
  *
  * The {@code java.lang.classfile.constantpool} package contains interfaces describing classfile constant pool entries.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile.constantpool;
 
-import jdk.internal.javac.PreviewFeature;

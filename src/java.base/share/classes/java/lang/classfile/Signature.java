@@ -31,15 +31,13 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Signature {
 
     /** {@return the raw signature string} */
@@ -70,9 +68,8 @@ public sealed interface Signature {
     /**
      * Models the signature of a primitive type or void
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface BaseTypeSig extends Signature
             permits SignaturesImpl.BaseTypeSigImpl {
 
@@ -107,9 +104,8 @@ public sealed interface Signature {
      * type variable, or array type.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface RefTypeSig
             extends Signature
             permits ArrayTypeSig, ClassTypeSig, TypeVarSig {
@@ -118,9 +114,8 @@ public sealed interface Signature {
     /**
      * Models the signature of a possibly-parameterized class or interface type.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ClassTypeSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.ClassTypeSigImpl {
@@ -186,31 +181,27 @@ public sealed interface Signature {
      * Models the type argument.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeArg {
 
         /**
          * Models an unbounded type argument {@code *}.
-         * @since 23
+         * @since 24
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public sealed interface Unbounded extends TypeArg permits SignaturesImpl.UnboundedTypeArgImpl {
         }
 
         /**
          * Models a type argument with an explicit bound type.
-         * @since 23
+         * @since 24
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public sealed interface Bounded extends TypeArg permits SignaturesImpl.TypeArgImpl {
 
             /**
              * Models a type argument's wildcard indicator.
-             * @since 23
+             * @since 24
              */
-            @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
             public enum WildcardIndicator {
 
                 /**
@@ -242,7 +233,6 @@ public sealed interface Signature {
         /**
          * {@return a bounded type arg}
          * @param boundType the bound
-         * @since 23
          */
         public static TypeArg.Bounded of(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -251,7 +241,6 @@ public sealed interface Signature {
 
         /**
          * {@return an unbounded type arg}
-         * @since 23
          */
         public static TypeArg.Unbounded unbounded() {
             return SignaturesImpl.UnboundedTypeArgImpl.INSTANCE;
@@ -260,7 +249,6 @@ public sealed interface Signature {
         /**
          * {@return an upper-bounded type arg}
          * @param boundType the upper bound
-         * @since 23
          */
         public static TypeArg.Bounded extendsOf(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -270,7 +258,6 @@ public sealed interface Signature {
         /**
          * {@return a lower-bounded type arg}
          * @param boundType the lower bound
-         * @since 23
          */
         public static TypeArg.Bounded superOf(RefTypeSig boundType) {
             requireNonNull(boundType);
@@ -281,7 +268,6 @@ public sealed interface Signature {
          * {@return a bounded type arg}
          * @param wildcard the wild card
          * @param boundType optional bound type
-         * @since 23
          */
         public static TypeArg.Bounded bounded(Bounded.WildcardIndicator wildcard, RefTypeSig boundType) {
             requireNonNull(wildcard);
@@ -293,9 +279,8 @@ public sealed interface Signature {
     /**
      * Models the signature of a type variable.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeVarSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.TypeVarSigImpl {
@@ -315,9 +300,8 @@ public sealed interface Signature {
     /**
      * Models the signature of an array type.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ArrayTypeSig
             extends RefTypeSig
             permits SignaturesImpl.ArrayTypeSigImpl {
@@ -351,9 +335,8 @@ public sealed interface Signature {
     /**
      * Models a signature for a type parameter of a generic class or method.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeParam
             permits SignaturesImpl.TypeParamImpl {
 
@@ -397,9 +380,8 @@ public sealed interface Signature {
      * Models a signature for a throwable type.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ThrowableSig extends Signature {
     }
 }

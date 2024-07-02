@@ -27,7 +27,6 @@ package java.lang.classfile;
 import java.lang.classfile.AttributeMapper.AttributeStability;
 import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Attribute mappers for standard classfile attributes.
@@ -88,9 +87,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see AttributeMapper
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public final class Attributes {
 
     /** AnnotationDefault */
@@ -206,7 +204,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code AnnotationDefault} attribute}
-     * @since 23
      */
     public static AttributeMapper<AnnotationDefaultAttribute> annotationDefault() {
         return AnnotationDefaultMapper.INSTANCE;
@@ -214,7 +211,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code BootstrapMethods} attribute}
-     * @since 23
      */
     public static AttributeMapper<BootstrapMethodsAttribute> bootstrapMethods() {
         return BootstrapMethodsMapper.INSTANCE;
@@ -223,7 +219,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code CharacterRangeTable} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<CharacterRangeTableAttribute> characterRangeTable() {
         return CharacterRangeTableMapper.INSTANCE;
@@ -231,7 +226,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Code} attribute}
-     * @since 23
      */
     public static AttributeMapper<CodeAttribute> code() {
         return CodeMapper.INSTANCE;
@@ -239,7 +233,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code CompilationID} attribute}
-     * @since 23
      */
     public static AttributeMapper<CompilationIDAttribute> compilationId() {
         return CompilationIDMapper.INSTANCE;
@@ -247,7 +240,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ConstantValue} attribute}
-     * @since 23
      */
     public static AttributeMapper<ConstantValueAttribute> constantValue() {
         return ConstantValueMapper.INSTANCE;
@@ -256,7 +248,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code Deprecated} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<DeprecatedAttribute> deprecated() {
         return DeprecatedMapper.INSTANCE;
@@ -264,7 +255,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code EnclosingMethod} attribute}
-     * @since 23
      */
     public static AttributeMapper<EnclosingMethodAttribute> enclosingMethod() {
         return EnclosingMethodMapper.INSTANCE;
@@ -272,7 +262,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Exceptions} attribute}
-     * @since 23
      */
     public static AttributeMapper<ExceptionsAttribute> exceptions() {
         return ExceptionsMapper.INSTANCE;
@@ -280,7 +269,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code InnerClasses} attribute}
-     * @since 23
      */
     public static AttributeMapper<InnerClassesAttribute> innerClasses() {
         return InnerClassesMapper.INSTANCE;
@@ -289,7 +277,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code LineNumberTable} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<LineNumberTableAttribute> lineNumberTable() {
         return LineNumberTableMapper.INSTANCE;
@@ -298,7 +285,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code LocalVariableTable} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<LocalVariableTableAttribute> localVariableTable() {
         return LocalVariableTableMapper.INSTANCE;
@@ -307,7 +293,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code LocalVariableTypeTable} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<LocalVariableTypeTableAttribute> localVariableTypeTable() {
         return LocalVariableTypeTableMapper.INSTANCE;
@@ -315,7 +300,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code MethodParameters} attribute}
-     * @since 23
      */
     public static AttributeMapper<MethodParametersAttribute> methodParameters() {
         return MethodParametersMapper.INSTANCE;
@@ -323,7 +307,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Module} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModuleAttribute> module() {
         return ModuleMapper.INSTANCE;
@@ -331,7 +314,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ModuleHashes} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModuleHashesAttribute> moduleHashes() {
         return ModuleHashesMapper.INSTANCE;
@@ -339,7 +321,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ModuleMainClass} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModuleMainClassAttribute> moduleMainClass() {
         return ModuleMainClassMapper.INSTANCE;
@@ -347,7 +328,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ModulePackages} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModulePackagesAttribute> modulePackages() {
         return ModulePackagesMapper.INSTANCE;
@@ -355,7 +335,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ModuleResolution} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModuleResolutionAttribute> moduleResolution() {
         return ModuleResolutionMapper.INSTANCE;
@@ -363,7 +342,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code ModuleTarget} attribute}
-     * @since 23
      */
     public static AttributeMapper<ModuleTargetAttribute> moduleTarget() {
         return ModuleTargetMapper.INSTANCE;
@@ -371,7 +349,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code NestHost} attribute}
-     * @since 23
      */
     public static AttributeMapper<NestHostAttribute> nestHost() {
         return NestHostMapper.INSTANCE;
@@ -379,7 +356,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code NestMembers} attribute}
-     * @since 23
      */
     public static AttributeMapper<NestMembersAttribute> nestMembers() {
         return NestMembersMapper.INSTANCE;
@@ -387,7 +363,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code PermittedSubclasses} attribute}
-     * @since 23
      */
     public static AttributeMapper<PermittedSubclassesAttribute> permittedSubclasses() {
         return PermittedSubclassesMapper.INSTANCE;
@@ -395,7 +370,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Record} attribute}
-     * @since 23
      */
     public static AttributeMapper<RecordAttribute> record() {
         return RecordMapper.INSTANCE;
@@ -403,7 +377,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeInvisibleAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeInvisibleAnnotationsAttribute> runtimeInvisibleAnnotations() {
         return RuntimeInvisibleAnnotationsMapper.INSTANCE;
@@ -411,7 +384,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute> runtimeInvisibleParameterAnnotations() {
         return RuntimeInvisibleParameterAnnotationsMapper.INSTANCE;
@@ -419,7 +391,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeInvisibleTypeAnnotationsAttribute> runtimeInvisibleTypeAnnotations() {
         return RuntimeInvisibleTypeAnnotationsMapper.INSTANCE;
@@ -427,7 +398,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeVisibleAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeVisibleAnnotationsAttribute> runtimeVisibleAnnotations() {
         return RuntimeVisibleAnnotationsMapper.INSTANCE;
@@ -435,7 +405,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeVisibleParameterAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute> runtimeVisibleParameterAnnotations() {
         return RuntimeVisibleParameterAnnotationsMapper.INSTANCE;
@@ -443,7 +412,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code RuntimeVisibleTypeAnnotations} attribute}
-     * @since 23
      */
     public static AttributeMapper<RuntimeVisibleTypeAnnotationsAttribute> runtimeVisibleTypeAnnotations() {
         return RuntimeVisibleTypeAnnotationsMapper.INSTANCE;
@@ -451,7 +419,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code Signature} attribute}
-     * @since 23
      */
     public static AttributeMapper<SignatureAttribute> signature() {
         return SignatureMapper.INSTANCE;
@@ -459,7 +426,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code SourceDebugExtension} attribute}
-     * @since 23
      */
     public static AttributeMapper<SourceDebugExtensionAttribute> sourceDebugExtension() {
         return SourceDebugExtensionMapper.INSTANCE;
@@ -467,7 +433,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code SourceFile} attribute}
-     * @since 23
      */
     public static AttributeMapper<SourceFileAttribute> sourceFile() {
         return SourceFileMapper.INSTANCE;
@@ -475,7 +440,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code SourceID} attribute}
-     * @since 23
      */
     public static AttributeMapper<SourceIDAttribute> sourceId() {
         return SourceIDMapper.INSTANCE;
@@ -483,7 +447,6 @@ public final class Attributes {
 
     /**
      * {@return Attribute mapper for the {@code StackMapTable} attribute}
-     * @since 23
      */
     public static AttributeMapper<StackMapTableAttribute> stackMapTable() {
         return StackMapTableMapper.INSTANCE;
@@ -492,7 +455,6 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code Synthetic} attribute}
      * The mapper permits multiple instances in a given location.
-     * @since 23
      */
     public static AttributeMapper<SyntheticAttribute> synthetic() {
         return SyntheticMapper.INSTANCE;

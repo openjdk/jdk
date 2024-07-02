@@ -29,7 +29,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code SourceDebugExtension} attribute.
@@ -42,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface SourceDebugExtensionAttribute
         extends Attribute<SourceDebugExtensionAttribute>, ClassElement
         permits BoundAttribute.BoundSourceDebugExtensionAttribute, UnboundAttribute.UnboundSourceDebugExtensionAttribute {

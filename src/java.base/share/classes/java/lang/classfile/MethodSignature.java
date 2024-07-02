@@ -29,14 +29,12 @@ import java.util.List;
 import jdk.internal.classfile.impl.SignaturesImpl;
 import static java.util.Objects.requireNonNull;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodSignature
         permits SignaturesImpl.MethodSignatureImpl {
 

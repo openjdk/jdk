@@ -25,7 +25,6 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.constant.ConstantDesc;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant pool entry that can be used as the constant in a
@@ -33,9 +32,8 @@ import jdk.internal.javac.PreviewFeature;
  * types and {@linkplain String} constants.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantValueEntry extends LoadableConstantEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {
 

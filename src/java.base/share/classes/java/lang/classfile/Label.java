@@ -25,7 +25,6 @@
 package java.lang.classfile;
 
 import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A marker for a position within the instructions of a method body.  The
@@ -40,9 +39,8 @@ import jdk.internal.javac.PreviewFeature;
  * can be bound to the current position within a {@linkplain CodeBuilder} via
  * {@link CodeBuilder#labelBinding(Label)} or {@link CodeBuilder#with(ClassFileElement)}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Label
         permits LabelImpl {
 }

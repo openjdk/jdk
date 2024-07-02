@@ -27,7 +27,6 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A marker interface for elements that can appear when traversing
@@ -38,9 +37,8 @@ import jdk.internal.javac.PreviewFeature;
  * exception metadata, label target metadata, etc.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeElement extends ClassFileElement
         permits Instruction, PseudoInstruction,
                 CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,

@@ -31,7 +31,6 @@ import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a branching instruction (conditional or unconditional) in the {@code
@@ -39,9 +38,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@code kind} of {@link Opcode.Kind#BRANCH}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BranchInstruction extends Instruction
         permits AbstractInstruction.BoundBranchInstruction,
                 AbstractInstruction.UnboundBranchInstruction {

@@ -29,16 +29,14 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A transformation on streams of {@link FieldElement}.
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface FieldTransform
         extends ClassFileTransform<FieldTransform, FieldElement, FieldBuilder> {

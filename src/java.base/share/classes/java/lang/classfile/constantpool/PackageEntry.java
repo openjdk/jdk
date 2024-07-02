@@ -26,16 +26,14 @@ package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import java.lang.constant.PackageDesc;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Package_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.12 The CONSTANT_Package_info Structure
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {
     /**

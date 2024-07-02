@@ -24,15 +24,13 @@
  */
 package java.lang.classfile.constantpool;
 
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Thrown to indicate that requested entry cannot be obtained from the constant
  * pool.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public class ConstantPoolException extends IllegalArgumentException {
 
     @java.io.Serial

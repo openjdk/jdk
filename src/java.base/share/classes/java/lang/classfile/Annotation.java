@@ -34,7 +34,6 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an annotation on a declaration.
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see RuntimeInvisibleParameterAnnotationsAttribute
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Annotation
         extends WritableElement<Annotation>
         permits TypeAnnotation, AnnotationImpl {

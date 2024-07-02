@@ -28,16 +28,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A transformation on streams of {@link CodeElement}.
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface CodeTransform
         extends ClassFileTransform<CodeTransform, CodeElement, CodeBuilder> {

@@ -33,14 +33,12 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single record component in the {@link java.lang.classfile.attribute.RecordAttribute}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RecordComponentInfo
         extends AttributedElement
         permits BoundRecordComponentInfo, UnboundAttribute.UnboundRecordComponentInfo {
