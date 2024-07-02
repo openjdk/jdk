@@ -5481,37 +5481,6 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
   }
 };
 
-// An Event wraps a win32 "CreateEvent" kernel handle.
-//
-// We have a number of choices regarding "CreateEvent" win32 handle leakage:
-//
-// 1:  When a thread dies return the Event to the EventFreeList, clear the ParkHandle
-//     field, and call CloseHandle() on the win32 event handle.  Unpark() would
-//     need to be modified to tolerate finding a null (invalid) win32 event handle.
-//     In addition, an unpark() operation might fetch the handle field, but the
-//     event could recycle between the fetch and the SetEvent() operation.
-//     SetEvent() would either fail because the handle was invalid, or inadvertently work,
-//     as the win32 handle value had been recycled.  In an ideal world calling SetEvent()
-//     on an stale but recycled handle would be harmless, but in practice this might
-//     confuse other non-Sun code, so it's not a viable approach.
-//
-// 2:  Once a win32 event handle is associated with an Event, it remains associated
-//     with the Event.  The event handle is never closed.  This could be construed
-//     as handle leakage, but only up to the maximum # of threads that have been extant
-//     at any one time.  This shouldn't be an issue, as windows platforms typically
-//     permit a process to have hundreds of thousands of open handles.
-//
-// 3:  Same as (1), but periodically, at stop-the-world time, rundown the EventFreeList
-//     and release unused handles.
-//
-// 4:  Add a CRITICAL_SECTION to the Event to protect LD+SetEvent from LD;ST(null);CloseHandle.
-//     It's not clear, however, that we wouldn't be trading one type of leak for another.
-//
-// 5.  Use an RCU-like mechanism (Read-Copy Update).
-//     Or perhaps something similar to Maged Michael's "Hazard pointers".
-//
-// We use (2).
-//
 // TODO-FIXME:
 // 1.  Reconcile Doug's JSR166 j.u.c park-unpark with the objectmonitor implementation.
 // 2.  Consider wrapping the WaitForSingleObject(Ex) calls in SEH try/finally blocks
@@ -5566,11 +5535,8 @@ int PlatformEvent::park(jlong Millis) {
   //    1 =>  0 : pass - return immediately
   //    0 => -1 : block; then set _Event to 0 before returning
 
-  guarantee(_ParkHandle != nullptr , "Invariant");
   guarantee(Millis > 0          , "Invariant");
 
-  // CONSIDER: defer assigning a CreateEvent() handle to the Event until
-  // the initial park() operation.
   // Consider: use atomic decrement instead of CAS-loop
 
   int v;
@@ -5582,25 +5548,17 @@ int PlatformEvent::park(jlong Millis) {
   if (v != 0) return OS_OK;
 
   // Do this the hard way by blocking ...
-  // TODO: consider a brief spin here, gated on the success of recent
-  // spin attempts by this thread.
-  //
   // We decompose long timeouts into series of shorter timed waits.
-  // Evidently large timo values passed in WaitForSingleObject() are problematic on some
-  // versions of Windows.  See EventWait() for details.  This may be superstition.  Or not.
-  // We trust the WAIT_TIMEOUT indication and don't track the elapsed wait time
-  // with os::javaTimeNanos().  Furthermore, we assume that spurious returns from
-  // ::WaitForSingleObject() caused by latent ::setEvent() operations will tend
-  // to happen early in the wait interval.  Specifically, after a spurious wakeup (rv ==
-  // WAIT_OBJECT_0 but _Event is still < 0) we don't bother to recompute Millis to compensate
-  // for the already waited time.  This policy does not admit any new outcomes.
-  // In the future, however, we might want to track the accumulated wait time and
-  // adjust Millis accordingly if we encounter a spurious wakeup.
+  // Evidently timeout values larger than 0xffff0000 were problematic on some
+  // versions of Windows. The below timeout (~3 days) was found to work well.
 
   const int MAXTIMEOUT = 0x10000000;
-  DWORD rv = WAIT_TIMEOUT;
-  while (_Event < 0 && Millis > 0) {
-    DWORD prd = Millis;     // set prd = MAX (Millis, MAXTIMEOUT)
+  jlong waitStart = os::javaTimeNanos();
+  // preserve initial millis for remaining time calculation on spurious wakeup
+  jlong initialMillis = Millis;
+  BOOL rv;
+  while ((v = _Event) < 0 && Millis > 0) {
+    DWORD prd = Millis;     // set prd = MIN (Millis, MAXTIMEOUT)
     if (Millis > MAXTIMEOUT) {
       prd = MAXTIMEOUT;
     }
@@ -5608,11 +5566,16 @@ int PlatformEvent::park(jlong Millis) {
     if (!ForceTimeHighResolution) {
       phri = new HighResolutionInterval(prd);
     }
-    rv = ::WaitForSingleObject(_ParkHandle, prd);
-    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
-    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
-    if (rv == WAIT_TIMEOUT) {
+
+    rv = ::WaitOnAddress(&_Event, &v, sizeof(_Event), prd);
+    if (!rv) {
+      assert(GetLastError() == ERROR_TIMEOUT, "WaitOnAddress failed with error code: %lu", GetLastError());
       Millis -= prd;
+    } else if (_Event < 0) { // spurious wakeup
+      // calculate the time remaining
+      jlong waitEnd = os::javaTimeNanos();
+      jlong millisPassed = (waitEnd - waitStart) / 1000000;
+      Millis = initialMillis - millisPassed;
     }
     delete phri; // if it is null, harmless
   }
@@ -5632,7 +5595,6 @@ void PlatformEvent::park() {
   //    1 =>  0 : pass - return immediately
   //    0 => -1 : block; then set _Event to 0 before returning
 
-  guarantee(_ParkHandle != nullptr, "Invariant");
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // Consider: use atomic decrement instead of CAS-loop
@@ -5643,14 +5605,12 @@ void PlatformEvent::park() {
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;
+  v = -1;
 
   // Do this the hard way by blocking ...
-  // TODO: consider a brief spin here, gated on the success of recent
-  // spin attempts by this thread.
   while (_Event < 0) {
-    DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
-    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
-    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
+    BOOL rv = ::WaitOnAddress(&_Event, &v, sizeof(_Event), INFINITE);
+    assert(rv, "WaitOnAddress failed with error code: %lu", GetLastError());
   }
 
   // Usually we'll find _Event == 0 at this point, but as
@@ -5662,7 +5622,6 @@ void PlatformEvent::park() {
 }
 
 void PlatformEvent::unpark() {
-  guarantee(_ParkHandle != nullptr, "Invariant");
 
   // Transitions for _Event:
   //    0 => 1 : just return
@@ -5679,8 +5638,7 @@ void PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without condition variables.
 
   if (Atomic::xchg(&_Event, 1) >= 0) return;
-
-  ::SetEvent(_ParkHandle);
+  ::WakeByAddressSingle((PVOID)&_Event);
 }
 
 
