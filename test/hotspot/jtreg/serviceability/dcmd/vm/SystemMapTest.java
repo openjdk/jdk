@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,19 +45,17 @@ import java.util.regex.Pattern;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run testng SystemMapTest
  */
-public class SystemMapTest {
+public class SystemMapTest extends SystemMapTestBase {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("System.map");
-        output.reportDiagnosticSummary();
         boolean NMTOff = output.contains("NMT is disabled");
-
-        String regexBase = ".*0x\\p{XDigit}+ - 0x\\p{XDigit}+ +\\d+";
-        output.shouldMatch(regexBase + ".*jvm.*");
+        for (String s: shouldMatchUnconditionally) {
+            output.shouldMatch(s);
+        }
         if (!NMTOff) { // expect VM annotations if NMT is on
-            output.shouldMatch(regexBase + ".*JAVAHEAP.*");
-            output.shouldMatch(regexBase + ".*META.*");
-            output.shouldMatch(regexBase + ".*CODE.*");
-            output.shouldMatch(regexBase + ".*STACK.*main.*");
+            for (String s: shouldMatchIfNMTIsEnabled) {
+                output.shouldMatch(s);
+            }
         }
     }
 
