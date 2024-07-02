@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@ public class Reflection {
     public static final Set<String> ALL_MEMBERS = Set.of(WILDCARD);
 
     static {
+        // Classes in this list should be already loaded before Reflection.class
+        // is initialized to reduce class-loading dependencies
+        // Classes that is only loaded before main but not initialized such as
+        // ConstantPool need special care; cannot registerXxxToFilter in
+        // their static initializer
         fieldFilterMap = Map.of(
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
@@ -62,7 +67,9 @@ public class Reflection {
             Field.class, ALL_MEMBERS,
             Method.class, ALL_MEMBERS,
             Module.class, ALL_MEMBERS,
-            System.class, Set.of("security")
+            System.class, Set.of("security"),
+            // loaded in early bootstrap but not initialized; no new dependencies
+            ConstantPool.class, Set.of("constantPoolOop")
         );
         methodFilterMap = Map.of();
     }
@@ -275,6 +282,7 @@ public class Reflection {
         return false;
     }
 
+    // Caller class must be initialized before main
     // fieldNames must contain only interned Strings
     public static synchronized void registerFieldsToFilter(Class<?> containingClass,
                                                            Set<String> fieldNames) {
@@ -282,6 +290,7 @@ public class Reflection {
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
+    // Caller class must be initialized before main
     // methodNames must contain only interned Strings
     public static synchronized void registerMethodsToFilter(Class<?> containingClass,
                                                             Set<String> methodNames) {
@@ -302,18 +311,12 @@ public class Reflection {
     }
 
     public static Field[] filterFields(Class<?> containingClass, Field[] fields) {
-        if (fieldFilterMap == null) {
-            // Bootstrapping
-            return fields;
-        }
+        // fail fast if map is null, result is cached by callers
         return (Field[])filter(fields, fieldFilterMap.get(containingClass));
     }
 
     public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
-        if (methodFilterMap == null) {
-            // Bootstrapping
-            return methods;
-        }
+        // fail fast if map is null, result is cached by callers
         return (Method[])filter(methods, methodFilterMap.get(containingClass));
     }
 

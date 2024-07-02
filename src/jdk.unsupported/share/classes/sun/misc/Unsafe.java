@@ -70,10 +70,6 @@ import jdk.internal.reflect.Reflection;
 
 public final class Unsafe {
 
-    static {
-        Reflection.registerMethodsToFilter(Unsafe.class, Set.of("getUnsafe"));
-    }
-
     private Unsafe() {}
 
     private static final Unsafe theUnsafe = new Unsafe();
