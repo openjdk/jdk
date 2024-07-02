@@ -2045,7 +2045,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (alock->box_node()->as_BoxLock()->is_unbalanced()) {
+  if (!alock->is_balanced()) {
     return; // Can't do any more elimination for this locking region
   }
   if (EliminateNestedLocks) {

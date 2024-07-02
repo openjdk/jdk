@@ -101,7 +101,8 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 // is an IfTrue projection. This code is also used to clone predicates to cloned loops.
 IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                         Node* new_entry, const Deoptimization::DeoptReason reason,
-                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs) {
+                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs
+                                                        NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type)) {
   assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   ParsePredicateNode* parse_predicate = parse_predicate_success_proj->in(0)->as_ParsePredicate();
   ParsePredicateUncommonProj* uncommon_proj = parse_predicate->uncommon_proj();
@@ -143,10 +144,12 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
   IfNode* new_iff = nullptr;
   switch (opcode) {
     case Op_If:
-      new_iff = new IfNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt);
+      new_iff = new IfNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt
+                           NOT_PRODUCT(COMMA assertion_predicate_type));
       break;
     case Op_RangeCheck:
-      new_iff = new RangeCheckNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt);
+      new_iff = new RangeCheckNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt
+                                   NOT_PRODUCT(COMMA assertion_predicate_type));
       break;
     case Op_ParsePredicate:
       new_iff = new ParsePredicateNode(entry, reason, &_igvn);
@@ -1320,7 +1323,8 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
-  IfTrueNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
+  IfTrueNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
+                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(opaque_init->outcnt() > 0, "should be used");
 
@@ -1345,7 +1349,8 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
-  new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
+  new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
+                                         false NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
   assert(assertion_predicate_has_loop_opaque_node(new_proj->in(0)->as_If()), "unexpected");
