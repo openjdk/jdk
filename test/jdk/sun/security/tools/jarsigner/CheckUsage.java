@@ -79,9 +79,14 @@ public class CheckUsage {
 
         // Test 2: Verify should be OK
 
-        SecurityTools.jarsigner("-keystore trust.jks -storepass changeit "
+        // Verify with own keystore is perfect.
+        SecurityTools.jarsigner("-keystore js.jks -storepass changeit "
                 + "-strict -verify a.jar")
                 .shouldHaveExitValue(0);
+        // Verify with only CA keystore is also mostly OK
+        SecurityTools.jarsigner("-keystore trust.jks -storepass changeit "
+                        + "-strict -verify a.jar")
+                .shouldHaveExitValue(32); //aliasNotInStore(32)
 
         // Test 3: When no keystore is specified, the error is only
         // "chain invalid"
