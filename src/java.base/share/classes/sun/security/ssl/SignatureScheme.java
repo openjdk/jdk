@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.security.*;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
@@ -630,4 +631,35 @@ enum SignatureScheme {
 
         return null;
     }
+
+    /*
+     * This method is used to check if the provided key is compatible with at least
+     * one of the specified signature algorithms.
+     */
+    static boolean isSignerCompatible(Key key, String[] sigAlgorithms) {
+        if (!(key instanceof ECPublicKey)) {
+            return true;
+        }
+
+        ECParameterSpec params = ((ECPublicKey) key).getParams();
+        NamedGroup keyNamedGroup = NamedGroup.valueOf(params);
+        if (keyNamedGroup == null) {
+            return false;
+        }
+
+        for (String algorithm : sigAlgorithms) {
+            for (SignatureScheme scheme : SignatureScheme.values()) {
+                if (algorithm.equalsIgnoreCase(scheme.algorithm)) {
+                    if (scheme.namedGroup != null) {
+                        if (scheme.namedGroup.name.equalsIgnoreCase(keyNamedGroup.name)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 }
