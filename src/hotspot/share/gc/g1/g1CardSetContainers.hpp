@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,22 @@ class G1CardSetInlinePtr : public StackObj {
 
   uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
-public:
-  G1CardSetInlinePtr() : _value_addr(nullptr), _value((ContainerPtr)G1CardSet::ContainerInlinePtr) { }
-
-  G1CardSetInlinePtr(ContainerPtr value) : _value_addr(nullptr), _value(value) {
-    assert(G1CardSet::container_type(_value) == G1CardSet::ContainerInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInlinePtr.", p2i(_value));
+  static ContainerPtr empty_card_set() {
+    // Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114573
+    // gcc issues -Wzero-as-null-pointer-constant here, even though
+    // ContainerInlinePtr is a *non-literal* constant 0.  We cast a non-const
+    // copy, and let the compiler's constant propagation optimize into
+    // equivalent code.
+    static_assert(G1CardSet::ContainerInlinePtr == 0, "unnecessary warning dodge");
+    auto value = G1CardSet::ContainerInlinePtr;
+    return reinterpret_cast<ContainerPtr>(value);
   }
+
+public:
+  G1CardSetInlinePtr() : G1CardSetInlinePtr(empty_card_set()) {}
+
+  explicit G1CardSetInlinePtr(ContainerPtr value) :
+    G1CardSetInlinePtr(nullptr, value) {}
 
   G1CardSetInlinePtr(ContainerPtr volatile* value_addr, ContainerPtr value) : _value_addr(value_addr), _value(value) {
     assert(G1CardSet::container_type(_value) == G1CardSet::ContainerInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInlinePtr.", p2i(_value));
