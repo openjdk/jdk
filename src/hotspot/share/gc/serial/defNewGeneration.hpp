@@ -119,18 +119,6 @@ class DefNewGeneration: public Generation {
   size_t               _max_eden_size;
   size_t               _max_survivor_size;
 
-  // Allocation support
-  bool _should_allocate_from_space;
-  bool should_allocate_from_space() const {
-    return _should_allocate_from_space;
-  }
-  void clear_should_allocate_from_space() {
-    _should_allocate_from_space = false;
-  }
-  void set_should_allocate_from_space() {
-    _should_allocate_from_space = true;
-  }
-
   // Tenuring
   void adjust_desired_tenuring_threshold();
 
