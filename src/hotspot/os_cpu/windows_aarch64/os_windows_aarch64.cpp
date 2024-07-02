@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // this at the end, and hope for the best.
   address pc = (address)uc->Pc;
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char), /* print_ascii=*/false);
   st->cr();
 }
 
