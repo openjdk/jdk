@@ -64,6 +64,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   void add(HeapWord* object, size_t size, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread);
   void scavenge();
   void remove_dead(ObjectSample* sample);
+  void push_span(ObjectSample* sample, size_t span);
 
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);
