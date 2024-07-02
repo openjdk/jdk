@@ -35,9 +35,9 @@ public final class ArenaImpl implements Arena {
 
     private final MemorySessionImpl session;
     private final boolean shouldReserveMemory;
-    ArenaImpl(MemorySessionImpl session) {
+    ArenaImpl(MemorySessionImpl session, boolean shouldReserveMemory) {
         this.session = session;
-        shouldReserveMemory = session instanceof ImplicitSession;
+        this.shouldReserveMemory = shouldReserveMemory;
     }
 
     @Override
