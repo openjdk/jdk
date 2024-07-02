@@ -91,7 +91,7 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
      * @param expect the expected outcome
      * @param exitCodeValidator an exit code validator. The first parameter will
      *                          be the actual exit code, the second test name,
-     *                          should throw TaskError is the exit code is not
+     *                          should throw TaskError if the exit code is not
      *                          as expected. Only used if the expected outcome
      *                          is {@code FAIL}
      * @return the result of calling {@code run()}
@@ -128,7 +128,7 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
      * @param expect the expected outcome
      * @param exitCodeValidator an exit code validator. The first parameter will
      *                          be the actual exit code, the second test name,
-     *                          should throw TaskError is the exit code is not
+     *                          should throw TaskError if the exit code is not
      *                          as expected. Only used if the expected outcome
      *                          is {@code FAIL}
      */
