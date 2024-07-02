@@ -947,9 +947,10 @@ private:
                                               LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
-  Node* clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
-                                                 Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
-                                                 Node* input_proj);
+  Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
+                                           IdealLoopTree* outer_loop, Node* input_proj);
+  IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
+                                                     Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);

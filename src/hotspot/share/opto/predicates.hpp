@@ -29,6 +29,8 @@
 #include "opto/connode.hpp"
 #include "opto/opaquenode.hpp"
 
+class IdealLoopTree;
+
 /*
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
  *
@@ -198,8 +200,8 @@
 // value of a range check in the last iteration of a loop.
 enum class AssertionPredicateType {
   None, // Not an Assertion Predicate
-  Init_value,
-  Last_value
+  InitValue,
+  LastValue
 };
 #endif // NOT PRODUCT
 
@@ -318,7 +320,7 @@ class TemplateAssertionPredicateExpression : public StackObj {
   Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
 };
 
-// Class to represent a node being part of a Template Assertion Predicate Expression.
+// Class to represent a node being part of a Template Assertion Predicate Expression. Note that this is not an IR node.
 //
 // The expression itself can belong to no, one, or two Template Assertion Predicates:
 // - None: This node is already dead (i.e. we replaced the Bool condition of the Template Assertion Predicate).
@@ -391,6 +393,30 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
     assert(template_counter <= 1 || _node->is_OpaqueLoopInit(), "only OpaqueLoopInit nodes can be part of two templates");
   }
 };
+
+// This class creates a new Initialized Assertion Predicate.
+class InitializedAssertionPredicate : public StackObj {
+  IfNode* const _template_assertion_predicate;
+  NOT_PRODUCT(const AssertionPredicateType _assertion_predicate_type;)
+  Node* const _new_init;
+  Node* const _new_stride;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  InitializedAssertionPredicate(IfNode* template_assertion_predicate, Node* new_init, Node* new_stride,
+                                PhaseIdealLoop* phase);
+  NONCOPYABLE(InitializedAssertionPredicate);
+
+  IfTrueNode* create(Node* control);
+
+ private:
+  OpaqueInitializedAssertionPredicateNode* create_new_bool(Node* control);
+  IfNode* create_if_node(Node* control, OpaqueInitializedAssertionPredicateNode* new_opaque_bool, IdealLoopTree* loop);
+  void create_halt_path(IfNode* if_node, IdealLoopTree* loop);
+  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop);
+  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
+};
+
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
 // or a Loop Limit Check Predicate Block). It contains zero or more Regular Predicates followed by a Parse Predicate
