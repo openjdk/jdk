@@ -55,7 +55,7 @@ public class TestRecursiveMonitorChurn {
     public static volatile Monitor monitor;
     public static void main(String[] args) {
         if (WB.getIntVMFlag("LockingMode") == LM_MONITOR) {
-            throw new SkippedException("LM_MONITOR always infaltes. Invalid test.");
+            throw new SkippedException("LM_MONITOR always inflates. Invalid test.");
         }
         final long pre_monitor_count = WB.getInUseMonitorCount();
         System.out.println(" Precount = " + pre_monitor_count);
