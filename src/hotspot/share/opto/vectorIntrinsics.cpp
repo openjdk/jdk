@@ -2484,12 +2484,10 @@ bool LibraryCallKit::inline_vector_insert() {
   // Convert insert value back to its appropriate type.
   switch (elem_bt) {
     case T_BYTE:
-      insert_val = gvn().transform(new ConvL2INode(insert_val));
-      insert_val = gvn().transform(new CastIINode(insert_val, TypeInt::BYTE));
+      insert_val = gvn().transform(new ConvL2INode(insert_val, TypeInt::BYTE));
       break;
     case T_SHORT:
-      insert_val = gvn().transform(new ConvL2INode(insert_val));
-      insert_val = gvn().transform(new CastIINode(insert_val, TypeInt::SHORT));
+      insert_val = gvn().transform(new ConvL2INode(insert_val, TypeInt::SHORT));
       break;
     case T_INT:
       insert_val = gvn().transform(new ConvL2INode(insert_val));
