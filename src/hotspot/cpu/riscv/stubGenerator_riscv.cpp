@@ -5220,10 +5220,10 @@ class StubGenerator: public StubCodeGenerator {
     __ la(codec, ExternalAddress((address) toBase64URL));
     __ BIND(ProcessData);
 
-    Label ProcessScalar, ProcessM2, ProcessM1;
-
     // vector version
     if (UseRVV) {
+      Label ProcessM2, ProcessM1, ProcessScalar;
+
       Register tmp1 = x28; // t3
       Register tmp2 = x29; // t4
       Register limitM1 = x30; // t5
@@ -5253,10 +5253,10 @@ class StubGenerator: public StubCodeGenerator {
                     v8, v9, v10, v11,   // outputs
                     Assembler::m1);
       __ sub(length, length, limitM1);
+      __ BIND(ProcessScalar);
     }
 
     // scalar version
-    __ BIND(ProcessScalar);
     {
       Register byte1 = soff, byte0 = send, byte2 = doff;
       Register combined24Bits = x28;
