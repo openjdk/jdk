@@ -346,6 +346,19 @@ public abstract class DateFormat extends Format {
             throw new IllegalArgumentException("Cannot format given Object as a Date");
     }
 
+    @Override
+    final StringBuf format(Object obj, StringBuf toAppendTo,
+                           FieldPosition fieldPosition) {
+        if (obj instanceof Date) {
+            return format((Date) obj, toAppendTo, fieldPosition);
+        } else if (obj instanceof Number) {
+            return format(new Date(((Number) obj).longValue()),
+                    toAppendTo, fieldPosition);
+        } else {
+            throw new IllegalArgumentException("Cannot format given Object as a Date");
+        }
+    }
+
     /**
      * Formats a {@link Date} into a date-time string. The formatted
      * string is appended to the given {@code StringBuffer}.
@@ -371,6 +384,11 @@ public abstract class DateFormat extends Format {
     public abstract StringBuffer format(Date date, StringBuffer toAppendTo,
                                         FieldPosition fieldPosition);
 
+    StringBuf format(Date date, StringBuf toAppendTo,
+                     FieldPosition fieldPosition) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Formats a {@link Date} into a date-time string.
      *
@@ -379,8 +397,14 @@ public abstract class DateFormat extends Format {
      */
     public final String format(Date date)
     {
-        return format(date, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if ("java.text".equals(getClass().getPackageName())
+                    && "java.text".equals(numberFormat.getClass().getPackageName())) {
+            return format(date, StringBufFactory.of(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(date, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /**

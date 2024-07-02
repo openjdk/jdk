@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,7 @@ public class FieldPosition {
         private boolean encounteredField;
 
         public void formatted(Format.Field attr, Object value, int start,
-                              int end, StringBuffer buffer) {
+                              int end, Format.StringBuf buffer) {
             if (!encounteredField && matchesField(attr)) {
                 setBeginIndex(start);
                 setEndIndex(end);
@@ -299,7 +299,7 @@ public class FieldPosition {
         }
 
         public void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, StringBuffer buffer) {
+                              int start, int end, Format.StringBuf buffer) {
             if (!encounteredField && matchesField(attr, fieldID)) {
                 setBeginIndex(start);
                 setEndIndex(end);
