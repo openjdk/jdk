@@ -40,20 +40,20 @@ public class AuthenticatorTest {
     @Test
     public void testFailure() {
         var failureResult = new Authenticator.Failure(666);
-        assertEquals(failureResult.getResponseCode(), 666);
+        assertEquals(666, failureResult.getResponseCode(), );
     }
 
     @Test
     public void testRetry() {
         var retryResult = new Authenticator.Retry(333);
-        assertEquals(retryResult.getResponseCode(), 333);
+        assertEquals(333, retryResult.getResponseCode());
     }
 
     @Test
     public void testSuccess() {
         var principal = new HttpPrincipal("test", "123");
         var successResult = new Authenticator.Success(principal);
-        assertEquals(successResult.getPrincipal(), principal);
+        assertEquals(principal, successResult.getPrincipal());
         assertEquals("test", principal.getUsername());
         assertEquals("123", principal.getRealm());
     }
