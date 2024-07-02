@@ -1290,3 +1290,14 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }
+
+long pos_ctr, neg_ctr, neg_fast_ctr, neg_slow_ctr;
+
+static void print_counters(void) {
+  fprintf(stderr, "\npos: %ld, neg: %ld, neg_fast: %ld, neg_slow: %ld\n", pos_ctr, neg_ctr, neg_fast_ctr, neg_slow_ctr);
+}
+
+static void xxxx(void) __attribute__((constructor));
+static void xxxx(void) {
+  atexit(print_counters);
+}

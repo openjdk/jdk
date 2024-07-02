@@ -4651,12 +4651,12 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
 
 void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
-                                                     Register super_klass,
-                                                     Register temp_reg,
-                                                     Register temp2_reg,
-                                                     Label* L_success,
-                                                     Label* L_failure,
-                                                     bool set_cond_codes) {
+                                                          Register super_klass,
+                                                          Register temp_reg,
+                                                          Register temp2_reg,
+                                                          Label* L_success,
+                                                          Label* L_failure,
+                                                          bool set_cond_codes) {
   assert_different_registers(sub_klass, super_klass, temp_reg);
   if (temp2_reg != noreg)
     assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg);

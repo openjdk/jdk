@@ -127,6 +127,7 @@ public:
 
   // Returns reference to the one global chunk header pool.
   static ChunkHeaderPool* pool() { return _chunkHeaderPool; }
+
 };
 
 } // namespace metaspace

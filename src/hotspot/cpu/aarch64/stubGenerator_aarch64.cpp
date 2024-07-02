@@ -1847,7 +1847,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // int Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj)
-
   address generate_isInstance() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "isInstance");
@@ -1869,7 +1868,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_klass(obj_klass, obj);
     __ ldr(super_klass, Address(a_java_lang_Class, java_lang_Class::klass_offset()));
-    // int sco_offset = in_bytes(Klass::super_check_offset_offset());
+
     // __ ldrw(rscratch1, super_klass, sco_offset);
     // __ ldrw(sco, obj_klass, sco_offset);
     // __ cmp(rscratch1, sco);
@@ -1880,9 +1879,9 @@ class StubGenerator: public StubCodeGenerator {
       __ check_klass_subtype_fast_path(obj_klass, super_klass, c_rarg5,        &L_success, &L_failure, nullptr);
 
       // __ check_klass_subtype_slow_path(obj_klass, super_klass, c_rarg5, c_rarg6, &L_success, nullptr);
-      __ check_klass_subtype_slow_path_2(obj_klass, super_klass,
-                                         c_rarg5, c_rarg6, c_rarg7, r10, v0,
-                                         &L_success, &L_failure);
+      __ check_klass_subtype_slow_path_table(obj_klass, super_klass,
+                                             c_rarg5, c_rarg6, c_rarg7, r10, v0,
+                                             &L_success, &L_failure);
     }
 
     __ bind(L_failure);
@@ -2062,14 +2061,8 @@ class StubGenerator: public StubCodeGenerator {
     // Emit GC store barriers for the oops we have copied and report
     // their number to the caller.
 
-    __ push(RegSet::of(r0, r1), sp);
-    __ mov(r0, 1);
-    __ mov(r1, count);
-    __ rt_call(CAST_FROM_FN_PTR(address, poolz));
-    __ pop(RegSet::of(r0, r1), sp);
-
     __ subs(count, count_save, count);     // K = partially copied oop count
-    __ eon(count, count, zr);                   // report (-1^K) to caller
+    __ eon(count, count, zr);              // report (-1^K) to caller
     __ br(Assembler::EQ, L_done_pop);
 
     __ BIND(L_do_card_marks);

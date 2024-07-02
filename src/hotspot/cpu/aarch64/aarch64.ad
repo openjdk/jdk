@@ -3595,6 +3595,23 @@ encode %{
     __ br ((Assembler::Condition)$cmp$$cmpcode, *L);
   %}
 
+  enc_class aarch64_enc_partial_subtype_check(iRegP sub, iRegP super, iRegP temp, iRegP result)
+  %{
+     Register sub_reg = as_Register($sub$$reg);
+     Register super_reg = as_Register($super$$reg);
+     Register temp_reg = as_Register($temp$$reg);
+     Register result_reg = as_Register($result$$reg);
+
+     Label miss;
+     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
+                                     nullptr, &miss,
+                                     /*set_cond_codes:*/ true);
+     if ($primary) {
+       __ mov(result_reg, zr);
+     }
+     __ bind(miss);
+  %}
+
   enc_class aarch64_enc_java_static_call(method meth) %{
     address addr = (address)$meth$$method;
     address call;
@@ -16210,6 +16227,13 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
 
   ins_pipe(pipe_class_memory);
 %}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
 
 instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, iRegP_R5 result,
                                  iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,

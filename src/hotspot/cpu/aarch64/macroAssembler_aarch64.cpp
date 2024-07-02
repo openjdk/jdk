@@ -1803,10 +1803,6 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   return true;
 }
 
-void poo () {
-}
-
-
 void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
@@ -1826,9 +1822,6 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
     slot          = rscratch1,
     r_bitmap      = rscratch2;
 
-  // lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &poo)));
-  // blr(rscratch1);
-
   ldrb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
 
   // Make sure that result is nonzero if the test below misses.
@@ -1840,19 +1833,14 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
 
+  // This next instruction is equivalent to:
   // mov(r_array_index, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   // sub(slot, r_array_index, slot);
   eor(slot, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   lslv(temp2, r_bitmap, slot);
   tbz(temp2, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1, L_fallthrough);
 
-  /* push(RegSet::of(r0, r1), sp); */
-  /* mov(r0, 1); */
-  /* mov(r1, 2); */
-  /* rt_call(CAST_FROM_FN_PTR(address, queef)); */
-  /* pop(RegSet::of(r0, r1), sp); */
-
-  bool must_save_v0 = vtemp == fnoreg;
+  bool must_save_v0 = (vtemp == fnoreg);
   if (must_save_v0) {
     // temp1 and result are free, so use them to preserve vtemp
     vtemp = v0;
