@@ -80,8 +80,6 @@ class aarch64 {
   static address _count_positives;
   static address _count_positives_long;
 
-  static address _is_instance_of;
-
   static address get_previous_sp_entry()
   {
     return _get_previous_sp_entry;
