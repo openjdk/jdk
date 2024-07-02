@@ -2455,6 +2455,11 @@ WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
   return -1; // Not used/implemented on other platforms
 WB_END
 
+// Available memory of the host machine (container-aware)
+WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
+  return os::available_memory();
+WB_END
+
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
                                     jobject o,
                                     jstring proc_cgroups,
@@ -2920,6 +2925,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_ValidateCgroup },
   {CC"hostPhysicalMemory",        CC"()J",            (void*)&WB_HostPhysicalMemory },
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
+  {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
