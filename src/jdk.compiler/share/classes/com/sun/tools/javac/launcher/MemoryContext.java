@@ -204,11 +204,15 @@ final class MemoryContext {
         var parentLayer = bootLayer;
         var parentLoader = parent;
 
-        // Optionally create module layer for all modules on the module path.
+        // Optionally create module layer with all missing modules from the module path.
         var modulePathFinder = createModuleFinderFromModulePath();
-        var modulePathModules = modulePathFinder.findAll().stream().map(ModuleReference::descriptor).map(ModuleDescriptor::name).toList();
+        var modulePathModules = modulePathFinder.findAll().stream()
+                .map(ModuleReference::descriptor)
+                .map(ModuleDescriptor::name)
+                .filter(name -> bootLayer.findModule(name).isEmpty())
+                .toList();
         if (!modulePathModules.isEmpty()) {
-            var modulePathConfiguration = bootLayer.configuration().resolveAndBind(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
+            var modulePathConfiguration = bootLayer.configuration().resolve(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
             var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
             parentLayer = modulePathLayer;
             parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
