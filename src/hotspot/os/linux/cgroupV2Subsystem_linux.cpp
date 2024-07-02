@@ -97,8 +97,8 @@ int CgroupV2CpuController::cpu_quota() {
 
 bool CgroupV2Subsystem::is_containerized() {
   return _unified.is_read_only() &&
-	 _memory->controller()->is_read_only() &&
-	 _cpu->controller()->is_read_only();
+         _memory->controller()->is_read_only() &&
+         _cpu->controller()->is_read_only();
 }
 
 char* CgroupV2Subsystem::cpu_cpuset_cpus() {
