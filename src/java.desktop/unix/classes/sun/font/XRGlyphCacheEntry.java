@@ -69,28 +69,25 @@ public class XRGlyphCacheEntry {
     }
 
     public static int getGlyphID(long glyphInfoPtr) {
-        // We need to access the GlyphID with Unsafe.getAddress() because the
+        // We need to access the GlyphID as a long because the
         // corresponding field in the underlying C data-structure is of type
         // 'void*' (see field 'cellInfo' of struct 'GlyphInfo'
         // in src/share/native/sun/font/fontscalerdefs.h).
         // On 64-bit Big-endian architectures it would be wrong to access this
-        // field with Unsafe.getInt().
-        return (int) StrikeCache.unsafe.getAddress(glyphInfoPtr +
-                                                   StrikeCache.cacheCellOffset);
+        // field as an int.
+        return (int)StrikeCache.getGlyphCellInfo(glyphInfoPtr);
     }
 
     public static void setGlyphID(long glyphInfoPtr, int id) {
-        // We need to access the GlyphID with Unsafe.putAddress() because the
+        // We need to access the GlyphID as a long because the
         // corresponding field in the underlying C data-structure is of type
-        // 'void*' (see field 'cellInfo' of struct 'GlyphInfo' in
-        // src/share/native/sun/font/fontscalerdefs.h).
-        // On 64-bit Big-endian architectures it would be wrong to write this
-        // field with Unsafe.putInt() because it is also accessed from native
-        // code as a 'long'.
+        // 'void*' (see field 'cellInfo' of struct 'GlyphInfo'
+        // in src/share/native/sun/font/fontscalerdefs.h).
+        // On 64-bit Big-endian architectures it would be wrong to access this
+        // field as an int
         // See Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative()
-        // in src/solaris/native/sun/java2d/x11/XRBackendNative.c
-        StrikeCache.unsafe.putAddress(glyphInfoPtr +
-                                      StrikeCache.cacheCellOffset, (long)id);
+        // in src/unix/native/sun/java2d/x11/XRBackendNative.c
+        StrikeCache.setGlyphCellInfo(glyphInfoPtr, (long)id);
     }
 
     public int getGlyphID() {
@@ -102,29 +99,27 @@ public class XRGlyphCacheEntry {
     }
 
     public float getXAdvance() {
-        return StrikeCache.unsafe.getFloat(glyphInfoPtr + StrikeCache.xAdvanceOffset);
+        return StrikeCache.getGlyphXAdvance(glyphInfoPtr);
     }
 
     public float getYAdvance() {
-        return StrikeCache.unsafe.getFloat(glyphInfoPtr + StrikeCache.yAdvanceOffset);
+        return StrikeCache.getGlyphYAdvance(glyphInfoPtr);
     }
 
     public int getSourceRowBytes() {
-        return StrikeCache.unsafe.getShort(glyphInfoPtr + StrikeCache.rowBytesOffset);
+        return StrikeCache.getGlyphRowBytes(glyphInfoPtr);
     }
 
     public int getWidth() {
-        return StrikeCache.unsafe.getShort(glyphInfoPtr + StrikeCache.widthOffset);
+        return StrikeCache.getGlyphWidth(glyphInfoPtr);
     }
 
     public int getHeight() {
-        return StrikeCache.unsafe.getShort(glyphInfoPtr + StrikeCache.heightOffset);
+        return StrikeCache.getGlyphHeight(glyphInfoPtr);
     }
 
     public void writePixelData(ByteArrayOutputStream os, boolean uploadAsLCD) {
-        long pixelDataAddress =
-            StrikeCache.unsafe.getAddress(glyphInfoPtr +
-                                          StrikeCache.pixelDataOffset);
+        long pixelDataAddress = StrikeCache.getGlyphImagePtr(glyphInfoPtr);
         if (pixelDataAddress == 0L) {
             return;
         }
@@ -134,11 +129,12 @@ public class XRGlyphCacheEntry {
         int rowBytes = getSourceRowBytes();
         int paddedWidth = getPaddedWidth(uploadAsLCD);
 
+        byte[] pixelBytes = StrikeCache.getGlyphPixelBytes(glyphInfoPtr);
         if (!uploadAsLCD) {
             for (int line = 0; line < height; line++) {
                 for(int x = 0; x < paddedWidth; x++) {
                     if(x < width) {
-                        os.write(StrikeCache.unsafe.getByte(pixelDataAddress + (line * rowBytes + x)));
+                        os.write(pixelBytes[(line * rowBytes + x)]);
                     }else {
                          /*pad to multiple of 4 bytes per line*/
                          os.write(0);
@@ -151,12 +147,9 @@ public class XRGlyphCacheEntry {
                 int rowBytesWidth = width * 3;
                 int srcpix = 0;
                 while (srcpix < rowBytesWidth) {
-                    os.write(StrikeCache.unsafe.getByte
-                          (pixelDataAddress + (rowStart + srcpix + 2)));
-                    os.write(StrikeCache.unsafe.getByte
-                          (pixelDataAddress + (rowStart + srcpix + 1)));
-                    os.write(StrikeCache.unsafe.getByte
-                          (pixelDataAddress + (rowStart + srcpix + 0)));
+                    os.write(pixelBytes[rowStart + srcpix + 2]);
+                    os.write(pixelBytes[rowStart + srcpix + 1]);
+                    os.write(pixelBytes[rowStart + srcpix + 0]);
                     os.write(255);
                     srcpix += 3;
                 }
@@ -165,11 +158,11 @@ public class XRGlyphCacheEntry {
     }
 
     public float getTopLeftXOffset() {
-        return StrikeCache.unsafe.getFloat(glyphInfoPtr + StrikeCache.topLeftXOffset);
+        return StrikeCache.getGlyphTopLeftX(glyphInfoPtr);
     }
 
     public float getTopLeftYOffset() {
-        return StrikeCache.unsafe.getFloat(glyphInfoPtr + StrikeCache.topLeftYOffset);
+        return StrikeCache.getGlyphTopLeftY(glyphInfoPtr);
     }
 
     public long getGlyphInfoPtr() {

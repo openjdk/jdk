@@ -319,10 +319,9 @@ public final class GlyphList {
            metrics[4] = 0;
            return;
         }
-        float gx =
-            StrikeCache.unsafe.getFloat(images[i]+StrikeCache.topLeftXOffset);
-        float gy =
-            StrikeCache.unsafe.getFloat(images[i]+StrikeCache.topLeftYOffset);
+
+        float gx = StrikeCache.getGlyphTopLeftX(images[i]);
+        float gy = StrikeCache.getGlyphTopLeftY(images[i]);
 
         if (usePositions) {
             metrics[0] = (int)Math.floor(positions[(i<<1)]   + gposx + gx);
@@ -331,17 +330,12 @@ public final class GlyphList {
             metrics[0] = (int)Math.floor(gposx + gx);
             metrics[1] = (int)Math.floor(gposy + gy);
             /* gposx and gposy are used to accumulate the advance */
-            gposx += StrikeCache.unsafe.getFloat
-                (images[i]+StrikeCache.xAdvanceOffset);
-            gposy += StrikeCache.unsafe.getFloat
-                (images[i]+StrikeCache.yAdvanceOffset);
+            gposx += StrikeCache.getGlyphXAdvance(images[i]);
+            gposy += StrikeCache.getGlyphYAdvance(images[i]);
         }
-        metrics[2] =
-            StrikeCache.unsafe.getChar(images[i]+StrikeCache.widthOffset);
-        metrics[3] =
-            StrikeCache.unsafe.getChar(images[i]+StrikeCache.heightOffset);
-        metrics[4] =
-            StrikeCache.unsafe.getChar(images[i]+StrikeCache.rowBytesOffset);
+        metrics[2] = StrikeCache.getGlyphWidth(images[i]);
+        metrics[3] = StrikeCache.getGlyphHeight(images[i]);
+        metrics[4] = StrikeCache.getGlyphRowBytes(images[i]);
     }
 
     public int[] getMetrics() {
@@ -360,22 +354,12 @@ public final class GlyphList {
         if (images[glyphindex] == 0L) {
             return graybits;
         }
-        long pixelDataAddress =
-            StrikeCache.unsafe.getAddress(images[glyphindex] +
-                                          StrikeCache.pixelDataOffset);
-
+        long pixelDataAddress = StrikeCache.getGlyphImagePtr(images[glyphindex]);
         if (pixelDataAddress == 0L) {
             return graybits;
         }
-        /* unsafe is supposed to be fast, but I doubt if this loop can beat
-         * a native call which does a getPrimitiveArrayCritical and a
-         * memcpy for the typical amount of image data (30-150 bytes)
-         * Consider a native method if there is a performance problem (which
-         * I haven't seen so far).
-         */
-        for (int i=0; i<len; i++) {
-            graybits[i] = StrikeCache.unsafe.getByte(pixelDataAddress+i);
-        }
+        byte[] bytes = StrikeCache.getGlyphPixelBytes(images[glyphindex]);
+        System.arraycopy(bytes, 0, graybits, 0, bytes.length);
         return graybits;
     }
 
@@ -445,13 +429,6 @@ public final class GlyphList {
      * but it seems unavoidable without re-working the Java TextRenderers.
      */
     private void fillBounds(int[] bounds, int endGlyphIndex) {
-        /* Faster to access local variables in the for loop? */
-        int xOffset = StrikeCache.topLeftXOffset;
-        int yOffset = StrikeCache.topLeftYOffset;
-        int wOffset = StrikeCache.widthOffset;
-        int hOffset = StrikeCache.heightOffset;
-        int xAdvOffset = StrikeCache.xAdvanceOffset;
-        int yAdvOffset = StrikeCache.yAdvanceOffset;
 
         int startGlyphIndex = glyphindex + 1;
         if (startGlyphIndex >= endGlyphIndex) {
@@ -471,10 +448,10 @@ public final class GlyphList {
             if (images[i] == 0L) {
                 continue;
             }
-            gx = StrikeCache.unsafe.getFloat(images[i]+xOffset);
-            gy = StrikeCache.unsafe.getFloat(images[i]+yOffset);
-            gw = StrikeCache.unsafe.getChar(images[i]+wOffset);
-            gh = StrikeCache.unsafe.getChar(images[i]+hOffset);
+            gx = StrikeCache.getGlyphTopLeftX(images[i]);
+            gy = StrikeCache.getGlyphTopLeftY(images[i]);
+            gw = StrikeCache.getGlyphWidth(images[i]);
+            gh = StrikeCache.getGlyphHeight(images[i]);
 
             if (usePositions) {
                 gx0 = positions[posIndex++] + gx + glx;
@@ -482,8 +459,8 @@ public final class GlyphList {
             } else {
                 gx0 = glx + gx;
                 gy0 = gly + gy;
-                glx += StrikeCache.unsafe.getFloat(images[i]+xAdvOffset);
-                gly += StrikeCache.unsafe.getFloat(images[i]+yAdvOffset);
+                glx += StrikeCache.getGlyphXAdvance(images[i]);
+                gly += StrikeCache.getGlyphYAdvance(images[i]);
             }
             gx1 = gx0 + gw;
             gy1 = gy0 + gh;
@@ -506,10 +483,8 @@ public final class GlyphList {
     }
 
     public boolean isColorGlyph(int glyphIndex) {
-        int width = StrikeCache.unsafe.getChar(images[glyphIndex] +
-                                               StrikeCache.widthOffset);
-        int rowBytes = StrikeCache.unsafe.getChar(images[glyphIndex] +
-                                                  StrikeCache.rowBytesOffset);
+        int width = StrikeCache.getGlyphWidth(images[glyphIndex]);
+        int rowBytes = StrikeCache.getGlyphRowBytes(images[glyphIndex]);
         return rowBytes == width * 4;
     }
 
