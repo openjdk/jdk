@@ -1128,7 +1128,9 @@ private:
     _verify_only(verify_me == nullptr),
     _mode(LoopOptsVerify),
     _nodes_required(UINT_MAX) {
+    DEBUG_ONLY(C->set_phase_verify_ideal_loop();)
     build_and_optimize();
+    DEBUG_ONLY(C->reset_phase_verify_ideal_loop();)
   }
 #endif
 

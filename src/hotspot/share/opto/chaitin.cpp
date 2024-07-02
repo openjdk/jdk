@@ -479,6 +479,9 @@ void PhaseChaitin::Register_Allocate() {
     }
 
     uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    if (C->failing()) {
+      return;
+    }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     // or we failed to split
@@ -551,6 +554,9 @@ void PhaseChaitin::Register_Allocate() {
       return;
     }
     uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    if (C->failing()) {
+      return;
+    }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");

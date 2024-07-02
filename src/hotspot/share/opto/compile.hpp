@@ -357,6 +357,7 @@ class Compile : public Phase {
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
+  bool                  _stress_seed_is_initialized; // True if _stress_seed has been set
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -389,6 +390,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
+
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
 
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
@@ -783,6 +786,12 @@ private:
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
+
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
@@ -812,7 +821,7 @@ private:
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
 
-  bool        failing() const        {
+  bool        failing_internal() const {
     return _env->failing() ||
            _failure_reason.get() != nullptr;
   }
@@ -824,6 +833,27 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
+  bool failing(DEBUG_ONLY(bool no_stress_bailout = false)) {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout && !no_stress_bailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||
            (r != nullptr &&
@@ -831,11 +861,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {
