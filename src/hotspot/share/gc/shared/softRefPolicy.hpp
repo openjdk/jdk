@@ -69,6 +69,7 @@ class ClearedAllSoftRefs : public StackObj {
   ~ClearedAllSoftRefs() {
     if (_clear_all_soft_refs) {
       _soft_ref_policy->cleared_all_soft_refs();
+      _soft_ref_policy->set_should_clear_all_soft_refs(false);
     }
   }
 
