@@ -982,7 +982,12 @@ void Parse::do_exits() {
   _exits.set_i_o(gvn().transform(iophi));
 
   // Figure out if we need to emit the trailing barrier. The barrier is only
-  // needed in the constructors, and only in three cases:
+  // needed in constructors where the object does not have an Initialization
+  // node. Macro expansion will emit a trailing barrier for Initialize nodes,
+  // so we do not need to emit here.
+  //
+  // Given a constructor without an object Initialize nodes, the trailing
+  // barrier is needed in three cases:
   //
   // 1. The constructor wrote a final. The effects of all initializations
   //    must be committed to memory before any code after the constructor
@@ -1009,12 +1014,12 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_initializer() &&
-       (wrote_final() ||
-         (AlwaysSafeConstructors && wrote_fields()) ||
-         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
-    _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
-                          alloc_with_final());
+  if (method()->is_initializer() && (!alloc_with_final() ||
+        !AllocateNode::Ideal_allocation(alloc_with_final())->initialization())
+      && (wrote_final() || (AlwaysSafeConstructors && wrote_fields()) ||
+        (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore :
+        Op_MemBarRelease, alloc_with_final());
 
     // If Memory barrier is created for final fields write
     // and allocation node does not escape the initialize method,
