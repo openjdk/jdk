@@ -1,0 +1,22 @@
+diff --git a/src/jdk.jcmd/share/man/jcmd.1 b/src/jdk.jcmd/share/man/jcmd.1
+index 64920148c83..a8491ee8fb2 100644
+--- a/src/jdk.jcmd/share/man/jcmd.1
++++ b/src/jdk.jcmd/share/man/jcmd.1
+@@ -35,7 +35,7 @@
+ . ftr VB CB
+ . ftr VBI CBI
+ .\}
+-.TH "JCMD" "1" "2025" "JDK 24-ea" "JDK Commands"
++.TH "JCMD" "1" "2024" "JDK 24-internal" "JDK Commands"
+ .hy
+ .SH NAME
+ .PP
+@@ -606,7 +606,7 @@ Make note of the generated name that is shown in the response to the
+ command so that you can use it with other commands.
+ (STRING, system-generated default name)
+ .IP \[bu] 2
+-\f[V]path-to-gc-roots\f[R]: (Optional) Flag for saving the path to
++\f[V]path-to-gc-root\f[R]: (Optional) Flag for saving the path to
+ garbage collection (GC) roots at the end of a recording.
+ The path information is useful for finding memory leaks but collecting
+ it is time consuming.
