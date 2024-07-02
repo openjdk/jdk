@@ -201,6 +201,9 @@ class SinkChannelImpl
 
     @Override
     public void kill() {
+        // wait for any write operation to complete before trying to close
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
