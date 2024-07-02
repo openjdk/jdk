@@ -35,33 +35,74 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
 
-static bool is_in_scoped_access(JavaThread* jt, oop session) {
+template<typename Func>
+static bool for_scoped_method(JavaThread* jt, const Func& func) {
   const int max_critical_stack_depth = 10;
   int depth = 0;
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
     if (m->is_scoped()) {
-      StackValueCollection* locals = stream.asJavaVFrame()->locals();
-      for (int i = 0; i < locals->size(); i++) {
-        StackValue* var = locals->at(i);
-        if (var->type() == T_OBJECT) {
-          if (var->get_obj() == session) {
-            assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
-            return true;
-          }
-        }
-      }
-      break;
+      assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
+      return func(stream);
     }
     depth++;
 #ifndef ASSERT
+    // On debug builds, just keep searching the stack
+    // in case we missed an @Scoped method further up
     if (depth >= max_critical_stack_depth) {
       break;
     }
 #endif
   }
-
   return false;
+}
+
+// static bool is_in_scoped_method(JavaThread* jt) {
+//   return for_scoped_method(jt, [](vframeStream& stream){ return true; });
+// }
+
+static void deoptimize_top_frame(JavaThread* jt) {
+  frame last_frame = jt->last_frame();
+  RegisterMap register_map(jt,
+                            RegisterMap::UpdateMap::include,
+                            RegisterMap::ProcessFrames::include,
+                            RegisterMap::WalkContinuation::skip);
+
+  if (last_frame.is_safepoint_blob_frame()) {
+    last_frame = last_frame.sender(&register_map);
+  }
+
+  if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+    Deoptimization::deoptimize(jt, last_frame);
+  }
+}
+
+static bool is_accessing_session(JavaThread* jt, oop session, bool should_deopt) {
+  // Quick check to see  if we are inside an @Scoped method, to avoid deoptimizing
+  // FIXME: this only seems to work correctly after deoptimizing
+  // if (!is_in_scoped_method(jt)) {
+  //   return;
+  // }
+
+  if (should_deopt) {
+    // FIXME: Reference.reachabilityFence doesn work, see JDK-8290892
+    // We deoptimize here so that we can accurately inspect locals.
+    deoptimize_top_frame(jt);
+  }
+
+  return for_scoped_method(jt, [&session = session](vframeStream& stream){
+    ResourceMark rm;
+    StackValueCollection* locals = stream.asJavaVFrame()->locals();
+    for (int i = 0; i < locals->size(); i++) {
+      StackValue* var = locals->at(i);
+      if (var->type() == T_OBJECT) {
+        if (var->get_obj() == session) {
+          return true;
+        }
+      }
+    }
+    return false;
+  });
 }
 
 class ScopedAsyncExceptionHandshake : public AsyncExceptionHandshake {
@@ -78,8 +119,9 @@ public:
 
   virtual void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
-    ResourceMark rm;
-    if (is_in_scoped_access(jt, _session.resolve())) {
+    // FIXME: why would this not be true? Exception should be installed
+    // before initial handshake returns. This should be an assert (but it can fail)
+    if (is_accessing_session(jt, _session.resolve(), false)) {
       // Throw exception to unwind out from the scoped access
       AsyncExceptionHandshake::do_thread(thread);
     }
@@ -110,25 +152,7 @@ public:
       return;
     }
 
-    frame last_frame = jt->last_frame();
-    RegisterMap register_map(jt,
-                             RegisterMap::UpdateMap::include,
-                             RegisterMap::ProcessFrames::include,
-                             RegisterMap::WalkContinuation::skip);
-
-    if (last_frame.is_safepoint_blob_frame()) {
-      last_frame = last_frame.sender(&register_map);
-    }
-
-    ResourceMark rm;
-    if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-      // FIXME: we would like to conditionally deoptimize only if the corresponding
-      // _session is reachable from the frame, but reachabilityFence doesn't currently
-      // work the way it should. Therefore we deopt unconditionally for now.
-      Deoptimization::deoptimize(jt, last_frame);
-    }
-
-    if (is_in_scoped_access(jt, JNIHandles::resolve(_session))) {
+    if (is_accessing_session(jt, JNIHandles::resolve(_session), true)) {
       // We have found that the target thread is inside of a scoped access.
       // An asynchronous handshake is sent to the target thread, telling it
       // to throw an exception, which will unwind the target thread out from
