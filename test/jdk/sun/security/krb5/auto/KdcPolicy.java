@@ -38,7 +38,7 @@ import sun.security.krb5.Config;
 
 /*
  * @test
- * @bug 8164656 8181461 8194486
+ * @bug 8164656 8181461 8194486 8333772
  * @summary krb5.kdc.bad.policy test
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
@@ -219,13 +219,13 @@ public class KdcPolicy {
                 inDefaults += "udp_preference_limit = 10000\n";
             } else if (r.nextBoolean()) {
                 inRealm += "   udp_preference_limit = 10000\n";
-                inDefaults += "udp_preference_limit = 1\n";
+                inDefaults += "udp_preference_limit = 0\n";
             } // else no settings means UDP
         } else {
             if (r.nextBoolean()) {
-                inDefaults += "udp_preference_limit = 1\n";
+                inDefaults += "udp_preference_limit = 0\n";
             } else {
-                inRealm += "   udp_preference_limit = 1\n";
+                inRealm += "   udp_preference_limit = 0\n";
                 inDefaults += "udp_preference_limit = 10000\n";
             }
         }
