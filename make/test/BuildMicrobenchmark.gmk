@@ -74,12 +74,12 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 #### Compile Indify tool
 
 $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
-    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SRC := $(TOPDIR)/test/jdk/java/lang/invoke, \
     INCLUDE_FILES := indify/Indify.java, \
-    DISABLED_WARNINGS := this-escape rawtypes serial options, \
+    DISABLED_WARNINGS := this-escape rawtypes serial options preview, \
     BIN := $(MICROBENCHMARK_TOOLS_CLASSES), \
-    JAVAC_FLAGS := -XDstringConcat=inline -Xprefer:newer, \
+    JAVAC_FLAGS := -XDstringConcat=inline -Xprefer:newer --enable-preview, \
 ))
 
 #### Compile Targets
@@ -126,7 +126,8 @@ $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)
 # Run Indify
 $(MICROBENCHMARK_INDIFY_DONE): $(BUILD_INDIFY) $(BUILD_JDK_MICROBENCHMARK)
 	$(call LogWarn, Running Indify on microbenchmark classes)
-	$(JAVA_SMALL) -cp $(MICROBENCHMARK_TOOLS_CLASSES) \
+	$(BUILD_JAVA_SMALL) -cp $(MICROBENCHMARK_TOOLS_CLASSES) \
+            --enable-preview \
 	    indify.Indify --overwrite $(MICROBENCHMARK_CLASSES) \
 	    $(LOG_DEBUG) 2>&1
 	$(TOUCH) $@
