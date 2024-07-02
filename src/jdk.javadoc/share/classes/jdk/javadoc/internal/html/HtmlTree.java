@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,9 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -63,10 +60,10 @@ import jdk.javadoc.internal.doclets.formats.html.Content;
 public class HtmlTree extends Content {
 
     /**
-     * The name of the HTML element.
+     * The tag for the HTML element.
      * This value is never {@code null}.
      */
-    public final TagName tagName;
+    public final HtmlTag tag;
 
     /**
      * The attributes for the HTML element.
@@ -84,10 +81,10 @@ public class HtmlTree extends Content {
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
-     * @param tagName the name
+     * @param tag the name
      */
-    public HtmlTree(TagName tagName) {
-        this.tagName = Objects.requireNonNull(tagName);
+    public HtmlTree(HtmlTag tag) {
+        this.tag = Objects.requireNonNull(tag);
     }
 
     /**
@@ -131,7 +128,7 @@ public class HtmlTree extends Content {
      * @param role the role
      * @return this object
      */
-    public HtmlTree setRole(Role role) {
+    public HtmlTree setRole(HtmlAttr.Role role) {
         return put(HtmlAttr.ROLE, role.toString());
     }
 
@@ -347,7 +344,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree A(String ref, Content body) {
-        return new HtmlTree(TagName.A)
+        return new HtmlTree(HtmlTag.A)
                 .put(HtmlAttr.HREF, encodeURL(ref))
                 .add(body);
     }
@@ -363,7 +360,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree A(URI ref, Content body) {
-        return new HtmlTree(TagName.A)
+        return new HtmlTree(HtmlTag.A)
                 .put(HtmlAttr.HREF, ref.toASCIIString())
                 .add(body);
     }
@@ -375,7 +372,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree CAPTION(Content body) {
-        return new HtmlTree(TagName.CAPTION)
+        return new HtmlTree(HtmlTag.CAPTION)
                 .add(body);
     }
 
@@ -386,7 +383,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree CODE(Content body) {
-        return new HtmlTree(TagName.CODE)
+        return new HtmlTree(HtmlTag.CODE)
                 .add(body);
     }
 
@@ -397,7 +394,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DD(Content body) {
-        return new HtmlTree(TagName.DD)
+        return new HtmlTree(HtmlTag.DD)
                 .add(body);
     }
 
@@ -407,7 +404,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DETAILS() {
-        return new HtmlTree(TagName.DETAILS);
+        return new HtmlTree(HtmlTag.DETAILS);
     }
 
     /**
@@ -416,7 +413,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DETAILS(HtmlStyle style) {
-        return new HtmlTree(TagName.DETAILS)
+        return new HtmlTree(HtmlTag.DETAILS)
                 .setStyle(style);
     }
 
@@ -427,7 +424,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DL(HtmlStyle style) {
-        return new HtmlTree(TagName.DL)
+        return new HtmlTree(HtmlTag.DL)
                 .setStyle(style);
     }
 
@@ -439,7 +436,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DL(HtmlStyle style, Content body) {
-        return new HtmlTree(TagName.DL)
+        return new HtmlTree(HtmlTag.DL)
                 .setStyle(style)
                 .add(body);
     }
@@ -451,7 +448,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DIV(HtmlStyle style) {
-        return new HtmlTree(TagName.DIV)
+        return new HtmlTree(HtmlTag.DIV)
                 .setStyle(style);
     }
 
@@ -463,7 +460,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DIV(HtmlStyle style, Content body) {
-        return new HtmlTree(TagName.DIV)
+        return new HtmlTree(HtmlTag.DIV)
                 .setStyle(style)
                 .add(body);
     }
@@ -475,7 +472,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DIV(Content body) {
-        return new HtmlTree(TagName.DIV)
+        return new HtmlTree(HtmlTag.DIV)
                 .add(body);
     }
 
@@ -486,7 +483,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree DT(Content body) {
-        return new HtmlTree(TagName.DT)
+        return new HtmlTree(HtmlTag.DT)
                 .add(body);
     }
 
@@ -497,8 +494,8 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree FOOTER() {
-        return new HtmlTree(TagName.FOOTER)
-                .setRole(Role.CONTENTINFO);
+        return new HtmlTree(HtmlTag.FOOTER)
+                .setRole(HtmlAttr.Role.CONTENTINFO);
     }
 
     /**
@@ -508,8 +505,8 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree HEADER() {
-        return new HtmlTree(TagName.HEADER)
-                .setRole(Role.BANNER);
+        return new HtmlTree(HtmlTag.HEADER)
+                .setRole(HtmlAttr.Role.BANNER);
     }
 
     /**
@@ -519,7 +516,7 @@ public class HtmlTree extends Content {
      * @param body       the content
      * @return the element
      */
-    public static HtmlTree HEADING(TagName headingTag, Content body) {
+    public static HtmlTree HEADING(HtmlTag headingTag, Content body) {
         return new HtmlTree(checkHeading(headingTag))
                 .add(body);
     }
@@ -532,7 +529,7 @@ public class HtmlTree extends Content {
      * @param body       the content
      * @return the element
      */
-    public static HtmlTree HEADING(TagName headingTag, HtmlStyle style, Content body) {
+    public static HtmlTree HEADING(HtmlTag headingTag, HtmlStyle style, Content body) {
         return new HtmlTree(checkHeading(headingTag))
                 .setStyle(style)
                 .add(body);
@@ -547,7 +544,7 @@ public class HtmlTree extends Content {
      * @param body       the content
      * @return the element
      */
-    public static HtmlTree HEADING_TITLE(TagName headingTag,
+    public static HtmlTree HEADING_TITLE(HtmlTag headingTag,
                                          HtmlStyle style, Content body) {
         return new HtmlTree(checkHeading(headingTag))
                 .setTitle(body)
@@ -563,13 +560,13 @@ public class HtmlTree extends Content {
      * @param body       the content
      * @return the element
      */
-    public static HtmlTree HEADING_TITLE(TagName headingTag, Content body) {
+    public static HtmlTree HEADING_TITLE(HtmlTag headingTag, Content body) {
         return new HtmlTree(checkHeading(headingTag))
                 .setTitle(body)
                 .add(body);
     }
 
-    private static TagName checkHeading(TagName headingTag) {
+    private static HtmlTag checkHeading(HtmlTag headingTag) {
         return switch (headingTag) {
             case H1, H2, H3, H4, H5, H6 -> headingTag;
             default -> throw new IllegalArgumentException(headingTag.toString());
@@ -586,7 +583,7 @@ public class HtmlTree extends Content {
      * @return the {@code HTML} element
      */
     public static HtmlTree HTML(String lang, Content head, Content body) {
-        return new HtmlTree(TagName.HTML)
+        return new HtmlTree(HtmlTag.HTML)
                 .put(HtmlAttr.LANG, lang)
                 .add(head)
                 .add(body);
@@ -601,7 +598,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlId id) {
-        return new HtmlTree(TagName.INPUT)
+        return new HtmlTree(HtmlTag.INPUT)
                 .put(HtmlAttr.TYPE, type.toString())
                 .setId(id)
                 .put(HtmlAttr.DISABLED, "");
@@ -615,7 +612,7 @@ public class HtmlTree extends Content {
      * @return      the element
      */
     public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlStyle style) {
-        return new HtmlTree(TagName.INPUT)
+        return new HtmlTree(HtmlTag.INPUT)
                 .put(HtmlAttr.TYPE, type.toString())
                 .setStyle(style)
                 .put(HtmlAttr.DISABLED, "");
@@ -628,7 +625,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree LABEL(String forLabel, Content body) {
-        return new HtmlTree(TagName.LABEL)
+        return new HtmlTree(HtmlTag.LABEL)
                 .put(HtmlAttr.FOR, forLabel)
                 .add(body);
     }
@@ -640,7 +637,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree LI(Content body) {
-        return new HtmlTree(TagName.LI)
+        return new HtmlTree(HtmlTag.LI)
                 .add(body);
     }
 
@@ -666,7 +663,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree LINK(String rel, String type, String href, String title) {
-        return new HtmlTree(TagName.LINK)
+        return new HtmlTree(HtmlTag.LINK)
                 .put(HtmlAttr.REL, rel)
                 .put(HtmlAttr.TYPE, type)
                 .put(HtmlAttr.HREF, href)
@@ -680,8 +677,8 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree MAIN() {
-        return new HtmlTree(TagName.MAIN)
-                .setRole(Role.MAIN);
+        return new HtmlTree(HtmlTag.MAIN)
+                .setRole(HtmlAttr.Role.MAIN);
     }
 
     /**
@@ -691,8 +688,8 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree MAIN(Content body) {
-        return new HtmlTree(TagName.MAIN)
-                .setRole(Role.MAIN)
+        return new HtmlTree(HtmlTag.MAIN)
+                .setRole(HtmlAttr.Role.MAIN)
                 .add(body);
     }
 
@@ -705,7 +702,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree META(String httpEquiv, String content, String charset) {
-        return new HtmlTree(TagName.META)
+        return new HtmlTree(HtmlTag.META)
                 .put(HtmlAttr.HTTP_EQUIV, httpEquiv)
                 .put(HtmlAttr.CONTENT, content + "; charset=" + charset);
     }
@@ -718,7 +715,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree META(String name, String content) {
-        return new HtmlTree(TagName.META)
+        return new HtmlTree(HtmlTag.META)
                 .put(HtmlAttr.NAME, name)
                 .put(HtmlAttr.CONTENT, content);
     }
@@ -730,8 +727,8 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree NAV() {
-        return new HtmlTree(TagName.NAV)
-                .setRole(Role.NAVIGATION);
+        return new HtmlTree(HtmlTag.NAV)
+                .setRole(HtmlAttr.Role.NAVIGATION);
     }
 
     /**
@@ -741,7 +738,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree NOSCRIPT(Content body) {
-        return new HtmlTree(TagName.NOSCRIPT)
+        return new HtmlTree(HtmlTag.NOSCRIPT)
                 .add(body);
     }
 
@@ -752,7 +749,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree OL(HtmlStyle style) {
-        return new HtmlTree(TagName.OL)
+        return new HtmlTree(HtmlTag.OL)
                 .setStyle(style);
     }
 
@@ -763,7 +760,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree P(Content body) {
-        return new HtmlTree(TagName.P)
+        return new HtmlTree(HtmlTag.P)
                 .add(body);
     }
 
@@ -786,7 +783,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree PRE(Content body) {
-        return new HtmlTree(TagName.PRE).add(body);
+        return new HtmlTree(HtmlTag.PRE).add(body);
     }
 
     /**
@@ -797,7 +794,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SCRIPT(String src) {
-        return new HtmlTree(TagName.SCRIPT)
+        return new HtmlTree(HtmlTag.SCRIPT)
                 .put(HtmlAttr.TYPE, "text/javascript")
                 .put(HtmlAttr.SRC, src);
 
@@ -810,7 +807,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SECTION(HtmlStyle style) {
-        return new HtmlTree(TagName.SECTION)
+        return new HtmlTree(HtmlTag.SECTION)
                 .setStyle(style);
     }
 
@@ -822,7 +819,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SECTION(HtmlStyle style, Content body) {
-        return new HtmlTree(TagName.SECTION)
+        return new HtmlTree(HtmlTag.SECTION)
                 .setStyle(style)
                 .add(body);
     }
@@ -834,7 +831,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SMALL(Content body) {
-        return new HtmlTree(TagName.SMALL)
+        return new HtmlTree(HtmlTag.SMALL)
                 .add(body);
     }
 
@@ -845,7 +842,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SPAN(Content body) {
-        return new HtmlTree(TagName.SPAN)
+        return new HtmlTree(HtmlTag.SPAN)
                 .add(body);
     }
 
@@ -856,7 +853,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SPAN(HtmlStyle styleClass) {
-        return new HtmlTree(TagName.SPAN)
+        return new HtmlTree(HtmlTag.SPAN)
                 .setStyle(styleClass);
     }
 
@@ -880,7 +877,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SPAN_ID(HtmlId id, Content body) {
-        return new HtmlTree(TagName.SPAN)
+        return new HtmlTree(HtmlTag.SPAN)
                 .setId(id)
                 .add(body);
     }
@@ -894,7 +891,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SPAN(HtmlId id, HtmlStyle style, Content body) {
-        return new HtmlTree(TagName.SPAN)
+        return new HtmlTree(HtmlTag.SPAN)
                 .setId(id)
                 .setStyle(style)
                 .add(body);
@@ -907,7 +904,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SUMMARY(Content body) {
-        return new HtmlTree(TagName.SUMMARY)
+        return new HtmlTree(HtmlTag.SUMMARY)
                 .add(body);
     }
 
@@ -918,7 +915,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree SUP(Content body) {
-        return new HtmlTree(TagName.SUP)
+        return new HtmlTree(HtmlTag.SUP)
                 .add(body);
     }
 
@@ -930,7 +927,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree TD(HtmlStyle style, Content body) {
-        return new HtmlTree(TagName.TD)
+        return new HtmlTree(HtmlTag.TD)
                 .setStyle(style)
                 .add(body);
     }
@@ -944,7 +941,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree TH(HtmlStyle style, String scope, Content body) {
-        return new HtmlTree(TagName.TH)
+        return new HtmlTree(HtmlTag.TH)
                 .setStyle(style)
                 .put(HtmlAttr.SCOPE, scope)
                 .add(body);
@@ -958,7 +955,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree TH(String scope, Content body) {
-        return new HtmlTree(TagName.TH)
+        return new HtmlTree(HtmlTag.TH)
                 .put(HtmlAttr.SCOPE, scope)
                 .add(body);
     }
@@ -970,7 +967,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree TITLE(String body) {
-        return new HtmlTree(TagName.TITLE)
+        return new HtmlTree(HtmlTag.TITLE)
                 .add(body);
     }
 
@@ -981,7 +978,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style) {
-        return new HtmlTree(TagName.UL)
+        return new HtmlTree(HtmlTag.UL)
                 .setStyle(style);
     }
 
@@ -994,7 +991,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
-        var ul = new HtmlTree(TagName.UL)
+        var ul = new HtmlTree(HtmlTag.UL)
                 .setStyle(style);
         ul.add(first);
         for (Content c : more) {
@@ -1013,7 +1010,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static <T> HtmlTree UL(HtmlStyle style, Collection<T> items, Function<T,Content> mapper) {
-        return new HtmlTree(TagName.UL)
+        return new HtmlTree(HtmlTag.UL)
                 .setStyle(style)
                 .addAll(items, mapper);
     }
@@ -1025,7 +1022,7 @@ public class HtmlTree extends Content {
 
     @Override
     public boolean isPhrasingContent() {
-        return tagName.phrasingContent;
+        return tag.blockType == HtmlTag.BlockType.INLINE;
     }
 
     /**
@@ -1069,7 +1066,7 @@ public class HtmlTree extends Content {
         return !isVoid()
             && !hasContent()
             && !hasAttr(HtmlAttr.ID)
-            && tagName != TagName.SCRIPT;
+            && tag != HtmlTag.SCRIPT;
     }
 
     /**
@@ -1080,22 +1077,22 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        return switch (tagName) {
+        return switch (tag) {
             case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
             default -> false;
         };
     }
 
     /**
-     * Returns whether or not this is a <em>void</em> element.
+     * Returns whether this is a <em>void</em> element.
      *
-     * @return whether or not this is a void element
+     * @return whether this is a void element
      *
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        return switch (tagName) {
-            case BR, HR, IMG, INPUT, LINK, META, WBR -> true;
+        return switch (tag) {
+            case BR, COL, FRAME, HR, IMG, INPUT, LINK, META, WBR -> true;
             default -> false;
         };
     }
@@ -1106,14 +1103,14 @@ public class HtmlTree extends Content {
         if (!isInline && !atNewline) {
             out.write(newline);
         }
-        String tagString = tagName.toString();
+        String tagString = tag.getName();
         out.write("<");
         out.write(tagString);
         for (var attr : attrs.entrySet()) {
             var key = attr.getKey();
             var value = attr.getValue();
             out.write(" ");
-            out.write(key.toString());
+            out.write(key.getName());
             if (!value.isEmpty()) {
                 out.write("=\"");
                 out.write(value.replace("\"", "&quot;"));

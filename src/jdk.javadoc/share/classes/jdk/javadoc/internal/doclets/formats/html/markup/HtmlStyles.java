@@ -28,6 +28,8 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jdk.javadoc.internal.html.HtmlStyle;
+
 /**
  * Enum representing HTML styles, with associated entries in the stylesheet files.
  *
@@ -49,7 +51,7 @@ import java.util.regex.Pattern;
  *
  * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
-public enum HtmlStyle {
+public enum HtmlStyles implements HtmlStyle {
 
     //<editor-fold desc="navigation bar">
     //
@@ -1098,13 +1100,13 @@ public enum HtmlStyle {
 
     private final String cssName;
 
-    HtmlStyle() {
+    HtmlStyles() {
         cssName = Pattern.compile("\\p{Upper}")
                 .matcher(toString())
                 .replaceAll(mr -> "-" + mr.group().toLowerCase(Locale.US));
     }
 
-    HtmlStyle(String cssName) {
+    HtmlStyles(String cssName) {
         this.cssName = cssName;
     }
 

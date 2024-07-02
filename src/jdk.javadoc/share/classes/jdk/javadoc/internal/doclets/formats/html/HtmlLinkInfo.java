@@ -31,11 +31,12 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
 
 
 /**
@@ -91,7 +92,7 @@ public class HtmlLinkInfo {
     private Element targetMember;
 
     // Optional style for the link.
-    private HtmlStyle style = null;
+    private HtmlStyles style = null;
 
     // The class we want to link to. Null if we are not linking to a class.
     private TypeElement typeElement;
@@ -250,7 +251,7 @@ public class HtmlLinkInfo {
      * @param style the new style value
      * @return this object
      */
-    public HtmlLinkInfo style(HtmlStyle style) {
+    public HtmlLinkInfo style(HtmlStyles style) {
         this.style = style;
         return this;
     }
@@ -258,7 +259,7 @@ public class HtmlLinkInfo {
     /**
      * {@return the optional style for the link}
      */
-    public HtmlStyle getStyle() {
+    public HtmlStyles getStyle() {
         return style;
     }
 

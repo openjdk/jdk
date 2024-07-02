@@ -23,12 +23,10 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A builder for HTML script elements.
@@ -100,7 +98,7 @@ public class Script  {
      */
     public Content asContent() {
         ScriptContent scriptContent = new ScriptContent(sb);
-        var script = new HtmlTree(TagName.SCRIPT) {
+        var script = new HtmlTree(HtmlTag.SCRIPT) {
             @Override
             public HtmlTree add(Content c) {
                 if (c != scriptContent) {

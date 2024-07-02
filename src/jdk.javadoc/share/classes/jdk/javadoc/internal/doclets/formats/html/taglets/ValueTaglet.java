@@ -39,9 +39,9 @@ import com.sun.source.doctree.ValueTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 /**

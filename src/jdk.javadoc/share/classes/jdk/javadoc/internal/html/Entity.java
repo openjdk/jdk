@@ -23,9 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;

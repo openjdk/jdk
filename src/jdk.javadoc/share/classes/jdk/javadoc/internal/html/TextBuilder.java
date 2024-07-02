@@ -23,12 +23,10 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * Class for generating string content for HTML tags of javadoc output.

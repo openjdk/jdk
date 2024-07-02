@@ -35,7 +35,7 @@ import com.sun.source.doctree.TextTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
 
 /**
  * An inline taglet used to index a word or a phrase.
