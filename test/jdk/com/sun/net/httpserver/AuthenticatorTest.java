@@ -40,7 +40,7 @@ public class AuthenticatorTest {
     @Test
     public void testFailure() {
         var failureResult = new Authenticator.Failure(666);
-        assertEquals(666, failureResult.getResponseCode(), );
+        assertEquals(666, failureResult.getResponseCode());
     }
 
     @Test
