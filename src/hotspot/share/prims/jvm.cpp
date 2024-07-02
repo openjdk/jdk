@@ -3192,6 +3192,10 @@ JVM_ENTRY(void, JVM_SetScopedValueCache(JNIEnv* env, jclass threadClass,
   thread->set_scopedValueCache(objs);
 JVM_END
 
+JVM_ENTRY(void, JVM_MyTrap(JNIEnv* env, jclass threadClass))
+  asm("nop");
+JVM_END
+
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))

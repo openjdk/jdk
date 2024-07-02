@@ -155,6 +155,7 @@ class UnixDirectoryStream
         private Path readNextEntry() {
             assert Thread.holdsLock(this);
 
+            System.myTrap();
             for (;;) {
                 byte[] nameAsBytes = null;
 
