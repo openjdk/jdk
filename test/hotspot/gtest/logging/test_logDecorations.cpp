@@ -27,6 +27,8 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "logging/circularStringBuffer.hpp"
+#include "threadHelper.inline.hpp"
 
 static const LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging, safepoint)>::tagset();
 static const LogDecorators default_decorators;
