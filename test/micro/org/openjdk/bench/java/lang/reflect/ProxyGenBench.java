@@ -50,10 +50,12 @@ public class ProxyGenBench {
     static final IHandler HANDLER = new IHandler();
 
     @Benchmark
-    public void generate100Proxies() {
+    public int generateAndProxy100() {
+        int hash = 0;
         for (int i = 0; i < 100; i++) {
-            Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER);
+            hash += Proxy.newProxyInstance(new ClsLoader(), INTF, HANDLER).hashCode();
         }
+        return hash;
     }
 
     public interface Interfaze {
@@ -65,7 +67,16 @@ public class ProxyGenBench {
     static class IHandler implements InvocationHandler {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            throw new UnsupportedOperationException();
+            if (method.getName().equals("hashCode")) {
+                return 17;
+            }
+            if (method.getName().equals("equals")) {
+                return false;
+            }
+            if (method.getName().equals("toString")) {
+                return "proxy";
+            }
+            return null;
         }
     }
 
@@ -77,6 +88,6 @@ public class ProxyGenBench {
     }
 
     public static void main(String[] args) {
-        new ProxyGenBench().generate100Proxies();
+        new ProxyGenBench().generateAndProxy100();
     }
 }
