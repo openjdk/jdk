@@ -1249,7 +1249,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-bool Node::dominates(Node* sub, Node_List &nlist) {
+bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1259,6 +1259,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   Node* orig_sub = sub;
   Node* dom      = this;
   bool  met_dom  = false;
+  dead_code      = false;
   nlist.clear();
 
   // Walk 'sub' backward up the chain to 'dom', watching for regions.
@@ -1269,7 +1270,11 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   // will either exit through the loop head, or give up.
   // (If we get confused, break out and return a conservative 'false'.)
   while (sub != nullptr) {
-    if (sub->is_top())  break; // Conservative answer for dead code.
+    if (sub->is_top()) {
+      // Conservative answer for dead code.
+      dead_code = true;
+      break;
+    }
     if (sub == dom) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl

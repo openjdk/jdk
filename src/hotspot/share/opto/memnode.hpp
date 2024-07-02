@@ -106,7 +106,7 @@ public:
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
   // This one should probably be a phase-specific function:
-  static bool all_controls_dominate(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub, bool *dead_code = nullptr);
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 

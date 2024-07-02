@@ -1106,7 +1106,7 @@ public:
   Node* find_exact_control(Node* ctrl);
 
   // Check if 'this' node dominates or equal to 'sub'.
-  bool dominates(Node* sub, Node_List &nlist);
+  bool dominates(Node* sub, Node_List &nlist, bool &dead_code);
 
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
