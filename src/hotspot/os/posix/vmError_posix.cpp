@@ -127,3 +127,14 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
   }
 #endif
 }
+
+void VMError::check_narrow_klass_protzone_violation(outputStream* st, const void* siginfo) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::base() != nullptr && siginfo != nullptr) {
+    const siginfo_t* const si = (siginfo_t*)siginfo;
+    if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
+      if ((address) si->si_addr == CompressedKlassPointers::base()) {
+          st->print("Fault address is narrow Klass base - dereferencing a zero nKlass?");
+      }
+    }
+  }
+}

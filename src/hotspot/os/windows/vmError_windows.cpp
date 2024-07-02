@@ -61,6 +61,17 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 #endif
 }
 
+void VMError::check_narrow_klass_protzone_violation(outputStream* st, const void* siginfo) {
+  if (UseCompressedClassPointers && CompressedKlassPointers::base() != nullptr && siginfo != nullptr) {
+    const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
+    if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+      if ((address)(er->ExceptionInformation[1]) == CompressedKlassPointers::base()) {
+          st->print("Fault address is narrow Klass base - dereferencing a zero nKlass?");
+      }
+    }
+  }
+}
+
 // Error reporting cancellation: there is no easy way to implement this on Windows, because we do
 // not have an easy way to send signals to threads (aka to cause a win32 Exception in another
 // thread). We would need something like "RaiseException(HANDLE thread)"...

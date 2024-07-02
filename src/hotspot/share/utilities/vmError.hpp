@@ -129,6 +129,10 @@ class VMError : public AllStatic {
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
 
+  // Write a hint to the stream in case siginfo indicates an access to the
+  // protection zone of the narrow Klass range.
+  static void check_narrow_klass_protzone_violation(outputStream* st, const void* siginfo);
+
   // Timeout handling.
   // Hook functions for platform dependent functionality:
   static void reporting_started();
