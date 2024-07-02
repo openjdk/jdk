@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,55 +23,16 @@
  * questions.
  */
 
-/*
- * Copyright 2003 Wily Technology, Inc.
- */
+#include "jni.h"
 
-#ifndef _UTILITIES_H_
-#define _UTILITIES_H_
+// This is in a separate file since it will need to be compiled to two different
+// object files, depending on if we are going to build a static or a dynamic
+// library.
 
-#include    <jni.h>
-#include    <jvmti.h>
-#include    "jni_util.h"
-
-#ifdef __cplusplus
-extern "C" {
+jboolean JLI_IsStaticallyLinked(void) {
+#ifdef STATIC_BUILD
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
 #endif
-
-/*
- *  This module provides various simple JNI and JVMTI utility functionality.
- */
-
-/*
- *  This allocate must be paired with this deallocate. Used for our own working buffers.
- *  Implementation may vary.
- */
-extern void *
-allocate(jvmtiEnv * jvmtienv, size_t bytecount);
-
-extern void
-deallocate(jvmtiEnv * jvmtienv, void * buffer);
-
-
-/*
- *  Misc. JNI support
- */
-/* convenience wrapper around JNI instanceOf */
-extern jboolean
-isInstanceofClassName(  JNIEnv*     jnienv,
-                        jobject     instance,
-                        const char* className);
-
-
-/* calling this stops the JVM and does not return */
-extern void
-abortJVM(   JNIEnv *        jnienv,
-            const char *    message);
-
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif /* __cplusplus */
-
-
-#endif
+}
