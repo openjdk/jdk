@@ -127,18 +127,6 @@ private:
 
   void mangle_unused_area() PRODUCT_RETURN;
 
-  // Try to allocate at least min_word_size and up to desired_size from this region.
-  // Returns null if not possible, otherwise sets actual_word_size to the amount of
-  // space allocated.
-  // This version assumes that all allocation requests to this G1HeapRegion are properly
-  // synchronized.
-  inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Try to allocate at least min_word_size and up to desired_size from this G1HeapRegion.
-  // Returns null if not possible, otherwise sets actual_word_size to the amount of
-  // space allocated.
-  // This version synchronizes with other calls to par_allocate_impl().
-  inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-
   inline HeapWord* advance_to_block_containing_addr(const void* addr,
                                                     HeapWord* const pb,
                                                     HeapWord* first_block) const;
@@ -163,8 +151,18 @@ public:
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and
   // this is done by explicit updates when crossing thresholds.
+
+  // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version synchronizes with other calls to par_allocate().
   inline HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* word_size);
   inline HeapWord* allocate(size_t word_size);
+  // Try to allocate at least min_word_size and up to desired_size from this region.
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version assumes that all allocation requests to this HeapRegion are properly
+  // synchronized.
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Full GC support methods.
