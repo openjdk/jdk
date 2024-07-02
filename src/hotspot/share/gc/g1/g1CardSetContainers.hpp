@@ -87,10 +87,11 @@ class G1CardSetInlinePtr : public StackObj {
   uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
   static ContainerPtr empty_card_set() {
-    // Don't directly cast ContainerInlinePtr (a constant 0) to ContainerPtr
-    // (a pointer type), to avoid -Wzero-as-null-pointer-constant.  Instead cast
-    // a non-const copy, and let the compiler's constant propagation optimize
-    // into equivalent code.
+    // Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114573
+    // gcc issues -Wzero-as-null-pointer-constant here, even though
+    // ContainerInlinePtr is a *non-literal* constant 0.  We cast a non-const
+    // copy, and let the compiler's constant propagation optimize into
+    // equivalent code.
     static_assert(G1CardSet::ContainerInlinePtr == 0, "unnecessary warning dodge");
     auto value = G1CardSet::ContainerInlinePtr;
     return reinterpret_cast<ContainerPtr>(value);
