@@ -462,11 +462,12 @@ public class ResourcePoolManager {
             uncompressed_size = comp.getUncompressedSize();
         }
         int nameOffset = strings.addString(plugin);
+        boolean isZip = "zip".equals(plugin);
         CompressedResourceHeader rh
                 = new CompressedResourceHeader(compressed.limit(), original.contentLength(),
                         nameOffset, isTerminal);
         // Merge header with content;
-        byte[] h = rh.getBytes(order);
+        byte[] h = rh.getBytes(order, isZip);
         ByteBuffer bb = ByteBuffer.allocate(compressed.limit() + h.length);
         bb.order(order);
         bb.put(h);
