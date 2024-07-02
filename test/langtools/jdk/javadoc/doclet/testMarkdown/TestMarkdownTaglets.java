@@ -121,7 +121,7 @@ public class TestMarkdownTaglets extends JavadocTester {
                     <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" \
                     onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span>\
                     <img src="../resource-files/copy.svg" alt="Copy snippet"></button>
-                    <pre class="snippet"><code>   this is snippet_standalone
+                    <pre class="snippet"><code class="language-java">   this is snippet_standalone
                     </code></pre>
                     </div>
 
@@ -131,7 +131,7 @@ public class TestMarkdownTaglets extends JavadocTester {
                     <div class="block"><p>First sentence.</p>
                     <p>Before.</p>
                     <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../resource-files/copy.svg" alt="Copy snippet"></button>
-                    <pre class="snippet"><code>   this is a snippet_wrapped
+                    <pre class="snippet"><code class="language-java">   this is a snippet_wrapped
                     </code></pre>
                     </div>
 
