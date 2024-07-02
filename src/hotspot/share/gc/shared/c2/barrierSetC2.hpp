@@ -102,22 +102,22 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
 
 public:
   C2Access(DecoratorSet decorators,
-           BasicType type, Node* base, C2AccessValuePtr& addr) :
+           Node* base, C2AccessValuePtr& addr, BasicType type) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 
@@ -153,7 +153,7 @@ protected:
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
                 BasicType type, Node* base, C2AccessValuePtr& addr) :
-    C2Access(decorators, type, base, addr),
+    C2Access(decorators, base, addr, type),
     _kit(kit) {
     fixup_decorators();
   }
@@ -193,7 +193,7 @@ class C2OptAccess: public C2Access {
 public:
   C2OptAccess(PhaseGVN& gvn, Node* ctl, MergeMemNode* mem, DecoratorSet decorators,
               BasicType type, Node* base, C2AccessValuePtr& addr) :
-    C2Access(decorators, type, base, addr),
+    C2Access(decorators, base, addr, type),
     _gvn(gvn), _mem(mem), _ctl(ctl) {
     fixup_decorators();
   }
