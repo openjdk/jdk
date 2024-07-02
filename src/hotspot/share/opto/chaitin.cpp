@@ -554,7 +554,7 @@ void PhaseChaitin::Register_Allocate() {
       return;
     }
     uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
-    if (C->failing()){
+    if (C->failing()) {
       return;
     }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
