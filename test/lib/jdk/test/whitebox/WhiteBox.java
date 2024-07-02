@@ -119,6 +119,8 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native long getInUseMonitorCount();
+
   public native int getLockStackCapacity();
 
   public native boolean supportsRecursiveLightweightLocking();
