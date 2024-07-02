@@ -706,7 +706,7 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   }
 
   // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
-  // and will still be vectorized by SuperWordVTransformBuilder::get_vtnode_vector_input_at_index.
+  // and will still be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
@@ -770,7 +770,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to
 // PopulateIndex vector node. We skip the pack creation of these nodes. They
-// will be vectorized by SuperWordVTransformBuilder::get_vtnode_vector_input_at_index.
+// will be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
   return n1->is_Add() &&
          n2->is_Add() &&
@@ -1888,6 +1888,7 @@ void VTransformGraph::apply() {
     lpt()->head()->dump();
   }
   assert(cl()->is_main_loop(), "auto vectorization only for main loops");
+  assert(_schedule.is_nonempty(), "must already be scheduled");
 #endif
 
   Compile* C = phase()->C;
@@ -2008,20 +2009,20 @@ void VTransformGraph::apply_vectorization() const {
   // Since "apply" is called on defs before uses, this allows us to find the
   // generated def (input) nodes when we are generating the use nodes in "apply".
   int length = _vtnodes.length();
-  GrowableArray<Node*> vnode_idx_to_transformed_node(length, length, nullptr);
+  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
 
   uint max_vector_length = 0; // number of elements
   uint max_vector_width  = 0; // total width in bytes
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyStatus status = vtn->apply(_vloop_analyzer,
-                                              vnode_idx_to_transformed_node);
-    NOT_PRODUCT( if (_is_trace_verbose) { status.trace(vtn); } )
+    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
+                                              vtnode_idx_to_transformed_node);
+    NOT_PRODUCT( if (_is_trace_verbose) { result.trace(vtn); } )
 
-    vnode_idx_to_transformed_node.at_put(vtn->_idx, status.node());
-    max_vector_length = MAX2(max_vector_length, status.vector_length());
-    max_vector_width  = MAX2(max_vector_width,  status.vector_width());
+    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    max_vector_length = MAX2(max_vector_length, result.vector_length());
+    max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
 
   assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
@@ -3030,23 +3031,27 @@ bool SuperWord::same_generation(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
 }
 
-void SuperWordVTransformBuilder::build_vtransform() {
+void SuperWordVTransformBuilder::build() {
   assert(!_packset.is_empty(), "must have non-empty packset");
+  assert(_graph.is_empty(), "start with empty graph");
 
+  // Create vtnodes for all nodes in the loop.
   build_vector_vtnodes_for_packed_nodes();
   build_scalar_vtnodes_for_non_packed_nodes();
 
+  // Connect all vtnodes with their inputs. Possibly create vtnodes for input
+  // nodes that are outside the loop.
   VectorSet vtn_dependencies; // Shared, but cleared for every vtnode.
-  build_edges_for_vector_vtnodes(vtn_dependencies);
-  build_edges_for_scalar_vtnodes(vtn_dependencies);
+  build_inputs_for_vector_vtnodes(vtn_dependencies);
+  build_inputs_for_scalar_vtnodes(vtn_dependencies);
 }
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
-    VTransformVectorNode* vtn = make_vtnode_for_pack(pack);
+    VTransformVectorNode* vtn = make_vector_vtnode_for_pack(pack);
     for (uint k = 0; k < pack->size(); k++) {
-      set_vtnode(pack->at(k), vtn);
+      map_node_to_vtnode(pack->at(k), vtn);
     }
   }
 }
@@ -3056,11 +3061,11 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
     VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
-    set_vtnode(n, vtn);
+    map_node_to_vtnode(n, vtn);
   }
 }
 
-void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_dependencies) {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
@@ -3100,12 +3105,12 @@ void SuperWordVTransformBuilder::build_edges_for_vector_vtnodes(VectorSet& vtn_d
     }
 
     for (uint k = 0; k < pack->size(); k++) {
-      add_dependencies_of_node_to_vtn(pack->at(k), vtn, vtn_dependencies);
+      add_dependencies_of_node_to_vtnode(pack->at(k), vtn, vtn_dependencies);
     }
   }
 }
 
-void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_dependencies) {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
@@ -3128,12 +3133,12 @@ void SuperWordVTransformBuilder::build_edges_for_scalar_vtnodes(VectorSet& vtn_d
       set_all_req_with_scalars(n, vtn, vtn_dependencies);
     }
 
-    add_dependencies_of_node_to_vtn(n, vtn, vtn_dependencies);
+    add_dependencies_of_node_to_vtnode(n, vtn, vtn_dependencies);
   }
 }
 
 // Create a vtnode for each pack. No in/out edges set yet.
-VTransformVectorNode* SuperWordVTransformBuilder::make_vtnode_for_pack(const Node_List* pack) const {
+VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
   uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   int opc = p0->Opcode();
@@ -3177,7 +3182,9 @@ void SuperWordVTransformBuilder::set_req_with_scalar(Node* n, VTransformNode* vt
   vtn_dependencies.set(req->_idx);
 }
 
-VTransformNode* SuperWordVTransformBuilder::get_vtnode_vector_input_at_index(const Node_List* pack, const int index) {
+// Either get existing vtnode vector input (when input is a pack), or else make a
+// new one vector vtnode for the input (e.g. for Replicate or PopulateIndex).
+VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index) {
   Node* p0 = pack->at(0);
 
   Node_List* pack_in = _packset.pack_input_at_index_or_null(pack, index);
@@ -3244,7 +3251,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_vector_input_at_index(con
   // The input is neither a pack not a same_input node. SuperWord::profitable does not allow
   // any other case. In the future, we could insert a PackNode.
 #ifdef ASSERT
-  tty->print_cr("\nSuperWordVTransformBuilder::get_vtnode_vector_input_at_index: index=%d", index);
+  tty->print_cr("\nSuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index: index=%d", index);
   pack->dump();
   assert(false, "Pack input was neither a pack nor a same_input node");
 #endif
@@ -3257,12 +3264,12 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_input_scalar(N
 
   assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
   vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
-  set_vtnode(n, vtn);
+  map_node_to_vtnode(n, vtn);
   return vtn;
 }
 
 void SuperWordVTransformBuilder::set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, int j) {
-  VTransformNode* req = get_vtnode_vector_input_at_index(pack, j);
+  VTransformNode* req = get_or_make_vtnode_vector_input_at_index(pack, j);
   vtn->set_req(j, req);
   vtn_dependencies.set(req->_idx);
 }
@@ -3287,7 +3294,7 @@ void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack,
   }
 }
 
-void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtn(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }

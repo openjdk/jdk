@@ -1352,30 +1352,30 @@ class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 
-// Status output from a VTransformNode::apply
-class VTransformApplyStatus {
+// Result from a VTransformNode::apply
+class VTransformApplyResult {
 private:
   Node* const _node;
   const uint _vector_length; // number of elements
   const uint _vector_width;  // total width in bytes
 
-  VTransformApplyStatus(Node* n, uint vector_length, uint vector_width) :
+  VTransformApplyResult(Node* n, uint vector_length, uint vector_width) :
     _node(n),
     _vector_length(vector_length),
     _vector_width(vector_width) {}
 
 public:
-  static VTransformApplyStatus make_scalar(Node* n) {
-    return VTransformApplyStatus(n, 0, 0);
+  static VTransformApplyResult make_scalar(Node* n) {
+    return VTransformApplyResult(n, 0, 0);
   }
 
-  static VTransformApplyStatus make_vector(Node* n, uint vector_length, uint vector_width) {
+  static VTransformApplyResult make_vector(Node* n, uint vector_length, uint vector_width) {
     assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyStatus(n, vector_length, vector_width);
+    return VTransformApplyResult(n, vector_length, vector_width);
   }
 
-  static VTransformApplyStatus make_empty() {
-    return VTransformApplyStatus(nullptr, 0, 0);
+  static VTransformApplyResult make_empty() {
+    return VTransformApplyResult(nullptr, 0, 0);
   }
 
   Node* node() const { return _node; }
@@ -1384,6 +1384,21 @@ public:
   NOT_PRODUCT( void trace(VTransformNode* vtn) const; )
 };
 
+// VTransformGraph is a graph of VTransformNode, which represent the VTransform. It
+// is designed to resemble the C2 nodes after "apply" as closely as possible.
+// Currently, there are these stages to the VTransform:
+//
+//  - Construction:
+//      external (e.g. with SuperWordVTransformBuilder)
+//
+//  - Schedule:
+//      compute linearization of graph, into a order that respects all edges in the
+//      graph (bailout if circle detected).
+//
+//  - Apply:
+//      Make all necessary changes to the C2 IR, each VTransformNode generates the
+//      corresponding scalar or vector C2 nodes.
+//
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -1444,6 +1459,7 @@ public:
   Arena* arena() { return &_arena; }
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
+  bool is_empty() const { return _vtnodes.is_empty(); }
 
   bool schedule();
   void apply();
@@ -1454,16 +1470,15 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   IdealLoopTree* lpt()        const { return _vloop.lpt(); }
   CountedLoopNode* cl()       const { return _vloop.cl(); }
-  PhiNode* iv()               const { return _vloop.iv(); }
   int iv_stride()             const { return cl()->stride_con(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  // VLoopVPointer accessors
+  // VLoopVPointers accessors
   const VPointer& vpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
-  void schedule_collect_nodes_without_req_or_dep(GrowableArray<VTransformNode*>& stack) const;
+  void schedule_collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -1538,7 +1553,7 @@ public:
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
 
-  bool has_req_or_dep() const {
+  bool has_req_or_dependency() const {
     for (int i = 0; i < _in.length(); i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
@@ -1552,7 +1567,7 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
@@ -1565,6 +1580,7 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
+// Identity transform for scalar nodes.
 class VTransformScalarNode : public VTransformNode {
 private:
   Node* _node;
@@ -1573,13 +1589,15 @@ public:
     VTransformNode(graph, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// Wrapper node for nodes outside the loop that are inputs to the loop.
+// Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
+// Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
+// we must wrap the inputs that are outside the loop also into special vtnodes.
 class VTransformInputScalarNode : public VTransformScalarNode {
 public:
   VTransformInputScalarNode(VTransformGraph& graph, Node* n) :
@@ -1588,6 +1606,7 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
+// Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
 private:
   int _vlen;
@@ -1595,21 +1614,22 @@ private:
 public:
   VTransformReplicateNode(VTransformGraph& graph, int vlen, const Type* element_type) :
     VTransformNode(graph, 2), _vlen(vlen), _element_type(element_type) {}
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// Transform introduces a scalar ConvI2LNode that was not previously in the C2 graph.
 class VTransformConvI2LNode : public VTransformNode {
 public:
   VTransformConvI2LNode(VTransformGraph& graph) : VTransformNode(graph, 2) {}
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
 };
 
-
+// Transform introduces a shift-count node, that truncates the shift count for a vector shift.
 class VTransformShiftCountNode : public VTransformNode {
 private:
   int _vlen;
@@ -1619,12 +1639,13 @@ private:
 public:
   VTransformShiftCountNode(VTransformGraph& graph, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
     VTransformNode(graph, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// Transform introduces a PopulateIndex node: [phi, phi+1, phi+2, phi+3, ...].
 class VTransformPopulateIndexNode : public VTransformNode {
 private:
   int _vlen;
@@ -1632,17 +1653,18 @@ private:
 public:
   VTransformPopulateIndexNode(VTransformGraph& graph, int vlen, const BasicType element_bt) :
     VTransformNode(graph, 2), _vlen(vlen), _element_bt(element_bt) {}
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// Base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
   GrowableArray<Node*> _nodes;
 public:
-  VTransformVectorNode(VTransformGraph& graph, const uint req, const int number_of_nodes) :
+  VTransformVectorNode(VTransformGraph& graph, const uint req, const uint number_of_nodes) :
     VTransformNode(graph, req), _nodes(graph.arena(), number_of_nodes, number_of_nodes, nullptr) {}
 
   void set_nodes(const Node_List* pack) {
@@ -1657,12 +1679,13 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// Catch all for all element-wise vector operations.
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
 public:
-  VTransformElementWiseVectorNode(VTransformGraph& graph, uint req, int number_of_nodes) :
+  VTransformElementWiseVectorNode(VTransformGraph& graph, uint req, uint number_of_nodes) :
     VTransformVectorNode(graph, req, number_of_nodes) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
 };
@@ -1679,11 +1702,11 @@ class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
-  VTransformBoolVectorNode(VTransformGraph& graph, int number_of_nodes, VTransformBoolTest test) :
+  VTransformBoolVectorNode(VTransformGraph& graph, uint number_of_nodes, VTransformBoolTest test) :
     VTransformElementWiseVectorNode(graph, 2, number_of_nodes), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
 };
@@ -1691,10 +1714,10 @@ public:
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, scalar init, vector]
-  VTransformReductionVectorNode(VTransformGraph& graph, int number_of_nodes) :
+  VTransformReductionVectorNode(VTransformGraph& graph, uint number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
 };
@@ -1702,10 +1725,10 @@ public:
 class VTransformLoadVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransformGraph& graph, int number_of_nodes) :
+  VTransformLoadVectorNode(VTransformGraph& graph, uint number_of_nodes) :
     VTransformVectorNode(graph, 3, number_of_nodes) {}
   LoadNode::ControlDependency control_dependency() const;
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
@@ -1713,9 +1736,9 @@ public:
 class VTransformStoreVectorNode : public VTransformVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransformGraph& graph, int number_of_nodes) :
+  VTransformStoreVectorNode(VTransformGraph& graph, uint number_of_nodes) :
     VTransformVectorNode(graph, 4, number_of_nodes) {}
-  virtual VTransformApplyStatus apply(const VLoopAnalyzer& vloop_analyzer,
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };

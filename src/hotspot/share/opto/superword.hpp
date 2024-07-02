@@ -648,15 +648,17 @@ public:
       _packset(packset),
       _graph(graph)
   {
-    build_vtransform();
+    assert(_graph.is_empty(), "constructor is passed an empty graph");
+    build();
+    assert(!_graph.is_empty(), "graph must contain some vtnodes now");
   }
 
 private:
-  void build_vtransform();
+  void build();
   void build_vector_vtnodes_for_packed_nodes();
   void build_scalar_vtnodes_for_non_packed_nodes();
-  void build_edges_for_vector_vtnodes(VectorSet& vtn_dependencies);
-  void build_edges_for_scalar_vtnodes(VectorSet& vtn_dependencies);
+  void build_inputs_for_vector_vtnodes(VectorSet& vtn_dependencies);
+  void build_inputs_for_scalar_vtnodes(VectorSet& vtn_dependencies);
 
   // Helper methods for building VTransformGraph.
   VTransformNode* get_vtnode_or_null(Node* n) const {
@@ -670,23 +672,19 @@ private:
     return vtn;
   }
 
-  void set_vtnode(Node* n, VTransformNode* vtn) {
+  void map_node_to_vtnode(Node* n, VTransformNode* vtn) {
     assert(vtn != nullptr, "only set non-null vtnodes");
     _idx_to_vtnode.put_when_absent(n->_idx, vtn);
   }
 
-  VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
-  VTransformNode* get_vtnode_vector_input_at_index(const Node_List* pack, const int index);
+  VTransformVectorNode* make_vector_vtnode_for_pack(const Node_List* pack) const;
+  VTransformNode* get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index);
   VTransformNode* get_vtnode_or_wrap_as_input_scalar(Node* n);
   void set_req_with_scalar(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
   void set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
   void set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
-  void add_dependencies_of_node_to_vtn(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
-
-  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void determine_mem_ref_and_aw_for_main_loop_alignment();
-  void adjust_pre_loop_limit_to_align_main_loop_vectors();
+  void add_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

@@ -1817,7 +1817,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  schedule_collect_nodes_without_req_or_dep(stack);
+  schedule_collect_nodes_without_req_or_dependency(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -1871,10 +1871,10 @@ bool VTransformGraph::schedule() {
 }
 
 // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::schedule_collect_nodes_without_req_or_dep(GrowableArray<VTransformNode*>& stack) const {
+void VTransformGraph::schedule_collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dep()) {
+    if (!vtn->has_req_or_dependency()) {
       stack.push(vtn);
     }
   }
@@ -1893,7 +1893,7 @@ void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>&
   }
 }
 
-void VTransformApplyStatus::trace(VTransformNode* vtn) const {
+void VTransformApplyResult::trace(VTransformNode* vtn) const {
   tty->print("  apply: ");
   vtn->print();
   tty->print("    ->   ");
@@ -1911,26 +1911,26 @@ Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& 
   return n;
 }
 
-VTransformApplyStatus VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
-  return VTransformApplyStatus::make_scalar(_node);
+  return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyStatus VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
   register_new_node_from_vectorization(vloop_analyzer, vn, val);
-  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* n = new ConvI2LNode(val);
   register_new_node_from_vectorization(vloop_analyzer, n, val);
-  return VTransformApplyStatus::make_scalar(n);
+  return VTransformApplyResult::make_scalar(n);
 }
 
-VTransformApplyStatus VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   Node* shift_count_in = find_transformed_input(1, vnode_idx_to_transformed_node);
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
@@ -1942,11 +1942,11 @@ VTransformApplyStatus VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
   VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
   register_new_node_from_vectorization(vloop_analyzer, vn, shift_count_in);
-  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
 
-VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   assert(val->is_Phi(), "expected to be iv");
@@ -1954,10 +1954,10 @@ VTransformApplyStatus VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
   register_new_node_from_vectorization(vloop_analyzer, vn, val);
-  return VTransformApplyStatus::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
@@ -1966,7 +1966,7 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   if (first->is_Cmp()) {
     // Cmp + Bool -> VectorMaskCmp
     // Handled by Bool / VTransformBoolVectorNode, so we do not generate any nodes here.
-    return VTransformApplyStatus::make_empty();
+    return VTransformApplyResult::make_empty();
   }
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
@@ -2007,10 +2007,10 @@ VTransformApplyStatus VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   }
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-  return VTransformApplyStatus::make_vector(vn, vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   BoolNode* first = nodes().at(0)->as_Bool();
   uint  vlen = nodes().length();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
@@ -2029,10 +2029,10 @@ VTransformApplyStatus VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-  return VTransformApplyStatus::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
@@ -2043,10 +2043,10 @@ VTransformApplyStatus VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
 
   ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-  return VTransformApplyStatus::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   LoadNode* first = nodes().at(0)->as_Load();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -2072,10 +2072,10 @@ VTransformApplyStatus VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-  return VTransformApplyStatus::make_vector(vn, vlen, vn->memory_size());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-VTransformApplyStatus VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   StoreNode* first = nodes().at(0)->as_Store();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -2088,7 +2088,7 @@ VTransformApplyStatus VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
-  return VTransformApplyStatus::make_vector(vn, vlen, vn->memory_size());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
 void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
