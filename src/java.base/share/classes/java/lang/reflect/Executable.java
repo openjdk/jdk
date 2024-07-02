@@ -39,8 +39,8 @@ import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.generics.info.ExecutableGenericInfo;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
-import sun.reflect.generics.repository.ConstructorRepository;
 
 /**
  * A shared superclass for the common functionality of {@link Method}
@@ -67,7 +67,7 @@ public abstract sealed class Executable extends AccessibleObject
      */
     abstract boolean hasGenericInformation();
 
-    abstract ConstructorRepository getGenericInfo();
+    abstract ExecutableGenericInfo<?> getGenericInfo();
 
     boolean equalParamTypes(Class<?>[] params1, Class<?>[] params2) {
         /* Avoid unnecessary cloning */
@@ -331,7 +331,7 @@ public abstract sealed class Executable extends AccessibleObject
     @SuppressWarnings("doclint:reference") // cross-module links
     public Type[] getGenericParameterTypes() {
         if (hasGenericInformation())
-            return getGenericInfo().getParameterTypes();
+            return getGenericInfo().getParameters();
         else
             return getParameterTypes();
     }
@@ -533,7 +533,7 @@ public abstract sealed class Executable extends AccessibleObject
     public Type[] getGenericExceptionTypes() {
         Type[] result;
         if (hasGenericInformation() &&
-            ((result = getGenericInfo().getExceptionTypes()).length > 0))
+            ((result = getGenericInfo().getExceptions()).length > 0))
             return result;
         else
             return getExceptionTypes();

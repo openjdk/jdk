@@ -36,11 +36,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
-import sun.reflect.generics.repository.GenericDeclRepository;
-import sun.reflect.generics.repository.MethodRepository;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.scope.MethodScope;
+import sun.reflect.generics.info.ExecutableGenericInfo;
+import sun.reflect.generics.info.GenericInfo;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.AnnotationParser;
 import java.lang.annotation.Annotation;
@@ -82,7 +79,7 @@ public final class Method extends Executable {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient volatile MethodRepository genericInfo;
+    private transient volatile ExecutableGenericInfo<Method> genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
     private final byte[]              annotationDefault;
@@ -99,21 +96,14 @@ public final class Method extends Executable {
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
 
-    // Accessor for factory
-    private GenericsFactory getFactory() {
-        // create scope and factory
-        return CoreReflectionFactory.make(this, MethodScope.make(this));
-    }
-
     // Accessor for generic info repository
     @Override
-    MethodRepository getGenericInfo() {
+    ExecutableGenericInfo<Method> getGenericInfo() {
         var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
-            genericInfo = MethodRepository.make(getGenericSignature(),
-                                                getFactory());
+            genericInfo = new ExecutableGenericInfo<>(this, getGenericSignature());
             this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
@@ -255,9 +245,9 @@ public final class Method extends Executable {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Method>[] getTypeParameters() {
         if (getGenericSignature() != null)
-            return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
+            return getGenericInfo().getTypeVariables();
         else
-            return (TypeVariable<Method>[])GenericDeclRepository.EMPTY_TYPE_VARS;
+            return (TypeVariable<Method>[]) GenericInfo.EMPTY_TYPE_VARS;
     }
 
     /**
@@ -296,7 +286,7 @@ public final class Method extends Executable {
      */
     public Type getGenericReturnType() {
       if (getGenericSignature() != null) {
-        return getGenericInfo().getReturnType();
+        return getGenericInfo().getResult();
       } else { return getReturnType();}
     }
 
