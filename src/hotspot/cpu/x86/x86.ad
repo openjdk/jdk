@@ -2457,6 +2457,10 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
     mstack.push(m, Visit);           // m = ShiftCntV
     return true;
   }
+  if (is_encode_and_store_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
   return false;
 }
 

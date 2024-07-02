@@ -245,6 +245,39 @@ void G1Arguments::initialize() {
   if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
+
+#if G1_LATE_BARRIER_MIGRATION_SUPPORT
+  if (G1StressBarriers) {
+    // Increase the frequency of concurrent marking (so that the pre-barrier is
+    // not trivially skipped).
+    if (FLAG_IS_DEFAULT(G1UseAdaptiveIHOP)) {
+      FLAG_SET_ERGO(G1UseAdaptiveIHOP, false);
+    }
+    if (FLAG_IS_DEFAULT(InitiatingHeapOccupancyPercent)) {
+      FLAG_SET_ERGO(InitiatingHeapOccupancyPercent, 0);
+    }
+    // Exercise both pre-barrier enqueue paths (inline and runtime) equally.
+    if (FLAG_IS_DEFAULT(G1SATBBufferSize)) {
+      FLAG_SET_ERGO(G1SATBBufferSize, 2);
+    }
+    // Increase the frequency of inter-regional objects in the post-barrier.
+    if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
+      FLAG_SET_ERGO(G1HeapRegionSize, HeapRegionBounds::min_size());
+    }
+    // Increase the frequency with which the post-barrier sees a clean card and
+    // has to dirty it.
+    if (FLAG_IS_DEFAULT(GCCardSizeInBytes)) {
+      FLAG_SET_ERGO(GCCardSizeInBytes, MAX2(ObjectAlignmentInBytes, 128));
+    }
+    if (FLAG_IS_DEFAULT(G1RSetUpdatingPauseTimePercent)) {
+      FLAG_SET_ERGO(G1RSetUpdatingPauseTimePercent, 0);
+    }
+    // Exercise both post-barrier dirtying paths (inline and runtime) equally.
+    if (FLAG_IS_DEFAULT(G1UpdateBufferSize)) {
+      FLAG_SET_ERGO(G1UpdateBufferSize, 2);
+    }
+  }
+#endif // G1_LATE_BARRIER_MIGRATION_SUPPORT
 }
 
 void G1Arguments::initialize_heap_flags_and_sizes() {

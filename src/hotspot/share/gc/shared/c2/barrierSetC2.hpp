@@ -254,6 +254,8 @@ public:
   Label* entry();
   // Return point from the stub (typically end of barrier).
   Label* continuation();
+  // High-level, GC-specific barrier flags.
+  uint8_t barrier_data() const;
 
   // Preserve the value in reg across runtime calls in this barrier.
   void preserve(Register reg);
