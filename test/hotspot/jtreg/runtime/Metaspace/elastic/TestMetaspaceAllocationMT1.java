@@ -58,7 +58,7 @@
  */
 
 /*
- * @test id=debug-default-strict
+ * @test id=debug-default-long-manual
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -72,24 +72,6 @@
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:VerifyMetaspaceInterval=10
  *      TestMetaspaceAllocationMT1 10
- */
-
-/*
- * @test id=debug-guard
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == true)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:VerifyMetaspaceInterval=10
- *      -XX:+MetaspaceGuardAllocations
- *      TestMetaspaceAllocationMT1 3
  */
 
 /*
@@ -130,7 +112,6 @@ public class TestMetaspaceAllocationMT1 {
             System.out.println("#### seconds: " + seconds);
             System.out.println("#### commitLimit: " + commitLimit);
             System.out.println("#### reserveLimit: " + reserveLimit);
-            System.out.println("#### guards: " + Settings.settings().usesAllocationGuards);
 
             MetaspaceTestContext context = new MetaspaceTestContext(commitLimit, reserveLimit);
             MetaspaceTestOneArenaManyThreads test = new MetaspaceTestOneArenaManyThreads(context, testAllocationCeiling, numThreads, seconds);

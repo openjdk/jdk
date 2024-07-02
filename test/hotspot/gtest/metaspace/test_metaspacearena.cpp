@@ -291,11 +291,6 @@ TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_micro_nc) {
 //  Here, we give it an ideal policy which should enable the initial chunk to grow unmolested
 //  until finish.
 TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_2) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   // Note: internally, chunk in-place enlargement is disallowed if growing the chunk
   //  would cause the arena to claim more memory than its growth policy allows. This
   //  is done to prevent the arena to grow too fast.
@@ -337,11 +332,6 @@ TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_2) {
 //  test that in place enlargement correctly fails if growing the chunk would bring us
 //  beyond the max. size of a chunk.
 TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_max_chunk_size) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   MetaspaceGtestContext context;
 
   for (size_t first_allocation_size = 1; first_allocation_size <= MAX_CHUNK_WORD_SIZE / 2; first_allocation_size *= 2) {
@@ -372,11 +362,6 @@ TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_max_chunk_siz
 //  test that in place enlargement correctly fails if growing the chunk would cause more
 //  than doubling its size
 TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_doubling_chunk_size) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   MetaspaceGtestContext context;
   MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
 
@@ -399,9 +384,6 @@ TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_doubling_chun
 // Allocate, deallocate, then allocate the same block again. The second allocate should
 // reuse the deallocated block.
 TEST_VM(metaspace, MetaspaceArena_deallocate) {
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
   for (size_t s = 2; s <= MAX_CHUNK_WORD_SIZE; s *= 2) {
     MetaspaceGtestContext context;
     MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
@@ -504,10 +486,6 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
                                    size_t expected_starting_capacity,
                                    bool test_in_place_enlargement)
 {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
 
   // From a MetaspaceArena in a clean room allocate tiny amounts;
   // watch it grow. Used/committed/capacity should not grow in
