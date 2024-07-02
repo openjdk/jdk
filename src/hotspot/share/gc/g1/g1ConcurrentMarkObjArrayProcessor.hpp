@@ -25,9 +25,8 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_HPP
 
+#include "gc/shared/arraySlicer.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "gc/g1/g1ArraySlicer.hpp"
-#include "gc/g1/g1TaskQueueEntry.hpp"
 
 class G1CMTask;
 
@@ -35,7 +34,7 @@ class G1CMTask;
 // Instead of pushing large object arrays, we push continuations onto the
 // mark stack. These continuations are identified by having their LSB set.
 // This allows incremental processing of large objects.
-class G1CMObjArrayProcessor : public G1ArraySlicer {
+class G1CMObjArrayProcessor : public ArraySlicer {
 private:
   // Reference to the task for doing the actual work.
   G1CMTask* _task;
@@ -44,7 +43,7 @@ public:
   explicit G1CMObjArrayProcessor(G1CMTask* task) : _task(task) {
   }
   void scan_metadata(objArrayOop array) override;
-  void push_on_queue(G1TaskQueueEntry task) override;
+  void push_on_queue(ArraySliceTask task) override;
   size_t scan_array(objArrayOop array, int from, int len) override;
 };
 

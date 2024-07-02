@@ -28,9 +28,9 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/g1TaskQueueEntry.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/preservedMarks.hpp"
@@ -138,9 +138,9 @@ public:
   void verify_task(narrowOop* task) const NOT_DEBUG_RETURN;
   void verify_task(oop* task) const NOT_DEBUG_RETURN;
   void verify_task(oop task) const NOT_DEBUG_RETURN;
-  void verify_task(G1TaskQueueEntry task) const NOT_DEBUG_RETURN;
+  void verify_task(ArraySliceTask task) const NOT_DEBUG_RETURN;
 
-  void push_on_queue(G1TaskQueueEntry task);
+  void push_on_queue(ArraySliceTask task);
 
   // Apply the post barrier to the given reference field. Enqueues the card of p
   // if the barrier does not filter out the reference for some reason (e.g.
@@ -189,7 +189,7 @@ private:
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> void do_oop_evac(T* p);
 
-  void dispatch_task(G1TaskQueueEntry task);
+  void dispatch_task(ArraySliceTask task);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous

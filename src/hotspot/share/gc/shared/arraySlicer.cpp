@@ -24,13 +24,12 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1ArraySlicer.hpp"
-#include "gc/g1/g1TaskQueueEntry.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
-size_t G1ArraySlicer::process_objArray(objArrayOop array) {
+size_t ArraySlicer::process_objArray(objArrayOop array) {
   int len = array->length();
 
   // Mark objArray klass metadata
@@ -62,19 +61,19 @@ size_t G1ArraySlicer::process_objArray(objArrayOop array) {
     pow--;
     slice = 2;
     last_idx = (1 << pow);
-    push_on_queue(G1TaskQueueEntry(array, 1, pow));
+    push_on_queue(ArraySliceTask(array, 1, pow));
   }
 
-  // Split out tasks, as suggested in G1TaskQueueEntry docs. Record the last
+  // Split out tasks, as suggested in ArraySliceTask docs. Record the last
   // successful right boundary to figure out the irregular tail.
   while ((1 << pow) > (int)ObjArrayMarkingStride &&
-         (slice * 2 < G1TaskQueueEntry::slice_size())) {
+         (slice * 2 < ArraySliceTask::slice_size())) {
     pow--;
     int left_slice = slice * 2 - 1;
     int right_slice = slice * 2;
     int left_slice_end = left_slice * (1 << pow);
     if (left_slice_end < len) {
-      push_on_queue(G1TaskQueueEntry(array, left_slice, pow));
+      push_on_queue(ArraySliceTask(array, left_slice, pow));
       slice = right_slice;
       last_idx = left_slice_end;
     } else {
@@ -90,15 +89,15 @@ size_t G1ArraySlicer::process_objArray(objArrayOop array) {
   return 0;
 }
 
-size_t G1ArraySlicer::process_slice(objArrayOop array, int slice, int pow) {
+size_t ArraySlicer::process_slice(objArrayOop array, int slice, int pow) {
   assert (ObjArrayMarkingStride > 0, "sanity");
 
-  // Split out tasks, as suggested in G1TaskQueueEntry docs. Avoid pushing tasks that
+  // Split out tasks, as suggested in ArraySliceTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
-  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < G1TaskQueueEntry::slice_size())) {
+  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < ArraySliceTask::slice_size())) {
     pow--;
     slice *= 2;
-    push_on_queue(G1TaskQueueEntry(array, slice - 1, pow));
+    push_on_queue(ArraySliceTask(array, slice - 1, pow));
   }
 
   int slice_size = 1 << pow;

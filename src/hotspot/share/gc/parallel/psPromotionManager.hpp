@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_HPP
 
 #include "gc/parallel/psPromotionLAB.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.hpp"
@@ -53,9 +54,10 @@ class ParCompactionManager;
 class PSPromotionManager {
   friend class PSScavenge;
   friend class ScavengeRootsTask;
+  friend class ParallelGCArraySlicer;
 
  private:
-  typedef OverflowTaskQueue<ScannerTask, mtGC>           PSScannerTasksQueue;
+  typedef OverflowTaskQueue<ArraySliceTask, mtGC>      PSScannerTasksQueue;
   typedef GenericTaskQueueSet<PSScannerTasksQueue, mtGC> PSScannerTasksQueueSet;
 
   static PaddedEnd<PSPromotionManager>* _manager_array;
@@ -101,9 +103,9 @@ class PSPromotionManager {
 
   template <class T> void  process_array_chunk_work(oop obj,
                                                     int start, int end);
-  void process_array_chunk(PartialArrayScanTask task);
+  void process_array_chunk(ArraySliceTask task);
 
-  void push_depth(ScannerTask task);
+  void push_depth(ArraySliceTask task);
 
   inline void promotion_trace_event(oop new_obj, oop old_obj, size_t obj_size,
                                     uint age, bool tenured,
@@ -124,7 +126,7 @@ class PSPromotionManager {
   static PSPromotionManager* gc_thread_promotion_manager(uint index);
   static PSPromotionManager* vm_thread_promotion_manager();
 
-  static bool steal_depth(int queue_num, ScannerTask& t);
+  static bool steal_depth(int queue_num, ArraySliceTask& t);
 
   PSPromotionManager();
 
@@ -159,7 +161,7 @@ class PSPromotionManager {
     return claimed_stack_depth()->is_empty();
   }
 
-  inline void process_popped_location_depth(ScannerTask task);
+  inline void process_popped_location_depth(ArraySliceTask task);
 
   static bool should_scavenge(oop* p, bool check_to_space = false);
   static bool should_scavenge(narrowOop* p, bool check_to_space = false);
@@ -169,10 +171,35 @@ class PSPromotionManager {
 
   template <class T> inline void claim_or_forward_depth(T* p);
 
-  TASKQUEUE_STATS_ONLY(inline void record_steal(ScannerTask task);)
+  TASKQUEUE_STATS_ONLY(inline void record_steal(ArraySliceTask task);)
 
   void push_contents(oop obj);
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);
 };
+
+class ParallelGCArraySlicer : public ArraySlicer {
+  PSPromotionManager* _promotion_manager;
+public:
+  explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
+          _promotion_manager(promotion_manager) {}
+
+  void scan_metadata(objArrayOop array) {
+    // Nothing to do here.
+  }
+  void push_on_queue(ArraySliceTask task) {
+    _promotion_manager->push_depth(task);
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunk_pushes);
+  }
+  size_t scan_array(objArrayOop array, int start, int end) {
+    if (UseCompressedOops) {
+      _promotion_manager->process_array_chunk_work<narrowOop>(array, start, end);
+    } else {
+      _promotion_manager->process_array_chunk_work<oop>(array, start, end);
+    }
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunks_processed);
+    return 0; // Not used in ParallelGC
+  }
+};
+
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_HPP

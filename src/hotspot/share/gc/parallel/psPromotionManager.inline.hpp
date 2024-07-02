@@ -50,7 +50,7 @@ inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   return &_manager_array[index];
 }
 
-inline void PSPromotionManager::push_depth(ScannerTask task) {
+inline void PSPromotionManager::push_depth(ArraySliceTask task) {
   claimed_stack_depth()->push(task);
 }
 
@@ -62,7 +62,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
     Prefetch::write(obj->mark_addr(), 0);
-    push_depth(ScannerTask(p));
+    push_depth(ArraySliceTask(p));
   }
 }
 
@@ -280,8 +280,8 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
         new_obj->is_objArray() &&
         PSChunkLargeArrays) {
       // we'll chunk it
-      push_depth(ScannerTask(PartialArrayScanTask(o)));
-      TASKQUEUE_STATS_ONLY(++_arrays_chunked; ++_array_chunk_pushes);
+      ParallelGCArraySlicer slicer(this);
+      slicer.process_objArray(objArrayOop(new_obj));
     } else {
       // we'll just push its contents
       push_contents(new_obj);
@@ -327,10 +327,10 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   }
 }
 
-inline void PSPromotionManager::process_popped_location_depth(ScannerTask task) {
-  if (task.is_partial_array_task()) {
+inline void PSPromotionManager::process_popped_location_depth(ArraySliceTask task) {
+  if (task.is_array_slice()) {
     assert(PSChunkLargeArrays, "invariant");
-    process_array_chunk(task.to_partial_array_task());
+    process_array_chunk(task);
   } else {
     if (task.is_narrow_oop_ptr()) {
       assert(UseCompressedOops, "Error");
@@ -341,13 +341,13 @@ inline void PSPromotionManager::process_popped_location_depth(ScannerTask task) 
   }
 }
 
-inline bool PSPromotionManager::steal_depth(int queue_num, ScannerTask& t) {
+inline bool PSPromotionManager::steal_depth(int queue_num, ArraySliceTask& t) {
   return stack_array_depth()->steal(queue_num, t);
 }
 
 #if TASKQUEUE_STATS
-void PSPromotionManager::record_steal(ScannerTask task) {
-  if (task.is_partial_array_task()) {
+void PSPromotionManager::record_steal(ArraySliceTask task) {
+  if (task.is_array_slice()) {
     ++_array_chunk_steals;
   }
 }

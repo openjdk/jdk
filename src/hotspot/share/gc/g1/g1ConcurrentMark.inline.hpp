@@ -106,9 +106,9 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 #endif
 
 // It scans an object and visits its children.
-inline void G1CMTask::scan_task_entry(G1TaskQueueEntry task_entry) { process_grey_task_entry<true>(task_entry); }
+inline void G1CMTask::scan_task_entry(ArraySliceTask task_entry) { process_grey_task_entry<true>(task_entry); }
 
-inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
+inline void G1CMTask::push(ArraySliceTask task_entry) {
   assert(task_entry.is_array_slice() || _g1h->is_in_reserved(task_entry.to_oop()), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.to_oop())), "invariant");
@@ -158,7 +158,7 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 }
 
 template<bool scan>
-inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
+inline void G1CMTask::process_grey_task_entry(ArraySliceTask task_entry) {
   assert(scan || (task_entry.is_oop() && task_entry.to_oop()->is_typeArray()), "Skipping scan of grey non-typeArray");
   assert(task_entry.is_array_slice() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.to_oop())),
          "Any stolen object should be a slice or marked");
@@ -266,7 +266,7 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
   // be pushed on the stack. So, some duplicate work, but no
   // correctness problems.
   if (is_below_finger(obj, global_finger)) {
-    G1TaskQueueEntry entry(obj);
+    ArraySliceTask entry(obj);
     if (obj->is_typeArray()) {
       // Immediately process arrays of primitive types, rather
       // than pushing on the mark stack.  This keeps us from

@@ -30,9 +30,9 @@
 void G1CMObjArrayProcessor::scan_metadata(objArrayOop array) {
   _task->scan_objArray_start(array);
 }
-void G1CMObjArrayProcessor::push_on_queue(G1TaskQueueEntry task) {
+void G1CMObjArrayProcessor::push_on_queue(ArraySliceTask task) {
   _task->push(task);
 }
-size_t G1CMObjArrayProcessor::scan_array(objArrayOop array, int from, int len) {
-  return _task->scan_objArray(array, from, from + len);
+size_t G1CMObjArrayProcessor::scan_array(objArrayOop array, int start, int end) {
+  return _task->scan_objArray(array, start, end);
 }

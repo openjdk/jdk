@@ -23,8 +23,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
-#define SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
+#ifndef SHARE_GC_SHARE_ARRAYSLICER_HPP
+#define SHARE_GC_SHARE_ARRAYSLICER_HPP
+
+#include "oops/oopsHierarchy.hpp"
 
 // A task queue entry that encodes both regular oops, and the array oops plus sliceing data for
 // parallel array processing.
@@ -81,7 +83,7 @@
 // bits from the native pointer. It is useful to debug the optimized version.
 //
 #ifdef _LP64
-class G1TaskQueueEntry {
+class ArraySliceTask {
 private:
   // Everything is encoded into this field...
   uintptr_t _val;
@@ -142,28 +144,28 @@ private:
   }
 
 public:
-  G1TaskQueueEntry() : _val(0) {
+  ArraySliceTask() : _val(0) {
   }
-  G1TaskQueueEntry(oop o) {
+  ArraySliceTask(oop o) {
     uintptr_t enc = encode_oop(o, OopTag);
     assert(decode(enc, OopTag) == o, "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(!decode_is_sliced(enc),  "task should not be sliced");
     _val = enc;
   }
-  G1TaskQueueEntry(oop* o) {
+  ArraySliceTask(oop* o) {
     uintptr_t enc = encode_oop(o, OopTag);
     assert(decode(enc, OopTag) == o, "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(!decode_is_sliced(enc),  "task should not be sliced");
     _val = enc;
   }
-  G1TaskQueueEntry(narrowOop* o) {
+  ArraySliceTask(narrowOop* o) {
     uintptr_t enc = encode_oop(o, NarrowOopTag);
     assert(decode(enc, NarrowOopTag) == o, "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(!decode_is_sliced(enc),  "task should not be sliced");
     _val = enc;
   }
 
-  G1TaskQueueEntry(oop o, int slice, int pow) {
+  ArraySliceTask(oop o, int slice, int pow) {
     uintptr_t enc_oop = encode_oop(o, OopTag);
     uintptr_t enc_slice = encode_slice(slice);
     uintptr_t enc_pow = encode_pow(pow);
@@ -195,7 +197,7 @@ public:
   }
 };
 #else
-class G1TaskQueueEntry {
+class ArraySliceTask {
 private:
   static const uint8_t slice_bits  = 10;
 
@@ -204,23 +206,23 @@ private:
   uint16_t _pow;
 
 public:
-  G1TaskQueueEntry() :
+  ArraySliceTask() :
     _ptr(nullptr), _slice(0), _pow(0) {
   }
-  G1TaskQueueEntry(oop o) :
+  ArraySliceTask(oop o) :
     _ptr(cast_from_oop<void*>(o)),
     _slice(0), _pow(0) {
     assert(!is_array_slice(),  "task should not be sliced");
   }
-  G1TaskQueueEntry(oop* o) :
+  ArraySliceTask(oop* o) :
     _ptr(reinterpret_cast<void*>(o)),
     _slice(0), _pow(0) {
     assert(!is_array_slice(),  "task should not be sliced");
   }
-  G1TaskQueueEntry(narrowOop* o) {
+  ArraySliceTask(narrowOop* o) {
     ShouldNotReachHere();
   }
-  G1TaskQueueEntry(oop o, int slice, int pow) :
+  ArraySliceTask(oop o, int slice, int pow) :
     _ptr(cast_from_oop<void*>(o)),
     _slice(slice), _pow(pow) {
     assert(is_array_slice(),  "task should be sliced");
@@ -246,4 +248,15 @@ public:
   }
 };
 #endif
-#endif // SHARE_GC_G1_G1TASKQUEUEENTRY_HPP
+
+class ArraySlicer {
+public:
+  virtual void scan_metadata(objArrayOop array) = 0;
+  virtual void push_on_queue(ArraySliceTask task) = 0;
+  virtual size_t scan_array(objArrayOop array, int start, int end) = 0;
+
+  size_t process_objArray(objArrayOop obj);
+  size_t process_slice(objArrayOop array, int slice, int pow);
+};
+
+#endif // SHARE_GC_SHARE_ARRAYSLICER_HPP

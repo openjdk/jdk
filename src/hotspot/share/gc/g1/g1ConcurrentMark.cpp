@@ -98,7 +98,7 @@ bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
   // We move that task's local finger along.
   _task->move_finger_to(addr);
 
-  _task->scan_task_entry(G1TaskQueueEntry(cast_to_oop(addr)));
+  _task->scan_task_entry(ArraySliceTask(cast_to_oop(addr)));
   // we only partially drain the local queue and global stack
   _task->drain_local_queue(true);
   _task->drain_global_stack(true);
@@ -114,7 +114,7 @@ G1CMMarkStack::G1CMMarkStack() :
 }
 
 size_t G1CMMarkStack::capacity_alignment() {
-  return (size_t)lcm(os::vm_allocation_granularity(), sizeof(TaskQueueEntryChunk)) / sizeof(G1TaskQueueEntry);
+  return (size_t)lcm(os::vm_allocation_granularity(), sizeof(TaskQueueEntryChunk)) / sizeof(ArraySliceTask);
 }
 
 bool G1CMMarkStack::initialize() {
@@ -123,7 +123,7 @@ bool G1CMMarkStack::initialize() {
   size_t initial_capacity = MarkStackSize;
   size_t max_capacity = MarkStackSizeMax;
 
-  size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
+  size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(ArraySliceTask);
 
   size_t max_num_chunks = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
   size_t initial_num_chunks = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
@@ -325,7 +325,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_free_list()
   return remove_chunk_from_list(&_free_list);
 }
 
-bool G1CMMarkStack::par_push_chunk(G1TaskQueueEntry* ptr_arr) {
+bool G1CMMarkStack::par_push_chunk(ArraySliceTask* ptr_arr) {
   // Get a new chunk.
   TaskQueueEntryChunk* new_chunk = remove_chunk_from_free_list();
 
@@ -338,21 +338,21 @@ bool G1CMMarkStack::par_push_chunk(G1TaskQueueEntry* ptr_arr) {
     }
   }
 
-  Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, EntriesPerChunk * sizeof(G1TaskQueueEntry));
+  Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, EntriesPerChunk * sizeof(ArraySliceTask));
 
   add_chunk_to_chunk_list(new_chunk);
 
   return true;
 }
 
-bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
+bool G1CMMarkStack::par_pop_chunk(ArraySliceTask* ptr_arr) {
   TaskQueueEntryChunk* cur = remove_chunk_from_chunk_list();
 
   if (cur == nullptr) {
     return false;
   }
 
-  Copy::conjoint_memory_atomic(cur->data, ptr_arr, EntriesPerChunk * sizeof(G1TaskQueueEntry));
+  Copy::conjoint_memory_atomic(cur->data, ptr_arr, EntriesPerChunk * sizeof(ArraySliceTask));
 
   add_chunk_to_free_list(cur);
   return true;
@@ -1965,7 +1965,7 @@ public:
     _info(info)
   { }
 
-  void operator()(G1TaskQueueEntry task_entry) const {
+  void operator()(ArraySliceTask task_entry) const {
     if (task_entry.is_array_slice()) {
       guarantee(_g1h->is_in_reserved(task_entry.to_oop()), "Slice " PTR_FORMAT " must be in heap.", p2i(task_entry.to_oop()));
       return;
@@ -2309,16 +2309,16 @@ void G1CMTask::decrease_limits() {
 void G1CMTask::move_entries_to_global_stack() {
   // Local array where we'll store the entries that will be popped
   // from the local queue.
-  G1TaskQueueEntry buffer[G1CMMarkStack::EntriesPerChunk];
+  ArraySliceTask buffer[G1CMMarkStack::EntriesPerChunk];
 
   size_t n = 0;
-  G1TaskQueueEntry task_entry;
+  ArraySliceTask task_entry;
   while (n < G1CMMarkStack::EntriesPerChunk && _task_queue->pop_local(task_entry)) {
     buffer[n] = task_entry;
     ++n;
   }
   if (n < G1CMMarkStack::EntriesPerChunk) {
-    buffer[n] = G1TaskQueueEntry();
+    buffer[n] = ArraySliceTask();
   }
 
   if (n > 0) {
@@ -2334,7 +2334,7 @@ void G1CMTask::move_entries_to_global_stack() {
 bool G1CMTask::get_entries_from_global_stack() {
   // Local array where we'll store the entries that will be popped
   // from the global stack.
-  G1TaskQueueEntry buffer[G1CMMarkStack::EntriesPerChunk];
+  ArraySliceTask buffer[G1CMMarkStack::EntriesPerChunk];
 
   if (!_cm->mark_stack_pop(buffer)) {
     return false;
@@ -2342,7 +2342,7 @@ bool G1CMTask::get_entries_from_global_stack() {
 
   // We did actually pop at least one entry.
   for (size_t i = 0; i < G1CMMarkStack::EntriesPerChunk; ++i) {
-    G1TaskQueueEntry task_entry = buffer[i];
+    ArraySliceTask task_entry = buffer[i];
     if (task_entry.is_null()) {
       break;
     }
@@ -2374,7 +2374,7 @@ void G1CMTask::drain_local_queue(bool partially) {
   }
 
   if (_task_queue->size() > target_size) {
-    G1TaskQueueEntry entry;
+    ArraySliceTask entry;
     bool ret = _task_queue->pop_local(entry);
     while (ret) {
       scan_task_entry(entry);
@@ -2479,7 +2479,7 @@ void G1CMTask::print_stats() {
                        hits, misses, percent_of(hits, hits + misses));
 }
 
-bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry) {
+bool G1ConcurrentMark::try_stealing(uint worker_id, ArraySliceTask& task_entry) {
   return _task_queues->steal(worker_id, task_entry);
 }
 
@@ -2786,7 +2786,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
     assert(_cm->out_of_regions() && _task_queue->size() == 0,
            "only way to reach here");
     while (!has_aborted()) {
-      G1TaskQueueEntry entry;
+      ArraySliceTask entry;
       if (_cm->try_stealing(_worker_id, entry)) {
         scan_task_entry(entry);
 

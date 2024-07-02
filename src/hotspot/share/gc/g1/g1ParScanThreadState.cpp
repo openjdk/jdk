@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
-#include "gc/g1/g1ArraySlicer.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
@@ -35,6 +34,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -172,7 +172,7 @@ void G1ParScanThreadState::verify_task(oop p) const {
   assert(!_g1h->is_in_cset(p), "p=" PTR_FORMAT, p2i(p));
 }
 
-void G1ParScanThreadState::verify_task(G1TaskQueueEntry task) const {
+void G1ParScanThreadState::verify_task(ArraySliceTask task) const {
   if (task.is_narrow_oop_ptr()) {
     verify_task(task.to_narrow_oop_ptr());
   } else if (task.is_oop_ptr()) {
@@ -219,7 +219,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   write_ref_field_post(p, obj);
 }
 
-class G1ScavengeArraySlicer : public G1ArraySlicer {
+class G1ScavengeArraySlicer : public ArraySlicer {
   G1ScanEvacuatedObjClosure& _scanner;
   bool _skip_enqueue;
   G1ParScanThreadState* _par_scan;
@@ -239,13 +239,13 @@ public:
       Devirtualizer::do_klass(&_scanner, array->klass());
     }
   }
-  void push_on_queue(G1TaskQueueEntry task) override {
+  void push_on_queue(ArraySliceTask task) override {
     _par_scan->push_on_queue(task);
   }
-  size_t scan_array(objArrayOop array, int from, int len) override {
+  size_t scan_array(objArrayOop array, int start, int end) override {
     G1SkipCardEnqueueSetter x(&_scanner, _skip_enqueue);
-    array->oop_iterate_range(&_scanner, from, from + len);
-    return len * (UseCompressedOops ? 2 : 1);
+    array->oop_iterate_range(&_scanner, start, end);
+    return (end - start) * (UseCompressedOops ? 2 : 1);
   }
 };
 
@@ -276,7 +276,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
  }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::dispatch_task(G1TaskQueueEntry task) {
+void G1ParScanThreadState::dispatch_task(ArraySliceTask task) {
   verify_task(task);
   if (task.is_narrow_oop_ptr()) {
     do_oop_evac(task.to_narrow_oop_ptr());
@@ -292,7 +292,7 @@ void G1ParScanThreadState::dispatch_task(G1TaskQueueEntry task) {
 // inlining into steal_and_trim_queue.
 ATTRIBUTE_FLATTEN NOINLINE
 void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
-  G1TaskQueueEntry task;
+  ArraySliceTask task;
   do {
     while (_task_queue->pop_overflow(task)) {
       if (!_task_queue->try_push_to_taskqueue(task)) {
@@ -307,7 +307,7 @@ void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
 
 ATTRIBUTE_FLATTEN
 void G1ParScanThreadState::steal_and_trim_queue(G1ScannerTasksQueueSet* task_queues) {
-  G1TaskQueueEntry stolen_task;
+  ArraySliceTask stolen_task;
   while (task_queues->steal(_worker_id, stolen_task)) {
     dispatch_task(stolen_task);
     // Processing stolen task may have added tasks to our queue.

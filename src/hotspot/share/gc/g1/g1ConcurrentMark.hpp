@@ -30,7 +30,7 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/g1/g1TaskQueueEntry.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -52,7 +52,7 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
+typedef GenericTaskQueue<ArraySliceTask, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
@@ -104,7 +104,7 @@ private:
   struct TaskQueueEntryChunk {
     TaskQueueEntryChunk* next;
     NOT_LP64(void* dummy;) // To make things align.
-    G1TaskQueueEntry data[EntriesPerChunk];
+    ArraySliceTask data[EntriesPerChunk];
   };
 
   class ChunkAllocator {
@@ -239,12 +239,12 @@ private:
   // be terminated with a null.
   // Returns whether the buffer contents were successfully pushed to the global mark
   // stack.
-  bool par_push_chunk(G1TaskQueueEntry* buffer);
+  bool par_push_chunk(ArraySliceTask* buffer);
 
   // Pops a chunk from this mark stack, copying them into the given buffer. This
   // chunk may contain up to EntriesPerChunk elements. If there are less, the last
   // element in the array is a null pointer.
-  bool par_pop_chunk(G1TaskQueueEntry* buffer);
+  bool par_pop_chunk(ArraySliceTask* buffer);
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
@@ -553,14 +553,14 @@ public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
-  bool mark_stack_push(G1TaskQueueEntry* arr) {
+  bool mark_stack_push(ArraySliceTask* arr) {
     if (!_global_mark_stack.par_push_chunk(arr)) {
       set_has_overflown();
       return false;
     }
     return true;
   }
-  bool mark_stack_pop(G1TaskQueueEntry* arr) {
+  bool mark_stack_pop(ArraySliceTask* arr) {
     return _global_mark_stack.par_pop_chunk(arr);
   }
   size_t mark_stack_size() const                { return _global_mark_stack.size(); }
@@ -589,7 +589,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
+  bool try_stealing(uint worker_id, ArraySliceTask& task_entry);
 
   G1ConcurrentMark(G1CollectedHeap* g1h,
                    G1RegionToSpaceMapper* bitmap_storage);
@@ -806,7 +806,7 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
+  template<bool scan> void process_grey_task_entry(ArraySliceTask task_entry);
 public:
   // Apply the closure on the objArray metadata.
   inline void scan_objArray_start(objArrayOop obj);
@@ -870,10 +870,10 @@ public:
   inline bool deal_with_reference(T* p);
 
   // Scans an object and visits its children.
-  inline void scan_task_entry(G1TaskQueueEntry task_entry);
+  inline void scan_task_entry(ArraySliceTask task_entry);
 
   // Pushes an object on the local queue.
-  inline void push(G1TaskQueueEntry task_entry);
+  inline void push(ArraySliceTask task_entry);
 
   // Move entries to the global stack.
   void move_entries_to_global_stack();

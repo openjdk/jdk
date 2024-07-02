@@ -124,7 +124,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
             "stacks should be empty at this point");
 
   while (true) {
-    ScannerTask task;
+    ArraySliceTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       TASKQUEUE_STATS_ONLY(pm->record_steal(task));
       pm->process_popped_location_depth(task);

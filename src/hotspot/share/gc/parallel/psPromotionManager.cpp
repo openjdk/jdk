@@ -29,6 +29,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/shared/arraySlicer.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -225,7 +226,7 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
-    ScannerTask task;
+    ArraySliceTask task;
 
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
@@ -277,38 +278,13 @@ template <class T> void PSPromotionManager::process_array_chunk_work(
   }
 }
 
-void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
+void PSPromotionManager::process_array_chunk(ArraySliceTask task) {
   assert(PSChunkLargeArrays, "invariant");
 
-  oop old = task.to_source_array();
-  assert(old->is_objArray(), "invariant");
-  assert(old->is_forwarded(), "invariant");
-
-  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
-
-  oop const obj = old->forwardee();
-
-  int start;
-  int const end = arrayOop(old)->length();
-  if (end > (int) _min_array_size_for_chunking) {
-    // we'll chunk more
-    start = end - _array_chunk_size;
-    assert(start > 0, "invariant");
-    arrayOop(old)->set_length(start);
-    push_depth(ScannerTask(PartialArrayScanTask(old)));
-    TASKQUEUE_STATS_ONLY(++_array_chunk_pushes);
-  } else {
-    // this is the final chunk for this array
-    start = 0;
-    int const actual_length = arrayOop(obj)->length();
-    arrayOop(old)->set_length(actual_length);
-  }
-
-  if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(obj, start, end);
-  } else {
-    process_array_chunk_work<oop>(obj, start, end);
-  }
+  ParallelGCArraySlicer slicer(this);
+  oop obj = task.to_oop();
+  assert(obj->is_objArray(), "must be object array");
+  slicer.process_slice(objArrayOop(obj), task.slice(), task.pow());
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
