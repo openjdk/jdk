@@ -63,7 +63,11 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     ShenandoahSuspendibleThreadSetJoiner stsj;
-    ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
+    // Do not use active_generation() : we must use the gc_generation() set by
+    // ShenandoahGCScope on the ControllerThread's stack; no safepoint may
+    // intervene to update active_generation, so we can't
+    // shenandoah_assert_generations_reconciled() here.
+    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
@@ -111,7 +115,8 @@ public:
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
     StringDedup::Requests requests;
-    ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
+    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
+    shenandoah_assert_generations_reconciled();
 
     // First drain remaining SATB buffers.
     {

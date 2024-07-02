@@ -869,6 +869,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
+      shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
         // TODO: This worries me. Here we are asserting that an unmarked from-space object is 'correct'.
         // Normally, I would call this a bogus assert, but there seems to be a legitimate use-case for
@@ -992,6 +993,9 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
     heap->rendezvous_threads();
   }
+  // We can only toggle concurrent_weak_root_in_progress flag
+  // at a safepoint, so that mutators see a consistent
+  // value. The flag will be cleared at the next safepoint.
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {

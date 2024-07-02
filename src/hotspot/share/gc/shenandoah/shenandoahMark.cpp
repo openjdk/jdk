@@ -149,8 +149,12 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   ShenandoahObjToScanQueue* q;
   ShenandoahMarkTask t;
 
-  assert(heap->active_generation()->type() == GENERATION, "Sanity");
-  heap->active_generation()->ref_processor()->set_mark_closure(worker_id, cl);
+  // Do not use active_generation() : we must use the gc_generation() set by
+  // ShenandoahGCScope on the ControllerThread's stack; no safepoint may
+  // intervene to update active_generation, so we can't
+  // shenandoah_assert_generations_reconciled() here.
+  assert(heap->gc_generation()->type() == GENERATION, "Sanity: %d != %d", heap->gc_generation()->type(), GENERATION);
+  heap->gc_generation()->ref_processor()->set_mark_closure(worker_id, cl);
 
   /*
    * Process outstanding queues, if any.

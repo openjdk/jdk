@@ -195,6 +195,8 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   assert(!r->is_humongous(), "never evacuate humongous objects");
 
   ShenandoahAffiliation target_gen = r->affiliation();
+  // gc_generation() can change asynchronously and should not be used here.
+  assert(active_generation() != nullptr, "Error");
   if (active_generation()->is_young() && target_gen == YOUNG_GENERATION) {
     markWord mark = p->mark();
     if (mark.is_marked()) {
@@ -778,6 +780,7 @@ private:
   template<class T>
   void do_work(uint worker_id) {
     T cl;
+
     if (CONCURRENT && (worker_id == 0)) {
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
@@ -793,7 +796,9 @@ private:
 
     ShenandoahHeapRegion* r = _regions->next();
     // We update references for global, old, and young collections.
-    assert(_heap->active_generation()->is_mark_complete(), "Expected complete marking");
+    ShenandoahGeneration* const gc_generation = _heap->gc_generation();
+    shenandoah_assert_generations_reconciled();
+    assert(gc_generation->is_mark_complete(), "Expected complete marking");
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     bool is_mixed = _heap->collection_set()->has_old_regions();
     while (r != nullptr) {
@@ -807,7 +812,7 @@ private:
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
           region_progress = true;
         } else if (r->is_old()) {
-          if (_heap->active_generation()->is_global()) {
+          if (gc_generation->is_global()) {
             // Note that GLOBAL collection is not as effectively balanced as young and mixed cycles.  This is because
             // concurrent GC threads are parceled out entire heap regions of work at a time and there
             // is no "catchup phase" consisting of remembered set scanning, during which parcels of work are smaller
@@ -844,7 +849,7 @@ private:
       r = _regions->next();
     }
 
-    if (!_heap->active_generation()->is_global()) {
+    if (!gc_generation->is_global()) {
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 

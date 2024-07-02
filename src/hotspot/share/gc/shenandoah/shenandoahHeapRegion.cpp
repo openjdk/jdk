@@ -315,7 +315,8 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
-  assert(ShenandoahHeap::heap()->active_generation()->is_mark_complete(), "Marking should be complete here.");
+  assert(ShenandoahHeap::heap()->gc_generation()->is_mark_complete(), "Marking should be complete here.");
+  shenandoah_assert_generations_reconciled();
   ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
 }
 
@@ -465,7 +466,8 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   ShenandoahMarkingContext* marking_context = heap->marking_context();
 
   // Expect marking to be completed before these threads invoke this service.
-  assert(heap->active_generation()->is_mark_complete(), "sanity");
+  assert(heap->gc_generation()->is_mark_complete(), "sanity");
+  shenandoah_assert_generations_reconciled();
 
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen

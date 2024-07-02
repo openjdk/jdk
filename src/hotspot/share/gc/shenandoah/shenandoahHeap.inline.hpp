@@ -354,31 +354,37 @@ bool ShenandoahHeap::is_in(const void* p) const {
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   if (!mode()->is_generational()) {
     // everything is the same single generation
+    assert(is_in(obj), "Otherwise shouldn't return true below");
     return true;
   }
 
-  if (active_generation() == nullptr) {
-    // no collection is happening, only expect this to be called
+  ShenandoahGeneration* const gen = active_generation();
+
+  if (gen == nullptr) {
+    // no collection is happening: only expect this to be called
     // when concurrent processing is active, but that could change
     return false;
   }
 
   assert(is_in(obj), "only check if is in active generation for objects (" PTR_FORMAT ") in heap", p2i(obj));
-  assert((active_generation() == (ShenandoahGeneration*) old_generation()) ||
-         (active_generation() == (ShenandoahGeneration*) young_generation()) ||
-         (active_generation() == global_generation()), "Active generation must be old, young, or global");
+  assert(gen->is_old() || gen->is_young() || gen->is_global(),
+         "Active generation must be old, young, or global");
 
   size_t index = heap_region_containing(obj)->index();
+
+  // No flickering!
+  assert(gen == active_generation(), "Race?");
+
   switch (_affiliations[index]) {
   case ShenandoahAffiliation::FREE:
     // Free regions are in Old, Young, Global
     return true;
   case ShenandoahAffiliation::YOUNG_GENERATION:
     // Young regions are in young_generation and global_generation, not in old_generation
-    return (active_generation() != (ShenandoahGeneration*) old_generation());
+    return gen != (ShenandoahGeneration*)old_generation();
   case ShenandoahAffiliation::OLD_GENERATION:
     // Old regions are in old_generation and global_generation, not in young_generation
-    return (active_generation() != (ShenandoahGeneration*) young_generation());
+    return gen != (ShenandoahGeneration*)young_generation();
   default:
     assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
     return false;
