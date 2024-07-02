@@ -874,12 +874,7 @@ public class WeakHashMap<K,V>
      * operations.
      */
     public Set<K> keySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            ks = new KeySet();
-            keySet = ks;
-        }
-        return ks;
+        return new KeySet();
     }
 
     private class KeySet extends AbstractSet<K> {
@@ -927,12 +922,7 @@ public class WeakHashMap<K,V>
      * support the {@code add} or {@code addAll} operations.
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new Values();
-            values = vs;
-        }
-        return vs;
+        return new Values();
     }
 
     private class Values extends AbstractCollection<V> {

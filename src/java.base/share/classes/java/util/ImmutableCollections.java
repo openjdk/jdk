@@ -36,6 +36,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+
+import jdk.internal.ValueBased;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
@@ -1071,8 +1073,8 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
+    @ValueBased
+    sealed abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
         @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
@@ -1102,7 +1104,7 @@ class ImmutableCollections {
         }
     }
 
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @ValueBased
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1169,7 +1171,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @ValueBased
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable

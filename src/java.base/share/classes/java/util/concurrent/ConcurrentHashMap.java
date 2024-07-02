@@ -815,8 +815,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private transient volatile CounterCell[] counterCells;
 
     // views
-    private transient KeySetView<K,V> keySet;
-    private transient ValuesView<K,V> values;
     private transient EntrySetView<K,V> entrySet;
 
 
@@ -1237,9 +1235,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @return the set view
      */
     public KeySetView<K,V> keySet() {
-        KeySetView<K,V> ks;
-        if ((ks = keySet) != null) return ks;
-        return keySet = new KeySetView<K,V>(this, null);
+        return new KeySetView<>(this, null);
     }
 
     /**
@@ -1261,9 +1257,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @return the collection view
      */
     public Collection<V> values() {
-        ValuesView<K,V> vs;
-        if ((vs = values) != null) return vs;
-        return values = new ValuesView<K,V>(this);
+        return new ValuesView<K,V>(this);
     }
 
     /**

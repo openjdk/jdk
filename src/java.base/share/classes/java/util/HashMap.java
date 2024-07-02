@@ -910,12 +910,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            ks = new KeySet();
-            keySet = ks;
-        }
-        return ks;
+        return new KeySet();
     }
 
     /**
@@ -1038,12 +1033,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return a view of the values contained in this map
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new Values();
-            values = vs;
-        }
-        return vs;
+        return new Values();
     }
 
     final class Values extends AbstractCollection<V> {
@@ -1931,8 +1921,6 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     void reinitialize() {
         table = null;
         entrySet = null;
-        keySet = null;
-        values = null;
         modCount = 0;
         threshold = 0;
         size = 0;
