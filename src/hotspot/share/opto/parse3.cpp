@@ -209,7 +209,15 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   Node* val = type2size[bt] == 1 ? pop() : pop_pair();
 
   DecoratorSet decorators = IN_HEAP;
-  decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
+
+  if (is_vol && !(method()->is_initializer() && _gvn.type(val)->is_zero_type())) {
+    // Volatile fields initialized to default values in constructor are
+    // indistinguishable from the default field initializations. They do
+    // do not require full barriers.
+    decorators |= MO_SEQ_CST;
+  } else {
+    decorators |= MO_UNORDERED;
+  }
 
   bool is_obj = is_reference_type(bt);
 
