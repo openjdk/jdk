@@ -57,7 +57,6 @@
  * <p>
  * An application, for example, can register its interest in changes to
  * objects in a context as follows:
- * <blockquote>
  * {@snippet :
  * EventContext src =
  *     (EventContext)(new InitialContext()).lookup("o=wiz,c=us");
@@ -73,7 +72,6 @@
  *     }
  * }
  * }
- * </blockquote>
  *
  * <a id=THREADING></a>
  * <h3>Threading Issues</h3>
