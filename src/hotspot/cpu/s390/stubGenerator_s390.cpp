@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,6 +700,50 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(miss);
     __ load_const_optimized(Z_RET, 1); // One indicates a miss.
     __ z_ltgr(Z_RET, Z_RET);           // Set NE flag in CR.
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    const Register
+        r_super_klass  = Z_ARG1,
+        r_sub_klass    = Z_ARG2,
+        r_array_index  = Z_ARG3,
+        r_array_length = Z_ARG4,
+        r_array_base   = Z_ARG5,
+        r_bitmap       = Z_R10,
+        r_result       = Z_R11;
+    address start = __ pc();
+
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, r_result, super_klass_index);
+
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+
+    const Register
+        r_super_klass  = Z_ARG1,
+        r_array_base   = Z_ARG5,
+        r_temp1        = Z_ARG4,
+        r_array_index  = Z_ARG3,
+        r_bitmap       = Z_R10,
+        r_result       = Z_R11;
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base,
+                                               r_array_index, r_bitmap, r_result, r_temp1);
+
     __ z_br(Z_R14);
 
     return start;
@@ -3246,6 +3290,14 @@ class StubGenerator: public StubCodeGenerator {
     if (UseMontgomerySquareIntrinsic) {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
+    }
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
     }
 #endif
 #endif // COMPILER2_OR_JVMCI
