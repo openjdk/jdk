@@ -3741,6 +3741,13 @@ jint Arguments::apply_ergo() {
     }
   }
 
+  if (log_is_enabled(Info, perf, vmlocks)) {
+    if (!UsePerfData) {
+      warning("Disabling -Xlog:perf+vmlocks since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, vmlocks));
+    }
+  }
+
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
