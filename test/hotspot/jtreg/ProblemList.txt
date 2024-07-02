@@ -58,7 +58,6 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/CheckLargePages.java 8332654 linux-x64
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
-compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
