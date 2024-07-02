@@ -1046,7 +1046,7 @@ public final class StackMapGenerator {
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
             int localsSize = 0;
             // Pre-emptively create a locals array that encompass all parameter slots
-            checkLocal(methodDesc.parameterCount() + (isStatic ? 0 : -1));
+            checkLocal(methodDesc.parameterCount() + (isStatic ? -1 : 0));
             if (!isStatic) {
                 localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
