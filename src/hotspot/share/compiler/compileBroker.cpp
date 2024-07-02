@@ -1145,7 +1145,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         const methodHandle& hot_method,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
-                                        bool blocking,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
   assert(method->method_holder()->is_instance_klass(),
@@ -1209,6 +1208,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   // Outputs from the following MutexLocker block:
   CompileTask* task     = nullptr;
   CompileQueue* queue  = compile_queue(comp_level);
+  bool blocking = false;
 
   // Acquire our lock.
   {
@@ -1236,6 +1236,10 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       // The compilation falls outside the allowed range.
       return;
     }
+
+    // This directive will be owned by a compile task.
+    DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler(comp_level));
+    blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
 
 #if INCLUDE_JVMCI
     if (UseJVMCICompiler && blocking) {
@@ -1315,11 +1319,54 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                compile_id, method,
                                osr_bci, comp_level,
                                hot_method, hot_count, compile_reason,
-                               blocking);
+                               directive, blocking);
   }
 
   if (blocking) {
     wait_for_completion(task);
+  }
+}
+
+static void apply_directive_exclude_option(const methodHandle& method, int comp_level) {
+  if (method->is_always_compilable()) {
+    return;
+  }
+
+  // Compiler directives can be updated.
+  // We need to guarantee that the directive is not changed while we are using it.
+  MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
+
+  if (method->is_not_compilable(comp_level) && !method->is_excluded_from_compilation(comp_level)) {
+    // The method is already not compilable, no need to exclude it.
+    return;
+  }
+
+  assert(method->is_not_compilable(comp_level) == method->is_excluded_from_compilation(comp_level),
+         "Excluded status must be aligned with compilable status");
+
+  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
+  assert(comp != nullptr, "Ensure we have a compiler");
+
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  const bool excluded_new_value = directive->ExcludeOption;
+  DirectivesStack::release(directive);
+  const bool not_compilable = method->is_not_compilable(comp_level);
+  const bool excluded_old_value = method->is_excluded_from_compilation(comp_level);
+  if (excluded_new_value == excluded_old_value) {
+    return;
+  }
+
+  if (comp->is_c1()) {
+    method->set_is_c1_excluded(excluded_new_value);
+    method->set_is_not_c1_compilable(excluded_new_value);
+  } else if (comp->is_c2()) {
+    method->set_is_c2_excluded(excluded_new_value);
+    method->set_is_not_c2_compilable(excluded_new_value);
+  }
+  if (excluded_new_value) {
+    method->print_made_not_compilable(comp_level, /*is_osr*/ false, /*report*/ true, "excluded by CompilerDirective");
+  } else {
+    method->print_made_compilable(comp_level, "included by CompilerDirective");
   }
 }
 
@@ -1333,7 +1380,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     return nullptr;
   }
 
-  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
+  AbstractCompiler *comp = compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
 #if INCLUDE_JVMCI
@@ -1343,33 +1390,17 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 #endif
 
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
-  DirectivesStack::release(directive);
-  return nm;
-}
-
-nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
-                                         int comp_level,
-                                         const methodHandle& hot_method, int hot_count,
-                                         CompileTask::CompileReason compile_reason,
-                                         DirectiveSet* directive,
-                                         TRAPS) {
-
   // make sure arguments make sense
   assert(method->method_holder()->is_instance_klass(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
-  // return quickly if possible
 
-  // lock, make sure that the compilation
-  // isn't prohibited in a straightforward way.
-  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
+  if (compilation_is_prohibited(method, osr_bci, comp_level)) {
     return nullptr;
   }
+
+  apply_directive_exclude_option(method, comp_level);
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
@@ -1471,8 +1502,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     if (!should_compile_new_jobs()) {
       return nullptr;
     }
-    bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, THREAD);
   }
 
   // return requested nmethod
@@ -1529,25 +1559,26 @@ bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded) {
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level) {
+  assert(compiler(comp_level) != nullptr, "Ensure we have a compiler");
+
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
-  AbstractCompiler *comp = compiler(comp_level);
-  if (is_native && (!CICompileNatives || comp == nullptr)) {
+  if (is_native && !CICompileNatives) {
     method->set_not_compilable_quietly("native methods not supported", comp_level);
     return true;
   }
 
   bool is_osr = (osr_bci != standard_entry_bci);
   // Some compilers may not support on stack replacement.
-  if (is_osr && (!CICompileOSR || comp == nullptr)) {
+  if (is_osr && !CICompileOSR) {
     method->set_not_osr_compilable("OSR not supported", comp_level);
     return true;
   }
 
   // The method may be explicitly excluded by the user.
   double scale;
-  if (excluded || (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, scale) && scale == 0)) {
+  if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, scale) && scale == 0) {
     bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
@@ -1622,11 +1653,12 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 const methodHandle& hot_method,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
+                                                DirectiveSet*       directive,
                                                 bool                blocking) {
   CompileTask* new_task = CompileTask::allocate();
   new_task->initialize(compile_id, method, osr_bci, comp_level,
                        hot_method, hot_count, compile_reason,
-                       blocking);
+                       directive, blocking);
   queue->add(new_task);
   return new_task;
 }

@@ -1031,6 +1031,34 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
 }
 
+void Method::print_made_compilable(int comp_level, const char* reason) {
+  assert(reason != nullptr, "must provide a reason");
+  if (PrintCompilation) {
+    ttyLocker ttyl;
+    tty->print("made compilable on ");
+    if (comp_level == CompLevel_all) {
+      tty->print("all levels ");
+    } else {
+      tty->print("level %d ", comp_level);
+    }
+    this->print_short_name(tty);
+    int size = this->code_size();
+    if (size > 0) {
+      tty->print(" (%d bytes)", size);
+    }
+    tty->print_cr("   %s", reason);
+  }
+  if ((TraceDeoptimization || LogCompilation) && (xtty != nullptr)) {
+    ttyLocker ttyl;
+    xtty->begin_elem("make_compilable thread='" UINTX_FORMAT "' level='%d'",
+                     os::current_thread_id(), comp_level);
+    xtty->print(" reason=\'%s\'", reason);
+    xtty->method(this);
+    xtty->stamp();
+    xtty->end_elem();
+  }
+}
+
 bool Method::is_always_compilable() const {
   // Generated adapters must be compiled
   if (is_special_native_intrinsic() && is_synthetic()) {
@@ -1099,6 +1127,16 @@ void Method::set_not_osr_compilable(const char* reason, int comp_level, bool rep
       set_is_not_c2_osr_compilable();
   }
   assert(!CompilationPolicy::can_be_osr_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
+}
+
+bool Method::is_excluded_from_compilation(int comp_level) const {
+  if (comp_level == CompLevel_any)
+    return is_c1_excluded() && is_c2_excluded();
+  if (is_c1_compile(comp_level))
+    return is_c1_excluded();
+  if (is_c2_compile(comp_level))
+    return is_c2_excluded();
+  return false;
 }
 
 // Revert to using the interpreter and clear out the nmethod
