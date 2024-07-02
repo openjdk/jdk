@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,23 @@ public final class ByteArray {
      */
     public static int getInt(byte[] array, int offset) {
         return (int) INT.get(array, offset);
+    }
+
+    /**
+     * {@return an {@code unsigned int} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to get a value from.
+     * @param offset where extraction in the array should begin
+     * @return an {@code long} representing an unsigned int from the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
+     * @see #setUnsignedShort(byte[], int, int)
+     */
+    public static long getUnsignedInt(byte[] array, int offset) {
+        return Integer.toUnsignedLong((int) INT.get(array, offset));
     }
 
     /**
@@ -314,6 +331,23 @@ public final class ByteArray {
      */
     public static void setInt(byte[] array, int offset, int value) {
         INT.set(array, offset, value);
+    }
+
+    /**
+     * Sets (writes) the provided {@code value} using big endian order into
+     * the provided {@code array} beginning at the given {@code offset}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to set (write) a value into
+     * @param offset where setting (writing) in the array should begin
+     * @param value  value to set in the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
+     * @see #getUnsignedInt(byte[], int)
+     */
+    public static void setUnsignedInt(byte[] array, int offset, long value) {
+        INT.set(array, offset, (int) value);
     }
 
     /**
