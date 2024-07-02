@@ -153,8 +153,10 @@ class RegisterMap : public StackObj {
   const RegisterMap* as_RegisterMap() const { return this; }
   RegisterMap* as_RegisterMap() { return this; }
 
+#ifndef PRODUCT
   void print_on(outputStream* st) const;
   void print() const;
+#endif
 
   void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
   void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
