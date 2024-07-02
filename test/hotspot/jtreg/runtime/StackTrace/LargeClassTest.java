@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,27 @@
 /*
  * @test
  * @bug 8194246
+ * @enablePreview
  * @summary JVM crashes on stack trace for large number of methods.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
- * @run driver LargeClassTest
+ * @modules java.base/jdk.internal.misc
+ * @run main LargeClassTest
  */
 
 import java.io.File;
 import java.io.FileOutputStream;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class LargeClassTest implements Opcodes {
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
+
+public class LargeClassTest{
     public static void main(String... args) throws Exception {
         writeClassFile();
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "Large");
@@ -53,96 +55,82 @@ public class LargeClassTest implements Opcodes {
     // Writes a Large class with > signed 16 bit int methods
     public static void writeClassFile() throws Exception {
 
-        ClassWriter cw = new ClassWriter(0);
-        FieldVisitor fv;
-        MethodVisitor mv;
-        AnnotationVisitor av0;
+        ClassDesc CD_Large = ClassDesc.of("Large");
+        ClassDesc CD_Random = ClassDesc.ofInternalName("java/util/Random");
+        ClassDesc CD_System = ClassDesc.ofInternalName("java/lang/System");
+        ClassDesc CD_PrintStream = ClassDesc.ofInternalName("java/io/PrintStream");
+        ClassDesc CD_Thread = ClassDesc.ofInternalName("java/lang/Thread");
+        ClassDesc CD_StackTraceElement = ClassDesc.ofInternalName("java/lang/StackTraceElement");
+        ClassDesc CD_Arrays = ClassDesc.ofInternalName("java/util/Arrays");
 
-        cw.visit(55, ACC_PUBLIC + ACC_SUPER, "Large", null, "java/lang/Object", null);
+        byte[] bytes = ClassFile.of().build(CD_Large,
+                clb -> {
+                    clb.withVersion(JAVA_11_VERSION, 0);
+                            clb.withSuperclass(CD_Object);
+                            clb.withFlags(ACC_PUBLIC | ACC_SUPER);
+                            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_());
+                    // public static void main(String[] args) {
+                    //     Large large = new Large();
+                    //     large.f_1(55);
+                    // }
+                    clb.withMethodBody("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()), ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .new_(CD_Large)
+                                            .dup()
+                                            .invokespecial(CD_Large, INIT_NAME, MTD_void)
+                                            .astore(1)
+                                            .aload(1)
+                                            .bipush(55)
+                                            .invokevirtual(CD_Large, "f_1", MethodTypeDesc.of(CD_int, CD_int))
+                                            .pop()
+                                            .return_());
+                    // Write 34560 methods called f_$i
+                    for (int i = 1000; i < 34560 ; i++) {
+                        clb.withMethodBody("f_" + i, MethodTypeDesc.of(CD_void), ACC_PUBLIC,
+                                CodeBuilder::return_);
 
-        {
-          mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-          mv.visitCode();
-          mv.visitVarInsn(ALOAD, 0);
-          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-          mv.visitInsn(RETURN);
-          mv.visitMaxs(1, 1);
-          mv.visitEnd();
-        }
-        {
-          // public static void main(String[] args) {
-          //     Large large = new Large();
-          //     large.f_1(55);
-          // }
-          mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-          mv.visitCode();
-          mv.visitTypeInsn(NEW, "Large");
-          mv.visitInsn(DUP);
-          mv.visitMethodInsn(INVOKESPECIAL, "Large", "<init>", "()V", false);
-          mv.visitVarInsn(ASTORE, 1);
-          mv.visitVarInsn(ALOAD, 1);
-          mv.visitIntInsn(BIPUSH, 55);
-          mv.visitMethodInsn(INVOKEVIRTUAL, "Large", "f_1", "(I)I", false);
-          mv.visitInsn(POP);
-          mv.visitInsn(RETURN);
-          mv.visitMaxs(2, 2);
-          mv.visitEnd();
-        }
-
-        // Write 33560 methods called f_$i
-        for (int i = 1000; i < 34560; i++)
-        {
-          mv = cw.visitMethod(ACC_PUBLIC, "f_" + i, "()V", null, null);
-          mv.visitCode();
-          mv.visitInsn(RETURN);
-          mv.visitMaxs(0, 1);
-          mv.visitEnd();
-        }
-        {
-          // public int f_1(int prior) {
-          //   int total = prior + new java.util.Random(1).nextInt();
-          //   return total + f_2(total);
-          // }
-          mv = cw.visitMethod(ACC_PUBLIC, "f_1", "(I)I", null, null);
-          mv.visitCode();
-          mv.visitVarInsn(ILOAD, 1);
-          mv.visitTypeInsn(NEW, "java/util/Random");
-          mv.visitInsn(DUP);
-          mv.visitInsn(LCONST_1);
-          mv.visitMethodInsn(INVOKESPECIAL, "java/util/Random", "<init>", "(J)V", false);
-          mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Random", "nextInt", "()I", false);
-          mv.visitInsn(IADD);
-          mv.visitVarInsn(ISTORE, 2);
-          mv.visitVarInsn(ILOAD, 2);
-          mv.visitVarInsn(ALOAD, 0);
-          mv.visitVarInsn(ILOAD, 2);
-          mv.visitMethodInsn(INVOKEVIRTUAL, "Large", "f_2", "(I)I", false);
-          mv.visitInsn(IADD);
-          mv.visitInsn(IRETURN);
-          mv.visitMaxs(5, 3);
-          mv.visitEnd();
-        }
-        {
-          // public int f_2(int total) {
-          //   System.out.println(java.util.Arrays.toString(Thread.currentThread().getStackTrace()));
-          //   return 10;
-          // }
-          mv = cw.visitMethod(ACC_PUBLIC, "f_2", "(I)I", null, null);
-          mv.visitCode();
-          mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-          mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-          mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "getStackTrace", "()[Ljava/lang/StackTraceElement;", false);
-          mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", "([Ljava/lang/Object;)Ljava/lang/String;", false);
-          mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-          mv.visitIntInsn(BIPUSH, 10);
-          mv.visitInsn(IRETURN);
-          mv.visitMaxs(2, 2);
-          mv.visitEnd();
-        }
-        cw.visitEnd();
-
+                    }
+                    // public int f_1(int prior) {
+                    //   int total = prior + new java.util.Random(1).nextInt();
+                    //   return total + f_2(total);
+                    // }
+                    clb.withMethodBody("f_1", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC,
+                            cob -> cob
+                                    .iload(1)
+                                    .new_(CD_Random)
+                                    .dup()
+                                    .lconst_1()
+                                    .invokespecial(CD_Random, INIT_NAME, MethodTypeDesc.of(CD_void, CD_long))
+                                    .invokevirtual(CD_Random, "nextInt", MethodTypeDesc.of(CD_int))
+                                    .iadd()
+                                    .istore(2)
+                                    .iload(2)
+                                    .aload(0)
+                                    .iload(2)
+                                    .invokevirtual(CD_Large, "f_2", MethodTypeDesc.of(CD_int, CD_int))
+                                    .iadd()
+                                    .ireturn());
+                    // public int f_2(int total) {
+                    //   System.out.println(java.util.Arrays.toString(Thread.currentThread().getStackTrace()));
+                    //   return 10;
+                    // }
+                    clb.withMethodBody("f_2", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC,
+                            cob -> cob
+                                    .getstatic(CD_System, "out", CD_PrintStream)
+                                    .invokestatic(CD_Thread, "currentThread", MethodTypeDesc.of(CD_Thread))
+                                    .invokevirtual(CD_Thread, "getStackTrace", MethodTypeDesc.of(CD_StackTraceElement.arrayType()))
+                                    .invokestatic(CD_Arrays, "toString", MethodTypeDesc.of(CD_String, CD_Object.arrayType()))
+                                    .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
+                                    .bipush(10)
+                                    .ireturn());
+                }
+        );
         try (FileOutputStream fos = new FileOutputStream(new File("Large.class"))) {
-          fos.write(cw.toByteArray());
+          fos.write(bytes);
         }
     }
 }

@@ -24,16 +24,15 @@
 /*
  * @test
  * @bug 8051045 8166974
+ * @enablePreview
  * @summary Test exceptions from invokedynamic and the bootstrap method
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @run main BootstrapMethodErrorTest
  */
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.*;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -43,9 +42,12 @@ import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
+
 public class BootstrapMethodErrorTest {
 
-    static abstract class IndyClassloader extends ClassLoader implements Opcodes {
+    static abstract class IndyClassloader extends ClassLoader {
 
         public IndyClassloader() {
             super(BootstrapMethodErrorTest.class.getClassLoader());
@@ -74,47 +76,50 @@ public class BootstrapMethodErrorTest {
                 toMethodDescriptorString();
 
         private byte[] loadClassData(String name) throws Exception {
-            ClassWriter cw = new ClassWriter(
-                    ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             if (name.equals(BOOTSTRAP_METHOD_CLASS_NAME)) {
-                defineIndyBootstrapMethodClass(cw);
-                return cw.toByteArray();
+                return defineIndyBootstrapMethodClass();
+
             }
             else if (name.equals("Exec")) {
-                defineIndyCallingClass(cw);
-                return cw.toByteArray();
+                return defineIndyCallingClass();
             }
             return null;
         }
 
-        void defineIndyCallingClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC, INDY_CALLER_CLASS_NAME, null, "java/lang/Object", null);
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "invoke", "()V", null, null);
-            mv.visitCode();
-            Handle h = new Handle(H_INVOKESTATIC,
-                                  BOOTSTRAP_METHOD_CLASS_NAME, BOOTSTRAP_METHOD_NAME,
-                                  BOOTSTRAP_METHOD_DESC, false);
-            mv.visitInvokeDynamicInsn(BOOTSTRAP_METHOD_CLASS_NAME, "()V", h);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-            cw.visitEnd();
+        byte[] defineIndyCallingClass() {
+                return ClassFile.of().build(ClassDesc.of(INDY_CALLER_CLASS_NAME),
+                        clb -> clb
+                                .withVersion(JAVA_8_VERSION, 0)
+                                .withFlags(ACC_SUPER | ACC_PUBLIC)
+                                .withSuperclass(CD_Object)
+                                .withMethodBody("invoke", MethodTypeDesc.of(CD_void), ACC_PUBLIC | ACC_STATIC,
+                                        cob -> {
+                                            DirectMethodHandleDesc h = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.STATIC,
+                                                    ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
+                                                    BOOTSTRAP_METHOD_NAME,
+                                                    BOOTSTRAP_METHOD_DESC);
+                                            cob.invokedynamic(DynamicCallSiteDesc.of(h, MethodTypeDesc.of(CD_void)));
+                                            cob.return_();
+                                        }
+                                )
+                );
         }
 
-        void defineIndyBootstrapMethodClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC,
-                     BOOTSTRAP_METHOD_CLASS_NAME, null, "java/lang/Object", null);
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC,
-                                              BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_DESC, null, null);
-            mv.visitCode();
-            defineIndyBootstrapMethodBody(mv);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+        byte[] defineIndyBootstrapMethodClass() {
+            return ClassFile.of().build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_SUPER | ACC_PUBLIC)
+                            .withSuperclass(CD_Object)
+                            .withMethodBody(BOOTSTRAP_METHOD_NAME, MethodTypeDesc.ofDescriptor(BOOTSTRAP_METHOD_DESC), ACC_PUBLIC | ACC_STATIC,
+                                    this::defineIndyBootstrapMethodBody
+                            )
+            );
         }
 
-        void defineIndyBootstrapMethodBody(MethodVisitor mv) {
-            mv.visitInsn(ACONST_NULL);
-            mv.visitInsn(ARETURN);
+        void defineIndyBootstrapMethodBody(CodeBuilder cob) {
+            cob.aconst_null();
+            cob.areturn();
         }
 
         void invoke() throws Exception {
@@ -188,16 +193,16 @@ public class BootstrapMethodErrorTest {
 
     static class InaccessibleBootstrapMethod extends IndyClassloader {
 
-        void defineIndyBootstrapMethodClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC,
-                     BOOTSTRAP_METHOD_CLASS_NAME, null, "java/lang/Object", null);
-            // Bootstrap method is declared to be private
-            MethodVisitor mv = cw.visitMethod(ACC_PRIVATE | ACC_STATIC,
-                                              BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_DESC, null, null);
-            mv.visitCode();
-            defineIndyBootstrapMethodBody(mv);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+        byte[] defineIndyBootstrapMethodClass() {
+            return ClassFile.of().build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_SUPER | ACC_PUBLIC)
+                            .withSuperclass(CD_Object)
+                            .withMethodBody(BOOTSTRAP_METHOD_NAME, MethodTypeDesc.ofDescriptor(BOOTSTRAP_METHOD_DESC), ACC_PRIVATE | ACC_STATIC,
+                                    this::defineIndyBootstrapMethodBody
+                            )
+            );
         }
 
         @Override
@@ -208,11 +213,11 @@ public class BootstrapMethodErrorTest {
 
     static class BootstrapMethodDoesNotReturnCallSite extends IndyClassloader {
 
-        void defineIndyBootstrapMethodBody(MethodVisitor mv) {
+        void defineIndyBootstrapMethodBody(CodeBuilder cob) {
             // return null from the bootstrap method,
             // which cannot be cast to CallSite
-            mv.visitInsn(ACONST_NULL);
-            mv.visitInsn(ARETURN);
+            cob.aconst_null();
+            cob.areturn();
         }
 
         @Override
@@ -224,13 +229,13 @@ public class BootstrapMethodErrorTest {
     static class BootstrapMethodCallSiteHasWrongTarget extends IndyClassloader {
 
         @Override
-        void defineIndyBootstrapMethodBody(MethodVisitor mv) {
+        void defineIndyBootstrapMethodBody(CodeBuilder cob) {
             // Invoke the method BootstrapMethodErrorTest.getCallSite to obtain
             // a CallSite instance whose target is different from that of
             // the indy call site
-            mv.visitMethodInsn(INVOKESTATIC, "BootstrapMethodErrorTest",
-                               "getCallSite", "()Ljava/lang/invoke/CallSite;", false);
-            mv.visitInsn(ARETURN);
+            cob.invokestatic(ClassDesc.of("BootstrapMethodErrorTest"), "getCallSite",
+                             MethodTypeDesc.ofDescriptor("()Ljava/lang/invoke/CallSite;"));
+            cob.areturn();
         }
 
         @Override
@@ -247,13 +252,13 @@ public class BootstrapMethodErrorTest {
         }
 
         @Override
-        void defineIndyBootstrapMethodBody(MethodVisitor mv) {
+        void defineIndyBootstrapMethodBody(CodeBuilder cob) {
             // Invoke the method whose name is methodName which will throw
             // an exception
-            mv.visitMethodInsn(INVOKESTATIC, "BootstrapMethodErrorTest",
-                               methodName, "()V", false);
-            mv.visitInsn(ACONST_NULL);
-            mv.visitInsn(ARETURN);
+            cob.invokestatic(ClassDesc.of("BootstrapMethodErrorTest"), methodName,
+                             MethodTypeDesc.of(CD_void));
+            cob.aconst_null();
+            cob.areturn();
         }
     }
 

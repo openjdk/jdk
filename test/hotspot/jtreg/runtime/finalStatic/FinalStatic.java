@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,19 @@
 
 /*
  * @test
+ * @enablePreview
  * @bug 8028553
  * @summary Test that VerifyError is not thrown when 'overriding' a static method.
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @run main FinalStatic
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.*;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 /*
  *  class A { static final int m() {return FAIL; } }
@@ -51,7 +54,7 @@ public class FinalStatic {
     static final int FAILED = 0;
     static final int EXPECTED = 1234;
 
-    static class TestClassLoader extends ClassLoader implements Opcodes {
+    static class TestClassLoader extends ClassLoader{
 
         @Override
         public Class findClass(String name) throws ClassNotFoundException {
@@ -66,54 +69,39 @@ public class FinalStatic {
         }
 
         private byte[] loadClassData(String name) throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
+
             switch (name) {
-               case CLASS_NAME_A:
-                    cw.visit(52, ACC_SUPER | ACC_PUBLIC, CLASS_NAME_A, null, "java/lang/Object", null);
-                    {
-                        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-                        mv.visitCode();
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-                        mv.visitInsn(RETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
+                case CLASS_NAME_A:
+                    return ClassFile.of().build(ClassDesc.of(CLASS_NAME_A),
+                            clb -> clb.withVersion(JAVA_8_VERSION, 0)
+                                    .withFlags(ACC_PUBLIC | ACC_SUPER)
+                                    .withSuperclass(CD_Object)
+                                    .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                            cob -> cob
+                                                    .aload(0)
+                                                    .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                                    .return_())
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_STATIC | ACC_FINAL,
+                                            cob -> cob.ldc(FAILED).ireturn())
+                    );
 
-                        mv = cw.visitMethod(ACC_FINAL | ACC_STATIC, "m", "()I", null, null);
-                        mv.visitCode();
-                        mv.visitLdcInsn(FAILED);
-                        mv.visitInsn(IRETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
-                    }
-                    break;
                 case CLASS_NAME_B:
-                    cw.visit(52, ACC_SUPER | ACC_PUBLIC, CLASS_NAME_B, null, CLASS_NAME_A, null);
-                    {
-                        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-                        mv.visitCode();
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKESPECIAL, CLASS_NAME_A, "<init>", "()V");
-                        mv.visitInsn(RETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
-
-                        mv = cw.visitMethod(ACC_PUBLIC, "m", "()I", null, null);
-                        mv.visitCode();
-                        mv.visitLdcInsn(EXPECTED);
-                        mv.visitInsn(IRETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
-
-                    }
-                    break;
+                    return ClassFile.of().build(ClassDesc.ofInternalName(CLASS_NAME_B),
+                            clb -> clb.withVersion(JAVA_8_VERSION, 0)
+                                    .withFlags(ACC_PUBLIC | ACC_SUPER)
+                                    .withSuperclass(ClassDesc.ofInternalName(CLASS_NAME_A))
+                                    .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                            cob -> cob
+                                                    .aload(0)
+                                                    .invokespecial(ClassDesc.ofInternalName(CLASS_NAME_A), INIT_NAME, MTD_void)
+                                                    .return_())
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC,
+                                            cob -> cob.ldc(EXPECTED).ireturn())
+                    );
                 default:
                     break;
             }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+            throw new AssertionError("Unknown class " + name);
         }
     }
 

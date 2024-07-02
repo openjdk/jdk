@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,188 +23,152 @@
 
 /*
  * @test
+ * @enablePreview
  * @bug 8087223 8195650
  * @summary Adding constantTag to keep method call consistent with it.
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file BadMethodHandles.java
  * @run main/othervm BadMethodHandles
  */
 
-import jdk.internal.org.objectweb.asm.*;
 import java.io.FileOutputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 public class BadMethodHandles {
 
+    private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
+    private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
+    private static final ClassDesc CD_MethodHandle = ClassDesc.of("java.lang.invoke.MethodHandle");
+
     static byte[] dumpBadInterfaceMethodref() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "BadInterfaceMethodref", null, "java/lang/Object", null);
-        Handle handle1 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "m", "()V", true);
-        Handle handle2 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "staticM", "()V", true);
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "m", "()V", null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("hello from m");
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false/*intf*/);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(3, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "staticM", "()V", null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("hello from staticM");
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false/*intf*/);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(3, 1);
-            mv.visitEnd();
-        }
+        DirectMethodHandleDesc handle_1 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
+                ClassDesc.of("BadInterfaceMethodref"), "m", "()V");
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runm", "()V", null, null);
-            mv.visitCode();
-            // REF_invokeStatic
-            mv.visitLdcInsn(handle1);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        DirectMethodHandleDesc handle_2 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
+                ClassDesc.of("BadInterfaceMethodref"), "staticM", "()V");
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runStaticM", "()V", null, null);
-            mv.visitCode();
-            // REF_invokeStatic
-            mv.visitLdcInsn(handle2);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        return ClassFile.of().build(ClassDesc.of("BadInterfaceMethodref"),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
+                            .withSuperclass(CD_Object)
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+                            .withMethodBody("m", MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .getstatic(CD_System, "out", CD_PrintStream)
+                                            .ldc("hello from m")
+                                            .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
+                                            .return_())
+                            .withMethodBody("staticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .getstatic(CD_System, "out", CD_PrintStream)
+                                            .ldc("hello from staticM")
+                                            .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
+                                            .return_())
+                            .withMethodBody("runm", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .ldc(handle_1)
+                                            .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
+                                            .return_())
+                            .withMethodBody("runStaticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .ldc(handle_2)
+                                            .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
+                                            .return_())
 
-        cw.visitEnd();
-        return cw.toByteArray();
+        );
     }
 
     static byte[] dumpIBad() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE, "IBad", null, "java/lang/Object", null);
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "m", "()V", null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("hello from m");
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false/*intf*/);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(3, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "staticM", "()V", null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("hello from staticM");
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false/*intf*/);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(3, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
+
+        return ClassFile.of().build(ClassDesc.of("IBad"),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE)
+                            .withSuperclass(CD_Object)
+                            .withMethodBody("m", MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .getstatic(CD_System, "out", CD_PrintStream)
+                                            .ldc("hello from m")
+                                            .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
+                                            .return_())
+                            .withMethodBody("staticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .getstatic(CD_System, "out", CD_PrintStream)
+                                            .ldc("hello from staticM")
+                                            .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
+                                            .return_())
+        );
     }
 
     static byte[] dumpBadMethodref() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "BadMethodref", null, "java/lang/Object", new String[]{"IBad"});
-        Handle handle1 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "m", "()V", true);
-        Handle handle2 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "staticM", "()V", true);
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runm", "()V", null, null);
-            mv.visitCode();
-            // REF_invokeStatic
-            mv.visitLdcInsn(handle1);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        DirectMethodHandleDesc handle_1 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
+                ClassDesc.of("BadMethodref"), "m", "()V");
+        DirectMethodHandleDesc handle_2 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
+                ClassDesc.of("BadMethodref"), "staticM", "()V");
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runStaticM", "()V", null, null);
-            mv.visitCode();
-            // REF_invokeStatic
-            mv.visitLdcInsn(handle2);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.of("BadMethodref"),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
+                            .withSuperclass(CD_Object)
+                            .withInterfaceSymbols(ClassDesc.of("IBad"))
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+                            .withMethodBody("runm", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .ldc(handle_1)
+                                            .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
+                                            .return_())
+                            .withMethodBody("runStaticM", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .ldc(handle_2)
+                                            .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
+                                            .return_())
+        );
     }
 
     static byte[] dumpInvokeBasic() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "InvokeBasicref", null, "java/lang/Object", null);
-        Handle handle =
-                new Handle(Opcodes.H_INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeBasic", "([Ljava/lang/Object;)Ljava/lang/Object;", false);
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        DirectMethodHandleDesc handle = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.VIRTUAL,
+                CD_MethodHandle, "invokeBasic", "([Ljava/lang/Object;)Ljava/lang/Object;");
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runInvokeBasicM", "()V", null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(handle);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        return ClassFile.of().build(ClassDesc.of("InvokeBasicref"),
+                    clb -> clb
+                            .withVersion(JAVA_8_VERSION, 0)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
+                            .withSuperclass(CD_Object)
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+                            .withMethodBody("runInvokeBasicM", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .ldc(handle)
+                                            .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
+                                            .return_())
+        );
 
-        cw.visitEnd();
-        return cw.toByteArray();
     }
 
     static class CL extends ClassLoader {
