@@ -599,13 +599,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // define via jvm/jni_DefineClass which will acquire the
   // class loader object lock to protect against multiple threads
   // defining the class in parallel by accident.
-  // This lock must be acquired here so the waiter will find
-  // any successful result in the SystemDictionary and not attempt
-  // the define.
-  // ParallelCapable class loaders and the bootstrap classloader
-  // do not acquire lock here.
-  Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
 
   bool super_load_in_progress  = false;
   InstanceKlass* loaded_class = nullptr;
@@ -866,11 +859,6 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
 
   ClassLoaderData* loader_data = register_loader(class_loader);
 
-  // Classloaders that support parallelism, e.g. bootstrap classloader,
-  // do not acquire lock here
-  Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
-
   // Parse the stream and create a klass.
   // Note that we do this even though this klass might
   // already be present in the SystemDictionary, otherwise we would not
@@ -899,18 +887,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
   // If a class loader supports parallel classloading, handle parallel define requests.
   // find_or_define_instance_class may return a different InstanceKlass,
   // in which case the old k would be deallocated
-  if (is_parallelCapable(class_loader)) {
-    k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
-  } else {
-    define_instance_class(k, class_loader, THREAD);
-
-    // If defining the class throws an exception register 'k' for cleanup.
-    if (HAS_PENDING_EXCEPTION) {
-      assert(k != nullptr, "Must have an instance klass here!");
-      loader_data->add_to_deallocate_list(k);
-      return nullptr;
-    }
-  }
+  k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
 
   // Make sure we have an entry in the SystemDictionary on success
   DEBUG_ONLY(verify_dictionary_entry(h_name, k));
@@ -1165,14 +1142,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   // this lock is currently a nop.
 
   ClassLoaderData* loader_data = class_loader_data(class_loader);
-  {
-    HandleMark hm(THREAD);
-    Handle lockObject = get_loader_lock_or_null(class_loader);
-    ObjectLocker ol(lockObject, THREAD);
-    // prohibited package check assumes all classes loaded from archive call
-    // restore_unshareable_info which calls ik->set_package()
-    ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
-  }
+  ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
 
   load_shared_class_misc(ik, loader_data);
   return ik;
@@ -1381,15 +1351,19 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   assert(loader_data->class_loader() == class_loader(), "they must be the same");
 
   // Bootstrap and other parallel classloaders don't acquire a lock,
-  // they use placeholder token.
-  // If a parallelCapable class loader calls define_instance_class instead of
-  // find_or_define_instance_class to get here, we have a timing
-  // hole with systemDictionary updates and check_constraints
-  if (!is_parallelCapable(class_loader)) {
-    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD,
-           get_loader_lock_or_null(class_loader)),
-           "define called without lock");
+  // they use placeholder token. The Java caller for non parallelCapable class loaders
+  // acquires the ClassLoader lock, but we also use the placeholder token to
+  // detect multiple definitions of the same class, if the Java code fails to
+  // lock the class loader.
+  // If we call define_instance_class instead of find_or_define_instance_class to get
+  // here, we have a timing hole with systemDictionary updates and check_constraints
+#ifdef ASSERT
+  {
+    MutexLocker ml(THREAD, SystemDictionary_lock);
+    assert(PlaceholderTable::get_entry(k->name(), loader_data)->definer() == THREAD,
+           "define called without a placeholder token");
   }
+#endif
 
   // Check class-loading constraints. Throw exception if violation is detected.
   // Grabs and releases SystemDictionary_lock
