@@ -111,5 +111,5 @@ size_t ArraySlicer::process_slice(objArrayOop array, int slice, int pow) {
   assert (0 < to && to <= len, "to is sane: %d/%d", to, len);
 #endif
 
-  return scan_array(array, from, to - from);
+  return scan_array(array, from, to);
 }
