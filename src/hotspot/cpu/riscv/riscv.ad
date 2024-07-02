@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
-// Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -8404,6 +8404,7 @@ instruct round_float_reg(iRegINoSp dst, fRegF src, fRegF ftmp) %{
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
+  predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
   ins_cost(ALU_COST);
   format %{ "encode_heap_oop  $dst, $src\t#@encodeHeapOop" %}
@@ -8411,6 +8412,17 @@ instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
     Register s = $src$$Register;
     Register d = $dst$$Register;
     __ encode_heap_oop(d, s);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src) %{
+  predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (EncodeP src));
+  ins_cost(ALU_COST);
+  format %{ "encode_heap_oop_not_null $dst, $src\t#@encodeHeapOop_not_null" %}
+  ins_encode %{
+    __ encode_heap_oop_not_null($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
