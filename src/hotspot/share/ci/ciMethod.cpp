@@ -718,17 +718,10 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   {
     MutexLocker locker(Compile_lock);
     InstanceKlass* context = actual_recv->get_instanceKlass();
-    if (UseVtableBasedCHA) {
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
-                                                                              root_m->get_Method(),
-                                                                              callee_holder->get_Klass(),
-                                                                              this->get_Method()));
-    } else {
-      if (root_m->is_abstract()) {
-        return nullptr; // not supported
-      }
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
-    }
+    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
+                                                                            root_m->get_Method(),
+                                                                            callee_holder->get_Klass(),
+                                                                            this->get_Method()));
     assert(target() == nullptr || !target()->is_abstract(), "not allowed");
     // %%% Should upgrade this ciMethod API to look for 1 or 2 concrete methods.
   }

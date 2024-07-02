@@ -1089,6 +1089,14 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
     }
   }
 
+  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
+  // arrays.
+  oop init_lock = ik->init_lock();
+  if (init_lock != nullptr) {
+    field_count++;
+    size += sizeof(address);
+  }
+
   // We write the value itself plus a name and a one byte type tag per field.
   return checked_cast<u4>(size + field_count * (sizeof(address) + 1));
 }
@@ -1125,6 +1133,14 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
       writer->write_objectID(prev->constants()->resolved_references());
       prev = prev->previous_versions();
     }
+  }
+
+  // Add init lock to the end if the class is not yet initialized
+  oop init_lock = ik->init_lock();
+  if (init_lock != nullptr) {
+    writer->write_symbolID(vmSymbols::init_lock_name());         // name
+    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
+    writer->write_objectID(init_lock);
   }
 }
 
