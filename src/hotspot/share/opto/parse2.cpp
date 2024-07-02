@@ -33,7 +33,6 @@
 #include "oops/oop.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
@@ -1405,7 +1404,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   bool taken_trap = false;
   bool untaken_trap = false;
-  bool stress_trap = StressUnstableIfTraps && ((random() % 2) == 0);
+  bool stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
 
   // Sanity check the probability value
   assert(prob > 0.0f,"Bad probability in Parser");
@@ -1540,7 +1539,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
 
   bool taken_trap = false;
   bool untaken_trap = false;
-  bool stress_trap = StressUnstableIfTraps && ((random() % 2) == 0);
+  bool stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
 
   // Branch is taken:
   { PreserveJVMState pjvms(this);
