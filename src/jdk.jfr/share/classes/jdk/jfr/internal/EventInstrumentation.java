@@ -461,7 +461,7 @@ final class EventInstrumentation {
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
                     Label rethrow = catchAllHandler.newLabel();
-                    catchAllHandler.if_null(rethrow);
+                    catchAllHandler.ifnull(rethrow);
                     // stack: [ex] [EW]
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
@@ -486,7 +486,7 @@ final class EventInstrumentation {
             Label fail = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(fail);
+                codeBuilder.ifnull(fail);
             }
             // if (!eventConfiguration.shouldCommit(duration) goto fail;
             getEventConfiguration(codeBuilder);
@@ -525,7 +525,7 @@ final class EventInstrumentation {
                 if (guardEventConfiguration) {
                     // if (eventConfiguration == null) goto fail;
                     getEventConfiguration(codeBuilder);
-                    codeBuilder.if_null(fail);
+                    codeBuilder.ifnull(fail);
                 }
                 // return eventConfiguration.shouldCommit(duration);
                 getEventConfiguration(codeBuilder);
@@ -738,7 +738,7 @@ final class EventInstrumentation {
             Label nullLabel = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(nullLabel);
+                codeBuilder.ifnull(nullLabel);
             }
             getEventConfiguration(codeBuilder);
             invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
