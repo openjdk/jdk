@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +23,22 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
-#define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
+#ifndef SHARE_GC_G1_G1ARRAYSLICER_HPP
+#define SHARE_GC_G1_G1ARRAYSLICER_HPP
 
-#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
-
-#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "gc/shared/gc_globals.hpp"
+#include "gc/g1/g1TaskQueueEntry.hpp"
 
-inline bool G1CMObjArrayProcessor::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->size() >= 2 * ObjArrayMarkingStride;
-}
+class Klass;
 
-#endif // SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
+class G1ArraySlicer {
+public:
+  virtual void scan_metadata(objArrayOop array) = 0;
+  virtual void push_on_queue(G1TaskQueueEntry task) = 0;
+  virtual size_t scan_array(objArrayOop array, int from, int len) = 0;
+
+  size_t process_objArray(objArrayOop obj);
+  size_t process_slice(objArrayOop array, int slice, int pow);
+};
+
+#endif // SHARE_GC_G1_G1ARRAYSLICER_HPP
