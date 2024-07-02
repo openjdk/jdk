@@ -185,7 +185,6 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       NAME := simdsort, \
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
-      CXXFLAGS := -std=c++17, \
       LIBS_linux := $(LIBDL) $(LIBM), \
   ))
 
