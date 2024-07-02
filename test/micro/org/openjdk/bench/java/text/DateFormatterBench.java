@@ -63,13 +63,13 @@ public class DateFormatterBench {
     private DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
 
     @Benchmark
-    public void testFormatDate() {
-        dateFormat.format(date);
+    public String testFormatDate() {
+        return dateFormat.format(date);
     }
 
     @Benchmark
-    public void testFormatObject() {
-        dateFormat.format(objDate);
+    public String testFormatObject() {
+        return dateFormat.format(objDate);
     }
 
     public static void main(String... args) throws Exception {

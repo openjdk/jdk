@@ -58,8 +58,8 @@ public class ListFormatterBench {
     private ListFormat listFormat = ListFormat.getInstance();
 
     @Benchmark
-    public void testListFormat() {
-        listFormat.format(data);
+    public String testListFormat() {
+        return listFormat.format(data);
     }
 
     public static void main(String... args) throws Exception {
