@@ -264,6 +264,7 @@ public class Desktop {
     }
 
     private DesktopPeer peer;
+    private JMenuBar customDefaultMenuBar;
 
     /**
      * Suppresses default constructor for noninstantiability.
@@ -979,14 +980,27 @@ public class Desktop {
         checkActionSupport(Action.APP_MENU_BAR);
 
         if (menuBar != null) {
+            customDefaultMenuBar = menuBar;
             Container parent = menuBar.getParent();
             if (parent != null) {
                 parent.remove(menuBar);
                 menuBar.updateUI();
             }
+        } else {
+            customDefaultMenuBar = null;
         }
 
         peer.setDefaultMenuBar(menuBar);
+    }
+
+    /**
+     * Returns a previously set DefaultMenuBar. Returns null if
+     * no previous DefaultMenuBar has been set.
+     *
+     * @return customDefaultMenuBar The DefaultMenuBar
+     */
+    public JMenuBar getCustomDefaultMenuBar() {
+        return customDefaultMenuBar;
     }
 
     /**
