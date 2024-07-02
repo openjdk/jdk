@@ -129,13 +129,13 @@ serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generi
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/TestJmapCore.java               8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8267433,8318754 macosx-x64,macosx-aarch64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
