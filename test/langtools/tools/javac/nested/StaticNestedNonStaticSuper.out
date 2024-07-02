@@ -1,2 +1,2 @@
-StaticNestedNonStaticSuper.java:10:23: compiler.err.no.encl.instance.of.type.in.scope: StaticNestedNonStaticSuper
+StaticNestedNonStaticSuper.java:10:23: compiler.err.non-static.cant.be.ref: kindname.variable, this
 1 error

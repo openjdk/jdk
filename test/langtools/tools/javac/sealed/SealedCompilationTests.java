@@ -880,6 +880,8 @@ class SealedCompilationTests extends CompilationTestCase {
                         assertFail("compiler.err.repeated.modifier", template, sealed_non_sealed, modifier);
                     } else if (modifier.equals("final") || modifier.equals("sealed") || modifier.equals("non-sealed")) {
                         assertFail("compiler.err.illegal.combination.of.modifiers", template, sealed_non_sealed, modifier);
+                    } else if (template.equals(template1) && modifier.equals("static")) {
+                        assertFail("compiler.err.non-static.cant.be.ref", template, sealed_non_sealed, modifier);
                     } else {
                         assertOK(template, sealed_non_sealed, modifier);
                     }
