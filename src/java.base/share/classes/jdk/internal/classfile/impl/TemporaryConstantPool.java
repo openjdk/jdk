@@ -191,11 +191,6 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public boolean writeBootstrapMethods(BufWriter buf) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void writeTo(BufWriter buf) {
         throw new UnsupportedOperationException();
     }
