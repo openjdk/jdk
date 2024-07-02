@@ -1340,6 +1340,7 @@ class ZipFileSystem extends FileSystem {
 
     private void makeParentDirs(IndexNode node, IndexNode root) {
         IndexNode parent;
+        if(node.name.length<=1) continue;
         ParentLookup lookup = new ParentLookup();
         while (true) {
             int off = getParentOff(node.name);
