@@ -138,6 +138,7 @@ public class TestFramework {
                     "AlignVector",
                     "UseAVX",
                     "UseSSE",
+                    "UseKNLSetting",
                     "UseSVE",
                     "UseZbb",
                     "UseRVV",
