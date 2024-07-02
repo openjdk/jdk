@@ -400,17 +400,15 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
-      // Allow for "<cmd> -help" or "<cmd> --help" to enable
+      // Allow for "<cmd> -h" or "<cmd> --help" to enable
       // the help diagnostic command. Ignores any additional
       // arguments.
-      const char *args = line.args_addr();
-      if (strncmp(args, " -help", 6) == 0 || strncmp(args, " --help", 7) == 0) {
-        stringStream updated_line;
-        reorder_help_cmd(line, updated_line);
-        CmdLine updated_cmd(updated_line.base(),
-                            updated_line.size(), false);
+      stringStream updated_line;
+      if (reorder_help_cmd(line, updated_line)) {
+        CmdLine updated_cmd(updated_line.base(), updated_line.size(), false);
         line = updated_cmd;
       }
+
       ResourceMark rm;
       DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
       assert(command != nullptr, "command error must be handled before this line");
@@ -422,10 +420,22 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
   }
 }
 
-void DCmd::reorder_help_cmd(CmdLine line, stringStream& updated_line) {
-  updated_line.print("%s", "help ");
-  updated_line.write(line.cmd_addr(), line.cmd_len());
-  updated_line.write("\0", 1);
+bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
+  stringStream args;
+  args.print("%s", line.args_addr());
+  char *rest = args.as_string();
+  char *token = strtok_r(rest, " ", &rest);
+  while (token != NULL) {
+    if (strncmp(token, "-h", 2) == 0 || strncmp(token, "--help", 6) == 0) {
+      updated_line.print("%s", "help ");
+      updated_line.write(line.cmd_addr(), line.cmd_len());
+      updated_line.write("\0", 1);
+      return true;
+    }
+    token = strtok_r(rest, " ", &rest);
+  }
+
+  return false;
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {

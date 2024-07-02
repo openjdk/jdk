@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestJcmdSubcommandHelp {
 
-    private static final String HELP_ONE_DASH = "-help";
+    private static final String HELP_ONE_DASH = "-h";
     private static final String HELP_TWO_DASH = "--help";
     private static final String CMD = "VM.metaspace";
 
