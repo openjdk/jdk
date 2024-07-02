@@ -481,7 +481,11 @@ void AbstractDumpWriter::write_raw(const void* s, size_t len) {
     flush();
   }
 
-  memcpy(buffer() + position(), s, len);
+  if(s == nullptr) {
+    memset(buffer() + position(), 0, len);
+  } else {
+    memcpy(buffer() + position(), s, len);
+  }
   set_position(position() + len);
 }
 
@@ -999,42 +1003,42 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
       break;
     }
     case JVM_SIGNATURE_BYTE : {
-      jbyte b = obj->byte_field(offset);
+      jbyte b = HeapDumpRedacted ? 0 : obj->byte_field(offset);
       writer->write_u1(b);
       break;
     }
     case JVM_SIGNATURE_CHAR : {
-      jchar c = obj->char_field(offset);
+      jchar c = HeapDumpRedacted ? 0 : obj->char_field(offset);
       writer->write_u2(c);
       break;
     }
     case JVM_SIGNATURE_SHORT : {
-      jshort s = obj->short_field(offset);
+      jshort s = HeapDumpRedacted ? 0 : obj->short_field(offset);
       writer->write_u2(s);
       break;
     }
     case JVM_SIGNATURE_FLOAT : {
-      jfloat f = obj->float_field(offset);
+      jfloat f = HeapDumpRedacted ? 0 : obj->float_field(offset);
       dump_float(writer, f);
       break;
     }
     case JVM_SIGNATURE_DOUBLE : {
-      jdouble d = obj->double_field(offset);
+      jdouble d = HeapDumpRedacted ? 0 : obj->double_field(offset);
       dump_double(writer, d);
       break;
     }
     case JVM_SIGNATURE_INT : {
-      jint i = obj->int_field(offset);
+      jint i = HeapDumpRedacted ? 0 : obj->int_field(offset);
       writer->write_u4(i);
       break;
     }
     case JVM_SIGNATURE_LONG : {
-      jlong l = obj->long_field(offset);
+      jlong l = HeapDumpRedacted ? 0 : obj->long_field(offset);
       writer->write_u8(l);
       break;
     }
     case JVM_SIGNATURE_BOOLEAN : {
-      jboolean b = obj->bool_field(offset);
+      jboolean b = HeapDumpRedacted ? false : obj->bool_field(offset);
       writer->write_u1(b);
       break;
     }
@@ -1374,71 +1378,74 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
-  // If the byte ordering is big endian then we can copy most types directly
+  if(HeapDumpRedacted) {
+    writer->write_raw(nullptr, length_in_bytes); //nullptr to write zeros
+  } else {
+    // If the byte ordering is big endian then we can copy most types directly
+    switch (type) {
+      case T_INT : {
+        if (Endian::is_Java_byte_ordering_different()) {
+          WRITE_ARRAY(array, int, u4, length);
+        } else {
+          writer->write_raw(array->int_at_addr(0), length_in_bytes);
+        }
+        break;
+      }
+      case T_BYTE : {
+        writer->write_raw(array->byte_at_addr(0), length_in_bytes);
+        break;
+      }
+      case T_CHAR : {
+        if (Endian::is_Java_byte_ordering_different()) {
+          WRITE_ARRAY(array, char, u2, length);
+        } else {
+          writer->write_raw(array->char_at_addr(0), length_in_bytes);
+        }
+        break;
+      }
+      case T_SHORT : {
+        if (Endian::is_Java_byte_ordering_different()) {
+          WRITE_ARRAY(array, short, u2, length);
+        } else {
+          writer->write_raw(array->short_at_addr(0), length_in_bytes);
+        }
+        break;
+      }
+      case T_BOOLEAN : {
+        if (Endian::is_Java_byte_ordering_different()) {
+          WRITE_ARRAY(array, bool, u1, length);
+        } else {
+          writer->write_raw(array->bool_at_addr(0), length_in_bytes);
+        }
+        break;
+      }
+      case T_LONG : {
+        if (Endian::is_Java_byte_ordering_different()) {
+          WRITE_ARRAY(array, long, u8, length);
+        } else {
+          writer->write_raw(array->long_at_addr(0), length_in_bytes);
+        }
+        break;
+      }
 
-  switch (type) {
-    case T_INT : {
-      if (Endian::is_Java_byte_ordering_different()) {
-        WRITE_ARRAY(array, int, u4, length);
-      } else {
-        writer->write_raw(array->int_at_addr(0), length_in_bytes);
-      }
-      break;
-    }
-    case T_BYTE : {
-      writer->write_raw(array->byte_at_addr(0), length_in_bytes);
-      break;
-    }
-    case T_CHAR : {
-      if (Endian::is_Java_byte_ordering_different()) {
-        WRITE_ARRAY(array, char, u2, length);
-      } else {
-        writer->write_raw(array->char_at_addr(0), length_in_bytes);
-      }
-      break;
-    }
-    case T_SHORT : {
-      if (Endian::is_Java_byte_ordering_different()) {
-        WRITE_ARRAY(array, short, u2, length);
-      } else {
-        writer->write_raw(array->short_at_addr(0), length_in_bytes);
-      }
-      break;
-    }
-    case T_BOOLEAN : {
-      if (Endian::is_Java_byte_ordering_different()) {
-        WRITE_ARRAY(array, bool, u1, length);
-      } else {
-        writer->write_raw(array->bool_at_addr(0), length_in_bytes);
-      }
-      break;
-    }
-    case T_LONG : {
-      if (Endian::is_Java_byte_ordering_different()) {
-        WRITE_ARRAY(array, long, u8, length);
-      } else {
-        writer->write_raw(array->long_at_addr(0), length_in_bytes);
-      }
-      break;
-    }
+      // handle float/doubles in a special value to ensure than NaNs are
+      // written correctly. TO DO: Check if we can avoid this on processors that
+      // use IEEE 754.
 
-    // handle float/doubles in a special value to ensure than NaNs are
-    // written correctly. TO DO: Check if we can avoid this on processors that
-    // use IEEE 754.
-
-    case T_FLOAT : {
-      for (int i = 0; i < length; i++) {
-        dump_float(writer, array->float_at(i));
+      case T_FLOAT : {
+        for (int i = 0; i < length; i++) {
+          dump_float(writer, array->float_at(i));
+        }
+        break;
       }
-      break;
-    }
-    case T_DOUBLE : {
-      for (int i = 0; i < length; i++) {
-        dump_double(writer, array->double_at(i));
+      case T_DOUBLE : {
+        for (int i = 0; i < length; i++) {
+          dump_double(writer, array->double_at(i));
+        }
+        break;
       }
-      break;
+      default : ShouldNotReachHere();
     }
-    default : ShouldNotReachHere();
   }
 
   writer->end_sub_record();

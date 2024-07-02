@@ -557,6 +557,10 @@ const int ObjectAlignmentInBytes = 8;
           "from JVM "                                                       \
           "(also see HeapDumpPath, HeapDumpGzipLevel)")                     \
                                                                             \
+  product(bool, HeapDumpRedacted, false, MANAGEABLE,                        \
+          "Redact primitive type values from heap dump by setting "         \
+          "to zero.")                                                       \
+                                                                            \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
           "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
           "or HeapDumpAfterFullGC is on, the path (filename or "            \
