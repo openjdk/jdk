@@ -655,6 +655,36 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
     SHA1 usage SignedJAR & denyAfter 2019-01-01
 
 #
+# Algorithm restrictions for Hybrid Public Key Encryption (HPKE)
+#
+# In some environments, certain algorithm identifiers may be undesirable
+# for Hybrid Public Key Encryption. See the specification of HPKEParameterSpec
+# for definition of algorithm identifiers used in HPKE.
+#
+# The value for this property is a comma-separate-list of equations. Each one
+# taking the form of one of
+#
+#   kem_id=<number>
+#   kem_id=<number>-<number>
+#   kdf_id=<number>
+#   kdf_id=<number>-<number>
+#   aead_id=<number>
+#   aead_id=<number>-<number>
+#
+# If only one number is provided, the algorithm identifier is disabled. If a
+# range is provided, the algorithm identifiers within the range (inclusive
+# on both sides) are disabled. Initializing an HPKE cipher with disabled
+# algorithm identifier(s) will throw an InvalidAlgorithmParameterException.
+#
+# The numbers must be in decimal. All whitespaces around delimiters are ignored.
+# The names are case-sensitive.
+#
+# Note: This property is currently used by the JDK Reference
+# implementation. It is not guaranteed to be examined and used by other
+# implementations.
+jdk.hpke.disabledAlgorithms=
+
+#
 # Legacy cryptographic algorithms and key lengths.
 #
 # In some environments, a certain algorithm or key length may be undesirable.
