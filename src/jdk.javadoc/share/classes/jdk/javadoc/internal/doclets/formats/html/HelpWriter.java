@@ -108,6 +108,10 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(getNavigationSection())
                 .add(new HtmlTree(TagName.HR))
                 .add(getPageKindSection())
+                .add(options.noSince()
+                        ? new ContentBuilder()
+                        : new ContentBuilder(new HtmlTree(TagName.HR),
+                                             getReleasesSection()))
                 .add(new HtmlTree(TagName.HR))
                 .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
                         getContent("doclet.help.footnote")));
@@ -395,6 +399,26 @@ public class HelpWriter extends HtmlDocletWriter {
         tableOfContents.popNestedList();
 
         return pageKindsSection;
+    }
+
+    private Content getReleasesSection() {
+        Content releasesHeading = contents.getContent("doclet.help.releases.head");
+        var releasesSection = HtmlTree.DIV(HtmlStyle.subTitle)
+                .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, releasesHeading).setId(HtmlIds.HELP_RELEASES))
+                .add(HtmlTree.P(contents.getContent("doclet.help.releases.body.specify.top-level")))
+                .add(HtmlTree.P(contents.getContent("doclet.help.releases.body.specify.member")));
+
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)
+                || configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
+            releasesSection.add(HtmlTree.P(contents.getContent("doclet.help.releases.body.refer")));
+        }
+
+        tableOfContents.addLink(HtmlIds.HELP_RELEASES, releasesHeading);
+        tableOfContents.pushNestedList();
+        tableOfContents.popNestedList();
+
+        return releasesSection;
+
     }
 
     private Content getContent(String key) {
