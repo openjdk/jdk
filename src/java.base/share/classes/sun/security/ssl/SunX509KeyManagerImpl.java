@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             X509Credentials cred = new X509Credentials((PrivateKey)key,
                 (X509Certificate[])certs);
             credentialsMap.put(alias, cred);
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.fine("found key for : " + alias, (Object[])certs);
             }
         }
@@ -384,7 +384,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             if (issuers.length == 0) {
                 // no issuer specified, match all
                 aliases.add(alias);
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                     SSLLogger.fine("matching alias: " + alias);
                 }
             } else {
@@ -393,7 +393,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
                 for (int i = 0; i < x500Issuers.length; i++) {
                     if (certIssuers.contains(issuers[i])) {
                         aliases.add(alias);
-                        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                             SSLLogger.fine("matching alias: " + alias);
                         }
                         break;

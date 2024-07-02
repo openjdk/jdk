@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             destination.limit(destination.position());
             destination.position(dstContent);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                 SSLLogger.fine(
                         "WRITE: " + protocolVersion.name + " " +
                         ContentType.APPLICATION_DATA.name +
@@ -288,7 +288,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                     dstPos, dstLim, headerSize,
                     protocolVersion);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
                 ByteBuffer temporary = destination.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);
@@ -317,7 +317,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             //
             // Please don't change the limit of the destination buffer.
             destination.put(SSLRecord.v2NoCipher);
-            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
                 SSLLogger.fine("Raw write", SSLRecord.v2NoCipher);
             }
 
@@ -332,13 +332,13 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             //
             // Please don't change the limit of the destination buffer.
             if (SSLLogger.isOn) {
-                if (SSLLogger.isOn("record")) {
+                if (SSLLogger.isOn("ssl,record")) {
                      SSLLogger.fine(Thread.currentThread().getName() +
                             ", WRITE: SSLv2 ClientHello message" +
                             ", length = " + v2ClientHello.remaining());
                 }
 
-                if (SSLLogger.isOn("packet")) {
+                if (SSLLogger.isOn("ssl,record,packet")) {
                     SSLLogger.fine("Raw write", v2ClientHello);
                 }
             }
@@ -525,7 +525,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             dstBuf.limit(dstBuf.position());
             dstBuf.position(dstContent);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                 SSLLogger.fine(
                         "WRITE: " + protocolVersion.name + " " +
                         ContentType.nameOf(memo.contentType) +
@@ -543,7 +543,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                 memo.encodeCipher.dispose();
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);
