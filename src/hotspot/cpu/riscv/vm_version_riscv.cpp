@@ -147,11 +147,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic is not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
@@ -240,6 +235,16 @@ void VM_Version::initialize() {
   //       in some situations.
 
   // ChaCha20
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic))
+      warning("VectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
