@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ struct PacketList {
 };
 
 static volatile struct PacketList *cmdQueue;
-static jrawMonitorID cmdQueueLock;
-static jrawMonitorID vmDeathLock;
+static DebugRawMonitor* cmdQueueLock;
+static DebugRawMonitor* vmDeathLock;
 static jboolean transportError;
 
 static jboolean
@@ -63,7 +63,7 @@ lastCommand(jdwpCmdPacket *cmd)
 void
 debugLoop_initialize(void)
 {
-    vmDeathLock = debugMonitorCreate("JDWP VM_DEATH Lock");
+    vmDeathLock = debugMonitorCreate(vmDeathLockForDebugLoop_Rank, "JDWP VM_DEATH Lock");
 }
 
 void
@@ -87,7 +87,7 @@ debugLoop_run(void)
     /* Initialize all statics */
     /* We may be starting a new connection after an error */
     cmdQueue = NULL;
-    cmdQueueLock = debugMonitorCreate("JDWP Command Queue Lock");
+    cmdQueueLock = debugMonitorCreate(cmdQueueLock_Rank, "JDWP Command Queue Lock");
     transportError = JNI_FALSE;
 
     shouldListen = JNI_TRUE;

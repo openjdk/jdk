@@ -43,6 +43,7 @@ BackendGlobalData *gdata = NULL;
 static jboolean isInterface(jclass clazz);
 static jboolean isArrayClass(jclass clazz);
 static char * getPropertyUTF8(JNIEnv *env, char *propertyName);
+static void createDbgRawMonitor();
 
 /* Save an object reference for use later (create a NewGlobalRef) */
 void
@@ -179,6 +180,10 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
 void
 util_initialize(JNIEnv *env)
 {
+    if (gdata->rankedMonitors) {
+        createDbgRawMonitor();
+    }
+
     WITH_LOCAL_REFS(env, 6) {
 
         jvmtiError error;
@@ -991,6 +996,8 @@ handleInterrupt(void)
     if ((thread != NULL) && (!threadControl_isDebugThread(thread))) {
         threadControl_setPendingInterrupt(thread);
     }
+    JNIEnv *env = getEnv();
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, thread);
 }
 
 static jvmtiError
@@ -1003,8 +1010,8 @@ ignore_vm_death(jvmtiError error)
     return error;
 }
 
-void
-debugMonitorEnter(jrawMonitorID monitor)
+static void
+debugMonitorEnter_norank(jrawMonitorID monitor)
 {
     jvmtiError error;
     error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
@@ -1015,8 +1022,8 @@ debugMonitorEnter(jrawMonitorID monitor)
     }
 }
 
-void
-debugMonitorExit(jrawMonitorID monitor)
+static void
+debugMonitorExit_norank(jrawMonitorID monitor)
 {
     jvmtiError error;
 
@@ -1028,8 +1035,8 @@ debugMonitorExit(jrawMonitorID monitor)
     }
 }
 
-void
-debugMonitorWait(jrawMonitorID monitor)
+static void
+debugMonitorWait_norank(jrawMonitorID monitor)
 {
     jvmtiError error;
     error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
@@ -1073,8 +1080,8 @@ debugMonitorWait(jrawMonitorID monitor)
     }
 }
 
-void
-debugMonitorNotify(jrawMonitorID monitor)
+static void
+debugMonitorNotify_norank(jrawMonitorID monitor)
 {
     jvmtiError error;
 
@@ -1086,8 +1093,8 @@ debugMonitorNotify(jrawMonitorID monitor)
     }
 }
 
-void
-debugMonitorNotifyAll(jrawMonitorID monitor)
+static void
+debugMonitorNotifyAll_norank(jrawMonitorID monitor)
 {
     jvmtiError error;
 
@@ -1099,31 +1106,407 @@ debugMonitorNotifyAll(jrawMonitorID monitor)
     }
 }
 
-jrawMonitorID
-debugMonitorCreate(char *name)
+/*
+ * A DebugRawMonitor is an encapsulation of a jrawMonitorID. It is used to
+ * store other information about the jrawMonitorID that is needed for ranked
+ * monitors support, such as the thread that currently owns the monitor.
+ */
+struct DebugRawMonitor {
+    jrawMonitorID monitor;
+    const char* name;
+    DebugRawMonitorRank rank;
+    volatile jthread ownerThread; // Access protected by dbgRawMonitor
+    int entryCount; // Only ownerThread should ever access this field
+};
+
+static DebugRawMonitor dbg_monitors[NUM_DEBUG_RAW_MONITORS];
+
+
+/*
+ * The dbgRawMonitor controls access to the DebugRawMonitor->ownerThread field.
+ * It must be held whenever modifying ownerThread and also must be held whenever
+ * accessing ownerThread unless we know the current thread already owns the monitor.
+ * Only the owner of the DebugRawMonitor will ever modify ownerThread. The main thing
+ * we are trying to protect from is a thread checking to see if it is the owner of
+ * the DebugRawMonitor, and having the ownerThread field change while doing this.
+ * The check is made using:
+ *    isSameObject(env, dbg_monitor->ownerThread, current_thread)
+ * We don't want ownerThread changing in the middle of this check since it can lead
+ * to a crash if the JNI handle gets freed. So this check is always protected by
+ * dbgRawMonitor as are modifications to ownerThread.
+ *
+ * There is also one other minor role that dbgRawMonitor plays. In verifyMonitorRank()
+ * we iterate over all monitors, and need to make sure the monitor we are checking has
+ * been initialized. If it hasn't been, then it is skipped. There can be a race and
+ * we catch it in the middle of intialization. Since dbgRawMonitor is held during
+ * verifyMonitorRank(), we should also hold it during monitor initialization.
+ */
+
+static jrawMonitorID dbgRawMonitor;
+
+static void
+createDbgRawMonitor()
+{
+    JDI_ASSERT(gdata->rankedMonitors);
+    jvmtiError error;
+    error = JVMTI_FUNC_PTR(gdata->jvmti,CreateRawMonitor)
+            (gdata->jvmti, "Debug Raw Monitor", &dbgRawMonitor);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "on creation of dbgRawMonitor");
+    }
+    JDI_ASSERT(dbgRawMonitor != NULL);
+}
+
+void
+dbgRawMonitor_lock()
+{
+    JDI_ASSERT(gdata->rankedMonitors);
+    jvmtiError error;
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
+            (gdata->jvmti, dbgRawMonitor);
+    error = ignore_vm_death(error);
+    if (error != JVMTI_ERROR_NONE) {
+      EXIT_ERROR(error, "on dbgRawMonitor enter");
+    }
+}
+
+void
+dbgRawMonitor_unlock()
+{
+    JDI_ASSERT(gdata->rankedMonitors);
+    jvmtiError error;
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorExit)
+            (gdata->jvmti, dbgRawMonitor);
+    error = ignore_vm_death(error);
+    if (error != JVMTI_ERROR_NONE) {
+      EXIT_ERROR(error, "on dbgRawMonitor exit");
+    }
+}
+
+DebugRawMonitor*
+debugMonitorCreate(DebugRawMonitorRank dbg_monitor_rank, char *name)
 {
     jrawMonitorID monitor;
     jvmtiError error;
+    DebugRawMonitor* dbg_monitor = &dbg_monitors[dbg_monitor_rank];
+    JDI_ASSERT(dbg_monitor->monitor == NULL);
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,CreateRawMonitor)
                 (gdata->jvmti, name, &monitor);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on creation of a raw monitor");
     }
-    return monitor;
+
+    JDI_ASSERT(monitor != NULL);
+
+    // Need to lock during initialization so verifyMonitorRank() can be guaranteed that
+    // if the monitor field is not NULL, then the monitor is fully initialized.
+    if (gdata->rankedMonitors) {
+        dbgRawMonitor_lock();
+    }
+    dbg_monitor->monitor = monitor;
+    dbg_monitor->rank = dbg_monitor_rank;
+    dbg_monitor->name = name;
+    if (gdata->rankedMonitors) {
+        dbgRawMonitor_unlock();
+    }
+
+    return dbg_monitor;
 }
 
 void
-debugMonitorDestroy(jrawMonitorID monitor)
+debugMonitorDestroy(DebugRawMonitor *dbg_monitor)
 {
     jvmtiError error;
+    JDI_ASSERT(dbg_monitor != NULL);
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,DestroyRawMonitor)
-                (gdata->jvmti, monitor);
+                (gdata->jvmti, dbg_monitor->monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on destruction of raw monitor");
     }
+
+    dbg_monitor->monitor = NULL;
+}
+
+static char*
+getThreadName(jthread thread)
+{
+    jvmtiThreadInfo info;
+    jvmtiError error;
+    JNIEnv *env = getEnv();
+
+    memset(&info, 0, sizeof(info));
+    WITH_LOCAL_REFS(env, 2) {
+        error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+                (gdata->jvmti, thread, &info);
+    } END_WITH_LOCAL_REFS(env);
+    return info.name;
+}
+
+void
+dumpRawMonitor(DebugRawMonitor *dbg_monitor) {
+    tty_message("DebugRawMonitor(%d)", dbg_monitor->rank);
+    tty_message("\tname: %s", dbg_monitor->name);
+    if (dbg_monitor->ownerThread != NULL) {
+        char* threadName = getThreadName(dbg_monitor->ownerThread);
+        tty_message("\townerThreadName: %s", threadName);
+        jvmtiDeallocate(threadName);
+    }
+}
+
+void
+dumpRawMonitors() {
+    int i;
+    for (i = 0; i < NUM_DEBUG_RAW_MONITORS; i++) {
+        DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
+        if (dbg_monitor->monitor == NULL) {
+            continue;
+        }
+        jthread thread = dbg_monitor->ownerThread;
+        if (thread == NULL) {
+            continue;
+        }
+        dumpRawMonitor(dbg_monitor);
+    }
+}
+
+static void
+assertIsCurrentThread(JNIEnv *env, jthread thread, jthread current_thread)
+{
+    if (!gdata->assertOn) {
+        return;
+    }
+    if (gdata->vmDead) {
+        return; // This assert is not reliable if the VM is exiting
+    }
+    if (!isSameObject(env, thread, current_thread)) {
+        tty_message("ERROR: Threads are not the same: \"%s\" \"%s\"",
+                    getThreadName(thread), getThreadName(current_thread));
+        dumpRawMonitors();
+        JDI_ASSERT(JNI_FALSE);
+    }
+}
+
+static void
+verifyMonitorRank(JNIEnv *env, DebugRawMonitorRank rank, jthread thread)
+{
+    // We must hold the dbgRawMonitor when calling verifyMonitorRank()
+
+    // Iterate over all the monitors and make sure we don't already hold one that
+    // has a higher rank than the monitor we are about to enter. The loop starts
+    // with the lowest ranked monitor (0) and stops at rank-1. None of the
+    // monitors in this set should be held by the current thread.
+    DebugRawMonitorRank i;
+    for (i = 0; i < rank; i++) {
+        DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
+        if (dbg_monitor->monitor == NULL) {
+            continue; // ignore uninitialzed monitors
+        }
+        if (dbg_monitor->ownerThread == NULL) {
+            continue; // ignore unowned monitors
+        }
+        if (!isSameObject(env, dbg_monitor->ownerThread, thread)) {
+            continue; // ignore monitors not owned by this thread
+        }
+
+        /*
+         * At this point we know we have some sort of rank violation because we know that
+         * the current thread owns the monitor we are iterating over, and it has a lower rank
+         * than the monitor we are entering.
+         */
+
+        if (dbg_monitor->rank == popFrameEventLock_Rank && rank == popFrameProceedLock_Rank) {
+            // For reasons too complex to explain here, this is one exception that is safe so
+            // we allow it. See the long comment for these locks in threadControl.c.
+            continue;
+        }
+
+        JDI_ASSERT(dbg_monitor->rank < rank);
+        char* threadName = getThreadName(thread);
+        tty_message("DebugRawMonitor rank failure: (%d:\"%s\" > %d:\"%s\") for thread (%s)",
+                    dbg_monitor->rank, dbg_monitor->name,
+                    rank, dbg_monitors[rank].name, threadName);
+        jvmtiDeallocate(threadName);
+        dumpRawMonitors();
+        JDI_ASSERT(JNI_FALSE);
+    }
+}
+
+void
+debugMonitorEnter(DebugRawMonitor *dbg_monitor)
+{
+    jrawMonitorID monitor = dbg_monitor->monitor;
+
+    if (!gdata->rankedMonitors) {
+        debugMonitorEnter_norank(monitor);
+        return;
+    }
+
+    JNIEnv *env = getEnv();
+    jthread current_thread = threadControl_currentThread();
+
+    if (gdata->vmDead && current_thread == NULL) {
+        return;
+    }
+    JDI_ASSERT(current_thread != NULL);
+
+    dbgRawMonitor_lock();
+    if (isSameObject(env, dbg_monitor->ownerThread, current_thread)) {
+        // We have already entered this monitor, so nothing to do except bump entryCount below.
+        dbgRawMonitor_unlock();
+    } else {
+        // We must hold the dbgRawMonitor when calling verifyMonitorRank()
+        verifyMonitorRank(env, dbg_monitor->rank, current_thread);
+        dbgRawMonitor_unlock();
+
+        debugMonitorEnter_norank(monitor);
+
+        // Once we have entered the monitor, claim ownership of the DebugRawMonitor
+        // by saving the thread into it.
+        dbgRawMonitor_lock();
+        JDI_ASSERT(dbg_monitor->ownerThread == NULL);
+        JDI_ASSERT(dbg_monitor->entryCount == 0);
+        saveGlobalRef(env, current_thread, (jobject*)&(dbg_monitor->ownerThread));
+        dbgRawMonitor_unlock();
+    }
+
+    dbg_monitor->entryCount++;
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+}
+
+void
+debugMonitorExit(DebugRawMonitor *dbg_monitor)
+{
+    jrawMonitorID monitor = dbg_monitor->monitor;
+
+    if (!gdata->rankedMonitors) {
+        debugMonitorExit_norank(monitor);
+        return;
+    }
+
+    jthread current_thread = threadControl_currentThread();
+
+    if (gdata->vmDead && current_thread == NULL) {
+        return;
+    }
+
+    JDI_ASSERT(dbg_monitor->entryCount > 0);
+
+    // Assert that the current thread owns this monitor.
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+
+    dbg_monitor->entryCount--;
+    if (dbg_monitor->entryCount == 0) {
+        // Release ownership of the DebugRawMonitor before RawMonitorExit actually exits it.
+        dbgRawMonitor_lock();
+        tossGlobalRef(env, (jobject*)&(dbg_monitor->ownerThread));
+        dbgRawMonitor_unlock();
+
+        debugMonitorExit_norank(monitor);
+    }
+}
+
+void
+debugMonitorWait(DebugRawMonitor *dbg_monitor)
+{
+    jrawMonitorID monitor = dbg_monitor->monitor;
+
+    if (!gdata->rankedMonitors) {
+        debugMonitorWait_norank(monitor);
+        return;
+    }
+
+    JNIEnv *env = getEnv();
+    jthread savedOwnerThread = dbg_monitor->ownerThread;
+    int savedEntryCount = dbg_monitor->entryCount;
+    jthread current_thread = threadControl_currentThread();
+
+    if (gdata->vmDead && current_thread == NULL) {
+        return;
+    }
+
+    JDI_ASSERT(savedOwnerThread != NULL);
+
+    // Assert that the current thread owns this monitor.
+    assertIsCurrentThread(env, savedOwnerThread, current_thread);
+
+    {
+      dbgRawMonitor_lock();
+
+      // Release ownership of the DebugRawMonitor before RawMonitorWait actually exits it.
+      dbg_monitor->ownerThread = NULL;
+      dbg_monitor->entryCount = 0;
+
+      // Doing a wait ends up doing an exit and then an enter after the wait completes.
+      // We must do the same rank verificaton as is done during a monitor enter.
+      // We must hold the dbgRawMonitor when calling verifyMonitorRank()
+      verifyMonitorRank(env, dbg_monitor->rank, current_thread);
+
+      dbgRawMonitor_unlock();
+    }
+
+    debugMonitorWait_norank(monitor);
+
+    // Now that we have re-entered the monitor, reclaim ownership of the DebugRawMonitor
+    // by saving the thread into it and restoring the entry count.
+    dbgRawMonitor_lock();
+    dbg_monitor->ownerThread = savedOwnerThread;
+    dbg_monitor->entryCount = savedEntryCount;
+    dbgRawMonitor_unlock();
+
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+}
+
+void
+debugMonitorNotify(DebugRawMonitor *dbg_monitor)
+{
+    jrawMonitorID monitor = dbg_monitor->monitor;
+
+    if (!gdata->rankedMonitors) {
+        debugMonitorNotify_norank(monitor);
+        return;
+    }
+
+    jthread current_thread = threadControl_currentThread();
+
+    if (gdata->vmDead && current_thread == NULL) {
+        return;
+    }
+
+    // Assert that the current thread owns this monitor.
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+
+    debugMonitorNotify_norank(monitor);
+}
+
+void
+debugMonitorNotifyAll(DebugRawMonitor *dbg_monitor)
+{
+    jrawMonitorID monitor = dbg_monitor->monitor;
+
+    if (!gdata->rankedMonitors) {
+        debugMonitorNotifyAll_norank(monitor);
+        return;
+    }
+
+    jthread current_thread = threadControl_currentThread();
+
+    if (gdata->vmDead && current_thread == NULL) {
+        return;
+    }
+
+    // Assert that the current thread owns this monitor.
+    JNIEnv *env = getEnv();
+    assertIsCurrentThread(env, dbg_monitor->ownerThread, current_thread);
+    JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+
+    debugMonitorNotifyAll_norank(monitor);
 }
 
 /**

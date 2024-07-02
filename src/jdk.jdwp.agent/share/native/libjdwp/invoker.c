@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@
 #include "outStream.h"
 #include "signature.h"
 
-static jrawMonitorID invokerLock;
+static DebugRawMonitor* invokerLock;
 
 void
 invoker_initialize(void)
 {
-    invokerLock = debugMonitorCreate("JDWP Invocation Lock");
+    invokerLock = debugMonitorCreate(invokerLock_Rank, "JDWP Invocation Lock");
 }
 
 void
@@ -720,6 +720,7 @@ invoker_completeInvokeRequest(jthread thread)
     id  = 0;
 
     eventHandler_lock(); /* for proper lock order */
+    stepControl_lock();  /* for proper lock order in threadControl getLocks() */
     debugMonitorEnter(invokerLock);
 
     request = threadControl_getInvokeRequest(thread);
@@ -790,6 +791,7 @@ invoker_completeInvokeRequest(jthread thread)
      * Give up the lock before I/O operation
      */
     debugMonitorExit(invokerLock);
+    stepControl_unlock();
     eventHandler_unlock();
 
     if (!detached) {

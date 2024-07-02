@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,10 +122,10 @@ typedef struct {
 } CommandQueue;
 
 static CommandQueue commandQueue;
-static jrawMonitorID commandQueueLock;
-static jrawMonitorID commandCompleteLock;
-static jrawMonitorID blockCommandLoopLock;
-static jrawMonitorID vmDeathLock;
+static DebugRawMonitor* commandQueueLock;
+static DebugRawMonitor* commandCompleteLock;
+static DebugRawMonitor* blockCommandLoopLock;
+static DebugRawMonitor* vmDeathLock;
 static volatile jboolean commandLoopEnteredVmDeathLock = JNI_FALSE;
 
 static jint maxQueueSize = 50 * 1024; /* TO DO: Make this configurable */
@@ -744,10 +744,10 @@ eventHelper_initialize(jbyte sessionID)
     commandQueue.head = NULL;
     commandQueue.tail = NULL;
 
-    commandQueueLock = debugMonitorCreate("JDWP Event Helper Queue Monitor");
-    commandCompleteLock = debugMonitorCreate("JDWP Event Helper Completion Monitor");
-    blockCommandLoopLock = debugMonitorCreate("JDWP Event Block CommandLoop Monitor");
-    vmDeathLock = debugMonitorCreate("JDWP VM_DEATH CommandLoop Monitor");
+    commandQueueLock     = debugMonitorCreate(commandQueueLock_Rank, "JDWP Event Helper Queue Monitor");
+    commandCompleteLock  = debugMonitorCreate(commandCompleteLock_Rank, "JDWP Event Helper Completion Monitor");
+    blockCommandLoopLock = debugMonitorCreate(blockCommandLoopLock_Rank, "JDWP Event Block CommandLoop Monitor");
+    vmDeathLock          = debugMonitorCreate(vmDeathLock_Rank, "JDWP VM_DEATH CommandLoop Monitor");
 
     /* Start the event handler thread */
     func = &commandLoop;
