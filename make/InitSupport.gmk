@@ -63,14 +63,14 @@ ifeq ($(HAS_SPEC),)
 
   # The variable MAKEOVERRIDES contains variable assignments from the command
   # line, but in reverse order to what the user entered.
-  # The '\#' <=> '\ 'dance is needed to keep values with space in them connected.
-  COMMAND_LINE_VARIABLES := $(subst \#,\ , $(call reverse, $(subst \ ,\#,$(MAKEOVERRIDES))))
+  # The '§' <=> '\ 'dance is needed to keep values with space in them connected.
+  COMMAND_LINE_VARIABLES := $(subst §,\ , $(call reverse, $(subst \ ,§,$(MAKEOVERRIDES))))
 
   # A list like FOO="val1" BAR="val2" containing all user-supplied make
   # variables that we should propagate.
-  # The '\#' <=> '\ 'dance is needed to keep values with space in them connected.
-  USER_MAKE_VARS := $(subst \#,\ , $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
-      $(subst \ ,\#,$(MAKEOVERRIDES))))
+  # The '§' <=> '\ 'dance is needed to keep values with space in them connected.
+  USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
+      $(subst \ ,§,$(MAKEOVERRIDES))))
 
   # Setup information about available configurations, if any.
   ifneq ($(CUSTOM_ROOT), )
