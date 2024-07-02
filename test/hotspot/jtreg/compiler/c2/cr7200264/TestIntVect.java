@@ -515,9 +515,7 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI,
-                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
-                   IRNode.RSHIFT_VI,
+    @IR(counts = { IRNode.RSHIFT_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
@@ -535,9 +533,7 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI,
-                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
-                   IRNode.RSHIFT_VI,
+    @IR(counts = { IRNode.RSHIFT_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },

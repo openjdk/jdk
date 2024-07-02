@@ -427,6 +427,21 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
+    public static final String CMOVE_L = PREFIX + "CMOVE_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMOVE_L, "CMoveL");
+    }
+
+    public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
+    static {
+        superWordNodes(CMOVE_VD, "CMoveVD");
+    }
+
+    public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
+    static {
+        superWordNodes(CMOVE_VF, "CMoveVF");
+    }
+
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");
@@ -1036,6 +1051,16 @@ public class IRNode {
     public static final String MUL_L = PREFIX + "MUL_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_L, "MulL");
+    }
+
+    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_HI_L, "MulHiL");
+    }
+
+    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UMUL_HI_L, "UMulHiL");
     }
 
     public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
