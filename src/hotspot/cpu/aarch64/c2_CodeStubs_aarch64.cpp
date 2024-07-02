@@ -32,10 +32,7 @@
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  // ## something is wrong with offsets. do we get another set of instuctions?
-  //    todo: fix that
-  // return 20;
-  return 24;
+  return 20;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {

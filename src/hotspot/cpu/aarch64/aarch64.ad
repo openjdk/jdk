@@ -2261,9 +2261,7 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   __ adr(lr, __ pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  // ## something is wrong with offsets. do we get another set of instuctions?
-  //    todo: fix that
-  // assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
   return offset;
 }

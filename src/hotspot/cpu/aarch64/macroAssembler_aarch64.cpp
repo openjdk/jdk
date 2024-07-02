@@ -324,8 +324,8 @@ public:
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
 
-    // ## This is a of bugfix. See "Maybe we have a third instruction" below:
-    //    in fact we have either two or three instructions in adrp
+    // ## It is a bugfix. See "Maybe we have a third instruction" below: in fact ther is
+    //    either two or three instructions in adrp, the third one must be corrected too.
     bool is_add_insn3 = ((insn_at(insn_addr, 2) >> 24) & 0b11111) == 0b10001;
     if (is_add_insn3) {
       bool same_Rd_insn3 = (_insn & 0xf) == (insn_at(insn_addr, 2) & 0xf);
