@@ -2617,6 +2617,50 @@ public class JavacParserTest extends TestCase {
                      }""");
     }
 
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion6() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          private Object testMethod(final String arg1 final String arg2) {
+                              return null;
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:48:compiler.err.expected3",
+                             "3:66:compiler.err.expected"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         private Object testMethod(final String arg1);
+                         final String arg2;
+                         {
+                             return null;
+                         }
+                     }""");
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)

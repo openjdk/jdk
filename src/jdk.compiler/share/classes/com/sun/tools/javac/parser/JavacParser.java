@@ -4994,13 +4994,17 @@ public class JavacParser implements Parser {
             // Parsing formalParameters sets the receiverParam, if present
             List<JCVariableDecl> params = List.nil();
             List<JCExpression> thrown = List.nil();
+            boolean unclosedParameterList;
             if (!isRecord || name != names.init || token.kind == LPAREN) {
                 params = formalParameters();
+                unclosedParameterList = token.pos == endPosTable.errorEndPos;
                 if (!isVoid) type = bracketsOpt(type);
                 if (token.kind == THROWS) {
                     nextToken();
                     thrown = qualidentList(true);
                 }
+            } else {
+                unclosedParameterList = false;
             }
 
             saveDanglingDocComments(dc);
@@ -5020,10 +5024,14 @@ public class JavacParser implements Parser {
                 accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 if (token.pos <= endPosTable.errorEndPos) {
                     // error recovery
-                    skip(false, true, false, true);
+                    // look if there is a probable missing opening brace,
+                    // and if yes, parse as a block
+                    skip(false, true, false, !unclosedParameterList);
                     boolean parseAsBlock;
                     if (token.kind == LBRACE) {
                         parseAsBlock = true;
+                    } else if (unclosedParameterList) {
+                        parseAsBlock = false;
                     } else if (token.kind == RBRACE) {
                         int braceBalance = 1;
                         VirtualScanner virtualScanner = new VirtualScanner(S);
@@ -5048,6 +5056,7 @@ public class JavacParser implements Parser {
                                 !(speculativeResult.stats.head instanceof JCExpressionStatement s &&
                                  s.expr.hasTag(ERRONEOUS));
                     }
+
                     if (parseAsBlock) {
                         body = block();
                     }
