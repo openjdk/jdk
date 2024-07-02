@@ -866,6 +866,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
             input.close();
             tce.cert = cert;
             tce.certRef = keychainItemRef;
+            String keyEntryAlias = null;
 
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same
@@ -878,6 +879,11 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                     if (co instanceof TrustedCertEntry tco) {
                         if (tco.cert.equals(tce.cert)) {
                             return;
+                        }
+                    } else if (co instanceof KeyEntry ke) {
+                        if (keyEntryAlias == null && ke.chain.length > 0 && ke.chain[0].equals(tce.cert)) {
+                            // Remember keyEntry corresponding to the trusted cert entry
+                            keyEntryAlias = alias.toLowerCase(Locale.ROOT);
                         }
                     }
                     alias = originalAlias + " " + uniqueVal++;
@@ -918,6 +924,10 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                 } else {
                     // Otherwise, return immediately. The certificate is not
                     // added into entries.
+                    // Remove keyEntry related to certificate with empty trust settings
+                    if (keyEntryAlias != null) {
+                        entries.remove(keyEntryAlias);
+                    }
                     return;
                 }
             } else {
@@ -934,6 +944,10 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
 
                     // If we find explicit distrust in some record, we ignore the certificate
                     if ("3".equals(result)) {
+                        // Remove keyEntry related to implicitly distrusted certificate
+                        if (keyEntryAlias != null) {
+                            entries.remove(keyEntryAlias);
+                        }
                         return;
                     }
 
@@ -949,6 +963,10 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                     }
                 }
                 if (values.isEmpty()) {
+                    // Remove keyEntry related to certificate with empty trusted settings
+                    if (keyEntryAlias != null) {
+                        entries.remove(keyEntryAlias);
+                    }
                     return;
                 }
                 if (values.size() == 1) {
