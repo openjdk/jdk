@@ -146,6 +146,23 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
+     * Returns the extraAttributes of the entry.
+     * @return the extraAttributes of the entry.
+     */
+    public int getExtraAttributes() {
+        return this.extraAttributes;
+    }
+
+    /**
+     * Set the extraAttributes of the entry.
+     * @param  extraAttributes
+     *         the extraAttributes of the entry
+     */
+    public void setExtraAttributes(int extraAttributes) {
+        this.extraAttributes=extraAttributes;
+    }
+
+    /**
      * Sets the last modification time of the entry.
      *
      * <p> If the entry is output to a ZIP file or ZIP file formatted
