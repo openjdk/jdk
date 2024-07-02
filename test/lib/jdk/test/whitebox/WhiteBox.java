@@ -72,6 +72,8 @@ public class WhiteBox {
   // Arguments
   public native void printHeapSizes();
 
+  public native boolean isUbsanEnabled();
+
   // Memory
   private native long getObjectAddress0(Object o);
   public           long getObjectAddress(Object o) {

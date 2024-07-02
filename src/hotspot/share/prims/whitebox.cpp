@@ -281,6 +281,15 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
 }
 WB_END
 
+WB_ENTRY(jboolean, WB_isUbsanEnabled(JNIEnv* env, jobject o)) {
+#if defined(UNDEFINED_BEHAVIOR_SANITIZER)
+  return true;
+#else
+  return false;
+#endif
+}
+WB_END
+
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
   ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
@@ -2684,8 +2693,8 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddToBootstrapClassLoaderSearch},
   {CC"addToSystemClassLoaderSearch0",    CC"(Ljava/lang/String;)V",
                                                       (void*)&WB_AddToSystemClassLoaderSearch},
-  {CC"getCompressedOopsMaxHeapSize", CC"()J",
-      (void*)&WB_GetCompressedOopsMaxHeapSize},
+  {CC"getCompressedOopsMaxHeapSize", CC"()J",         (void*)&WB_GetCompressedOopsMaxHeapSize},
+  {CC"isUbsanEnabled",     CC"()Z",                   (void*)&WB_isUbsanEnabled},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
