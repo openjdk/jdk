@@ -68,7 +68,7 @@ public final class SunNativeProvider extends Provider {
         System.err.println(NAME + ": " + message);
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static final HashMap<String, String> MECH_MAP =
             AccessController.doPrivileged(
                 new PrivilegedAction<>() {

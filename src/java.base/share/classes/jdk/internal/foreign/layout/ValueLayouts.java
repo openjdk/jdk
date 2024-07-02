@@ -332,7 +332,7 @@ public final class ValueLayouts {
         @Override
         @CallerSensitive
         public AddressLayout withTargetLayout(MemoryLayout layout) {
-            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
+            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout", false);
             Objects.requireNonNull(layout);
             return new OfAddressImpl(order(), byteSize(), byteAlignment(), layout, name());
         }

@@ -62,6 +62,7 @@ import sun.jvm.hotspot.utilities.PlatformInfo;
     RuntimeException if they are called before the debugger is
     configured with the Java primitive type sizes. </P> */
 
+@SuppressWarnings("restricted")
 public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     private boolean useGCC32ABI;
     private boolean attached;

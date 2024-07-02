@@ -50,7 +50,7 @@ class WindowsPreferences extends AbstractPreferences {
         loadPrefsLib();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadPrefsLib() {
         PrivilegedAction<Void> load = () -> {
             System.loadLibrary("prefs");

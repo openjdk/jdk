@@ -160,7 +160,7 @@ public final class AccessBridge {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;

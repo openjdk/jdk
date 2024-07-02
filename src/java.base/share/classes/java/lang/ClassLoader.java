@@ -2442,10 +2442,27 @@ public abstract class ClassLoader {
                 " in java.library.path: " + StaticProperty.javaLibraryPath());
     }
 
-    /*
+    /**
      * Invoked in the VM class linking code.
+     * @param loader the class loader used to look up the native library symbol
+     * @param clazz the class in which the native method is declared
+     * @param entryName the native method's mangled name (this is the name used for the native lookup)
+     * @param javaName the native method's declared name
      */
-    static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
+        long addr = findNativeInternal(loader, entryName);
+        if (addr != 0 && loader != null) {
+            Reflection.ensureNativeAccess(clazz, clazz, javaName, true);
+        }
+        return addr;
+    }
+
+    /*
+     * This is also called by SymbolLookup::loaderLookup. In that case, we need
+     * to avoid a restricted check, as that check has already been performed when
+     * obtaining the lookup.
+     */
+    static long findNativeInternal(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
         } else {

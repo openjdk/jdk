@@ -552,15 +552,45 @@ of the release.
 Native access involves access to code or data outside the Java runtime.
 This is generally unsafe and, if done incorrectly, might crash the JVM
 or result in memory corruption.
-Methods that provide native access are restricted, and by default their
-use causes warnings.
-This option allows code in the specified modules to use restricted
-methods without warnings.
-\f[I]module\f[R] can be \f[V]ALL-UNNAMED\f[R] to indicate code on the
-class path.
-When this option is present, any use of restricted methods by code
-outside the specified modules causes an
+Native access can occur as a result of calling a method that is either
+\f[B]restricted\f[R] [https://openjdk.org/jeps/454#Safety], or
+\f[V]native\f[R].
+This option allows code in the specified modules to perform native
+access.
+Native access occurring in a module that has not been explicitly enabled
+is deemed \f[I]illegal\f[R].
+.RS
+.PP
+\f[I]module\f[R] can be a module name, or \f[V]ALL-UNNAMED\f[R] to
+indicate code on the class path.
+.RE
+.TP
+-\f[V]--illegal-native-access=\f[R]\f[I]parameter\f[R]
+This option specifies a mode for how illegal native access is handled:
+.RS
+.RS
+.PP
+\f[B]Note:\f[R] This option will be removed in a future release.
+.RE
+.IP \[bu] 2
+\f[V]allow\f[R]: This mode allows illegal native access in all modules,
+without any warings.
+.IP \[bu] 2
+\f[V]warn\f[R]: This mode is identical to \f[V]allow\f[R] except that a
+warning message is issued for the first illegal native access found in a
+module.
+This mode is the default for the current JDK but will change in a future
+release.
+.IP \[bu] 2
+\f[V]deny\f[R]: This mode disables illegal native access.
+That is, any illegal native access causes an
 \f[V]IllegalCallerException\f[R].
+This mode will become the default in a future release.
+.PP
+To verify that your application is ready for a future version of the
+JDK, run it with \f[V]--illegal-native-access=deny\f[R] along with any
+necessary \f[V]--enable-native-access\f[R] options.
+.RE
 .TP
 \f[V]--finalization=\f[R]\f[I]value\f[R]
 Controls whether the JVM performs finalization of objects.
