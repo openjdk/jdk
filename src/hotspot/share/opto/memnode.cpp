@@ -42,6 +42,7 @@
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
+#include "opto/mempointer.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
@@ -2844,8 +2845,11 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
   }
 
   ResourceMark rm;
-  // TODO
-
+  const MemPointer pointer_use(_phase, use_store);
+  const MemPointer pointer_def(_phase, def_store);
+  if (!pointer_def.is_adjacent_to_and_before(pointer_use)) {
+    return false;
+  }
   return true;
 }
 

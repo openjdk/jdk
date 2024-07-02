@@ -37,13 +37,13 @@
 //
 class MemPointerSummand : public StackObj {
 public:
-  const Node* _var;
-  const jlong _scaleL;
-  const jlong _scaleI;
+  Node* _var;
+  jlong _scaleL;
+  jlong _scaleI;
 
 public:
   MemPointerSummand() : _var(nullptr), _scaleL(0), _scaleI(0) {}
-  MemPointerSummand(const Node* var, const jlong scaleL, const jlong scaleI)
+  MemPointerSummand(Node* var, const jlong scaleL, const jlong scaleI)
     : _var(var), _scaleL(scaleL), _scaleI(scaleI)
   {
     assert(_var != nullptr, "must have variable");
@@ -65,16 +65,37 @@ private:
   MemPointerSummand _summands[SUMMANDS_SIZE];
   jlong _con;
 
+public:
   MemPointerSimpleForm() {}
+
+  static MemPointerSimpleForm make_from_ConIL(Node* n, const jlong con);
+  static MemPointerSimpleForm make_from_AddSubILP(Node* n, const MemPointerSimpleForm* a, const MemPointerSimpleForm* b);
+  static MemPointerSimpleForm make_from_Mul(Node* n, const MemPointerSimpleForm* a, const jlong scale);
+  static MemPointerSimpleForm make_from_ConvI2L(Node* n, const MemPointerSimpleForm* a);
 };
 
 // TODO
 class MemPointer : public StackObj {
 private:
   bool _is_valid;
-  Node* _mem;
-
+  const MemNode* _mem;
   MemPointerSimpleForm _simple_form;
+
+public:
+  MemPointer(PhaseGVN* phase, const MemNode* mem) :
+    _is_valid(false),
+    _mem(mem)
+  {
+    assert(_mem->is_Store(), "only stores are supported");
+    Node* pointer = mem->in(MemNode::Address);
+    _simple_form = parse_simple_form(pointer);
+    assert(false, "TODO");
+    // _mem->memory_size();
+  }
+
+  static MemPointerSimpleForm parse_simple_form(Node* pointer);
+
+  bool is_adjacent_to_and_before(const MemPointer& other) const;
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP
