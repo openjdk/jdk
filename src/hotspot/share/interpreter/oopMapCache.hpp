@@ -83,21 +83,21 @@ class InterpreterOopMap: ResourceObj {
 
  private:
   Method*        _method;         // the method for which the mask is valid
-  unsigned short _bci;            // the bci    for which the mask is valid
   int            _mask_size;      // the mask size in bits (USHRT_MAX if invalid)
   int            _expression_stack_size; // the size of the expression stack in slots
+  unsigned short _bci;            // the bci    for which the mask is valid
 
  protected:
+#ifdef ASSERT
+  bool _resource_allocate_bit_mask;
+#endif
+  int            _num_oops;
   intptr_t       _bit_mask[N];    // the bit mask if
                                   // mask_size <= small_mask_limit,
                                   // ptr to bit mask otherwise
                                   // "protected" so that sub classes can
                                   // access it without using trickery in
                                   // method bit_mask().
-  int            _num_oops;
-#ifdef ASSERT
-  bool _resource_allocate_bit_mask;
-#endif
 
   // access methods
   Method*        method() const                  { return _method; }
