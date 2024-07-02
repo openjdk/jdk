@@ -1010,6 +1010,43 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           FloatRegister vtemp_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table(Register sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     FloatRegister vtemp,
+                                     Register result,
+                                     Label *L_success);
+
+
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
   bool lookup_secondary_supers_table(Register r_sub_klass,
@@ -1033,7 +1070,8 @@ public:
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register temp1,
-                                               Register result);
+                                               Register result,
+                                               bool is_stub = true);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.

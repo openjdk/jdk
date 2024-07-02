@@ -12178,6 +12178,7 @@ instruct partialSubtypeCheck(rdi_RegP result,
                              rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
+  predicate(!UseSecondarySupersTable);
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
@@ -12194,6 +12195,13 @@ instruct partialSubtypeCheck(rdi_RegP result,
   ins_encode(enc_PartialSubtypeCheck());
   ins_pipe(pipe_slow);
 %}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
 
 instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP super_con, rdi_RegP result,
                                        rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
@@ -12220,25 +12228,22 @@ instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP su
   ins_pipe(pipe_slow);
 %}
 
-instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
-                                     rsi_RegP sub, rax_RegP super, rcx_RegI rcx,
-                                     immP0 zero,
-                                     rdi_RegP result)
+instruct partialSubtypeCheckVarSuper(rsi_RegP sub, rax_RegP super, rdi_RegP result,
+                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
+                                       rFlagsReg cr)
 %{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL rcx, KILL result);
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
 
   ins_cost(1000);
-  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
-            "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
-            "jne,s   miss\t\t# Missed: flags nz\n\t"
-            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
-    "miss:\t" %}
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
-  opcode(0x0); // No need to XOR RDI
-  ins_encode(enc_PartialSubtypeCheck());
+  ins_encode %{
+    __ lookup_secondary_supers_table($sub$$Register, $super$$Register, $temp1$$Register, $temp2$$Register,
+                                     $temp3$$Register, $temp4$$Register, $result$$Register);
+  %}
+
   ins_pipe(pipe_slow);
 %}
 

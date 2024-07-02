@@ -1846,6 +1846,57 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_miss);
   }
 
+  // int Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj)
+  address generate_isInstance() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "isInstance");
+    address start = __ pc();
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    //  Input:
+    //    c_rarg0   - java_lang_Class
+    //    c_rarg1   - oop
+
+    Register a_java_lang_Class = c_rarg0;
+    Register obj = c_rarg1;
+    Register super_klass = c_rarg2;
+    Register obj_klass = c_rarg3;
+    Register sco = c_rarg4;
+
+    Label L_success, L_failure;
+
+    __ load_klass(obj_klass, obj);
+    __ ldr(super_klass, Address(a_java_lang_Class, java_lang_Class::klass_offset()));
+
+    // __ ldrw(rscratch1, super_klass, sco_offset);
+    // __ ldrw(sco, obj_klass, sco_offset);
+    // __ cmp(rscratch1, sco);
+    // __ br(__ NE, fail);
+
+    {
+      // __ check_klass_subtype(obj_klass, super_klass, c_rarg5, L_success);
+      __ check_klass_subtype_fast_path(obj_klass, super_klass, c_rarg5,        &L_success, &L_failure, nullptr);
+
+      // __ check_klass_subtype_slow_path(obj_klass, super_klass, c_rarg5, c_rarg6, &L_success, nullptr);
+      __ check_klass_subtype_slow_path_table(obj_klass, super_klass,
+                                             c_rarg5, c_rarg6, c_rarg7, r10, v0,
+                                             &L_success, &L_failure);
+    }
+
+    __ bind(L_failure);
+    __ mov(r0, 0);
+    __ leave();
+    __ ret(lr);
+
+    __ bind(L_success);
+    __ mov(r0, 1);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   //
   //  Generate checkcasting array copy stub
   //
@@ -1975,8 +2026,34 @@ class StubGenerator: public StubCodeGenerator {
                      gct1);
     __ cbz(copied_oop, L_store_element);
 
-    __ load_klass(r19_klass, copied_oop);// query the object klass
-    generate_type_check(r19_klass, ckoff, ckval, L_store_element);
+    {
+      __ load_klass(r19_klass, copied_oop);// query the object klass
+
+      BLOCK_COMMENT("type_check:");
+      if (!UseSecondarySupersTable) {
+        generate_type_check(/*sub_klass*/r19_klass,
+                            /*super_check_offset*/ckoff,
+                            /*super_klass*/ckval, L_store_element);
+      } else {
+        Label L_miss;
+        __ check_klass_subtype_fast_path(/*sub_klass*/r19_klass, /*super_klass*/ckval, noreg,
+                                         &L_store_element, &L_miss, nullptr,
+                                         /*super_check_offset*/ckoff);
+        __ BIND(L_miss);
+
+        // We will consult the secondary-super array.
+        __ lookup_secondary_supers_table(/*r_sub_klass*/r19_klass,
+                                         /*r_super_klass*/ckval,
+                                         /*r_array_base*/gct1,
+                                         /*temp2*/gct2,
+                                         /*temp3*/gct3,
+                                         /*vtemp*/v0,
+                                         /*result*/r10, &L_store_element);
+
+        // Fall through on failure!
+      }
+    }
+
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
@@ -1985,7 +2062,7 @@ class StubGenerator: public StubCodeGenerator {
     // their number to the caller.
 
     __ subs(count, count_save, count);     // K = partially copied oop count
-    __ eon(count, count, zr);                   // report (-1^K) to caller
+    __ eon(count, count, zr);              // report (-1^K) to caller
     __ br(Assembler::EQ, L_done_pop);
 
     __ BIND(L_do_card_marks);
@@ -8475,6 +8552,8 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 #endif
+
+    StubRoutines::aarch64::_is_instance_of = generate_isInstance();
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 
