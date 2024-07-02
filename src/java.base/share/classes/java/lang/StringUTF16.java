@@ -43,7 +43,6 @@ import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
-
     // Return a new byte array for a UTF16-coded string for len chars
     // Throw an exception if out of range
     public static byte[] newBytesFor(int len) {
@@ -1548,27 +1547,38 @@ final class StringUTF16 {
         return true;
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
-        int end = i + 4;
-        checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        assert(i == end);
-        return end;
+    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
+        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (index << 1);
+        Unsafe UNSAFE = Unsafe.getUnsafe();
+
+        UNSAFE.putByte(val, address    , (byte)(c1 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 1, (byte)(c1 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 2, (byte)(c2 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 3, (byte)(c2 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 4, (byte)(c3 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 5, (byte)(c3 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 6, (byte)(c4 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 7, (byte)(c4 >> LO_BYTE_SHIFT));
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
-        int end = i + 5;
-        checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        putChar(value, i++, c5);
-        assert(i == end);
-        return end;
+    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
+        assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
+        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
+        long address  = Unsafe.ARRAY_BYTE_BASE_OFFSET + (index << 1);
+        Unsafe UNSAFE = Unsafe.getUnsafe();
+
+        UNSAFE.putByte(val, address    , (byte)(c1 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 1, (byte)(c1 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 2, (byte)(c2 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 3, (byte)(c2 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 4, (byte)(c3 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 5, (byte)(c3 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 6, (byte)(c4 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 7, (byte)(c4 >> LO_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 8, (byte)(c5 >> HI_BYTE_SHIFT));
+        UNSAFE.putByte(val, address + 9, (byte)(c5 >> LO_BYTE_SHIFT));
     }
 
     public static char charAt(byte[] value, int index) {
