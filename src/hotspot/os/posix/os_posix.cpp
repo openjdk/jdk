@@ -1362,6 +1362,7 @@ void os::Posix::init(void) {
   }
 
   initial_time_count = javaTimeNanos();
+  os::init_random(initial_time_count);
 }
 
 void os::Posix::init_2(void) {

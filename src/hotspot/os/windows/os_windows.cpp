@@ -4583,6 +4583,8 @@ void os::init(void) {
 
   // initialize fast thread access - only used for 32-bit
   win32::initialize_thread_ptr_offset();
+
+  os::init_random((unsigned)os::javaTimeNanos());
 }
 
 // To install functions for atexit processing
