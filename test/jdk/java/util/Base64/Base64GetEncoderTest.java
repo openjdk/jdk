@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,117 +21,74 @@
  * questions.
  */
 
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-
 import java.util.Base64;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-/**
+/*
  * @test
- * @bug 8007799 8176379
- * @summary test Encoder with linemax == 0, line separator should not appear in encoded data
+ * @bug 8007799 8176379 8331342
+ * @summary Test that getting a Mime encoder where line length rounds down to 0
+ *          produces a non line separated encoder (RFC 4648). Ensure correctness
+ *          of encoded data with the retrieved encoder.
+ * @run junit Base64GetEncoderTest
  */
 
 public class Base64GetEncoderTest {
 
-    public static void main(String args[]) throws Throwable {
+    // Test data that contains a short and a long byte array
+    private static final byte[][] TEST_INPUT =
+            {"foo".getBytes(US_ASCII), "quux".repeat(21).getBytes(US_ASCII)};
+    private static Base64.Encoder encoder;
 
-        for (int maxlen = -4; maxlen < 4; maxlen++) {
-
-            final Base64.Encoder encoder = Base64.getMimeEncoder(maxlen, "$$$".getBytes(US_ASCII));
-
-            testEncodeToString(encoder);
-            testWrapEncode1(encoder);
-            testEncodeToStringWithLongInputData(encoder);
-            testWrapEncode2(encoder);
+    // Retrieved encoder should not have line separators
+    @ParameterizedTest
+    @MethodSource("roundsToZeroOrSmaller")
+    public void getMimeEncoderTest(int lineLength) throws IOException {
+        encoder = Base64.getMimeEncoder(lineLength, "$$$".getBytes(US_ASCII));
+        // Test correctness of encoder
+        for (byte[] data : TEST_INPUT) {
+            encodeToStringTest(data);
+            wrapTest(data);
         }
     }
 
-    private static void testWrapEncode2(final Base64.Encoder encoder)
+    // Line lengths that when rounded down to the nearest multiple of 4,
+    // should all produce lineLength <= 0
+    private static int[] roundsToZeroOrSmaller() {
+        return new int[]{-4, -3, -2, -1, 0, 1, 2, 3};
+    }
+
+    // Ensure correctness of the Encoder by testing Encoder.wrap
+    private static void wrapTest(byte[] inputData)
             throws IOException {
-        System.err.println("\nEncoder.wrap test II ");
-        final byte[] secondTestBuffer =
-                "api/java_util/Base64/index.html#GetEncoderMimeCustom[noLineSeparatorInEncodedString]"
-                .getBytes(US_ASCII);
-        String base64EncodedString;
-        ByteArrayOutputStream secondEncodingStream = new ByteArrayOutputStream();
-        OutputStream base64EncodingStream = encoder.wrap(secondEncodingStream);
-        base64EncodingStream.write(secondTestBuffer);
-        base64EncodingStream.close();
-
-        final byte[] encodedByteArray = secondEncodingStream.toByteArray();
-
-        System.err.print("result = " + new String(encodedByteArray, US_ASCII)
-                + "  after wrap Base64 encoding of string");
-
-        base64EncodedString = new String(encodedByteArray, US_ASCII);
-
-        if (base64EncodedString.contains("$$$")) {
-            throw new RuntimeException(
-                    "Base64 encoding contains line separator after wrap 2 invoked  ... \n");
-        }
-    }
-
-    private static void testEncodeToStringWithLongInputData(
-            final Base64.Encoder encoder) {
-        System.err.println("\n\nEncoder.encodeToStringWithLongInputData test  ");
-
-        final byte[] secondTestBuffer =
-                "api/java_util/Base64/index.html#GetEncoderMimeCustom[noLineSeparatorInEncodedString]"
-                .getBytes(US_ASCII);
-        String base64EncodedString;
-        base64EncodedString = encoder.encodeToString(secondTestBuffer);
-
-        System.err.println("Second Base64 encoded string is "
-                + base64EncodedString);
-
-        if (base64EncodedString.contains("$$$")) {
-            throw new RuntimeException(
-                    "Base64 encoding contains line separator after encodeToString invoked  ... \n");
-        }
-    }
-
-    private static void testWrapEncode1(final Base64.Encoder encoder)
-            throws IOException {
-        System.err.println("\nEncoder.wrap test I ");
-
-        final byte[] bytesIn = "fo".getBytes(US_ASCII);
-        String base64EncodedString;
         ByteArrayOutputStream encodingStream = new ByteArrayOutputStream();
         OutputStream encoding = encoder.wrap(encodingStream);
-        encoding.write(bytesIn);
+        encoding.write(inputData);
         encoding.close();
-
-        final byte[] encodedBytes = encodingStream.toByteArray();
-
-        System.err.print("result = " + new String(encodedBytes, US_ASCII)
-                + "  after the Base64 encoding \n");
-
-        base64EncodedString = new String(encodedBytes, US_ASCII);
-
-        if (base64EncodedString.contains("$$$")) {
-            throw new RuntimeException(
-                    "Base64 encoding contains line separator after wrap I test ... \n");
-        }
+        String base64EncodedString = encodingStream.toString(US_ASCII);
+        assertFalse(base64EncodedString.contains("$$$"),
+                failMessage("Encoder.wrap()",  base64EncodedString, inputData));
     }
 
-    private static void testEncodeToString(final Base64.Encoder encoder) {
-        final byte[] bytesIn = "fo".getBytes(US_ASCII);
+    // Ensure correctness of the Encoder by testing Encoder.encodeToString
+    private static void encodeToStringTest(byte[] inputData) {
+        String base64EncodedString = encoder.encodeToString(inputData);
+        assertFalse(base64EncodedString.contains("$$$"),
+                failMessage("Encoder.encodeToString()", base64EncodedString, inputData));
+    }
 
-        System.err.println("\nEncoder.encodeToString test  ");
-
-        String base64EncodedString = encoder.encodeToString(bytesIn);
-
-        System.err.println("Base64 encoded string is " + base64EncodedString);
-
-        if (base64EncodedString.contains("$$$")) {
-            throw new RuntimeException("Base64 encoding contains line separator after Encoder.encodeToString invoked ... \n");
-        }
+    // Utility to produce a helpful error message
+    private static String failMessage(String methodName, String encodedString, byte[] bytesIn) {
+        return "\n%s incorrectly produced the String: \"%s\"\n".formatted(methodName, encodedString) +
+                "which has line separators. The input String was: \"%s\"\n".formatted(new String(bytesIn, US_ASCII)) +
+                "Ensure that getMimeEncoder() returned the correct encoder";
     }
 }
