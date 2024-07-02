@@ -358,7 +358,7 @@ public class SwitchBootstraps {
         private final MethodHandles.Lookup lookup;
         private final EnumDesc<?>[] enumDescs;
         @Stable
-        private Object[] resolvedEnum;
+        private final Object[] resolvedEnum;
 
         public ResolvedEnumLabels(MethodHandles.Lookup lookup, EnumDesc<?>[] enumDescs) {
             this.lookup = lookup;
