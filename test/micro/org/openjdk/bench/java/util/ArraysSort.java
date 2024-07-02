@@ -20,144 +20,292 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.lang;
+
+package org.openjdk.bench.java.util;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.io.UnsupportedEncodingException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
 
 /**
- * Performance test of Arrays.sort() methods
+ * Microbenchmark for Arrays.sort() and Arrays.parallelSort().
+ *
+ * @author Vladimir Yaroslavskiy
+ *
+ * @version 2022.06.14
+ *
+ * @since 22
  */
-@Fork(value=1, jvmArgsAppend={"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
+@State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@State(Scope.Thread)
-@Warmup(iterations = 3, time=5)
-@Measurement(iterations = 3, time=3)
+@Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
+@Fork(value=1, jvmArgsAppend={"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
 public class ArraysSort {
 
-    @Param({"10","25","50","75","100", "1000", "10000", "100000", "1000000"})
-    private int size;
+    @Param({ "600", "9000", "20000", "400000", "3000000" })
+    int size;
 
-    private int[] ints_unsorted;
-    private long[] longs_unsorted;
-    private float[] floats_unsorted;
-    private double[] doubles_unsorted;
+    @Param
+    Builder builder;
 
-    private int[] ints_sorted;
-    private long[] longs_sorted;
-    private float[] floats_sorted;
-    private double[] doubles_sorted;
+    int[] b;
 
+    @Setup
+    public void init() {
+        b = new int[size];
+    }
 
-    public void initialize() {
-        Random rnd = new Random(42);
+    public enum Builder {
 
-        ints_unsorted = new int[size];
-        longs_unsorted = new long[size];
-        floats_unsorted = new float[size];
-        doubles_unsorted = new double[size];
+        RANDOM {
+            @Override
+            void build(int[] b) {
+                Random random = new Random(0x888);
 
-        int[] intSpecialCases = {Integer.MIN_VALUE, Integer.MAX_VALUE};
-        long[] longSpecialCases = {Long.MIN_VALUE, Long.MAX_VALUE};
-        float[] floatSpecialCases = {+0.0f, -0.0f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NaN};
-        double[] doubleSpecialCases = {+0.0, -0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN};
-
-        for (int i = 0; i < size; i++) {
-            ints_unsorted[i] = rnd.nextInt();
-            longs_unsorted[i] = rnd.nextLong();
-            if (i % 10 != 0) {
-                ints_unsorted[i] = rnd.nextInt();
-                longs_unsorted[i] = rnd.nextLong();
-                floats_unsorted[i] = rnd.nextFloat();
-                doubles_unsorted[i] = rnd.nextDouble();
-            } else {
-                ints_unsorted[i] = intSpecialCases[rnd.nextInt(intSpecialCases.length)];
-                longs_unsorted[i] = longSpecialCases[rnd.nextInt(longSpecialCases.length)];
-                floats_unsorted[i] = floatSpecialCases[rnd.nextInt(floatSpecialCases.length)];
-                doubles_unsorted[i] = doubleSpecialCases[rnd.nextInt(doubleSpecialCases.length)];
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = random.nextInt();
+                }
             }
+        },
+
+        REPEATED {
+            @Override
+            void build(int[] b) {
+                Random random = new Random(0x555);
+
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = random.nextInt(5);
+                }
+            }
+        },
+
+        STAGGER {
+            @Override
+            void build(int[] b) {
+                for (int i = 0; i < b.length; ++i) {
+                    b[i] = (i * 7) % b.length;
+                }
+            }
+        },
+
+        SHUFFLE {
+            @Override
+            void build(int[] b) {
+                Random random = new Random(0x555);
+
+                for (int i = 0, j = 0, k = 1; i < b.length; ++i) {
+                    b[i] = random.nextInt(8) > 0 ? (j += 2) : (k += 2);
+                }
+            }
+        };
+
+        abstract void build(int[] b);
+    }
+
+    public static class Int extends ArraysSort {
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(b);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(b);
         }
     }
 
-    @Setup
-    public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
-        initialize();
+    public static class Long extends ArraysSort {
+
+        long[] a;
+
+        @Setup
+        public void setup() {
+            a = new long[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
     }
 
-    @Setup(Level.Invocation)
-    public void clear() {
-        ints_sorted = ints_unsorted.clone();
-        longs_sorted = longs_unsorted.clone();
-        floats_sorted = floats_unsorted.clone();
-        doubles_sorted = doubles_unsorted.clone();
+    public static class Byte extends ArraysSort {
+
+        byte[] a;
+
+        @Setup
+        public void setup() {
+            a = new byte[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (byte) b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
     }
 
-    @Benchmark
-    public int[] intSort() throws Throwable {
-        Arrays.sort(ints_sorted);
-        return ints_sorted;
+    public static class Char extends ArraysSort {
+
+        char[] a;
+
+        @Setup
+        public void setup() {
+            a = new char[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (char) b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
     }
 
-    @Benchmark
-    public int[] intParallelSort() throws Throwable {
-        Arrays.parallelSort(ints_sorted);
-        return ints_sorted;
+    public static class Short extends ArraysSort {
+
+        short[] a;
+
+        @Setup
+        public void setup() {
+            a = new short[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (short) b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
     }
 
-    @Benchmark
-    public long[] longSort() throws Throwable {
-        Arrays.sort(longs_sorted);
-        return longs_sorted;
+    public static class Float extends ArraysSort {
+
+        float[] a;
+
+        @Setup
+        public void setup() {
+            a = new float[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
     }
 
-    @Benchmark
-    public long[] longParallelSort() throws Throwable {
-        Arrays.parallelSort(longs_sorted);
-        return longs_sorted;
-    }
+    public static class Double extends ArraysSort {
 
-    @Benchmark
-    public float[] floatSort() throws Throwable {
-        Arrays.sort(floats_sorted);
-        return floats_sorted;
-    }
+        double[] a;
 
-    @Benchmark
-    public float[] floatParallelSort() throws Throwable {
-        Arrays.parallelSort(floats_sorted);
-        return floats_sorted;
-    }
+        @Setup
+        public void setup() {
+            a = new double[size];
+        }
 
-    @Benchmark
-    public double[] doubleSort() throws Throwable {
-        Arrays.sort(doubles_sorted);
-        return doubles_sorted;
-    }
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
 
-    @Benchmark
-    public double[] doubleParallelSort() throws Throwable {
-        Arrays.parallelSort(doubles_sorted);
-        return doubles_sorted;
-    }
+            for (int i = 0; i < size; ++i) {
+                a[i] = b[i];
+            }
+        }
 
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+
+        @Benchmark
+        public void testParallelSort() {
+            Arrays.parallelSort(a);
+        }
+    }
 }
