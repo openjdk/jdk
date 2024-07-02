@@ -104,6 +104,12 @@ public:
       return;
     }
 
+    if (jt->has_async_exception_condition()) {
+      // Target thread just about to throw an async exception using async handshakes,
+      // we will then unwind out from the scoped memory access.
+      return;
+    }
+
     frame last_frame = jt->last_frame();
     RegisterMap register_map(jt,
                              RegisterMap::UpdateMap::include,
@@ -120,12 +126,6 @@ public:
       // _session is reachable from the frame, but reachabilityFence doesn't currently
       // work the way it should. Therefore we deopt unconditionally for now.
       Deoptimization::deoptimize(jt, last_frame);
-    }
-
-    if (jt->has_async_exception_condition()) {
-      // Target thread just about to throw an async exception using async handshakes,
-      // we will then unwind out from the scoped memory access.
-      return;
     }
 
     if (is_in_scoped_access(jt, JNIHandles::resolve(_session))) {
