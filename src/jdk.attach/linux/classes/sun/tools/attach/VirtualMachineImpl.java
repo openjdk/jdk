@@ -297,7 +297,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 }
             }
 
-            // let's attempt to obtain the pid NS, best efforts to avoid crossing pid ns boundaries (as with a container)
+            // let's attempt to obtain the pid ns, best efforts to avoid crossing pid ns boundaries (as with a container)
             Optional<Path> curPidNS = Optional.empty();
 
             try {
@@ -311,7 +311,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 // the process still exists, but we don't have privileges to read its procfs
             }
 
-            // recurse "up" the process hierarchy, if appropriate
+            // recurse "up" the process hierarchy if appropriate. PID 1 cannot have a parent in the same namespace
             final var havePidNSes = prevPidNS.isPresent() && curPidNS.isPresent();
             final var ppid = ph.get().parent();
 
