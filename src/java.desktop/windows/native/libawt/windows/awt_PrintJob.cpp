@@ -59,6 +59,22 @@
 
 jfieldID AwtPrintDialog::pageID;
 
+// A template class to handle automatic clean-up
+// to avoid repeating clean-up code in all return paths.
+// The destructor of the object invokes the passed-in lambda to clean up.
+template<typename F>
+class Cleaner {
+public:
+    Cleaner(const F &clean) : cleanup(clean) {}
+
+    ~Cleaner() {
+        cleanup();
+    }
+
+private:
+    const F cleanup;
+};
+
 /************************************************************************
  * WPrintJob native methods
  */
@@ -482,18 +498,6 @@ Java_sun_awt_windows_WPageDialog_initIDs(JNIEnv *env, jclass cls)
  * WPageDialogPeer native methods
  */
 
-#define CLEANUP_SHOW {                      \
-    env->DeleteGlobalRef(peerGlobalRef);    \
-    if (target != NULL) {                   \
-        env->DeleteLocalRef(target);        \
-    }                                       \
-    if (parent != NULL) {                   \
-        env->DeleteLocalRef(parent);        \
-    }                                       \
-    env->DeleteLocalRef(page);              \
-    env->DeleteLocalRef(self);              \
-}
-
 /*
  * Class:     sun_awt_windows_WPageDialogPeer
  * Method:    show
@@ -519,10 +523,23 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     jobject self = env->GetObjectField(target, AwtPrintDialog::controlID);
     DASSERT(self != NULL);
 
+    // Delete references to Java objects
+    auto refCleanup = [&] {
+        env->DeleteGlobalRef(peerGlobalRef);
+        if (target != NULL) {
+          env->DeleteLocalRef(target);
+        }
+        if (parent != NULL) {
+          env->DeleteLocalRef(parent);
+        }
+        env->DeleteLocalRef(page);
+        env->DeleteLocalRef(self);
+    };
+    Cleaner<decltype(refCleanup)> refCleaner(refCleanup);
+
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
-    jboolean doIt = JNI_FALSE;
     PAGESETUPDLG setup;
     memset(&setup, 0, sizeof(setup));
 
@@ -577,8 +594,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          * If both are null, then there is no default printer.
          */
         if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-            CLEANUP_SHOW;
-            return doIt;
+            return JNI_FALSE;
         }
     } else {
         int measure = PSD_INTHOUSANDTHSOFINCHES;
@@ -605,8 +621,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
     if (env->ExceptionCheck()) {
-        CLEANUP_SHOW;
-        return doIt;
+        return JNI_FALSE;
     }
 
     setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
@@ -614,13 +629,30 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
     AwtDialog::CheckInstallModalHook();
 
+    // Undo modal hooks and save printer parameters
+    auto postCleanup = [&] {
+        AwtDialog::CheckUninstallModalHook();
+
+        AwtDialog::ModalActivateNextWindow(NULL, target, peer);
+
+        HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
+        if (setup.hDevMode != oldG) {
+           AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
+        }
+
+        oldG = AwtPrintControl::getPrintHDName(env, self);
+        if (setup.hDevNames != oldG) {
+           AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
+        }
+    };
+    Cleaner<decltype(postCleanup)> postCleaner(postCleanup);
+
     BOOL ret = ::PageSetupDlg(&setup);
     if (ret) {
 
         jobject paper = getPaper(env, page);
         if (paper == NULL) {
-            CLEANUP_SHOW;
-            return doIt;
+            return JNI_FALSE;
         }
         int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
                                                 MM_HIENGLISH :
@@ -661,8 +693,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          */
         setPaperValues(env, paper, &paperSize, &margins, units);
         if (env->ExceptionCheck()) {
-            CLEANUP_SHOW;
-            return doIt;
+            return JNI_FALSE;
          }
         /*
          * Put the updated Paper instance and the orientation into
@@ -670,12 +701,10 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          */
         setPaper(env, page, paper);
         if (env->ExceptionCheck()) {
-            CLEANUP_SHOW;
-            return doIt;
+            return JNI_FALSE;
         }
         setPageFormatOrientation(env, page, orientation);
         if (env->ExceptionCheck()) {
-            CLEANUP_SHOW;
             return JNI_FALSE;
         }
         if (setup.hDevMode != NULL) {
@@ -684,33 +713,16 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                 if (devmode->dmFields & DM_PAPERSIZE) {
                     jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
                     if (err) {
-                        CLEANUP_SHOW;
-                        return doIt;
+                        return JNI_FALSE;
                     }
                 }
             }
             ::GlobalUnlock(setup.hDevMode);
         }
-        doIt = JNI_TRUE;
+        return JNI_TRUE;
     }
 
-    AwtDialog::CheckUninstallModalHook();
-
-    AwtDialog::ModalActivateNextWindow(NULL, target, peer);
-
-    HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
-    if (setup.hDevMode != oldG) {
-        AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
-    }
-
-    oldG = AwtPrintControl::getPrintHDName(env, self);
-    if (setup.hDevNames != oldG) {
-        AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
-    }
-
-    CLEANUP_SHOW;
-
-    return doIt;
+    return JNI_FALSE;
 
     CATCH_BAD_ALLOC_RET(0);
 }
