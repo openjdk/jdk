@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
         body.add(htmlWriter.commentTagsToContent(element, description, context.within(paramTag)));
-        return HtmlTree.DD(body);
+        return HtmlTree.DD(paramTag.isTypeParameter()
+                ? HtmlTree.SPAN_ID(config.htmlIds.forTypeParam(paramName, element), body)
+                : body);
     }
 
     private record Documentation(ParamTree paramTree, ExecutableElement method) { }
