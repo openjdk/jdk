@@ -26,7 +26,7 @@
 /*
  * This is a stress test for allocating from a single MetaspaceArena from
  *  multiple threads, optionally with reserve limit (mimicking the non-expandable CompressedClassSpace)
- * or commit limit (mimimcking MaxMetaspaceSize).
+ * or commit limit (mimicking MaxMetaspaceSize).
  *
  * The test threads will start to allocate from the Arena, and occasionally deallocate.
  * The threads run with a safety allocation max; if reached (or, if the underlying arena
@@ -34,7 +34,7 @@
  * kind of float at the allocation ceiling, alternating between allocation and deallocation.
  *
  * We test with various flags, to exercise all 3 reclaim policies (none, balanced (default)
- * and aggessive) as well as one run with allocation guards enabled.
+ * and aggressive) as well as one run with allocation guards enabled.
  *
  * We also set MetaspaceVerifyInterval very low to trigger many verifications in debug vm.
  *
@@ -94,17 +94,18 @@ public class TestMetaspaceAllocationMT1 {
 
     public static void main(String[] args) throws Exception {
 
-        final long testAllocationCeiling = 1024 * 1024 * 8; // 8m words = 64M on 64bit
+        final long wordSize = Settings.WORD_SIZE;
+        final long testAllocationCeiling = 1024 * 1024 * 8 * wordSize; // 8m words = 64M on 64bit
         final int numThreads = 4;
         final int seconds = Integer.parseInt(args[0]);
 
         for (int i = 0; i < 3; i ++) {
 
-            long commitLimit = (i == 1) ? 1024 * 256 : 0;
+            long commitLimit = (i == 1) ? 1024 * 256 * wordSize: 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
             //  (512K on 64bit, 1M on 32bit)
-            long reserveLimit = (i == 2) ? Settings.rootChunkWordSize * 2 : 0;
+            long reserveLimit = (i == 2) ? Settings.ROOT_CHUNK_WORD_SIZE * 2 * wordSize: 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);
@@ -114,7 +115,7 @@ public class TestMetaspaceAllocationMT1 {
             System.out.println("#### reserveLimit: " + reserveLimit);
 
             MetaspaceTestContext context = new MetaspaceTestContext(commitLimit, reserveLimit);
-            MetaspaceTestOneArenaManyThreads test = new MetaspaceTestOneArenaManyThreads(context, testAllocationCeiling, numThreads, seconds);
+            MetaspaceTestOneArenaManyThreads test = new MetaspaceTestOneArenaManyThreads(context, testAllocationCeiling * wordSize, numThreads, seconds);
 
             try {
                 test.runTest();

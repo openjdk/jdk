@@ -49,15 +49,16 @@ public class TestMetaspaceAllocation {
 
     public static void main(String[] args) {
 
+        final long wordSize = Settings.WORD_SIZE;
         MetaspaceTestContext context = new MetaspaceTestContext();
-        MetaspaceTestArena arena1 = context.createArena(false, 1024 * 1024 * 4);
-        MetaspaceTestArena arena2 = context.createArena(true,1024 * 1024 * 4);
+        MetaspaceTestArena arena1 = context.createArena(false, 1024 * 1024 * 4 * wordSize);
+        MetaspaceTestArena arena2 = context.createArena(true,1024 * 1024 * 4 * wordSize);
 
-        Allocation a1 = arena1.allocate(100);
-        Allocation a2 = arena2.allocate(100);
+        Allocation a1 = arena1.allocate(100 * wordSize);
+        Allocation a2 = arena2.allocate(100 * wordSize);
 
-        long used = context.usedWords();
-        long committed = context.committedWords();
+        long used = context.usedBytes();
+        long committed = context.committedBytes();
 
         System.out.println("used " + used + " committed " + committed);
 

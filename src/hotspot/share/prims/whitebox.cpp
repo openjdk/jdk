@@ -1712,8 +1712,22 @@ int WhiteBox::array_bytes_to_length(size_t bytes) {
 ///////////////
 // MetaspaceTestContext and MetaspaceTestArena
 WB_ENTRY(jlong, WB_CreateMetaspaceTestContext(JNIEnv* env, jobject wb, jlong commit_limit, jlong reserve_limit))
+  if (commit_limit % BytesPerWord != 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("WB_CreateMetaspaceTestContext: commit_limit " JLONG_FORMAT
+                        " is not a multiple of the system word byte size %d",
+                        commit_limit, BytesPerWord));
+  }
+  if (reserve_limit % BytesPerWord != 0) {
+    THROW_MSG_0(
+        vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_CreateMetaspaceTestContext: reserve_limit " JLONG_FORMAT
+                " is not a multiple of the system word byte size %d",
+                commit_limit, BytesPerWord));
+  }
   metaspace::MetaspaceTestContext* context =
-      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit, (size_t) reserve_limit);
+      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit / BytesPerWord,
+                                          (size_t) reserve_limit / BytesPerWord);
   return (jlong)p2i(context);
 WB_END
 
@@ -1731,14 +1745,14 @@ WB_ENTRY(void, WB_PrintMetaspaceTestContext(JNIEnv* env, jobject wb, jlong conte
   context0->print_on(tty);
 WB_END
 
-WB_ENTRY(jlong, WB_GetTotalCommittedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+WB_ENTRY(jlong, WB_GetTotalCommittedBytesInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
-  return context0->committed_words();
+  return (jlong)context0->committed_words() * BytesPerWord;
 WB_END
 
-WB_ENTRY(jlong, WB_GetTotalUsedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+WB_ENTRY(jlong, WB_GetTotalUsedBytesInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
-  return context0->used_words();
+  return (jlong)context0->used_words() * BytesPerWord;
 WB_END
 
 WB_ENTRY(jlong, WB_CreateArenaInTestContext(JNIEnv* env, jobject wb, jlong context, jboolean is_micro))
@@ -1751,19 +1765,39 @@ WB_ENTRY(void, WB_DestroyMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena
   delete (metaspace::MetaspaceTestArena*) arena;
 WB_END
 
-WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong word_size))
-  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
-  MetaWord* p = arena0->allocate((size_t) word_size);
+WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong size))
+  if (size % BytesPerWord != 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("WB_AllocateFromMetaspaceTestArena: size " JLONG_FORMAT
+                        " is not a multiple of the system word byte size %d",
+                        size, BytesPerWord));
+  }
+  metaspace::MetaspaceTestArena *arena0 = (metaspace::MetaspaceTestArena *)arena;
+  MetaWord *p = arena0->allocate((size_t) size / BytesPerWord);
   return (jlong)p2i(p);
 WB_END
 
-WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong word_size))
+WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong size))
+  if (size % BytesPerWord != 0) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("WB_DeallocateToMetaspaceTestArena: size " JLONG_FORMAT
+                      " is not a multiple of the system word byte size %d",
+                      size, BytesPerWord));
+  }
   metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
-  arena0->deallocate((MetaWord*)p, (size_t) word_size);
+  arena0->deallocate((MetaWord*)p, (size_t) size / BytesPerWord);
 WB_END
 
 WB_ENTRY(jlong, WB_GetMaxMetaspaceAllocationSize(JNIEnv* env, jobject wb))
   return (jlong) Metaspace::max_allocation_word_size() * BytesPerWord;
+WB_END
+
+WB_ENTRY(jlong, WB_WordSize(JNIEnv* env))
+  return (jlong)BytesPerWord;
+WB_END
+
+WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
+return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
 //////////////
@@ -2939,8 +2973,8 @@ static JNINativeMethod methods[] = {
   {CC"destroyMetaspaceTestContext", CC"(J)V",         (void*)&WB_DestroyMetaspaceTestContext},
   {CC"purgeMetaspaceTestContext", CC"(J)V",           (void*)&WB_PurgeMetaspaceTestContext},
   {CC"printMetaspaceTestContext", CC"(J)V",           (void*)&WB_PrintMetaspaceTestContext},
-  {CC"getTotalCommittedWordsInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedWordsInMetaspaceTestContext},
-  {CC"getTotalUsedWordsInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedWordsInMetaspaceTestContext},
+  {CC"getTotalCommittedBytesInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedBytesInMetaspaceTestContext},
+  {CC"getTotalUsedBytesInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedBytesInMetaspaceTestContext},
   {CC"createArenaInTestContext", CC"(JZ)J",           (void*)&WB_CreateArenaInTestContext},
   {CC"destroyMetaspaceTestArena", CC"(J)V",           (void*)&WB_DestroyMetaspaceTestArena},
   {CC"allocateFromMetaspaceTestArena", CC"(JJ)J",     (void*)&WB_AllocateFromMetaspaceTestArena},
@@ -2959,6 +2993,8 @@ static JNINativeMethod methods[] = {
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
+  {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
+  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
 };
 
 
