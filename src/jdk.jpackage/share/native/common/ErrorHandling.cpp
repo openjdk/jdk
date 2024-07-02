@@ -72,7 +72,7 @@ std::string makeMessage(const std::runtime_error& e, const SourceCodePos& pos) {
 namespace {
 
 bool isNotSpace(int chr) {
-    return isspace(chr) == 0;
+    return isspace((unsigned char) chr) == 0;
 }
 
 

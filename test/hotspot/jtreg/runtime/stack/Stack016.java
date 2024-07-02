@@ -36,7 +36,7 @@
  *     stack overflow, and then tries to provoke similar stack overflows
  *     in 10 times in each of 10 threads. Each provocation consists of
  *     invoking that recursive method for the given fixed depth
- *     of invocations which is 10 times that depth measured before,
+ *     of invocations which is 100 times that depth measured before,
  *     and then trying to invoke that recursive method once again
  *     from within the catch clause just caught StackOverflowError.
  *     The test is deemed passed, if VM have not crashed, and
@@ -88,7 +88,7 @@ public class Stack016 extends Thread {
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Stack016();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
-            threads[i].depthToTry = RESERVE * maxDepth;
+            threads[i].depthToTry = RESERVE * maxDepth * 10;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {

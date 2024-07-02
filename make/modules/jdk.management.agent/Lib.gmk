@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,14 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libmanagement_agent
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib, \
+    JDK_LIBS := java.base:libjava, \
+    LIBS_windows := advapi32.lib, \
 ))
 
-$(BUILD_LIBMANAGEMENT_AGENT): $(call FindLib, java.base, java)
-
 TARGETS += $(BUILD_LIBMANAGEMENT_AGENT)
-
-################################################################################

@@ -247,6 +247,18 @@ ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
 endif
 
 ################################################################################
+# Copy tzmappings file for Windows
+
+ifeq ($(call isTargetOs, windows), true)
+  $(eval $(call SetupCopyFiles, COPY_TZMAPPINGS, \
+      FILES := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/windows/conf/tzmappings, \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+  ))
+
+  TARGETS += $(COPY_TZMAPPINGS)
+endif
+
+################################################################################
 # Optionally copy hsdis into the image
 
 ifeq ($(ENABLE_HSDIS_BUNDLING), true)

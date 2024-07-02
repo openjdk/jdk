@@ -27,9 +27,7 @@
 // Encapsulates the libperfstat library.
 //
 // The purpose of this code is to dynamically load the libperfstat library
-// instead of statically linking against it. The libperfstat library is an
-// AIX-specific library which only exists on AIX, not on PASE. If I want to
-// share binaries between AIX and PASE, I cannot directly link against libperfstat.so.
+// instead of statically linking against it.
 
 #ifndef OS_AIX_LIBPERFSTAT_AIX_HPP
 #define OS_AIX_LIBPERFSTAT_AIX_HPP

@@ -119,7 +119,6 @@ struct S_PPI { void* p0; void* p1; int p2; };
 struct S_PPF { void* p0; void* p1; float p2; };
 struct S_PPD { void* p0; void* p1; double p2; };
 struct S_PPP { void* p0; void* p1; void* p2; };
-struct S_FFFF { float p0; float p1; float p2; float p3; };
 
 #ifdef _AIX
 #pragma align (reset)

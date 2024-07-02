@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8325485
  * @summary Testing ClassFile on small Corpus.
  * @build helpers.* testdata.*
  * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
@@ -82,7 +83,7 @@ class CorpusTest {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
             switch (coe) {
-                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LINE_NUMBER_TABLE) {
+                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
@@ -90,14 +91,14 @@ class CorpusTest {
                         b.writeU2(ln.line());
                     }
                 });
-                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TABLE) {
+                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
                         lv.writeTo(b);
                     }
                 });
-                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
@@ -116,7 +117,7 @@ class CorpusTest {
     static Path[] corpus() throws IOException, URISyntaxException {
         splitTableAttributes("testdata/Pattern2.class", "testdata/Pattern2-split.class");
         return Stream.of(
-                Files.walk(JRT.getPath("modules/java.base/java")),
+                Files.walk(JRT.getPath("modules/java.base/java/util")),
                 Files.walk(JRT.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")),
                 Files.walk(Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent()))
                 .flatMap(p -> p)
@@ -139,6 +140,7 @@ class CorpusTest {
         for (Transforms.NoOpTransform m : Transforms.NoOpTransform.values()) {
             if (m == Transforms.NoOpTransform.ARRAYCOPY
                 || m == Transforms.NoOpTransform.SHARED_3_NO_STACKMAP
+                || m == Transforms.NoOpTransform.CLASS_REMAPPER
                 || m.name().startsWith("ASM"))
                 continue;
 
@@ -189,12 +191,8 @@ class CorpusTest {
                                  .collect(joining("\n"));
             fail(String.format("Errors in testNullAdapt: %s", msg));
         }
-    }
 
-    @ParameterizedTest
-    @MethodSource("corpus")
-    void testReadAndTransform(Path path) throws IOException {
-        byte[] bytes = Files.readAllBytes(path);
+        // test read and transform
         var cc = ClassFile.of();
         var classModel = cc.parse(bytes);
         assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofStreamingElements(classModel),

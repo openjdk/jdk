@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -18,8 +18,7 @@ import java.util.Objects;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.7
  */
-public final class ShutdownHooks
-{
+public final class ShutdownHooks {
     private static final List<Task> tasks = new ArrayList<>();
 
     private static Thread hook;
@@ -29,8 +28,7 @@ public final class ShutdownHooks
 
         // Install the hook thread if needed
         if (hook == null) {
-            hook = addHook(new Thread("JLine Shutdown Hook")
-            {
+            hook = addHook(new Thread("JLine Shutdown Hook") {
                 @Override
                 public void run() {
                     runTasks();
@@ -53,8 +51,7 @@ public final class ShutdownHooks
             Log.debug("Running task: ", task);
             try {
                 task.run();
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 Log.warn("Task failed", e);
             }
         }
@@ -91,8 +88,7 @@ public final class ShutdownHooks
 
         try {
             Runtime.getRuntime().removeShutdownHook(thread);
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
             // The VM is shutting down, not a big deal; ignore
         }
     }
@@ -100,8 +96,7 @@ public final class ShutdownHooks
     /**
      * Essentially a {@link Runnable} which allows running to throw an exception.
      */
-    public interface Task
-    {
+    public interface Task {
         void run() throws Exception;
     }
 }

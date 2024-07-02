@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,7 @@ public class TargetApplicationWaitingAgents {
                 /*
                  * When target application initialized send signal to AODTestRunner
                  */
-                pipe = SocketIOPipe.createClientIOPipe(log, "localhost", argParser.getPort(), 0);
+                pipe = SocketIOPipe.createClientIOPipe(log, argParser.getPort(), 0);
                 log.display("Sending signal '" + AODTestRunner.SIGNAL_READY_FOR_ATTACH + "'");
                 pipe.println(AODTestRunner.SIGNAL_READY_FOR_ATTACH);
             }

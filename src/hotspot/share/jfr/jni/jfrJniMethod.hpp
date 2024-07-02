@@ -161,9 +161,11 @@ jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
 
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
-jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jobject classes, jobject methods);
+jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
 
-jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jlong start_filter_id);
+jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
+
+jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
 
 #ifdef __cplusplus
 }

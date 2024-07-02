@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,15 +127,16 @@ public final class Float extends Number
     public static final float MIN_VALUE = 0x0.000002P-126f; // 1.4e-45f
 
     /**
-     * The number of bits used to represent a {@code float} value.
+     * The number of bits used to represent a {@code float} value,
+     * {@value}.
      *
      * @since 1.5
      */
     public static final int SIZE = 32;
 
     /**
-     * The number of bits in the significand of a {@code float} value.
-     * This is the parameter N in section {@jls 4.2.3} of
+     * The number of bits in the significand of a {@code float} value,
+     * {@value}.  This is the parameter N in section {@jls 4.2.3} of
      * <cite>The Java Language Specification</cite>.
      *
      * @since 19
@@ -143,8 +144,8 @@ public final class Float extends Number
     public static final int PRECISION = 24;
 
     /**
-     * Maximum exponent a finite {@code float} variable may have.  It
-     * is equal to the value returned by {@code
+     * Maximum exponent a finite {@code float} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
      * Math.getExponent(Float.MAX_VALUE)}.
      *
      * @since 1.6
@@ -152,8 +153,8 @@ public final class Float extends Number
     public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 127
 
     /**
-     * Minimum exponent a normalized {@code float} variable may have.
-     * It is equal to the value returned by {@code
+     * Minimum exponent a normalized {@code float} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
      * Math.getExponent(Float.MIN_NORMAL)}.
      *
      * @since 1.6
@@ -161,7 +162,8 @@ public final class Float extends Number
     public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -126
 
     /**
-     * The number of bytes used to represent a {@code float} value.
+     * The number of bytes used to represent a {@code float} value,
+     * {@value}.
      *
      * @since 1.8
      */
@@ -489,10 +491,6 @@ public final class Float extends Number
      * Finally, after rounding a {@code Float} object representing
      * this {@code float} value is returned.
      *
-     * <p>To interpret localized string representations of a
-     * floating-point value, use subclasses of {@link
-     * java.text.NumberFormat}.
-     *
      * <p>Note that trailing format specifiers, specifiers that
      * determine the type of a floating-point literal
      * ({@code 1.0f} is a {@code float} value;
@@ -515,6 +513,16 @@ public final class Float extends Number
      * a {@code NumberFormatException} be thrown, the documentation
      * for {@link Double#valueOf Double.valueOf} lists a regular
      * expression which can be used to screen the input.
+     *
+     * @apiNote To interpret localized string representations of a
+     * floating-point value, or string representations that have
+     * non-ASCII digits, use {@link java.text.NumberFormat}. For
+     * example,
+     * {@snippet lang="java" :
+     *     NumberFormat.getInstance(l).parse(s).floatValue();
+     * }
+     * where {@code l} is the desired locale, or
+     * {@link java.util.Locale#ROOT} if locale insensitive.
      *
      * @param   s   the string to be parsed.
      * @return  a {@code Float} object holding the value

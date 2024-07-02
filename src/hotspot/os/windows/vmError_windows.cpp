@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
@@ -44,7 +45,7 @@ void VMError::install_secondary_signal_handler() {
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 #if INCLUDE_CDS
-  if (siginfo && UseSharedSpaces) {
+  if (siginfo && CDSConfig::is_using_archive()) {
     const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
     if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
         er->NumberParameters >= 2) {
@@ -71,5 +72,5 @@ void VMError::raise_fail_fast(void* exrecord, void* context) {
   RaiseFailFastException(static_cast<PEXCEPTION_RECORD>(exrecord),
                          static_cast<PCONTEXT>(context),
                          flags);
-  os::infinite_sleep();
+  ::abort();
 }

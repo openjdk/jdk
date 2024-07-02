@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@
 
 package compiler.print;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -68,17 +70,26 @@ public class CompileCommandPrintMemStat {
                 .replace("$", "\\$");
 
         // Should see trace output when methods are compiled
-        oa.shouldHaveExitValue(0)
-          .shouldMatch(".*" + expectedNameIncl + ".*")
-          .shouldNotMatch(".*" + expectedNameExcl + ".*");
+        oa.shouldHaveExitValue(0).
+                shouldMatch("Arena usage.*" + expectedNameIncl + ".*").
+                shouldNotMatch("Arena usage.*" + expectedNameExcl + ".*");
+
 
         // Should see final report
         // Looks like this:
-        // total     NA        RA        result  #nodes  time    type  #rc thread              method
-        // 211488    66440     77624     ok      13      0.057   c2    2   0x00007fb49428db70  compiler/print/CompileCommandPrintMemStat$TestMain::method1(()V)
-        oa.shouldMatch("total.*method");
-        oa.shouldMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameIncl + ".*");
-        oa.shouldNotMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameExcl + ".*");
+        // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
+        // 2149912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
+        // or
+        // 537784    98184     208536    ok      267     -       0.096   c2    1   0x0000000153019c00  jdk/internal/classfile/impl/BufWriterImpl::writeU1((I)V) 4521912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
+        oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
+
+        // In debug builds, we have a default memory limit enabled. That implies MemStat. Therefore we
+        // expect to see all methods, not just the one we specified on the command line.
+        if (Platform.isDebugBuild()) {
+            oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
+        } else {
+            oa.shouldNotMatch(".*" + expectedNameExcl + ".*");
+        }
     }
 
     // Test class that is invoked by the sub process

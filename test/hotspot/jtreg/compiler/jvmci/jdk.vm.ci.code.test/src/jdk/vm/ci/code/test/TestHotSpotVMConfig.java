@@ -32,6 +32,7 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
     public TestHotSpotVMConfig(HotSpotVMConfigStore config, Architecture arch) {
         super(config);
         ropProtection = (arch instanceof AArch64) ? getFieldValue("VM_Version::_rop_protection", Boolean.class) : false;
+        nmethodEntryBarrierConcurrentPatch = initNmethodEntryBarrierConcurrentPatch(arch);
     }
 
     public final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
@@ -47,10 +48,37 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     // Checkstyle: stop
     public final int MARKID_DEOPT_HANDLER_ENTRY = getConstant("CodeInstaller::DEOPT_HANDLER_ENTRY", Integer.class);
+    public final int MARKID_FRAME_COMPLETE = getConstant("CodeInstaller::FRAME_COMPLETE", Integer.class);
+    public final int MARKID_ENTRY_BARRIER_PATCH = getConstant("CodeInstaller::ENTRY_BARRIER_PATCH", Integer.class);
     public final long handleDeoptStub = getFieldValue("CompilerToVM::Data::SharedRuntime_deopt_blob_unpack", Long.class, "address");
 
     public final int maxOopMapStackOffset = getFieldValue("CompilerToVM::Data::_max_oop_map_stack_offset", Integer.class, "int");
     public final int heapWordSize = getConstant("HeapWordSize", Integer.class);
 
     public final boolean ropProtection;
+
+    private Boolean initNmethodEntryBarrierConcurrentPatch(Architecture arch) {
+        Boolean patchConcurrent = null;
+        if (arch instanceof AArch64 && nmethodEntryBarrier != 0) {
+            Integer patchingType = getFieldValue("CompilerToVM::Data::BarrierSetAssembler_nmethod_patching_type", Integer.class, "int");
+            if (patchingType != null) {
+                // There currently only 2 variants in use that differ only by the presence of a
+                // dmb instruction
+                int stw = getConstant("NMethodPatchingType::stw_instruction_and_data_patch", Integer.class);
+                int conc = getConstant("NMethodPatchingType::conc_data_patch", Integer.class);
+                if (patchingType == stw) {
+                    patchConcurrent = false;
+                } else if (patchingType == conc) {
+                    patchConcurrent = true;
+                } else {
+                    throw new IllegalArgumentException("unsupported barrier sequence " + patchingType);
+                }
+            }
+        }
+        return patchConcurrent;
+    }
+
+    public final int threadDisarmedOffset = getFieldValue("CompilerToVM::Data::thread_disarmed_guard_value_offset", Integer.class, "int");
+    public final long nmethodEntryBarrier = getFieldValue("CompilerToVM::Data::nmethod_entry_barrier", Long.class, "address");
+    public final Boolean nmethodEntryBarrierConcurrentPatch;
 }

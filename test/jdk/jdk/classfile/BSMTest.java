@@ -78,7 +78,7 @@ public class BSMTest {
                                     BootstrapMethodEntry bme = cpb.bsmEntry(methodHandleEntry, staticArgs);
                                     ConstantDynamicEntry cde = cpb.constantDynamicEntry(bme, cpb.nameAndTypeEntry("name", CD_String));
 
-                                    codeB.constantInstruction(Opcode.LDC, cde.constantValue());
+                                    codeB.ldc(cde.constantValue());
                                 }
                                 default -> codeB.with(codeE);
                             }

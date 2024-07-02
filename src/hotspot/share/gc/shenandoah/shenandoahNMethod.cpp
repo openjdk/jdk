@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +33,7 @@
 #include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
-  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false) {
+  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {
 
   if (!oops.is_empty()) {
     _oops_count = oops.length();
@@ -427,7 +428,7 @@ ShenandoahNMethodTableSnapshot::~ShenandoahNMethodTableSnapshot() {
   _list->release();
 }
 
-void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
+void ShenandoahNMethodTableSnapshot::parallel_nmethods_do(NMethodClosure *f) {
   size_t stride = 256; // educated guess
 
   ShenandoahNMethod** const list = _list->list();
@@ -447,7 +448,7 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
       }
 
       nmr->assert_correct();
-      f->do_code_blob(nmr->nm());
+      f->do_nmethod(nmr->nm());
     }
   }
 }
@@ -478,7 +479,7 @@ ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(Shenand
 }
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   _table_snapshot = _table->snapshot_for_iteration();
 }
 
@@ -488,7 +489,7 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
 }
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do_end() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   _table->finish_iteration(_table_snapshot);
   CodeCache_lock->notify_all();
 }

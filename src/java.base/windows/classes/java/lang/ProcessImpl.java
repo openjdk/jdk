@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ final class ProcessImpl extends Process {
                 fdAccess.setHandle(stdin_fd, stdHandles[0]);
                 fdAccess.registerCleanup(stdin_fd);
                 stdin_stream = new BufferedOutputStream(
-                    new FileOutputStream(stdin_fd));
+                    new PipeOutputStream(stdin_fd));
             }
 
             if (stdHandles[1] == -1L || forceNullOutputStream)
@@ -557,18 +557,24 @@ final class ProcessImpl extends Process {
 
     public int exitValue() {
         int exitCode = getExitCodeProcess(handle);
-        if (exitCode == STILL_ACTIVE)
-            throw new IllegalThreadStateException("process has not exited");
+        if (exitCode == STILL_ACTIVE) {
+            // STILL_ACTIVE (259) might be the real exit code
+            if (isProcessAlive(handle)) {
+                throw new IllegalThreadStateException("process has not exited");
+            }
+            // call again, in case the process just exited
+            return getExitCodeProcess(handle);
+        }
         return exitCode;
     }
     private static native int getExitCodeProcess(long handle);
 
     public int waitFor() throws InterruptedException {
-        long comp = Blocker.begin();
+        boolean attempted = Blocker.begin();
         try {
             waitForInterruptibly(handle);
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
         if (Thread.interrupted())
             throw new InterruptedException();
@@ -582,7 +588,7 @@ final class ProcessImpl extends Process {
         throws InterruptedException
     {
         long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
-        if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
+        if (!isProcessAlive(handle)) return true;
         if (timeout <= 0) return false;
 
         long deadline = System.nanoTime() + remainingNanos;
@@ -593,21 +599,21 @@ final class ProcessImpl extends Process {
                 // if wraps around then wait a long while
                 msTimeout = Integer.MAX_VALUE;
             }
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 waitForTimeoutInterruptibly(handle, msTimeout);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
             if (Thread.interrupted())
                 throw new InterruptedException();
-            if (getExitCodeProcess(handle) != STILL_ACTIVE) {
+            if (!isProcessAlive(handle)) {
                 return true;
             }
             remainingNanos = deadline - System.nanoTime();
         } while (remainingNanos > 0);
 
-        return (getExitCodeProcess(handle) != STILL_ACTIVE);
+        return !isProcessAlive(handle);
     }
 
     private static native void waitForTimeoutInterruptibly(

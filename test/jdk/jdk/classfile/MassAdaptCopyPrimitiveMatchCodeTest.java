@@ -120,7 +120,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
                         cb.with(e);
                 });
         //TODO: work-around to compiler bug generating multiple constant pool entries within records
-        if (cm.findAttribute(Attributes.RECORD).isPresent()) {
+        if (cm.findAttribute(Attributes.record()).isPresent()) {
             System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest: Ignored because it is a record%n         - %s%n", name);
             return;
         }

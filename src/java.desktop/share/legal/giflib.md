@@ -1,4 +1,4 @@
-## GIFLIB v5.2.1
+## GIFLIB v5.2.2
 
 ### GIFLIB License
 ```
@@ -24,7 +24,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-https://sourceforge.net/p/giflib/code/ci/master/tree/openbsd-reallocarray.c
+tree/README
 
-Copyright (c) 2008 Otto Moerbeek <otto@drijf.net>
+== Authors ==
+
+Gershon Elber <gershon[AT]cs.technion.sc.il>
+original giflib code
+
+Toshio Kuratomi <toshio[AT]tiki-lounge.com>
+uncompressed gif writing code
+former maintainer
+
+Eric Raymond <esr[AT]snark.thyrsus.com>
+current as well as long time former maintainer of giflib code
+
+There have been many other contributors; see the attributions in the
+version-control history to learn more.
+
+
+tree/openbsd-reallocarray.c
+
+Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
 SPDX-License-Identifier: MIT
+
+```

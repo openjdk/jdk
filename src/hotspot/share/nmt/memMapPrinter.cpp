@@ -29,17 +29,18 @@
 
 #include "logging/logAsyncWriter.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "memory/resourceArea.hpp"
+#include "nmt/memflags.hpp"
+#include "nmt/memFlagBitmap.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "nmt/memFlagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
-#include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
@@ -89,8 +90,11 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   Range* _ranges;
   MEMFLAGS* _flags;
   size_t _count, _capacity;
+  mutable size_t _last;
+
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr),
+                           _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
@@ -131,17 +135,16 @@ public:
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
     // are usually sorted in order of addresses, ascending.
-    static uintx last = 0;
-    if (to <= _ranges[last].from) {
+    if (to <= _ranges[_last].from) {
       // the range is to the right of the given section, we need to re-start the search
-      last = 0;
+      _last = 0;
     }
     MemFlagBitmap bm;
-    for(uintx i = last; i < _count; i++) {
+    for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
       } else if (to <= _ranges[i].from) {
-        last = i;
+        _last = i;
         break;
       }
     }
@@ -200,6 +203,8 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
 
 // Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
 static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
+
+  ResourceMark rm;
 
 #define HANDLE_THREAD(T)                                                        \
   if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \

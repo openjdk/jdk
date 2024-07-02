@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class ProtectionDomainVerificationTest {
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldContain("[protectiondomain] adding protection domain for class");
+        .shouldContain("[protectiondomain] adding protection domain that can access class");
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=debug",
@@ -56,7 +56,7 @@ public class ProtectionDomainVerificationTest {
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldNotContain("[protectiondomain] adding protection domain for class");
+        .shouldNotContain("[protectiondomain] adding protection domain that can access class");
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=trace",
