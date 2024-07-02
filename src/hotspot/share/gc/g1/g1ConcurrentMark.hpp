@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -949,7 +949,7 @@ public:
 // Class that's used to to print out per-region liveness
 // information. It's currently used at the end of marking and also
 // after we sort the old regions at the end of the cleanup operation.
-class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
+class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;

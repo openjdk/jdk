@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,6 @@
 
 package sun.jvm.hotspot.gc.g1;
 
-import java.io.PrintStream;
-import sun.jvm.hotspot.gc.g1.G1HeapRegion;
-
-public class PrintRegionClosure implements HeapRegionClosure {
-    private PrintStream tty;
-
-    public PrintRegionClosure(PrintStream tty) {
-        this.tty = tty;
-    }
-
-    public void doHeapRegion(G1HeapRegion hr) {
-        hr.printOn(tty);
-    }
+public interface G1HeapRegionClosure {
+    public void doHeapRegion(G1HeapRegion hr);
 }

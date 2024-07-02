@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   }
 }
 
-class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
+class G1ConcurrentRefine::RemSetSamplingClosure : public G1HeapRegionClosure {
   G1CollectionSet* _cset;
   size_t _sampled_card_rs_length;
   size_t _sampled_code_root_rs_length;
@@ -263,7 +263,7 @@ public:
     _cset(cset), _sampled_card_rs_length(0), _sampled_code_root_rs_length(0) {}
 
   bool do_heap_region(G1HeapRegion* r) override {
-    HeapRegionRemSet* rem_set = r->rem_set();
+    G1HeapRegionRemSet* rem_set = r->rem_set();
     _sampled_card_rs_length += rem_set->occupied();
     _sampled_code_root_rs_length += rem_set->code_roots_list_length();
     return false;

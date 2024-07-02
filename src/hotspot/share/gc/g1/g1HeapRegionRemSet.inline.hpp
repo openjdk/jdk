@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-void HeapRegionRemSet::set_state_untracked() {
+void G1HeapRegionRemSet::set_state_untracked() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
             "Should only set to Untracked during safepoint but is %s.", get_state_str());
   if (_state == Untracked) {
@@ -43,14 +43,14 @@ void HeapRegionRemSet::set_state_untracked() {
   _state = Untracked;
 }
 
-void HeapRegionRemSet::set_state_updating() {
+void G1HeapRegionRemSet::set_state_updating() {
   guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
             "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
   clear_fcc();
   _state = Updating;
 }
 
-void HeapRegionRemSet::set_state_complete() {
+void G1HeapRegionRemSet::set_state_complete() {
   clear_fcc();
   _state = Complete;
 }
@@ -107,7 +107,7 @@ public:
 };
 
 template <class CardOrRangeVisitor>
-inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
+inline void G1HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
   G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(&_card_set,
                                                                                        cl,
                                                                                        _card_set.config()->log2_card_regions_per_heap_region(),
@@ -116,11 +116,11 @@ inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
 }
 
 
-uintptr_t HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
+uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }
 
-void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
+void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
   assert(_state != Untracked, "must be");
 
   uint cur_idx = _hr->hrm_index();
@@ -136,11 +136,11 @@ void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
   _card_set.add_card(to_card(from));
 }
 
-bool HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
+bool G1HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
   return _card_set.contains_card(to_card(from));
 }
 
-void HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
+void G1HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
   _card_set.print_info(st, to_card(from));
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,17 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-HeapWord* HeapRegionRemSet::_heap_base_address = nullptr;
+HeapWord* G1HeapRegionRemSet::_heap_base_address = nullptr;
 
-const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
-const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
+const char* G1HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
+const char* G1HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
 
-void HeapRegionRemSet::initialize(MemRegion reserved) {
+void G1HeapRegionRemSet::initialize(MemRegion reserved) {
   G1CardSet::initialize(reserved);
   _heap_base_address = reserved.start();
 }
 
-HeapRegionRemSet::HeapRegionRemSet(G1HeapRegion* hr,
+G1HeapRegionRemSet::G1HeapRegionRemSet(G1HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _code_roots(),
   _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
@@ -63,11 +63,11 @@ HeapRegionRemSet::HeapRegionRemSet(G1HeapRegion* hr,
   _hr(hr),
   _state(Untracked) { }
 
-void HeapRegionRemSet::clear_fcc() {
+void G1HeapRegionRemSet::clear_fcc() {
   G1FromCardCache::clear(_hr->hrm_index());
 }
 
-void HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
+void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   if (!only_cardset) {
     _code_roots.clear();
   }
@@ -81,17 +81,17 @@ void HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   assert(occupied() == 0, "Should be clear.");
 }
 
-void HeapRegionRemSet::reset_table_scanner() {
+void G1HeapRegionRemSet::reset_table_scanner() {
   _code_roots.reset_table_scanner();
   _card_set.reset_table_scanner();
 }
 
-G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
+G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {
   return _card_set_mm.memory_stats();
 }
 
-void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
-  out->print_cr("  Static structures = " SIZE_FORMAT, HeapRegionRemSet::static_mem_size());
+void G1HeapRegionRemSet::print_static_mem_size(outputStream* out) {
+  out->print_cr("  Static structures = " SIZE_FORMAT, G1HeapRegionRemSet::static_mem_size());
 }
 
 // Code roots support
@@ -101,12 +101,12 @@ void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
 // except when doing a full gc.
 // When not at safepoint the CodeCache_lock must be held during modifications.
 
-void HeapRegionRemSet::add_code_root(nmethod* nm) {
+void G1HeapRegionRemSet::add_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
   _code_roots.add(nm);
 }
 
-void HeapRegionRemSet::remove_code_root(nmethod* nm) {
+void G1HeapRegionRemSet::remove_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
 
   _code_roots.remove(nm);
@@ -115,18 +115,18 @@ void HeapRegionRemSet::remove_code_root(nmethod* nm) {
   guarantee(!_code_roots.contains(nm), "duplicate entry found");
 }
 
-void HeapRegionRemSet::bulk_remove_code_roots() {
+void G1HeapRegionRemSet::bulk_remove_code_roots() {
   _code_roots.bulk_remove();
 }
 
-void HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {
+void G1HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {
   _code_roots.nmethods_do(blk);
 }
 
-void HeapRegionRemSet::clean_code_roots(G1HeapRegion* hr) {
+void G1HeapRegionRemSet::clean_code_roots(G1HeapRegion* hr) {
   _code_roots.clean(hr);
 }
 
-size_t HeapRegionRemSet::code_roots_mem_size() {
+size_t G1HeapRegionRemSet::code_roots_mem_size() {
   return _code_roots.mem_size();
 }

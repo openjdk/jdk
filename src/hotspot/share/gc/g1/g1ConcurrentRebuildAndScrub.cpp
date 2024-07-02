@@ -63,11 +63,11 @@
 // a pause.
 class G1RebuildRSAndScrubTask : public WorkerTask {
   G1ConcurrentMark* _cm;
-  HeapRegionClaimer _hr_claimer;
+  G1HeapRegionClaimer _hr_claimer;
 
   const bool _should_rebuild_remset;
 
-  class G1RebuildRSAndScrubRegionClosure : public HeapRegionClosure {
+  class G1RebuildRSAndScrubRegionClosure : public G1HeapRegionClosure {
     G1ConcurrentMark* _cm;
     const G1CMBitMap* _bitmap;
 

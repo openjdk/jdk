@@ -55,7 +55,7 @@ public class G1HeapRegion extends ContiguousSpace implements LiveRegionsProvider
     private static long typeFieldOffset;
     private static long pointerSize;
 
-    private HeapRegionType type;
+    private G1HeapRegionType type;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -88,7 +88,7 @@ public class G1HeapRegion extends ContiguousSpace implements LiveRegionsProvider
         super(addr);
         Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
                                                        : addr.addOffsetTo(typeFieldOffset);
-        type = VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
+        type = VMObjectFactory.newObject(G1HeapRegionType.class, typeAddr);
     }
 
     public Address bottom()        { return bottomField.getValue(addr); }

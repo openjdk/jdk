@@ -37,9 +37,9 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegionSetBase. Represents a group of regions.
+// Mirror class for G1HeapRegionSetBase. Represents a group of regions.
 
-public class HeapRegionSetBase extends VMObject {
+public class G1HeapRegionSetBase extends VMObject {
 
     // uint _length
     private static CIntegerField lengthField;
@@ -53,7 +53,7 @@ public class HeapRegionSetBase extends VMObject {
     }
 
     private static synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("HeapRegionSetBase");
+        Type type = db.lookupType("G1HeapRegionSetBase");
 
         lengthField = type.getCIntegerField("_length");
     }
@@ -62,7 +62,7 @@ public class HeapRegionSetBase extends VMObject {
         return lengthField.getValue(addr);
     }
 
-    public HeapRegionSetBase(Address addr) {
+    public G1HeapRegionSetBase(Address addr) {
         super(addr);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 
 class G1FullGCResetMetadataTask : public G1FullGCTask {
   G1FullCollector* _collector;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 
-  class G1ResetMetadataClosure : public HeapRegionClosure {
+  class G1ResetMetadataClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
 

@@ -29,7 +29,7 @@
 #include "logging/log.hpp"
 #include "memory/allStatic.hpp"
 
-class FreeRegionList;
+class G1FreeRegionList;
 
 class G1HeapRegionPrinter : public AllStatic {
 

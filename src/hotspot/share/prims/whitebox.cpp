@@ -608,7 +608,7 @@ WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
   THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1MemoryNodeIds: G1 GC is not enabled");
 WB_END
 
-class OldRegionsLivenessClosure: public HeapRegionClosure {
+class OldRegionsLivenessClosure: public G1HeapRegionClosure {
 
  private:
   const int _liveness;
