@@ -229,7 +229,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
     _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false),
     _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
