@@ -755,6 +755,7 @@
   </Event>
 
   <Event name="DataLoss" category="Flight Recorder" label="Data Loss"
+         thread="true"
          description="Data could not be copied out from a buffer, typically because of contention"
          startTime="false">
     <Field type="ulong" contentType="bytes" name="amount" label="Amount" description="Amount lost data" />
