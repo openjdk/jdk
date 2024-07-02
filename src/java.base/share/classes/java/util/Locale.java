@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,19 +48,19 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
 import sun.util.locale.LocaleExtensions;
 import sun.util.locale.LocaleMatcher;
-import sun.util.locale.LocaleObjectCache;
 import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
@@ -981,38 +981,36 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
+
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return Cache.LOCALECACHE.get(baseloc);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return Cache.LOCALECACHE.get(key);
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
-    private static class Cache extends LocaleObjectCache<Object, Locale> {
+    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
+            = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
-        private static final Cache LOCALECACHE = new Cache();
-
-        private Cache() {
-        }
-
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
         @Override
-        protected Locale createObject(Object key) {
-            if (key instanceof BaseLocale) {
-                return new Locale((BaseLocale)key, null);
-            } else {
-                LocaleKey lk = (LocaleKey)key;
-                return new Locale(lk.base, lk.exts);
+        public Locale apply(Object key) {
+            if (key instanceof BaseLocale base) {
+                return new Locale(base, null);
             }
+            LocaleKey lk = (LocaleKey)key;
+            return new Locale(lk.base, lk.exts);
         }
-    }
+    };
 
     private static final class LocaleKey {
+
         private final BaseLocale base;
         private final LocaleExtensions exts;
         private final int hash;

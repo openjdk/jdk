@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,10 @@ class os::Aix {
   static julong _physical_memory;
   static pthread_t _main_thread;
 
-  // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
-  static int _on_pase;
-
   // 0 = uninitialized, otherwise 16 bit number:
   //  lower 8 bit - minor version
   //  higher 8 bit - major version
   //  For AIX, e.g. 0x0601 for AIX 6.1
-  //  for OS/400 e.g. 0x0504 for OS/400 V5R4
   static uint32_t _os_version;
 
   // -1 = uninitialized,
@@ -63,8 +59,7 @@ class os::Aix {
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
-  // OS recognitions (PASE/AIX, OS level) call this before calling any
-  // one of Aix::on_pase(), Aix::os_version().
+  // OS recognitions (AIX OS level) call this before calling Aix::os_version().
   static void initialize_os_info();
 
   // Scan environment for important settings which might effect the
@@ -74,9 +69,8 @@ class os::Aix {
   // Must run after os::Aix::initialue_os_info().
   static void scan_environment();
 
-  // Initialize libo4 (on PASE) and libperfstat (on AIX). Call this
+  // Initialize libperfstat; call this
   // before relying on functions from either lib, e.g. Aix::get_meminfo().
-  static void initialize_libo4();
   static void initialize_libperfstat();
 
  public:
@@ -94,20 +88,6 @@ class os::Aix {
   // libpthread version string
   static void libpthread_init();
 
-  // Function returns true if we run on OS/400 (pase), false if we run
-  // on AIX.
-  static bool on_pase() {
-    assert(_on_pase != -1, "not initialized");
-    return _on_pase ? true : false;
-  }
-
-  // Function returns true if we run on AIX, false if we run on OS/400
-  // (pase).
-  static bool on_aix() {
-    assert(_on_pase != -1, "not initialized");
-    return _on_pase ? false : true;
-  }
-
   // Get 4 byte AIX kernel version number:
   // highest 2 bytes: Version, Release
   // if available: lowest 2 bytes: Tech Level, Service Pack.
@@ -119,20 +99,9 @@ class os::Aix {
   // 0 = uninitialized, otherwise 16 bit number:
   // lower 8 bit - minor version
   // higher 8 bit - major version
-  // For AIX, e.g. 0x0601 for AIX 6.1
-  // for OS/400 e.g. 0x0504 for OS/400 V5R4
+  // For AIX, e.g. 0x0701 for AIX 7.1
   static int os_version_short() {
     return os_version() >> 16;
-  }
-
-  // Convenience method: returns true if running on PASE V5R4 or older.
-  static bool on_pase_V5R4_or_older() {
-    return on_pase() && os_version_short() <= 0x0504;
-  }
-
-  // Convenience method: returns true if running on AIX 5.3 or older.
-  static bool on_aix_53_or_older() {
-    return on_aix() && os_version_short() <= 0x0503;
   }
 
   // Returns true if we run in SPEC1170 compliant mode (XPG_SUS_ENV=ON).
@@ -151,24 +120,23 @@ class os::Aix {
   struct meminfo_t {
 
     // Amount of virtual memory (in units of 4 KB pages)
-    unsigned long long virt_total;
+    size_t virt_total;
 
     // Amount of real memory, in bytes
-    unsigned long long real_total;
+    size_t real_total;
 
     // Amount of free real memory, in bytes
-    unsigned long long real_free;
+    size_t real_free;
 
     // Total amount of paging space, in bytes
-    unsigned long long pgsp_total;
+    size_t pgsp_total;
 
     // Amount of free paging space, in bytes
-    unsigned long long pgsp_free;
+    size_t pgsp_free;
 
   };
 
-  // Functions to retrieve memory information on AIX, PASE.
-  // (on AIX, using libperfstat, on PASE with libo4.so).
+  // function to retrieve memory information, using libperfstat
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -121,19 +120,13 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
                                       _object_space, _gen_counters);
 }
 
-// Assume that the generation has been allocated if its
-// reserved size is not 0.
-bool  PSOldGen::is_allocated() {
-  return virtual_space()->reserved_size() != 0;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % BOTConstants::card_size_in_words()) == 0,
+  assert((block_word_size % CardTable::card_size_in_words()) == 0,
          "To ensure fast object_start calls");
 
   MutableSpace *space = object_space();
@@ -382,28 +375,3 @@ void PSOldGen::update_counters() {
 void PSOldGen::verify() {
   object_space()->verify();
 }
-
-class VerifyObjectStartArrayClosure : public ObjectClosure {
-  ObjectStartArray* _start_array;
-
-public:
-  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
-    _start_array(start_array) { }
-
-  virtual void do_object(oop obj) {
-    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
-    guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
-  }
-};
-
-void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check(&_start_array);
-  object_iterate(&check);
-}
-
-#ifndef PRODUCT
-void PSOldGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  object_space()->set_top_for_allocations();
-}
-#endif

@@ -176,7 +176,7 @@ public class NotifReconnectDeadlockTest {
 
     // serverTimeout increased to avoid occasional problems with initial connect.
     // Not using Utils.adjustTimeout to avoid accidentally making it too long.
-    private static final long serverTimeout = 2000;
+    private static final long serverTimeout = 3000;
     private static final long listenerSleep = serverTimeout*6;
 
     private volatile static String clientState = null;

@@ -153,7 +153,6 @@ public class TestModulePackages extends JavadocTester {
                 """
                     <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">m</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html" class="current-selection">p</a></li>
                     </ol>
                     """);
@@ -161,7 +160,6 @@ public class TestModulePackages extends JavadocTester {
                 """
                     <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">o</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html" class="current-selection">p</a></li>
                     </ol>
                     """);
@@ -169,9 +167,7 @@ public class TestModulePackages extends JavadocTester {
                 """
                     <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">m</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>
                     """);
@@ -179,9 +175,7 @@ public class TestModulePackages extends JavadocTester {
                 """
                     <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">o</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
-                    &nbsp;&gt;&nbsp;
                     <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>
                     """);

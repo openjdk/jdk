@@ -27,16 +27,16 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
@@ -80,23 +80,23 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
 class StrongRootsClosures : public G1RootClosures {
   OopClosure* _roots;
   CLDClosure* _clds;
-  CodeBlobClosure* _blobs;
+  NMethodClosure* _nmethods;
 public:
-  StrongRootsClosures(OopClosure* roots, CLDClosure* clds, CodeBlobClosure* blobs) :
-      _roots(roots), _clds(clds), _blobs(blobs) {}
+  StrongRootsClosures(OopClosure* roots, CLDClosure* clds, NMethodClosure* nmethods) :
+      _roots(roots), _clds(clds), _nmethods(nmethods) {}
 
   OopClosure* strong_oops() { return _roots; }
 
   CLDClosure* weak_clds()        { return nullptr; }
   CLDClosure* strong_clds()      { return _clds; }
 
-  CodeBlobClosure* strong_codeblobs() { return _blobs; }
+  NMethodClosure* strong_nmethods() { return _nmethods; }
 };
 
 void G1RootProcessor::process_strong_roots(OopClosure* oops,
                                            CLDClosure* clds,
-                                           CodeBlobClosure* blobs) {
-  StrongRootsClosures closures(oops, clds, blobs);
+                                           NMethodClosure* nmethods) {
+  StrongRootsClosures closures(oops, clds, nmethods);
 
   process_java_roots(&closures, nullptr, 0);
   process_vm_roots(&closures, nullptr, 0);
@@ -123,20 +123,20 @@ public:
   CLDClosure* weak_clds() { return _clds; }
   CLDClosure* strong_clds() { return _clds; }
 
-  // We don't want to visit code blobs more than once, so we return null for the
+  // We don't want to visit nmethods more than once, so we return null for the
   // strong case and walk the entire code cache as a separate step.
-  CodeBlobClosure* strong_codeblobs() { return nullptr; }
+  NMethodClosure* strong_nmethods() { return nullptr; }
 };
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
                                         CLDClosure* clds,
-                                        CodeBlobClosure* blobs) {
+                                        NMethodClosure* nmethods) {
   AllRootsClosures closures(oops, clds);
 
   process_java_roots(&closures, nullptr, 0);
   process_vm_roots(&closures, nullptr, 0);
 
-  process_code_cache_roots(blobs, nullptr, 0);
+  process_code_cache_roots(nmethods, nullptr, 0);
 
   // refProcessor is not needed since we are inside a safe point
   _process_strong_tasks.all_tasks_claimed(G1RP_PS_refProcessor_oops_do);
@@ -149,7 +149,7 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
   // processes nmethods in two ways, as "strong" and "weak" nmethods.
   //
   // 1) Strong nmethods are reachable from the thread stack frames. G1 applies
-  // the G1RootClosures::strong_codeblobs() closure on them. The closure
+  // the G1RootClosures::strong_nmethods() closure on them. The closure
   // iterates over all oops embedded inside each nmethod, and performs 3
   // operations:
   //   a) evacuates; relocate objects outside of collection set
@@ -159,7 +159,7 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
   // classes will not be unloaded.
   //
   // 2) Weak nmethods are reachable only from the code root remembered set (see
-  // G1CodeRootSet). G1 applies the G1RootClosures::weak_codeblobs() closure on
+  // G1CodeRootSet). G1 applies the G1RootClosures::weak_nmethods() closure on
   // them. The closure iterates over all oops embedded inside each nmethod, and
   // performs 2 operations: a) and b).
   // Since these oops are *not* marked, their classes can potentially be
@@ -179,7 +179,7 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
     bool is_par = n_workers() > 1;
     Threads::possibly_parallel_oops_do(is_par,
                                        closures->strong_oops(),
-                                       closures->strong_codeblobs());
+                                       closures->strong_nmethods());
   }
 
   if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
@@ -200,14 +200,14 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
   }
 }
 
-void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,
+void G1RootProcessor::process_code_cache_roots(NMethodClosure* nmethod_closure,
                                                G1GCPhaseTimes* phase_times,
                                                uint worker_id) {
   // We do not track timing of this phase. It is only required with class unloading
   // disabled, which is an extremely uncommon use case and would otherwise only ever
   // show up as "skipped" in the logs.
   if (_process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do)) {
-    CodeCache::blobs_do(code_closure);
+    CodeCache::nmethods_do(nmethod_closure);
   }
 }
 

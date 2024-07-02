@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 
@@ -733,20 +734,31 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return args;
     }
 
-    private static void runCodesign(ProcessBuilder pb, boolean quiet)
-                                                            throws IOException {
+    private static void runCodesign(
+            ProcessBuilder pb, boolean quiet, Map<String, ? super Object> params)
+            throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              PrintStream ps = new PrintStream(baos)) {
             try {
             IOUtils.exec(pb, false, ps, false,
                          Executor.INFINITE_TIMEOUT, quiet);
             } catch (IOException ioe) {
-                // Log output of "codesign" in case of
-                // error. It should help user to diagnose
-                // issue when using --mac-app-image-sign-identity
+                // Log output of "codesign" in case of error. It should help
+                // user to diagnose issues when using --mac-app-image-sign-identity.
+                // In addition add possible reason for failure. For example
+                // "--app-content" can fail "codesign".
+
+                // APP_CONTENT is never null.
+                if (!APP_CONTENT.fetchFrom(params).isEmpty()) {
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.app.content"));
+                }
+
+                // Log "codesign" output
                 Log.info(MessageFormat.format(I18N.getString(
                          "error.tool.failed.with.output"), "codesign"));
                 Log.info(baos.toString().strip());
+
                 throw ioe;
             }
         }
@@ -818,7 +830,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             p.toFile().setWritable(true, true);
                             ProcessBuilder pb = new ProcessBuilder(args);
                             // run quietly
-                            runCodesign(pb, true);
+                            runCodesign(pb, true, params);
                             Files.setPosixFilePermissions(p, oldPermissions);
                         } catch (IOException ioe) {
                             toThrow.set(ioe);
@@ -846,7 +858,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 List<String> args = getCodesignArgs(true, path, signingIdentity,
                             identifierPrefix, entitlements, keyChain);
                 ProcessBuilder pb = new ProcessBuilder(args);
-                runCodesign(pb, false);
+                runCodesign(pb, false, params);
             } catch (IOException e) {
                 toThrow.set(e);
             }
@@ -877,7 +889,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         List<String> args = getCodesignArgs(true, appLocation, signingIdentity,
                 identifierPrefix, entitlements, keyChain);
         ProcessBuilder pb = new ProcessBuilder(args);
-        runCodesign(pb, false);
+        runCodesign(pb, false, params);
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {

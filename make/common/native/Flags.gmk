@@ -29,10 +29,12 @@
 # like optimization level.
 
 ################################################################################
+# $1 is the prefix of the file to be compiled
+# $2 is the prefix of the library, i.e. $$($1_BASE)
 define SetupCompileFileFlags
   ifeq ($$($1_OPTIMIZATION), )
-    $1_OPT_CFLAGS := $$($$($1_BASE)_OPT_CFLAGS)
-    $1_OPT_CXXFLAGS := $$($$($1_BASE)_OPT_CXXFLAGS)
+    $1_OPT_CFLAGS := $$($2_OPT_CFLAGS)
+    $1_OPT_CXXFLAGS := $$($2_OPT_CXXFLAGS)
   else
     ifeq ($$($1_OPTIMIZATION), NONE)
       $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
@@ -57,23 +59,23 @@ define SetupCompileFileFlags
     endif
   endif
 
-  ifneq ($$($$($1_BASE)_PRECOMPILED_HEADER), )
-    ifeq ($$(filter $$($1_FILENAME), $$($$($1_BASE)_PRECOMPILED_HEADER_EXCLUDE)), )
-      $1_USE_PCH_FLAGS := $$($$($1_BASE)_USE_PCH_FLAGS)
+  ifneq ($$($2_PRECOMPILED_HEADER), )
+    ifeq ($$(filter $$($1_FILENAME), $$($2_PRECOMPILED_HEADER_EXCLUDE)), )
+      $1_USE_PCH_FLAGS := $$($2_USE_PCH_FLAGS)
     endif
   endif
 
   ifneq ($(DISABLE_WARNING_PREFIX), )
     $1_WARNINGS_FLAGS := $$(addprefix $(DISABLE_WARNING_PREFIX), \
-      $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)) \
-      $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)_$$($1_FILENAME)))
+      $$($2_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)) \
+      $$($2_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)_$$($1_FILENAME)))
   endif
 
-  $1_BASE_CFLAGS :=  $$($$($1_BASE)_CFLAGS) $$($$($1_BASE)_EXTRA_CFLAGS) \
-      $$($$($1_BASE)_SYSROOT_CFLAGS)
-  $1_BASE_CXXFLAGS := $$($$($1_BASE)_CXXFLAGS) $$($$($1_BASE)_EXTRA_CXXFLAGS) \
-      $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
-  $1_BASE_ASFLAGS := $$($$($1_BASE)_ASFLAGS) $$($$($1_BASE)_EXTRA_ASFLAGS)
+  $1_BASE_CFLAGS :=  $$($2_CFLAGS) $$($2_EXTRA_CFLAGS) \
+      $$($2_SYSROOT_CFLAGS)
+  $1_BASE_CXXFLAGS := $$($2_CXXFLAGS) $$($2_EXTRA_CXXFLAGS) \
+      $$($2_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
+  $1_BASE_ASFLAGS := $$($2_ASFLAGS) $$($2_EXTRA_ASFLAGS)
 endef
 
 ################################################################################
@@ -127,6 +129,20 @@ define SetupCompilerFlags
   endif
   ifeq ($$(strip $$($1_EXTRA_CXXFLAGS)), )
     $1_EXTRA_CXXFLAGS := $$($1_EXTRA_CFLAGS)
+  endif
+
+  $$(call SetIfEmpty, $1_COMPILE_WITH_DEBUG_SYMBOLS, $$(COMPILE_WITH_DEBUG_SYMBOLS))
+
+  ifeq ($(STATIC_LIBS), true)
+    # For release builds where debug symbols are configured to be moved to
+    # separate debuginfo files, disable debug symbols for static libs instead.
+    # We don't currently support this configuration and we don't want symbol
+    # information in release builds unless explicitly asked to provide it.
+    ifeq ($(DEBUG_LEVEL), release)
+      ifeq ($(COPY_DEBUG_SYMBOLS), true)
+        $1_COMPILE_WITH_DEBUG_SYMBOLS := false
+      endif
+    endif
   endif
 
   ifeq ($$($1_COMPILE_WITH_DEBUG_SYMBOLS), true)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ HeapWord* ObjectStartArray::block_start_reaching_into_card(HeapWord* const addr)
   while (true) {
     offset = *entry;
 
-    if (offset < BOTConstants::card_size_in_words()) {
+    if (offset < CardTable::card_size_in_words()) {
       break;
     }
 

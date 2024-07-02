@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "utilities/ticks.hpp"
 

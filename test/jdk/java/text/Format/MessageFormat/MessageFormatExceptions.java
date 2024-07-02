@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Validate some exceptions in MessageFormat
- * @bug 6481179 8039165
+ * @bug 6481179 8039165 8318761
  * @run junit MessageFormatExceptions
  */
 
@@ -38,6 +38,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MessageFormatExceptions {
+
+    // Any exception for a Subformat should be re-thrown as propagated as an IAE
+    // to the MessageFormat
+    @Test
+    public void rethrowAsIAE() {
+        // Same Subformat pattern for ChoiceFormat throws NumberFormatException
+        assertThrows(IllegalArgumentException.class,
+                () -> new MessageFormat("{0,choice,0foo#foo}"));
+    }
 
     // MessageFormat should throw NPE when constructed with a null pattern
     @Test
@@ -57,6 +66,9 @@ public class MessageFormatExceptions {
         // Fails when constructor invokes applyPattern()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0, date}", null));
+        // Same as above, but with Subformat pattern
+        assertThrows(NullPointerException.class,
+                () -> new MessageFormat("{0, date,dd}", null));
         // Fail when constructor invokes applyPattern()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0, number}", null));

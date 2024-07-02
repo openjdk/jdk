@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
-
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 
 inline size_t TenuredGeneration::capacity() const {
   return space()->capacity();
@@ -45,21 +44,28 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
+inline void TenuredGeneration::update_for_block(HeapWord* start, HeapWord* end) {
+  _bts->update_for_block(start, end);
+}
+
 HeapWord* TenuredGeneration::allocate(size_t word_size,
-                                                 bool is_tlab) {
+                                      bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return _the_space->allocate(word_size);
+  HeapWord* res = _the_space->allocate(word_size);
+  if (res != nullptr) {
+    _bts->update_for_block(res, res + word_size);
+  }
+  return res;
 }
 
 HeapWord* TenuredGeneration::par_allocate(size_t word_size,
-                                                     bool is_tlab) {
+                                          bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return _the_space->par_allocate(word_size);
-}
-
-template <typename OopClosureType>
-void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
-  _the_space->oop_since_save_marks_iterate(blk);
+  HeapWord* res = _the_space->par_allocate(word_size);
+  if (res != nullptr) {
+    _bts->update_for_block(res, res + word_size);
+  }
+  return res;
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

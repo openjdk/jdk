@@ -74,7 +74,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
                     " has been patched. Key size " + keySize +
                     " is not supported");
         }
-        ECParameterSpec ecParams = ECUtil.getECParameterSpec(null, keySize);
+        ECParameterSpec ecParams = ECUtil.getECParameterSpec(keySize);
         try {
             return new KeyPair(new ECPublicKeyImpl(new ECPoint(x, y), ecParams),
                     new ECPrivateKeyImpl(s, ecParams));

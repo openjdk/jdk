@@ -110,10 +110,6 @@ Java and C/C++ natures during development by running:</p>
 <pre><code>make eclipse-mixed-env</code></pre>
 <p>Do note that this generates all features that come with both Java and
 C/C++ natures.</p>
-<p>By default, the Eclipse Workspace is located in the ide subdirectory
-in the build output. To share the JDK's source directory with the
-Eclipse Workspace, you can instead run:</p>
-<pre><code>make eclipse-shared-&lt;ENV&gt;-env</code></pre>
 <p>Eclipse support in the JDK is relatively new, so do keep in mind that
 not everything may work at the moment. As such, the resulting Workspace
 also has compilation database parsing support enabled, so you can pass
@@ -160,9 +156,6 @@ to import the newly created Java Workspace.</p>
 <p>If doing so results in an error, you can also import the JDK via
 <code>File -&gt; Import -&gt; Existing Projects into Workspace</code> as
 a last resort.</p>
-<p>Alternatively, if you want a Java Workspace inside the JDK's source
-directory, you can instead run:</p>
-<pre><code>make eclipse-shared-java-env</code></pre>
 <p>As mentioned above for Eclipse CDT, you can create a combined Java
 and C/C++ Workspace which can conveniently switch between Java and C/C++
 natures during development by running:</p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8278373
+ * @bug 7021614 8278373 8164094
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @summary check references in at-see and {at-link} tags
  * @modules jdk.compiler
@@ -130,6 +130,12 @@ public class ReferenceTest extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element e: roundEnv.getRootElements()) {
             new DocCommentScanner(trees.getPath(e)).scan();
+            for (Element enc: e.getEnclosedElements()) {
+                TreePath path = trees.getPath(enc);
+                if (trees.getDocCommentTree(path) != null) {
+                    new DocCommentScanner(path).scan();
+                }
+            }
         }
         return true;
     }
@@ -247,6 +253,10 @@ public class ReferenceTest extends AbstractProcessor {
  * @see #methodSearchPrimitive2(long, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, int)
  * @see #methodSearchPrimitive2(int, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(int, long)
  * @see #methodSearchPrimitive2(long, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, long)
+ *
+ * @see Inner#X    Bad
+ * @see Inner#X()  Bad
+ * @see Inner#m    Bad
  */
 class ReferenceTestExtras {
     int ReferenceTestExtras;            // field
@@ -276,6 +286,16 @@ class ReferenceTestExtras {
     void methodSearchPrimitive2(int i, long j) {}
     void methodSearchPrimitive2(long i, int j) {}
     void methodSearchPrimitive2(int i, int j) {}
+
+    /**
+     * @see #X         Field
+     * @see #X()       Method
+     * @see #m         Method
+     * @see Inner#X    Bad
+     * @see Inner#X()  Bad
+     * @see Inner#m    Bad
+     */
+    interface Inner {}
 }
 
 

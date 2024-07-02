@@ -135,7 +135,12 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     }
   }
 
-  return JvmtiAgentList::load_agent(agent, absParam, options, out);
+  // The abs parameter should be "true" or "false".
+  const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
+  JvmtiAgentList::load_agent(agent, is_absolute_path, options, out);
+
+  // Agent_OnAttach result or error message is written to 'out'.
+  return JNI_OK;
 }
 
 // Implementation of "properties" command.
@@ -249,7 +254,7 @@ static jint dump_heap(AttachOperation* op, outputStream* out) {
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, level, false, HeapDumper::default_num_of_dump_threads());
+    dumper.dump(path, out, level);
   }
   return JNI_OK;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,9 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-            return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
+            // Only annotation classes in the boot class loader can always be resolved.
+            boolean bootClassLoader = annotationType.getClassLoader() == null;
+            return PrivateAccess.getInstance().newAnnotation(type, values, bootClassLoader);
         }
         return null;
     }
@@ -220,7 +222,7 @@ public final class TypeLibrary {
             long id = Type.getTypeId(clazz);
             Type t;
             if (eventType) {
-                t = new PlatformEventType(typeName, id, clazz.getClassLoader() == null, true);
+                t = new PlatformEventType(typeName, id, Utils.isJDKClass(clazz), true);
             } else {
                 t = new Type(typeName, superType, id);
             }
@@ -263,7 +265,7 @@ public final class TypeLibrary {
         // STRUCT
         String superType = null;
         boolean eventType = false;
-        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+        if (isEventClass(clazz)) {
             superType = Type.SUPER_TYPE_EVENT;
             eventType= true;
         }
@@ -283,12 +285,22 @@ public final class TypeLibrary {
         }
         addAnnotations(clazz, type, dynamicAnnotations);
 
-        if (clazz.getClassLoader() == null) {
+        if (Utils.isJDKClass(clazz)) {
             type.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO);
         } else {
             type.log("Added", LogTag.JFR_METADATA, LogLevel.INFO);
         }
         return type;
+    }
+
+    private static boolean isEventClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (MirrorEvent.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        return false;
     }
 
     private static void addAnnotations(Class<?> clazz, Type type, List<AnnotationElement> dynamicAnnotations) {
@@ -322,7 +334,7 @@ public final class TypeLibrary {
             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
             if (vd != null) {
                 if (!vd.getTypeName().equals(field.getType().getName())) {
-                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getName() + " but got " + vd.getName());
+                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getType().getName() + " but got " + vd.getTypeName());
                 }
                 for (AnnotationElement ae : vd.getAnnotationElements()) {
                     newTypes.add(PrivateAccess.getInstance().getType(ae));

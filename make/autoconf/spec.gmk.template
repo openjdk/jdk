@@ -353,6 +353,8 @@ BUNDLES_OUTPUTDIR = $(OUTPUTDIR)/bundles
 TESTMAKE_OUTPUTDIR = $(OUTPUTDIR)/test-make
 MAKESUPPORT_OUTPUTDIR = $(OUTPUTDIR)/make-support
 
+JAVA_TMP_DIR = $(SUPPORT_OUTPUTDIR)/javatmp
+
 # This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR := @CONFIGURESUPPORT_OUTPUTDIR@
 BUILDJDK_OUTPUTDIR = $(OUTPUTDIR)/buildjdk
@@ -477,7 +479,7 @@ MACOSX_VERSION_MAX := @MACOSX_VERSION_MAX@
 MACOSX_CODESIGN_MODE := @MACOSX_CODESIGN_MODE@
 MACOSX_CODESIGN_IDENTITY := @MACOSX_CODESIGN_IDENTITY@
 
-# Toolchain type: gcc, clang, xlc, microsoft...
+# Toolchain type: gcc, clang, microsoft...
 TOOLCHAIN_TYPE := @TOOLCHAIN_TYPE@
 TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@
 CC_VERSION_NUMBER := @CC_VERSION_NUMBER@
@@ -486,20 +488,7 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
-# Option used to tell the compiler whether to create 32- or 64-bit executables
-COMPILER_TARGET_BITS_FLAG := @COMPILER_TARGET_BITS_FLAG@
-COMPILER_SUPPORTS_TARGET_BITS_FLAG := @COMPILER_SUPPORTS_TARGET_BITS_FLAG@
-
-# Option used to pass a command file to the compiler
-COMPILER_COMMAND_FILE_FLAG := @COMPILER_COMMAND_FILE_FLAG@
-
-# Option for specifying a file which saves the binder commands
-# produced by the link step (for debugging, currently AIX only)
-COMPILER_BINDCMD_FILE_FLAG := @COMPILER_BINDCMD_FILE_FLAG@
-
 CC_OUT_OPTION := @CC_OUT_OPTION@
-LD_OUT_OPTION := @LD_OUT_OPTION@
-AR_OUT_OPTION := @AR_OUT_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
 C_O_FLAG_HIGHEST_JVM := @C_O_FLAG_HIGHEST_JVM@
@@ -568,11 +557,9 @@ SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB := @LDFLAGS_JDKLIB@
-JDKLIB_LIBS := @JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE := @LDFLAGS_JDKEXE@
-JDKEXE_LIBS := @JDKEXE_LIBS@
 
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK := @LDFLAGS_CXX_JDK@
@@ -584,9 +571,6 @@ LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX := @LIBCXX@
-
-# Compiler and linker flags used when building native tests
-LDFLAGS_TESTEXE := @LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
@@ -604,10 +588,10 @@ BUILD_SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
 
 AS := @AS@
 
-# AR is used to create a static library (is ar in unix, lib.exe in windows)
 AR := @AR@
 ARFLAGS := @ARFLAGS@
-
+LIB := @LIB@
+LIBFLAGS := @LIBFLAGS@
 NM := @NM@
 NMFLAGS := @NMFLAGS@
 STRIP := @STRIP@
@@ -618,10 +602,6 @@ LIPO := @LIPO@
 INSTALL_NAME_TOOL := @INSTALL_NAME_TOOL@
 METAL := @METAL@
 METALLIB := @METALLIB@
-
-# Options to linker to specify a mapfile.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_MAPFILE = @SET_SHARED_LIBRARY_MAPFILE@
 
 #
 # Options for generating debug symbols
@@ -647,23 +627,16 @@ SHARED_LIBRARY_FLAGS := @SHARED_LIBRARY_FLAGS@
 SET_SHARED_LIBRARY_ORIGIN = @SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN = @SET_EXECUTABLE_ORIGIN@
 
-# Different OS:es have different ways of naming shared libraries.
-# The SHARED_LIBRARY and STATIC_LIBRARY macros takes "verify" as and argument and returns:
-#    "libverify.so" or "libverify.dylib" or "verify.dll" depending on platform.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SHARED_LIBRARY = @SHARED_LIBRARY@
-STATIC_LIBRARY = @STATIC_LIBRARY@
-
 LIBRARY_PREFIX := @LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX := @SHARED_LIBRARY_SUFFIX@
 STATIC_LIBRARY_SUFFIX := @STATIC_LIBRARY_SUFFIX@
 EXECUTABLE_SUFFIX := @EXECUTABLE_SUFFIX@
 OBJ_SUFFIX := @OBJ_SUFFIX@
-STATIC_BUILD := @STATIC_BUILD@
 
 STRIPFLAGS := @STRIPFLAGS@
 
-JAVA_FLAGS := @JAVA_FLAGS@
+JAVA_FLAGS_TMPDIR := -Djava.io.tmpdir=$(JAVA_TMP_DIR)
+JAVA_FLAGS := @JAVA_FLAGS@ $(JAVA_FLAGS_TMPDIR)
 JAVA_FLAGS_BIG := @JAVA_FLAGS_BIG@
 JAVA_FLAGS_SMALL := @JAVA_FLAGS_SMALL@
 BUILD_JAVA_FLAGS_SMALL := @BUILD_JAVA_FLAGS_SMALL@
@@ -699,8 +672,12 @@ BUILD_JAR = @FIXPATH@ $(BUILD_JDK)/bin/jar
 
 DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
+
 # Interim langtools modules and arguments
-INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.internal.md jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
@@ -813,7 +790,9 @@ TAR_SUPPORTS_TRANSFORM := @TAR_SUPPORTS_TRANSFORM@
 
 # Build setup
 USE_EXTERNAL_LIBJPEG := @USE_EXTERNAL_LIBJPEG@
+LIBJPEG_LIBS := @LIBJPEG_LIBS@
 USE_EXTERNAL_LIBGIF := @USE_EXTERNAL_LIBGIF@
+GIFLIB_LIBS := @GIFLIB_LIBS@
 USE_EXTERNAL_LIBZ := @USE_EXTERNAL_LIBZ@
 LIBZ_CFLAGS := @LIBZ_CFLAGS@
 LIBZ_LIBS := @LIBZ_LIBS@

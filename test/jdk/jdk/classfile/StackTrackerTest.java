@@ -58,7 +58,7 @@ class StackTrackerTest {
                         assertIterableEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
                         tryb.ifThen(thb -> {
                             assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
-                            thb.constantInstruction(ClassDesc.of("Phee"));
+                            thb.loadConstant(ClassDesc.of("Phee"));
                             assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
                             thb.athrow();
                             assertFalse(stackTracker.stack().isPresent());
@@ -91,7 +91,7 @@ class StackTrackerTest {
                     var l2 = stcb.newBoundLabel(); //back jump target
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertTrue(stackTracker.maxStackSize().isPresent()); //however still tracking
-                    stcb.constantInstruction(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
+                    stcb.loadConstant(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertFalse(stackTracker.maxStackSize().isPresent()); //because tracking lost
                     stcb.athrow();

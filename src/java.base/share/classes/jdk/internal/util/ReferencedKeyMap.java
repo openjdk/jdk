@@ -100,6 +100,21 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final ReferenceQueue<K> stale;
 
     /**
+     * @return a supplier to create a {@code ConcurrentHashMap} appropriate for use in the
+     *         create methods.
+     * @param <K> the type of keys maintained by the new map
+     * @param <V> the type of mapped values
+     */
+    public static <K, V> Supplier<Map<ReferenceKey<K>, V>> concurrentHashMapSupplier() {
+        return new Supplier<>() {
+            @Override
+            public Map<ReferenceKey<K>, V> get() {
+                return new ConcurrentHashMap<>();
+            }
+        };
+    }
+
+    /**
      * Private constructor.
      *
      * @param isSoft          true if {@link SoftReference} keys are to
@@ -438,5 +453,31 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
         } while (interned == null);
         return interned;
     }
+
+
+    /**
+     * Attempt to add key to map if absent.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     *
+     * @param <T> type of key
+     *
+     * @return true if the key was added
+     */
+    static <T> boolean internAddKey(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        ReferenceKey<T> entryKey = setMap.entryKey(key);
+        setMap.removeStaleReferences();
+        ReferenceKey<T> existing = setMap.map.putIfAbsent(entryKey, entryKey);
+        if (existing == null) {
+            return true;
+        } else {
+            // If {@code putIfAbsent} returns non-null then was actually a
+            // {@code replace} and older key was used. In that case the new
+            // key was not used and the reference marked stale.
+            entryKey.unused();
+            return false;
+        }
+     }
 
 }

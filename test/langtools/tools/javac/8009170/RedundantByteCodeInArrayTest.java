@@ -56,7 +56,7 @@ public class RedundantByteCodeInArrayTest {
         //lets get all the methods in the class file.
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString("arrMethod")) {
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElse(null);
                 assert code != null;
                 if (code.maxLocals() > 4)
                     throw new AssertionError("Too many locals for method arrMethod");

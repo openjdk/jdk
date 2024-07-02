@@ -573,6 +573,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
       can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
+      can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {
@@ -633,7 +636,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else if (!reduce_merge_precheck) {
           safepoints->append_if_missing(sfpt);
         }
-      } else if (reduce_merge_precheck && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
+      } else if (reduce_merge_precheck &&
+                 (use->is_Phi() || use->is_EncodeP() ||
+                  use->Opcode() == Op_MemBarRelease ||
+                  (UseStoreStoreForCtor && use->Opcode() == Op_MemBarStoreStore))) {
         // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
@@ -1306,8 +1312,7 @@ void PhaseMacroExpand::expand_allocate_common(
     slow_region = new RegionNode(3);
 
     // Now make the initial failure test.  Usually a too-big test but
-    // might be a TRUE for finalizers or a fancy class check for
-    // newInstance0.
+    // might be a TRUE for finalizers.
     IfNode *toobig_iff = new IfNode(ctrl, initial_slow_test, PROB_MIN, COUNT_UNKNOWN);
     transform_later(toobig_iff);
     // Plug the failing-too-big test into the slow-path region
@@ -1942,10 +1947,12 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // marked for elimination since new obj has no escape information.
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
-void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->as_BoxLock()->is_eliminated()) {
+void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
+  BoxLockNode* oldbox = box->as_BoxLock();
+  if (oldbox->is_eliminated()) {
     return; // This BoxLock node was processed already.
   }
+  assert(!oldbox->is_unbalanced(), "this should not be called for unbalanced region");
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
@@ -1953,8 +1960,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   if (EliminateNestedLocks ||
       oldbox->as_BoxLock()->is_simple_lock_region(nullptr, obj, nullptr)) {
     // Box is used only in one lock region. Mark this box as eliminated.
+    oldbox->set_local();      // This verifies correct state of BoxLock
     _igvn.hash_delete(oldbox);
-    oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
+    oldbox->set_eliminated(); // This changes box's hash value
      _igvn.hash_insert(oldbox);
 
     for (uint i = 0; i < oldbox->outcnt(); i++) {
@@ -1981,6 +1989,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   // Note: BoxLock node is marked eliminated only here and it is used
   // to indicate that all associated lock and unlock nodes are marked
   // for elimination.
+  newbox->set_local(); // This verifies correct state of BoxLock
   newbox->set_eliminated();
   transform_later(newbox);
 
@@ -2036,6 +2045,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
+  if (!alock->is_balanced()) {
+    return; // Can't do any more elimination for this locking region
+  }
   if (EliminateNestedLocks) {
     if (alock->is_nested()) {
        assert(alock->box_node()->as_BoxLock()->is_eliminated(), "sanity");
@@ -2352,6 +2364,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   // Re-marking may break consistency of Coarsened locks.
   if (!C->coarsened_locks_consistent()) {
     return; // recompile without Coarsened locks if broken
+  } else {
+    // After coarsened locks are eliminated locking regions
+    // become unbalanced. We should not execute any more
+    // locks elimination optimizations on them.
+    C->mark_unbalanced_boxes();
   }
 
   // First, attempt to eliminate locks
@@ -2411,8 +2428,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4   ||
+               n->is_Opaque4()             ||
+               n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2433,6 +2450,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Do not allow new macro nodes once we started to expand
+  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
@@ -2461,31 +2480,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-#if INCLUDE_RTM_OPT
-      } else if ((n->Opcode() == Op_Opaque3) && ((Opaque3Node*)n)->rtm_opt()) {
-        assert(C->profile_rtm(), "should be used only in rtm deoptimization code");
-        assert((n->outcnt() == 1) && n->unique_out()->is_Cmp(), "");
-        Node* cmp = n->unique_out();
-#ifdef ASSERT
-        // Validate graph.
-        assert((cmp->outcnt() == 1) && cmp->unique_out()->is_Bool(), "");
-        BoolNode* bol = cmp->unique_out()->as_Bool();
-        assert((bol->outcnt() == 1) && bol->unique_out()->is_If() &&
-               (bol->_test._test == BoolTest::ne), "");
-        IfNode* ifn = bol->unique_out()->as_If();
-        assert((ifn->outcnt() == 2) &&
-               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change) != nullptr, "");
-#endif
-        Node* repl = n->in(1);
-        if (!_has_locks) {
-          // Remove RTM state check if there are no locks in the code.
-          // Replace input to compare the same value.
-          repl = (cmp->in(1) == n) ? cmp->in(2) : cmp->in(1);
-        }
-        _igvn.replace_node(n, repl);
-        success = true;
-#endif
-      } else if (n->Opcode() == Op_Opaque4) {
+      } else if (n->is_Opaque4()) {
         // With Opaque4 nodes, the expectation is that the test of input 1
         // is always equal to the constant value of input 2. So we can
         // remove the Opaque4 and replace it by input 2. In debug builds,
@@ -2498,6 +2493,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, n->in(2));
 #endif
         success = true;
+      } else if (n->is_OpaqueInitializedAssertionPredicate()) {
+          // Initialized Assertion Predicates must always evaluate to true. Therefore, we get rid of them in product
+          // builds as they are useless. In debug builds we keep them as additional verification code. Even though
+          // loop opts are already over, we want to keep Initialized Assertion Predicates alive as long as possible to
+          // enable folding of dead control paths within which cast nodes become top after due to impossible types -
+          // even after loop opts are over. Therefore, we delay the removal of these opaque nodes until now.
+#ifdef ASSERT
+        _igvn.replace_node(n, n->in(1));
+#else
+        _igvn.replace_node(n, _igvn.intcon(1));
+#endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);

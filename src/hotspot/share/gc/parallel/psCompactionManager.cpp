@@ -29,6 +29,7 @@
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
@@ -51,16 +52,17 @@ ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
 GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = nullptr;
 Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 
-ParCompactionManager::ParCompactionManager() {
+PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
+
+ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
 
-  reset_bitmap_query_cache();
-
-  _deferred_obj_array = new (mtGC) GrowableArray<HeapWord*>(10, mtGC);
+  _preserved_marks = preserved_marks;
+  _marking_stats_cache = nullptr;
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
@@ -78,9 +80,12 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _objarray_task_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
   _region_task_queues = new RegionTaskQueueSet(parallel_gc_threads);
 
+  _preserved_marks_set = new PreservedMarksSet(true);
+  _preserved_marks_set->init(parallel_gc_threads);
+
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
-    _manager_array[i] = new ParCompactionManager();
+    _manager_array[i] = new ParCompactionManager(_preserved_marks_set->get(i));
     oop_task_queues()->register_queue(i, _manager_array[i]->oop_stack());
     _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
@@ -92,13 +97,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _shadow_region_array = new (mtGC) GrowableArray<size_t >(10, mtGC);
 
   _shadow_region_monitor = new Monitor(Mutex::nosafepoint, "CompactionManager_lock");
-}
 
-void ParCompactionManager::reset_all_bitmap_query_caches() {
-  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
-  for (uint i=0; i<parallel_gc_threads; i++) {
-    _manager_array[i]->reset_bitmap_query_cache();
-  }
 }
 
 void ParCompactionManager::flush_all_string_dedup_requests() {
@@ -167,15 +166,6 @@ void ParCompactionManager::drain_region_stacks() {
   } while (!region_stack()->is_empty());
 }
 
-void ParCompactionManager::drain_deferred_objects() {
-  while (!_deferred_obj_array->is_empty()) {
-    HeapWord* addr = _deferred_obj_array->pop();
-    assert(addr != nullptr, "expected a deferred object");
-    PSParallelCompact::update_deferred_object(this, addr);
-  }
-  _deferred_obj_array->clear_and_deallocate();
-}
-
 size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
   MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
   while (true) {
@@ -204,10 +194,6 @@ void ParCompactionManager::push_shadow_region(size_t shadow_region) {
 
 void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
-}
-
-void ParCompactionManager::push_deferred_object(HeapWord* addr) {
-  _deferred_obj_array->push(addr);
 }
 
 #ifdef ASSERT

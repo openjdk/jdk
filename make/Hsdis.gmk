@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,7 @@ HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 REAL_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
 BUILT_HSDIS_LIB := $(HSDIS_OUTPUT_DIR)/$(REAL_HSDIS_NAME)
 
-HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
-HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
-HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
+HSDIS_LINK_TYPE := C
 
 ifeq ($(HSDIS_BACKEND), capstone)
   ifeq ($(call isTargetCpuArch, x86), true)
@@ -59,8 +57,7 @@ endif
 
 ifeq ($(HSDIS_BACKEND), llvm)
   # Use C++ instead of C
-  HSDIS_TOOLCHAIN_CFLAGS := $(CXXFLAGS_JDKLIB)
-  HSDIS_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  HSDIS_LINK_TYPE := C++
 
   ifeq ($(call isTargetOs, linux), true)
     LLVM_OS := pc-linux-gnu
@@ -91,14 +88,11 @@ ifeq ($(HSDIS_BACKEND), binutils)
       endif
     endif
 
-    $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
-        CC := $(MINGW_BASE)-gcc, \
-        LD := $(MINGW_BASE)-ld, \
-        OBJCOPY := $(MINGW_BASE)-objcopy, \
-        RC := $(RC), \
-        SYSROOT_CFLAGS := --sysroot=$(MINGW_SYSROOT), \
-        SYSROOT_LDFLAGS := --sysroot=$(MINGW_SYSROOT), \
-    ))
+    BUILD_HSDIS_CC := $(MINGW_BASE)-gcc
+    BUILD_HSDIS_LD := $(MINGW_BASE)-ld
+    BUILD_HSDIS_OBJCOPY := $(MINGW_BASE)-objcopy
+    BUILD_HSDIS_SYSROOT_CFLAGS := --sysroot=$(MINGW_SYSROOT)
+    BUILD_HSDIS_SYSROOT_LDFLAGS := --sysroot=$(MINGW_SYSROOT)
 
     MINGW_SYSROOT_LIB_PATH := $(MINGW_SYSROOT)/mingw/lib
     ifeq ($(wildcard $(MINGW_SYSROOT_LIB_PATH)), )
@@ -122,8 +116,8 @@ ifeq ($(HSDIS_BACKEND), binutils)
 
     TOOLCHAIN_TYPE := gcc
     OPENJDK_TARGET_OS := linux
+    OPENJDK_TARGET_OS_TYPE := unix
     CC_OUT_OPTION := -o$(SPACE)
-    LD_OUT_OPTION := -o$(SPACE)
     GENDEPS_FLAGS := -MMD -MF
     CFLAGS_DEBUG_SYMBOLS := -g
     DISABLED_WARNINGS :=
@@ -131,9 +125,9 @@ ifeq ($(HSDIS_BACKEND), binutils)
     CFLAGS_WARNINGS_ARE_ERRORS := -Werror
     SHARED_LIBRARY_FLAGS := -shared
 
-    HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
-    HSDIS_TOOLCHAIN_CFLAGS :=
-    HSDIS_TOOLCHAIN_LDFLAGS := -L$(MINGW_GCC_LIB_PATH) -L$(MINGW_SYSROOT_LIB_PATH)
+    HSDIS_TOOLCHAIN_DEFAULT_CFLAGS := false
+    HSDIS_TOOLCHAIN_DEFAULT_LDFLAGS := false
+    HSDIS_LDFLAGS += -L$(MINGW_GCC_LIB_PATH) -L$(MINGW_SYSROOT_LIB_PATH)
     MINGW_DLLCRT := $(MINGW_SYSROOT_LIB_PATH)/dllcrt2.o
     HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
         -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
@@ -142,17 +136,27 @@ ifeq ($(HSDIS_BACKEND), binutils)
   endif
 endif
 
+################################################################################
+## Build libhsdis
+################################################################################
+
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
+    LINK_TYPE := $(HSDIS_LINK_TYPE), \
     SRC := $(TOPDIR)/src/utils/hsdis/$(HSDIS_BACKEND), \
-    EXTRA_HEADER_DIRS := $(TOPDIR)/src/utils/hsdis, \
-    TOOLCHAIN := $(HSDIS_TOOLCHAIN), \
+    EXTRA_HEADER_DIRS := \
+          java.base:include \
+          $(TOPDIR)/src/utils/hsdis, \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
-    CFLAGS := $(HSDIS_TOOLCHAIN_CFLAGS) $(HSDIS_CFLAGS), \
-    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(HSDIS_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
+    DEFAULT_CFLAGS := $(HSDIS_TOOLCHAIN_DEFAULT_CFLAGS), \
+    CFLAGS := $(HSDIS_CFLAGS), \
+    CXXFLAGS := $(HSDIS_CFLAGS), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := $(HSDIS_TOOLCHAIN_DEFAULT_LDFLAGS), \
+    LDFLAGS := $(HSDIS_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
     LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 

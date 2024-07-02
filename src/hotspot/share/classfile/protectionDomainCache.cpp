@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class CleanProtectionDomainEntries : public CLDClosure {
   void do_cld(ClassLoaderData* data) {
     Dictionary* dictionary = data->dictionary();
     if (dictionary != nullptr) {
-      dictionary->clean_cached_protection_domains(_delete_list);
+      dictionary->remove_from_package_access_cache(_delete_list);
     }
   }
 };
@@ -96,8 +96,8 @@ class HandshakeForPD : public HandshakeClosure {
 
 static void purge_deleted_entries() {
   // If there are any deleted entries, Handshake-all then they'll be
-  // safe to remove since traversing the pd_set list does not stop for
-  // safepoints and only JavaThreads will read the pd_set.
+  // safe to remove since traversing the package_access_cache list does not stop for
+  // safepoints and only JavaThreads will read the package_access_cache.
   // This is actually quite rare because the protection domain is generally associated
   // with the caller class and class loader, which if still alive will keep this
   // protection domain entry alive.
@@ -115,7 +115,7 @@ static void purge_deleted_entries() {
 }
 
 void ProtectionDomainCacheTable::unlink() {
-  // The dictionary entries _pd_set field should be null also, so nothing to do.
+  // DictionaryEntry::_package_access_cache should be null also, so nothing to do.
   assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
 
   // Create a list for holding deleted entries
@@ -128,7 +128,7 @@ void ProtectionDomainCacheTable::unlink() {
     // First clean cached pd lists in loaded CLDs
     // It's unlikely, but some loaded classes in a dictionary might
     // point to a protection_domain that has been unloaded.
-    // The dictionary pd_set points at entries in the ProtectionDomainCacheTable.
+    // DictionaryEntry::_package_access_cache points at entries in the ProtectionDomainCacheTable.
     MutexLocker ml(ClassLoaderDataGraph_lock);
     MutexLocker mldict(SystemDictionary_lock);  // need both.
     CleanProtectionDomainEntries clean(_delete_list);
@@ -187,7 +187,7 @@ void ProtectionDomainCacheTable::verify() {
 }
 
 // The object_no_keepalive() call peeks at the phantomly reachable oop without
-// keeping it alive.  This is used for traversing DictionaryEntry pd_set.
+// keeping it alive.  This is used for traversing DictionaryEntry::_package_access_cache.
 oop ProtectionDomainEntry::object_no_keepalive() {
   return _object.peek();
 }

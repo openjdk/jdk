@@ -54,10 +54,6 @@ public:
     _start(start), _word_size(pointer_delta(end, start)) {
     assert(end >= start, "incorrect constructor arguments");
   }
-  MemRegion(MetaWord* start, MetaWord* end) :
-    _start((HeapWord*)start), _word_size(pointer_delta(end, start)) {
-    assert(end >= start, "incorrect constructor arguments");
-  }
 
   MemRegion intersection(const MemRegion mr2) const;
   // regions must overlap or be adjacent

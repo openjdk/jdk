@@ -1629,7 +1629,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp,"  virtual bool           requires_postalloc_expand() const { return true; }\n");
         fprintf(fp,"  virtual void           postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);\n");
       } else {
-        fprintf(fp,"  virtual void           emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;\n");
+        fprintf(fp,"  virtual void           emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;\n");
       }
     }
 

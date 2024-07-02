@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @summary The RMI benchmark test. This java class is used to run the test
  *          under JTREG.
- * @library ../../../../testlibrary ../../
+ * @library ../../../../testlibrary ../../ /test/lib
  * @modules java.desktop
  *          java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary bench.BenchInfo bench.HtmlReporter bench.Util
+ * @build TestLibrary bench.BenchInfo bench.HtmlReporter bench.Util jdk.test.lib.process.ProcessTools
  * bench.Benchmark bench.Reporter bench.XmlReporter bench.ConfigFormatException
  * bench.Harness bench.TextReporter bench.rmi.BenchServer
  * bench.rmi.DoubleArrayCalls bench.rmi.LongCalls bench.rmi.ShortCalls
@@ -51,19 +51,12 @@
 
 package bench.rmi;
 
-import bench.ConfigFormatException;
-import bench.Harness;
-import bench.HtmlReporter;
-import bench.Reporter;
-import bench.TextReporter;
-import bench.XmlReporter;
-import static bench.rmi.Main.OutputFormat.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.rmi.AlreadyBoundException;
@@ -76,6 +69,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import bench.ConfigFormatException;
+import bench.Harness;
+import bench.HtmlReporter;
+import bench.Reporter;
+import bench.TextReporter;
+import bench.XmlReporter;
+import static bench.rmi.Main.OutputFormat.HTML;
+import static bench.rmi.Main.OutputFormat.TEXT;
+import static bench.rmi.Main.OutputFormat.XML;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * RMI/Serialization benchmark tests.
@@ -234,13 +239,6 @@ public class Main {
                     //Setup for client mode, server will fork client process
                     //after its initiation.
                     List<String> clientProcessStr = new ArrayList<>();
-                    clientProcessStr.add(System.getProperty("test.jdk") +
-                            File.separator + "bin" + File.separator + "java");
-                    String classpath = System.getProperty("java.class.path");
-                    if (classpath != null) {
-                        clientProcessStr.add("-cp");
-                        clientProcessStr.add(classpath);
-                    }
                     clientProcessStr.add("-Djava.security.policy=" + TEST_SRC_PATH + "policy.all");
                     clientProcessStr.add("-Djava.security.manager=allow");
                     clientProcessStr.add("-Dtest.src=" + TEST_SRC_PATH);
@@ -276,20 +274,13 @@ public class Main {
                     }
 
                     try {
-                        Process client = new ProcessBuilder(clientProcessStr).
-                                inheritIO().start();
-                        try {
-                            client.waitFor();
-                            int exitValue = client.exitValue();
-                            if (0 != exitValue) {
-                                die("Error: error happened in client process, exitValue = " + exitValue);
-                            }
-                        } finally {
-                            client.destroyForcibly();
-                        }
+                        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(clientProcessStr);
+                        OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
+                        System.out.println(outputAnalyzer.getOutput());
+                        outputAnalyzer.shouldHaveExitValue(0);
                     } catch (IOException ex) {
                         die("Error: Unable start client process, ex=" + ex.getMessage());
-                    } catch (InterruptedException ex) {
+                    } catch (Exception ex) {
                         die("Error: Error happening to client process, ex=" + ex.getMessage());
                     }
                     break;

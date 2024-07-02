@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_8;
 
 /**
- * Utility class for zipfile name and comment decoding and encoding
+ * Utility class for ZIP file entry name and comment decoding and encoding
  */
 class ZipCoder {
 
@@ -290,8 +290,7 @@ class ZipCoder {
                 // exceptions eagerly when opening ZipFiles
                 return hash(JLA.newStringUTF8NoRepl(a, off, len));
             }
-            // T_BOOLEAN to treat the array as unsigned bytes, in line with StringLatin1.hashCode
-            int h = ArraysSupport.vectorizedHashCode(a, off, len, 0, ArraysSupport.T_BOOLEAN);
+            int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
             if (a[end - 1] != '/') {
                 h = 31 * h + '/';
             }

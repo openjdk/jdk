@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
  * @test
  * @bug 6329116 6756569 6757131 6758988 6764308 6796489 6834474 6609737 6507067
  *      7039469 7090843 7103108 7103405 7158483 8008577 8059206 8064560 8072042
- *      8077685 8151876 8166875 8169191 8170316 8176044
- * @summary Make sure that timezone short display names are idenical to Olson's data.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI Bug6329116
+ *      8077685 8151876 8166875 8169191 8170316 8176044 8174269
+ * @summary Make sure that timezone short display names are identical to Olson's data.
+ * @run junit Bug6329116
  */
 
 import java.io.*;
-import java.text.*;
 import java.util.*;
 
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class Bug6329116 {
 
-    static Locale[] locales = Locale.getAvailableLocales();
+    // Do not test all locales, as some locales have localized
+    // short names in CLDR. Test only for the US locale
+
+    // static Locale[] locales = Locale.getAvailableLocales();
+    static Locale[] locales = {Locale.US};
     static String[] timezones = TimeZone.getAvailableIDs();
 
     @Test
@@ -112,7 +115,7 @@ public class Bug6329116 {
                         if (!expected.equals(got) &&
                             !expected.startsWith(got + "/") &&
                             !expected.endsWith("/" + got)) {
-                            if (useLocalzedShortDisplayName(tz, locales[i], got, false)) {
+                            if (useLocalizedShortDisplayName(tz, locales[i], got, false)) {
 /*
                                 System.out.println(tzs[j] +
                                                    ((j > 0) ? "(Alias of \"" + tzs[0] + "\")" : "") +
@@ -139,7 +142,7 @@ public class Bug6329116 {
                                 if (tzs[j].equals("Europe/London") &&
                                     locales[i].equals(new Locale("en", "IE"))) {
                                     continue;
-                                } else if (useLocalzedShortDisplayName(tz, locales[i], got, true)) {
+                                } else if (useLocalizedShortDisplayName(tz, locales[i], got, true)) {
 /*
                                 System.out.println(tzs[j] +
                                     ((j > 0) ? "(Alias of \"" + tzs[0] + "\")" : "") +
@@ -202,38 +205,39 @@ public class Bug6329116 {
         }
     }
 
-    static boolean useLocalzedShortDisplayName(TimeZone tz,
+    static boolean useLocalizedShortDisplayName(TimeZone tz,
                                                Locale locale,
                                                String got,
                                                boolean inDST) {
-        if (locale.getLanguage().equals("de")) {
-            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
-            if (inDST) {
-                if (("Mitteleurop\u00e4ische Sommerzeit".equals(name) && "MESZ".equals(got)) ||
-                    ("Osteurop\u00e4ische Sommerzeit".equals(name) && "OESZ".equals(got)) ||
-                    ("Westeurop\u00e4ische Sommerzeit".equals(name) && "WESZ".equals(got))) {
-                    return true;
-                }
-            } else {
-                if (("Mitteleurop\u00e4ische Zeit".equals(name) && "MEZ".equals(got)) ||
-                    ("Osteurop\u00e4ische Zeit".equals(name) && "OEZ".equals(got)) ||
-                    ("Westeurop\u00e4ische Zeit".equals(name) && "WEZ".equals(got))) {
-                    return true;
-                }
-            }
-        } else if (locale.getLanguage().equals("zh") &&
-            (locale.getCountry().equals("TW") || locale.getCountry().equals("HK"))) {
-            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
-            if (inDST) {
-                if (("\u53f0\u7063\u590f\u4ee4\u6642\u9593".equals(name) && "TDT".equals(got))) {
-                    return true;
-                }
-            } else {
-                if (("\u53f0\u7063\u6a19\u6e96\u6642\u9593".equals(name) && "TST".equals(got))) {
-                    return true;
-                }
-            }
-        }
+//        if (locale.getLanguage().equals("de")) {
+//            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
+//            if (inDST) {
+//                if (("Mitteleurop\u00e4ische Sommerzeit".equals(name) && "MESZ".equals(got)) ||
+//                    ("Osteurop\u00e4ische Sommerzeit".equals(name) && "OESZ".equals(got)) ||
+//                    ("Westeurop\u00e4ische Sommerzeit".equals(name) && "WESZ".equals(got))) {
+//                    return true;
+//                }
+//            } else {
+//                if (("Mitteleurop\u00e4ische Zeit".equals(name) && "MEZ".equals(got)) ||
+//                    ("Osteurop\u00e4ische Zeit".equals(name) && "OEZ".equals(got)) ||
+//                    ("Westeurop\u00e4ische Zeit".equals(name) && "WEZ".equals(got))) {
+//                    return true;
+//                }
+//            }
+//        } else if (locale.getLanguage().equals("zh") &&
+//            (locale.getCountry().equals("TW") || locale.getCountry().equals("HK"))) {
+//            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
+//            if (inDST) {
+//                if (("\u53f0\u7063\u590f\u4ee4\u6642\u9593".equals(name) && "TDT".equals(got))) {
+//                    return true;
+//                }
+//            } else {
+//                if (("\u53f0\u7063\u6a19\u6e96\u6642\u9593".equals(name) && "TST".equals(got))) {
+//                    return true;
+//                }
+//            }
+//        }
+
         // If we get a TimeZone with GMT+hh:mm format, we can ignore the offset value
         if (tz.getDisplayName(Locale.ENGLISH).startsWith("GMT+") || tz.getDisplayName(Locale.ENGLISH).startsWith("GMT-")) {
             return tz.getDisplayName().substring(0, 3).equals(got.substring(0, 3));

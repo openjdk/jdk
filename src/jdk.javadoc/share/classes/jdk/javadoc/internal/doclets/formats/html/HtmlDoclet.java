@@ -25,8 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -42,6 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ModuleElement;
@@ -303,9 +308,13 @@ public class HtmlDoclet extends AbstractDoclet {
             w.buildPage();
         }
 
+        if (!options.noFonts()) {
+            copyFontResources();
+        }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
-        if (options.stylesheetFile().length() == 0) {
+        if (options.stylesheetFile().isEmpty()) {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
@@ -326,6 +335,10 @@ public class HtmlDoclet extends AbstractDoclet {
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
         copyLegalFiles(options.createIndex());
+        // Print a notice if the documentation contains diagnostic markers
+        if (messages.containsDiagnosticMarkers()) {
+            messages.notice("doclet.contains.diagnostic.markers");
+        }
     }
 
     @Override
@@ -450,6 +463,31 @@ public class HtmlDoclet extends AbstractDoclet {
             f.copyResource(resourcePath, resourceURL, configuration.docResources);
         } else {
             f.copyResource(resourcePath, resourceURL, replaceNewLine);
+        }
+    }
+
+    private void copyFontResources() throws DocletException {
+        DocPath cssPath = DocPaths.FONTS.resolve(DocPaths.DEJAVU_CSS);
+        copyResource(cssPath, DocPaths.RESOURCE_FILES.resolve(cssPath), true);
+
+        try {
+            // Extract font file names from CSS file
+            URL cssURL = HtmlConfiguration.class.getResource(DocPaths.RESOURCES.resolve(cssPath).getPath());
+            Pattern pattern = Pattern.compile("DejaVu[-\\w]+\\.\\w+");
+
+            try (InputStream in = cssURL.openStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Matcher m = pattern.matcher(line);
+                    if (m.find()) {
+                        DocPath fontPath = DocPaths.FONTS.resolve(m.group());
+                        copyResource(fontPath, DocPaths.RESOURCE_FILES.resolve(fontPath), false);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ResourceIOException(cssPath, e);
         }
     }
 

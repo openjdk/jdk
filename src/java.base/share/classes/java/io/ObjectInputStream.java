@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
@@ -2356,7 +2358,13 @@ public class ObjectInputStream
          */
     }
 
-    /** Reads a record. */
+    /**
+     * Reads and returns a record.
+     * If an exception is marked for any of the fields, the dependency
+     * mechanism marks the record as having an exception.
+     * Null is returned from readRecord and later the exception is thrown at
+     * the exit of {@link #readObject(Class)}.
+     **/
     private Object readRecord(ObjectStreamClass desc) throws IOException {
         ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
         if (slots.length != 1) {
@@ -2369,6 +2377,9 @@ public class ObjectInputStream
         }
 
         FieldValues fieldValues = new FieldValues(desc, true);
+        if (handles.lookupException(passHandle) != null) {
+            return null;     // slot marked with exception, don't create record
+        }
 
         // get canonical record constructor adapted to take two arguments:
         // - byte[] primValues
@@ -2462,8 +2473,11 @@ public class ObjectInputStream
                     if (slotValues != null) {
                         slotValues[i] = values;
                     } else if (obj != null) {
-                        values.defaultCheckFieldValues(obj);
-                        values.defaultSetFieldValues(obj);
+                        if (handles.lookupException(passHandle) == null) {
+                            // passHandle NOT marked with an exception; set field values
+                            values.defaultCheckFieldValues(obj);
+                            values.defaultSetFieldValues(obj);
+                        }
                     }
                 }
 
@@ -2482,7 +2496,8 @@ public class ObjectInputStream
             }
         }
 
-        if (obj != null && slotValues != null) {
+        if (obj != null && slotValues != null && handles.lookupException(passHandle) == null) {
+            // passHandle NOT marked with an exception
             // Check that the non-primitive types are assignable for all slots
             // before assigning.
             for (int i = 0; i < slots.length; i++) {
@@ -2995,6 +3010,8 @@ public class ObjectInputStream
         private static final int CHAR_BUF_SIZE = 256;
         /** readBlockHeader() return value indicating header read may block */
         private static final int HEADER_BLOCKED = -2;
+        /** access to internal methods to count ASCII and inflate latin1/ASCII bytes to char */
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         /** buffer for reading general/block data */
         private final byte[] buf = new byte[MAX_BLOCK_SIZE];
@@ -3671,8 +3688,32 @@ public class ObjectInputStream
          * utflen bytes.
          */
         private String readUTFBody(long utflen) throws IOException {
+            if (!blkmode) {
+                end = pos = 0;
+            }
+
             StringBuilder sbuf;
             if (utflen > 0 && utflen < Integer.MAX_VALUE) {
+                // Scan for leading ASCII chars
+                int avail = end - pos;
+                int ascii = JLA.countPositives(buf, pos, Math.min(avail, (int)utflen));
+                if (ascii == utflen) {
+                    // Complete match, consume the buf[pos ... pos + ascii] range and return.
+                    // Modified UTF-8 and ISO-8859-1 are both ASCII-compatible encodings bytes
+                    // thus we can treat the range as ISO-8859-1 and avoid a redundant scan
+                    // in the String constructor
+                    String utf = new String(buf, pos, ascii, StandardCharsets.ISO_8859_1);
+                    pos += ascii;
+                    return utf;
+                }
+                // Avoid allocating a StringBuilder if there's enough data in buf and
+                // cbuf is large enough
+                if (avail >= utflen && utflen <= CHAR_BUF_SIZE) {
+                    JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
+                    pos += ascii;
+                    int cbufPos = readUTFSpan(ascii, utflen - ascii);
+                    return new String(cbuf, 0, cbufPos);
+                }
                 // a reasonable initial capacity based on the UTF length
                 int initialCapacity = Math.min((int)utflen, 0xFFFF);
                 sbuf = new StringBuilder(initialCapacity);
@@ -3680,14 +3721,14 @@ public class ObjectInputStream
                 sbuf = new StringBuilder();
             }
 
-            if (!blkmode) {
-                end = pos = 0;
-            }
-
             while (utflen > 0) {
                 int avail = end - pos;
                 if (avail >= 3 || (long) avail == utflen) {
-                    utflen -= readUTFSpan(sbuf, utflen);
+                    int cbufPos = readUTFSpan(0, utflen);
+                    // pos has advanced: adjust utflen by the difference in
+                    // available bytes
+                    utflen -= avail - (end - pos);
+                    sbuf.append(cbuf, 0, cbufPos);
                 } else {
                     if (blkmode) {
                         // near block boundary, read one byte at a time
@@ -3709,18 +3750,17 @@ public class ObjectInputStream
 
         /**
          * Reads span of UTF-encoded characters out of internal buffer
-         * (starting at offset pos and ending at or before offset end),
-         * consuming no more than utflen bytes.  Appends read characters to
-         * sbuf.  Returns the number of bytes consumed.
+         * (starting at offset pos), consuming no more than utflen bytes.
+         * Appends read characters to cbuf. Returns the current position
+         * in cbuf.
          */
-        private long readUTFSpan(StringBuilder sbuf, long utflen)
+        private int readUTFSpan(int cpos, long utflen)
             throws IOException
         {
-            int cpos = 0;
             int start = pos;
             int avail = Math.min(end - pos, CHAR_BUF_SIZE);
             // stop short of last char unless all of utf bytes in buffer
-            int stop = pos + ((utflen > avail) ? avail - 2 : (int) utflen);
+            int stop = start + ((utflen > avail) ? avail - 2 : (int) utflen);
             boolean outOfBounds = false;
 
             try {
@@ -3765,9 +3805,7 @@ public class ObjectInputStream
                     throw new UTFDataFormatException();
                 }
             }
-
-            sbuf.append(cbuf, 0, cpos);
-            return pos - start;
+            return cpos;
         }
 
         /**

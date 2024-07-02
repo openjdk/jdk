@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires !vm.graal.enabled & vm.opt.final.UseVtableBasedCHA == true
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation

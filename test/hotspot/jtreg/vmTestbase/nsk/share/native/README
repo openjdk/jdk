@@ -25,8 +25,8 @@ This directory contains source files of testbase_nsk native
 framework, which provides support for native tests.
 
     Source files:
-        nsk_tools.h
-        nsk_tools.c
+        nsk_tools.hpp
+        nsk_tools.cpp
 
     Naming conventions:
         macroses:  NSK_*
@@ -54,7 +54,7 @@ provides support for lists of various objects
 
 ---------------------------------------------------------------------------------
 
-nsk_tools.h
+nsk_tools.hpp
 
 Provides functions and macroses for the most usefull actions:
 

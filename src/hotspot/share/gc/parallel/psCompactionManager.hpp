@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
 #include "gc/parallel/psParallelCompact.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -45,7 +46,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class ParallelScavengeRefProcProxyTask;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
-  friend class UpdateDensePrefixAndCompactionTask;
+  friend class FillDensePrefixAndCompactionTask;
 
  private:
   typedef OverflowTaskQueue<oop, mtGC>            OopTaskQueue;
@@ -75,7 +76,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
 
-  GrowableArray<HeapWord*>*    _deferred_obj_array;
+  static PreservedMarksSet* _preserved_marks_set;
+  PreservedMarks* _preserved_marks;
 
   static ParMarkBitMap* _mark_bitmap;
 
@@ -86,10 +88,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Provides mutual exclusive access of _shadow_region_array.
   // See pop/push_shadow_region_mt_safe() below
   static Monitor*               _shadow_region_monitor;
-
-  HeapWord* _last_query_beg;
-  oop _last_query_obj;
-  size_t _last_query_ret;
 
   StringDedup::Requests _string_dedup_requests;
 
@@ -106,12 +104,40 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // objArray stack, otherwise returns false and the task is invalid.
   bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
 
-  ParCompactionManager();
+  ParCompactionManager(PreservedMarks* preserved_marks);
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
- public:
+  // To collect per-region live-words in a worker local cache in order to
+  // reduce threads contention.
+  class MarkingStatsCache : public CHeapObj<mtGC> {
+    constexpr static size_t num_entries = 1024;
+    static_assert(is_power_of_2(num_entries), "inv");
+    static_assert(num_entries > 0, "inv");
+
+    constexpr static size_t entry_mask = num_entries - 1;
+
+    struct CacheEntry {
+      size_t region_id;
+      size_t live_words;
+    };
+
+    CacheEntry entries[num_entries] = {};
+
+    inline void push(size_t region_id, size_t live_words);
+
+  public:
+    inline void push(oop obj, size_t live_words);
+
+    inline void evict(size_t index);
+
+    inline void evict_all();
+  };
+
+  MarkingStatsCache* _marking_stats_cache;
+
+public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
   static void    push_shadow_region_mt_safe(size_t shadow_region);
@@ -125,28 +151,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     return next_shadow_region();
   }
 
-  void push_deferred_object(HeapWord* addr);
-
-  void reset_bitmap_query_cache() {
-    _last_query_beg = nullptr;
-    _last_query_obj = nullptr;
-    _last_query_ret = 0;
-  }
-
   void flush_string_dedup_requests() {
     _string_dedup_requests.flush();
   }
-
-  // Bitmap query support, cache last query and result
-  HeapWord* last_query_begin() { return _last_query_beg; }
-  oop last_query_object() { return _last_query_obj; }
-  size_t last_query_return() { return _last_query_ret; }
-
-  void set_last_query_begin(HeapWord *new_beg) { _last_query_beg = new_beg; }
-  void set_last_query_object(oop new_obj) { _last_query_obj = new_obj; }
-  void set_last_query_return(size_t new_ret) { _last_query_ret = new_ret; }
-
-  static void reset_all_bitmap_query_caches();
 
   static void flush_all_string_dedup_requests();
 
@@ -156,6 +163,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Simply use the first compaction manager here.
   static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
+  PreservedMarks* preserved_marks() const {
+    return _preserved_marks;
+  }
 
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
@@ -180,12 +190,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
-  void drain_deferred_objects();
 
   void follow_contents(oop obj);
   void follow_array(objArrayOop array, int index);
-
-  void update_contents(oop obj);
 
   class FollowStackClosure: public VoidClosure {
    private:
@@ -197,6 +204,10 @@ class ParCompactionManager : public CHeapObj<mtGC> {
       : _compaction_manager(cm), _terminator(terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
+
+  inline void create_marking_stats_cache();
+
+  inline void flush_and_destroy_marking_stats_cache();
 
   // Called after marking.
   static void verify_all_marking_stack_empty() NOT_DEBUG_RETURN;

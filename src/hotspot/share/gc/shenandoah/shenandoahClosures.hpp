@@ -119,13 +119,13 @@ public:
   inline void do_oop(narrowOop* p);
 };
 
-class ShenandoahCodeBlobAndDisarmClosure: public CodeBlobToOopClosure {
+class ShenandoahNMethodAndDisarmClosure: public NMethodToOopClosure {
 private:
   BarrierSetNMethod* const _bs;
 
 public:
-  inline ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl);
-  inline void do_code_blob(CodeBlob* cb);
+  inline ShenandoahNMethodAndDisarmClosure(OopClosure* cl);
+  inline void do_nmethod(nmethod* nm);
 };
 
 #ifdef ASSERT

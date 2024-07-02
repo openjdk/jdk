@@ -36,7 +36,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -49,10 +49,10 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -216,10 +216,6 @@ G1GCPhaseTimes* G1YoungCollector::phase_times() const {
   return _g1h->phase_times();
 }
 
-G1HRPrinter* G1YoungCollector::hr_printer() const {
-  return _g1h->hr_printer();
-}
-
 G1MonitoringSupport* G1YoungCollector::monitoring_support() const {
   return _g1h->monitoring_support();
 }
@@ -264,13 +260,9 @@ void G1YoungCollector::wait_for_root_region_scanning() {
 }
 
 class G1PrintCollectionSetClosure : public HeapRegionClosure {
-private:
-  G1HRPrinter* _hr_printer;
 public:
-  G1PrintCollectionSetClosure(G1HRPrinter* hr_printer) : HeapRegionClosure(), _hr_printer(hr_printer) { }
-
-  virtual bool do_heap_region(HeapRegion* r) {
-    _hr_printer->cset(r);
+  virtual bool do_heap_region(G1HeapRegion* r) {
+    G1HeapRegionPrinter::cset(r);
     return false;
   }
 };
@@ -286,8 +278,8 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 
   concurrent_mark()->verify_no_collection_set_oops();
 
-  if (hr_printer()->is_active()) {
-    G1PrintCollectionSetClosure cl(hr_printer());
+  if (G1HeapRegionPrinter::is_active()) {
+    G1PrintCollectionSetClosure cl;
     collection_set()->iterate(&cl);
     collection_set()->iterate_optional(&cl);
   }
@@ -302,7 +294,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
     G1MonotonicArenaMemoryStats _card_set_stats;
 
-    void sample_card_set_size(HeapRegion* hr) {
+    void sample_card_set_size(G1HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
       // the policy to give back memory to the OS keep the most recent amount of
       // memory for these regions.
@@ -311,7 +303,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       }
     }
 
-    bool humongous_region_is_candidate(HeapRegion* region) const {
+    bool humongous_region_is_candidate(G1HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
       oop obj = cast_to_oop(region->bottom());
@@ -383,7 +375,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       _parent_task->add_humongous_total(_worker_humongous_total);
     }
 
-    virtual bool do_heap_region(HeapRegion* hr) {
+    virtual bool do_heap_region(G1HeapRegion* hr) {
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
@@ -484,13 +476,8 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
-
-  // Must be before collection set calculation, requires collection set to not
-  // be calculated yet.
-  if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start(_gc_cause);
-  }
-
+  // Flush various data in thread-local buffers to be able to determine the collection
+  // set
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
@@ -500,6 +487,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
+
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start(_gc_cause);
+  }
 
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -977,7 +968,7 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
   assert(collector_state()->in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  for (HeapRegion* r : *candidates) {
+  for (G1HeapRegion* r : *candidates) {
     _g1h->concurrent_mark()->add_root_region(r);
   }
 }

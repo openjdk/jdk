@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,18 @@
 
 #include "logging/logAsyncWriter.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "memory/resourceArea.hpp"
+#include "nmt/memflags.hpp"
+#include "nmt/memFlagBitmap.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "nmt/memFlagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
-#include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
@@ -88,9 +89,12 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // of them fit into a cache line.
   Range* _ranges;
   MEMFLAGS* _flags;
-  uintx _count, _capacity;
+  size_t _count, _capacity;
+  mutable size_t _last;
+
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr),
+                           _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
@@ -107,12 +111,12 @@ public:
     }
     if (_count == _capacity) {
       // Enlarge if needed
-      const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
+      const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
       ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
       if (_ranges == nullptr || _flags == nullptr) {
-        // In case of OOM lets make no fuzz. Just return.
+        // In case of OOM lets make no fuss. Just return.
         return false;
       }
       _capacity = new_capacity;
@@ -127,11 +131,20 @@ public:
   // Given a vma [from, to), find all regions that intersect with this vma and
   // return their collective flags.
   MemFlagBitmap lookup(const void* from, const void* to) const {
+    assert(from <= to, "Sanity");
+    // We optimize for sequential lookups. Since this class is used when a list
+    // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
+    // are usually sorted in order of addresses, ascending.
+    if (to <= _ranges[_last].from) {
+      // the range is to the right of the given section, we need to re-start the search
+      _last = 0;
+    }
     MemFlagBitmap bm;
-    for(uintx i = 0; i < _count; i++) {
+    for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
-      } else if (from < _ranges[i].to) {
+      } else if (to <= _ranges[i].from) {
+        _last = i;
         break;
       }
     }
@@ -146,6 +159,13 @@ public:
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
     return VirtualMemoryTracker::walk_virtual_memory(this);
+  }
+
+  void print_on(outputStream* st) const {
+    for (size_t i = 0; i < _count; i ++) {
+      st->print_cr(PTR_FORMAT "-" PTR_FORMAT " %s", p2i(_ranges[i].from), p2i(_ranges[i].to),
+          NMTUtil::flag_to_enum_name(_flags[i]));
+    }
   }
 };
 
@@ -183,6 +203,8 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
 
 // Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
 static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
+
+  ResourceMark rm;
 
 #define HANDLE_THREAD(T)                                                        \
   if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \
@@ -287,7 +309,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   // First collect all NMT information
   CachedNMTInformation nmt_info;
   nmt_info.fill_from_nmt();
-
+  DEBUG_ONLY(nmt_info.print_on(st);)
   st->print_cr("Memory mappings:");
   if (!MemTracker::enabled()) {
     st->cr();

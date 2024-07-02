@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8062588 8210406
+ * @bug 4052440 8062588 8210406 8174269
  * @summary Generic tests for the pluggable locales feature
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -32,7 +32,7 @@
  * @build com.foobar.Utils
  *        com.bar.*
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI GenericTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI GenericTest
  */
 
 import java.util.Arrays;
@@ -86,12 +86,13 @@ public class GenericTest {
      * Make sure that all the locales are available from the existing providers
      */
     void availableLocalesTest() {
-        // Check that Locale.getAvailableLocales() returns the union of the JRE supported
+        // Check that Locale.getAvailableLocales() returns the union of the CLDR/FALLBACK supported
         // locales and providers' locales
         HashSet<Locale> result =
             new HashSet<>(Arrays.asList(Locale.getAvailableLocales()));
         HashSet<Locale> expected =
-            new HashSet<>(Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales()));
+            new HashSet<>(Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getAvailableLocales()));
+        expected.addAll(Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getAvailableLocales()));
         expected.addAll(Arrays.asList(breakIP.getAvailableLocales()));
         expected.addAll(Arrays.asList(collatorP.getAvailableLocales()));
         expected.addAll(Arrays.asList(dateFP.getAvailableLocales()));

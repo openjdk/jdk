@@ -150,6 +150,9 @@ JVM_ActiveProcessorCount(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsContainerized(void);
+
 JNIEXPORT void * JNICALL
 JVM_LoadZipLibrary();
 
@@ -197,14 +200,8 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject implementationMember,
                                       jobject dynamicMethodType);
 
-JNIEXPORT jboolean JNICALL
-JVM_IsCDSDumpingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsSharingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsDumpingClassList(JNIEnv* env);
+JNIEXPORT jint JNICALL
+JVM_GetCDSConfigStatus();
 
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
