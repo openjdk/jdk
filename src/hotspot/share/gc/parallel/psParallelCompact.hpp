@@ -47,122 +47,6 @@ class MoveAndUpdateClosure;
 class ParallelOldTracer;
 class STWGCTimer;
 
-// The SplitInfo class holds the information needed to 'split' a source region
-// so that the live data can be copied to two destination *spaces*.  Normally,
-// all the live data in a region is copied to a single destination space (e.g.,
-// everything live in a region in eden is copied entirely into the old gen).
-// However, when the heap is nearly full, all the live data in eden may not fit
-// into the old gen.  Copying only some of the regions from eden to old gen
-// requires finding a region that does not contain a partial object (i.e., no
-// live object crosses the region boundary) somewhere near the last object that
-// does fit into the old gen.  Since it's not always possible to find such a
-// region, splitting is necessary for predictable behavior.
-//
-// A region is always split at the end of the partial object.  This avoids
-// additional tests when calculating the new location of a pointer, which is a
-// very hot code path.  The partial object and everything to its left will be
-// copied to another space (call it dest_space_1).  The live data to the right
-// of the partial object will be copied either within the space itself, or to a
-// different destination space (distinct from dest_space_1).
-//
-// Split points are identified during the summary phase, when region
-// destinations are computed:  data about the split, including the
-// partial_object_size, is recorded in a SplitInfo record and the
-// partial_object_size field in the summary data is set to zero.  The zeroing is
-// possible (and necessary) since the partial object will move to a different
-// destination space than anything to its right, thus the partial object should
-// not affect the locations of any objects to its right.
-//
-// The recorded data is used during the compaction phase, but only rarely:  when
-// the partial object on the split region will be copied across a destination
-// region boundary.  This test is made once each time a region is filled, and is
-// a simple address comparison, so the overhead is negligible (see
-// PSParallelCompact::first_src_addr()).
-//
-// Notes:
-//
-// Only regions with partial objects are split; a region without a partial
-// object does not need any extra bookkeeping.
-//
-// At most one region is split per space, so the amount of data required is
-// constant.
-//
-// A region is split only when the destination space would overflow.  Once that
-// happens, the destination space is abandoned and no other data (even from
-// other source spaces) is targeted to that destination space.  Abandoning the
-// destination space may leave a somewhat large unused area at the end, if a
-// large object caused the overflow.
-//
-// Future work:
-//
-// More bookkeeping would be required to continue to use the destination space.
-// The most general solution would allow data from regions in two different
-// source spaces to be "joined" in a single destination region.  At the very
-// least, additional code would be required in next_src_region() to detect the
-// join and skip to an out-of-order source region.  If the join region was also
-// the last destination region to which a split region was copied (the most
-// likely case), then additional work would be needed to get fill_region() to
-// stop iteration and switch to a new source region at the right point.  Basic
-// idea would be to use a fake value for the top of the source space.  It is
-// doable, if a bit tricky.
-//
-// A simpler (but less general) solution would fill the remainder of the
-// destination region with a dummy object and continue filling the next
-// destination region.
-
-class SplitInfo
-{
-public:
-  // Return true if this split info is valid (i.e., if a split has been
-  // recorded).  The very first region cannot have a partial object and thus is
-  // never split, so 0 is the 'invalid' value.
-  bool is_valid() const { return _src_region_idx > 0; }
-
-  // Return true if this split holds data for the specified source region.
-  inline bool is_split(size_t source_region) const;
-
-  // The index of the split region, the size of the partial object on that
-  // region and the destination of the partial object.
-  size_t    partial_obj_size() const { return _partial_obj_size; }
-  HeapWord* destination() const      { return _destination; }
-
-  // The destination count of the partial object referenced by this split
-  // (either 1 or 2).  This must be added to the destination count of the
-  // remainder of the source region.
-  unsigned int destination_count() const { return _destination_count; }
-
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of the destination region;
-  // otherwise this is null.
-  HeapWord* dest_region_addr() const     { return _dest_region_addr; }
-
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of that word within the partial
-  // object; otherwise this is null.
-  HeapWord* first_src_addr() const       { return _first_src_addr; }
-
-  // Record the data necessary to split the region src_region_idx.
-  void record(size_t src_region_idx, size_t partial_obj_size,
-              HeapWord* destination);
-
-  void clear();
-
-  DEBUG_ONLY(void verify_clear();)
-
-private:
-  size_t       _src_region_idx;
-  size_t       _partial_obj_size;
-  HeapWord*    _destination;
-  unsigned int _destination_count;
-  HeapWord*    _dest_region_addr;
-  HeapWord*    _first_src_addr;
-};
-
-inline bool SplitInfo::is_split(size_t region_idx) const
-{
-  return _src_region_idx == region_idx && is_valid();
-}
-
 class SpaceInfo
 {
 public:
@@ -182,8 +66,6 @@ public:
   // is no start array.
   ObjectStartArray* start_array() const { return _start_array; }
 
-  SplitInfo& split_info() { return _split_info; }
-
   void set_space(MutableSpace* s)           { _space = s; }
   void set_new_top(HeapWord* addr)          { _new_top = addr; }
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
@@ -194,7 +76,6 @@ private:
   HeapWord*         _new_top;
   HeapWord*         _dense_prefix;
   ObjectStartArray* _start_array;
-  SplitInfo         _split_info;
 };
 
 class ParallelCompactData
@@ -212,136 +93,45 @@ public:
   // Mask for the bits in a pointer to get the address of the start of a region.
   static const size_t RegionAddrMask;
 
-  class RegionData
-  {
+  class RegionData {
+    HeapWord*   _bottom;
+    HeapWord*   _end;
+    HeapWord*   _top;
+    RegionData* _next;
+    size_t      _partial_obj_size;
+    size_t      _live_obj_size;
+    bool        _claimed;
   public:
-    // Destination address of the region.
-    HeapWord* destination() const { return _destination; }
-
-    // The first region containing data destined for this region.
-    size_t source_region() const { return _source_region; }
-
-    // Reuse _source_region to store the corresponding shadow region index
-    size_t shadow_region() const { return _source_region; }
-
-    // The starting address of the partial object extending onto the region.
-    HeapWord* partial_obj_addr() const { return _partial_obj_addr; }
-
-    // Size of the partial object extending onto the region (words).
-    size_t partial_obj_size() const { return _partial_obj_size; }
-
-    // Size of live data that lies within this region due to objects that start
-    // in this region (words).  This does not include the partial object
-    // extending onto the region (if any), or the part of an object that extends
-    // onto the next region (if any).
-    size_t live_obj_size() const { return _dc_and_los & los_mask; }
-
-    // Total live data that lies within the region (words).
-    size_t data_size() const { return partial_obj_size() + live_obj_size(); }
-
-    // The destination_count is the number of other regions to which data from
-    // this region will be copied.  At the end of the summary phase, the valid
-    // values of destination_count are
-    //
-    // 0 - data from the region will be compacted completely into itself, or the
-    //     region is empty.  The region can be claimed and then filled.
-    // 1 - data from the region will be compacted into 1 other region; some
-    //     data from the region may also be compacted into the region itself.
-    // 2 - data from the region will be copied to 2 other regions.
-    //
-    // During compaction as regions are emptied, the destination_count is
-    // decremented (atomically) and when it reaches 0, it can be claimed and
-    // then filled.
-    //
-    // A region is claimed for processing by atomically changing the
-    // destination_count to the claimed value (dc_claimed).  After a region has
-    // been filled, the destination_count should be set to the completed value
-    // (dc_completed).
-    inline uint destination_count() const;
-    inline uint destination_count_raw() const;
-
-    // Whether this region is available to be claimed, has been claimed, or has
-    // been completed.
-    //
-    // Minor subtlety:  claimed() returns true if the region is marked
-    // completed(), which is desirable since a region must be claimed before it
-    // can be completed.
-    bool available() const { return _dc_and_los < dc_one; }
-    bool claimed()   const { return _dc_and_los >= dc_claimed; }
-    bool completed() const { return _dc_and_los >= dc_completed; }
-
-    // These are not atomic.
-    void set_destination(HeapWord* addr)       { _destination = addr; }
-    void set_source_region(size_t region)      { _source_region = region; }
-    void set_shadow_region(size_t region)      { _source_region = region; }
-    void set_partial_obj_addr(HeapWord* addr)  { _partial_obj_addr = addr; }
-    void set_partial_obj_size(size_t words)    {
-      _partial_obj_size = (region_sz_t) words;
+    RegionData() = default;
+    RegionData(HeapWord* bottom, HeapWord* end) :
+      _bottom(bottom),
+      _end(end),
+      _top(nullptr),
+      _next(nullptr),
+      _partial_obj_size(0),
+      _live_obj_size(0),
+      _claimed(false) {
     }
-
-    inline void set_destination_count(uint count);
-    inline void set_live_obj_size(size_t words);
-
-    inline void set_completed();
-    inline bool claim_unsafe();
-
-    // These are atomic.
-    inline void add_live_obj(size_t words);
-    inline void decrement_destination_count();
     inline bool claim();
 
-    // Possible values of _shadow_state, and transition is as follows
-    // Normal Path:
-    // UnusedRegion -> mark_normal() -> NormalRegion
-    // Shadow Path:
-    // UnusedRegion -> mark_shadow() -> ShadowRegion ->
-    // mark_filled() -> FilledShadow -> mark_copied() -> CopiedShadow
-    static const int UnusedRegion = 0; // The region is not collected yet
-    static const int ShadowRegion = 1; // Stolen by an idle thread, and a shadow region is created for it
-    static const int FilledShadow = 2; // Its shadow region has been filled and ready to be copied back
-    static const int CopiedShadow = 3; // The data of the shadow region has been copied back
-    static const int NormalRegion = 4; // The region will be collected by the original parallel algorithm
+    HeapWord* bottom() const { return _bottom; }
+    void set_bottom(HeapWord* bottom) { _bottom = bottom; }
+    HeapWord* end()    const { return _end;    }
+    void set_end(HeapWord* end) { _end = end; }
+    HeapWord* top()    const { return _top;    }
+    void set_top(HeapWord* top) { _top = top;  }
 
-    // Mark the current region as normal or shadow to enter different processing paths
-    inline bool mark_normal();
-    inline bool mark_shadow();
-    // Mark the shadow region as filled and ready to be copied back
-    inline void mark_filled();
-    // Mark the shadow region as copied back to avoid double copying.
-    inline bool mark_copied();
-    // Special case: see the comment in PSParallelCompact::fill_and_update_shadow_region.
-    // Return to the normal path here
-    inline void shadow_to_normal();
+    RegionData* next() const { return _next;   }
+    void set_next(RegionData* next) { _next = next; }
 
+    size_t partial_obj_size() const     { return _partial_obj_size; }
+    void set_partial_obj_size(size_t s) { _partial_obj_size = s;    }
 
-    int shadow_state() { return _shadow_state; }
+    // Total live data that lies within the region (words).
+    size_t data_size() const { return _partial_obj_size + _live_obj_size; }
 
-  private:
-    // The type used to represent object sizes within a region.
-    typedef uint region_sz_t;
-
-    // Constants for manipulating the _dc_and_los field, which holds both the
-    // destination count and live obj size.  The live obj size lives at the
-    // least significant end so no masking is necessary when adding.
-    static const region_sz_t dc_shift;           // Shift amount.
-    static const region_sz_t dc_mask;            // Mask for destination count.
-    static const region_sz_t dc_one;             // 1, shifted appropriately.
-    static const region_sz_t dc_claimed;         // Region has been claimed.
-    static const region_sz_t dc_completed;       // Region has been completed.
-    static const region_sz_t los_mask;           // Mask for live obj size.
-
-    HeapWord*            _destination;
-    size_t               _source_region;
-    HeapWord*            _partial_obj_addr;
-    region_sz_t          _partial_obj_size;
-    region_sz_t volatile _dc_and_los;
-    int         volatile _shadow_state;
-
-#ifdef ASSERT
-   public:
-    uint                 _pushed;   // 0 until region is pushed onto a stack
-   private:
-#endif
+    inline void set_live_obj_size(size_t words) { _live_obj_size = words; }
+    inline void add_live_obj(size_t words) { Atomic::add(&_live_obj_size, words); }
   };
 
 public:
@@ -360,18 +150,10 @@ public:
   // beg and end must be region-aligned.
   void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
 
-  HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
-                                  HeapWord* destination, HeapWord* target_end,
-                                  HeapWord** target_next);
-
   size_t live_words_in_space(const MutableSpace* space,
                              HeapWord** full_region_prefix_end = nullptr);
 
-  bool summarize(SplitInfo& split_info,
-                 HeapWord* source_beg, HeapWord* source_end,
-                 HeapWord** source_next,
-                 HeapWord* target_beg, HeapWord* target_end,
-                 HeapWord** target_next);
+  void summarize();
 
   void clear_range(size_t beg_region, size_t end_region);
   void clear_range(HeapWord* beg, HeapWord* end) {
@@ -412,90 +194,9 @@ private:
   size_t          _region_count;
 };
 
-inline uint
-ParallelCompactData::RegionData::destination_count_raw() const
-{
-  return _dc_and_los & dc_mask;
-}
-
-inline uint
-ParallelCompactData::RegionData::destination_count() const
-{
-  return destination_count_raw() >> dc_shift;
-}
-
-inline void
-ParallelCompactData::RegionData::set_destination_count(uint count)
-{
-  assert(count <= (dc_completed >> dc_shift), "count too large");
-  const region_sz_t live_sz = (region_sz_t) live_obj_size();
-  _dc_and_los = (count << dc_shift) | live_sz;
-}
-
-inline void ParallelCompactData::RegionData::set_live_obj_size(size_t words)
-{
-  assert(words <= los_mask, "would overflow");
-  _dc_and_los = destination_count_raw() | (region_sz_t)words;
-}
-
-inline void ParallelCompactData::RegionData::decrement_destination_count()
-{
-  assert(_dc_and_los < dc_claimed, "already claimed");
-  assert(_dc_and_los >= dc_one, "count would go negative");
-  Atomic::add(&_dc_and_los, dc_mask);
-}
-
-inline void ParallelCompactData::RegionData::set_completed()
-{
-  assert(claimed(), "must be claimed first");
-  _dc_and_los = dc_completed | (region_sz_t) live_obj_size();
-}
-
-// MT-unsafe claiming of a region.  Should only be used during single threaded
-// execution.
-inline bool ParallelCompactData::RegionData::claim_unsafe()
-{
-  if (available()) {
-    _dc_and_los |= dc_claimed;
-    return true;
-  }
-  return false;
-}
-
-inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
-{
-  assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
-}
-
 inline bool ParallelCompactData::RegionData::claim()
 {
-  const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
-  const region_sz_t old = Atomic::cmpxchg(&_dc_and_los, los, dc_claimed | los);
-  return old == los;
-}
-
-inline bool ParallelCompactData::RegionData::mark_normal() {
-  return Atomic::cmpxchg(&_shadow_state, UnusedRegion, NormalRegion) == UnusedRegion;
-}
-
-inline bool ParallelCompactData::RegionData::mark_shadow() {
-  if (_shadow_state != UnusedRegion) return false;
-  return Atomic::cmpxchg(&_shadow_state, UnusedRegion, ShadowRegion) == UnusedRegion;
-}
-
-inline void ParallelCompactData::RegionData::mark_filled() {
-  int old = Atomic::cmpxchg(&_shadow_state, ShadowRegion, FilledShadow);
-  assert(old == ShadowRegion, "Fail to mark the region as filled");
-}
-
-inline bool ParallelCompactData::RegionData::mark_copied() {
-  return Atomic::cmpxchg(&_shadow_state, FilledShadow, CopiedShadow) == FilledShadow;
-}
-
-void ParallelCompactData::RegionData::shadow_to_normal() {
-  int old = Atomic::cmpxchg(&_shadow_state, ShadowRegion, NormalRegion);
-  assert(old == ShadowRegion, "Fail to mark the region as finish");
+  Unimplemented();
 }
 
 inline ParallelCompactData::RegionData*
@@ -750,9 +451,6 @@ private:
   // Move objects to new locations.
   static void compact();
 
-  // Add available regions to the stack and draining tasks to the task queue.
-  static void prepare_region_draining_tasks(uint parallel_gc_threads);
-
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
 public:
@@ -894,8 +592,6 @@ public:
   // whichever is smaller, starting at source(). The start array is not
   // updated.
   void copy_partial_obj(size_t partial_obj_size);
-
-  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 };
 
 inline void MoveAndUpdateClosure::decrement_words_remaining(size_t words) {
@@ -932,8 +628,6 @@ class MoveAndUpdateShadowClosure: public MoveAndUpdateClosure {
   inline size_t calculate_shadow_offset(size_t region_idx, size_t shadow_idx);
 public:
   inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow);
-
-  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 
 private:
   size_t _shadow;

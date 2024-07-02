@@ -69,7 +69,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   OopTaskQueue                  _oop_stack;
   ObjArrayTaskQueue             _objarray_stack;
-  size_t                        _next_shadow_region;
 
   // Is there a way to reuse the _oop_stack for the
   // saving empty regions?  For now just create a different
@@ -80,14 +79,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   PreservedMarks* _preserved_marks;
 
   static ParMarkBitMap* _mark_bitmap;
-
-  // Contains currently free shadow regions. We use it in
-  // a LIFO fashion for better data locality and utilization.
-  static GrowableArray<size_t>* _shadow_region_array;
-
-  // Provides mutual exclusive access of _shadow_region_array.
-  // See pop/push_shadow_region_mt_safe() below
-  static Monitor*               _shadow_region_monitor;
 
   StringDedup::Requests _string_dedup_requests;
 
@@ -139,17 +130,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
 public:
   static const size_t InvalidShadow = ~0;
-  static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
-  static void    push_shadow_region_mt_safe(size_t shadow_region);
-  static void    push_shadow_region(size_t shadow_region);
-  static void    remove_all_shadow_regions();
-
-  inline size_t  next_shadow_region() { return _next_shadow_region; }
-  inline void    set_next_shadow_region(size_t record) { _next_shadow_region = record; }
-  inline size_t  move_next_shadow_region_by(size_t workers) {
-    _next_shadow_region += workers;
-    return next_shadow_region();
-  }
 
   void flush_string_dedup_requests() {
     _string_dedup_requests.flush();
@@ -172,7 +152,6 @@ public:
   // Save for later processing.  Must not fail.
   inline void push(oop obj);
   inline void push_objarray(oop objarray, size_t index);
-  inline void push_region(size_t index);
 
   // Check mark and maybe push on marking stack.
   template <typename T> inline void mark_and_push(T* p);
