@@ -96,9 +96,6 @@ inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
   if ((shifted_bitmap >> highest_bit_number) == 0) {
-#ifndef PRODUCT
-    neg_fast_ctr++;
-#endif // PRODUCT
     return false;
   }
 
@@ -108,10 +105,6 @@ inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
     // Yes! It worked the first time.
     return true;
   }
-
-#ifndef PRODUCT
-    neg_slow_ctr++;
-#endif // PRODUCT
 
   // Is there another entry to check? Consult the bitmap. If Bit 1,
   // the next bit to test, is zero, we are certain that super_klass is
@@ -138,11 +131,6 @@ inline bool Klass::search_secondary_supers(Klass *k) const {
     if (linear_result != result) {
       on_secondary_supers_verification_failure((Klass*)this, k, linear_result, result, "mismatch");
     }
-  }
-
-  switch (result) {
-    case true: pos_ctr++;
-    case false: neg_ctr++;
   }
 #endif // PRODUCT
 
