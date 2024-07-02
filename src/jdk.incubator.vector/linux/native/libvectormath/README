@@ -1,0 +1,41 @@
+# Maintenance notes for importing SLEEF source code
+
+## Motivation
+When importing files from SLEEF, please follow below steps.
+
+## Steps of maintenance
+
+### Step 1: Clone the SLEEF repository
+Location: https://github.com/shibatch/sleef
+
+### Step 2: Build SLEEF
+There's a `make/devkit/createSleef.sh` helper script which can be used to build SLEEF. In particular, it includes cross-compilation functionality.
+
+If not using the helper script, the build steps can be found here: https://github.com/shibatch/sleef?tab=readme-ov-file#how-to-build-sleef
+
+NOTE: The following cmake options are necessary when building SLEEF:
+* -DSLEEF_BUILD_INLINE_HEADERS=ON
+* -DSLEEF_ENFORCE_SVE=ON
+
+### Step 3: Import the SLEEF files into the JDK
+
+SLEEF source:
+
+* ${SLEEF_SRC_DIR}/common/misc.h
+
+Generated files (aarch64):
+
+* ${SLEEF_BUILD_DIR}/include/sleefinline_advsimd.h
+* ${SLEEF_BUILD_DIR}/include/sleefinline_sve.h
+
+Generated files (riscv64):
+
+* ${SLEEF_BUILD_DIR}/include/sleefinline_rvvm1.h
+
+JDK target dir:
+* ${JDK_SRC_DIR}/jdk.incubator.vector/linux/native/libvectormath/
+
+### Step 4: Make necessary changes to resolve any build issues in case there is any
+
+Currently, the only necessary change is:
+* make `Sleef_rempitabdp` and `Sleef_rempitabsp` in sleefinline_advsimd.h and sleefinline_sve.h `static` to avoid multiple definitions.
