@@ -146,6 +146,7 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _wrote_final        = false;
   _wrote_fields       = false;
   _wrote_volatile     = false;
+  _wrote_stable       = false;
   _start              = nullptr;
 
   if (osr_bci != -1) {

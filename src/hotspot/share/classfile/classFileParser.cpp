@@ -1970,7 +1970,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
-      if (!privileged)              break;  // only allow in privileged code
+      if (RestrictStable && !privileged) break;  // only allow in privileged code
       return _field_Stable;
     }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
