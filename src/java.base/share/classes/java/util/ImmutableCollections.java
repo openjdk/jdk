@@ -1309,7 +1309,7 @@ class ImmutableCollections {
 
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
-            return new AbstractSet<>() {
+            return new AbstractImmutableSet<>() {
                 @Override
                 public int size() {
                     return MapN.this.size;
@@ -1318,6 +1318,11 @@ class ImmutableCollections {
                 @Override
                 public Iterator<Map.Entry<K,V>> iterator() {
                     return new MapNIterator();
+                }
+
+                @Override
+                public int hashCode() {
+                    return MapN.this.hashCode();
                 }
             };
         }
