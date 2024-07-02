@@ -699,7 +699,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
     addw(tmp5, jv, 1);                    // jv+1
     subsw(j, jv, jx);
     add(qBase, sp, 320);                  // base of q[]
-    msubw(rscratch1, i, tmp5, rscratch1); // q0 =  e0-24*(jv+1)
+    msubw(rscratch1, i, tmp5, rscratch1, rscratch2); // q0 =  e0-24*(jv+1)
     // use double f[20], fq[20], q[20], iq[20] on stack, which is
     // (20 + 20 + 20) x 8 + 20 x 4 = 560 bytes. From lower to upper addresses it
     // will contain f[20], fq[20], q[20], iq[20]

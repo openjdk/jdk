@@ -114,6 +114,13 @@ enum Ampere_CPU_Model {
     CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
 };
 
+enum Neoverse_CPU_Model {
+    CPU_MODEL_NEOVERSE_N1 = 0xd0c,
+    CPU_MODEL_NEOVERSE_N2 = 0xd49,
+    CPU_MODEL_NEOVERSE_V1 = 0xd40,
+    CPU_MODEL_NEOVERSE_V2 = 0xd4f,
+};
+
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
     decl(ASIMD,         asimd,         1)     \
@@ -154,6 +161,23 @@ enum Ampere_CPU_Model {
 
   static bool model_is(int cpu_model) {
     return _model == cpu_model || _model2 == cpu_model;
+  }
+
+
+  static bool is_neoverse() {
+    switch(_model) {
+      case CPU_MODEL_NEOVERSE_N1:
+      case CPU_MODEL_NEOVERSE_N2:
+      case CPU_MODEL_NEOVERSE_V1:
+      case CPU_MODEL_NEOVERSE_V2:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static bool is_neoverse_v_series() {
+    return (model_is(CPU_MODEL_NEOVERSE_V1) || model_is(CPU_MODEL_NEOVERSE_V2));
   }
 
   static bool is_zva_enabled() { return 0 <= _zva_length; }
