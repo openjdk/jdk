@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ class TransformTests {
         ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo))), "foo");
-        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar))), "bar");
+        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2foo))), "foo");
+        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar))), "bar");
     }
 
     @Test
@@ -110,7 +110,7 @@ class TransformTests {
 
         assertEquals(invoke(bytes), "foo");
         ClassTransform transform = transformCode(foo2bar.andThen(bar2baz));
-        assertEquals(invoke(cc.transform(cm, transform)), "baz");
+        assertEquals(invoke(cc.transformClass(cm, transform)), "baz");
     }
 
     @Test
@@ -121,9 +121,9 @@ class TransformTests {
         ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
-        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
-        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
+        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
+        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
     }
 
     public static class TestClass {

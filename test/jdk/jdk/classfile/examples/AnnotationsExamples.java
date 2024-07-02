@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class AnnotationsExamples {
     public byte[] addAnno(ClassModel m) {
         // @@@ Not correct
         List<Annotation> annos = List.of(Annotation.of(ClassDesc.of("java.lang.FunctionalInterface")));
-        return ClassFile.of().transform(m, ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
+        return ClassFile.of().transformClass(m, ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
     }
 
     /**
@@ -75,7 +75,7 @@ public class AnnotationsExamples {
             var cc = ClassFile.of();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/annotation/Documented;")) {
-                    m2 = cc.parse(cc.transform(m, SWAP_ANNO_TRANSFORM));
+                    m2 = cc.parse(cc.transformClass(m, SWAP_ANNO_TRANSFORM));
                 }
             }
         }
@@ -119,7 +119,7 @@ public class AnnotationsExamples {
             var cc = ClassFile.of();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/FunctionalInterface;")) {
-                    m2 = cc.parse(cc.transform(m, (cb, ce) -> {
+                    m2 = cc.parse(cc.transformClass(m, (cb, ce) -> {
                         if (ce instanceof RuntimeVisibleAnnotationsAttribute ra) {
                             var oldAnnos = ra.annotations();
                             List<Annotation> newAnnos = new ArrayList<>(oldAnnos.size() + 1);
@@ -145,7 +145,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassBuilderEdition(ClassModel m) {
-        return ClassFile.of().transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
+        return ClassFile.of().transformClass(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override
@@ -172,7 +172,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassTransformEdition(ClassModel m) {
-        return ClassFile.of().transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
+        return ClassFile.of().transformClass(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override

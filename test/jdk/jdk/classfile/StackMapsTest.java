@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ class StackMapsTest {
         var actualVersion = cc.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
-        var version49 = cc.parse(cc.transform(
+        var version49 = cc.parse(cc.transformClass(
                                     actualVersion,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
@@ -229,7 +229,7 @@ class StackMapsTest {
                                 .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(cc.verify(cc.transform(
+         assertEmpty(cc.verify(cc.transformClass(
                                     version49,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))));

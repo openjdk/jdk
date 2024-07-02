@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ public class SerialPersistentFieldsTest {
                                             ObjectStreamField[] spf) {
         var cf = ClassFile.of();
         var model = cf.parse(classBytes);
-        return cf.transform(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
+        return cf.transformClass(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }
 
     /** A visitor that adds a serialPersistentFields field, and assigns it in clinit. */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class BadClassfile {
     private static void test(String classname, String expected) throws Exception {
         File classfile = new File(System.getProperty("test.classes", "."), classname + ".class");
         ClassModel cf = ClassFile.of().parse(classfile.toPath());
-        ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ClassFileVersion)
+        ClassFile.of().transformClass(cf, ClassTransform.dropping(ce -> ce instanceof ClassFileVersion)
                 .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.withVersion(Target.JDK1_7.majorVersion, Target.JDK1_7.minorVersion))));
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) c.getTask(null, null, null, Arrays.asList("-classpath", System.getProperty("test.classes", ".")), null, null);

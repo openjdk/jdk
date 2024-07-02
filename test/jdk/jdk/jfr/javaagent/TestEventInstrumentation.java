@@ -116,7 +116,7 @@ public class TestEventInstrumentation {
                 }
 
                 var cf = ClassFile.of();
-                result = cf.transform(cf.parse(bytes), (clb, ce) -> {
+                result = cf.transformClass(cf.parse(bytes), (clb, ce) -> {
                     if (ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)) {
                         clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {
                             @Override
