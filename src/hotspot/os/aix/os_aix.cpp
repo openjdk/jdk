@@ -113,6 +113,7 @@
 #error Hotspot on AIX must be compiled with -D_LARGE_FILES
 #endif
 
+#define ERROR_NO_SUCH_FILE "No such file or directory"
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
@@ -1051,7 +1052,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   result = dll_load_library(filename, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+  if (result == nullptr && strstr(ebuf, ERROR_NO_SUCH_FILE) != nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
     snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
     result = dll_load_library(file_path, ebuf, ebuflen);
   }
