@@ -131,7 +131,7 @@ class MutableBigInteger {
 
     private void init(int val) {
         value = new int[1];
-        intLen = 1;
+        intLen = val != 0 ? 1 : 0;
         value[0] = val;
     }
 
