@@ -36,19 +36,22 @@ class CgroupV1Controller: public CgroupController {
     /* mountinfo contents */
     char *_root;
     char *_mount_point;
+    bool _read_only;
 
     /* Constructed subsystem directory */
     char *_path;
 
   public:
-    CgroupV1Controller(char *root, char *mountpoint) {
+    CgroupV1Controller(char *root, char *mountpoint, bool ro) {
       _root = os::strdup(root);
       _mount_point = os::strdup(mountpoint);
       _path = nullptr;
+      _read_only = ro;
     }
 
     virtual void set_subsystem_path(char *cgroup_path);
     char *subsystem_path() { return _path; }
+    bool is_read_only() { return _read_only; }
 };
 
 class CgroupV1MemoryController: public CgroupV1Controller {
@@ -65,7 +68,7 @@ class CgroupV1MemoryController: public CgroupV1Controller {
     void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
 
   public:
-    CgroupV1MemoryController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
+    CgroupV1MemoryController(char *root, char *mountpoint, bool ro) : CgroupV1Controller(root, mountpoint, ro) {
       _uses_mem_hierarchy = false;
     }
 
@@ -97,6 +100,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
     jlong pids_max();
     jlong pids_current();
+    bool is_containerized();
 
     void print_version_specific_info(outputStream* st);
 
