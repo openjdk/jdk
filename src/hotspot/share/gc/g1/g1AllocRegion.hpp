@@ -89,6 +89,8 @@ protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
 
+  void set(G1HeapRegion* alloc_region);
+
   // Reset the alloc region to point the dummy region.
   void reset_alloc_region();
 
@@ -154,12 +156,6 @@ public:
 
   // Should be called before we start using this object.
   virtual void init();
-
-  // This can be used to set the active region to a specific
-  // region. (Use Example: we try to retain the last old GC alloc
-  // region that we've used during a GC and we can use set() to
-  // re-instate it at the beginning of the next GC.)
-  void set(G1HeapRegion* alloc_region);
 
   // Should be called when we want to release the active region which
   // is returned after it's been retired.
@@ -238,9 +234,8 @@ protected:
     assert(stats != nullptr, "Must pass non-null PLAB statistics");
   }
 public:
-  // This can be used to set the active region to a specific
-  // region. (Use Example: we try to retain the last old GC alloc
-  // region that we've used during a GC and we can use set() to
+  // This can be used to reuse a specific region. (Use Example: we try to retain the
+  // last old GC alloc region that we've used during a GC and we can use reuse() to
   // re-instate it at the beginning of the next GC.)
   void reuse(G1HeapRegion* alloc_region);
 };

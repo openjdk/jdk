@@ -184,8 +184,8 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
 }
 
 inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
-                                          size_t desired_word_size,
-                                          size_t* actual_word_size) {
+                                            size_t desired_word_size,
+                                            size_t* actual_word_size) {
   do {
     HeapWord* obj = top();
     size_t available = pointer_delta(end(), obj);
@@ -213,8 +213,8 @@ inline HeapWord* G1HeapRegion::allocate(size_t word_size) {
 }
 
 inline HeapWord* G1HeapRegion::allocate(size_t min_word_size,
-                                      size_t desired_word_size,
-                                      size_t* actual_word_size) {
+                                        size_t desired_word_size,
+                                        size_t* actual_word_size) {
   HeapWord* obj = top();
   size_t available = pointer_delta(end(), obj);
   size_t want_to_allocate = MIN2(available, desired_word_size);
