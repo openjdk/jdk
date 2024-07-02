@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,13 @@ static NSTimeInterval gsLastClickTime;
 static int gsEventNumber;
 static int* gsButtonEventNumber;
 static NSTimeInterval gNextKeyEventTime;
+static CGEventFlags initFlags;
+static CGEventFlags allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
+                              | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
+                              | kCGEventFlagMaskAlphaShift | kCGEventFlagMaskSecondaryFn;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
+static inline int GetCGKeyMask(int cgKeyCode);
 
 static void PostMouseEvent(const CGPoint point, CGMouseButton button,
                            CGEventType type, int clickCount, int eventNumber);
@@ -121,6 +126,13 @@ Java_sun_lwawt_macosx_CRobot_initRobot
             jboolean copy = JNI_FALSE;
 
             setupDone = 1;
+            // initialize CGEventFlags here - which is used in keyEvent
+            initFlags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+
+            // Clear Function flag bits if they are set
+            if ((initFlags & kCGEventFlagMaskSecondaryFn) != 0) {
+                initFlags ^= kCGEventFlagMaskSecondaryFn;
+            }
             // Don't block local events after posting ours
             CGSetLocalEventsSuppressionInterval(0.0);
 
@@ -291,12 +303,25 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
         CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
         CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
         CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
+
         if (event != NULL) {
-            CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            if ((flags & kCGEventFlagMaskSecondaryFn) != 0) {
-                flags ^= kCGEventFlagMaskSecondaryFn;
-                CGEventSetFlags(event, flags);
+            int flagMaskValue = GetCGKeyMask(keyCode);
+            if (OSX_Undefined != flagMaskValue) {
+                if (keyCode == OSX_CapsLock) {
+                    if (keyPressed) {
+                        initFlags ^= flagMaskValue;
+                    }
+                } else {
+                    initFlags = keyPressed
+                                ? (initFlags | flagMaskValue)    // add flag bits if modifier key pressed
+                                : (initFlags & ~flagMaskValue);  // clear flag bits if modifier key released
+                }
             }
+
+            CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+            flags = (initFlags & allModifiersMask) | (flags & (~allModifiersMask));
+            CGEventSetFlags(event, flags);
+
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
         }
@@ -396,6 +421,12 @@ static inline CGKeyCode GetCGKeyCode(jint javaKeyCode)
 {
     CRobotKeyCodeMapping *keyCodeMapping = [CRobotKeyCodeMapping sharedInstance];
     return [keyCodeMapping getOSXKeyCodeForJavaKey:javaKeyCode];
+}
+
+static inline int GetCGKeyMask(int cgKeyCode)
+{
+    CRobotKeyCodeMapping *keyCodeMapping = [CRobotKeyCodeMapping sharedInstance];
+    return [keyCodeMapping getFlagMaskForCGKey:cgKeyCode];
 }
 
 static int GetClickCount(BOOL isDown) {
