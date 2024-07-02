@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,10 @@ import java.util.Objects;
  * file system. {@code Path} defines the {@link #getFileName() getFileName},
  * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath
  * subpath} methods to access the path components or a subsequence of its name
- * elements.
+ * elements, {@link #getExtension() getExtension} to obtain its file name
+ * extension, and {@link #withoutExtension withoutExtension} and
+ * {@link #withExtension withExtension} to remove or alter the extension,
+ * respectively.
  *
  * <p> In addition to accessing the components of a path, a {@code Path} also
  * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)
@@ -248,6 +251,179 @@ public interface Path
      *          {@code null} if this path has zero elements
      */
     Path getFileName();
+
+    /**
+     * Returns the file extension of this path's file name as a {@code String}.
+     * The extension is acquired from this {@code Path} by obtaining the file
+     * name element, locating the position of the last period character
+     * ('.', U+002E FULL STOP) within the file name element, and then extracting
+     * the portion of the file name element after the last period as a string.
+     * If the file name element is {@code null}, the file name does not contain
+     * a period, the last character in the file name is a period, or the content
+     * of the file name before the last period is empty, then the extension is
+     * {@linkplain String#isEmpty empty}.
+     *
+     * <p> A typical case is where a file name contains a single period
+     * character followed by an extension which usually indicates the contents
+     * or purpose of the file. For example, a file named {@code "archive.zip"}
+     * has extension {@code "zip"} which signals that the file is in the
+     * <i>ZIP</i> losslessly compressed archive file format.
+     *
+     * <p> A compound file name extension has two or more concatenated
+     * extensions such as in {@code "archive.tar.gz"}, which signifies that
+     * the file is an archive file ({@code "tar"}) losslessly compressed
+     * according to the <i>gzip</i> format.
+     *
+     * @implSpec
+     * The default implementation is in most cases equivalent for this path to:
+     * {@snippet lang="java" :
+     *     int lastPeriod = fileNameString.lastIndexOf('.');
+     *     return lastPeriod <= 0
+     *        ? ""
+     *        : fileNameString.substring(lastPeriod + 1);
+     * }
+     *
+     * @return  the file name extension of this path, which might be the
+     *          {@linkplain String#isEmpty empty string}
+     *
+     * @see #withExtension
+     * @see #withoutExtension
+     *
+     * @since 24
+     */
+    default String getExtension() {
+        Path fileName = getFileName();
+        if (fileName == null)
+            return "";
+
+        String fileNameString = fileName.toString();
+        int lastPeriodIndex = fileNameString.lastIndexOf('.');
+
+        if (lastPeriodIndex <= 0)
+            return "";
+
+        // If lastPeriodIndex == fileNameString.length() - 1 then "" is returned
+        return fileNameString.substring(lastPeriodIndex + 1);
+    }
+
+    /**
+     * Returns a {@code Path} with the same sequence of elements as this
+     * path, but with no file name extension. If this path has no extension,
+     * then the path is returned unchanged.
+     *
+     * <p> For example, an audio track's extension might be removed as:
+     * {@snippet lang="java" :
+     *     Path music = Path.of("library/audio/track.flac");
+     *     Path noise = music.withoutExtension();
+     * }
+     * where {@code noise.toString()} would return
+     * {@code "library/audio/track"}.
+     *
+     * <p> A compound extension may be replaced by invoking this method and
+     * then the {@linkplain #withExtension withExtension} method on the result.
+     * For example, to convert the {@code "tar.gz"} compound extension
+     * to {@code "zip"}:
+     * {@snippet lang="java" :
+     *    Path p = Path.of("archive.tar.gz");
+     *    Path q = p.withoutExtension().withExtension("zip");
+     * }
+     * where {@code q.toString()} would return {@code "archive.zip"}.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * {@snippet lang="java" :
+     *     if (getExtension().isEmpty()) {
+     *         return this;
+     *     } else {
+     *         String str = getFileName().toString();
+     *         return resolveSibling(str.substring(0,
+     *                               str.length() - ext.length() - 1));
+     *     }
+     * }
+     *
+     * @return the resulting path or this path if it does not contain a file
+     *         name extension
+     *
+     * @see #getExtension
+     * @see #withExtension
+     *
+     * @since 24
+     */
+    default Path withoutExtension() {
+        String ext = getExtension();
+        if (ext.isEmpty())
+            return this;
+        String str = getFileName().toString();
+        return resolveSibling(str.substring(0, str.length() - ext.length() - 1));
+    }
+
+    /**
+     * Returns a {@code Path} with the same sequence of elements as this path,
+     * but with an altered file name extension. If the specified extension is
+     * non-{@linkplain String#isEmpty empty}, then a {@code '.'} and then
+     * {@code extension} are appended to the path returned by
+     * {@linkplain #withoutExtension wihoutExtension}, otherwise the path
+     * returned by {@linkplain #withoutExtension wihoutExtension} is returned.
+     *
+     * <p> For example, an audio track's extension might be changed as:
+     * {@snippet lang="java" :
+     *     Path lossless = Path.of("library/audio/track.flac");
+     *     Path lossy = lossless.withExtension("mp3");
+     * }
+     * where {@code lossy.toString()} would return
+     * {@code "library/audio/track.mp3"}.
+     *
+     * <p> A compound extension may be formed by appending an additional
+     * extension as:
+     * {@snippet lang="java" :
+     *     Path p = Path.of("archive.tar");
+     *     Path q = p.withExtension(p.getExtension() + "." + "gz");
+     * }
+     * where {@code q.toString()} would return {@code "archive.tar.gz"}.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     *
+     * {@snippet lang="java" :
+     *     Path p = withoutExtension();
+     *     if (extension == null || extension.isEmpty()) {
+     *         return p;
+     *     } else {
+     *         return p.resolveSibling(p.getFileName() + "." + extension);
+     *     }
+     * }
+     *
+     * This method must satisfy the invariant:
+     * {@snippet lang="java" :
+     *     assert equals(withExtension(getExtension()));
+     * }
+     *
+     * @param extension
+     *        the extension to append
+     *
+     * @return a {@code Path} with the requested extension replacing the
+     *         existing extension, if any
+     *
+     * @throws IllegalArgumentException
+     *         if {@code extension} starts with a period character
+     *
+     * @see #getExtension
+     * @see #withoutExtension
+     *
+     * @since 24
+     */
+    default Path withExtension(String extension) {
+        Objects.requireNonNull(extension);
+
+        if (extension.startsWith("."))
+            throw new IllegalArgumentException("extension starts with '.'");
+
+        Path path = withoutExtension();
+        if (extension.isEmpty())
+            return path;
+
+        return path.resolveSibling(path.getFileName() + "." + extension);
+    }
 
     /**
      * Returns the <em>parent path</em>, or {@code null} if this path does not
