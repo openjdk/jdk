@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
  * @test
  * @bug 8251496
  * @summary Tests for methods in Authenticator
- * @run testng/othervm AuthenticatorTest
+ * @run junit AuthenticatorTest
  */
 
 import com.sun.net.httpserver.Authenticator;
-import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpPrincipal;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class AuthenticatorTest {
@@ -50,11 +50,11 @@ public class AuthenticatorTest {
     }
 
     @Test
-    public void TestSuccess() {
+    public void testSuccess() {
         var principal = new HttpPrincipal("test", "123");
         var successResult = new Authenticator.Success(principal);
         assertEquals(successResult.getPrincipal(), principal);
-        assertEquals("test", principal.getName());
+        assertEquals("test", principal.getUsername());
         assertEquals("123", principal.getRealm());
     }
 }
