@@ -24,8 +24,8 @@
  */
 package jdk.tools.jlink.plugin;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -68,7 +68,21 @@ public interface ResourcePoolEntry {
         MAN_PAGE,
         NATIVE_CMD,
         NATIVE_LIB,
-        TOP
+        TOP;
+
+        public static Type fromOrdinal(int value) {
+            Type retval = null;
+            for (Type v: Type.values()) {
+                if (v.ordinal() == value) {
+                    retval = v;
+                    break;
+                }
+            }
+            if (retval == null) {
+                throw new IllegalArgumentException("Illegal ordinal: " + value);
+            }
+            return retval;
+        }
     }
 
     /**

@@ -21,6 +21,9 @@
  * questions.
  */
 
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+
 import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.MethodTypeDesc;
@@ -32,19 +35,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-
 /*
- * @test
+ * @test id=packaged_modules
  * @bug 8252919 8327499
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
@@ -54,16 +54,37 @@ import static java.lang.constant.ConstantDescs.CD_int;
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
+ * @requires jlink.packagedModules
  * @build tests.*
- * @run testng/othervm GenerateJLIClassesPluginTest
+ * @run testng/othervm -DlinkableRuntime=false GenerateJLIClassesPluginTest
+ */
+
+/*
+ * @test id=linkable_jdk_runtimes
+ * @bug 8252919 8327499
+ * @library ../../lib
+ * @summary Test --generate-jli-classes plugin
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.internal.plugins
+ *          jdk.jlink/jdk.tools.jmod
+ *          jdk.jlink/jdk.tools.jimage
+ * @requires (jlink.runtime.linkable & !jlink.packagedModules)
+ * @build tests.*
+ * @run testng/othervm -DlinkableRuntime=true GenerateJLIClassesPluginTest
  */
 public class GenerateJLIClassesPluginTest {
 
+    private static final String LINKABLE_RUNTIME_PROP = "linkableRuntime";
     private static Helper helper;
 
     @BeforeTest
     public static void setup() throws Exception {
-        helper = Helper.newHelper();
+        boolean isLinkableRuntime = Boolean.getBoolean(LINKABLE_RUNTIME_PROP);
+        System.out.println("Tests run on " +
+                           (isLinkableRuntime ? "linkable JDK runtime." : "packaged modules."));
+        helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             System.err.println("Test not run");
             return;
