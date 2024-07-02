@@ -1843,9 +1843,9 @@ encode %{
     Label miss;
     const bool set_cond_codes = true;
 
-    __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
-                                     nullptr, &miss,
-                                     /*set_cond_codes:*/ true);
+    __ check_klass_subtype_slow_path_linear(Rrsi, Rrax, Rrcx, Rrdi,
+                                            nullptr, &miss,
+                                            /*set_cond_codes:*/ true);
     if ($primary) {
       __ xorptr(Rrdi, Rrdi);
     }
