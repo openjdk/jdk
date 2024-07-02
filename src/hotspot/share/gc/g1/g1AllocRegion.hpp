@@ -63,11 +63,6 @@ private:
   // distinct regions this object can used during an active interval.
   uint _count;
 
-  // When we set up a new active region we save its used bytes in this
-  // field so that, when we retire it, we can calculate how much space
-  // we allocated in it.
-  size_t _used_bytes_before;
-
   // Useful for debugging and tracing.
   const char* _name;
 
@@ -224,6 +219,9 @@ public:
 
 // Common base class for allocation regions used during GC.
 class G1GCAllocRegion : public G1AllocRegion {
+  // When we set up a new active region we save its used bytes in this
+  // field so that, when we retire it, we can calculate how much space
+  // we allocated in it.
   size_t _used_bytes_before;
 protected:
   G1EvacStats* _stats;
