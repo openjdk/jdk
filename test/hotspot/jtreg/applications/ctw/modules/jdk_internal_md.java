@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @bug 8251093
- * @summary Sanity check the flag TraceLinearScanLevel with the highest level in a silent HelloWorld program.
+ * @summary run CTW for all classes from jdk.internal.md module
  *
- * @requires vm.debug == true & vm.compiler1.enabled & vm.compMode != "Xcomp"
- * @run main/othervm -Xbatch -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
+ * @library /test/lib / /testlibrary/ctw/src
+ * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.jimage
+ *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.reflect
+ * @modules jdk.internal.md
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.internal.md
  */
-package compiler.c1;
-
-public class TestTraceLinearScanLevel {
-    public static void main(String[] strArr) {
-    }
-}
-

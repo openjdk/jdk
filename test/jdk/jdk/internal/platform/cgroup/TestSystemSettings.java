@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,23 @@
 
 /*
  * @test
- * @bug 8251093
- * @summary Sanity check the flag TraceLinearScanLevel with the highest level in a silent HelloWorld program.
- *
- * @requires vm.debug == true & vm.compiler1.enabled & vm.compMode != "Xcomp"
- * @run main/othervm -Xbatch -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
+ * @key cgroups
+ * @requires os.family == "linux"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @build TestSystemSettings
+ * @run main/othervm TestSystemSettings
  */
-package compiler.c1;
 
-public class TestTraceLinearScanLevel {
-    public static void main(String[] strArr) {
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class TestSystemSettings {
+
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.shouldContain("System not containerized.");
     }
 }
-
