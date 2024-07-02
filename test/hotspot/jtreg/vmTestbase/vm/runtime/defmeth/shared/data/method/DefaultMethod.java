@@ -25,8 +25,9 @@ package vm.runtime.defmeth.shared.data.method;
 
 import vm.runtime.defmeth.shared.Printer;
 import vm.runtime.defmeth.shared.data.method.body.MethodBody;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.data.Visitor;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * Represents default method - non-abstract method in an interface.
@@ -40,7 +41,7 @@ public class DefaultMethod extends Method {
     }
 
     private DefaultMethod(String name, String desc, String sig, MethodBody body) {
-        super(Opcodes.ACC_PUBLIC, name, desc, sig);
+        super(ACC_PUBLIC, name, desc, sig);
         this.body = body;
     }
 

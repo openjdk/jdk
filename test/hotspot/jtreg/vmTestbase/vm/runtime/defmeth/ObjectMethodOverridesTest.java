@@ -26,6 +26,7 @@
  *
  * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
  * @library /vmTestbase /test/lib
+ * @enablePreview
  *
  * @comment build retransform.jar in current dir
  * @run driver vm.runtime.defmeth.shared.BuildJar

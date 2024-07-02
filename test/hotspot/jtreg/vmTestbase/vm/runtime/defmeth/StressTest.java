@@ -26,6 +26,7 @@
  *
  * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
  * @library /vmTestbase /test/lib
+ * @enablePreview
  *
  * @comment build retransform.jar in current dir
  * @run driver vm.runtime.defmeth.shared.BuildJar
@@ -55,7 +56,7 @@ import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import jdk.test.lib.Utils;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.DefMethTest.MAX_MAJOR_VER;
 import static vm.runtime.defmeth.shared.DefMethTest.MIN_MAJOR_VER;
 
