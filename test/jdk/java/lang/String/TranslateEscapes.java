@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8223780
+ * @bug 8223780 8263261
  * @summary This exercises String#translateEscapes patterns and limits.
  * @compile TranslateEscapes.java
  * @run main TranslateEscapes
@@ -35,6 +35,7 @@ public class TranslateEscapes {
         test2();
         test3();
         test4();
+        test5();
     }
 
     /*
@@ -86,11 +87,43 @@ public class TranslateEscapes {
         verifyLineTerminator("\r");
     }
 
+    /*
+     * Unicode escapes.
+     */
+    static void test5() {
+        verifyUnicodeEscape("\\u0000", "\u0000");
+        verifyUnicodeEscape("\\u2022", "\u2022");
+        verifyUnicodeEscape("\\ud83c\\udf09", "\ud83c\udf09");
+        verifyUnicodeEscape("\\uuuuu2022", "\uuuuu2022");
+
+        verifyIllegalUnicodeEscape("\\u000x");
+        verifyIllegalUnicodeEscape("\\u000");
+        verifyIllegalUnicodeEscape("\\u00");
+        verifyIllegalUnicodeEscape("\\u0");
+        verifyIllegalUnicodeEscape("\\u");
+    }
+
     static void verifyEscape(String string, char ch) {
         String escapes = "\\" + string;
         if (escapes.translateEscapes().charAt(0) != ch) {
-            System.err.format("\"%s\" not escape \"%s\"'%n", string, escapes);
+            System.err.format("\"%s\" does not escape \"%s\"'%n", string, escapes);
             throw new RuntimeException();
+        }
+    }
+
+    static void verifyUnicodeEscape(String string1, String string2) {
+        if (!string1.translateEscapes().equals(string2)) {
+            System.err.format("\"%s\" does not unicode escape \"%s\"%n", string1, string2);
+            throw new RuntimeException();
+        }
+    }
+
+    static void verifyIllegalUnicodeEscape(String string) {
+        try {
+            string.translateEscapes();
+            System.err.format("\"%s\" should be an error%n", string);
+            throw new RuntimeException();
+        } catch (IllegalArgumentException ex) {
         }
     }
 

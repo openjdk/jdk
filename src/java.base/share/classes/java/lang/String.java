@@ -4204,9 +4204,9 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with escape sequences
-     * translated as if in a string literal.
+     * and Unicode escapes translated as if in a string literal.
      * <p>
-     * Escape sequences are translated as follows;
+     * Escapes are translated as follows;
      * <table class="striped">
      *   <caption style="display:none">Translation</caption>
      *   <thead>
@@ -4272,21 +4272,31 @@ public final class String
      *     <td>continuation</td>
      *     <td>discard</td>
      *   </tr>
+     *   <tr>
+     *     <th scope="row">{@code \u005CuXXXX}</th>
+     *     <td>Unicode escape</td>
+     *     <td>single UTF-16 code unit equivalent {@code U+XXXX}<p>multiple 'u' are supported per JLS 3.3</td>
+     *   </tr>
      *   </tbody>
      * </table>
      *
-     * @implNote
-     * This method does <em>not</em> translate Unicode escapes such as "{@code \u005cu2022}".
-     * Unicode escapes are translated by the Java compiler when reading input characters and
-     * are not part of the string literal specification.
-     *
      * @throws IllegalArgumentException when an escape sequence is malformed.
      *
-     * @return String with escape sequences translated.
+     * @return String with escape sequences and Unicode escapes translated.
      *
      * @jls 3.10.7 Escape Sequences
+     * @jls 3.3 Unicode Escapes
      *
      * @since 15
+     *
+     * @implNote Unicode escapes are translated by the compiler before string
+     * literals are translated. As a convenience for use with constructed
+     * strings, this method translates Unicode escapes. For example, this
+     * method could be used when ASCII encoded text files need to maintain Unicode
+     * content. The translation is done in a single pass and is non-recursive. That is,
+     * escape sequences and Unicode escapes are translated as encountered in one pass and
+     * <strong>not</strong> done as an Unicode escapes pass followed by an escape sequences
+     * pass.
      */
     public String translateEscapes() {
         if (isEmpty()) {
@@ -4318,6 +4328,21 @@ public final class String
                     break;
                 case 't':
                     ch = '\t';
+                    break;
+                case 'u':
+                    while (from < length && chars[from] == 'u') {
+                        from++;
+                    }
+                    if (from <= length - 4) {
+                        from += 4;
+                        try {
+                            ch = (char) Integer.parseInt(this, from - 4, from, 16);
+                        } catch (NumberFormatException ex) {
+                            throw new IllegalArgumentException("Invalid Unicode sequence: " + substring(from - 4, from));
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Invalid Unicode sequence: " + substring(from));
+                    }
                     break;
                 case '\'':
                 case '\"':
