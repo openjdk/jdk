@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
  */
 package java.lang.classfile;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -120,50 +120,14 @@ public sealed interface ClassFileTransform<
      * Chain this transform with another; elements presented to the builder of
      * this transform will become the input to the next transform.
      *
+     * @apiNote This API is exposed for users' convenience to compose transforms.
+     * The builder received by the resulting transform (or {@code next}) is
+     * suitable for this transform only if {@code next} simply passes through results
+     * without any side effects; otherwise {@code next} will fail to intercept
+     * or process some elements.
+     *
      * @param next the downstream transform
      * @return the chained transform
      */
     C andThen(C next);
-
-    /**
-     * The result of binding a transform to a builder.  Used primarily within
-     * the implementation to perform transformation.
-     *
-     * @param <E> the element type
-     *
-     * @since 22
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    interface ResolvedTransform<E extends ClassFileElement> {
-        /**
-         * {@return a {@link Consumer} to receive elements}
-         */
-        Consumer<E> consumer();
-
-        /**
-         * {@return an action to call at the end of transformation}
-         */
-        Runnable endHandler();
-
-        /**
-         * {@return an action to call at the start of transformation}
-         */
-        Runnable startHandler();
-    }
-
-    /**
-     * Bind a transform to a builder.  If the transform is chained, intermediate
-     * builders are created for each chain link.  If the transform is stateful
-     * (see, e.g., {@link ClassTransform#ofStateful(Supplier)}), the supplier is
-     * invoked to get a fresh transform object.
-     *
-     * <p>This method is a low-level method that should rarely be used by
-     * user code; most of the time, user code should prefer
-     * {@link ClassFileBuilder#transform(CompoundElement, ClassFileTransform)},
-     * which resolves the transform and executes it on the current builder.
-     *
-     * @param builder the builder to bind to
-     * @return the bound result
-     */
-    ResolvedTransform<E> resolve(B builder);
 }
