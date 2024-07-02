@@ -28,6 +28,7 @@
 #include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include <limits>
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.
 // NCS:s are:
@@ -41,21 +42,10 @@
 // We achieve this by using a closed hashtable for finding previously existing NCS:s and referring to them by an index that's smaller than a pointer.
 class NativeCallStackStorage : public CHeapObjBase {
 public:
-  struct StackIndex {
-    friend NativeCallStackStorage;
-    int32_t _stack_index;
-  public:
-    static constexpr const int32_t invalid = -1;
-    static bool equals(const StackIndex& a, const StackIndex& b) {
-      return a._stack_index == b._stack_index;
-    }
-
-    bool is_invalid() {
-      return _stack_index == invalid;
-    }
-  };
+  using StackIndex = int32_t;
 
 private:
+
   struct TableEntry;
   using TableEntryStorage = ArrayWithFreeList<TableEntry, mtNMT>;
   using TableEntryIndex = typename TableEntryStorage::I;
@@ -74,25 +64,36 @@ private:
   static const constexpr int default_table_size = 4099;
   const int _table_size;
   TableEntryIndex* _table;
-  GrowableArrayCHeap<NativeCallStack, mtNMT> _stacks;
-  const bool _is_detailed_mode;
 
+  ArrayWithFreeList<NativeCallStack, mtNMT> _stacks;
+  constexpr static ArrayWithFreeList<NativeCallStack, mtNMT>::I _invalid_stackindex
+      = ArrayWithFreeList<NativeCallStack, mtNMT>::nil;
+
+  const bool _is_detailed_mode;
   const NativeCallStack _fake_stack;
 public:
+
+  static bool equals(const StackIndex a, const StackIndex b) {
+    return a == b;
+  }
+
+  static bool is_invalid(StackIndex a) {
+    return a == _invalid_stackindex;
+  }
 
   StackIndex push(const NativeCallStack& stack) {
     // Not in detailed mode, so not tracking stacks.
     if (!_is_detailed_mode) {
-      return StackIndex{StackIndex::invalid};
+      return _invalid_stackindex;
     }
     return put(stack);
   }
 
   const inline NativeCallStack& get(StackIndex si) {
-    if (si._stack_index == -1) {
+    if (is_invalid(si)) {
       return _fake_stack;
     }
-    return _stacks.at(si._stack_index);
+    return _stacks.at(si);
   }
 
   NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size);

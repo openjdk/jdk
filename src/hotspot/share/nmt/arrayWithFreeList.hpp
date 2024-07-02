@@ -45,11 +45,16 @@ public:
   static constexpr const I nil = -1;
 
 private:
-  // A free list allocator element is either a link to the next free space
-  // or an actual element.
-  union BackingElement {
+  union UnusedBackingElement {
     I link;
     E e;
+  };
+
+  // A free list allocator element is either a link to the next free space
+  // or an actual element.
+  union alignas(UnusedBackingElement) BackingElement {
+    I link;
+    char e[sizeof(E)];
   };
 
   GrowableArrayCHeap<BackingElement, flag> _backing_storage;
