@@ -164,30 +164,6 @@ public abstract class DatagramSocketImpl implements SocketOptions {
 
     /**
      * Set the TTL (time-to-live) option.
-     * @param ttl a byte specifying the TTL value
-     *
-     * @deprecated use setTimeToLive instead.
-     * @throws    IOException if an I/O exception occurs while setting
-     * the time-to-live option.
-     * @see #getTTL()
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    protected abstract void setTTL(byte ttl) throws IOException;
-
-    /**
-     * Retrieve the TTL (time-to-live) option.
-     *
-     * @throws    IOException if an I/O exception occurs
-     * while retrieving the time-to-live option
-     * @deprecated use getTimeToLive instead.
-     * @return a byte representing the TTL value
-     * @see #setTTL(byte)
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    protected abstract byte getTTL() throws IOException;
-
-    /**
-     * Set the TTL (time-to-live) option.
      * @param ttl an {@code int} specifying the time-to-live value
      * @throws    IOException if an I/O exception occurs
      * while setting the time-to-live option.
