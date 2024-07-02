@@ -264,6 +264,112 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
+void CgroupV2Controller::set_subsystem_path(char* cgroup_path) {
+  if (_path != nullptr) {
+    os::free(_path);
+  }
+  _path = construct_path(_mount_path, cgroup_path);
+}
+
+bool CgroupV2MemoryController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+bool CgroupV2CpuController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+CgroupCpuController* CgroupV2CpuController::adjust_controller(int host_cpus) {
+  log_trace(os, container)("Adjusting v2 controller path for cpu: %s", reader()->subsystem_path());
+  assert(reader()->cgroup_path() != nullptr, "invariant");
+  assert(host_cpus > 0, "Negative host cpus?");
+  char* orig = os::strdup(reader()->cgroup_path());
+  char* cg_path = os::strdup(orig);
+  char* last_slash;
+  int cpus = CgroupUtil::processor_count(this, host_cpus);
+  bool path_iterated = false;
+  while (cpus == host_cpus && (last_slash = strrchr(cg_path, '/')) != cg_path) {
+    *last_slash = '\0'; // strip path
+    // update to shortened path and try again
+    reader()->set_subsystem_path(cg_path);
+    cpus = CgroupUtil::processor_count(this, host_cpus);
+    path_iterated = true;
+    if (cpus != host_cpus) {
+      log_trace(os, container)("Adjusted v2 controller path for cpu to: %s", reader()->subsystem_path());
+      os::free(cg_path);
+      os::free(orig);
+      return this;
+    }
+  }
+  os::free(cg_path);
+  if (path_iterated) {
+    reader()->set_subsystem_path((char*)"/");
+    cpus = CgroupUtil::processor_count(this, host_cpus);
+    if (cpus != host_cpus) {
+      // handle limit set at mount point
+      log_trace(os, container)("Adjusted v2 controller path for cpu to: %s", reader()->subsystem_path());
+      os::free(orig);
+      return this;
+    }
+    log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
+                              reader()->mount_point(), orig);
+    reader()->set_subsystem_path(orig);
+  } else {
+    log_trace(os, container)("Lowest limit for cpu at leaf: %s",
+                              reader()->subsystem_path());
+  }
+  os::free(orig);
+  return this;
+}
+
+CgroupMemoryController* CgroupV2MemoryController::adjust_controller(julong phys_mem) {
+  log_trace(os, container)("Adjusting v2 controller path for memory: %s", reader()->subsystem_path());
+  assert(reader()->cgroup_path() != nullptr, "invariant");
+  char* orig = os::strdup(reader()->cgroup_path());
+  char* cg_path = os::strdup(orig);
+  char* last_slash;
+  jlong limit = read_memory_limit_in_bytes(phys_mem);
+  bool path_iterated = false;
+  while (limit < 0 && (last_slash = strrchr(cg_path, '/')) != cg_path) {
+    *last_slash = '\0'; // strip path
+    // update to shortened path and try again
+    reader()->set_subsystem_path(cg_path);
+    limit = read_memory_limit_in_bytes(phys_mem);
+    path_iterated = true;
+    if (limit > 0) {
+      log_trace(os, container)("Adjusted v2 controller path for memory to: %s", reader()->subsystem_path());
+      os::free(cg_path);
+      os::free(orig);
+      return this;
+    }
+  }
+  // no lower limit found or limit at leaf
+  os::free(cg_path);
+  if (path_iterated) {
+    reader()->set_subsystem_path((char*)"/");
+    limit = read_memory_limit_in_bytes(phys_mem);
+    if (limit > 0) {
+      // handle limit set at mount point
+      log_trace(os, container)("Adjusted v2 controller path for memory to: %s", reader()->subsystem_path());
+      os::free(orig);
+      return this;
+    }
+    log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
+                              reader()->mount_point(), orig);
+    reader()->set_subsystem_path(orig);
+  } else {
+    log_trace(os, container)("Lowest limit for memory at leaf: %s",
+                              reader()->subsystem_path());
+  }
+  os::free(orig);
+  return this;
+}
+
+// For cgv2 we only need hierarchy walk if the cgroup path isn't '/' (root)
+bool CgroupV2Controller::needs_hierarchy_adjustment() {
+  return strcmp(_cgroup_path, "/") != 0;
+}
+
 void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
   jlong swap_current = memory_swap_current_value(reader());
   jlong swap_limit = memory_swap_limit_value(reader());

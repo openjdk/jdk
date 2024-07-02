@@ -103,9 +103,13 @@
 }
 
 class CgroupController: public CHeapObj<mtInternal> {
+  protected:
+    char* _cgroup_path;
   public:
     virtual char* subsystem_path() = 0;
     virtual bool is_read_only() = 0;
+    char* cgroup_path() { return _cgroup_path; }
+    virtual bool needs_hierarchy_adjustment() { return false; }
 
     /* Read a numerical value as unsigned long
      *
@@ -202,6 +206,8 @@ class CgroupCpuController: public CHeapObj<mtInternal> {
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
+    virtual bool needs_hierarchy_adjustment() = 0;
+    virtual CgroupCpuController* adjust_controller(int host_cpus) = 0;
     virtual bool is_read_only() = 0;
 };
 
@@ -217,6 +223,8 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
     virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
+    virtual CgroupMemoryController* adjust_controller(julong phys_mem) = 0;
+    virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
 };
 

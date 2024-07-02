@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "memory/allocation.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 
 // Cgroups version 1 specific implementation
 
@@ -48,12 +49,14 @@ class CgroupV1Controller: public CgroupController {
                                   _mount_point(os::strdup(mountpoint)),
                                   _read_only(ro),
                                   _path(nullptr) {
+      _cgroup_path = nullptr;
     }
     // Shallow copy constructor
     CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
                                                       _mount_point(o._mount_point),
                                                       _read_only(o._read_only),
                                                       _path(o._path) {
+      _cgroup_path = o._cgroup_path;
     }
     ~CgroupV1Controller() {
       // At least one subsystem controller exists with paths to malloc'd path
@@ -61,8 +64,10 @@ class CgroupV1Controller: public CgroupController {
     }
 
     void set_subsystem_path(char *cgroup_path);
-    char *subsystem_path() override { return _path; }
-    bool is_read_only() { return _read_only; }
+    char* subsystem_path() override { return _path; }
+    bool is_read_only() override { return _read_only; }
+    bool needs_hierarchy_adjustment() override;
+    char *mount_point() { return _mount_point; }
 };
 
 class CgroupV1MemoryController final : public CgroupMemoryController {
@@ -71,8 +76,9 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
   public:
-    bool is_hierarchical() { return _uses_mem_hierarchy; }
-    void set_subsystem_path(char *cgroup_path);
+    void set_subsystem_path(char *cgroup_path) {
+      reader()->set_subsystem_path(cgroup_path);
+    }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
     jlong memory_usage_in_bytes() override;
     jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) override;
@@ -85,23 +91,18 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong kernel_memory_limit_in_bytes(julong host_mem);
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem) override;
+    bool needs_hierarchy_adjustment() override;
+    CgroupV1MemoryController* adjust_controller(julong phys_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }
   private:
-    /* Some container runtimes set limits via cgroup
-     * hierarchy. If set to true consider also memory.stat
-     * file if everything else seems unlimited */
-    bool _uses_mem_hierarchy;
-    jlong uses_mem_hierarchy();
-    void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
     jlong read_mem_swappiness();
     jlong read_mem_swap(julong host_total_memsw);
 
   public:
     CgroupV1MemoryController(const CgroupV1Controller& reader)
-      : _reader(reader),
-        _uses_mem_hierarchy(false) {
+      : _reader(reader) {
     }
 
 };
@@ -125,6 +126,8 @@ class CgroupV1CpuController final : public CgroupCpuController {
   public:
     CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
     }
+    bool needs_hierarchy_adjustment() override;
+    CgroupV1CpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {
@@ -161,9 +164,11 @@ class CgroupV1Subsystem: public CgroupSubsystem {
                       CgroupV1Controller* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory) :
-      _memory(new CachingCgroupController<CgroupMemoryController>(memory)),
+      _memory(new CachingCgroupController<CgroupMemoryController>(
+                                         CgroupUtil::adjust_controller(memory))),
       _cpuset(cpuset),
-      _cpu(new CachingCgroupController<CgroupCpuController>(cpu)),
+      _cpu(new CachingCgroupController<CgroupCpuController>(
+                                         CgroupUtil::adjust_controller(cpu))),
       _cpuacct(cpuacct),
       _pids(pids) {
     }
