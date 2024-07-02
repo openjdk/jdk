@@ -2735,6 +2735,58 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
   vmv_x_s(dst, tmp);
 }
 
+void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, VectorRegister src2,
+                                             VectorRegister vtmp1, VectorRegister vtmp2,
+                                             BasicType bt, uint vector_length) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  uint len = vector_length/type2aelembytes(bt);
+  vsetvli_helper(bt, len);
+
+  len /= 2;
+  vslidedown_vi(vtmp1, src2, len);
+  vsetvli_helper(bt, len);
+  vmul_vv(vtmp1, vtmp1, src2);
+  while (len > 1) {
+    len /= 2;
+    vslidedown_vi(vtmp2, vtmp1, len);
+    vsetvli_helper(bt, len);
+    vmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vmv_x_s(dst, vtmp1);
+  if (bt == T_INT) {
+    mulw(dst, dst, src1);
+  } else {
+    mul(dst, dst, src1);
+  }
+}
+
+void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                                        VectorRegister vtmp1, VectorRegister vtmp2,
+                                        BasicType bt, uint vector_length) {
+  assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
+  uint len = vector_length/type2aelembytes(bt);
+  vsetvli_helper(bt, len);
+
+  len /= 2;
+  vslidedown_vi(vtmp1, src2, len);
+  vsetvli_helper(bt, len);
+  vfmul_vv(vtmp1, vtmp1, src2);
+  while (len > 1) {
+    len /= 2;
+    vslidedown_vi(vtmp2, vtmp1, len);
+    vsetvli_helper(bt, len);
+    vfmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vfmv_f_s(dst, vtmp1);
+  if (bt == T_FLOAT) {
+    fmul_s(dst, dst, src1);
+  } else {
+    fmul_d(dst, dst, src1);
+  }
+}
+
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
 void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, Register tmp) {
