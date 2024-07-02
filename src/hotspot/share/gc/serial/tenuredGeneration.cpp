@@ -387,7 +387,7 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
   return res;
 }
 
-oop TenuredGeneration::promote(oop obj, size_t obj_size) {
+oop TenuredGeneration::allocate_for_promotion(oop obj, size_t obj_size) {
   assert(obj_size == obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
@@ -401,15 +401,9 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
   if (result == nullptr) {
     // Promotion of obj into gen failed.  Try to expand and allocate.
     result = expand_and_allocate(obj_size, false);
-    if (result == nullptr) {
-      return nullptr;
-    }
   }
 
-  // Copy to new location.
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
-  oop new_obj = cast_to_oop<HeapWord*>(result);
-  return new_obj;
+  return cast_to_oop<HeapWord*>(result);
 }
 
 HeapWord*
