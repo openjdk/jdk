@@ -24,7 +24,6 @@
 package vm.runtime.defmeth.shared.builder;
 
 import nsk.share.Pair;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.Util;
 import vm.runtime.defmeth.shared.data.Clazz;
 import vm.runtime.defmeth.shared.data.ConcreteClass;
@@ -37,10 +36,11 @@ import vm.runtime.defmeth.shared.data.method.result.IntResult;
 import vm.runtime.defmeth.shared.data.method.result.Result;
 import vm.runtime.defmeth.shared.data.method.result.ResultIgnore;
 import vm.runtime.defmeth.shared.data.method.result.ThrowExResult;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.method.body.CallMethod;
 import vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke;
+
+import static java.lang.classfile.ClassFile.*;
 
 /**
  * Builder for data.Tester instances.
@@ -226,14 +226,14 @@ public class TesterBuilder implements Builder<Tester> {
      * @return
      */
     private CallMethod.Invoke getCallInsn() {
-        if ((m.acc() & Opcodes.ACC_STATIC) != 0) {
+        if ((m.acc() & ACC_STATIC) != 0) {
             return Invoke.STATIC;
         } else if (staticReceiver instanceof Interface) {
             return Invoke.INTERFACE;
         } else if (staticReceiver instanceof ConcreteClass) {
             if (m.isConstructor()) {
                 return Invoke.SPECIAL;
-            } else if ((m.acc() & Opcodes.ACC_INTERFACE) == 0) {
+            } else if ((m.acc() & ACC_INTERFACE) == 0) {
                 return Invoke.VIRTUAL;
             } else {
                 return Invoke.INTERFACE;

@@ -143,7 +143,7 @@ public class Util {
     }
 
     /**
-     * Print ASM version (sequence of calls to ASM API to produce same class file)
+     * Print ASM equivalent class file (sequence of calls to ASM API to produce same class file)
      * of {@code classFile} to stdout.
      *
      * @param classFile

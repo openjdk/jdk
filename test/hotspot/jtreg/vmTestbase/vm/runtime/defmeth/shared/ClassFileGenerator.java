@@ -31,6 +31,7 @@ import nsk.share.test.TestUtils;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 
+import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
 import static java.lang.invoke.MethodHandleInfo.REF_newInvokeSpecial;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -71,7 +72,7 @@ public class ClassFileGenerator implements Visitor {
     private String className;
 
     public ClassFileGenerator() {
-        this.defaultMajorVer = 52;
+        this.defaultMajorVer = JAVA_8_VERSION;
         this.defaultClassAccFlags = ACC_PUBLIC;
         this.invocationType = ExecutionMode.DIRECT;
     }

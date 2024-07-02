@@ -26,7 +26,8 @@ package vm.runtime.defmeth.shared.builder;
 import java.util.ArrayList;
 import java.util.List;
 import vm.runtime.defmeth.shared.data.method.Method;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * Generic builder for classes of type {@code <S>} using
