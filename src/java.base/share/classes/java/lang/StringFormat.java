@@ -270,10 +270,12 @@ final class StringFormat {
     }
 
     private static int getCharsLatin1(byte[] bytes, int index, Object arg, char conv, int width, int size) {
-        if (size < width) {
-            for (int i = size; i < width; i++) {
-                bytes[index++] = ' ';
+        int pad = width - size;
+        if (pad > 0) {
+            for (int i = 0; i < pad; i++) {
+                bytes[index + i] = ' ';
             }
+            index += pad;
         }
 
         if (conv == STRING) {
@@ -295,10 +297,12 @@ final class StringFormat {
     }
 
     private static int getCharsUTF16(byte[] bytes, int index, Object arg, char conv, int width, int size) {
-        if (size < width) {
-            for (int i = size; i < width; i++) {
-                StringUTF16.putChar(bytes, index++, ' ');
+        int pad = width - size;
+        if (pad > 0) {
+            for (int i = 0; i < pad; i++) {
+                StringUTF16.putChar(bytes, index + i, ' ');
             }
+            index += pad;
         }
 
         if (conv == STRING) {
