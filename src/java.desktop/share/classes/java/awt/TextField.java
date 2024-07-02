@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.EventListener;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
+import javax.swing.UIManager;
 
 /**
  * A {@code TextField} object is a text component
@@ -485,6 +486,15 @@ public non-sealed class TextField extends TextComponent {
             return (columns > 0) ?
                        minimumSize(columns) :
                        super.minimumSize();
+        }
+    }
+
+    @Override
+    public synchronized void setEditable(boolean b) {
+        super.setEditable(b);
+        Color defaultBackground = UIManager.getColor("TextField.background");
+        if (!backgroundSetByClientCode) {
+            setBackground(b ? defaultBackground : SystemColor.control, false);
         }
     }
 
