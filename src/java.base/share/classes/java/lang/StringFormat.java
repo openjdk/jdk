@@ -41,10 +41,9 @@ final class StringFormat {
     private static final char STRING                    = 's';
 
     static String format(String format, Object... args) {
-        if (args != null) {
+        if (args != null && args.length <= 2) {
             int off = format.indexOf('%');
             if (off == -1) {
-                // no formatting to be done
                 return format;
             }
 

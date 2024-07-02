@@ -267,6 +267,18 @@ public class StringFormat {
         format2("%3", "", 12);
         format2("%s%3", "", 12);
         format2("%s%33%", "", 12);
+
+        format1("a%n");
+        format1("a%nb");
+        format1("%nb");
+        format1(utf_chars[0] + "%n");
+        format1(utf_chars[0] + "%n" + utf_chars[0]);
+        format1("%n" + utf_chars[0]);
+
+        format1(utf_chars[0] + "%s%n", str_args_0[0]);
+        format1(utf_chars[0] + "%s%n", formats_1d_utf16[0]);
+        format1(utf_chars[0] + "%n%s", str_args_0[0]);
+        format1(utf_chars[0] + "%n%s", formats_1d_utf16[0]);
     }
 
     static void locales(Runnable r) {
@@ -277,6 +289,12 @@ public class StringFormat {
             r.run();
         }
         Locale.setDefault(Locale.Category.FORMAT, defaultLocale);
+    }
+
+    private static void format1(String format) {
+        String juf = new Formatter().format(format).toString();
+        String strf = format.formatted();
+        assertEquals(juf, strf);
     }
 
     private static void format1(String format, String arg) {

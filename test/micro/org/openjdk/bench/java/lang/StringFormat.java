@@ -57,6 +57,16 @@ public class StringFormat {
     }
 
     @Benchmark
+    public String lineFormat() {
+        return "0123456789 %n".formatted();
+    }
+
+    @Benchmark
+    public String lineFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %n".formatted();
+    }
+
+    @Benchmark
     public String stringFormat() {
         return "0123456789 %s".formatted(s);
     }
@@ -64,6 +74,16 @@ public class StringFormat {
     @Benchmark
     public String stringFormatUtf16() {
         return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s".formatted(s);
+    }
+
+    @Benchmark
+    public String stringLineFormat() {
+        return "%s 0123456789 %n".formatted(s);
+    }
+
+    @Benchmark
+    public String stringLineFormatUtf16() {
+        return "%s \u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %n".formatted(s);
     }
 
     @Benchmark
