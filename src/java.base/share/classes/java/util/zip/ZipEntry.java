@@ -59,7 +59,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
-    int extraAttributes = -1; // e.g. POSIX permissions, sym links.
+    int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
     /**
      * Compression method for uncompressed entries.
      */
@@ -134,7 +134,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
         flag = e.flag;
         extra = e.extra;
         comment = e.comment;
-        extraAttributes = e.extraAttributes;
+        externalFileAttributes = e.externalFileAttributes;
     }
 
     /**
