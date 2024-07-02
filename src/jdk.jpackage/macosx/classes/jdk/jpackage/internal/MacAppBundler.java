@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,14 @@ public class MacAppBundler extends AppImageBundler {
     private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     public static final BundlerParamInfo<String> DEFAULT_ICNS_ICON =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             ".mac.default.icns",
             String.class,
             params -> TEMPLATE_BUNDLE_ICON,
             (s, p) -> s);
 
     public static final BundlerParamInfo<String> DEVELOPER_ID_APP_SIGNING_KEY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.signing-key-developer-id-app",
             String.class,
             params -> {
@@ -86,14 +86,14 @@ public class MacAppBundler extends AppImageBundler {
             (s, p) -> s);
 
     public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
             String.class,
             params -> getIdentifier(params) + ".",
