@@ -49,6 +49,8 @@ import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
+import sun.swing.AltProcessor;
 
 /**
  * @author Scott Violet
@@ -866,7 +868,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                  "ctrl released ENTER", "release"
             },
 
-
             "ScrollBar.squareButtons", Boolean.FALSE,
             "ScrollBar.thumbHeight", Integer.valueOf(14),
             "ScrollBar.width", Integer.valueOf(16),
@@ -1414,6 +1415,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         return c.getComponentOrientation().isLeftToRight();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void initialize() {
         /*
          * We need to call loadGTK() to ensure that the native GTK
@@ -1456,6 +1461,23 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+
+        // By default mnemonics are hidden for GTK L&F
+        MnemonicHandler.setMnemonicHidden(true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void uninitialize() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(false);
+        super.uninitialize();
     }
 
     static ReferenceQueue<GTKLookAndFeel> queue = new ReferenceQueue<GTKLookAndFeel>();

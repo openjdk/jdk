@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import javax.swing.text.View;
 
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
+import sun.swing.MnemonicHandler;
 
 /**
  * Wrapper for primitive graphics calls.
@@ -665,9 +666,16 @@ public class SynthGraphicsUtils {
                 g.setColor(lh.getStyle().getColor(
                         lh.getContext(), ColorType.TEXT_FOREGROUND));
                 g.setFont(lh.getStyle().getFont(lh.getContext()));
+
+                int mnemIndex = lh.getMenuItem().getDisplayedMnemonicIndex();
+                // Check to see if the Mnemonic should be rendered in GTK.
+                if (mnemIndex >= 0 && MnemonicHandler.isMnemonicHidden()) {
+                    mnemIndex = -1;
+                }
+
                 lh.getGraphicsUtils().paintText(lh.getContext(), g, lh.getText(),
                         lr.getTextRect().x, lr.getTextRect().y,
-                        lh.getMenuItem().getDisplayedMnemonicIndex());
+                        mnemIndex);
             }
         }
     }
