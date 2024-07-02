@@ -218,6 +218,7 @@ private:
   static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize contentions_offset() { return byte_offset_of(ObjectMonitor, _contentions); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,61 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ strw(t, Address(rthread, JavaThread::lock_stack_top_offset()));
 
   __ b(continuation());
+}
+
+int C2FastUnlockLightweightStub::max_size() const {
+  return 256;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+  const Register monitor = _mark;
+  const Register contentions_addr = _t;
+  const Register prev_contentions_value = _mark;
+  const Register owner_addr = _thread;
+
+  Label slow_path, decrement_contentions_slow_path, decrement_contentions_fast_path;
+
+  { // Check for, and try to cancel any async deflation.
+    __ bind(_check_deflater);
+
+    // CAS owner (null => current thread).
+    __ cmpxchg(owner_addr, zr, rthread, Assembler::xword, /*acquire*/ true,
+               /*release*/ false, /*weak*/ false, _t);
+    __ br(Assembler::EQ, slow_path);
+
+    __ cmp(_t, checked_cast<uint8_t>(reinterpret_cast<intptr_t>(DEFLATER_MARKER)));
+    __ br(Assembler::NE, unlocked_continuation());
+
+    // The deflator owns the lock.  Try to cancel the deflation by
+    // first incrementing contentions...
+    __ lea(contentions_addr, Address(monitor, ObjectMonitor::contentions_offset()));
+    __ atomic_addw(prev_contentions_value, 1, contentions_addr);
+
+    __ cmp(prev_contentions_value, zr);
+    __ br(Assembler::LS, decrement_contentions_fast_path); // Mr. Deflator won the race.
+
+    // ... then try to take the ownership.  If we manage to cancel deflation,
+    // ObjectMonitor::deflate_monitor() will decrement contentions, which is why
+    // we don't do it here.
+    __ mov(rscratch2, checked_cast<uint8_t>(reinterpret_cast<intptr_t>(DEFLATER_MARKER)));
+    __ cmpxchg(owner_addr, rscratch2, rthread, Assembler::xword, /*acquire*/ true,
+               /*release*/ false, /*weak*/ false, zr);
+    __ br(Assembler::EQ, slow_path); // We successfully canceled deflation.
+
+    __ cmpxchg(owner_addr, zr, rthread, Assembler::xword, /*acquire*/ true,
+               /*release*/ false, /*weak*/ false, zr);
+    __ br(Assembler::EQ, decrement_contentions_slow_path);
+
+    __ bind(decrement_contentions_fast_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ b(unlocked_continuation());
+
+    __ bind(decrement_contentions_slow_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ bind(slow_path);
+    __ cmp(zr, rthread); // Set Flag to NE
+    __ b(slow_path_continuation());
+  }
 }
 
 #undef __
