@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package com.sun.crypto.provider;
 
-import java.util.Arrays;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import javax.crypto.IllegalBlockSizeException;
+
 import static com.sun.crypto.provider.KWUtil.*;
 
 /**
@@ -66,7 +66,7 @@ class AESKeyWrap extends FeedbackCipher {
     @Override
     void save() {
         throw new UnsupportedOperationException("save not supported");
-    };
+    }
 
     /**
      * Restores the content of this cipher to the previous saved one.
@@ -74,7 +74,7 @@ class AESKeyWrap extends FeedbackCipher {
     @Override
     void restore() {
         throw new UnsupportedOperationException("restore not supported");
-    };
+    }
 
     /**
      * Initializes the cipher in the specified mode with the given key
@@ -112,20 +112,20 @@ class AESKeyWrap extends FeedbackCipher {
     @Override
     void reset() {
         throw new UnsupportedOperationException("reset not supported");
-    };
+    }
 
 
-    // no support for multi-part encryption
+    // no support for multipart encryption
     @Override
     int encrypt(byte[] pt, int ptOfs, int ptLen, byte[] ct, int ctOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
-    };
+        throw new UnsupportedOperationException("multipart not supported");
+    }
 
-    // no support for multi-part decryption
+    // no support for multipart decryption
     @Override
     int decrypt(byte[] ct, int ctOfs, int ctLen, byte[] pt, int ptOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
-    };
+        throw new UnsupportedOperationException("multipart not supported");
+    }
 
     /**
      * Performs single-part encryption operation.
