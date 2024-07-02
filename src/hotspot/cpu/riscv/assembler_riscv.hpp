@@ -1825,10 +1825,12 @@ enum Nf {
     patch_VLdSt(op, Vd_or_Vs3, width, Rs1, umop, vm, mop, mew, nf);                         \
   }
 
-  // Vector Unit-Stride Instructions
+  // Vector Unit-Stride Segment Load Instructions
   INSN(vlseg3e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g3);
 
+  // Vector Unit-Stride Segment Store Instructions
   INSN(vsseg4e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g4);
+
 #undef INSN
 
 #define INSN(NAME, op, width, mop, mew)                                                                  \

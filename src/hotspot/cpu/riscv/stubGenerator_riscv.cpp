@@ -5112,7 +5112,7 @@ class StubGenerator: public StubCodeGenerator {
    *
    * NOTE: each field will occupy a vector register group
    */
-  void encodeVector(Register src, Register dst, Register codec, Register step,
+  void base64_vector_encode_round(Register src, Register dst, Register codec, Register step,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
@@ -5222,12 +5222,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label ProcessScalar, ProcessM2, ProcessM1;
 
-    if (!UseRVV) {
-      __ j(ProcessScalar);
-    }
-
     // vector version
-    {
+    if (UseRVV) {
       Register tmp1 = x28; // t3
       Register tmp2 = x29; // t4
       Register limitM1 = x30; // t5
@@ -5241,7 +5237,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ blt(length, limitM2, ProcessM1);
 
-      encodeVector(src, dst, codec, limitM2,
+      base64_vector_encode_round(src, dst, codec, limitM2,
                     v2, v4, v6,         // inputs
                     v8, v10, v12, v14,  // indexes
                     v16, v18, v20, v22, // outputs
@@ -5251,7 +5247,7 @@ class StubGenerator: public StubCodeGenerator {
       __ j(ProcessM2);
 
       __ BIND(ProcessM1);
-      encodeVector(src, dst, codec, limitM1,
+      base64_vector_encode_round(src, dst, codec, limitM1,
                     v1, v2, v3,         // inputs
                     v4, v5, v6, v7,     // indexes
                     v8, v9, v10, v11,   // outputs
