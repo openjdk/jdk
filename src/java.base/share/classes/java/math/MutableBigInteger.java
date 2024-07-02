@@ -1026,6 +1026,7 @@ class MutableBigInteger {
     /**
      * Multiply the contents of two MutableBigInteger objects. The result is
      * placed into MutableBigInteger z. The contents of y are not changed.
+     * Assume {@code intLen > 0}
      */
     void multiply(MutableBigInteger y, MutableBigInteger z) {
         int xLen = intLen;
@@ -2062,7 +2063,7 @@ class MutableBigInteger {
                 if (s0.intLen == s0Ints)
                     s0.value[0] &= -1 >>> -halfShift; // Remove excess bits
 
-                if (!s0.isZero()) { // An optimization
+                if (!s0.isZero()) { // MutableBigInteger.multiply() assumes intLen != 0
                     MutableBigInteger twiceS0 = new MutableBigInteger(s0);
                     twiceS0.leftShift(1);
                     MutableBigInteger doubleProd = new MutableBigInteger();
