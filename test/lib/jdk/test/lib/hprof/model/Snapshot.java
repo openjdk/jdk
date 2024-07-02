@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,12 +385,10 @@ public class Snapshot implements AutoCloseable {
     }
 
     /**
-     * Return an Iterator of all of the classes in this snapshot.
+     * Return a Collection of all of the classes in this snapshot.
      **/
-    public Iterator<JavaClass> getClasses() {
-        // note that because classes is a TreeMap
-        // classes are already sorted by name
-        return classes.values().iterator();
+    public Collection<JavaClass> getClasses() {
+        return Collections.unmodifiableCollection(classes.values());
     }
 
     public JavaClass[] getClassesArray() {
