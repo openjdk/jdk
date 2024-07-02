@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,21 +21,14 @@
  * questions.
  */
 
-/**
- * Internal option processing API
- *
- * @since 9
- */
-module jdk.internal.opt {
-    exports jdk.internal.joptsimple to
-        jdk.jlink,
-        jdk.jshell,
-        jdk.jdeps;
-    exports jdk.internal.opt to
-        jdk.compiler,
-        jdk.jartool,
-        jdk.javadoc,
-        jdk.jlink,
-        jdk.jpackage,
-        jdk.jdeps;
+package org.lib;
+
+import java.lang.foreign.*;
+
+public class Lib {
+    public static void doIt() {
+        MemorySegment.ofAddress(1234).reinterpret(10);
+    }
+
+    private static native void m();
 }

@@ -63,6 +63,10 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
+langtools_jnativescan = \
+    tools/all \
+    tools/jnativescan
+
 langtools_slow = \
     jdk/internal/shellsupport/doc/FullJavadocHelperTest.java
 

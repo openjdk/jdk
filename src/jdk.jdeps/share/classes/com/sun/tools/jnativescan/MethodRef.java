@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.jnativescan;
 
-/**
- * Internal option processing API
- *
- * @since 9
- */
-module jdk.internal.opt {
-    exports jdk.internal.joptsimple to
-        jdk.jlink,
-        jdk.jshell,
-        jdk.jdeps;
-    exports jdk.internal.opt to
-        jdk.compiler,
-        jdk.jartool,
-        jdk.javadoc,
-        jdk.jlink,
-        jdk.jpackage,
-        jdk.jdeps;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+
+record MethodRef(ClassDesc owner, String name, MethodTypeDesc type) {
+    public static MethodRef ofModel(MethodModel model) {
+        return new MethodRef(model.parent().orElseThrow().thisClass().asSymbol(),
+                model.methodName().stringValue(), model.methodTypeSymbol());
+    }
+
+    public static MethodRef ofInvokeInstruction(InvokeInstruction instruction) {
+        return new MethodRef(instruction.owner().asSymbol(),
+                instruction.name().stringValue(), instruction.typeSymbol());
+    }
+
+    @Override
+    public String toString() {
+        return JNativeScanTask.qualName(owner) + "::" + name + type.displayDescriptor();
+    }
 }
