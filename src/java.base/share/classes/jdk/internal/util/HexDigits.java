@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,14 +140,28 @@ public final class HexDigits {
      * @return the last index used
      */
     public static int getCharsLatin1(long value, int index, byte[] buffer) {
+        return getCharsLatin1(value, index, buffer, false);
+    }
+
+    /**
+     * Insert digits for long value in buffer from high index to low index.
+     *
+     * @param value      value to convert
+     * @param index      insert point + 1
+     * @param buffer     byte buffer to copy into
+     * @param ucase true uppper case, false lower case
+     *
+     * @return the last index used
+     */
+    public static int getCharsLatin1(long value, int index, byte[] buffer, boolean ucase) {
         while ((value & ~0xFF) != 0) {
-            short pair = DIGITS[((int) value) & 0xFF];
+            short pair = digitPair((int) value, ucase);
             buffer[--index] = (byte)(pair >> 8);
             buffer[--index] = (byte)(pair);
             value >>>= 8;
         }
 
-        int digits = DIGITS[(int) (value & 0xFF)];
+        int digits = digitPair((int) value, ucase);
         buffer[--index] = (byte) (digits >> 8);
 
         if (0xF < value) {
@@ -166,14 +181,28 @@ public final class HexDigits {
      * @return the last index used
      */
     public static int getCharsUTF16(long value, int index, byte[] buffer) {
+        return getCharsUTF16(value, index, buffer, false);
+    }
+
+    /**
+     * Insert digits for long value in buffer from high index to low index.
+     *
+     * @param value      value to convert
+     * @param index      insert point + 1
+     * @param buffer     byte buffer to copy into
+     * @param ucase true uppper case, false lower case
+     *
+     * @return the last index used
+     */
+    public static int getCharsUTF16(long value, int index, byte[] buffer, boolean ucase) {
         while ((value & ~0xFF) != 0) {
-            int pair = (int) DIGITS[((int) value) & 0xFF];
+            short pair = digitPair((int) value, ucase);
             JLA.putCharUTF16(buffer, --index, pair >> 8);
             JLA.putCharUTF16(buffer, --index, pair & 0xFF);
             value >>>= 8;
         }
 
-        int digits = DIGITS[(int) (value & 0xFF)];
+        short digits = digitPair((int) value, ucase);
         JLA.putCharUTF16(buffer, --index, (byte) (digits >> 8));
 
         if (0xF < value) {
