@@ -34,8 +34,15 @@ import java.io.EOFException;
 import java.util.Objects;
 
 /**
- * This class implements a stream filter for reading compressed data in
- * the GZIP file format.
+ * This class implements a stream filter for reading compressed data in the GZIP file format.
+ *
+ * <p>
+ * The GZIP compressed data format is self-delimiting, i.e., it includes an explicit trailer
+ * frame that marks the end of the compressed data. Therefore it's possible for the underlying
+ * input to contain additional data beyond the end of the compressed GZIP data. In particular,
+ * some GZIP compression tools will concatenate multiple compressed data streams together.
+ * This class includes configurable support for decompressing multiple concatenated compressed
+ * data streams as a single uncompressed data stream.
  *
  * @see         InflaterInputStream
  * @author      David Connelly
@@ -53,6 +60,9 @@ public class GZIPInputStream extends InflaterInputStream {
      */
     protected boolean eos;
 
+    private final boolean allowConcatenation;
+    private final boolean ignoreExtraBytes;
+
     private boolean closed = false;
 
     /**
@@ -65,7 +75,9 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Creates a new input stream with the specified buffer size.
+     * Creates a new input stream with the specified buffer size that
+     * allows concatenated compressed streams and ignores extra bytes.
+     *
      * @param in the input stream
      * @param size the input buffer size
      *
@@ -76,10 +88,75 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
+        this(in, size, true, true);
+    }
+
+    /**
+     * Creates a new input stream with the default buffer size that
+     * allows concatenated compressed streams and ignores extra bytes.
+     *
+     * @param in the input stream
+     *
+     * @throws    ZipException if a GZIP format error has occurred or the
+     *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
+     * @throws    IOException if an I/O error has occurred
+     */
+    public GZIPInputStream(InputStream in) throws IOException {
+        this(in, 512, true, true);
+    }
+
+    /**
+     * Creates a new input stream with the specified buffer size,
+     * support for concatenated streams, and tolerance for extra bytes.
+     *
+     * <p>
+     * When {@code allowConcatenation} is true, this class will attempt to decode any data that
+     * follows a GZIP trailer frame as the GZIP header frame of a new compressed data stream
+     * and proceed to decompress it. As a result, arbitrarily many consecutive compressed data
+     * streams in the underlying input will be read back as a single uncompressed stream. When
+     * {@code allowConcatenation} is false, decompression stops after the first GZIP trailer
+     * frame encountered, and any additional bytes are considered extraneous.
+     *
+     * <p>
+     * The {@code ignoreExtraBytes} flag controls the behavior when extraneous data appears,
+     * i.e., when any data follows the GZIP trailer frame (if {@code allowConcatenation} is
+     * false), or when any data other than a valid GZIP header frame follows a GZIP trailer
+     * frame (if {@code allowConcatenation} is true). When {@code ignoreExtraBytes} is true,
+     * the unexpected data, and any {@link IOException} thrown while trying to read that
+     * data, are simply discarded, and EOF is returned; when {@code ignoreExtraBytes} is
+     * false, any unexpected data triggers an {@link IOException}, and any {@link IOException}
+     * thrown while trying to read a concatenated GZIP header frame is propagated to the caller.
+     * In other words, every byte of the underlying data stream is part of a complete and valid
+     * compressed data stream, or else an {@link IOException} is guaranteed to be thrown.
+     *
+     * @apiNote The original behavior of this class is replicated by setting both
+     * {@code allowConcatenation} and {@code ignoreExtraBytes} to true. However,
+     * enabling {@code ignoreExtraBytes} is discouraged because of its imprecision in
+     * how many additional bytes are read and the possibility that {@link IOException}s
+     * and data corruption in the underlying stream can go unnoticed.
+     *
+     * @param in the input stream
+     * @param size the input buffer size
+     * @param allowConcatenation true to allow multiple concatenated compressed data streams,
+     *                           or false to expect exactly one compressed data stream
+     * @param ignoreExtraBytes true to tolerate and ignore extra bytes, false to throw
+     *                             {@link IOException} if any extra bytes are encountered
+     *
+     * @throws    ZipException if a GZIP format error has occurred or the
+     *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
+     * @throws    IOException if an I/O error has occurred
+     * @since     24
+     */
+    public GZIPInputStream(InputStream in, int size,
+            boolean allowConcatenation, boolean ignoreExtraBytes) throws IOException {
         super(in, createInflater(in, size), size);
         usesDefaultInflater = true;
+        this.allowConcatenation = allowConcatenation;
+        this.ignoreExtraBytes = ignoreExtraBytes;
         try {
-            readHeader(in);
+            readHeader(in, -1);
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
@@ -99,19 +176,6 @@ public class GZIPInputStream extends InflaterInputStream {
             throw new IllegalArgumentException("buffer size <= 0");
         }
         return new Inflater(true);
-    }
-
-    /**
-     * Creates a new input stream with a default buffer size.
-     * @param in the input stream
-     *
-     * @throws    ZipException if a GZIP format error has occurred or the
-     *                         compression method used is unsupported
-     * @throws    NullPointerException if {@code in} is null
-     * @throws    IOException if an I/O error has occurred
-     */
-    public GZIPInputStream(InputStream in) throws IOException {
-        this(in, 512);
     }
 
     /**
@@ -189,13 +253,18 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /*
      * Reads GZIP member header and returns the total byte number
-     * of this member header.
+     * of this member header. Use the given value as the first byte
+     * if not equal to -1 (and include it in the returned byte count).
+     * Throws EOFException if there's not enough input data.
      */
-    private int readHeader(InputStream this_in) throws IOException {
+    private int readHeader(InputStream this_in, int firstByte) throws IOException {
         CheckedInputStream in = new CheckedInputStream(this_in, crc);
         crc.reset();
         // Check header magic
-        if (readUShort(in) != GZIP_MAGIC) {
+        int byte1 = firstByte != -1 ? firstByte : readUByte(in);
+        int byte2 = readUByte(in);
+        int magic = (byte2 << 8) | byte1;
+        if (magic != GZIP_MAGIC) {
             throw new ZipException("Not in GZIP format");
         }
         // Check compression method
@@ -258,13 +327,35 @@ public class GZIPInputStream extends InflaterInputStream {
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
 
-        // try concatenated case
-        int m = 8;                  // this.trailer
-        try {
-            m += readHeader(in);    // next.header
-        } catch (IOException ze) {
-            return true;  // ignore any malformed, do nothing
+        // Keep track of how many bytes of buffered data we may have read
+        int m = 8;                                          // this.trailer
+
+        // Handle concatenation and/or extra bytes
+        if (allowConcatenation && ignoreExtraBytes) {       // i.e., the legacy behavior
+            try {
+                m += readHeader(in, -1);                    // next.header
+            } catch (IOException ze) {
+                return true;  // ignore any malformed, do nothing
+            }
+        } else {
+
+            // If there is no more data, the input has terminated at a proper GZIP boundary
+            int nextByte = in.read();
+            if (nextByte == -1)
+                return true;
+
+            // There is more data; if we are not allowing concatenation, then there are extra bytes
+            if (!allowConcatenation) {
+                if (!ignoreExtraBytes)
+                    throw new ZipException("Extra bytes after GZIP trailer");
+                return true;
+            }
+
+            // We are allowing concatenation and not ignoring extra bytes; read the next header
+            m += readHeader(in, nextByte);                  // next.header
         }
+
+        // Pass along any remaining buffered data to the new inflater
         inf.reset();
         if (n > m)
             inf.setInput(buf, len - n + m, n - m);
