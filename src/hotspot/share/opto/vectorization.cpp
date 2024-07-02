@@ -89,24 +89,24 @@ VStatus VLoop::check_preconditions_helper() {
 
   // Check for control flow in the body
   _cl_exit = _cl->loopexit();
-  bool has_cfg = _cl_exit->in(0) != _cl;
-  if (has_cfg && !is_allow_cfg()) {
-#ifndef PRODUCT
-    if (is_trace_preconditions()) {
-      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
-      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
-      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
-      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
-      _lpt->dump_head();
-    }
-#endif
-    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
-  }
-
-  // Make sure the are no extra control users of the loop backedge
-  if (_cl->back_control()->outcnt() != 1) {
-    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
-  }
+//  bool has_cfg = _cl_exit->in(0) != _cl;
+//  if (has_cfg && !is_allow_cfg()) {
+//#ifndef PRODUCT
+//    if (is_trace_preconditions()) {
+//      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+//      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+//      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+//      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+//      _lpt->dump_head();
+//    }
+//#endif
+//    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
+//  }
+//
+//  // Make sure the are no extra control users of the loop backedge
+//  if (_cl->back_control()->outcnt() != 1) {
+//    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
+//  }
 
   // To align vector memory accesses in the main-loop, we will have to adjust
   // the pre-loop limit.
@@ -177,6 +177,8 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   _vpointers.compute_vpointers();
 
   _dependency_graph.construct();
+
+  _predicates.compute_predicates();
 
   return VStatus::make_success();
 }
@@ -294,7 +296,8 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_
 
 int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
   int max_pred_depth = 0;
-  if (!n->is_Phi()) { // ignore backedge
+  if (!n->is_CountedLoop() &&
+      !(n->is_Phi() && n->in(0)->is_CountedLoop())) { // ignore backedge
     for (PredsIterator it(*this, n); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
@@ -405,6 +408,83 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = nullptr; // done
   }
 }
+
+void VLoopBody::construct_data_ctrl_mapping(ResourceHashtable<Node*,GrowableArray<Node*>*>& data_nodes_for_ctrl) const {
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
+    if (n->is_CFG()) { continue; }
+    Node* ctrl = _vloop.phase()->get_ctrl(n);
+    GrowableArray<Node*>** ptr = data_nodes_for_ctrl.get(ctrl);
+    GrowableArray<Node*>* arr = nullptr;
+    if (ptr != nullptr) {
+      arr = *ptr;
+    } else {
+      arr = new GrowableArray<Node*>();
+      data_nodes_for_ctrl.put_when_absent(ctrl, arr);
+    }
+    arr->append(n);
+  }
+}
+
+void VLoopPredicates::compute_predicates() {
+  // TODO hash and cmp -> no duplicates!
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    VLoopPredicate* p = nullptr;
+    if (n->is_CFG()) {
+      // Node* idom = _vloop.phase()->idom(n); // TODO needed?
+      if (n->is_CountedLoop()) {
+        p = new (_arena) VLoopTruePredicate();
+      } else if (n->is_If() || n->is_RangeCheck()) {
+        p = _predicates.at(_body.bb_idx(n->in(0)));
+      } else if (n->is_IfTrue()) {
+        BoolNode* bol = n->in(0)->in(1)->as_Bool();
+        p = new (_arena) VLoopLiteralPredicate(bol);
+        VLoopPredicate* p_ctrl = _predicates.at(_body.bb_idx(n->in(0)));
+        p = new (_arena) VLoopAndPredicate(p_ctrl, p);
+      } else if (n->is_IfFalse()) {
+        BoolNode* bol = n->in(0)->in(1)->as_Bool();
+        p = new (_arena) VLoopLiteralPredicate(bol);
+        p = new (_arena) VLoopNegatePredicate(p);
+        VLoopPredicate* p_ctrl = _predicates.at(_body.bb_idx(n->in(0)));
+        p = new (_arena) VLoopAndPredicate(p_ctrl, p);
+      } else if (n->is_Region()) {
+        // Node* idom = _vloop.phase()->idom(n);
+        p = _predicates.at(_body.bb_idx(n->in(1)));
+        for (uint j = 2; j < n->req(); j++) {
+          VLoopPredicate* p_path =  _predicates.at(_body.bb_idx(n->in(j)));
+          p = new (_arena) VLoopOrPredicate(p, p_path);
+        }
+      } else {
+        n->dump();
+        ShouldNotReachHere();
+      }
+    } else {
+      // All non CFG nodes take the predicate of their ctrl.
+      // TODO consider removing predicate if "safe".
+      Node* ctrl = _vloop.phase()->get_ctrl(n);
+      tty->print("ctrl: "); ctrl->dump();
+      p = _predicates.at(_body.bb_idx(ctrl));
+    }
+    n->dump();
+    p->print(); tty->cr();
+    assert(p != nullptr, "must all have predicates");
+    _predicates.at_put(i, p);
+  }
+  NOT_PRODUCT( if (_vloop.is_trace_predicates()) { print(); } )
+}
+
+#ifndef PRODUCT
+void VLoopPredicates::print() const {
+  tty->print_cr("\nVLoopPredicates::print:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    VLoopPredicate* p = _predicates.at(i);
+    n->dump();
+    if (p != nullptr) { p->print(); tty->cr(); }
+  }
+}
+#endif
 
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;

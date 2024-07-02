@@ -57,11 +57,26 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 {
 }
 
+#define TRACE_UNROLLING_ANALYSIS_FAILURE(message)                          \
+  NOT_PRODUCT(                                                             \
+    if (TraceSuperWordLoopUnrollAnalysis) {                                \
+      tty->print_cr("SuperWord::unrolling_analysis: failed: %s", message); \
+    }                                                                      \
+  )
+
 void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
   CountedLoopNode* cl   = vloop.cl();
   Node* cl_exit         = vloop.cl_exit();
   PhaseIdealLoop* phase = vloop.phase();
+
+#ifndef PRODUCT
+  if (TraceSuperWordLoopUnrollAnalysis) {
+    tty->print_cr("SuperWord::unrolling_analysis:\n");
+    lpt->dump_head();
+    cl->dump();
+  }
+#endif
 
   bool is_slp = true;
   size_t ignored_size = lpt->_body.size();
@@ -105,6 +120,9 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
           is_slp = false;
+          TRACE_UNROLLING_ANALYSIS_FAILURE("memory phi backedge problem?");
+          NOT_PRODUCT( n->dump(); )
+          NOT_PRODUCT( n_tail->dump(); )
           break;
         }
       }
@@ -119,6 +137,8 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     if (n->is_LoadStore() || n->is_MergeMem() ||
       (n->is_Proj() && !n->as_Proj()->is_CFG())) {
       is_slp = false;
+      TRACE_UNROLLING_ANALYSIS_FAILURE("node not allowed");
+      NOT_PRODUCT( n->dump(); )
       break;
     }
 
@@ -192,11 +212,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       // stop looking, we already have the max vector to map to.
       if (cur_max_vector < local_loop_unroll_factor) {
         is_slp = false;
-#ifndef PRODUCT
-        if (TraceSuperWordLoopUnrollAnalysis) {
-          tty->print_cr("slp analysis fails: unroll limit greater than max vector\n");
-        }
-#endif
+        TRACE_UNROLLING_ANALYSIS_FAILURE("unroll limit greater than max vector");
         break;
       }
 
@@ -756,17 +772,18 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
     return false;
   }
 
-  Node* s1_ctrl = s1->in(0);
-  Node* s2_ctrl = s2->in(0);
-  // If the control nodes are equivalent, no further checks are required to test for isomorphism.
-  if (s1_ctrl == s2_ctrl) {
-    return true;
-  } else {
-    // If the control nodes are not invariant for the loop, fail isomorphism test.
-    const bool s1_ctrl_inv = (s1_ctrl == nullptr) || lpt()->is_invariant(s1_ctrl);
-    const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
-    return s1_ctrl_inv && s2_ctrl_inv;
-  }
+  return true; // TODO do we need to do sth about ctrl? Or do it via packing strat/optimization?
+  //Node* s1_ctrl = s1->in(0);
+  //Node* s2_ctrl = s2->in(0);
+  //// If the control nodes are equivalent, no further checks are required to test for isomorphism.
+  //if (s1_ctrl == s2_ctrl) {
+  //  return true;
+  //} else {
+  //  // If the control nodes are not invariant for the loop, fail isomorphism test.
+  //  const bool s1_ctrl_inv = (s1_ctrl == nullptr) || lpt()->is_invariant(s1_ctrl);
+  //  const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
+  //  return s1_ctrl_inv && s2_ctrl_inv;
+  //}
 }
 
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
@@ -2947,8 +2964,11 @@ VStatus VLoopBody::construct() {
     }
   }
 
-  // Create a reverse-post-order list of nodes in body
   ResourceMark rm;
+  ResourceHashtable<Node*,GrowableArray<Node*>*> data_nodes_for_ctrl;
+  construct_data_ctrl_mapping(data_nodes_for_ctrl);
+
+  // Create a reverse-post-order list of nodes in body
   GrowableArray<Node*> stack;
   VectorSet visited;
   VectorSet post_visited;
@@ -2990,9 +3010,23 @@ VStatus VLoopBody::construct() {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
-            // Don't go around backedge
-            (!use->is_Phi() || n == _vloop.cl())) {
+            // Don't go around backedge ctrl
+            !use->is_CountedLoop() &&
+            // Don't go around backedge data (allowed: CountedLoop -> phi, non-backedge phis)
+            (!(use->is_Phi() && use->in(0)->is_CountedLoop()) || n->is_CountedLoop())) {
           stack.push(use); // Ordering edge: n -> use
+        }
+      }
+
+      // Add the ctrl -> data edges, i.e. every data should come after their get_ctrl(data).
+      GrowableArray<Node*>** ptr = data_nodes_for_ctrl.get(n);
+      if (ptr != nullptr) {
+        GrowableArray<Node*>& arr = **ptr;
+        for (int i = 0; i < arr.length(); i++) {
+          Node* use = arr.at(i);
+          if (!visited.test(bb_idx(use))) {
+            stack.push(use); // Ordering edge: n -> use
+          }
         }
       }
 
@@ -3010,6 +3044,27 @@ VStatus VLoopBody::construct() {
     }
   }
 
+#ifdef ASSERT
+  // TODO: remove or split out into separate method?
+  if (rpo_idx != -1) {
+    for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+      Node* n = _vloop.lpt()->_body.at(i);
+      bool found = false;
+      for (int j = 0; j < _body.length(); j++) {
+        if (n == _body.at(j)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        tty->print("Missing in VLoopBody: ");
+        n->dump();
+      }
+    }
+  }
+#endif
+  assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
+
   // Create real map of body indices for nodes
   for (int j = 0; j < _body.length(); j++) {
     Node* n = _body.at(j);
@@ -3022,7 +3077,6 @@ VStatus VLoopBody::construct() {
   }
 #endif
 
-  assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
   return VStatus::make_success();
 }
 

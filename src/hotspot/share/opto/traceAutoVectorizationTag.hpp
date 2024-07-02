@@ -37,6 +37,7 @@
   flags(TYPES,                "Trace VLoopTypes") \
   flags(POINTERS,             "Trace VLoopPointers") \
   flags(DEPENDENCY_GRAPH,     "Trace VLoopDependencyGraph") \
+  flags(PREDICATES,           "Trace VLoopPredicates") \
   flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_memop_pairs") \
   flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
