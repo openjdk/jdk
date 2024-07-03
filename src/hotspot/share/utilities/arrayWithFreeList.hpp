@@ -89,7 +89,7 @@ private:
       data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
     }
 
-    resizable_array(BackingElement* data, size_t capacity)
+    resizable_array(BackingElement* data, II capacity)
     : fixed_size(true),
       len(0),
       cap(capacity),
@@ -147,7 +147,7 @@ public:
     static_assert_E_satisfies_type_requirements(false);
   }
 
-  ArrayWithFreeList(BackingElement* data, size_t capacity)
+  ArrayWithFreeList(BackingElement* data, II capacity)
   : _backing_storage(data, capacity), _free_start(nil) {
     static_assert_E_satisfies_type_requirements(true);
   }
