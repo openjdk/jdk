@@ -400,7 +400,7 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
-      // Allow for "<cmd> -h" or "<cmd> --help" to enable
+      // Allow for "<cmd> -h|-help|--help" to enable
       // the help diagnostic command. Ignores any additional
       // arguments.
       stringStream updated_line;
