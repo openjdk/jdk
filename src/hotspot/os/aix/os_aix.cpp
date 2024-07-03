@@ -113,7 +113,6 @@
 #error Hotspot on AIX must be compiled with -D_LARGE_FILES
 #endif
 
-#define ERROR_NO_SUCH_FILE "No such file or directory"
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
@@ -989,7 +988,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-static void* dll_load_library(const char *filename, int *errno, char *ebuf, int ebuflen) {
+static void* dll_load_library(const char *filename, int *eno, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
   if (ebuf && ebuflen > 0) {
@@ -1017,7 +1016,7 @@ static void* dll_load_library(const char *filename, int *errno, char *ebuf, int 
   void* result;
   const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = Aix_dlopen(filename, errno, dflags, &error_report);
+  result = Aix_dlopen(filename, eno, dflags, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
