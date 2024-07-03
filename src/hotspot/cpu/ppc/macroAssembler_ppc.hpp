@@ -54,6 +54,7 @@ class MacroAssembler: public Assembler {
   inline static int largeoffset_si16_si16_hi(int si31) { return (si31 + (1<<15)) >> 16; }
   inline static int largeoffset_si16_si16_lo(int si31) { return si31 - (((si31 + (1<<15)) >> 16) << 16); }
 
+
   // load d = *[a+si31]
   // Emits several instructions if the offset is not encodable in one instruction.
   void ld_largeoffset_unchecked(Register d, int si31, Register a, int emit_filler_nop);
@@ -416,7 +417,7 @@ class MacroAssembler: public Assembler {
   void call_VM_leaf(address entry_point, Register arg_1);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
-
+  address call_c_runtime(address entry_point);
   // Call a stub function via a function descriptor, but don't save
   // TOC before call, don't setup TOC and ENV for call, and don't
   // restore TOC after call. Updates and returns _last_calls_return_pc.

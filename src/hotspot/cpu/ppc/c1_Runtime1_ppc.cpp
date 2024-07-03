@@ -62,9 +62,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
   // ARG1 must hold thread address.
   mr(R3_ARG1, R16_thread);
 
-  //address return_pc = call_c_with_frame_resize(entry_point, /*No resize, we have a C compatible frame.*/0);
-  this->call_VM_leaf(entry_point);
-  address return_pc = pc();
+  address return_pc = this->call_c_runtime(entry_point);
+  
   reset_last_Java_frame();
 
   // Check for pending exceptions.
