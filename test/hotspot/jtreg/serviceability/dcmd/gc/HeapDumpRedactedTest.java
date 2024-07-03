@@ -50,7 +50,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 }
 
 public class HeapDumpRedactedTest {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         PrimitiveTestTarget target = new PrimitiveTestTarget();
         PidJcmdExecutor executor = new PidJcmdExecutor();
         File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
@@ -72,7 +72,7 @@ public class HeapDumpRedactedTest {
         }
         int instanceCount = testClass.getInstancesCount(false);
         if (instanceCount < 1) {
-            throw new RuntimeException("Not instances of '" + className + "' found");
+            throw new RuntimeException("No instances of '" + className + "' found");
         }
         JavaObject targetObject = (JavaObject) testClass.getInstances(false).nextElement();
 

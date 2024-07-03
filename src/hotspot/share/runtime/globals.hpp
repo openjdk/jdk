@@ -559,7 +559,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, HeapDumpRedacted, false, MANAGEABLE,                        \
           "Redact primitive type values from heap dump by setting "         \
-          "to zero.")                                                       \
+          "them to zero.")                                                  \
                                                                             \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
           "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \

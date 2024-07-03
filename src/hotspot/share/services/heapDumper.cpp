@@ -481,7 +481,7 @@ void AbstractDumpWriter::write_raw(const void* s, size_t len) {
     flush();
   }
 
-  if(s == nullptr) {
+  if (s == nullptr) {
     memset(buffer() + position(), 0, len);
   } else {
     memcpy(buffer() + position(), s, len);
