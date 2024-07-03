@@ -49,6 +49,8 @@ class ParallelGCArraySlicer : public ArraySlicer {
   PSPromotionManager* _promotion_manager;
 public:
   explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
+          ArraySlicer(promotion_manager->_array_chunk_size,
+                      promotion_manager->_min_array_size_for_chunking),
           _promotion_manager(promotion_manager) {}
 
   void scan_metadata(objArrayOop array) {

@@ -35,7 +35,7 @@ size_t ArraySlicer::process_objArray(objArrayOop array) {
   // Mark objArray klass metadata
   scan_metadata(array);
 
-  if (len <= (int)ObjArrayMarkingStride * 2) {
+  if (len <= _min_array_size_for_slicing) {
     return scan_array(array, 0, len);
   }
 
@@ -66,7 +66,7 @@ size_t ArraySlicer::process_objArray(objArrayOop array) {
 
   // Split out tasks, as suggested in ArraySliceTask docs. Record the last
   // successful right boundary to figure out the irregular tail.
-  while ((1 << pow) > (int)ObjArrayMarkingStride &&
+  while ((1 << pow) > _array_slice_size &&
          (slice * 2 < ArraySliceTask::slice_size())) {
     pow--;
     int left_slice = slice * 2 - 1;
@@ -90,11 +90,11 @@ size_t ArraySlicer::process_objArray(objArrayOop array) {
 }
 
 size_t ArraySlicer::process_slice(objArrayOop array, int slice, int pow) {
-  assert (ObjArrayMarkingStride > 0, "sanity");
+  assert (_array_slice_size > 0, "sanity");
 
   // Split out tasks, as suggested in ArraySliceTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
-  while ((1 << pow) > (int)ObjArrayMarkingStride && (slice * 2 < ArraySliceTask::slice_size())) {
+  while ((1 << pow) > _array_slice_size && (slice * 2 < ArraySliceTask::slice_size())) {
     pow--;
     slice *= 2;
     push_on_queue(ArraySliceTask(array, slice - 1, pow));

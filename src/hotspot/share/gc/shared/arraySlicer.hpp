@@ -250,10 +250,18 @@ public:
 #endif
 
 class ArraySlicer {
-public:
+private:
+  int _array_slice_size;
+  int _min_array_size_for_slicing;
+protected:
+  ArraySlicer(int array_slice_size, int min_array_size_for_slicing) :
+    _array_slice_size(array_slice_size),
+    _min_array_size_for_slicing(min_array_size_for_slicing) {}
+
   virtual void scan_metadata(objArrayOop array) = 0;
   virtual void push_on_queue(ArraySliceTask task) = 0;
   virtual size_t scan_array(objArrayOop array, int start, int end) = 0;
+public:
 
   size_t process_objArray(objArrayOop obj);
   size_t process_slice(objArrayOop array, int slice, int pow);

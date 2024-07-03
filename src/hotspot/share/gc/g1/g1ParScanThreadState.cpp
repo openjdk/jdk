@@ -228,10 +228,11 @@ public:
   G1ScavengeArraySlicer(G1ScanEvacuatedObjClosure& scanner,
                         bool skip_enqueue,
                         G1ParScanThreadState* par_scan) :
-          _scanner(scanner),
-          _skip_enqueue(skip_enqueue),
-          _par_scan(par_scan),
-          _g1h(G1CollectedHeap::heap()) {}
+    ArraySlicer(ParGCArrayScanChunk, ParGCArrayScanChunk),
+    _scanner(scanner),
+    _skip_enqueue(skip_enqueue),
+    _par_scan(par_scan),
+    _g1h(G1CollectedHeap::heap()) {}
 
   void scan_metadata(objArrayOop array) override {
     // TODO: According to old comment not needed, but may be cleaner?

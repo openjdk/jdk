@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_HPP
 
 #include "gc/shared/arraySlicer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class G1CMTask;
@@ -40,7 +41,9 @@ private:
   G1CMTask* _task;
 
 public:
-  explicit G1CMObjArrayProcessor(G1CMTask* task) : _task(task) {
+  explicit G1CMObjArrayProcessor(G1CMTask* task) :
+    ArraySlicer((int)ObjArrayMarkingStride, (int)(2 * ObjArrayMarkingStride)),
+    _task(task) {
   }
   void scan_metadata(objArrayOop array) override;
   void push_on_queue(ArraySliceTask task) override;
