@@ -1049,11 +1049,11 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   const char new_extension[] = ".a";
   STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
   // First try to load the existing file.
-  int errno=0;
-  result = dll_load_library(filename, &errno, ebuf, ebuflen);
+  int eno=0;
+  result = dll_load_library(filename, &eno, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr && err_no==ENOENT != nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+  if (result == nullptr && eno == ENOENT && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
     snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
     result = dll_load_library(file_path, &errno, ebuf, ebuflen);
   }
