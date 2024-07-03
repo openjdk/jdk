@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8332124
- * @summary Test to verify jcmd accepts the "-help" and "--help" suboptions as a command argument
+ * @summary Test to verify jcmd accepts the "-help", "--help" and "-h" suboptions as a command argument
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,9 +38,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestJcmdSubcommandHelp {
 
-    private static final String HELP_ONE_DASH = "-h";
+    private static final String HELP_ONE_DASH = "-help";
     private static final String HELP_TWO_DASH = "--help";
+    private static final String HELP_POSIX = "-h";
     private static final String CMD = "VM.metaspace";
+    private static final String ILLEGAL = "IllegalArgumentException: Unknown argument";
 
     public static void main(String[] args) throws Exception {
 
@@ -55,12 +57,19 @@ public class TestJcmdSubcommandHelp {
 
         testExpectedUsage(HELP_ONE_DASH, expectedOutput);
         testExpectedUsage(HELP_TWO_DASH, expectedOutput);
+        testExpectedUsage(HELP_POSIX, expectedOutput);
 
         testIgnoreAdditionalArgs(HELP_ONE_DASH, expectedOutput);
         testIgnoreAdditionalArgs(HELP_TWO_DASH, expectedOutput);
+        testIgnoreAdditionalArgs(HELP_POSIX, expectedOutput);
 
         testIgnoreTrailingSpaces(HELP_ONE_DASH, expectedOutput);
         testIgnoreTrailingSpaces(HELP_TWO_DASH, expectedOutput);
+        testIgnoreTrailingSpaces(HELP_POSIX, expectedOutput);
+
+        testSimilarCommand(HELP_ONE_DASH + "less", ILLEGAL);
+        testSimilarCommand(HELP_TWO_DASH + "me", ILLEGAL);
+        testSimilarCommand(HELP_POSIX + "ello", ILLEGAL);
     }
 
     private static void testExpectedUsage(String helpOption, String expectedOutput) throws Exception {
@@ -78,15 +87,33 @@ public class TestJcmdSubcommandHelp {
                 "Expected jcmd to accept '%s' suboption with trailing spaces".formatted(helpOption));
     }
 
+    private static void testSimilarCommand(String helpOption, String expectedOutput) throws Exception {
+        verifyOutputContains(new String[] {CMD, helpOption}, expectedOutput,
+                "Expected jcmd to NOT accept '%s' suboption with trailing content".formatted(helpOption));
+    }
+
+    private static void verifyOutputContains(String[] args, String expectedOutput, String errorMessage) throws Exception {
+        OutputAnalyzer output = JcmdBase.jcmd(args);
+        String issuedOutput = output.getOutput();
+        if (!issuedOutput.contains(expectedOutput)) {
+            printDifferingOutputs(expectedOutput, issuedOutput);
+            throw new Exception(errorMessage);
+        }
+    }
+
     private static void verifyOutput(String[] args, String expectedOutput, String errorMessage) throws Exception {
         OutputAnalyzer output = JcmdBase.jcmd(args);
         String issuedOutput = output.getOutput();
         if (!expectedOutput.equals(issuedOutput)) {
-            System.out.println("Expected output: ");
-            System.out.println(expectedOutput);
-            System.out.println("Issued output: ");
-            System.out.println(issuedOutput);
+            printDifferingOutputs(expectedOutput, issuedOutput);
             throw new Exception(errorMessage);
         }
+    }
+
+    private static void printDifferingOutputs(String expectedOutput, String issuedOutput) {
+        System.out.println("Expected output: ");
+        System.out.println(expectedOutput);
+        System.out.println("Issued output: ");
+        System.out.println(issuedOutput);
     }
 }

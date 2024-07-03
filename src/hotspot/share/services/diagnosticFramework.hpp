@@ -312,7 +312,7 @@ public:
   // management.cpp every time.
   static void register_dcmds();
 
-  // Helper method to substitute "<cmd> -h" for "help <cmd>" if applicable.
+  // Helper method to substitute help options "-h|-help|--help <cmd>" for "help <cmd>".
   static bool reorder_help_cmd(CmdLine line, stringStream& updated_line);
 };
 
