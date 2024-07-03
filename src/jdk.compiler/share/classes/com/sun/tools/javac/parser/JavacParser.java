@@ -5027,35 +5027,57 @@ public class JavacParser implements Parser {
                     // error recovery
                     // look if there is a probable missing opening brace,
                     // and if yes, parse as a block
-                    skip(false, true, false, !unclosedParameterList);
+                    skip(false, true, !unclosedParameterList, !unclosedParameterList);
                     boolean parseAsBlock;
                     if (token.kind == LBRACE) {
                         parseAsBlock = true;
                     } else if (unclosedParameterList) {
                         parseAsBlock = false;
-                    } else if (token.kind == RBRACE) {
-                        int braceBalance = 1;
-                        VirtualScanner virtualScanner = new VirtualScanner(S);
-
-                        virtualScanner.nextToken();
-
-                        while (virtualScanner.token().kind != TokenKind.EOF) {
-                            switch (virtualScanner.token().kind) {
-                                case LBRACE -> braceBalance++;
-                                case RBRACE -> braceBalance--;
-                            }
-                            virtualScanner.nextToken();
-                        }
-
-                        parseAsBlock = braceBalance == 0;
                     } else {
-                        JavacParser speculative = new VirtualParser(this);
-                        JCBlock speculativeResult =
-                                speculative.block();
-                        parseAsBlock =
-                                !speculativeResult.stats.isEmpty() &&
-                                !(speculativeResult.stats.head instanceof JCExpressionStatement s &&
-                                 s.expr.hasTag(ERRONEOUS));
+                        parseAsBlock = switch (token.kind) {
+                            //definitelly sees a statement:
+                            case CASE, DEFAULT, IF, FOR, WHILE, DO, TRY, SWITCH,
+                                 RETURN, THROW, BREAK, CONTINUE, ELSE, FINALLY,
+                                 CATCH, THIS, SUPER, NEW -> true;
+                            case RBRACE -> {
+                                //check if adding an opening brace would balance out
+                                //the opening and closing braces:
+                                int braceBalance = 1;
+                                VirtualScanner virtualScanner = new VirtualScanner(S);
+
+                                virtualScanner.nextToken();
+
+                                while (virtualScanner.token().kind != TokenKind.EOF) {
+                                    switch (virtualScanner.token().kind) {
+                                        case LBRACE -> braceBalance++;
+                                        case RBRACE -> braceBalance--;
+                                    }
+                                    virtualScanner.nextToken();
+                                }
+
+                                yield braceBalance == 0;
+                            }
+                            default -> {
+                                //speculatively try to parse as a block, and check
+                                //if the result would suggest there is a block
+                                //e.g.: it contains a statement that is not
+                                //a member declaration
+                                JavacParser speculative = new VirtualParser(this);
+                                JCBlock speculativeResult =
+                                        speculative.block();
+                                if (!speculativeResult.stats.isEmpty()) {
+                                    JCStatement last = speculativeResult.stats.last();
+                                    yield !speculativeResult.stats.stream().allMatch(s -> s.hasTag(VARDEF) ||
+                                                                                          s.hasTag(CLASSDEF) ||
+                                                                                          s.hasTag(BLOCK) ||
+                                                                                          s == last) ||
+                                          !(last instanceof JCExpressionStatement exprStatement &&
+                                            exprStatement.expr.hasTag(ERRONEOUS));
+                                } else {
+                                    yield false;
+                                }
+                            }
+                        };
                     }
 
                     if (parseAsBlock) {
