@@ -913,8 +913,12 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
   if (current_method != _current_method) {
     // If a different method, end the old and begin with the new one.
     if (_append) {
+      // Do not call `end_method` if we are appending, just update `_current_method`,
+      // because `begin_method` is not called in the constructor in append mode.
       _current_method = current_method;
     } else {
+      // End the old method and begin a new one.
+      // Don't worry about `_current_method`, `end_method` will clear it.
       end_method();
       begin_method();
     }
