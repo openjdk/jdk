@@ -1406,7 +1406,8 @@ void FileMapInfo::open_for_write() {
   if (fd < 0) {
     log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
                    os::strerror(errno));
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
+    return;
   }
   _fd = fd;
   _file_open = true;
@@ -1659,7 +1660,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    MetaspaceShared::unrecoverable_writing_error("Unable to write to shared archive file.");
+    MetaspaceShared::writing_error("Unable to write to shared archive file.");
   }
   _file_offset += nbytes;
 }

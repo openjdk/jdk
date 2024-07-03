@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideFwd")
     void testFixFwdJumpsTransform(Sample sample) throws Exception {
         assertFixed(sample,
-                    CC_Fixed_Jumps.transform(
+                    CC_Fixed_Jumps.transformClass(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
     }
@@ -145,7 +145,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideBack")
     void testFixBackJumpsTransform(Sample sample) throws Exception {
         assertFixed(sample,
-                    CC_Fixed_Jumps.transform(
+                    CC_Fixed_Jumps.transformClass(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
     }
@@ -154,7 +154,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideFwd")
     void testFailFwdJumpsTransform(Sample sample) throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                     CC_Not_Fixed_Jumps.transform(
+                     CC_Not_Fixed_Jumps.transformClass(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
     }
@@ -163,7 +163,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideBack")
     void testFailBackJumpsTransform(Sample sample) throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                     CC_Not_Fixed_Jumps.transform(
+                     CC_Not_Fixed_Jumps.transformClass(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
     }
@@ -172,7 +172,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideFwd")
     void testFixFwdJumpsChainedTransform(Sample sample) throws Exception {
         assertFixed(sample,
-                    CC_Fixed_Jumps.transform(
+                    CC_Fixed_Jumps.transformClass(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
@@ -181,7 +181,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideBack")
     void testFixBackJumpsChainedTransform(Sample sample) throws Exception {
         assertFixed(sample,
-                    CC_Fixed_Jumps.transform(
+                    CC_Fixed_Jumps.transformClass(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
@@ -190,7 +190,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideFwd")
     void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                     CC_Not_Fixed_Jumps.transform(
+                     CC_Not_Fixed_Jumps.transformClass(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
@@ -199,7 +199,7 @@ class ShortJumpsFixTest {
     @MethodSource("provideBack")
     void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
-                     CC_Not_Fixed_Jumps.transform(
+                     CC_Not_Fixed_Jumps.transformClass(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
