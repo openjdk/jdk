@@ -1892,7 +1892,7 @@ void VTransform::apply() {
     lpt()->head()->dump();
   }
   assert(cl()->is_main_loop(), "auto vectorization only for main loops");
-  assert(_schedule.is_nonempty(), "must already be scheduled");
+  assert(_graph.is_scheduled(), "must already be scheduled");
 #endif
 
   Compile* C = phase()->C;
@@ -1914,8 +1914,9 @@ void VTransform::apply() {
 // in the memory graph after the reordering.
 void VTransform::apply_memops_reordering_with_schedule() const {
 #ifndef PRODUCT
+  assert(_graph.is_scheduled(), "must be already scheduled");
   if (_is_trace_info) {
-    print_memops_schedule();
+    _graph.print_memops_schedule();
   }
 #endif
 
@@ -1944,7 +1945,7 @@ void VTransform::apply_memops_reordering_with_schedule() const {
 
   // (2) Walk over schedule, append memops to the current state
   //     of that slice. If it is a Store, we take it as the new state.
-  for_each_memop_in_schedule([&] (MemNode* n) {
+  _graph.for_each_memop_in_schedule([&] (MemNode* n) {
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
     int alias_idx = phase()->C->get_alias_index(n->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
@@ -1999,6 +2000,26 @@ void VTransform::apply_memops_reordering_with_schedule() const {
   }
 }
 
+void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width NOT_PRODUCT( COMMA const bool is_trace_verbose)) const {
+  ResourceMark rm;
+  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
+  // Since "apply" is called on defs before uses, this allows us to find the
+  // generated def (input) nodes when we are generating the use nodes in "apply".
+  int length = _vtnodes.length();
+  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
+
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
+                                              vtnode_idx_to_transformed_node);
+    NOT_PRODUCT( if (is_trace_verbose) { result.trace(vtn); } )
+
+    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    max_vector_length = MAX2(max_vector_length, result.vector_length());
+    max_vector_width  = MAX2(max_vector_width,  result.vector_width());
+  }
+}
+
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
 void VTransform::apply_vectorization() const {
   Compile* C = phase()->C;
@@ -2008,26 +2029,9 @@ void VTransform::apply_vectorization() const {
   }
 #endif
 
-  ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
-
   uint max_vector_length = 0; // number of elements
   uint max_vector_width  = 0; // total width in bytes
-
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
-                                              vtnode_idx_to_transformed_node);
-    NOT_PRODUCT( if (_is_trace_verbose) { result.trace(vtn); } )
-
-    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
-    max_vector_length = MAX2(max_vector_length, result.vector_length());
-    max_vector_width  = MAX2(max_vector_width,  result.vector_width());
-  }
+  _graph.apply_vectorization_for_each_vtnode(max_vector_length, max_vector_width NOT_PRODUCT( COMMA _is_trace_verbose));
 
   assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
   cl()->mark_loop_vectorized();
@@ -2629,8 +2633,9 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
   MemNode const* mem_ref = nullptr;
   int max_aw = 0;
 
-  for (int i = 0; i < _vtnodes.length(); i++) {
-    VTransformVectorNode* vtn = _vtnodes.at(i)->isa_Vector();
+  const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
+  for (int i = 0; i < vtnodes.length(); i++) {
+    VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
     if (vtn == nullptr) { continue; }
     MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
     if (p0 == nullptr) { continue; }

@@ -89,6 +89,51 @@ public:
   NOT_PRODUCT( void trace(VTransformNode* vtn) const; )
 };
 
+// TODO desc
+class VTransformGraph : public StackObj {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop& _vloop;
+
+  VTransformNodeIDX _next_idx;
+  GrowableArray<VTransformNode*> _vtnodes;
+
+  // Schedule (linearization) of the graph. We use this to reorder the memory graph
+  // before inserting vector operations.
+  GrowableArray<VTransformNode*> _schedule;
+
+public:
+  VTransformGraph(const VLoopAnalyzer& vloop_analyzer, Arena& arena) :
+    _vloop_analyzer(vloop_analyzer),
+    _vloop(vloop_analyzer.vloop()),
+    _next_idx(0),
+    _vtnodes(&arena, _vloop.estimated_body_length(), 0, nullptr),
+    _schedule(&arena, _vloop.estimated_body_length(), 0, nullptr) {}
+
+  VTransformNodeIDX new_idx() { return _next_idx++; }
+  void add_vtnode(VTransformNode* vtnode);
+  bool is_empty() const { return _vtnodes.is_empty(); }
+  bool is_scheduled() const { return _schedule.is_nonempty(); }
+  const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
+  void add_vtnode_to_schedule(int index, VTransformNode* vtn) { _schedule.at_put_grow(index, vtn); }
+
+  template<typename Callback>
+  void for_each_memop_in_schedule(Callback callback) const;
+
+  void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
+
+  void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width NOT_PRODUCT( COMMA const bool is_trace_verbose)) const;
+
+#ifndef PRODUCT
+  void print_vtnodes() const;
+  void print_schedule() const;
+  void print_memops_schedule() const;
+  void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
+                            const VectorSet& pre_visited,
+                            const VectorSet& post_visited) const;
+#endif
+};
+
 // TODO graph vs transform
 // VTransform is a graph of VTransformNode, which represent the VTransform. It
 // is designed to resemble the C2 nodes after "apply" as closely as possible.
@@ -113,12 +158,7 @@ private:
   // Everything in the vtransform is allocated from this arena, including all vtnodes.
   Arena _arena;
 
-  VTransformNodeIDX _next_idx;
-  GrowableArray<VTransformNode*> _vtnodes;
-
-  // Schedule (linearization) of the graph. We use this to reorder the memory graph
-  // before inserting vector operations.
-  GrowableArray<VTransformNode*> _schedule;
+  VTransformGraph _graph;
 
   // Memory reference, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
@@ -143,9 +183,7 @@ public:
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
     _arena(mtCompiler),
-    _next_idx(0),
-    _vtnodes(&_arena, _vloop.estimated_body_length(), 0, nullptr),
-    _schedule(&_arena, _vloop.estimated_body_length(), 0, nullptr),
+    _graph(_vloop_analyzer, _arena),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment)
     NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
@@ -163,9 +201,8 @@ public:
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   Arena* arena() { return &_arena; }
-  VTransformNodeIDX new_idx() { return _next_idx++; }
-  void add_vtnode(VTransformNode* vtnode);
-  bool is_empty() const { return _vtnodes.is_empty(); }
+  bool is_empty() const { return _graph.is_empty(); }
+  VTransformGraph& graph() { return _graph; }
 
   bool schedule();
   void apply();
@@ -184,11 +221,6 @@ private:
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
-  void schedule_collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
-
-  template<typename Callback>
-  void for_each_memop_in_schedule(Callback callback) const;
-
   void apply_memops_reordering_with_schedule() const;
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
@@ -196,15 +228,6 @@ private:
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
   void apply_vectorization() const;
-
-#ifndef PRODUCT
-  void print_vtnodes() const;
-  void print_schedule() const;
-  void print_memops_schedule() const;
-  void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
-                            const VectorSet& pre_visited,
-                            const VectorSet& post_visited) const;
-#endif
 };
 
 // VTransformNodes resemble the C2 IR Nodes. They represent the resulting scalar and
@@ -221,12 +244,12 @@ private:
 
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
-    _idx(vtransform.new_idx()),
+    _idx(vtransform.graph().new_idx()),
     _req(req),
     _in(vtransform.arena(),  req, req, nullptr),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
-    vtransform.add_vtnode(this);
+    vtransform.graph().add_vtnode(this);
   }
 
   void set_req(uint i, VTransformNode* n) {
@@ -451,7 +474,7 @@ public:
 
 // Invoke callback on all memops, in the order of the schedule.
 template<typename Callback>
-void VTransform::for_each_memop_in_schedule(Callback callback) const {
+void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
   assert(_schedule.length() == _vtnodes.length(), "schedule was computed");
 
   for (int i = 0; i < _schedule.length(); i++) {
