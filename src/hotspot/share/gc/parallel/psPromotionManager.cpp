@@ -266,7 +266,7 @@ void PSPromotionManager::flush_labs() {
 }
 
 template <class T> void PSPromotionManager::process_array_chunk_work(
-                                                 oop obj,
+                                                 objArrayOop obj,
                                                  int start, int end) {
   assert(start <= end, "invariant");
   T* const base      = (T*)objArrayOop(obj)->base();

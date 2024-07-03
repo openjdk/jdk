@@ -101,7 +101,7 @@ class PSPromotionManager {
 
   inline static PSPromotionManager* manager_array(uint index);
 
-  template <class T> void  process_array_chunk_work(oop obj,
+  template <class T> void  process_array_chunk_work(objArrayOop obj,
                                                     int start, int end);
   void process_array_chunk(ArraySliceTask task);
 
