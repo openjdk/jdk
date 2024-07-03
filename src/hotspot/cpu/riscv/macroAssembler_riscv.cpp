@@ -1494,10 +1494,9 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 
   lwu(tmp2, Address(tmp3));
-  if (upper) {
-    tmp1 = v;
+  // It is more optimal to use 'srli' instead of 'srliw' for case when it is not necessary to clean upper bits
+  if (upper)
     srli(tmp1, v, 24);
-  }
   else
     srliw(tmp1, v, 24);
 
