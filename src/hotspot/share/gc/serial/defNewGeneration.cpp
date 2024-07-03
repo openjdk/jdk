@@ -229,7 +229,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
     _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false),
     _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
@@ -833,17 +832,6 @@ void DefNewGeneration::reset_scratch() {
   if (ZapUnusedHeapArea) {
     to()->mangle_unused_area();
   }
-}
-
-bool DefNewGeneration::collection_attempt_is_safe() {
-  if (!to()->is_empty()) {
-    log_trace(gc)(":: to is not empty ::");
-    return false;
-  }
-  if (_old_gen == nullptr) {
-    _old_gen = SerialHeap::heap()->old_gen();
-  }
-  return _old_gen->promotion_attempt_is_safe(used());
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {

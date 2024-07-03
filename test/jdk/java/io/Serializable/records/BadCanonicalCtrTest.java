@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class BadCanonicalCtrTest {
      */
     static byte[] removeConstructor(byte[] classBytes) {
         var cf = ClassFile.of();
-        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.dropping(ce ->
                 ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
 
@@ -217,7 +217,7 @@ public class BadCanonicalCtrTest {
      */
     static byte[] modifyConstructor(byte[] classBytes) {
         var cf = ClassFile.of();
-        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.dropping(ce ->
                         ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
                 .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
                         MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
