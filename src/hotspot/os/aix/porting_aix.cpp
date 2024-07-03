@@ -1035,7 +1035,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
 // This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
-void* Aix_dlopen(const char* filename, int *eno, int Flags, const char** error_report) {
+void* Aix_dlopen(const char* filename,int Flags, int *eno, const char** error_report) {
   assert(error_report != nullptr, "error_report is nullptr");
   void* result;
   struct stat64x libstat;
