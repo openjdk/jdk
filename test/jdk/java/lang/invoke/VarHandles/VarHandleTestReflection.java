@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
 
@@ -52,13 +53,31 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     }
 
     @Test(dataProvider = "accessModesProvider", expectedExceptions = IllegalArgumentException.class)
-    public void methodInvocation(VarHandle.AccessMode accessMode) throws Exception {
+    public void methodInvocationArgumentMismatch(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
-        // Try a reflective invoke using a Method
+        // Try a reflective invoke using a Method, with no arguments
 
         Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
         vhm.invoke(v, new Object[]{});
+    }
+
+    @Test(dataProvider = "accessModesProvider")
+    public void methodInvocationMatchingArguments(VarHandle.AccessMode accessMode) throws Exception {
+        VarHandle v = handle();
+
+        // Try a reflective invoke using a Method, with an array of 0 arguments
+
+        Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
+        Object args = new Object[0];
+        try {
+            vhm.invoke(v, args);
+        } catch (InvocationTargetException e) {
+            if (!(e.getCause() instanceof UnsupportedOperationException)) {
+                throw new RuntimeException("expected UnsupportedOperationException but got: "
+                                           + e.getCause().getClass().getName(), e);
+            }
+        }
     }
 
     @Test(dataProvider = "accessModesProvider", expectedExceptions = UnsupportedOperationException.class)

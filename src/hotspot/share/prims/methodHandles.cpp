@@ -1443,6 +1443,7 @@ static JNINativeMethod VH_methods[] = {
   {CC "setOpaque",                  CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
   {CC "setRelease",                 CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
   {CC "setVolatile",                CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSet",          CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
   {CC "weakCompareAndSetAcquire",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
   {CC "weakCompareAndSetPlain",     CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
   {CC "weakCompareAndSetRelease",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)}
