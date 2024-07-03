@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8210496
  * @modules java.base/jdk.internal.reflect
@@ -31,6 +31,9 @@
 
 import java.lang.reflect.*;
 import java.lang.invoke.MethodHandles.Lookup;
+
+import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.Reflection;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
@@ -40,7 +43,7 @@ public class Filtering {
     @DataProvider(name = "sensitiveClasses")
     private Object[][] sensitiveClasses() {
         return new Object[][]{
-            { jdk.internal.reflect.Reflection.class, null },
+            { Reflection.class, null },
             { AccessibleObject.class, null },
             { ClassLoader.class, null },
             { Constructor.class, null },
@@ -65,6 +68,7 @@ public class Filtering {
             { Module.class, "name" },
             { Module.class, "loader" },
             { System.class, "security" },
+            { ConstantPool.class, "constantPoolOop" },
         };
     }
 

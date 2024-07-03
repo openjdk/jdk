@@ -59,6 +59,7 @@ public class Reflection {
         // ConstantPool need special care; cannot registerXxxToFilter in
         // their static initializer
         fieldFilterMap = Map.of(
+            // initialized in bootstrap by the end of this static block
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
             Class.class, Set.of("classLoader", "classData"),
@@ -68,8 +69,10 @@ public class Reflection {
             Method.class, ALL_MEMBERS,
             Module.class, ALL_MEMBERS,
             System.class, Set.of("security"),
-            // loaded in early bootstrap but not initialized; no new dependencies
+            // loaded in bootstrap before Reflection but not initialized
             ConstantPool.class, Set.of("constantPoolOop")
+            // additional:
+            // MethodHandles.Lookup: initialized in bootstrap later
         );
         methodFilterMap = Map.of();
     }
@@ -282,7 +285,8 @@ public class Reflection {
         return false;
     }
 
-    // Caller class must be initialized before main
+    // Caller class must be initialized before main;
+    // document new callers in static block.
     // fieldNames must contain only interned Strings
     public static synchronized void registerFieldsToFilter(Class<?> containingClass,
                                                            Set<String> fieldNames) {
@@ -290,7 +294,8 @@ public class Reflection {
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
-    // Caller class must be initialized before main
+    // Caller class must be initialized before main;
+    // document new callers in static block.
     // methodNames must contain only interned Strings
     public static synchronized void registerMethodsToFilter(Class<?> containingClass,
                                                             Set<String> methodNames) {
