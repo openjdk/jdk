@@ -348,7 +348,7 @@ class JavaCharStream
   }
 
   @Deprecated
-  /**
+  /*
    * @deprecated
    * @see #getEndColumn
    */
@@ -357,7 +357,7 @@ class JavaCharStream
   }
 
   @Deprecated
-  /**
+  /*
    * @deprecated
    * @see #getEndLine
    */
@@ -365,12 +365,12 @@ class JavaCharStream
     return bufline[bufpos];
   }
 
-/** Get end column. */
+  /** Get end column. */
   public int getEndColumn() {
     return bufcolumn[bufpos];
   }
 
-/** Get end line. */
+  /** Get end line. */
   public int getEndLine() {
     return bufline[bufpos];
   }
