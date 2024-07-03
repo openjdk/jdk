@@ -24,13 +24,10 @@
 
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
-#include "opto/vectornode.hpp"
 #include "opto/vectorization.hpp"
 
 #ifndef PRODUCT

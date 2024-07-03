@@ -22,22 +22,13 @@
  */
 
 #include "precompiled.hpp"
-#include "libadt/vectset.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/matcher.hpp"
-#include "opto/memnode.hpp"
-#include "opto/opcodes.hpp"
-#include "opto/opaquenode.hpp"
-#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
-#include "utilities/powerOfTwo.hpp"
 
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),

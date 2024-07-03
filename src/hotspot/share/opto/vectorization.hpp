@@ -26,7 +26,6 @@
 #define SHARE_OPTO_VECTORIZATION_HPP
 
 #include "opto/matcher.hpp"
-#include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"

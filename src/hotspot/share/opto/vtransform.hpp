@@ -142,8 +142,7 @@ private:
 public:
   VTransformGraph(const VLoopAnalyzer& vloop_analyzer,
                   Arena& arena
-                  NOT_PRODUCT( COMMA const VTransformTrace trace)
-		  ) :
+                  NOT_PRODUCT( COMMA const VTransformTrace trace)) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
     NOT_PRODUCT(_trace(trace) COMMA)
