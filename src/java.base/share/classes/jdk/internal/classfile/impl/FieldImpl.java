@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,12 @@ public final class FieldImpl
 
     @Override
     public Utf8Entry fieldName() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry fieldType() {
-        return reader.readUtf8Entry(startPos + 4);
+        return reader.readEntry(startPos + 4, Utf8Entry.class);
     }
 
     @Override
