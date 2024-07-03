@@ -33,7 +33,8 @@
 
 class DictionaryEntry;
 class ProtectionDomainEntry;
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the class loader data dictionaries.
@@ -73,7 +74,7 @@ public:
   void all_entries_do(KlassClosure* closure);
   void classes_do(MetaspaceClosure* it);
 
-  void remove_from_package_access_cache(GrowableArray<ProtectionDomainEntry*>* delete_list);
+  void remove_from_package_access_cache(GrowableArray<ProtectionDomainEntry*, int>* delete_list);
 
   InstanceKlass* find(Thread* current, Symbol* name, Handle protection_domain);
 

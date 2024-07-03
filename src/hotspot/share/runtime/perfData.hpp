@@ -30,7 +30,8 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
 
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 /* jvmstat global and subsystem counter name space - enumeration value
  * serve as an index into the PerfDataManager::_name_space[] array
@@ -575,7 +576,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
   private:
 
     // GrowableArray implementation
-    typedef GrowableArray<PerfData*> PerfDataArray;
+  typedef GrowableArray<PerfData*, int> PerfDataArray;
 
     PerfDataArray* _set;
 

@@ -114,8 +114,6 @@ class Mutex;
 
 struct jvmtiTimerInfo;
 
-template<class E> class GrowableArray;
-
 // %%%%% Moved ThreadState, START_FN, OSThread to new osThread.hpp. -- Rose
 
 // Platform-independent error return values from OS functions

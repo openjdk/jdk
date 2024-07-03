@@ -25,26 +25,23 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
 
-void* GrowableArrayResourceAllocator::allocate(int max, int elementSize) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = elementSize * (size_t) max;
+void* GrowableArrayResourceAllocator::allocate(size_t max, size_t elementSize) {
+  size_t byte_size = elementSize * max;
 
   return (void*)resource_allocate_bytes(byte_size);
 }
 
-void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* arena) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = element_size * (size_t) max;
+void* GrowableArrayArenaAllocator::allocate(size_t max, size_t element_size, Arena* arena) {
+  size_t byte_size = element_size * max;
 
   return arena->Amalloc(byte_size);
 }
 
-void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MEMFLAGS memflags) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = element_size * (size_t) max;
+void* GrowableArrayCHeapAllocator::allocate(size_t max, size_t element_size, MEMFLAGS memflags) {
+  size_t byte_size = element_size * max;
 
   // memory type has to be specified for C heap allocation
   assert(memflags != mtNone, "memory type not specified for C heap object");
@@ -70,7 +67,7 @@ void GrowableArrayNestingCheck::on_resource_area_alloc() const {
   }
 }
 
-void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
+void GrowableArrayMetadata::init_checks(const GrowableArrayBase<>* array) const {
   // Stack allocated arrays support all three element allocation locations
   if (array->allocated_on_stack_or_embedded()) {
     return;

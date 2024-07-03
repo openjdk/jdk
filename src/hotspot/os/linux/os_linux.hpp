@@ -26,6 +26,7 @@
 #define OS_LINUX_OS_LINUX_HPP
 
 #include "runtime/os.hpp"
+#include "utilities/growableArray.hpp"
 
 // os::Linux defines the interface to Linux operating systems
 

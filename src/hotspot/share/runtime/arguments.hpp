@@ -37,6 +37,8 @@
 
 // Arguments parses the command line and recognizes options
 
+template<typename E, typename Index>
+class GrowableArray;
 class JVMFlag;
 
 // Invocation API hook typedefs (these should really be defined in jni.h)
@@ -211,7 +213,7 @@ class Arguments : AllStatic {
   // --patch-module=module=<file>(<pathsep><file>)*
   // Each element contains the associated module name, path
   // string pair as specified to --patch-module.
-  static GrowableArray<ModulePatchPath*>* _patch_mod_prefix;
+  static GrowableArray<ModulePatchPath*, int>* _patch_mod_prefix;
 
   // The constructed value of the system class path after
   // argument processing and JVMTI OnLoad additions via
@@ -481,7 +483,7 @@ class Arguments : AllStatic {
     _jdk_boot_class_path_append->append_value(value);
   }
 
-  static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
+  static GrowableArray<ModulePatchPath*, int>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_boot_class_path() { return _boot_class_path->value(); }
   static bool has_jimage() { return _has_jimage; }
 

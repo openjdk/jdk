@@ -29,9 +29,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 
-template <typename E, MEMFLAGS F>
-class GrowableArrayCHeap;
-
 // G1AbstractSubTask represents a task to be performed either within a
 // G1BatchedTask running on a single worker ("serially") or multiple workers
 // ("in parallel"). A G1AbstractSubTask is always associated with a phase tag

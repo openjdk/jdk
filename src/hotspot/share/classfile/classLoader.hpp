@@ -44,7 +44,8 @@
 class JImageFile;
 class ClassFileStream;
 class PackageEntry;
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 class ClassPathEntry : public CHeapObj<mtClass> {
 private:
@@ -199,14 +200,14 @@ class ClassLoader: AllStatic {
   // to load a class.
 
   // 1. Contains the module/path pairs specified to --patch-module
-  static GrowableArray<ModuleClassPathList*>* _patch_mod_entries;
+  static GrowableArray<ModuleClassPathList*, int>* _patch_mod_entries;
 
   // 2. the base piece
   //    Contains the ClassPathEntry of the modular java runtime image.
   //    If no java runtime image is present, this indicates a
   //    build with exploded modules is being used instead.
   static ClassPathEntry* _jrt_entry;
-  static GrowableArray<ModuleClassPathList*>* _exploded_entries;
+  static GrowableArray<ModuleClassPathList*, int>* _exploded_entries;
   enum { EXPLODED_ENTRY_SIZE = 80 }; // Initial number of exploded modules
 
   // 3. the boot loader's append path
@@ -332,7 +333,7 @@ class ClassLoader: AllStatic {
 
   // Search the module list for the class file stream based on the file name and java package
   static ClassFileStream* search_module_entries(JavaThread* current,
-                                                const GrowableArray<ModuleClassPathList*>* const module_list,
+                                                const GrowableArray<ModuleClassPathList*, int>* const module_list,
                                                 PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                 const char* const file_name);
 

@@ -43,7 +43,7 @@ class ClassInstanceInfo;
 class CompressedLineNumberWriteStream;
 class ConstMethod;
 class FieldInfo;
-template <typename T>
+template<typename E, typename Index>
 class GrowableArray;
 class InstanceKlass;
 class RecordComponent;
@@ -143,9 +143,9 @@ class ClassFileParser {
   ClassAnnotationCollector* _parsed_annotations;
   FieldAllocationCount* _fac;
   FieldLayoutInfo* _field_info;
-  GrowableArray<FieldInfo>* _temp_field_info;
+  GrowableArray<FieldInfo, int>* _temp_field_info;
   const intArray* _method_ordering;
-  GrowableArray<Method*>* _all_mirandas;
+  GrowableArray<Method*, int>* _all_mirandas;
 
   enum { fixed_buffer_size = 128 };
   u_char _linenumbertable_buffer[fixed_buffer_size];

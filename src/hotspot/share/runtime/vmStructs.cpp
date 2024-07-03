@@ -485,13 +485,6 @@
   nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
-  /*******************/                                                                                                              \
-  /* GrowableArrays  */                                                                                                              \
-  /*******************/                                                                                                              \
-                                                                                                                                     \
-  nonstatic_field(GrowableArrayBase,           _len,                                          int)                                   \
-  nonstatic_field(GrowableArrayBase,           _capacity,                                     int)                                   \
-  nonstatic_field(GrowableArray<int>,          _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
@@ -1224,7 +1217,7 @@
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
-  declare_toplevel_type(GrowableArrayBase)                                \
+  declare_toplevel_type(GrowableArrayBase<int>)                           \
   declare_toplevel_type(GrowableArray<int>)                               \
   declare_toplevel_type(Arena)                                            \
     declare_type(ResourceArea, Arena)                                     \

@@ -31,7 +31,8 @@
 #include "runtime/handles.hpp"
 #include "utilities/resourceHash.hpp"
 
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 class LogStream;
 class ObjectMonitor;
 class ObjectMonitorDeflationSafepointer;
@@ -48,7 +49,7 @@ private:
 public:
   void add(ObjectMonitor* monitor);
   size_t unlink_deflated(size_t deflated_count,
-                         GrowableArray<ObjectMonitor*>* unlinked_list,
+                         GrowableArray<ObjectMonitor*, int>* unlinked_list,
                          ObjectMonitorDeflationSafepointer* safepointer);
   size_t count() const;
   size_t max() const;

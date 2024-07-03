@@ -32,7 +32,8 @@
 #include "utilities/tableStatistics.hpp"
 
 class JavaThread;
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 // TempNewSymbol in symbolHandle.hpp is used with SymbolTable operations,
 // so include it here.
@@ -158,11 +159,11 @@ public:
   // Sharing
   static void shared_symbols_do(SymbolClosure *cl);  // no safepoint iteration.
 private:
-  static void copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
+  static void copy_shared_symbol_table(GrowableArray<Symbol*, int>* symbols,
                                        CompactHashtableWriter* ch_table);
 public:
   static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
-  static void write_to_archive(GrowableArray<Symbol*>* symbols) NOT_CDS_RETURN;
+  static void write_to_archive(GrowableArray<Symbol*, int>* symbols) NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc,
                                             bool is_static_archive = true) NOT_CDS_RETURN;
 

@@ -30,7 +30,7 @@
 #include "jni.h"
 
 class JfrCheckpointWriter;
-template <typename>
+template<typename E, typename Index>
 class GrowableArray;
 class JfrThreadGroupsHelper;
 class JfrThreadGroupPointers;
@@ -40,7 +40,7 @@ class JfrThreadGroup : public JfrCHeapObj {
  private:
   static JfrThreadGroup* _instance;
   class JfrThreadGroupEntry;
-  GrowableArray<JfrThreadGroupEntry*>* _list;
+  GrowableArray<JfrThreadGroupEntry*, int>* _list;
 
   JfrThreadGroup();
   JfrThreadGroupEntry* find_entry(const JfrThreadGroupPointers& ptrs) const;
