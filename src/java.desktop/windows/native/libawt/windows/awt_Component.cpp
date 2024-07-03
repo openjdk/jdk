@@ -3362,8 +3362,8 @@ BOOL AwtComponent::IsNumPadKey(UINT vkey, BOOL extended)
     return FALSE;
 }
 static void
-resetKbdState( BYTE (&kstate)[256]) {
-    BYTE tmpState[256];
+resetKbdState( BYTE (&kstate)[AwtToolkit::KB_STATE_SIZE]) {
+    BYTE tmpState[AwtToolkit::KB_STATE_SIZE];
     WCHAR wc[2];
     memmove(tmpState, kstate, sizeof(kstate));
     tmpState[VK_SHIFT] = 0;
