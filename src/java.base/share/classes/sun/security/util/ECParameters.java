@@ -203,8 +203,7 @@ public final class ECParameters extends AlgorithmParametersSpi {
         }
 
         if (spec.isAssignableFrom(ECGenParameterSpec.class)) {
-            // Ensure the name is the Object ID
-            String name = namedCurve.getObjectId();
+            String name = namedCurve.getNameAndAliases()[0];
             return spec.cast(new ECGenParameterSpec(name));
         }
 
