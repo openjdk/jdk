@@ -1782,4 +1782,3 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
   }
 }
 #endif
-
