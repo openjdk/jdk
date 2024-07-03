@@ -703,7 +703,7 @@ class MutableBigInteger {
     private final void primitiveRightShift(int n, int[] result, int resPos) {
         int[] val = value;
         int n2 = 32 - n;
- 
+
         int b = val[offset];
         result[resPos] = b >>> n;
         for (int i = 1; i < intLen; i++) {
