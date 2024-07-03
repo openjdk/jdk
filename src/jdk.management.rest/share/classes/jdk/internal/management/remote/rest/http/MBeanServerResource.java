@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import jdk.internal.management.remote.rest.mapper.JSONMappingException;
 import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
 import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
-import com.sun.jmx.remote.security.SubjectDelegator;
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -264,11 +263,7 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
             if (subject == null) {
                 this.acc = null;
             } else {
-                if (SubjectDelegator.checkRemoveCallerContext(subject)) {
-                    acc = JMXSubjectDomainCombiner.getDomainCombinerContext(subject);
-                } else {
-                    acc = JMXSubjectDomainCombiner.getContext(subject);
-                }
+                acc = JMXSubjectDomainCombiner.getContext(subject);
             }
         }
 
