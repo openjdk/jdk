@@ -47,8 +47,8 @@ import javax.swing.plaf.basic.BasicPopupMenuUI;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
-import sun.swing.StringUIClientPropertyKey;
 import sun.swing.MnemonicHandler;
+import sun.swing.StringUIClientPropertyKey;
 
 import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
 

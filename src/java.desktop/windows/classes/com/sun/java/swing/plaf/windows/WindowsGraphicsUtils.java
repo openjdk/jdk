@@ -25,15 +25,32 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import sun.swing.SwingUtilities2;
-import sun.swing.MnemonicHandler;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
 
-import java.awt.*;
-
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
+
+import com.sun.java.swing.plaf.windows.WindowsButtonUI;
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
 
 /**
  * A collection of static utility methods used for rendering the Windows look

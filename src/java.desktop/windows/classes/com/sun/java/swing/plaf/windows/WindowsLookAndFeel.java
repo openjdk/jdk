@@ -93,12 +93,12 @@ import sun.font.FontUtilities;
 import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
+import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.icon.SortArrowIcon;
 import sun.swing.plaf.windows.ClassicSortArrowIcon;
-import sun.swing.MnemonicHandler;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.Prop;

@@ -55,10 +55,11 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 
 import apple.laf.JRSUIControl;
 import apple.laf.JRSUIUtils;
+
+import sun.swing.AltProcessor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
-import sun.swing.MnemonicHandler;
-import sun.swing.AltProcessor;
 
 import static javax.swing.UIDefaults.LazyValue;
 

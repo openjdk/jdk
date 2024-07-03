@@ -46,8 +46,8 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.swing.MenuItemCheckIconFactory;
 import sun.swing.MenuItemLayoutHelper;
-import sun.swing.SwingUtilities2;
 import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 /**
  * Windows rendition of the component.

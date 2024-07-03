@@ -35,8 +35,8 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicLabelUI;
 
 import sun.awt.AppContext;
-import sun.swing.SwingUtilities2;
 import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 /**
  * Windows rendition of the component.

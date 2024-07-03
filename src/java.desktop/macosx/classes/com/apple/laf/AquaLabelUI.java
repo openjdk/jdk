@@ -25,14 +25,19 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics;
 
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 
-import sun.swing.SwingUtilities2;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+
+import javax.swing.plaf.basic.BasicLabelUI;
+
 import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;

@@ -46,11 +46,11 @@ import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
+import sun.swing.AltProcessor;
 import sun.swing.DefaultLayoutStyle;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
-import sun.swing.MnemonicHandler;
-import sun.swing.AltProcessor;
 
 /**
  * @author Scott Violet

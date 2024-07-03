@@ -32,8 +32,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 
-import sun.swing.MnemonicHandler;
-
 public final class AltProcessor implements KeyEventPostProcessor {
 
     private AltProcessor() {}
@@ -44,6 +42,7 @@ public final class AltProcessor implements KeyEventPostProcessor {
         return altProcessor;
     }
 
+    @Override
     public boolean postProcessKeyEvent(final KeyEvent ev) {
         if (ev.getKeyCode() != KeyEvent.VK_ALT) {
             return false;
