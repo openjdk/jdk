@@ -69,7 +69,7 @@ public class TestRecursiveMonitorChurn {
 
         if (pre_monitor_count != post_monitor_count) {
             final long monitor_count_change = post_monitor_count - pre_monitor_count;
-            System.out.println("Unexpected change in mointor count: " + monitor_count_change);
+            System.out.println("Unexpected change in monitor count: " + monitor_count_change);
             if (monitor_count_change < 0) {
                 throw new RuntimeException("Unexpected Deflation");
             }
