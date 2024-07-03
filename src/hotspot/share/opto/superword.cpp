@@ -1902,7 +1902,7 @@ void VTransform::apply() {
   Compile* C = phase()->C;
   C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl());
 
-  apply_memops_reordering_with_schedule();
+  _graph.apply_memops_reordering_with_schedule();
   C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl());
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
@@ -1916,11 +1916,11 @@ void VTransform::apply() {
 // We reorder all slices in parallel, ensuring that the memops inside each slice are
 // ordered according to the _schedule. This means that all packed memops are consecutive
 // in the memory graph after the reordering.
-void VTransform::apply_memops_reordering_with_schedule() const {
+void VTransformGraph::apply_memops_reordering_with_schedule() const {
 #ifndef PRODUCT
-  assert(_graph.is_scheduled(), "must be already scheduled");
+  assert(is_scheduled(), "must be already scheduled");
   if (_trace._info) {
-    _graph.print_memops_schedule();
+    print_memops_schedule();
   }
 #endif
 
@@ -1949,7 +1949,7 @@ void VTransform::apply_memops_reordering_with_schedule() const {
 
   // (2) Walk over schedule, append memops to the current state
   //     of that slice. If it is a Store, we take it as the new state.
-  _graph.for_each_memop_in_schedule([&] (MemNode* n) {
+  for_each_memop_in_schedule([&] (MemNode* n) {
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
     int alias_idx = phase()->C->get_alias_index(n->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);

@@ -43,13 +43,12 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 //                                                         +--------+
 //
 // We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
-// TODO: maybe do this in graph, but then tracing is an issue...
-bool VTransform::schedule() {
-  assert(!_graph.is_scheduled(), "not yet scheduled");
+bool VTransformGraph::schedule() {
+  assert(!is_scheduled(), "not yet scheduled");
 
 #ifndef PRODUCT
   if (_trace._verbose) {
-    _graph.print_vtnodes();
+    print_vtnodes();
   }
 #endif
 
@@ -58,11 +57,11 @@ bool VTransform::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  _graph.collect_nodes_without_req_or_dependency(stack);
+  collect_nodes_without_req_or_dependency(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
-  int rpo_idx = _graph.vtnodes().length() - 1;
+  int rpo_idx = _vtnodes.length() - 1;
   while (!stack.is_empty()) {
     VTransformNode* vtn = stack.top();
     if (!pre_visited.test_set(vtn->_idx)) {
@@ -83,7 +82,7 @@ bool VTransform::schedule() {
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
           // circle.
-          NOT_PRODUCT(if (_trace._rejections) { _graph.trace_schedule_cycle(stack, pre_visited, post_visited); } )
+          NOT_PRODUCT(if (_trace._rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
         stack.push(use);
@@ -92,8 +91,8 @@ bool VTransform::schedule() {
 
       if (all_uses_already_visited) {
         stack.pop();
-        post_visited.set(vtn->_idx);                   // post-visit
-        _graph.add_vtnode_to_schedule(rpo_idx--, vtn); // assign rpo_idx
+        post_visited.set(vtn->_idx);           // post-visit
+        _schedule.at_put_grow(rpo_idx--, vtn); // assign rpo_idx
       }
 
     } else {
@@ -103,7 +102,7 @@ bool VTransform::schedule() {
 
 #ifndef PRODUCT
   if (_trace._verbose) {
-    _graph.print_schedule();
+    print_schedule();
   }
 #endif
 

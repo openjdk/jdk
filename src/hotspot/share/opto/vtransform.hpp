@@ -144,14 +144,21 @@ public:
   bool is_empty() const { return _vtnodes.is_empty(); }
   bool is_scheduled() const { return _schedule.is_nonempty(); }
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
-  void add_vtnode_to_schedule(int index, VTransformNode* vtn) { _schedule.at_put_grow(index, vtn); }
 
-  template<typename Callback>
-  void for_each_memop_in_schedule(Callback callback) const;
+  bool schedule();
+  void apply_memops_reordering_with_schedule() const;
+  void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
+
+private:
+  // VLoop accessors
+  PhaseIdealLoop* phase()     const { return _vloop.phase(); }
+  PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
+  bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
 
-  void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
+  template<typename Callback>
+  void for_each_memop_in_schedule(Callback callback) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
@@ -215,7 +222,7 @@ public:
   bool is_empty() const { return _graph.is_empty(); }
   VTransformGraph& graph() { return _graph; }
 
-  bool schedule();
+  bool schedule() { return _graph.schedule(); }
   void apply();
 
 private:
@@ -231,8 +238,6 @@ private:
   const VPointer& vpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
-
-  void apply_memops_reordering_with_schedule() const;
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
