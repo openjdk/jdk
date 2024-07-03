@@ -89,11 +89,36 @@ public:
   NOT_PRODUCT( void trace(VTransformNode* vtn) const; )
 };
 
+#ifndef PRODUCT
+class VTransformTrace {
+public:
+  const bool _verbose;
+  const bool _rejections;
+  const bool _align_vector;
+  const bool _info;
+
+  VTransformTrace(const VTrace& vtrace,
+                  const bool is_trace_rejections,
+                  const bool is_trace_align_vector,
+                  const bool is_trace_info) :
+    _verbose     (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
+    _rejections  (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector(_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _info        (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+
+  static bool is_trace_vtransform(const VTrace& vtrace) {
+    return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+  }
+};
+#endif
+
 // TODO desc
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
+
+  NOT_PRODUCT(const VTransformTrace _trace;)
 
   VTransformNodeIDX _next_idx;
   GrowableArray<VTransformNode*> _vtnodes;
@@ -103,9 +128,13 @@ private:
   GrowableArray<VTransformNode*> _schedule;
 
 public:
-  VTransformGraph(const VLoopAnalyzer& vloop_analyzer, Arena& arena) :
+  VTransformGraph(const VLoopAnalyzer& vloop_analyzer,
+                  Arena& arena
+                  NOT_PRODUCT( COMMA const VTransformTrace trace)
+		  ) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
+    NOT_PRODUCT(_trace(trace) COMMA)
     _next_idx(0),
     _vtnodes(&arena, _vloop.estimated_body_length(), 0, nullptr),
     _schedule(&arena, _vloop.estimated_body_length(), 0, nullptr) {}
@@ -122,7 +151,7 @@ public:
 
   void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
 
-  void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width NOT_PRODUCT( COMMA const bool is_trace_verbose)) const;
+  void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
@@ -155,6 +184,8 @@ private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
 
+  NOT_PRODUCT(const VTransformTrace _trace;)
+
   // Everything in the vtransform is allocated from this arena, including all vtnodes.
   Arena _arena;
 
@@ -165,39 +196,19 @@ private:
   MemNode const* _mem_ref_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
-#ifndef PRODUCT
-  bool _is_trace_rejections;
-  bool _is_trace_align_vector;
-  bool _is_trace_info;
-  bool _is_trace_verbose;
-#endif
-
 public:
   VTransform(const VLoopAnalyzer& vloop_analyzer,
              MemNode const* mem_ref_for_main_loop_alignment,
              int aw_for_main_loop_alignment
-             NOT_PRODUCT( COMMA const bool is_trace_rejections)
-             NOT_PRODUCT( COMMA const bool is_trace_align_vector)
-             NOT_PRODUCT( COMMA const bool is_trace_info)
+             NOT_PRODUCT( COMMA const VTransformTrace trace)
              ) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
+    NOT_PRODUCT(_trace(trace) COMMA)
     _arena(mtCompiler),
-    _graph(_vloop_analyzer, _arena),
+    _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
-    _aw_for_main_loop_alignment(aw_for_main_loop_alignment)
-    NOT_PRODUCT( COMMA _is_trace_rejections(is_trace_rejections) )
-    NOT_PRODUCT( COMMA _is_trace_align_vector(is_trace_align_vector) )
-    NOT_PRODUCT( COMMA _is_trace_info(is_trace_info) )
-  {
-#ifndef PRODUCT
-    bool is_trace     = _vloop.vtrace().is_trace(TraceAutoVectorizationTag::VTRANSFORM);
-    _is_trace_verbose = _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALL);
-    _is_trace_rejections   |= is_trace || _is_trace_verbose;
-    _is_trace_align_vector |= is_trace || _is_trace_verbose;
-    _is_trace_info         |= is_trace || _is_trace_verbose;
-#endif
-  }
+    _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   Arena* arena() { return &_arena; }

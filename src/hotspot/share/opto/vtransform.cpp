@@ -48,7 +48,7 @@ bool VTransform::schedule() {
   assert(!_graph.is_scheduled(), "not yet scheduled");
 
 #ifndef PRODUCT
-  if (_is_trace_verbose) {
+  if (_trace._verbose) {
     _graph.print_vtnodes();
   }
 #endif
@@ -83,7 +83,7 @@ bool VTransform::schedule() {
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
           // circle.
-          NOT_PRODUCT(if (_is_trace_rejections) { _graph.trace_schedule_cycle(stack, pre_visited, post_visited); } )
+          NOT_PRODUCT(if (_trace._rejections) { _graph.trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
         stack.push(use);
@@ -102,7 +102,7 @@ bool VTransform::schedule() {
   }
 
 #ifndef PRODUCT
-  if (_is_trace_verbose) {
+  if (_trace._verbose) {
     _graph.print_schedule();
   }
 #endif

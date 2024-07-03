@@ -1863,12 +1863,16 @@ bool SuperWord::schedule_and_apply() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
+#ifndef PRODUCT
+  VTransformTrace trace(_vloop.vtrace(),
+                        is_trace_superword_rejections(),
+                        is_trace_align_vector(),
+                        is_trace_superword_info());
+#endif
   VTransform vtransform(_vloop_analyzer,
                         _mem_ref_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
-                        NOT_PRODUCT( COMMA is_trace_superword_rejections())
-                        NOT_PRODUCT( COMMA is_trace_align_vector())
-                        NOT_PRODUCT( COMMA is_trace_superword_info())
+                        NOT_PRODUCT( COMMA trace)
                         );
 
   // Build the transform from the packset.
@@ -1886,7 +1890,7 @@ bool SuperWord::schedule_and_apply() const {
 // correctness and profitability checks have passed, and the graph was successfully scheduled.
 void VTransform::apply() {
 #ifndef PRODUCT
-  if (_is_trace_info || TraceLoopOpts) {
+  if (_trace._info || TraceLoopOpts) {
     tty->print_cr("\nVTransform::apply:");
     lpt()->dump_head();
     lpt()->head()->dump();
@@ -1915,7 +1919,7 @@ void VTransform::apply() {
 void VTransform::apply_memops_reordering_with_schedule() const {
 #ifndef PRODUCT
   assert(_graph.is_scheduled(), "must be already scheduled");
-  if (_is_trace_info) {
+  if (_trace._info) {
     _graph.print_memops_schedule();
   }
 #endif
@@ -2000,7 +2004,7 @@ void VTransform::apply_memops_reordering_with_schedule() const {
   }
 }
 
-void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width NOT_PRODUCT( COMMA const bool is_trace_verbose)) const {
+void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
   // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
   // Since "apply" is called on defs before uses, this allows us to find the
@@ -2012,7 +2016,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyResult result = vtn->apply(_vloop_analyzer,
                                               vtnode_idx_to_transformed_node);
-    NOT_PRODUCT( if (is_trace_verbose) { result.trace(vtn); } )
+    NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
 
     vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
@@ -2024,14 +2028,14 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
 void VTransform::apply_vectorization() const {
   Compile* C = phase()->C;
 #ifndef PRODUCT
-  if (_is_trace_verbose) {
+  if (_trace._verbose) {
     tty->print_cr("\nVTransform::apply_vectorization:");
   }
 #endif
 
   uint max_vector_length = 0; // number of elements
   uint max_vector_width  = 0; // total width in bytes
-  _graph.apply_vectorization_for_each_vtnode(max_vector_length, max_vector_width NOT_PRODUCT( COMMA _is_trace_verbose));
+  _graph.apply_vectorization_for_each_vtnode(max_vector_length, max_vector_width);
 
   assert(max_vector_length > 0 && max_vector_width > 0, "must have vectorized");
   cl()->mark_loop_vectorized();
@@ -2653,7 +2657,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
   DEBUG_ONLY(                           \
-    if (_is_trace_align_vector) {       \
+    if (_trace._align_vector) {       \
       tty->print("  " #node ": ");      \
       node->dump();                     \
     }                                   \
@@ -2821,7 +2825,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* invar        = align_to_ref_p.invar();
 
 #ifdef ASSERT
-  if (_is_trace_align_vector) {
+  if (_trace._align_vector) {
     tty->print_cr("\nVLoopTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
@@ -2848,7 +2852,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       scale  == 0 || !is_power_of_2(abs(scale))  ||
       abs(scale) >= aw) {
 #ifdef ASSERT
-    if (_is_trace_align_vector) {
+    if (_trace._align_vector) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
     }
@@ -2864,7 +2868,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int AW = aw / abs(scale);
 
 #ifdef ASSERT
-  if (_is_trace_align_vector) {
+  if (_trace._align_vector) {
     tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
   }
 #endif
