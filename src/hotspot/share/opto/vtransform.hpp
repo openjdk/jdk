@@ -27,19 +27,29 @@
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
 
-// TODO work on transform vs graph vs nodes !!!
-// VTransform
+// VTransform:
+// - Models the transformation of the scalar loop to vectorized loop:
+//   It is a "C2 subgraph" -> "C2 subgraph" mapping.
+// - The VTransform contains a graph (VTransformGraph), which consists
+//   many vtnodes (VTransformNode).
+// - Each vtnode models a part of the transformation, and is supposed
+//   to represent the output C2 nodes after the vectorization as closely
+//   as possible.
 //
-// Maps the transformation from the scalar to the vectorized loop.
+// This is the life-cycle of a VTransform:
+// - Construction:
+//   - From SuperWord, with the SuperWordVTransformBuilder.
 //
-// The graph (VTransform) of vtnodes (VTransformNode) represents the output
-// C2 graph after vectorization as closely as possible.
+// - Future Plans: optimize, if-conversion, etc.
 //
-// This allows us to schedule the graph, and check for possible cycles that
-// vectorization might introduce.
+// - Schedule:
+//   - Compute linearization of the graph, into an order that respects
+//     all edges in the graph (bailout if cycle detected).
 //
-// Changes to the C2 IR are only made once the "apply" method is called, and
-// each vtnode generates its corresponding scalar or vector C2 nodes.
+// - Apply:
+//   - Changes to the C2 IR are only made once the "apply" method is called.
+//   - Each vtnode generates its corresponding scalar and vector C2 nodes,
+//     possibly replacing old scalar C2 nodes.
 //
 // Future Plans with VTransform:
 // - Cost model: estimate if vectorization is profitable.
@@ -57,7 +67,7 @@ class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 
-// Result from a VTransformNode::apply
+// Result from VTransformNode::apply
 class VTransformApplyResult {
 private:
   Node* const _node;
@@ -90,6 +100,7 @@ public:
 };
 
 #ifndef PRODUCT
+// Convenience method for tracing flags.
 class VTransformTrace {
 public:
   const bool _verbose;
@@ -112,7 +123,8 @@ public:
 };
 #endif
 
-// TODO desc
+// VTransformGraph: component of VTransform
+// See description at top of this file.
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -170,22 +182,9 @@ private:
 #endif
 };
 
-// TODO graph vs transform
-// VTransform is a graph of VTransformNode, which represent the VTransform. It
-// is designed to resemble the C2 nodes after "apply" as closely as possible.
-// Currently, there are these stages to the VTransform:
-//
-//  - Construction:
-//      external (e.g. with SuperWordVTransformBuilder)
-//
-//  - Schedule:
-//      compute linearization of graph, into a order that respects all edges in the
-//      graph (bailout if circle detected).
-//
-//  - Apply:
-//      Make all necessary changes to the C2 IR, each VTransformNode generates the
-//      corresponding scalar or vector C2 nodes.
-//
+// VTransform: models the transformation of the scalar loop to vectorized loop.
+// It is a "C2 subgraph" to "C2 subgraph" mapping.
+// See description at top of this file.
 class VTransform : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -246,8 +245,10 @@ private:
   void apply_vectorization() const;
 };
 
-// VTransformNodes resemble the C2 IR Nodes. They represent the resulting scalar and
-// vector nodes as closely as possible.
+// The vtnodes (VTransformNode) resemble the C2 IR Nodes, and model a part of the
+// VTransform. Many such vtnodes make up the VTransformGraph. The vtnodes represent
+// the resulting scalar and vector nodes as closely as possible.
+// See description at top of this file.
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
