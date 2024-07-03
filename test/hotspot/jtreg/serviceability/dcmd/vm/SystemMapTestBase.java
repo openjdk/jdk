@@ -47,8 +47,8 @@ public class SystemMapTestBase {
         regexBase_committed + "/bin/java",
         // libjvm
         regexBase_committed + "/lib/.*/libjvm.so",
-        // primordial thread stack
-        regexBase_committed + "\\[stack\\]",
+        // vdso library, should be part of all user space apps on all architectures OpenJDK supports.
+        regexBase_committed + "\\[vdso\\]",
         // we should see the hs-perf data file, and it should appear as shared as well as committed
         regexBase_shared_and_committed + "hsperfdata_.*"
     };
