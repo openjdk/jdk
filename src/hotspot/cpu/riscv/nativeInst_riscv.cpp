@@ -49,7 +49,7 @@ bool NativeInstruction::is_call_at(address addr) {
 //-----------------------------------------------------------------------------
 // NativeShortCallTrampoline
 //
-// Implements the trampoline part of patchable far call - trampoline call.
+// Implements the trampoline part of reloc call - trampoline call.
 
 class NativeShortCall;
 
@@ -110,7 +110,7 @@ NativeShortCallTrampolineStub* NativeShortCallTrampolineStub::at(address addr) {
 //-----------------------------------------------------------------------------
 // NativeShortCall
 //
-// Implements the trampoline call, a short call with a trampoline, version of patchable far call.
+// Implements the trampoline call, a short call with a trampoline, version of reloc call.
 // Enabled by setting the experimental UseTrampolines to true.
 
 class NativeShortCall: private NativeInstruction {
@@ -302,7 +302,7 @@ bool NativeShortCall::is_call_before(address return_address) {
 //-----------------------------------------------------------------------------
 // NativeFarCall
 //
-// Implements direct far calling loading an address from the stub section version of patchable far call.
+// Implements direct far calling loading an address from the stub section version of reloc call.
 // This is the default (experimental flag UseTrampolines, default false).
 
 class NativeFarCall: public NativeInstruction {

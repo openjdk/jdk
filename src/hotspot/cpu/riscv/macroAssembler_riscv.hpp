@@ -466,7 +466,7 @@ class MacroAssembler: public Assembler {
 
   address emit_address_stub(int insts_call_instruction_offset, address target);
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_patchable_far_call_stub_size();
+  static int max_reloc_call_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -1211,7 +1211,7 @@ public:
   //     This form of call is most suitable for targets at fixed addresses, which
   //     will never be patched.
   //
-  //   - patchable far call:
+  //   - reloc call:
   //     This is only available in C1/C2-generated code (nmethod).
   //
   //     [Main code section]
@@ -1225,7 +1225,7 @@ public:
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
   //
-  // - trampoline call (old patchable far call / -XX:+UseTrampolines):
+  // - trampoline call (old reloc call / -XX:+UseTrampolines):
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
   //     and a register-indirect call. It has the advantages of reaching anywhere in
@@ -1264,7 +1264,7 @@ public:
   // --
 
   // Emit a direct call if the entry address will always be in range,
-  // otherwise a patchable far call.
+  // otherwise a reloc call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1272,7 +1272,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
-  address patchable_far_call(Address entry) {
+  address reloc_call(Address entry) {
     return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
   }
  private:

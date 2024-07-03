@@ -2413,7 +2413,7 @@ encode %{
     assert_cond(addr != nullptr);
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ patchable_far_call(Address(addr, relocInfo::runtime_call_type));
+      call = __ reloc_call(Address(addr, relocInfo::runtime_call_type));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2431,7 +2431,7 @@ encode %{
       int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ patchable_far_call(Address(addr, rspec));
+      call = __ reloc_call(Address(addr, rspec));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2483,7 +2483,7 @@ encode %{
     address entry = (address)$meth$$method;
     CodeBlob *cb = CodeCache::find_blob(entry);
     if (cb != nullptr) {
-      address call = __ patchable_far_call(Address(entry, relocInfo::runtime_call_type));
+      address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -10100,7 +10100,7 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
                                                  $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
                                                  $tmpR16$$Register, super_klass_slot);
     } else {
-      address call = __ patchable_far_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      address call = __ reloc_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
     }
     if (!success) {

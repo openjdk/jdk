@@ -4228,7 +4228,7 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   IncompressibleRegion ir(this);  // relocations
   movptr(t1, (address)Universe::non_oop_word(), t0);
   assert_cond(entry != nullptr);
-  return patchable_far_call(Address(entry, rh));
+  return reloc_call(Address(entry, rh));
 }
 
 int MacroAssembler::ic_check_size() {
@@ -4274,7 +4274,7 @@ int MacroAssembler::ic_check(int end_alignment) {
 }
 
 address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_patchable_far_call_stub_size());
+  address stub = start_a_stub(max_reloc_call_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -4315,7 +4315,7 @@ address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, add
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
   // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(max_patchable_far_call_stub_size());
+  address stub = start_a_stub(max_reloc_call_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -4356,7 +4356,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
-int MacroAssembler::max_patchable_far_call_stub_size() {
+int MacroAssembler::max_reloc_call_stub_size() {
   // Max stub size: alignment nop, TrampolineStub.
   if (UseTrampolines) {
     return instruction_size + MacroAssembler::NativeShortCall::trampoline_size;
@@ -5080,7 +5080,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
     RuntimeAddress zero_blocks(StubRoutines::riscv::zero_blocks());
     assert(zero_blocks.target() != nullptr, "zero_blocks stub has not been generated");
     if (StubRoutines::riscv::complete()) {
-      address tpc = patchable_far_call(zero_blocks);
+      address tpc = reloc_call(zero_blocks);
       if (tpc == nullptr) {
         DEBUG_ONLY(reset_labels(around));
         postcond(pc() == badAddress);
