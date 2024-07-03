@@ -577,44 +577,53 @@ class MutableBigInteger {
          */
         if (intLen == 0)
            return;
+
         int nInts = n >>> 5;
-        int nBits = n&0x1F;
-        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);
+        int nBits = n & 0x1F;
+        int leadingZeros = Integer.numberOfLeadingZeros(value[offset]);
 
         // If shift can be done without moving words, do so
-        if (n <= (32-bitsInHighWord)) {
+        if (n <= leadingZeros) {
             primitiveLeftShift(nBits);
             return;
         }
 
-        int newLen = intLen + nInts +1;
-        if (nBits <= (32-bitsInHighWord))
-            newLen--;
-        if (value.length < newLen) {
-            // The array must grow
-            int[] result = new int[newLen];
-            for (int i=0; i < intLen; i++)
-                result[i] = value[offset+i];
-            setValue(result, newLen);
-        } else if (value.length - offset >= newLen) {
-            // Use space on right
-            for(int i=0; i < newLen - intLen; i++)
-                value[offset+intLen+i] = 0;
+        int newLen = intLen + nInts;
+        if (nBits > leadingZeros)
+            newLen++;
+
+        int[] result;
+        final int newOffset;
+        if (value.length < newLen) { // The array must grow
+            result = new int[newLen];
+            newOffset = 0;
         } else {
-            // Must use space on left
-            for (int i=0; i < intLen; i++)
-                value[i] = value[offset+i];
-            for (int i=intLen; i < newLen; i++)
-                value[i] = 0;
-            offset = 0;
+            result = value;
+            newOffset = value.length - offset >= newLen ? offset : 0;
         }
+
+        int len = intLen;
+        if (nBits != 0) {
+            // Do primitive shift directly for speed
+            if (nBits <= leadingZeros) {
+                primitiveLeftShift(nBits, result, newOffset); // newOffset <= offset
+            } else {
+                int lastInt = value[offset + intLen - 1];
+                primitiveRightShift(32 - nBits, result, newOffset); // newOffset <= offset
+                result[newOffset + len] = lastInt << nBits;
+                len++;
+            }
+        } else if (result != value || newOffset != offset) {
+            System.arraycopy(value, offset, result, newOffset, intLen);
+        }
+
+        // Add trailing zeros
+        if (result == value)
+            Arrays.fill(result, newOffset + len, newOffset + newLen, 0);
+
+        value = result;
         intLen = newLen;
-        if (nBits == 0)
-            return;
-        if (nBits <= (32-bitsInHighWord))
-            primitiveLeftShift(nBits);
-        else
-            primitiveRightShift(32 -nBits);
+        offset = newOffset;
     }
 
     /**
@@ -679,14 +688,29 @@ class MutableBigInteger {
      * Assumes that intLen > 0, n > 0 for speed
      */
     private final void primitiveRightShift(int n) {
+        primitiveRightShift(n, value, offset);
+    }
+
+    /**
+     * Right shift this MutableBigInteger n bits, where n is
+     * less than 32, placing the result in the specified array.
+     * Assumes that intLen > 0, n > 0 for speed.
+     * The result can be the value array of this MutableBigInteger,
+     * but for speed the copy is not performed safely, so, in that case
+     * the caller has to make sure that
+     * {@code (resPos <= offset || resPos >= offset + intLen)}.
+     */
+    private final void primitiveRightShift(int n, int[] result, int resPos) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset+intLen-1, c=val[i]; i > offset; i--) {
-            int b = c;
-            c = val[i-1];
-            val[i] = (c << n2) | (b >>> n);
+ 
+        int b = val[offset];
+        result[resPos] = b >>> n;
+        for (int i = 1; i < intLen; i++) {
+            int c = b;
+            b = val[offset + i];
+            result[resPos + i] = (c << n2) | (b >>> n);
         }
-        val[offset] >>>= n;
     }
 
     /**
@@ -695,14 +719,28 @@ class MutableBigInteger {
      * Assumes that intLen > 0, n > 0 for speed
      */
     private final void primitiveLeftShift(int n) {
+        primitiveLeftShift(n, value, offset);
+    }
+
+    /**
+     * Left shift this MutableBigInteger n bits, where n is
+     * less than 32, placing the result in the specified array.
+     * Assumes that intLen > 0, n > 0 for speed.
+     * The result can be the value array of this MutableBigInteger,
+     * but for speed the copy is not performed safely, so, in that case
+     * the caller has to make sure that
+     * {@code (resPos <= offset || resPos >= offset + intLen)}.
+     */
+    private final void primitiveLeftShift(int n, int[] result, int resPos) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset, c=val[i], m=i+intLen-1; i < m; i++) {
+        final int m = intLen - 1;
+        for (int i = 0, c = val[offset + i]; i < m; i++) {
             int b = c;
-            c = val[i+1];
-            val[i] = (b << n) | (c >>> n2);
+            c = val[offset + i + 1];
+            result[resPos + i] = (b << n) | (c >>> n2);
         }
-        val[offset+intLen-1] <<= n;
+        result[resPos + m] = val[offset + m] << n;
     }
 
     /**
