@@ -160,6 +160,20 @@ import java.security.ProtectionDomain;
  * sequence of bytes in class file format, whether or not they reside in a
  * file.
  *
+ * @apiNote
+ * If the invocation of {@link #transform transform()} for a class <code>C</code>
+ * directly or transitively requires loading or resolving the same class <code>C</code>,
+ * an error is thrown that is an instance of {@link LinkageError} (or a subclass).
+ * Transforming core JDK classes or using libraries which depend on core JDK classes
+ * during transformation increases the risk for such errors. If the {@link LinkageError}
+ * occurs during reference resolution (see section 5.4.3 Resolution of <cite>The
+ * Java Virtual Machine Specification</cite>) for a class <code>D</code>, the
+ * corresponding reference resolution in class <code>D</code> will always fail
+ * with the same error. This means that a {@link LinkageError} triggered during
+ * transformation of <code>C</code> in a class <code>D</code> not directly related to
+ * <code>C</code> can repeatedly occur later in arbitrary user code which uses class
+ * <code>D</code>.
+ *
  * @see     java.lang.instrument.Instrumentation
  * @since   1.5
  */
