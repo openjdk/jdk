@@ -929,7 +929,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // In case itable verification is ever added.
       // itable().verify(tty, true);
 #endif
-      if (UseVtableBasedCHA && Universe::is_fully_initialized()) {
+      if (Universe::is_fully_initialized()) {
         DeoptimizationScope deopt_scope;
         {
           // Now mark all code that assumes the class is not linked.
@@ -1264,7 +1264,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
 // is grabbed, to ensure that the compiler is not using the class hierarchy.
-void InstanceKlass::add_to_hierarchy_impl(JavaThread* current) {
+void InstanceKlass::add_to_hierarchy(JavaThread* current) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
 
   DeoptimizationScope deopt_scope;
@@ -1288,23 +1288,6 @@ void InstanceKlass::add_to_hierarchy_impl(JavaThread* current) {
   }
   // Perform the deopt handshake outside Compile_lock.
   deopt_scope.deoptimize_marked();
-}
-
-void InstanceKlass::add_to_hierarchy(JavaThread* current) {
-
-  if (UseVtableBasedCHA || !Universe::is_fully_initialized()) {
-    add_to_hierarchy_impl(current);
-  } else {
-    // In case we are not using CHA based vtables we need to make sure the loaded
-    // deopt is completed before anyone links this class.
-    // Linking is done with init_lock held, by loading and deopting with it
-    // held we make sure the deopt is completed before linking.
-    Handle h_init_lock(current, init_lock());
-    ObjectLocker ol(h_init_lock, current);
-    add_to_hierarchy_impl(current);
-
-    // This doesn't need a notify because the wait is only on the class initialization path.
-  }
 }
 
 

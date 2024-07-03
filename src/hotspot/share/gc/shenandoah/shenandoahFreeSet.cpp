@@ -1130,6 +1130,16 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   }
 }
 
+void ShenandoahFreeSet::log_status_under_lock() {
+  // Must not be heap locked, it acquires heap lock only when log is enabled
+  shenandoah_assert_not_heaplocked();
+  if (LogTarget(Info, gc, free)::is_enabled()
+      DEBUG_ONLY(|| LogTarget(Debug, gc, free)::is_enabled())) {
+    ShenandoahHeapLocker locker(_heap->lock());
+    log_status();
+  }
+}
+
 void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
 
