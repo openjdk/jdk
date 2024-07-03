@@ -139,7 +139,7 @@ When estimating the NMT impact, from memory overhead point of view, we have a ch
 #define IS_MALLOC_REALLOC(e) ((e->requested  > 0) && (e->old == REALLOC_MARKER))
 #define IS_MALOC(e)          ((e->requested  > 0) && (e->old == nullptr))
 
-#define MEMORY_LOG_FILE "hs_nmt_pid%p_memory_record.log"
+#define ALLOCS_LOG_FILE "hs_nmt_pid%p_allocs_record.log"
 #define THREADS_LOG_FILE "hs_nmt_pid%p_threads_record.log"
 #define INFO_LOG_FILE "hs_nmt_pid%p_info_record.log"
 #define BENCHMARK_LOG_FILE "hs_nmt_pid%p_benchmark.log"
@@ -449,7 +449,7 @@ void NMT_MemoryLogRecorder::replay(const char* path, const int pid) {
     }
 
     // open records file for reading the memory allocations to "play back"
-    file_info records_fi = _open_file_and_read(MEMORY_LOG_FILE, path, pid);
+    file_info records_fi = _open_file_and_read(ALLOCS_LOG_FILE, path, pid);
     Entry* records_file_entries = (Entry*)records_fi.ptr;
     long int count = (records_fi.size / sizeof(Entry));
     size_t size_pointers = count * sizeof(address);
@@ -609,7 +609,7 @@ void NMT_MemoryLogRecorder::initialize(intx limit) {
       _initiliazed = true;
       _limit = limit;
       if (_limit > 0) {
-        _log_fd = _prepare_log_file(nullptr, MEMORY_LOG_FILE);
+        _log_fd = _prepare_log_file(nullptr, ALLOCS_LOG_FILE);
         //fprintf(stderr, " _log_fd:%d\n", _log_fd);
       } else {
         _done = true;

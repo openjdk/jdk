@@ -38,7 +38,7 @@ the process to create samples:
 creates 3 files:
 
 CWD/hs_nmt_pidPID_info_record.log
-CWD/hs_nmt_pidPID_memory_record.log
+CWD/hs_nmt_pidPID_allocs_record.log
 CWD/hs_nmt_pidPID_threads_record.log
 
 

@@ -92,7 +92,7 @@ public class NMT_Allocation
         System.out.println("");
     }
     /*
-        # xxd -l 88 hs_nmt_pid58895_memory_record.log
+        # xxd -l 88 hs_nmt_pid58895_allocs_record.log
         00000000: addd 9e42 cf3a 0000 0329 0000 0000 0000  ...B.:...)......
         00000010: 40c2 2d00 0060 0000 0000 0000 0000 0000  @.-..`..........
         00000020: feff ffff ffff ffff feff ffff ffff ffff  ................
@@ -100,7 +100,7 @@ public class NMT_Allocation
         00000040: 5400 0000 0000 0000 6000 0000 0000 0000  T.......`.......
         00000050: 1300 0000 0000 0000                      ........
 
-        # xxd -l 88 -ps -c 8 hs_nmt_pid58895_memory_record.log
+        # xxd -l 88 -ps -c 8 hs_nmt_pid58895_allocs_record.log
         addd9e42cf3a0000
         0329000000000000
         40c22d0000600000
@@ -170,7 +170,7 @@ public class NMT_Allocation
     {
         NMT_Allocation[] elements = null;
 
-        String name = Path.of(path, "hs_nmt_pid"+pid+"_memory_record.log").toString();
+        String name = Path.of(path, "hs_nmt_pid"+pid+"_allocs_record.log").toString();
         LogFile log = new LogFile(name);
 
         int elements_count = log.size() / NMT_Allocation.size();
