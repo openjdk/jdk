@@ -177,29 +177,4 @@ class PSPromotionManager {
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);
 };
 
-class ParallelGCArraySlicer : public ArraySlicer {
-  PSPromotionManager* _promotion_manager;
-public:
-  explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
-          _promotion_manager(promotion_manager) {}
-
-  void scan_metadata(objArrayOop array) {
-    // Nothing to do here.
-  }
-  void push_on_queue(ArraySliceTask task) {
-    _promotion_manager->push_depth(task);
-    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunk_pushes);
-  }
-  size_t scan_array(objArrayOop array, int start, int end) {
-    if (UseCompressedOops) {
-      _promotion_manager->process_array_chunk_work<narrowOop>(array, start, end);
-    } else {
-      _promotion_manager->process_array_chunk_work<oop>(array, start, end);
-    }
-    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunks_processed);
-    return 0; // Not used in ParallelGC
-  }
-};
-
-
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_HPP

@@ -44,6 +44,31 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 
+
+class ParallelGCArraySlicer : public ArraySlicer {
+  PSPromotionManager* _promotion_manager;
+public:
+  explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
+          _promotion_manager(promotion_manager) {}
+
+  void scan_metadata(objArrayOop array) {
+    // Nothing to do here.
+  }
+  void push_on_queue(ArraySliceTask task) {
+    _promotion_manager->push_depth(task);
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunk_pushes);
+  }
+  size_t scan_array(objArrayOop array, int start, int end) {
+    if (UseCompressedOops) {
+      _promotion_manager->process_array_chunk_work<narrowOop>(array, start, end);
+    } else {
+      _promotion_manager->process_array_chunk_work<oop>(array, start, end);
+    }
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunks_processed);
+    return 0; // Not used in ParallelGC
+  }
+};
+
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != nullptr, "access of null manager_array");
   assert(index < ParallelGCThreads, "out of range manager_array access");
