@@ -54,7 +54,6 @@ public class BootClassPathZip64Test {
     public static void main(String[] args) throws Exception {
         ClassLoader loader = BootClassPathZip64Test.class.getClassLoader();
         Class c = loader.loadClass("T");
-        BootClassPathZip64Creator.tearDown();
     }
 
 }
