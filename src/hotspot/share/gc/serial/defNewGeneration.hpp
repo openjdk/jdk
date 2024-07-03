@@ -43,7 +43,6 @@ class CSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
 
