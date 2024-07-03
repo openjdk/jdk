@@ -63,7 +63,8 @@ struct ProcSmapsInfo {
   void reset() {
     from = to = nullptr;
     prot[0] = filename[0] = '\0';
-    kernelpagesize = rss = private_hugetlb = anonhugepages = swap = 0;
+    kernelpagesize = rss = private_hugetlb = shared_hugetlb = anonhugepages = swap = 0;
+    rd = wr = ex = sh = nr = hg = ht = nh = false;
   }
 };
 

@@ -27,13 +27,6 @@ import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import java.io.*;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.regex.Pattern;
-
 /*
  * @test
  * @summary Test of diagnostic command System.map
@@ -43,7 +36,7 @@ import java.util.regex.Pattern;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng SystemMapTest
+ * @run testng/othervm -XX:+UsePerfData SystemMapTest
  */
 public class SystemMapTest extends SystemMapTestBase {
     public void run(CommandExecutor executor) {

@@ -259,7 +259,7 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
           if (flag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
           }
-          num_printed ++;
+          num_printed++;
         }
       }
     }

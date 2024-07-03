@@ -28,8 +28,6 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.*;
-import java.lang.StringBuilder;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -42,7 +40,7 @@ import java.util.regex.Pattern;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng SystemDumpMapTest
+ * @run testng/othervm -XX:+UsePerfData SystemDumpMapTest
  */
 public class SystemDumpMapTest extends SystemMapTestBase {
 
