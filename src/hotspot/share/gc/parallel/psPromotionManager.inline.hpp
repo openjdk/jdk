@@ -45,30 +45,6 @@
 #include "utilities/copy.hpp"
 
 
-class ParallelGCArraySlicer : public ArraySlicer {
-  PSPromotionManager* _promotion_manager;
-public:
-  explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
-          _promotion_manager(promotion_manager) {}
-
-  void scan_metadata(objArrayOop array) {
-    // Nothing to do here.
-  }
-  void push_on_queue(ArraySliceTask task) {
-    _promotion_manager->push_depth(task);
-    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunk_pushes);
-  }
-  size_t scan_array(objArrayOop array, int start, int end) {
-    if (UseCompressedOops) {
-      _promotion_manager->process_array_chunk_work<narrowOop>(array, start, end);
-    } else {
-      _promotion_manager->process_array_chunk_work<oop>(array, start, end);
-    }
-    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunks_processed);
-    return 0; // Not used in ParallelGC
-  }
-};
-
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != nullptr, "access of null manager_array");
   assert(index < ParallelGCThreads, "out of range manager_array access");
@@ -181,6 +157,43 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     return m.forwardee();
   }
 }
+
+template <class T> void PSPromotionManager::process_array_chunk_work(
+                                                 objArrayOop obj,
+                                                 int start, int end) {
+  assert(start <= end, "invariant");
+  T* const base      = (T*)objArrayOop(obj)->base();
+  T* p               = base + start;
+  T* const chunk_end = base + end;
+  while (p < chunk_end) {
+    claim_or_forward_depth(p);
+    ++p;
+  }
+}
+
+class ParallelGCArraySlicer : public ArraySlicer {
+  PSPromotionManager* _promotion_manager;
+public:
+  explicit ParallelGCArraySlicer(PSPromotionManager* promotion_manager) :
+          _promotion_manager(promotion_manager) {}
+
+  void scan_metadata(objArrayOop array) {
+    // Nothing to do here.
+  }
+  void push_on_queue(ArraySliceTask task) {
+    _promotion_manager->push_depth(task);
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunk_pushes);
+  }
+  size_t scan_array(objArrayOop array, int start, int end) {
+    if (UseCompressedOops) {
+      _promotion_manager->process_array_chunk_work<narrowOop>(array, start, end);
+    } else {
+      _promotion_manager->process_array_chunk_work<oop>(array, start, end);
+    }
+    TASKQUEUE_STATS_ONLY(++_promotion_manager->_array_chunks_processed);
+    return 0; // Not used in ParallelGC
+  }
+};
 
 //
 // This method is pretty bulky. It would be nice to split it up

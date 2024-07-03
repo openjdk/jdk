@@ -265,19 +265,6 @@ void PSPromotionManager::flush_labs() {
   }
 }
 
-template <class T> void PSPromotionManager::process_array_chunk_work(
-                                                 objArrayOop obj,
-                                                 int start, int end) {
-  assert(start <= end, "invariant");
-  T* const base      = (T*)objArrayOop(obj)->base();
-  T* p               = base + start;
-  T* const chunk_end = base + end;
-  while (p < chunk_end) {
-    claim_or_forward_depth(p);
-    ++p;
-  }
-}
-
 void PSPromotionManager::process_array_chunk(ArraySliceTask task) {
   assert(PSChunkLargeArrays, "invariant");
 
