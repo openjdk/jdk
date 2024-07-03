@@ -198,8 +198,7 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation; if null, this method is
-     *     equivalent to {@code getInstance(String)}
+     *     the provider to use for this key derivation (may not be {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -215,6 +214,7 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(provider, "provider may not be null");
         try {
             return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
@@ -231,8 +231,7 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation; if null, this method is
-     *     equivalent to {@code getInstance(String)}
+     *     the provider to use for this key derivation (may not be {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -245,6 +244,7 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
+        Objects.requireNonNull(provider, "provider may not be null");
         try {
             return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
@@ -301,8 +301,7 @@ public final class KDF {
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
      *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation; if null, this method is
-     *     equivalent to {@code getInstance(String, AlgorithmParameterSpec)}
+     *     the provider to use for this key derivation (may not be {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -324,6 +323,7 @@ public final class KDF {
         throws NoSuchAlgorithmException, NoSuchProviderException,
                InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
+        Objects.requireNonNull(provider, "provider may not be null");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
@@ -352,8 +352,7 @@ public final class KDF {
      *     the {@code AlgorithmParameterSpec} used to configure this KDF's
      *     algorithm or {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation; if null, this method is
-     *     equivalent to {@code getInstance(String, AlgorithmParameterSpec)}
+     *     the provider to use for this key derivation (may not be {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -371,6 +370,7 @@ public final class KDF {
                                   Provider provider)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
+        Objects.requireNonNull(provider, "provider may not be null");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
