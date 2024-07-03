@@ -25,6 +25,8 @@
 #define SHARE_OPTO_SUPERWORD_HPP
 
 #include "opto/vectorization.hpp"
+#include "opto/vtransform.hpp"
+#include "opto/superwordVTransformBuilder.hpp"
 #include "utilities/growableArray.hpp"
 
 //
