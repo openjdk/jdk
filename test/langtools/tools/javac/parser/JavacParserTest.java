@@ -2661,6 +2661,45 @@ public class JavacParserTest extends TestCase {
                      }""");
     }
 
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion7() throws IOException {
+        //after 'default' attribute value, only semicolon (';') is expected,
+        //not left brace ('{'):
+        String code = """
+                      package tests;
+                      public @interface A {
+                          public String value() default ""
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:37:compiler.err.expected"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public @interface A {
+                         \n\
+                         public String value() default "";
+                     }""");
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)

@@ -5018,10 +5018,11 @@ public class JavacParser implements Parser {
                 if (token.kind == DEFAULT) {
                     accept(DEFAULT);
                     defaultValue = annotationValue();
+                    accept(SEMI);
                 } else {
                     defaultValue = null;
+                    accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 }
-                accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 if (token.pos <= endPosTable.errorEndPos) {
                     // error recovery
                     // look if there is a probable missing opening brace,
