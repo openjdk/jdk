@@ -36,12 +36,13 @@
 // OopMapCache's are allocated lazily per InstanceKlass.
 
 // The oopMap (InterpreterOopMap) is stored as a bit mask. If the
-// bit_mask can fit into two words it is stored in
+// bit_mask can fit into four words it is stored in
 // the _bit_mask array, otherwise it is allocated on the heap.
 // For OopMapCacheEntry the bit_mask is allocated in the C heap
 // because these entries persist between garbage collections.
-// For InterpreterOopMap the bit_mask is allocated in
-// a resource area for better performance.  InterpreterOopMap
+// For InterpreterOopMap the bit_mask is allocated in the C heap
+// to avoid issues with allocations from the resource area that have
+// to live accross the oop closure (see 8335409). InterpreterOopMap
 // should only be created and deleted during same garbage collection.
 //
 // If ENABBLE_ZAP_DEAD_LOCALS is defined, two bits are used
@@ -89,7 +90,7 @@ class InterpreterOopMap: ResourceObj {
 
  protected:
 #ifdef ASSERT
-  bool _resource_allocate_bit_mask;
+  bool           _used;
 #endif
   int            _num_oops;
   intptr_t       _bit_mask[N];    // the bit mask if
@@ -128,11 +129,12 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   InterpreterOopMap();
+  ~InterpreterOopMap();
 
   // Copy the OopMapCacheEntry in parameter "from" into this
   // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
   // allocated space (i.e., the bit mask was to large to hold
-  // in-line), allocate the space from a Resource area.
+  // in-line), allocate the space from the C heap.
   void resource_copy(OopMapCacheEntry* from);
 
   void iterate_oop(OffsetClosure* oop_closure) const;

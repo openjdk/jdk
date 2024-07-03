@@ -66,9 +66,6 @@ class OopMapCacheEntry: private InterpreterOopMap {
  public:
   OopMapCacheEntry() : InterpreterOopMap() {
     _next = nullptr;
-#ifdef ASSERT
-    _resource_allocate_bit_mask = false;
-#endif
   }
 };
 
@@ -178,8 +175,16 @@ class VerifyClosure : public OffsetClosure {
 InterpreterOopMap::InterpreterOopMap() {
   initialize();
 #ifdef ASSERT
-  _resource_allocate_bit_mask = true;
+  _used = false;
 #endif
+}
+
+InterpreterOopMap::~InterpreterOopMap() {
+  if (mask_size() > small_mask_limit) {
+    assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
+           "The bit mask should be allocated from the C heap");
+    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+  }
 }
 
 bool InterpreterOopMap::is_empty() const {
@@ -400,10 +405,10 @@ void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
 // Implementation of OopMapCache
 
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
-  assert(_resource_allocate_bit_mask,
-    "Should not resource allocate the _bit_mask");
-  assert(from->has_valid_mask(),
-    "Cannot copy entry with an invalid mask");
+  // The expectation is that this InterpreterOopMap is a recently created
+  // and empty. It is used to get a copy of a cached entry.
+  assert(!_used, "InterpreterOopMap object can only be filled once");
+  assert(from->has_valid_mask(), "Cannot copy entry with an invalid mask");
 
   set_method(from->method());
   set_bci(from->bci());
@@ -416,21 +421,11 @@ void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
     memcpy((void *)_bit_mask, (void *)from->_bit_mask,
       mask_word_size() * BytesPerWord);
   } else {
-    // The expectation is that this InterpreterOopMap is a recently created
-    // and empty. It is used to get a copy of a cached entry.
-    // If the bit mask has a value, it should be in the
-    // resource area.
-    assert(_bit_mask[0] == 0 ||
-      Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
-      "The bit mask should have been allocated from a resource area");
-    // Allocate the bit_mask from a Resource area for performance.  Allocating
-    // from the C heap as is done for OopMapCache has a significant
-    // performance impact.
-    _bit_mask[0] = (uintptr_t) NEW_RESOURCE_ARRAY(uintptr_t, mask_word_size());
+    _bit_mask[0] = (uintptr_t) NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
     assert(_bit_mask[0] != 0, "bit mask was not allocated");
-    memcpy((void*) _bit_mask[0], (void*) from->_bit_mask[0],
-      mask_word_size() * BytesPerWord);
+    memcpy((void*) _bit_mask[0], (void*) from->_bit_mask[0], mask_word_size() * BytesPerWord);
   }
+  DEBUG_ONLY(_used = true);
 }
 
 inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int bci) const {

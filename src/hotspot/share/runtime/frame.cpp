@@ -947,7 +947,6 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   InterpreterFrameClosure blk(this, max_locals, m->max_stack(), f);
 
   // process locals & expression stack
-  ResourceMark rm(thread);
   InterpreterOopMap mask;
   if (query_oop_map_cache) {
     m->mask_for(m, bci, &mask);
