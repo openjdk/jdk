@@ -1091,7 +1091,7 @@ void* Aix_dlopen(const char* filename, int *eno, int Flags, const char** error_r
         p_handletable = new_tab;
       }
       // Library not yet loaded; load it, then store its handle in handle table
-      errno = 0
+      errno = 0;
       result = ::dlopen(filename, Flags);
       if (result != nullptr) {
         g_handletable_used++;
