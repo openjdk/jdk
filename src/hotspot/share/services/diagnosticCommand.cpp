@@ -992,7 +992,7 @@ public:
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
 

@@ -322,6 +322,34 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void population_count(Register dst, Register src, Register tmp1, Register tmp2);
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  bool lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3,
+                                     Register tmp4,
+                                     u1 super_klass_slot,
+                                     bool stub_is_near = false);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register result,
+                                               Register tmp1);
+
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
                            Register tmp_reg,
@@ -1260,6 +1288,15 @@ public:
   void compute_match_mask(Register src, Register pattern, Register match_mask,
                           Register mask1, Register mask2);
 
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
+  void kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
+        Register table0, Register table1, Register table2, Register table3,
+        bool upper);
+  void update_byte_crc32(Register crc, Register val, Register table);
+
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
@@ -1289,6 +1326,7 @@ public:
                        Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
+
 #endif
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
