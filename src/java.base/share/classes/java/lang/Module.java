@@ -54,13 +54,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -1588,7 +1584,7 @@ public final class Module implements AnnotatedElement {
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
         var cc = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
-        byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
+        byte[] bytes = cc.transformClass(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);

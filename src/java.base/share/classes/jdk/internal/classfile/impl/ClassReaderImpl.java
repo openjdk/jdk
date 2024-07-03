@@ -151,7 +151,7 @@ public final class ClassReaderImpl
     @Override
     public ClassEntry thisClassEntry() {
         if (thisClass == null) {
-            thisClass = readClassEntry(thisClassPos);
+            thisClass = readEntry(thisClassPos, ClassEntry.class);
         }
         return thisClass;
     }
@@ -395,23 +395,23 @@ public final class ClassReaderImpl
                 case TAG_FLOAT -> new AbstractPoolEntry.FloatEntryImpl(this, index, readFloat(q));
                 case TAG_LONG -> new AbstractPoolEntry.LongEntryImpl(this, index, readLong(q));
                 case TAG_DOUBLE -> new AbstractPoolEntry.DoubleEntryImpl(this, index, readDouble(q));
-                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                             (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                               (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                                                 (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q),
-                                                                                   (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q + 2));
+                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.Utf8EntryImpl.class));
                 case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
                                                                                      readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class));
-                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
+                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
                 default -> throw new ConstantPoolException(
                         "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
             };
@@ -428,7 +428,7 @@ public final class ClassReaderImpl
             int len = readInt(p + 2);
             p += 6;
             if (len < 0 || len > classfileLength - p) {
-                throw new IllegalArgumentException("attribute " + readUtf8Entry(p - 6).stringValue() + " too big to handle");
+                throw new IllegalArgumentException("attribute " + readEntry(p - 6, Utf8Entry.class).stringValue() + " too big to handle");
             }
             p += len;
         }
@@ -463,41 +463,6 @@ public final class ClassReaderImpl
             return null;
         }
         return entryByIndex(index, cls);
-    }
-
-    @Override
-    public Utf8Entry readUtf8Entry(int pos) {
-        return readEntry(pos, Utf8Entry.class);
-    }
-
-    @Override
-    public Utf8Entry readUtf8EntryOrNull(int pos) {
-        return readEntryOrNull(pos, Utf8Entry.class);
-    }
-
-    @Override
-    public ModuleEntry readModuleEntry(int pos) {
-        return readEntry(pos, ModuleEntry.class);
-    }
-
-    @Override
-    public PackageEntry readPackageEntry(int pos) {
-        return readEntry(pos, PackageEntry.class);
-    }
-
-    @Override
-    public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class);
-    }
-
-    @Override
-    public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class);
-    }
-
-    @Override
-    public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return readEntry(pos, MethodHandleEntry.class);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,27 @@ import jdk.internal.javac.PreviewFeature;
  * #with(ClassFileElement)} or concretely by calling the various {@code withXxx}
  * methods.
  *
+ * <h2>Instruction Factories</h2>
+ * {@code CodeBuilder} provides convenience methods to create instructions (See
+ * JVMS {@jvms 6.5} Instructions) by their mnemonic, taking necessary operands.
+ * <ul>
+ * <li>Instructions that encode their operands in their opcode, such as {@code
+ * aload_<n>}, share their factories with their generic version like {@link
+ * #aload aload}. Note that some constant instructions, such as {@link #iconst_1
+ * iconst_1}, do not have generic versions, and thus have their own factories.
+ * <li>Instructions that accept wide operands, such as {@code ldc2_w} or {@code
+ * wide}, share their factories with their regular version like {@link #ldc}. Note
+ * that {@link #goto_w goto_w} has its own factory to avoid {@linkplain
+ * ClassFile.ShortJumpsOption short jumps}.
+ * <li>The {@code goto}, {@code instanceof}, {@code new}, and {@code return}
+ * instructions' factories are named {@link #goto_ goto_}, {@link #instanceOf
+ * instanceOf}, {@link #new_ new_}, and {@link #return_() return_} respectively,
+ * due to clashes with keywords in the Java programming language.
+ * <li>Factories are not provided for instructions {@code jsr}, {@code jsr_w},
+ * {@code ret}, and {@code wide ret}, which cannot appear in class files with
+ * major version {@value ClassFile#JAVA_7_VERSION} or higher. (JVMS {@jvms 4.9.1})
+ * </ul>
+ *
  * @see CodeTransform
  *
  * @since 22
@@ -131,7 +152,7 @@ public sealed interface CodeBuilder
     /**
      * {@return the local variable slot associated with the receiver}.
      *
-     * @throws IllegalStateException if this is not a static method
+     * @throws IllegalStateException if this is a static method
      */
     int receiverSlot();
 
@@ -703,7 +724,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
-        return with(ExceptionCatch.of(handler, start, end, Optional.of(catchType)));
+        return with(ExceptionCatch.of(handler, start, end, Optional.ofNullable(catchType)));
     }
 
     /**
@@ -841,6 +862,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a reference from a local variable
+     *
+     * <p>This may also generate {@code aload_<N>} and
+     * {@code wide aload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -885,6 +910,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a reference into a local variable
+     *
+     * <p>This may also generate {@code astore_<N>} and
+     * {@code wide astore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1050,6 +1079,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a double from a local variable
+     *
+     * <p>This may also generate {@code dload_<N>} and
+     * {@code wide dload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1091,6 +1124,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a double into a local variable
+     *
+     * <p>This may also generate {@code dstore_<N>} and
+     * {@code wide dstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1254,6 +1291,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a float from a local variable
+     *
+     * <p>This may also generate {@code fload_<N>} and
+     * {@code wide fload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1295,6 +1336,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a float into a local variable
+     *
+     * <p>This may also generate {@code fstore_<N>} and
+     * {@code wide fstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1354,6 +1399,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to branch always
+     *
+     * <p>This may also generate {@code goto_w} instructions if the {@link
+     * ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS FIX_SHORT_JUMPS} option
+     * is set.
+     *
+     * @apiNote The instruction's name is {@code goto}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param target the branch target
      * @return this builder
      */
@@ -1591,7 +1645,7 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_nonnull(Label target) {
+    default CodeBuilder ifnonnull(Label target) {
         return branch(Opcode.IFNONNULL, target);
     }
 
@@ -1600,7 +1654,7 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_null(Label target) {
+    default CodeBuilder ifnull(Label target) {
         return branch(Opcode.IFNULL, target);
     }
 
@@ -1670,6 +1724,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load an int from a local variable
+     *
+     * <p>This may also generate {@code iload_<N>} and
+     * {@code wide iload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1695,6 +1753,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
      * @since 23
@@ -1705,6 +1768,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
      * @throws IllegalArgumentException if {@code target} represents a primitive type
@@ -1914,6 +1982,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store an int into a local variable
+     *
+     * <p>This may also generate {@code istore_<N>} and
+     * {@code wide istore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2037,6 +2109,12 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
+     * @apiNote {@link #loadConstant(ConstantDesc) loadConstant} generates more optimal instructions
+     * and should be used for general constants if an {@code ldc} instruction is not strictly required.
+     *
      * @param value the constant value
      * @return this builder
      */
@@ -2046,6 +2124,9 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
      * @param entry the constant value
      * @return this builder
      */
@@ -2066,6 +2147,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a long from a local variable
+     *
+     * <p>This may also generate {@code lload_<N>} and
+     * {@code wide lload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2131,6 +2216,10 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a long into a local variable
+     *
+     * <p>This may also generate {@code lstore_<N>} and
+     * {@code wide lstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2201,6 +2290,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      */
@@ -2210,6 +2304,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      * @throws IllegalArgumentException if {@code clazz} represents a primitive type
@@ -2287,6 +2386,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to return void from the method
+     *
+     * @apiNote The instruction's name is {@code return}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @return this builder
      */
     default CodeBuilder return_() {
