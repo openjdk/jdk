@@ -26,7 +26,7 @@
 
 void SuperWordVTransformBuilder::build() {
   assert(!_packset.is_empty(), "must have non-empty packset");
-  assert(_graph.is_empty(), "start with empty graph");
+  assert(_vtransform.is_empty(), "start with empty vtransform");
 
   // Create vtnodes for all nodes in the loop.
   build_vector_vtnodes_for_packed_nodes();
@@ -53,7 +53,7 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
-    VTransformScalarNode* vtn = new (_graph.arena()) VTransformScalarNode(_graph, n);
+    VTransformScalarNode* vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, n);
     map_node_to_vtnode(n, vtn);
   }
 }
@@ -138,20 +138,20 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   VTransformVectorNode* vtn = nullptr;
 
   if (p0->is_Load()) {
-    vtn = new (_graph.arena()) VTransformLoadVectorNode(_graph, pack_size);
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size);
   } else if (p0->is_Store()) {
-    vtn = new (_graph.arena()) VTransformStoreVectorNode(_graph, pack_size);
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
-    vtn = new (_graph.arena()) VTransformBoolVectorNode(_graph, pack_size, kind);
+    vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, pack_size, kind);
   } else if (_vloop_analyzer.reductions().is_marked_reduction(p0)) {
-    vtn = new (_graph.arena()) VTransformReductionVectorNode(_graph, pack_size);
+    vtn = new (_vtransform.arena()) VTransformReductionVectorNode(_vtransform, pack_size);
   } else if (VectorNode::is_muladds2i(p0)) {
     // A special kind of binary element-wise vector op: the inputs are "ints" a and b,
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, 3, pack_size);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, pack_size);
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
@@ -163,7 +163,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_graph.arena()) VTransformElementWiseVectorNode(_graph, p0->req(), pack_size);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), pack_size);
   }
   vtn->set_nodes(pack);
   return vtn;
@@ -209,7 +209,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // then the p0_bt can also be L/F/D but we need to produce ints for the input of
     // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    VTransformNode* populate_index = new (_graph.arena()) VTransformPopulateIndexNode(_graph, pack->size(), element_bt);
+    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, pack->size(), element_bt);
     populate_index->set_req(1, iv_vtn);
     return populate_index;
   }
@@ -222,7 +222,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       // create a special ShiftCount node.
       BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-      VTransformNode* shift_count = new (_graph.arena()) VTransformShiftCountNode(_graph, pack->size(), element_bt, mask, p0->Opcode());
+      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, pack->size(), element_bt, mask, p0->Opcode());
       shift_count->set_req(1, same_input_vtn);
       return shift_count;
     } else {
@@ -231,11 +231,11 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
-        VTransformNode* conv = new (_graph.arena()) VTransformConvI2LNode(_graph);
+        VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);
         conv->set_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      VTransformNode* replicate = new (_graph.arena()) VTransformReplicateNode(_graph, pack->size(), element_type);
+      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, pack->size(), element_type);
       replicate->set_req(1, same_input_vtn);
       return replicate;
     }
@@ -256,7 +256,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_input_scalar(N
   if (vtn != nullptr) { return vtn; }
 
   assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
-  vtn = new (_graph.arena()) VTransformInputScalarNode(_graph, n);
+  vtn = new (_vtransform.arena()) VTransformInputScalarNode(_vtransform, n);
   map_node_to_vtnode(n, vtn);
   return vtn;
 }

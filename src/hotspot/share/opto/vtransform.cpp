@@ -26,7 +26,7 @@
 #include "opto/convertnode.hpp"
 
 
-void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
+void VTransform::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
   _vtnodes.push(vtnode);
 }
@@ -43,7 +43,7 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 //                                                         +--------+
 //
 // We return "true" IFF we find no cycle, i.e. if the linearization succeeds.
-bool VTransformGraph::schedule() {
+bool VTransform::schedule() {
   assert(_schedule.is_empty(), "not yet scheduled");
 
 #ifndef PRODUCT
@@ -111,7 +111,7 @@ bool VTransformGraph::schedule() {
 }
 
 // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::schedule_collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
+void VTransform::schedule_collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
     if (!vtn->has_req_or_dependency()) {
@@ -121,10 +121,10 @@ void VTransformGraph::schedule_collect_nodes_without_req_or_dependency(GrowableA
 }
 
 #ifndef PRODUCT
-void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
+void VTransform::trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                                            const VectorSet& pre_visited,
                                            const VectorSet& post_visited) const {
-  tty->print_cr("\nVTransformGraph::schedule found a cycle on path (P), vectorization attempt fails.");
+  tty->print_cr("\nVTransform::schedule found a cycle on path (P), vectorization attempt fails.");
   for (int j = 0; j < stack.length(); j++) {
     VTransformNode* n = stack.at(j);
     bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
@@ -351,15 +351,15 @@ void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& v
 }
 
 #ifndef PRODUCT
-void VTransformGraph::print_vtnodes() const {
-  tty->print_cr("\nVTransformGraph::print_vtnodes:");
+void VTransform::print_vtnodes() const {
+  tty->print_cr("\nVTransform::print_vtnodes:");
   for (int i = 0; i < _vtnodes.length(); i++) {
     _vtnodes.at(i)->print();
   }
 }
 
-void VTransformGraph::print_schedule() const {
-  tty->print_cr("\nVTransformGraph::print_schedule:");
+void VTransform::print_schedule() const {
+  tty->print_cr("\nVTransform::print_schedule:");
   for (int i = 0; i < _schedule.length(); i++) {
     tty->print(" %3d: ", i);
     VTransformNode* vtn = _schedule.at(i);
@@ -371,8 +371,8 @@ void VTransformGraph::print_schedule() const {
   }
 }
 
-void VTransformGraph::print_memops_schedule() const {
-  tty->print_cr("\nVTransformGraph::print_memops_schedule:");
+void VTransform::print_memops_schedule() const {
+  tty->print_cr("\nVTransform::print_memops_schedule:");
   int i = 0;
   for_each_memop_in_schedule([&] (MemNode* mem) {
     tty->print(" %3d: ", i++);

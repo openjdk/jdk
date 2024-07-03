@@ -1862,29 +1862,32 @@ void PackSet::verify() const {
 bool SuperWord::schedule_and_apply() const {
   if (_packset.is_empty()) { return false; }
 
-  VTransformGraph graph(_vloop_analyzer,
+  // Make an empty transform.
+  VTransform vtransform(_vloop_analyzer,
                         _mem_ref_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT( COMMA is_trace_superword_rejections())
                         NOT_PRODUCT( COMMA is_trace_align_vector())
                         NOT_PRODUCT( COMMA is_trace_superword_info())
                         );
+
+  // Build the transform from the packset.
   {
     ResourceMark rm;
-    SuperWordVTransformBuilder builder(_packset, graph);
+    SuperWordVTransformBuilder builder(_packset, vtransform);
   }
 
-  if (!graph.schedule()) { return false; }
-  graph.apply();
+  if (!vtransform.schedule()) { return false; }
+  vtransform.apply();
   return true;
 }
 
 // Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
 // correctness and profitability checks have passed, and the graph was successfully scheduled.
-void VTransformGraph::apply() {
+void VTransform::apply() {
 #ifndef PRODUCT
   if (_is_trace_info || TraceLoopOpts) {
-    tty->print_cr("\nVLoopTransformGraph::apply:");
+    tty->print_cr("\nVTransform::apply:");
     lpt()->dump_head();
     lpt()->head()->dump();
   }
@@ -1909,7 +1912,7 @@ void VTransformGraph::apply() {
 // We reorder all slices in parallel, ensuring that the memops inside each slice are
 // ordered according to the _schedule. This means that all packed memops are consecutive
 // in the memory graph after the reordering.
-void VTransformGraph::apply_memops_reordering_with_schedule() const {
+void VTransform::apply_memops_reordering_with_schedule() const {
 #ifndef PRODUCT
   if (_is_trace_info) {
     print_memops_schedule();
@@ -1997,11 +2000,11 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
-void VTransformGraph::apply_vectorization() const {
+void VTransform::apply_vectorization() const {
   Compile* C = phase()->C;
 #ifndef PRODUCT
   if (_is_trace_verbose) {
-    tty->print_cr("\nVTransformGraph::apply_vectorization:");
+    tty->print_cr("\nVTransform::apply_vectorization:");
   }
 #endif
 
@@ -2617,7 +2620,7 @@ LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const
 
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
-void VTransformGraph::determine_mem_ref_and_aw_for_main_loop_alignment() {
+void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
   if (_mem_ref_for_main_loop_alignment != nullptr) {
     assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
@@ -2656,7 +2659,7 @@ void VTransformGraph::determine_mem_ref_and_aw_for_main_loop_alignment() {
 // the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
-void VTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;

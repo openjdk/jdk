@@ -27,27 +27,27 @@
 #ifndef SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
 #define SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
 
-// Facility class that builds a VTransformGraph from a SuperWord PackSet.
+// Facility class that builds a VTransform from a SuperWord PackSet.
 class SuperWordVTransformBuilder : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
   const PackSet& _packset;
-  VTransformGraph& _graph;
+  VTransform& _vtransform;
 
   ResourceHashtable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
 
 public:
   SuperWordVTransformBuilder(const PackSet& packset,
-                             VTransformGraph& graph) :
-      _vloop_analyzer(graph.vloop_analyzer()),
+                             VTransform& vtransform) :
+      _vloop_analyzer(vtransform.vloop_analyzer()),
       _vloop(_vloop_analyzer.vloop()),
       _packset(packset),
-      _graph(graph)
+      _vtransform(vtransform)
   {
-    assert(_graph.is_empty(), "constructor is passed an empty graph");
+    assert(_vtransform.is_empty(), "constructor is passed an empty vtransform");
     build();
-    assert(!_graph.is_empty(), "graph must contain some vtnodes now");
+    assert(!_vtransform.is_empty(), "vtransform must contain some vtnodes now");
   }
 
 private:
@@ -57,7 +57,7 @@ private:
   void build_inputs_for_vector_vtnodes(VectorSet& vtn_dependencies);
   void build_inputs_for_scalar_vtnodes(VectorSet& vtn_dependencies);
 
-  // Helper methods for building VTransformGraph.
+  // Helper methods for building VTransform.
   VTransformNode* get_vtnode_or_null(Node* n) const {
     VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
     return (ptr == nullptr) ? nullptr : *ptr;
