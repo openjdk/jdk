@@ -2731,13 +2731,13 @@ private:
   const jint _int_offset_shift; // (optional) Shift value for int_offset
   const bool _is_valid;          // The parsing succeeded
 
-  ArrayPointer(const Node* pointer,
+  ArrayPointer(const bool is_valid,
+               const Node* pointer,
                const Node* base,
                const jlong constant_offset,
                const Node* int_offset,
-               const GrowableArray<Node*>* other_offsets,
                const jint int_offset_shift,
-               const bool is_valid) :
+               const GrowableArray<Node*>* other_offsets) :
       _pointer(pointer),
       _base(base),
       _constant_offset(constant_offset),
@@ -2752,7 +2752,7 @@ private:
   }
 
   static ArrayPointer make_invalid(const Node* pointer) {
-    return ArrayPointer(pointer, nullptr, 0, nullptr, nullptr, 0, false);
+    return ArrayPointer(false, pointer, nullptr, 0, nullptr, 0, nullptr);
   }
 
   static bool parse_int_offset(Node* offset, Node*& int_offset, jint& int_offset_shift) {
@@ -2826,7 +2826,7 @@ public:
       }
     }
 
-    return ArrayPointer(pointer, base, constant_offset, int_offset, other_offsets, int_offset_shift, true);
+    return ArrayPointer(true, pointer, base, constant_offset, int_offset, int_offset_shift, other_offsets);
   }
 
   bool is_adjacent_to_and_before(const ArrayPointer& other, const jlong data_size) const {
