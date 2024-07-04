@@ -53,7 +53,11 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
      */
     private ExecutableElement currentConstructor;
 
-    private boolean foundNonPubConstructor = false;
+    /**
+     * If any constructors are non-public, then we want the modifiers shown in the summary.
+     * This implies we need a three-column summary.
+     */
+    private boolean showConstructorModifiers = false;
 
     /**
      * Construct a new member writer for constructors.
@@ -65,11 +69,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
         // the following must be done before the summary table is generated
         var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
-        for (Element constructor : constructors) {
-            if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
-                setFoundNonPubConstructor(true);
-            }
-        }
+        analyzeConstructors(constructors);
     }
 
     /**
@@ -94,11 +94,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     protected void buildConstructorDoc(Content target) {
         var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
         if (!constructors.isEmpty()) {
-            for (Element constructor : constructors) {
-                if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
-                    setFoundNonPubConstructor(true);
-                }
-            }
+            analyzeConstructors(constructors);
 
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
@@ -124,6 +120,20 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             target.add(constructorDetails);
             writer.tableOfContents.popNestedList();
         }
+    }
+
+    // Calculate "showConstructorModifiers"
+    private void analyzeConstructors(List<? extends Element> constructors) {
+        for (Element constructor : constructors) {
+            if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
+                setShowConstructorModifiers(true);
+            }
+        }
+    }
+
+    // Does the constructor summary need three columnns or just two?
+    protected boolean threeColumnSummary() {
+        return showConstructorModifiers;
     }
 
     @Override
@@ -231,8 +241,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                         .add(memberDetails));
     }
 
-    protected void setFoundNonPubConstructor(boolean foundNonPubConstructor) {
-        this.foundNonPubConstructor = foundNonPubConstructor;
+    protected void setShowConstructorModifiers(boolean showConstructorModifiers) {
+        this.showConstructorModifiers = showConstructorModifiers;
     }
 
     @Override
@@ -244,7 +254,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
-        if (foundNonPubConstructor) {
+        if (threeColumnSummary()) {
             return new TableHeader(contents.modifierLabel, contents.constructorLabel,
                     contents.descriptionLabel);
         } else {
@@ -256,7 +266,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     protected Table<Element> createSummaryTable() {
         List<HtmlStyle> bodyRowStyles;
 
-        if (foundNonPubConstructor) {
+        if (threeColumnSummary()) {
             bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colConstructorName,
                     HtmlStyle.colLast);
         } else {
@@ -276,7 +286,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        if (foundNonPubConstructor) {
+        if (threeColumnSummary()) {
             var code = new HtmlTree(TagName.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
