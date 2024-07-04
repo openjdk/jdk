@@ -604,7 +604,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
       st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
     }
     if (num > 0) {
-      QuickSort::sort(filtered, num, diff_entries_by_size, false);
+      QuickSort::sort(filtered, num, diff_entries_by_size);
       // Now print. Has to happen under lock protection too, since entries may be changed.
       for (int i = 0; i < num; i ++) {
         filtered[i]->print_on(st, human_readable);
