@@ -52,7 +52,7 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-typedef GenericTaskQueue<ArraySliceTask, mtGC> G1CMTaskQueue;
+typedef GenericTaskQueue<ArraySliceTask, mtGC>   G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery

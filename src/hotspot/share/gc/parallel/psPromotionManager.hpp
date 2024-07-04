@@ -57,7 +57,7 @@ class PSPromotionManager {
   friend class ParallelGCArraySlicer;
 
  private:
-  typedef OverflowTaskQueue<ArraySliceTask, mtGC>      PSScannerTasksQueue;
+  typedef OverflowTaskQueue<ArraySliceTask, mtGC>        PSScannerTasksQueue;
   typedef GenericTaskQueueSet<PSScannerTasksQueue, mtGC> PSScannerTasksQueueSet;
 
   static PaddedEnd<PSPromotionManager>* _manager_array;

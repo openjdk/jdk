@@ -31,10 +31,6 @@
 
 class G1CMTask;
 
-// Helper class to mark through large objArrays during marking in an efficient way.
-// Instead of pushing large object arrays, we push continuations onto the
-// mark stack. These continuations are identified by having their LSB set.
-// This allows incremental processing of large objects.
 class G1CMObjArrayProcessor : public ArraySlicer {
 private:
   // Reference to the task for doing the actual work.

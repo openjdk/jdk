@@ -87,7 +87,7 @@ class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
 
-typedef OverflowTaskQueue<ArraySliceTask, mtGC>  G1ScannerTasksQueue;
+typedef OverflowTaskQueue<ArraySliceTask, mtGC>        G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )

@@ -44,7 +44,6 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 
-
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != nullptr, "access of null manager_array");
   assert(index < ParallelGCThreads, "out of range manager_array access");
