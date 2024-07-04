@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1481,10 +1481,9 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 
   lwu(tmp2, Address(tmp3));
-  if (upper) {
-    tmp1 = v;
+  // It is more optimal to use 'srli' instead of 'srliw' for case when it is not necessary to clean upper bits
+  if (upper)
     srli(tmp1, v, 24);
-  }
   else
     srliw(tmp1, v, 24);
 
@@ -2648,6 +2647,51 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
     }
+  }
+}
+
+void MacroAssembler::encode_heap_oop_not_null(Register r) {
+#ifdef ASSERT
+  if (CheckCompressedOops) {
+    Label ok;
+    bnez(r, ok);
+    stop("null oop passed to encode_heap_oop_not_null");
+    bind(ok);
+  }
+#endif
+  verify_oop_msg(r, "broken oop in encode_heap_oop_not_null");
+  if (CompressedOops::base() != nullptr) {
+    sub(r, r, xheapbase);
+  }
+  if (CompressedOops::shift() != 0) {
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    srli(r, r, LogMinObjAlignmentInBytes);
+  }
+}
+
+void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
+#ifdef ASSERT
+  if (CheckCompressedOops) {
+    Label ok;
+    bnez(src, ok);
+    stop("null oop passed to encode_heap_oop_not_null2");
+    bind(ok);
+  }
+#endif
+  verify_oop_msg(src, "broken oop in encode_heap_oop_not_null2");
+
+  Register data = src;
+  if (CompressedOops::base() != nullptr) {
+    sub(dst, src, xheapbase);
+    data = dst;
+  }
+  if (CompressedOops::shift() != 0) {
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    srli(dst, data, LogMinObjAlignmentInBytes);
+    data = dst;
+  }
+  if (data == src) {
+    mv(dst, src);
   }
 }
 
