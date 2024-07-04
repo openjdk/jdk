@@ -967,18 +967,6 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
   }
 }
 
-#ifdef AIX
-// On Aix, we should fail attach attempts not aligned to segment boundaries (256m)
-TEST_VM(os, aix_reserve_at_non_shmlba_aligned_address) {
-  if (Use64KPages) {
-    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
-    ASSERT_EQ(p, nullptr); // should have failed
-    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
-    ASSERT_EQ(p, nullptr); // should have failed
-  }
-}
-#endif // AIX
-
 TEST_VM(os, vm_min_address) {
   size_t s = os::vm_min_address();
   ASSERT_GE(s, M);

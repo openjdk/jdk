@@ -1958,8 +1958,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // This is not reflected by os_allocation_granularity().
   // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
   const size_t system_allocation_granularity =
-    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
-    NOT_AIX(os::vm_allocation_granularity());
+    AIX_ONLY((!os::Aix::supports_64K_mmap_pages() && os::vm_page_size() == 64*K) ? 256*M : ) os::vm_allocation_granularity();
 
   const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
