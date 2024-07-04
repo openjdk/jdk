@@ -31,6 +31,7 @@ import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -58,6 +59,12 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
      * This implies we need a three-column summary.
      */
     private boolean showConstructorModifiers = false;
+
+    /**
+     * Whether any constructors have type parameters.
+     * This implies we need a three column summary.
+     */
+    private boolean hasTypeParamsConstructor = false;
 
     /**
      * Construct a new member writer for constructors.
@@ -122,18 +129,22 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
         }
     }
 
-    // Calculate "showConstructorModifiers"
+    // Calculate "showConstructorModifiers" and "hasTypeParamsConstructor"
     private void analyzeConstructors(List<? extends Element> constructors) {
         for (Element constructor : constructors) {
             if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
                 setShowConstructorModifiers(true);
+            }
+            List<? extends TypeParameterElement> list = ((ExecutableElement)constructor).getTypeParameters();
+            if (list != null && !list.isEmpty()) {
+                hasTypeParamsConstructor = true;
             }
         }
     }
 
     // Does the constructor summary need three columnns or just two?
     protected boolean threeColumnSummary() {
-        return showConstructorModifiers;
+        return showConstructorModifiers || hasTypeParamsConstructor;
     }
 
     @Override
@@ -211,6 +222,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     protected Content getSignature(ExecutableElement constructor) {
         return new Signatures.MemberSignature(constructor, this)
+                .setTypeParameters(getTypeParameters(constructor))
                 .setParameters(getParameters(constructor, true))
                 .setExceptions(getExceptions(constructor))
                 .setAnnotations(writer.getAnnotationInfo(constructor, true))
@@ -297,6 +309,11 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             } else {
                 code.add(
                         resources.getText("doclet.Package_private"));
+            }
+            ExecutableElement constructor = (ExecutableElement)member;
+            List<? extends TypeParameterElement> list = constructor.getTypeParameters();
+            if (list != null && !list.isEmpty()) {
+                addTypeParameters(constructor, code);
             }
             content.add(code);
         }
