@@ -28,6 +28,11 @@
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
  * modifying Java class files, as specified in Chapter {@jvms 4} of the <cite>Java
  * Java Virtual Machine Specification</cite>.
+ * <p>
+ * For simplicity, we static import all {@link ##symbolic-information symbolic
+ * constants} from {@link java.lang.constant.ConstantDescs} and classfile constants
+ * from {@link java.lang.classfile.ClassFile} as in the code fragments below:
+ * {@snippet lang="java" class="PackageSnippets" region="imports"}
  *
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
@@ -218,7 +223,7 @@
  * to generate the instructions:
  * {@snippet lang="java" class="PackageSnippets" region="helloWorld1"}
  * <p>
- * The convenience methods {@code ClassBuilder.buildMethodBody} allows us to ask
+ * The convenience methods {@link ClassBuilder#withMethodBody} allows us to ask
  * {@link ClassBuilder} to create code builders to build method bodies directly,
  * skipping the method builder custom lambda:
  * {@snippet lang="java" class="PackageSnippets" region="helloWorld2"}
@@ -245,7 +250,7 @@
  * invoking a method with an array or collection containing a {@code null} element
  * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
- * <h3>Symbolic information</h3>
+ * <h3 id="symbolic-information">Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
  * nominal descriptor abstractions from {@code java.lang.constant} such as {@link
  * java.lang.constant.ClassDesc} and {@link java.lang.constant.MethodTypeDesc},
@@ -361,7 +366,7 @@
  * and then transform the classfile:
  * {@snippet lang=java :
  * var cc = ClassFile.of();
- * byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+ * byte[] newBytes = cc.transformClass(cc.parse(bytes), ct);
  * }
  * <p>
  * This is much more concise (and less error-prone) than the equivalent
@@ -380,7 +385,7 @@
  * <p>
  * {@snippet lang=java :
  * var cc = ClassFile.of();
- * byte[] newBytes = cc.transform(cc.parse(bytes),
+ * byte[] newBytes = cc.transformClass(cc.parse(bytes),
  *                                ClassTransform.transformingMethods(
  *                                    MethodTransform.transformingCode(
  *                                        fooToBar.andThen(instrumentCalls))));

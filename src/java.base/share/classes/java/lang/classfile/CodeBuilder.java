@@ -189,6 +189,7 @@ public sealed interface CodeBuilder
      * @param handler the handler that receives a {@linkplain CodeBuilder} to
      * build the code.
      * @return this builder
+     * @see #transform CodeBuilder::transform(CodeModel, CodeTransform)
      */
     default CodeBuilder transforming(CodeTransform transform, Consumer<CodeBuilder> handler) {
         var resolved = TransformImpl.resolve(transform, this);

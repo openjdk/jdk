@@ -79,6 +79,16 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      * Apply a transform to a model of the same type as the entity being built,
      * directing resulting elements to this builder.
      *
+     * @apiNote This API is usually for shared transforms and the {@code
+     * ClassFileTransform<?, E, B>} type is not suited for lambda expression
+     * transforms.
+     * {@link ClassFile#transformClass(ClassModel, ClassTransform) ClassFile::transformClass},
+     * {@link ClassBuilder#transformField(FieldModel, FieldTransform) ClassBuilder::transformField},
+     * {@link ClassBuilder#transformMethod(MethodModel, MethodTransform) ClassBuilder::transformMethod},
+     * and {@link MethodBuilder#transformCode(CodeModel, CodeTransform) MethodBuilder::transformCode}
+     * accept lambda expressions, but they transform a model of a child type,
+     * directing the built child element to the builder.
+     *
      * @param model the model to transform
      * @param transform the transform to apply
      * @return this builder

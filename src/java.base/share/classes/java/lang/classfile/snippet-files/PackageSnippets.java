@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.*;
 
+// @start region="imports"
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
+// @end
 import static java.util.stream.Collectors.toSet;
 import java.lang.classfile.components.ClassRemapper;
 import java.lang.classfile.components.CodeLocalsShifter;
@@ -132,24 +136,24 @@ class PackageSnippets {
     private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
     private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
     private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
-    private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType());
-    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
+    private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(CD_void, CD_String.arrayType());
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
 
     void writeHelloWorld1() {
         // @start region="helloWorld1"
         byte[] bytes = ClassFile.of().build(CD_Hello,
-                clb -> clb.withFlags(ClassFile.ACC_PUBLIC)
-                          .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
-                                      ClassFile.ACC_PUBLIC,
+                clb -> clb.withFlags(ACC_PUBLIC)
+                          .withMethod(INIT_NAME, MTD_void,
+                                      ACC_PUBLIC,
                                       mb -> mb.withCode(
                                               cob -> cob.aload(0)
-                                                        .invokespecial(ConstantDescs.CD_Object,
-                                                                       ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                        .invokespecial(CD_Object,
+                                                                       INIT_NAME, MTD_void)
                                                         .return_()))
-                          .withMethod("main", MTD_void_StringArray, ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC,
+                          .withMethod("main", MTD_void_StringArray, ACC_PUBLIC | ACC_STATIC,
                                       mb -> mb.withCode(
                                               cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
-                                                        .ldc("Hello World")
+                                                        .loadConstant("Hello World")
                                                         .invokevirtual(CD_PrintStream, "println", MTD_void_String)
                                                         .return_())));
         // @end
@@ -158,16 +162,16 @@ class PackageSnippets {
     void writeHelloWorld2() {
         // @start region="helloWorld2"
         byte[] bytes = ClassFile.of().build(CD_Hello,
-                clb -> clb.withFlags(ClassFile.ACC_PUBLIC)
-                          .withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
-                                          ClassFile.ACC_PUBLIC,
+                clb -> clb.withFlags(ACC_PUBLIC)
+                          .withMethodBody(INIT_NAME, MTD_void,
+                                          ACC_PUBLIC,
                                           cob -> cob.aload(0)
-                                                    .invokespecial(ConstantDescs.CD_Object,
-                                                                   ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                    .invokespecial(CD_Object,
+                                                                   INIT_NAME, MTD_void)
                                                     .return_())
-                          .withMethodBody("main", MTD_void_StringArray, ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC,
+                          .withMethodBody("main", MTD_void_StringArray, ACC_PUBLIC | ACC_STATIC,
                                           cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
-                                                    .ldc("Hello World")
+                                                    .loadConstant("Hello World")
                                                     .invokevirtual(CD_PrintStream, "println", MTD_void_String)
                                                     .return_()));
         // @end
@@ -222,13 +226,13 @@ class PackageSnippets {
     void strictTransform1() {
         // @start region="strictTransform1"
         CodeTransform fooToBar = (b, e) -> {
-            if (ClassFile.latestMajorVersion() > ClassFile.JAVA_22_VERSION) {
+            if (ClassFile.latestMajorVersion() > JAVA_22_VERSION) {
                 throw new IllegalArgumentException("Cannot run on JDK > 22");
             }
             switch (e) {
                 case ArrayLoadInstruction i -> doSomething(b, i);
                 case ArrayStoreInstruction i -> doSomething(b, i);
-                default ->  b.with(e);
+                default -> b.with(e);
             }
         };
         // @end
@@ -238,9 +242,9 @@ class PackageSnippets {
         // @start region="strictTransform2"
         ClassTransform fooToBar = (b, e) -> {
             switch (e) {
-                case ClassFileVersion v when v.majorVersion() > ClassFile.JAVA_22_VERSION ->
+                case ClassFileVersion v when v.majorVersion() > JAVA_22_VERSION ->
                     throw new IllegalArgumentException("Cannot transform class file version " + v.majorVersion());
-                default ->  doSomething(b, e);
+                default -> doSomething(b, e);
             }
         };
         // @end
@@ -275,7 +279,7 @@ class PackageSnippets {
                 case TableSwitchInstruction i -> doSomething(b, i);
                 case ThrowInstruction i -> doSomething(b, i);
                 case TypeCheckInstruction i -> doSomething(b, i);
-                case PseudoInstruction i ->  doSomething(b, i);
+                case PseudoInstruction i -> doSomething(b, i);
                 default ->
                     throw new IllegalArgumentException("An unknown instruction could not be handled by this transformation");
             }
@@ -289,7 +293,7 @@ class PackageSnippets {
             switch (e) {
                 case ArrayLoadInstruction i -> doSomething(b, i);
                 case ArrayStoreInstruction i -> doSomething(b, i);
-                default ->  b.with(e);
+                default -> b.with(e);
             }
         };
         // @end
@@ -304,7 +308,7 @@ class PackageSnippets {
         CodeTransform instrumentCalls = (b, e) -> {
             if (e instanceof InvokeInstruction i) {
                 b.getstatic(CD_System, "out", CD_PrintStream)
-                 .ldc(i.name().stringValue())
+                 .loadConstant(i.name().stringValue())
                  .invokevirtual(CD_PrintStream, "println", MTD_void_String);
             }
             b.with(e);
@@ -413,7 +417,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
+                                            && !INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));

@@ -425,10 +425,10 @@ public sealed interface ClassFile
 
     /**
      * Transform one classfile into a new classfile with the aid of a
-     * {@link ClassTransform}.  The transform will receive each element of
-     * this class, as well as a {@link ClassBuilder} for building the new class.
-     * The transform is free to preserve, remove, or replace elements as it
-     * sees fit.
+     * {@link ClassTransform}, preserving the class name. The transform
+     * will receive each element of this class, as well as a {@link
+     * ClassBuilder} forbuilding the new class. The transform is free to
+     * preserve, remove, or replace elements as it sees fit.
      *
      * @implNote
      * This method behaves as if:

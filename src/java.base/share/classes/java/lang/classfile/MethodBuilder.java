@@ -82,13 +82,12 @@ public sealed interface MethodBuilder
     MethodBuilder withCode(Consumer<? super CodeBuilder> code);
 
     /**
-     * Build the method body for this method by transforming the body of another
-     * method.
+     * Build the method body for this method by transforming an existing method body.
      *
      * @implNote
      * <p>This method behaves as if:
      * {@snippet lang=java :
-     *     withCode(b -> b.transformCode(code, transform));
+     *     withCode(mb -> mb.transform(code, transform));
      * }
      *
      * @param code the method body to be transformed

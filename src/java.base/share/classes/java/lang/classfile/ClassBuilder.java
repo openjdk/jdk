@@ -203,14 +203,18 @@ public sealed interface ClassBuilder
     }
 
     /**
-     * Adds a field by transforming a field from another class.
+     * Adds a field by transforming an existing field, preserving
+     * its name and descriptor.
      *
      * @implNote
      * <p>This method behaves as if:
      * {@snippet lang=java :
      *     withField(field.fieldName(), field.fieldType(),
-     *                b -> b.transformField(field, transform));
+     *                fb -> fb.transform(field, transform));
      * }
+     * {@code field.fieldName()} and {@code field.fieldType()}
+     * arguments can be substituted to transform the
+     * field's name and descriptor.
      *
      * @param field the field to be transformed
      * @param transform the transform to apply to the field
@@ -233,7 +237,7 @@ public sealed interface ClassBuilder
                             Consumer<? super MethodBuilder> handler);
 
     /**
-     * Adds a method, with only a {@code Code} attribute.
+     * Adds a method, with a {@link CodeAttribute Code} attribute as its only attribute.
      *
      * @param name the name of the method
      * @param descriptor the method descriptor
@@ -269,7 +273,7 @@ public sealed interface ClassBuilder
     }
 
     /**
-     * Adds a method, with only a {@link CodeAttribute}.
+     * Adds a method, with a {@link CodeAttribute Code} attribute as its only attribute.
      * @param name the name of the method
      * @param descriptor the method descriptor
      * @param methodFlags the access flags
@@ -288,14 +292,19 @@ public sealed interface ClassBuilder
     }
 
     /**
-     * Adds a method by transforming a method from another class.
+     * Adds a method by transforming an existing method, preserving
+     * its name and descriptor.
      *
      * @implNote
      * <p>This method behaves as if:
      * {@snippet lang=java :
      *     withMethod(method.methodName(), method.methodType(),
-     *                b -> b.transformMethod(method, transform));
+     *                mb -> mb.transform(method, transform));
      * }
+     * {@code method.methodName()} and {@code method.methodType()}
+     * arguments can be substituted to transform the method's
+     * name and descriptor.
+     *
      * @param method the method to be transformed
      * @param transform the transform to apply to the method
      * @return this builder
