@@ -897,6 +897,10 @@ reg_class v2_reg(
     V2, V2_H, V2_J, V2_K
 );
 
+reg_class v2_m2_reg(
+    V2, V2_H, V2_J, V2_K, V3, V3_H, V3_J, V3_K
+);
+
 // class for vector register v3
 reg_class v3_reg(
     V3, V3_H, V3_J, V3_K
@@ -905,6 +909,15 @@ reg_class v3_reg(
 // class for vector register v4
 reg_class v4_reg(
     V4, V4_H, V4_J, V4_K
+);
+
+reg_class v4_m2_reg(
+    V4, V4_H, V4_J, V4_K, V5, V5_H, V5_J, V5_K
+);
+
+reg_class v4_m4_reg(
+    V4, V4_H, V4_J, V4_K, V5, V5_H, V5_J, V5_K,
+    V6, V6_H, V6_J, V6_K, V7, V7_H, V7_J, V7_K
 );
 
 // class for vector register v5
@@ -925,6 +938,11 @@ reg_class v7_reg(
 // class for vector register v8
 reg_class v8_reg(
     V8, V8_H, V8_J, V8_K
+);
+
+reg_class v8_m4_reg(
+    V8, V8_H, V8_J, V8_K, V9, V9_H, V9_J, V9_K,
+    V10, V10_H, V10_J, V10_K, V11, V11_H, V11_J, V11_K
 );
 
 // class for vector register v9
@@ -3446,6 +3464,16 @@ operand vReg_V2()
   interface(REG_INTER);
 %}
 
+operand vReg_V2_m2()
+%{
+  constraint(ALLOC_IN_RC(v2_m2_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand vReg_V3()
 %{
   constraint(ALLOC_IN_RC(v3_reg));
@@ -3459,6 +3487,26 @@ operand vReg_V3()
 operand vReg_V4()
 %{
   constraint(ALLOC_IN_RC(v4_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V4_m2()
+%{
+  constraint(ALLOC_IN_RC(v4_m2_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V4_m4()
+%{
+  constraint(ALLOC_IN_RC(v4_m4_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -3499,6 +3547,16 @@ operand vReg_V7()
 operand vReg_V8()
 %{
   constraint(ALLOC_IN_RC(v8_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V8_m4()
+%{
+  constraint(ALLOC_IN_RC(v8_m4_reg));
   match(VecA);
   match(vReg);
   op_cost(0);

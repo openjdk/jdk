@@ -2326,10 +2326,15 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
-                                        Assembler::LMUL lmul) {
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2, VectorRegisterGroup vgs, bool islatin, Label &DONE) {
   Label loop;
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
+  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vg2), "sanity");
+  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vvgss), "sanity");
+  Assembler::LMUL lmul = vgrp_to_lmul(vg1);
+  VectorRegister vr1 = vg1.start_vreg();
+  VectorRegister vr2 = vg2.start_vreg();
+  VectorRegister vrs = vgs.start_vreg();
 
   bind(loop);
   vsetvli(tmp1, cnt, sew, lmul);
@@ -2349,7 +2354,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   mv(result, true);
 }
 
-void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
+void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt,
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -2358,7 +2364,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, vg1, vg2, vg1, true, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -2385,7 +2391,8 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 }
 
 void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register result,
-                                        Register cnt1, int elem_size) {
+                                        Register cnt1, int elem_size,
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -2411,7 +2418,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, vg1, vg2, vg1, elem_size == 1, DONE);
 
   bind(DONE);
 
@@ -2419,7 +2426,8 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
 }
 
 void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register cnt1, Register cnt2,
-                                         Register result, Register tmp1, Register tmp2, int encForm) {
+                                         Register result, Register tmp1, Register tmp2, int encForm,
+                                         VectorRegisterGroup vg1, VectorRegisterGroup vg2) {
   Label DIFFERENCE, DONE, L, loop;
   bool encLL = encForm == StrIntrinsicNode::LL;
   bool encLU = encForm == StrIntrinsicNode::LU;
@@ -2453,9 +2461,9 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     // Below construction of v regs and lmul is based on test on 2 different boards,
     // vlen == 128 and vlen == 256 respectively.
     if (!encLL && MaxVectorSize == 16) { // UU
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, vg1, vg2, vg1, encLL, DIFFERENCE);
     } else { // UU + MaxVectorSize or LL
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, vg1, vg2, vg1, encLL, DIFFERENCE);
     }
 
     j(DONE);

@@ -3558,63 +3558,64 @@ instruct vsqrt_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V2 v2,
-                         vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, rFlagsReg cr)
+instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt, iRegI_R10 result,
+                         vReg_V2_m2 v2m2, vReg_V4_m2 v4m2, rFlagsReg cr)
 %{
   predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2m2, TEMP v4m2, KILL cr);
 
   format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsL" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register);
+                       $result$$Register, $cnt$$Register,
+                      $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct varray_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                        vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, iRegP_R28 tmp, rFlagsReg cr)
+                        vReg_V2_m2 v2m2, vReg_V4_m2 v4m2, iRegP_R28 tmp, rFlagsReg cr)
 %{
   predicate(UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP v2m2, TEMP v4m2, KILL cr);
 
   format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsB // KILL $tmp" %}
   ins_encode %{
     __ arrays_equals_v($ary1$$Register, $ary2$$Register,
-                       $result$$Register, $tmp$$Register, 1);
+                       $result$$Register, $tmp$$Register, 1,
+                       $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup);
     %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct varray_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                        vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, iRegP_R28 tmp, rFlagsReg cr)
+                        vReg_V2_m2 v2m2, vReg_V4_m2 v4m2, iRegP_R28 tmp, rFlagsReg cr)
 %{
   predicate(UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP v2m2, TEMP v4m2, KILL cr);
 
   format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsC // KILL $tmp" %}
   ins_encode %{
     __ arrays_equals_v($ary1$$Register, $ary2$$Register,
-                       $result$$Register, $tmp$$Register, 2);
+                       $result$$Register, $tmp$$Register, 2,
+                       $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct vstring_compareU_128b(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
-                          vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                          iRegI_R10 result, vReg_V4_m4 v4m4, vReg_V8_m4 v8m4,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU &&
             MaxVectorSize == 16);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-        TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
+        TEMP v4m4, TEMP v8m4);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
   ins_encode %{
@@ -3622,20 +3623,21 @@ instruct vstring_compareU_128b(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, i
     __ string_compare_v($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register, $result$$Register,
                         $tmp1$$Register, $tmp2$$Register,
-                        StrIntrinsicNode::UU);
+                        StrIntrinsicNode::UU,
+                        $v4m4$$VectorRegisterGroup, $v8m4$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
+                          iRegI_R10 result, vReg_V2_m2 v2m2, vReg_V4_m2 v4m2,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU &&
             MaxVectorSize > 16);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-        TEMP v2, TEMP v3, TEMP v4, TEMP v5);
+        TEMP v2m2, TEMP v4m2);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
   ins_encode %{
@@ -3643,65 +3645,67 @@ instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
     __ string_compare_v($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register, $result$$Register,
                         $tmp1$$Register, $tmp2$$Register,
-                        StrIntrinsicNode::UU);
+                        StrIntrinsicNode::UU,
+                        $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct vstring_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
+                          iRegI_R10 result, vReg_V2_m2 v2m2, vReg_V4_m2 v4m2,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-        TEMP v2, TEMP v3, TEMP v4, TEMP v5);
+        TEMP v2m2, TEMP v4m2);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareL" %}
   ins_encode %{
     __ string_compare_v($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register, $result$$Register,
                         $tmp1$$Register, $tmp2$$Register,
-                        StrIntrinsicNode::LL);
+                        StrIntrinsicNode::LL,
+                        $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct vstring_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                           iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
-                           vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                           iRegI_R10 result, vReg_V4_m4 v4m4, vReg_V8_m4 v8m4,
                            iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
+         TEMP v4m4, TEMP v8m4);
 
   format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
   ins_encode %{
     __ string_compare_v($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register, $result$$Register,
                         $tmp1$$Register, $tmp2$$Register,
-                        StrIntrinsicNode::UL);
+                        StrIntrinsicNode::UL,
+                        $v4m4$$VectorRegisterGroup, $v8m4$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}
 instruct vstring_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                           iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
-                           vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                           iRegI_R10 result, vReg_V4_m4 v4m4, vReg_V8_m4 v8m4,
                            iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
+         TEMP v4m4, TEMP v8m4);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}
   ins_encode %{
     __ string_compare_v($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register, $result$$Register,
                         $tmp1$$Register, $tmp2$$Register,
-                        StrIntrinsicNode::LU);
+                        StrIntrinsicNode::LU,
+                        $v4m4$$VectorRegisterGroup, $v8m4$$VectorRegisterGroup);
   %}
   ins_pipe(pipe_class_memory);
 %}

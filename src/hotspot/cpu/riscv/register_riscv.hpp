@@ -372,6 +372,37 @@ constexpr VectorRegister v29    = as_VectorRegister(29);
 constexpr VectorRegister v30    = as_VectorRegister(30);
 constexpr VectorRegister v31    = as_VectorRegister(31);
 
+class VectorRegisterGroup {
+  int _encoding;
+
+  constexpr explicit VectorRegisterGroup(int encoding) : _encoding(encoding) {}
+
+ public:
+  inline friend constexpr VectorRegisterGroup as_VectorRegisterGroup(int encoding);
+
+  constexpr VectorRegisterGroup() : _encoding(-1) {} // vnoreg_grp
+
+  int operator==(const VectorRegisterGroup r) const { return _encoding == r._encoding; }
+  int operator!=(const VectorRegisterGroup r) const { return _encoding != r._encoding; }
+
+  VectorRegister vreg_at(int i) {
+    return vnoreg; // just for temporary demo
+  }
+  VectorRegister start_vreg() {
+    return vreg_at(0);
+  }
+  int group_len() {
+    return 2; // just for temporary demo
+  }
+  // Assembler::LMUL lmul() { return Assembler::m2;}
+};
+
+constexpr VectorRegisterGroup vnoreg_grp = VectorRegisterGroup();
+
+inline constexpr VectorRegisterGroup as_VectorRegisterGroup(int encoding) {
+  return vnoreg_grp; // just for temporary demo
+}
+
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
