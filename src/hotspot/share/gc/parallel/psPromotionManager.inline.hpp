@@ -249,10 +249,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
-  // Parallel GC claims with a release - so other threads might access this object
-  // after claiming and they should see the "completed" object.
-  ContinuationGCSupport::transform_stack_chunk(new_obj);
-
   // Now we have to CAS in the header.
   // Because the forwarding is done with memory_order_relaxed there is no
   // ordering with the above copy.  Clients that get the forwardee must not
@@ -270,6 +266,8 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       new_obj->incr_age();
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
+
+    ContinuationGCSupport::transform_stack_chunk(new_obj);
 
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than

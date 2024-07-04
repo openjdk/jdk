@@ -609,14 +609,12 @@ sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-
 sun/security/smartcardio/TestPresent.java                       8039280 generic-all
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
 com/sun/crypto/provider/Cipher/DES/PerformanceTest.java         8039280 generic-all
-com/sun/security/auth/callback/TextCallbackHandler/Default.java 8039280 generic-all
 com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic-all
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
-javax/net/ssl/SSLSession/CertMsgCheck.java                      8326705 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
 

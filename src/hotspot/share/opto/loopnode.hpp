@@ -514,7 +514,7 @@ inline jlong BaseCountedLoopNode::stride_con() const {
 class LoopLimitNode : public Node {
   enum { Init=1, Limit=2, Stride=3 };
  public:
-  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(0,init,limit,stride) {
+  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(nullptr,init,limit,stride) {
     // Put it on the Macro nodes list to optimize during macro nodes expansion.
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -607,7 +607,7 @@ public:
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
-    : _parent(0), _next(0), _child(0),
+    : _parent(nullptr), _next(nullptr), _child(nullptr),
       _head(head), _tail(tail),
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
