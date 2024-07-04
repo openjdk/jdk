@@ -1516,12 +1516,12 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
 }
 
 void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
-                                                     Register super_klass,
-                                                     Register temp_reg,
-                                                     Register temp2_reg,
-                                                     Label* L_success,
-                                                     Label* L_failure,
-                                                     bool set_cond_codes) {
+                                                          Register super_klass,
+                                                          Register temp_reg,
+                                                          Register temp2_reg,
+                                                          Label* L_success,
+                                                          Label* L_failure,
+                                                          bool set_cond_codes) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
 
@@ -1603,6 +1603,8 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
   bind(L_fallthrough);
 }
 
+// If Register r is invalid, remove a new register from
+// available_regs, and add new register to regs_to_push.
 Register MacroAssembler::allocate_if_noreg(Register r,
                                   RegSetIterator<Register> &available_regs,
                                   RegSet &regs_to_push) {
@@ -1614,17 +1616,23 @@ Register MacroAssembler::allocate_if_noreg(Register r,
   return r;
 }
 
-
+// check_klass_subtype_slow_path_table() looks for super_klass in the
+// hash table belonging to super_klass, branching to L_success or
+// L_failure as appropriate. This is essentially a shim which
+// allocates registers as necessary then calls
+// lookup_secondary_supers_table() to do the work. Any of the temp
+// regs may be noreg, in which case this logic will chooses some
+// registers push and pop them from the stack.
 void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
-                                                     Register super_klass,
-                                                     Register temp_reg,
-                                                     Register temp2_reg,
-                                                     Register temp3_reg,
-                                                     Register result_reg,
-                                                     FloatRegister vtemp,
-                                                     Label* L_success,
-                                                     Label* L_failure,
-                                                     bool set_cond_codes) {
+                                                         Register super_klass,
+                                                         Register temp_reg,
+                                                         Register temp2_reg,
+                                                         Register temp3_reg,
+                                                         Register result_reg,
+                                                         FloatRegister vtemp,
+                                                         Label* L_success,
+                                                         Label* L_failure,
+                                                         bool set_cond_codes) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
   bool temp2_reg_was_valid = temp2_reg->is_valid();
@@ -1706,7 +1714,6 @@ do {                                                               \
          (result        == r5        || result        == noreg), "registers must match aarch64.ad"); \
 } while(0)
 
-// Return true: we succeeded in generating this code
 bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
@@ -1803,6 +1810,12 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   return true;
 }
 
+// At runtime, return 0 in result if r_super_klass is a superclass of
+// r_sub_klass, otherwise return nonzero. Use this version of
+// lookup_secondary_supers_table() if you don't know ahead of time
+// which superclass will be searched for. Used by interpreter and
+// runtime stubs. It is larger and has somewhat greater latency than
+// the version above, which takes a constant super_klass_slot.
 void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
