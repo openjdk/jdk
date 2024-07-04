@@ -5064,6 +5064,9 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   RegSetIterator<Register> available_regs = (temps - rcx).begin();
 
+  // FIXME. Once we are sure that all paths reaching this point really
+  // do pass rcx as one of our temps we can get rid of the following
+  // workaround.
   assert(temps.contains(rcx), "fix this code");
 
   // We prefer to have our shift count in rcx. If rcx is one of our
