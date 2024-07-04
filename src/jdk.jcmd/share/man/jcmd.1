@@ -681,6 +681,55 @@ If no path is provided, the data from the recording is discarded.
 value)
 .RE
 .TP
+\f[V]JFR.view\f[R] [\f[I]options\f[R]]
+Display event data in predefined views.
+.RS
+.PP
+Impact: Medium
+.PP
+\f[B]Note:\f[R]
+.PP
+The \f[I]options\f[R] must be specified using either \f[I]key\f[R] or
+\f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+If no parameters are entered, then a list of available views are
+displayed.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]cell-height\f[R]: (Optional) Maximum number of rows in a table
+cell.
+(INT, default value depends on the view)
+.IP \[bu] 2
+\f[V]maxage\f[R]: (Optional) Length of time for the view to span.
+(INT followed by \[aq]s\[aq] for seconds \[aq]m\[aq] for minutes or
+\[aq]h\[aq] for hours, default value is 10m)
+.IP \[bu] 2
+\f[V]maxsize\f[R]: (Optional) Maximum size for the view to span in bytes
+if one of the following suffixes is not used: \[aq]m\[aq] or \[aq]M\[aq]
+for megabytes OR \[aq]g\[aq] or \[aq]G\[aq] for gigabytes.
+(STRING, default value is 32MB)
+.IP \[bu] 2
+\f[V]truncate\f[R]: (Optional) Maximum number of rows in a table cell.
+(INT, default value depends on the view)
+.IP \[bu] 2
+\f[V]verbose\f[R]: (Optional) Displays the query that makes up the view.
+(BOOLEAN, default value is false)
+.IP \[bu] 2
+\f[V]width\f[R]: (Optional) The width of the view in characters.
+(INT, default value depends on the view)
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[V]view\f[R]: Name of the view or event type to display.
+Use \f[V]help JFR.view\f[R] to see a list of available views.
+(STRING, no default value)
+.PP
+The view parameter can be an event type name.
+Use \f[V]JFR.view types\f[R] to see a list.
+To display all views, use \f[V]JFR.view all-views\f[R].
+To display all events, use \f[V]JFR.view all-events\f[R].
+.RE
+.TP
 \f[V]JVMTI.agent_load\f[R] [\f[I]arguments\f[R]]
 Loads JVMTI native agent.
 .RS
