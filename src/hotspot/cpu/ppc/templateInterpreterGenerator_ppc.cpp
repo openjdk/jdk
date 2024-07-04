@@ -372,9 +372,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   switch (type) {
   case T_BOOLEAN:
     // convert !=0 to 1
-    __ neg(R0, R3_RET);
-    __ orr(R0, R3_RET, R0);
-    __ srwi(R3_RET, R0, 31);
+    __ normalize_bool(R3_RET);
     break;
   case T_BYTE:
      // sign extend 8 bits

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
+import sun.lwawt.LWKeyboardFocusManagerPeer;
 import sun.lwawt.LWLightweightFramePeer;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
@@ -1056,6 +1057,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         execute(ptr -> nativeSetEnabled(ptr, !blocked));
+
+        Window currFocus = LWKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
+        if (!blocked && (target == currFocus)) {
+            requestWindowFocus();
+        }
         checkBlockingAndOrder();
     }
 
