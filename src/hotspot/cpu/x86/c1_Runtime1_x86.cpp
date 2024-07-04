@@ -1284,7 +1284,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ movptr(rax, Address(rsp, (sup_k_off) * VMRegImpl::stack_slot_size)); // superclass
 
         Label miss;
-        __ check_klass_subtype_slow_path(rsi, rax, rcx, rdi, noreg, noreg, nullptr, &miss);
+        __ check_klass_subtype_slow_path(rsi, rax, rcx, rdi, nullptr, &miss);
 
         // fallthrough on success:
         __ movptr(Address(rsp, (result_off) * VMRegImpl::stack_slot_size), 1); // result

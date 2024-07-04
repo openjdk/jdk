@@ -647,6 +647,8 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+#ifdef _LP64
+  // The 64-bit version, which may do a hashed subclass lookup.
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp_reg,
@@ -655,7 +657,11 @@ public:
                                      Register temp4_reg,
                                      Label* L_success,
                                      Label* L_failure);
+#endif
 
+  // Three parts of a hashed subclass lookup: a simple linear search,
+  // a table lookup, and a fallback that does linear probing in the
+  // event of a hash collision.
   void check_klass_subtype_slow_path_linear(Register sub_klass,
                                             Register super_klass,
                                             Register temp_reg,
@@ -664,20 +670,18 @@ public:
                                             Label* L_failure,
                                             bool set_cond_codes = false);
   void check_klass_subtype_slow_path_table(Register sub_klass,
-                                       Register super_klass,
-                                       Register temp_reg,
-                                       Register temp2_reg,
-                                       Register temp3_reg,
-                                       Register result_reg,
-                                       Label* L_success,
-                                       Label* L_failure,
-                                       bool set_cond_codes = false);
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure);
   void hashed_check_klass_subtype_slow_path(Register sub_klass,
                                             Register super_klass,
                                             Register temp_reg,
                                             Label* L_success,
-                                            Label* L_failure,
-                                            bool set_cond_codes = false);
+                                            Label* L_failure);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.

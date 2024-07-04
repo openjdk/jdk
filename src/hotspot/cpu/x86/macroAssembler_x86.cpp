@@ -4541,8 +4541,7 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                            Label& L_success) {
   Label L_failure;
   check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg,        &L_success, &L_failure, nullptr);
-  check_klass_subtype_slow_path
-    (sub_klass, super_klass, temp_reg, noreg, noreg, noreg, &L_success, nullptr);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, noreg, &L_success, nullptr);
   bind(L_failure);
 }
 
@@ -4744,6 +4743,7 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
 
 #ifndef _LP64
 
+// 32-bit x86 only: always use the linear search.
 void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register super_klass,
                                                    Register temp_reg,
@@ -4761,6 +4761,19 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register super_klass,
                                                    Register temp_reg,
                                                    Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  assert(set_cond_codes == false, "must be false on 64-bit x86");
+  check_klass_subtype_slow_path
+    (sub_klass, super_klass, temp_reg, temp2_reg, noreg, noreg,
+     L_success, L_failure);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
                                                    Register temp3_reg,
                                                    Register temp4_reg,
                                                    Label* L_success,
@@ -4770,8 +4783,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
       (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
   } else {
     check_klass_subtype_slow_path_table
-      (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
-       L_success, L_failure, /*set_cond_codes*/false);
+      (sub_klass, super_klass, temp_reg, temp2_reg, temp3_reg, temp4_reg,
+       L_success, L_failure);
   }
 }
 
@@ -4793,8 +4806,7 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
                                                          Register temp3_reg,
                                                          Register result_reg,
                                                          Label* L_success,
-                                                         Label* L_failure,
-                                                         bool set_cond_codes) {
+                                                         Label* L_failure) {
   // NB! Callers may assume that, when temp2_reg is a valid register,
   // this code sets it to a nonzero value.
   bool temp2_reg_was_valid = temp2_reg->is_valid();
@@ -4942,6 +4954,8 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 #endif
 
   RegSetIterator<Register> available_regs = (temps - rcx).begin();
+
+  assert(temps.contains(rcx), "fix this code");
 
   // We prefer to have our shift count in rcx. If rcx is one of our
   // temps, use it for slot. If not, pick any of our temps.
