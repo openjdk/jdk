@@ -968,9 +968,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
                                                                             \
-  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
-          "Use vtable information during CHA")                              \
-                                                                            \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
                                                                             \
@@ -1410,9 +1407,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
-                                                                            \
-  develop(bool, MetaspaceGuardAllocations, false,                           \
-          "Metapace allocations are guarded.")                              \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\

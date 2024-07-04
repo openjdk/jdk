@@ -43,7 +43,6 @@ class CSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
 
@@ -118,18 +117,6 @@ class DefNewGeneration: public Generation {
   // sizing information
   size_t               _max_eden_size;
   size_t               _max_survivor_size;
-
-  // Allocation support
-  bool _should_allocate_from_space;
-  bool should_allocate_from_space() const {
-    return _should_allocate_from_space;
-  }
-  void clear_should_allocate_from_space() {
-    _should_allocate_from_space = false;
-  }
-  void set_should_allocate_from_space() {
-    _should_allocate_from_space = true;
-  }
 
   // Tenuring
   void adjust_desired_tenuring_threshold();
@@ -225,7 +212,6 @@ class DefNewGeneration: public Generation {
   }
 
   HeapWord* allocate(size_t word_size, bool is_tlab);
-  HeapWord* allocate_from_space(size_t word_size);
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
@@ -240,13 +226,6 @@ class DefNewGeneration: public Generation {
 
   // GC support
   void compute_new_size();
-
-  // Returns true if the collection is likely to be safely
-  // completed. Even if this method returns true, a collection
-  // may not be guaranteed to succeed, and the system should be
-  // able to safely unwind and recover from that failure, albeit
-  // at some additional cost.
-  bool collection_attempt_is_safe();
 
   bool collect(bool clear_all_soft_refs);
 
