@@ -371,6 +371,8 @@ public final class CPrinterJob extends RasterPrinterJob {
 
                     try {
                         printLoop(true, firstPage, lastPage);
+                    } catch (PrinterAbortException pex) {
+                        throw new PrinterAbortException(pex.getMessage());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -743,7 +745,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private boolean cancelCheck() {
+    private boolean cancelCheck() throws PrinterAbortException {
         // This is called from the native side.
 
         // This is used to avoid deadlock
@@ -751,15 +753,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         // but that will block the AppKit thread against whomever is holding the synchronized lock
         boolean cancelled = (performingPrinting && userCancelled);
         if (cancelled) {
-            try {
-                LWCToolkit.invokeLater(new Runnable() { public void run() {
-                    try {
-                    cancelDoc();
-                    } catch (PrinterAbortException pae) {
-                        // no-op, let the native side handle it
-                    }
-                }}, null);
-            } catch (java.lang.reflect.InvocationTargetException ite) {}
+            cancelDoc();
         }
         return cancelled;
     }
