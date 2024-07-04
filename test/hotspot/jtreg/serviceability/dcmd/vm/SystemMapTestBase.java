@@ -42,6 +42,8 @@ public class SystemMapTestBase {
     private static final String regexBase_committed = regexBase + "com.*";
     private static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
 
+    // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
+    private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
     protected static final String shouldMatchUnconditionally[] = {
         // java launcher
         regexBase_committed + "/bin/java",
@@ -54,7 +56,7 @@ public class SystemMapTestBase {
     };
 
     protected static final String shouldMatchIfNMTIsEnabled[] = {
-        regexBase_committed + "JAVAHEAP.*",
+        regexBase_java_heap + "JAVAHEAP.*",
         // metaspace
         regexBase_committed + "META.*",
         // parts of metaspace should be uncommitted
