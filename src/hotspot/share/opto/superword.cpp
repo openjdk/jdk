@@ -1863,7 +1863,7 @@ bool SuperWord::schedule_and_apply() const {
   VTransform vtransform(_vloop_analyzer,
                         _mem_ref_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
-                        NOT_PRODUCT( COMMA trace)
+                        NOT_PRODUCT(COMMA trace)
                         );
 
   // Build the transform from the packset.
@@ -2648,7 +2648,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
   DEBUG_ONLY(                           \
-    if (_trace._align_vector) {       \
+    if (_trace._align_vector) {         \
       tty->print("  " #node ": ");      \
       node->dump();                     \
     }                                   \
@@ -2817,7 +2817,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
 #ifdef ASSERT
   if (_trace._align_vector) {
-    tty->print_cr("\nVLoopTransformGraph::adjust_pre_loop_limit_to_align_main_loop_vectors:");
+    tty->print_cr("\nVLoopTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
     tty->print_cr("  aw:       %d", aw);

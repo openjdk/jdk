@@ -76,12 +76,12 @@ bool VTransformGraph::schedule() {
         VTransformNode* use = vtn->out(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
-          // Circle detected!
+          // Cycle detected!
           // The nodes that are pre_visited but not yet post_visited form a path from
           // the "root" to the current vtn. Now, we are looking at an edge (vtn, use),
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
-          // circle.
+          // cycle.
           NOT_PRODUCT(if (_trace._rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
@@ -94,7 +94,6 @@ bool VTransformGraph::schedule() {
         post_visited.set(vtn->_idx);           // post-visit
         _schedule.at_put_grow(rpo_idx--, vtn); // assign rpo_idx
       }
-
     } else {
       stack.pop(); // Already post-visited. Ignore secondary edge.
     }

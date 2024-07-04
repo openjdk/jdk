@@ -30,7 +30,7 @@
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:
 //   It is a "C2 subgraph" -> "C2 subgraph" mapping.
-// - The VTransform contains a graph (VTransformGraph), which consists
+// - The VTransform contains a graph (VTransformGraph), which consists of
 //   many vtnodes (VTransformNode).
 // - Each vtnode models a part of the transformation, and is supposed
 //   to represent the output C2 nodes after the vectorization as closely
@@ -43,7 +43,7 @@
 // - Future Plans: optimize, if-conversion, etc.
 //
 // - Schedule:
-//   - Compute linearization of the graph, into an order that respects
+//   - Compute linearization of the VTransformGraph, into an order that respects
 //     all edges in the graph (bailout if cycle detected).
 //
 // - Apply:
@@ -96,11 +96,11 @@ public:
   Node* node() const { return _node; }
   uint vector_length() const { return _vector_length; }
   uint vector_width() const { return _vector_width; }
-  NOT_PRODUCT( void trace(VTransformNode* vtn) const; )
+  NOT_PRODUCT( void trace(VTransformNode* vtnode) const; )
 };
 
 #ifndef PRODUCT
-// Convenience method for tracing flags.
+// Convenience class for tracing flags.
 class VTransformTrace {
 public:
   const bool _verbose;
@@ -230,7 +230,6 @@ private:
   IdealLoopTree* lpt()        const { return _vloop.lpt(); }
   CountedLoopNode* cl()       const { return _vloop.cl(); }
   int iv_stride()             const { return cl()->stride_con(); }
-  bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   // VLoopVPointers accessors
   const VPointer& vpointer(const MemNode* mem) const {
@@ -342,7 +341,7 @@ public:
 
 // Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
 // Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
-// we must wrap the inputs that are outside the loop also into special vtnodes.
+// we must wrap the inputs that are outside the loop into special vtnodes, too.
 class VTransformInputScalarNode : public VTransformScalarNode {
 public:
   VTransformInputScalarNode(VTransform& vtransform, Node* n) :
@@ -374,7 +373,7 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
 };
 
-// Transform introduces a shift-count node, that truncates the shift count for a vector shift.
+// Transform introduces a shift-count node that truncates the shift count for a vector shift.
 class VTransformShiftCountNode : public VTransformNode {
 private:
   int _vlen;
