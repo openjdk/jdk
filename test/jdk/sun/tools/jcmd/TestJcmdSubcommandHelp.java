@@ -40,7 +40,7 @@ public class TestJcmdSubcommandHelp {
 
     private static final String HELP_ONE_DASH = "-help";
     private static final String HELP_TWO_DASH = "--help";
-    private static final String HELP_POSIX = "-h";
+    private static final String SINGLE_H = "-h";
     private static final String CMD = "VM.metaspace";
     private static final String ILLEGAL = "IllegalArgumentException: Unknown argument";
 
@@ -57,19 +57,19 @@ public class TestJcmdSubcommandHelp {
 
         testExpectedUsage(HELP_ONE_DASH, expectedOutput);
         testExpectedUsage(HELP_TWO_DASH, expectedOutput);
-        testExpectedUsage(HELP_POSIX, expectedOutput);
+        testExpectedUsage(SINGLE_H, expectedOutput);
 
         testIgnoreAdditionalArgs(HELP_ONE_DASH, expectedOutput);
         testIgnoreAdditionalArgs(HELP_TWO_DASH, expectedOutput);
-        testIgnoreAdditionalArgs(HELP_POSIX, expectedOutput);
+        testIgnoreAdditionalArgs(SINGLE_H, expectedOutput);
 
         testIgnoreTrailingSpaces(HELP_ONE_DASH, expectedOutput);
         testIgnoreTrailingSpaces(HELP_TWO_DASH, expectedOutput);
-        testIgnoreTrailingSpaces(HELP_POSIX, expectedOutput);
+        testIgnoreTrailingSpaces(SINGLE_H, expectedOutput);
 
         testSimilarCommand(HELP_ONE_DASH + "less", ILLEGAL);
         testSimilarCommand(HELP_TWO_DASH + "me", ILLEGAL);
-        testSimilarCommand(HELP_POSIX + "ello", ILLEGAL);
+        testSimilarCommand(SINGLE_H + "ello", ILLEGAL);
     }
 
     private static void testExpectedUsage(String helpOption, String expectedOutput) throws Exception {
