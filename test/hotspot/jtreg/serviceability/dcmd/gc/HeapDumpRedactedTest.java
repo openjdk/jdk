@@ -20,7 +20,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test 
  * @summary  Test that primitive values in the heap dump are 0
  * @library /test/lib
- * @run main/othervm -XX:+HeapDumpRedacted HeapDumpRedactedTest
+ * @run main/othervm HeapDumpRedactedTest
  */
 
  
@@ -59,7 +59,7 @@ public class HeapDumpRedactedTest {
             dump.delete();
         }
 
-        executor.execute("GC.heap_dump " + dump.getAbsolutePath());
+        executor.execute("GC.heap_dump " + dump.getAbsolutePath() + " -redact");
         Snapshot snapshot = Reader.readFile(dump.getAbsolutePath(), true, 0);
         snapshot.resolve(false);
         Enumeration<JavaHeapObject> things = snapshot.getThings();
@@ -115,7 +115,7 @@ public class HeapDumpRedactedTest {
         JavaThing field = obj.getField(fieldName);
         Asserts.assertTrue(field instanceof JavaValue);
         JavaValue value = (JavaValue) field;
-        Asserts.assertEquals(value.toString(), expected);
+        Asserts.assertEquals(expected, value.toString());
     }
 
     private static void testPrimitiveArray(String fieldName, JavaObject obj, String expected) {
@@ -126,7 +126,7 @@ public class HeapDumpRedactedTest {
         for (JavaThing element : elements) {
             Asserts.assertTrue(element instanceof JavaValue);
             JavaValue value = (JavaValue) element;
-            Asserts.assertEquals(value.toString(), expected);
+            Asserts.assertEquals(expected, value.toString());
         }
     }
 
