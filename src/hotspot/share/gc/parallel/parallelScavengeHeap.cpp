@@ -661,7 +661,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
            "addr should be in allocated part of old gen");
     return old_gen()->start_array()->object_start((HeapWord*)addr);
   }
-  return 0;
+  return nullptr;
 }
 
 bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {

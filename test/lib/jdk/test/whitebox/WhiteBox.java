@@ -119,6 +119,8 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native long getInUseMonitorCount();
+
   public native int getLockStackCapacity();
 
   public native boolean supportsRecursiveLightweightLocking();
@@ -798,4 +800,5 @@ public class WhiteBox {
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 
   public native void preTouchMemory(long addr, long size);
+  public native long rss();
 }

@@ -191,10 +191,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_VC, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.LSHIFT_VC, ">0"})
     public char[] vectorShiftLeft() {
         char[] res = new char[SIZE];
@@ -205,10 +202,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_VC, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorSignedShiftRight() {
         char[] res = new char[SIZE];
@@ -219,10 +213,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_VC, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorUnsignedShiftRight() {
         char[] res = new char[SIZE];

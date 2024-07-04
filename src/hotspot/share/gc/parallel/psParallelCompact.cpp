@@ -237,7 +237,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
-  if (vspace != 0) {
+  if (vspace != nullptr) {
     if (vspace->expand_by(_reserved_byte_size)) {
       return vspace;
     }
@@ -246,7 +246,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
     rs.release();
   }
 
-  return 0;
+  return nullptr;
 }
 
 bool ParallelCompactData::initialize_region_data(size_t heap_size)
@@ -255,7 +255,7 @@ bool ParallelCompactData::initialize_region_data(size_t heap_size)
 
   const size_t count = heap_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
-  if (_region_vspace != 0) {
+  if (_region_vspace != nullptr) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
     _region_count = count;
     return true;
@@ -837,8 +837,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
   assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
   const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval
-                              || total_invocations == HeapFirstMaximumCompactionCount;
+  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
 
   // If all regions in old-gen are full
   const bool is_region_full =
