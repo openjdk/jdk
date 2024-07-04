@@ -2077,14 +2077,14 @@ private:
   enum WouldProfile {unknown, no_profile, profile};
   WouldProfile      _would_profile;
 
-  // Size of _data array in bytes.  (Excludes header and extra_data fields.)
-  int _data_size;
-
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int                _jvmci_ir_size;
   FailedSpeculation* _failed_speculations;
+  int                _jvmci_ir_size;
 #endif
+
+  // Size of _data array in bytes.  (Excludes header and extra_data fields.)
+  int _data_size;
 
   // data index for the area dedicated to parameters. -1 if no
   // parameter profiling.
