@@ -1368,8 +1368,8 @@ JVM_END
  * This is required by the specification of VarHandle.{access-mode} if
  * invoked directly.
  */
-JVM_ENTRY(jobject, VH_UOE(JNIEnv* env, jobject mh, jobjectArray args)) {
-  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "VarHandle access mode method a cannot be invoked reflectively");
+JVM_ENTRY(jobject, VH_UOE(JNIEnv* env, jobject vh, jobjectArray args)) {
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "VarHandle access mode methods cannot be invoked reflectively");
   return nullptr;
 }
 JVM_END
@@ -1416,37 +1416,37 @@ static JNINativeMethod MH_methods[] = {
 };
 static JNINativeMethod VH_methods[] = {
   // UnsupportedOperationException throwers
+  {CC "get",                        CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "set",                        CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getVolatile",                CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setVolatile",                CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getAcquire",                 CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setRelease",                 CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getOpaque",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setOpaque",                  CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "compareAndSet",              CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
   {CC "compareAndExchange",         CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
   {CC "compareAndExchangeAcquire",  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
   {CC "compareAndExchangeRelease",  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "compareAndSet",              CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
-  {CC "get",                        CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAcquire",                 CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndAdd",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndAddAcquire",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndAddRelease",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseAnd",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseAndAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseAndRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseOr",            CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseOrAcquire",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseOrRelease",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseXor",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseXorAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getAndBitwiseXorRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetPlain",     CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSet",          CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetAcquire",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetRelease",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
   {CC "getAndSet",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
   {CC "getAndSetAcquire",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
   {CC "getAndSetRelease",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getOpaque",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "getVolatile",                CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
-  {CC "set",                        CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
-  {CC "setOpaque",                  CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
-  {CC "setRelease",                 CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
-  {CC "setVolatile",                CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
-  {CC "weakCompareAndSet",          CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
-  {CC "weakCompareAndSetAcquire",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
-  {CC "weakCompareAndSetPlain",     CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
-  {CC "weakCompareAndSetRelease",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)}
+  {CC "getAndAdd",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndAddAcquire",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndAddRelease",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOr",            CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOrAcquire",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOrRelease",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAnd",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAndAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAndRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXor",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXorAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXorRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)}
 };
 
 /**
@@ -1455,6 +1455,7 @@ static JNINativeMethod VH_methods[] = {
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(!MethodHandles::enabled(), "must not be enabled");
   assert(vmClasses::MethodHandle_klass() != nullptr, "should be present");
+  assert(vmClasses::VarHandle_klass() != nullptr, "should be present");
 
   oop mh_mirror = vmClasses::MethodHandle_klass()->java_mirror();
   oop vh_mirror = vmClasses::VarHandle_klass()->java_mirror();

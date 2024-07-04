@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,12 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void methodInvocationMatchingArguments(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
-        // Try a reflective invoke using a Method, with an array of 0 arguments
+        // Try a reflective invoke using a Method, with the minimal required arguments
 
         Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
-        Object args = new Object[0];
+        Object arg = new Object[0];
         try {
-            vhm.invoke(v, args);
+            vhm.invoke(v, arg);
         } catch (InvocationTargetException e) {
             if (!(e.getCause() instanceof UnsupportedOperationException)) {
                 throw new RuntimeException("expected UnsupportedOperationException but got: "
