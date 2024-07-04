@@ -124,7 +124,7 @@ public class TestAlwaysPreTouchBehavior {
     // of the touched pages may be reassigned by the kernel to another process
     // after touching and before measuring.
     //
-    // Therefore this test requires enough breathing room - a sufficiently large
+    // Therefore, this test requires enough breathing room - a sufficiently large
     // available memory reserve on the machine - to not produce false negatives.
     // We do this via:
     // - specifying @requires os.maxMemory > 2G
