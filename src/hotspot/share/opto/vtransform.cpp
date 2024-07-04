@@ -150,26 +150,30 @@ Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& 
   return n;
 }
 
-VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                  const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   // This was just wrapped. Now we simply unwap without touching the inputs.
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                     const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
   register_new_node_from_vectorization(vloop_analyzer, vn, val);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* n = new ConvI2LNode(val);
   register_new_node_from_vectorization(vloop_analyzer, n, val);
   return VTransformApplyResult::make_scalar(n);
 }
 
-VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   Node* shift_count_in = find_transformed_input(1, vnode_idx_to_transformed_node);
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
@@ -185,7 +189,8 @@ VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop
 }
 
 
-VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                         const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   assert(val->is_Phi(), "expected to be iv");
@@ -196,7 +201,8 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                             const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
@@ -249,7 +255,8 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
-VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   BoolNode* first = nodes().at(0)->as_Bool();
   uint  vlen = nodes().length();
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
@@ -271,7 +278,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                           const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
   int   opc  = first->Opcode();
@@ -285,7 +293,8 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   LoadNode* first = nodes().at(0)->as_Load();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
@@ -314,7 +323,8 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   StoreNode* first = nodes().at(0)->as_Store();
   uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);

@@ -45,9 +45,9 @@ public:
       _packset(packset),
       _vtransform(vtransform)
   {
-    assert(_vtransform.is_empty(), "constructor is passed an empty vtransform");
+    assert(!_vtransform.has_graph(), "constructor is passed an empty vtransform");
     build();
-    assert(!_vtransform.is_empty(), "vtransform must contain some vtnodes now");
+    assert(_vtransform.has_graph(), "vtransform must contain some vtnodes now");
   }
 
 private:

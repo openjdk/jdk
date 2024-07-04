@@ -27,7 +27,7 @@
 
 void SuperWordVTransformBuilder::build() {
   assert(!_packset.is_empty(), "must have non-empty packset");
-  assert(_vtransform.is_empty(), "start with empty vtransform");
+  assert(!_vtransform.has_graph(), "start with empty vtransform");
 
   // Create vtnodes for all nodes in the loop.
   build_vector_vtnodes_for_packed_nodes();

@@ -152,8 +152,8 @@ public:
 
   VTransformNodeIDX new_idx() { return _next_idx++; }
   void add_vtnode(VTransformNode* vtnode);
-  bool is_empty() const { return _vtnodes.is_empty(); }
-  bool is_scheduled() const { return _schedule.is_nonempty(); }
+  DEBUG_ONLY( bool is_empty() const { return _vtnodes.is_empty(); } )
+  DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
 
   bool schedule();
@@ -217,7 +217,7 @@ public:
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   Arena* arena() { return &_arena; }
-  bool is_empty() const { return _graph.is_empty(); }
+  DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
   bool schedule() { return _graph.schedule(); }
@@ -417,7 +417,7 @@ public:
     }
   }
 
-  const GrowableArray<Node*> nodes() const { return _nodes; }
+  const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
