@@ -28,8 +28,10 @@
 #include "memory/metaspace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
+#include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
+#include "utilities/nativeCallStack.hpp"
 
 /*
  * Base class that provides helpers
@@ -149,11 +151,11 @@ class MemSummaryReporter : public MemReporterBase {
 class MemDetailReporter : public MemSummaryReporter {
  private:
   MemBaseline&   _baseline;
-
+  NativeCallStackPrinter _stackprinter;
  public:
   MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale) :
     MemSummaryReporter(baseline, output, scale),
-     _baseline(baseline) { }
+     _baseline(baseline), _stackprinter(output) { }
 
   // Generate detail report.
   // The report contains summary and detail sections.
@@ -229,10 +231,12 @@ class MemSummaryDiffReporter : public MemReporterBase {
  * both baselines have to be detail baseline.
  */
 class MemDetailDiffReporter : public MemSummaryDiffReporter {
+  NativeCallStackPrinter _stackprinter;
  public:
   MemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
     outputStream* output, size_t scale = default_scale) :
-    MemSummaryDiffReporter(early_baseline, current_baseline, output, scale) { }
+    MemSummaryDiffReporter(early_baseline, current_baseline, output, scale),
+    _stackprinter(output) { }
 
   // Generate detail comparison report
   virtual void report_diff();

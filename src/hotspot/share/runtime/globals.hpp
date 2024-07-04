@@ -968,9 +968,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
                                                                             \
-  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
-          "Use vtable information during CHA")                              \
-                                                                            \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
                                                                             \
@@ -1957,9 +1954,9 @@ const int ObjectAlignmentInBytes = 8;
              "fence. Add cleanliness checks.")                              \
                                                                             \
   product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
-          "Select locking mode: "                                           \
-          "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
+          "(Deprecated) Select locking mode: "                              \
+          "0: (Deprecated) monitors only (LM_MONITOR), "                    \
+          "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
