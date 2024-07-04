@@ -176,8 +176,8 @@ void SuperWordVTransformBuilder::set_req_with_scalar(Node* n, VTransformNode* vt
   vtn_dependencies.set(req->_idx);
 }
 
-// Either get existing vtnode vector input (when input is a pack), or else make a
-// new one vector vtnode for the input (e.g. for Replicate or PopulateIndex).
+// Either get the existing vtnode vector input (when input is a pack), or else make a
+// new vector vtnode for the input (e.g. for Replicate or PopulateIndex).
 VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index) {
   Node* p0 = pack->at(0);
 
