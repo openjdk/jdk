@@ -27,8 +27,6 @@
  * @bug 8304042
  * @summary Test some examples with independent packs with cyclic dependency
  *          between the packs.
- * @requires vm.bits == 64
- * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency
@@ -78,7 +76,7 @@ public class TestIndependentPacksWithCyclicDependency {
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::test*",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::verify",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::init",
-                                   "-XX:LoopUnrollLimit=1000");
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     TestIndependentPacksWithCyclicDependency() {
@@ -120,6 +118,7 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test0(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -144,6 +143,7 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0", IRNode.VECTOR_CAST_F2I, "> 0", IRNode.VECTOR_CAST_I2F, "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static void test1(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -167,6 +167,7 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test2(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -191,6 +192,7 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test3(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -267,6 +269,7 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.ADD_VF, "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test6(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb,
                       long[] dataLa, long[] dataLb) {

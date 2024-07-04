@@ -336,6 +336,7 @@ class os: AllStatic {
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong used_memory();
   static julong free_memory();
 
   static jlong total_swap_space();
@@ -344,6 +345,7 @@ class os: AllStatic {
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
+  static size_t rss();
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -854,10 +856,10 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                             int bytes_per_line, address logical_start);
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
-    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii,
+                             int bytes_per_line, const_address logical_start);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true) {
+    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start);
   }
 
   // returns a string to describe the exception/signal;
