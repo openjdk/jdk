@@ -33,7 +33,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -48,20 +47,17 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import sun.swing.MnemonicHandler;
-import sun.swing.SwingUtilities2;
-
 import apple.laf.JRSUIConstants.State;
 import apple.laf.JRSUIConstants.Widget;
-
 import com.apple.laf.AquaIcon.InvertableIcon;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 /**
  * AquaMenuPainter, implements paintMenuItem to avoid code duplication

@@ -30,17 +30,14 @@ import java.awt.Graphics;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
-
 import javax.swing.plaf.basic.BasicLabelUI;
-
-import sun.swing.MnemonicHandler;
-import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 public class AquaLabelUI extends BasicLabelUI {
     private static final RecyclableSingleton<AquaLabelUI> aquaLabelUI = new RecyclableSingletonFromDefaultConstructor<AquaLabelUI>(AquaLabelUI.class);

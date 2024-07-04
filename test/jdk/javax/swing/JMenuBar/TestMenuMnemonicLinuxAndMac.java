@@ -60,6 +60,7 @@ public class TestMenuMnemonicLinuxAndMac {
             if (laf.getName().contains("GTK") || laf.getName().contains("Aqua")) {
                 System.out.println("Testing: "+laf.getName());
                 UIManager.setLookAndFeel(laf.getClassName());
+                break;
             }
         }
 

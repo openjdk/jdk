@@ -36,17 +36,16 @@ import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JRadioButton;
-import javax.swing.JToggleButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
 import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
-import com.sun.java.swing.plaf.windows.WindowsButtonUI;
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
