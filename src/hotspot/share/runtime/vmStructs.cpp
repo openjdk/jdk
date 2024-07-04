@@ -485,6 +485,13 @@
   nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
+  /*******************/                                                                                                              \
+  /* GrowableArrays  */                                                                                                              \
+  /*******************/                                                                                                              \
+                                                                                                                                     \
+  nonstatic_field(GrowableArrayBase<int>,      _len,                                          int)                                   \
+  nonstatic_field(GrowableArrayBase<int>,      _capacity,                                     int)                                   \
+  nonstatic_field(GrowableArray<int, int>,     _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
