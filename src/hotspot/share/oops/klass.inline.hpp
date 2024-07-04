@@ -77,10 +77,6 @@ inline ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
-#ifndef PRODUCT
-extern long pos_ctr, neg_ctr, neg_fast_ctr, neg_slow_ctr;
-#endif // PRODUCT
-
 inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   uintx bitmap = _bitmap;
 
