@@ -112,6 +112,8 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
+  X86_ONLY(static_field(CompilerToVM::Data,    L1_line_size,                           int))                                         \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
