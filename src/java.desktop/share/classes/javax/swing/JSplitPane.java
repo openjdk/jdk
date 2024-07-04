@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 import javax.accessibility.AccessibleValue;
 import javax.swing.plaf.SplitPaneUI;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 /**
  * <code>JSplitPane</code> is used to divide two (and only two)
@@ -361,6 +362,17 @@ public class JSplitPane extends JComponent implements Accessible
 
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        if (this.getUI() instanceof BasicSplitPaneUI) {
+            ((BasicSplitPaneUI)(this.getUI())).getDivider().setEnabled(enabled);
+        }
+    }
 
     /**
      * Sets the L&amp;F object that renders this component.

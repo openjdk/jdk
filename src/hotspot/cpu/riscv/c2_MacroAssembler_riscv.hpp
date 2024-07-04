@@ -37,7 +37,7 @@
                        Register tmp1, Register tmp2,
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
-                       bool is_latin, Label& DONE);
+                       bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
   void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
   void expand_bits_v(Register dst, Register src, Register mask, bool is_long);

@@ -66,19 +66,17 @@
 
 class CppVtableInfo {
   intptr_t _vtable_size;
-  intptr_t _cloned_vtable[1];
+  intptr_t _cloned_vtable[1]; // Pseudo flexible array member.
+  static size_t cloned_vtable_offset() { return offset_of(CppVtableInfo, _cloned_vtable); }
 public:
-  static int num_slots(int vtable_size) {
-    return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
-  }
   int vtable_size()           { return int(uintx(_vtable_size)); }
   void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
-  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
-  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
+  // Using _cloned_vtable[i] for i > 0 causes undefined behavior. We use address calculation instead.
+  intptr_t* cloned_vtable()   { return (intptr_t*)((char*)this + cloned_vtable_offset()); }
+  void zero()                 { memset(cloned_vtable(), 0, sizeof(intptr_t) * vtable_size()); }
   // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
   static size_t byte_size(int vtable_size) {
-    CppVtableInfo i;
-    return pointer_delta(&i._cloned_vtable[vtable_size], &i, sizeof(u1));
+    return cloned_vtable_offset() + (sizeof(intptr_t) * vtable_size);
   }
 };
 

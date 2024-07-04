@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class OpenModulesTest extends ModuleTestBase {
                                                           module.uses(),
                                                           module.provides());
 
-        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transformClass(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(miClass)) {
             out.write(newBytes);

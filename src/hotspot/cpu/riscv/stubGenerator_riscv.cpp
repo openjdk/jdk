@@ -2808,6 +2808,50 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifdef COMPILER2
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,
+      r_array_base   = x11,
+      r_array_length = x12,
+      r_array_index  = x13,
+      r_sub_klass    = x14,
+      result         = x15,
+      r_bitmap       = x16;
+
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, super_klass_index, /*stub_is_near*/true);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,        // argument
+      r_array_base   = x11,        // argument
+      temp1          = x12,        // tmp
+      r_array_index  = x13,        // argument
+      result         = x15,        // argument
+      r_bitmap       = x16;        // argument
+
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, result, temp1);
+    __ ret();
+
+    return start;
+  }
+
   address generate_mulAdd()
   {
     __ align(CodeEntryAlignment);
@@ -5269,6 +5313,52 @@ static const int64_t right_3_bits = right_n_bits(3);
 
 #endif // COMPILER2
 
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *   c_rarg0   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
+
+    address start = __ pc();
+
+    const Register crc    = c_rarg0;  // crc
+    const Register buf    = c_rarg1;  // source java byte array address
+    const Register len    = c_rarg2;  // length
+    const Register table0 = c_rarg3;  // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+
+    const Register tmp1 = c_rarg7;
+    const Register tmp2 = t2;
+    const Register tmp3 = x28; // t3
+    const Register tmp4 = x29; // t4
+    const Register tmp5 = x30; // t5
+    const Register tmp6 = x31; // t6
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len, table0, table1, table2,
+                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -5515,6 +5605,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
+
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -5565,6 +5661,18 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (bs_nm != nullptr) {
       StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
+
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
+#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 
