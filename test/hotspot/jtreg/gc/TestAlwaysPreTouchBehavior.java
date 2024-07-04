@@ -101,9 +101,6 @@ package gc;
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m gc.TestAlwaysPreTouchBehavior -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  */
 
-
-import jdk.test.lib.Asserts;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -116,12 +113,38 @@ import java.util.List;
 
 public class TestAlwaysPreTouchBehavior {
 
+    // This test tests the ability of the JVM to pretouch its java heap
+    // for test purposes (AlwaysPreTouch). We start a JVM with -XX:+AlwaysPreTouch,
+    // then observe RSS and expect to see RSS covering the entirety of the
+    // java heap, since it should all be pre-touched now.
+    //
+    // This test is important (we had pretouching break before) but inherently
+    // shaky, since RSS of the JVM process is subject to host machine conditions.
+    // If there is memory pressure, we may swap parts of the heap out, or parts
+    // of the touched pages may be reassigned by the kernel to another process
+    // after touching and before measuring.
+    //
+    // Therefore this test requires enough breathing room - a sufficiently large
+    // available memory reserve on the machine - to not produce false negatives.
+    // We do this via:
+    // - specifying @requires os.maxMemory > 2G
+    // - the test itself first checks if the available memory is larger than a
+    //   certain required threshold A, only then it starts the testee JVM
+    // - finally, in the testee JVM, if RSS is lower than expected and before
+    //   registering that as an error, we check available memory again. If it is lower
+    //   than threshold B, it again won't count as an error.
+
     final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     final static long M = 1024 * 1024;
     final static long heapsize = M * 128;
+    // maximum size of non-heap memory we expect the testee JVM to have.
     final static long expectedMaxNonHeapRSS = M * 256;
+    // How much memory we require the host to have available before even starting the test
     final static  long requiredAvailableBefore = heapsize * 2 + expectedMaxNonHeapRSS;
+    // In the testee JVM, if RSS is lower than expected, how much memory should *still* be available now to
+    // count the low RSS as a real error - an indication for a misfunctioning pretouch, not just a low-memory
+    // condition on the system.
     final static  long requiredAvailableDuring = expectedMaxNonHeapRSS;
 
     private static String[] prepareOptions(String[] extraVMOptions) {
@@ -131,7 +154,7 @@ public class TestAlwaysPreTouchBehavior {
         }
         allOptions.add("-Xmx" + heapsize);
         allOptions.add("-Xms" + heapsize);
-        allOptions.add("-XX:+AlwaysPreTouch"); // Stabilize RSS
+        allOptions.add("-XX:+AlwaysPreTouch");
         allOptions.add("-XX:+UnlockDiagnosticVMOptions"); // For whitebox
         allOptions.add("-XX:+WhiteBoxAPI");
         allOptions.add("-Xbootclasspath/a:.");
@@ -158,7 +181,7 @@ public class TestAlwaysPreTouchBehavior {
         long rss = wb.rss();
         System.out.println("RSS: " + rss + " available: " + avail + " committed " + committed);
 
-        if (args[0].equals("run")) {
+        if (args[0].equals("run")) { // see prepareOptions()
             if (rss < committed) {
                 if (avail < requiredAvailableDuring) {
                     throw new SkippedException("Not enough memory for this  test (" + avail + ")");
