@@ -440,6 +440,8 @@ public sealed interface ClassFile
      * @param model the class model to transform
      * @param transform the transform
      * @return the bytes of the new class
+     *
+     * @since 24
      */
     default byte[] transformClass(ClassModel model, ClassTransform transform) {
         return transformClass(model, model.thisClass(), transform);
@@ -456,6 +458,8 @@ public sealed interface ClassFile
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class
+     *
+     * @since 24
      */
     default byte[] transformClass(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
         return transformClass(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
@@ -479,6 +483,8 @@ public sealed interface ClassFile
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class
+     *
+     * @since 24
      */
     byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform);
 

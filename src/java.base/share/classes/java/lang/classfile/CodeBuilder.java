@@ -1640,6 +1640,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to branch if reference is not null
      * @param target the branch target
      * @return this builder
+     * @since 24
      */
     default CodeBuilder ifnonnull(Label target) {
         return branch(Opcode.IFNONNULL, target);
@@ -1649,6 +1650,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to branch if reference is null
      * @param target the branch target
      * @return this builder
+     * @since 24
      */
     default CodeBuilder ifnull(Label target) {
         return branch(Opcode.IFNULL, target);
