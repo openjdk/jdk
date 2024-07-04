@@ -166,11 +166,6 @@ public class ComponentEventTest {
             doTestForComponent(i);
         }
 
-        EventQueue.invokeAndWait(() -> {
-            frame.dispose();
-            frame.setVisible(true);
-        });
-
         robot.delay(DELAY);
 
         resetValues();
