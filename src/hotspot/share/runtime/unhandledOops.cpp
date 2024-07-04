@@ -30,6 +30,10 @@
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef CHECK_UNHANDLED_OOPS
+
+template<typename E, typename Index>
+class GrowableArray;
+
 const int free_list_size = 256;
 
 
