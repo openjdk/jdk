@@ -286,8 +286,8 @@ public:
 // gen size to keep pause time length goal.
 void G1ConcurrentRefine::adjust_young_list_target_length() {
   if (_policy->use_adaptive_young_list_length()) {
-    G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
     RemSetSamplingClosure cl;
+    G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
     cset->iterate(&cl);
     _policy->revise_young_list_target_length(cl.sampled_card_rs_length(), cl.sampled_code_root_rs_length());
   }
