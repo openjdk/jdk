@@ -34,7 +34,7 @@ import jdk.jfr.consumer.EventStream;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr jdk.attach java.base/jdk.internal.misc
- * @build jdk.jfr.api.consumer.streaming.Application
+ * @build jdk.jfr.api.consumer.streaming.TestProcess
  *
  * @run main/othervm -Dsun.tools.attach.attachTimeout=100000 jdk.jfr.api.consumer.streaming.TestJVMExit
  */
