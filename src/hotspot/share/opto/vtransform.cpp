@@ -132,9 +132,9 @@ void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>&
   }
 }
 
-void VTransformApplyResult::trace(VTransformNode* vtn) const {
+void VTransformApplyResult::trace(VTransformNode* vtnode) const {
   tty->print("  apply: ");
-  vtn->print();
+  vtnode->print();
   tty->print("    ->   ");
   if (_node == nullptr) {
     tty->print_cr("nullptr");

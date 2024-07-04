@@ -2817,7 +2817,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
 #ifdef ASSERT
   if (_trace._align_vector) {
-    tty->print_cr("\nVLoopTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
+    tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
     tty->print_cr("  aw:       %d", aw);
