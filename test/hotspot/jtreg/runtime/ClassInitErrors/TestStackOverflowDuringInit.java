@@ -28,6 +28,7 @@
  *          a StackOverflowError, that we record the SOE as the underlying
  *          cause, even if we can't create the ExceptionInInitializerError
  * @comment This test could easily be perturbed so don't allow flag settings.
+ * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @requires vm.flagless
  * @comment Run with the smallest stack possible to limit the execution time.
  *          This is the smallest stack that is supported by all platforms.
