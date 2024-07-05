@@ -1256,6 +1256,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param out the array to write the resulting tag into
      * @param outOff the offset to begin writing the data.
      *
+     * @throws ProviderException if there is insufficient room to
+     *      write the tag.
      */
     private void authFinalizeData(byte[] data, int dataOff, int length,
             byte[] out, int outOff) {

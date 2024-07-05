@@ -172,7 +172,7 @@ extends KeyAgreementSpi {
      * @param key the key for this phase. For example, in the case of
      * Diffie-Hellman between 2 parties, this would be the other party's
      * Diffie-Hellman public key.
-     * @param lastPhase flag which indicates whether this is the last
+     * @param lastPhase flag which indicates if this is the last
      * phase of this key agreement.
      *
      * @return the (intermediate) key resulting from this phase, or null if

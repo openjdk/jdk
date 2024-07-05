@@ -272,7 +272,7 @@ final class GHASH implements Cloneable, GCM {
     /*
      * This is an intrinsified method.  The method's argument list must match
      * the hotspot signature.  This method and methods called by it, cannot
-     * throw exceptions or allocate arrays as it will break intrinsics
+     * throw exceptions or allocate arrays as it will break intrinsics.
      */
     @IntrinsicCandidate
     private static void processBlocks(byte[] data, int inOfs, int blocks,
