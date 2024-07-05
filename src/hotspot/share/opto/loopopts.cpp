@@ -787,6 +787,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   }//for
   Node* bol = iff->in(1);
   assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
+  if (bol->is_OpaqueStress()) {
+    return nullptr;
+  }
   if (bol->is_Opaque4()) {
     // Ignore Template Assertion Predicates with Opaque4 nodes.
     assert(assertion_predicate_has_loop_opaque_node(iff),
@@ -1682,6 +1685,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_MergeMem() &&
       !n->is_CMove() &&
       !n->is_Opaque4() &&
+      !n->is_OpaqueStress() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
@@ -2004,6 +2008,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     }
   }
   Node* n = phi->in(1);
+  assert(!n->is_OpaqueStress(), "fix this");
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
   if (n->is_Opaque4() || n->is_OpaqueInitializedAssertionPredicate()) {
@@ -2180,7 +2185,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // For example, it is unexpected that there is a Phi between an
       // AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate() ||
+      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueStress() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.

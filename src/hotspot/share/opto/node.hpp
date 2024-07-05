@@ -138,6 +138,7 @@ class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
 class Opaque4Node;
+class OpaqueStressNode;
 class OpaqueInitializedAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
@@ -800,6 +801,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 19)
     DEFINE_CLASS_ID(LShift,   Node, 20)
     DEFINE_CLASS_ID(Neg,      Node, 21)
+    DEFINE_CLASS_ID(OpaqueStress, Node, 21)
 
     _max_classes  = ClassMask_Neg
   };
@@ -971,6 +973,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
+  DEFINE_CLASS_QUERY(OpaqueStress)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)

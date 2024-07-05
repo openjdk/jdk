@@ -1401,6 +1401,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   // Generate real control flow
   Node   *tst = _gvn.transform( new BoolNode( c, btest ) );
+  tst = _gvn.transform(new OpaqueStressNode(tst));
 
   // Sanity check the probability value
   assert(prob > 0.0f,"Bad probability in Parser");
@@ -1510,6 +1511,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
 
   // Generate real control flow
   float true_prob = (taken_if_true ? prob : untaken_prob);
+  tst = _gvn.transform(new OpaqueStressNode(tst));
   IfNode* iff = create_and_map_if(control(), tst, true_prob, cnt);
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
   Node* taken_branch   = new IfTrueNode(iff);
@@ -1598,7 +1600,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
                   nullptr,
                   (is_fallthrough ? "taken always" : "taken never"));
 
-    if (call != nullptr) {
+    if (call != nullptr && !StressUnstableIfTraps && false) {
       C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
     }
     return;

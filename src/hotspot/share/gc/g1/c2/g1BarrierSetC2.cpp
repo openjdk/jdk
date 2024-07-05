@@ -756,6 +756,9 @@ void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) c
         if (this_region->in(ind)->is_IfFalse() &&
             this_region->in(ind)->in(0)->Opcode() == Op_If) {
           Node* bol = this_region->in(ind)->in(0)->in(1);
+          if (bol->is_OpaqueStress()) {
+            bol = bol->in(1);
+          }
           assert(bol->is_Bool(), "");
           cmpx = bol->in(1);
           if (bol->as_Bool()->_test._test == BoolTest::ne &&
