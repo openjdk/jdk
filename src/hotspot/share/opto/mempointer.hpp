@@ -30,25 +30,29 @@
 // TODO general description
 
 // Summand of a MemPointerSimpleForm.
-//   if var is a long (varL):
-//     s = scaleL * varL
-//   else, i.e. if var is a int (varI):
-//     s = scaleL * ConvI2L(scaleI * varI)
+//   if node is a long (nodeL):
+//     s = scaleL * nodeL
+//   else, i.e. if node is a int (nodeI):
+//     s = scaleL * ConvI2L(scaleI * nodeI)
 //
 class MemPointerSummand : public StackObj {
-public:
-  Node* _var;
+private:
+  Node* _node;
   jlong _scaleL;
   jlong _scaleI;
 
 public:
-  MemPointerSummand() : _var(nullptr), _scaleL(0), _scaleI(0) {}
-  MemPointerSummand(Node* var, const jlong scaleL, const jlong scaleI)
-    : _var(var), _scaleL(scaleL), _scaleI(scaleI)
+  MemPointerSummand() : _node(nullptr), _scaleL(0), _scaleI(0) {}
+  MemPointerSummand(Node* node, const jlong scaleL, const jlong scaleI)
+    : _node(node), _scaleL(scaleL), _scaleI(scaleI)
   {
-    assert(_var != nullptr, "must have variable");
+    assert(_node != nullptr, "must have node");
     assert(_scaleL != 0 && _scaleI != 0, "non-zero scale");
   }
+
+  Node* node() const { return _node; }
+  jlong scaleL() const { return _scaleL; }
+  jlong scaleI() const { return _scaleI; }
 };
 
 // Simple form of the pointer sub-expression of "pointer".
@@ -67,17 +71,36 @@ private:
 
 public:
   MemPointerSimpleForm() {}
+};
 
-  static MemPointerSimpleForm make_from_ConIL(Node* n, const jlong con);
-  static MemPointerSimpleForm make_from_AddSubILP(Node* n, const MemPointerSimpleForm* a, const MemPointerSimpleForm* b);
-  static MemPointerSimpleForm make_from_Mul(Node* n, const MemPointerSimpleForm* a, const jlong scale);
-  static MemPointerSimpleForm make_from_ConvI2L(Node* n, const MemPointerSimpleForm* a);
+class MemPointerSimpleFormParser : public StackObj {
+private:
+  const MemNode* _mem;
+
+  // Internal data-structures for parsing.
+  GrowableArray<MemPointerSummand> _worklist;
+  GrowableArray<MemPointerSummand> _summands;
+  jlong _con;
+
+  // Resulting simple-form.
+  MemPointerSimpleForm _simple_form;
+
+public:
+  MemPointerSimpleFormParser(const MemNode* mem) : _mem(mem), _con(0) {
+    _simple_form = parse_simple_form();
+  }
+
+  const MemPointerSimpleForm simple_form() const { return _simple_form; }
+
+private:
+  MemPointerSimpleForm parse_simple_form();
+  void parse_sub_expression(const MemPointerSummand summand);
 };
 
 // TODO
 class MemPointer : public StackObj {
 private:
-  bool _is_valid;
+  bool _is_valid; // TODO needed?
   const MemNode* _mem;
   MemPointerSimpleForm _simple_form;
 
@@ -87,13 +110,12 @@ public:
     _mem(mem)
   {
     assert(_mem->is_Store(), "only stores are supported");
-    Node* pointer = mem->in(MemNode::Address);
-    _simple_form = parse_simple_form(pointer);
+    ResourceMark rm;
+    MemPointerSimpleFormParser parser(_mem);
+    _simple_form = parser.simple_form();
     assert(false, "TODO");
     // _mem->memory_size();
   }
-
-  static MemPointerSimpleForm parse_simple_form(Node* pointer);
 
   bool is_adjacent_to_and_before(const MemPointer& other) const;
 };
