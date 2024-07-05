@@ -3403,7 +3403,7 @@ public final class Formatter implements Closeable, Flushable {
             c = conv;
             if (!dt) {
                 if (!Conversion.isValid(c)) {
-                    throw new UnknownFormatConversionException(String.valueOf(c));
+                    throw unknownFormatConversion(c);
                 }
                 if (Character.isUpperCase(c)) {
                     flags = Flags.add(flags, Flags.UPPERCASE);
