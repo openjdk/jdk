@@ -801,7 +801,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 19)
     DEFINE_CLASS_ID(LShift,   Node, 20)
     DEFINE_CLASS_ID(Neg,      Node, 21)
-    DEFINE_CLASS_ID(OpaqueStress, Node, 21)
+    DEFINE_CLASS_ID(OpaqueStress, Node, 22)
 
     _max_classes  = ClassMask_Neg
   };
