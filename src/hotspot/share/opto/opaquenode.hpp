@@ -163,7 +163,6 @@ class OpaqueStressNode : public Node {
   }
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-  virtual const Type* Value(PhaseGVN* phase) const { return phase->type(in(1)); }
 };
 
 #endif // SHARE_OPTO_OPAQUENODE_HPP

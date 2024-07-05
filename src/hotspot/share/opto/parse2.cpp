@@ -1401,7 +1401,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   // Generate real control flow
   Node   *tst = _gvn.transform( new BoolNode( c, btest ) );
-  tst = _gvn.transform(new OpaqueStressNode(tst));
 
   // Sanity check the probability value
   assert(prob > 0.0f,"Bad probability in Parser");
@@ -1440,6 +1439,8 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   } else  {                     // Path is live.
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
+
+  stress_trap(iff);
 }
 
 //------------------------------------do_if------------------------------------
@@ -1511,7 +1512,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
 
   // Generate real control flow
   float true_prob = (taken_if_true ? prob : untaken_prob);
-  tst = _gvn.transform(new OpaqueStressNode(tst));
   IfNode* iff = create_and_map_if(control(), tst, true_prob, cnt);
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
   Node* taken_branch   = new IfTrueNode(iff);
@@ -1552,6 +1552,50 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   } else {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
+
+  stress_trap(iff);
+}
+
+void Parse::stress_trap(IfNode* orig_iff) {
+//  if (!StressUnstableIfTraps || ((random() % 2) == 0)) {
+//    return;
+//  }
+
+  // Search for an unstable if trap
+  CallStaticJavaNode* trap = nullptr;
+  for (int i = 0; i <= 1; ++i) {
+      Node* out = orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
+      if (out != nullptr && out->isa_CallStaticJava() && out->as_CallStaticJava()->is_uncommon_trap()) {
+          trap = out->as_CallStaticJava();
+          // TODO support more flavors (we need to be careful, Reason_null_check for example will replace the object by null in debug info)
+          if (!trap->jvms()->should_reexecute() || Deoptimization::trap_request_reason(trap->uncommon_trap_request()) != Deoptimization::Reason_unstable_if) {
+              trap = nullptr;
+              continue;
+          }
+          break;
+      }
+  }
+  if (trap == nullptr) {
+      return; // No trap found
+  }
+
+  // Add a check before the original if that will trap on true and execute the original if on false
+  Node* bol = _gvn.transform(new OpaqueStressNode(intcon(1)));
+  IfNode* iff = _gvn.transform(new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt))->as_If();
+  Node* if_true = _gvn.transform(new IfTrueNode(iff));
+  Node* if_false = _gvn.transform(new IfFalseNode(iff));
+
+  // Trap
+  ProjNode* trap_proj = trap->in(0)->as_Proj();
+  assert(trap_proj->outcnt() == 1, "some other nodes are dependent on the trap projection");
+
+  Node* trap_region = new RegionNode(3);
+  trap_region->set_req(1, trap_proj);
+  trap_region->set_req(2, if_true);
+  trap->set_req(0, _gvn.transform(trap_region));
+
+  // Don't trap, execute original if
+  orig_iff->set_req(0, if_false);
 }
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {

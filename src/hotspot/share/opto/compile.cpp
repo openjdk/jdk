@@ -3159,69 +3159,6 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   }
 }
 
-void Compile::stress_trap(Final_Reshape_Counts& frc, Node* opaque) {
-    // Problem (1): If might loose connection with the trap, adjusting the if will then trigger re-execution at a bytecode that does not correspond to the if = not correspond to the current execution state. But the Opaque node should guarantee that we only find traps that belong to the if we are going to adjust.
-    // Problem (2): For checks like if (a == 2) { trap; } C2 is smart enough to replace a with 2 in the debug info for the trap which leads to incorrect execution even if we re-execute the if
-    // -> we need to add the additional check early to prevent this
-
-    IfNode* orig_iff = (opaque->outcnt() == 1) ? opaque->unique_out()->isa_If() : nullptr;
-
-    // Replace the OpaqueStress   
-    opaque->subsume_by(opaque->in(1), this);
-    
-    // Search for the unstable if trap
-    CallStaticJavaNode* trap = nullptr;
-    if (orig_iff != nullptr) {
-        for (int i = 0; i <= 1; ++i) {
-            Node* out = orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
-            if (out != nullptr && out->isa_CallStaticJava() && out->as_CallStaticJava()->is_uncommon_trap()) {
-                trap = out->as_CallStaticJava();
-                // TODO support more flavors (we need to be careful, Reason_null_check for example will replace the object by null in debug info)
-                if (!trap->jvms()->should_reexecute() || Deoptimization::trap_request_reason(trap->uncommon_trap_request()) != Deoptimization::Reason_unstable_if) {
-                    trap = nullptr;
-                    continue;
-                }
-                break;
-            }
-        }
-    }
-    if (trap == nullptr) {
-        return; // Trap or if was removed
-    }
-//    if (!StressUnstableIfTraps || ((random() % 2) == 0)) {
-
-    // Always true
-    Node* zero = new ConINode(TypeInt::make(0));
-    Node* cmp = new CmpINode(zero, zero);
-    Node* bol = new BoolNode(cmp, BoolTest::mask::eq);
-
-    ProjNode* trap_proj = trap->in(0)->as_Proj();
-
-    // Add a check before the original if that will trap on true
-    IfNode* iff = new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt);
-    Node* if_true = new IfTrueNode(iff);
-    Node* if_false = new IfFalseNode(iff);
-
-    frc._visited.set(if_false->_idx); // Mark this node as visited because it's not visited from "below" anymore
-
-    // Trap
-    Node* trap_region = new RegionNode(3);
-
-    // TODO needed?
-    //assert(trap_proj->outcnt() == 1, "some other nodes are dependent on the trap projection");
-    for (DUIterator_Fast imax, i = trap_proj->fast_outs(imax); i < imax; i++) {
-      Node* u = trap_proj->fast_out(i);
-      int nb = u->replace_edge(trap_proj, trap_region);
-      --i, imax -= nb;
-    }
-    
-    trap_region->set_req(1, trap_proj);
-    trap_region->set_req(2, if_true);
-    
-    // Don't trap, execute original if
-    orig_iff->set_req(0, if_false);
-}
-
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
@@ -3270,7 +3207,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     n->subsume_by(n->in(1), this);
     break;
   case Op_OpaqueStress:
-    stress_trap(frc, n);
+    {
+      // Trap on true, always trap
+      Node* zero = new ConINode(TypeInt::make(0));
+      Node* cmp = new CmpINode(zero, zero);
+      Node* bol = new BoolNode(cmp, BoolTest::mask::eq);
+      n->subsume_by(bol, this);
+    }
     break;    
   case Op_CallStaticJava:
   case Op_CallJava:
