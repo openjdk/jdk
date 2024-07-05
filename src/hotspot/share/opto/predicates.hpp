@@ -296,20 +296,20 @@ class RuntimePredicate : public StackObj {
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
 };
 
-// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Predicate Expression.
+// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Expression.
 class TransformStrategyForOpaqueLoopNodes : public StackObj {
  public:
   virtual Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const = 0;
   virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
 };
 
-// A Template Assertion Predicate Expression represents the Opaque4Node for the initial value or the last value of a
+// A Template Assertion Predicate represents the Opaque4Node for the initial value or the last value of a
 // Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
-class TemplateAssertionPredicateExpression : public StackObj {
+class TemplateAssertionExpression : public StackObj {
   Opaque4Node* _opaque4_node;
 
  public:
-  explicit TemplateAssertionPredicateExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
+  explicit TemplateAssertionExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
 
  private:
   Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
@@ -320,29 +320,29 @@ class TemplateAssertionPredicateExpression : public StackObj {
   Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
 };
 
-// Class to represent a node being part of a Template Assertion Predicate Expression. Note that this is not an IR node.
+// Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
 //
 // The expression itself can belong to no, one, or two Template Assertion Predicates:
 // - None: This node is already dead (i.e. we replaced the Bool condition of the Template Assertion Predicate).
 // - Two: A OpaqueLoopInitNode could be part of two Template Assertion Predicates.
 // - One: In all other cases.
-class TemplateAssertionPredicateExpressionNode : public StackObj {
+class TemplateAssertionExpressionNode : public StackObj {
   Node* const _node;
 
  public:
-  explicit TemplateAssertionPredicateExpressionNode(Node* node) : _node(node) {
+  explicit TemplateAssertionExpressionNode(Node* node) : _node(node) {
     assert(is_in_expression(node), "must be valid");
   }
-  NONCOPYABLE(TemplateAssertionPredicateExpressionNode);
+  NONCOPYABLE(TemplateAssertionExpressionNode);
 
  private:
   static bool is_template_assertion_predicate(Node* node);
 
  public:
-  // Check whether the provided node is part of a Template Assertion Predicate Expression or not.
+  // Check whether the provided node is part of a Template Assertion Expression or not.
   static bool is_in_expression(Node* node);
 
-  // Check if the opcode of node could be found in a Template Assertion Predicate Expression.
+  // Check if the opcode of node could be found in a Template Assertion Expression.
   // This also provides a fast check whether a node is unrelated.
   static bool is_maybe_in_expression(const Node* node) {
     const int opcode = node->Opcode();
@@ -379,16 +379,16 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
         callback(next->as_If());
         DEBUG_ONLY(template_counter++;)
       } else {
-        assert(!next->is_CFG(), "no CFG expected in Template Assertion Predicate Expression");
+        assert(!next->is_CFG(), "no CFG expected in Template Assertion Expression");
         list.push_outputs_of(next);
       }
     }
 
-    // Each node inside a Template Assertion Predicate Expression is in between a Template Assertion Predicate and
-    // its OpaqueLoop* nodes (or an OpaqueLoop* node itself). The OpaqueLoop* nodes do not common up. Therefore, each
-    // Template Assertion Predicate Expression node belongs to a single expression - except for OpaqueLoopInitNodes.
-    // An OpaqueLoopInitNode is shared between the init and last value Template Assertion Predicate at creation.
-    // Later, when cloning the expressions, they are no longer shared.
+    // Each node inside a Template Assertion Expression is in between a Template Assertion Predicate and its OpaqueLoop*
+    // nodes (or an OpaqueLoop* node itself). The OpaqueLoop* nodes do not common up. Therefore, each Template Assertion
+    // Expression node belongs to a single expression - except for OpaqueLoopInitNodes. An OpaqueLoopInitNode is shared
+    // between the init and last value Template Assertion Predicate at creation. Later, when cloning the expressions,
+    // they are no longer shared.
     assert(template_counter <= 2, "a node cannot be part of more than two templates");
     assert(template_counter <= 1 || _node->is_OpaqueLoopInit(), "only OpaqueLoopInit nodes can be part of two templates");
   }

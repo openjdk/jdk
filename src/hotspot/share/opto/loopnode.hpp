@@ -1770,7 +1770,7 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
   void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
   bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-  void clone_template_assertion_predicate_expression_down(Node* node);
+  void clone_template_assertion_expression_down(Node* node);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 

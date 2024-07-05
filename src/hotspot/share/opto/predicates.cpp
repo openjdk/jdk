@@ -240,27 +240,27 @@ class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes 
   }
 };
 
-// Creates an identical clone of this Template Assertion Predicate Expression (i.e.cloning all nodes from the Opaque4Node
-// to and including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the same graph structure as found for
-// this Template Assertion Predicate Expression. The cloned nodes get 'new_ctrl' as ctrl. There is no other update done
-// for the cloned nodes. Return the newly cloned Opaque4Node.
-Opaque4Node* TemplateAssertionPredicateExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
+// Creates an identical clone of this Template Assertion Expression (i.e.cloning all nodes from the Opaque4Node to and
+// including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the same graph structure as found for this
+// Template Assertion Expression. The cloned nodes get 'new_ctrl' as ctrl. There is no other update done for the cloned
+// nodes. Return the newly cloned Opaque4Node.
+Opaque4Node* TemplateAssertionExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
   CloneStrategy clone_init_and_stride_strategy(phase, new_ctrl);
   return clone(clone_init_and_stride_strategy, new_ctrl, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInitNode, we replace it with the provided 'new_init' node.
-Opaque4Node* TemplateAssertionPredicateExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl,
-                                                                          PhaseIdealLoop* phase) {
+Opaque4Node* TemplateAssertionExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl,
+                                                                 PhaseIdealLoop* phase) {
   ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_init, new_ctrl, phase);
   return clone(replace_init_and_clone_stride_strategy, new_ctrl, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInit and OpaqueLoopStride node, we replace them with the provided
 // 'new_init' and 'new_stride' nodes, respectively.
-Opaque4Node* TemplateAssertionPredicateExpression::clone_and_replace_init_and_stride(Node* new_init, Node* new_stride,
-                                                                                     Node* new_ctrl,
-                                                                                     PhaseIdealLoop* phase) {
+Opaque4Node* TemplateAssertionExpression::clone_and_replace_init_and_stride(Node* new_init, Node* new_stride,
+                                                                            Node* new_ctrl,
+                                                                            PhaseIdealLoop* phase) {
   ReplaceInitAndStrideStrategy replace_init_and_stride_strategy(new_init, new_stride);
   return clone(replace_init_and_stride_strategy, new_ctrl, phase);
 }
@@ -308,8 +308,7 @@ class DataNodesOnPathsToTargets : public StackObj {
   // Do a BFS from the start_node to collect all target nodes. We can then do another BFS from the target nodes to
   // find all nodes on the paths from start->target(s).
   // Note: We could do a single DFS pass to search targets and backtrack in one walk. But this is much more complex.
-  //       Given that the typical Template Assertion Predicate Expression only consists of a few nodes, we aim for
-  //       simplicity here.
+  //       Given that the typical Template Assertion Expression only consists of a few nodes, we aim for simplicity here.
   void collect_target_nodes(Node* start_node) {
     _nodes_to_visit.push(start_node);
     for (uint i = 0; i < _nodes_to_visit.size(); i++) {
@@ -343,14 +342,14 @@ class DataNodesOnPathsToTargets : public StackObj {
   }
 };
 
-// Clones this Template Assertion Predicate Expression and applies the given strategy to transform the OpaqueLoop* nodes.
-Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
-                                                         Node* new_ctrl, PhaseIdealLoop* phase) {
+// Clones this Template Assertion Expression and applies the given strategy to transform the OpaqueLoop* nodes.
+Opaque4Node* TemplateAssertionExpression::clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                                Node* new_ctrl, PhaseIdealLoop* phase) {
   ResourceMark rm;
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
-  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpressionNode::is_maybe_in_expression,
+  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionExpressionNode::is_maybe_in_expression,
                                                           is_opaque_loop_node);
   const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
@@ -360,8 +359,8 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   return opaque4_clone->as_Opaque4();
 }
 
-// Check if this node belongs a Template Assertion Predicate Expression (including OpaqueLoop* nodes).
-bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
+// Check if this node belongs a Template Assertion Expression (including OpaqueLoop* nodes).
+bool TemplateAssertionExpressionNode::is_in_expression(Node* node) {
   if (is_maybe_in_expression(node)) {
     ResourceMark rm;
     Unique_Node_List list;
@@ -378,7 +377,7 @@ bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
   return false;
 }
 
-bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(Node* node) {
+bool TemplateAssertionExpressionNode::is_template_assertion_predicate(Node* node) {
   return node->is_If() && node->in(1)->is_Opaque4();
 }
 
@@ -390,24 +389,24 @@ InitializedAssertionPredicate::InitializedAssertionPredicate(IfNode* template_as
       _phase(phase) {}
 
 // Create an Initialized Assertion Predicate at the provided control from the _template_assertion_predicate.
-// We clone the Template Assertion Predicate Expression and replace:
+// We clone the Template Assertion Expression and replace:
 // - Opaque4 with OpaqueInitializedAssertionPredicate
 // - OpaqueLoop*Nodes with _new_init and _new_stride, respectively.
 //
-//          init                 stride
-//            |                    |
-//   OpaqueLoopInitNode  OpaqueLoopStrideNode                      _new_init    _new_stride
-//                  \     /                                               \     /
-//                    ...                                                   ...
-//                     |                                                     |
-//                    Bool                                                new Bool
-//                     |                                                     |
-//                  Opaque4                ======>              control   OpaqueInitializedAssertionPredicate
-//                     |                                              \  /
-//                    If                                             new If
-//                  /    \                                           /    \
-//            success     fail path                         new success   new Halt
-//              proj    (Halt or UCT)                           proj
+//             /         init                 stride
+//             |           |                    |
+//             |  OpaqueLoopInitNode  OpaqueLoopStrideNode                      /       _new_init    _new_stride
+//  Template   |                 \     /                                        |              \     /
+//  Assertion  |                   ...                               Assertion  |                ...
+//  Expression |                    |                                Expression |                 |
+//             |                   Bool                                         |              new Bool
+//             |                    |                                           |                 |
+//             \                 Opaque4           ======>          control     \  OpaqueInitializedAssertionPredicate
+//                                  |                                      \      /
+//                                 If                                       new If
+//                               /    \                                     /    \
+//                         success     fail path                   new success   new Halt
+//                           proj    (Halt or UCT)                     proj
 //
 IfTrueNode* InitializedAssertionPredicate::create(Node* control) {
   IdealLoopTree* loop = _phase->get_loop(control);
@@ -420,13 +419,13 @@ IfTrueNode* InitializedAssertionPredicate::create(Node* control) {
 // Create a new Assertion Expression to be used as bool input for the Initialized Assertion Predicate IfNode.
 OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicate::create_assertion_expression(Node* control) {
   Opaque4Node* template_opaque = _template_assertion_predicate->in(1)->as_Opaque4();
-  TemplateAssertionPredicateExpression assertion_expression(template_opaque);
-  Opaque4Node* tmp_opaque =
-      assertion_expression.clone_and_replace_init_and_stride(_new_init, _new_stride, control, _phase);
-  OpaqueInitializedAssertionPredicateNode* assertion_predicate_expression
-      = new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
-  _phase->register_new_node(assertion_predicate_expression, control);
-  return assertion_predicate_expression;
+  TemplateAssertionExpression template_assertion_expression(template_opaque);
+  Opaque4Node* tmp_opaque = template_assertion_expression.clone_and_replace_init_and_stride(_new_init, _new_stride,
+                                                                                            control, _phase);
+  OpaqueInitializedAssertionPredicateNode* assertion_expression =
+      new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
+  _phase->register_new_node(assertion_expression, control);
+  return assertion_expression;
 }
 
 IfNode* InitializedAssertionPredicate::create_if_node(Node* control,

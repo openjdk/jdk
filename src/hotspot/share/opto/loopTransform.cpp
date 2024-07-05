@@ -1455,7 +1455,7 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   wq.push(n);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (TemplateAssertionPredicateExpressionNode::is_maybe_in_expression(n)) {
+    if (TemplateAssertionExpressionNode::is_maybe_in_expression(n)) {
       if (n->is_OpaqueLoopInit()) {
         init++;
       } else if (n->is_OpaqueLoopStride()) {
@@ -1491,9 +1491,9 @@ IfTrueNode* PhaseIdealLoop::create_initialized_assertion_predicate(IfNode* templ
 Node* PhaseIdealLoop::clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj,
                                                          Node* control, IdealLoopTree* outer_loop, Node* input_proj) {
   assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes for Template Assertion Predicate");
-  TemplateAssertionPredicateExpression template_assertion_predicate_expression(iff->in(1)->as_Opaque4());
+  TemplateAssertionExpression template_assertion_expression(iff->in(1)->as_Opaque4());
   assert(new_init->is_OpaqueLoopInit(), "only for creating new Template Assertion Predicates");
-  Opaque4Node* new_opaque_node = template_assertion_predicate_expression.clone_and_replace_init(new_init, control, this);
+  Opaque4Node* new_opaque_node = template_assertion_expression.clone_and_replace_init(new_init, control, this);
   Node* proj = predicate->clone();
   Node* other_proj = uncommon_proj->clone();
   Node* new_iff = iff->clone();
