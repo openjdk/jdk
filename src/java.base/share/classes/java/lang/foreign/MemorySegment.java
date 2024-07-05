@@ -618,6 +618,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     // Take action (e.g. throw an Exception)
      * }
      * }
+     *
+     * @since 23
      */
     long maxByteAlignment();
 
@@ -633,6 +635,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long, long)
      *
@@ -652,6 +657,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @param offset The new segment base offset (relative to the address of this segment),
      *               specified in bytes
@@ -679,6 +687,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long, long)
      *
@@ -705,6 +716,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @see #asSlice(long, long)
      *
@@ -721,7 +735,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
-     *
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @param newSize the size of the returned segment
      * @return a new memory segment that has the same address and scope as
@@ -760,6 +776,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
@@ -808,6 +827,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
+     * The returned memory segment shares a region of backing memory with this segment.
+     * Hence, no memory will be allocated or freed by this method.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
