@@ -28,8 +28,20 @@ import java.util.Map;
 
 public class InputTemplate1 extends InputTemplate {
 
+    private static  String VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS = """
+            int a1 = 77;
+            int b1 = 0;
+            do {
+                a1--;
+                b1++;
+            } while (a1 > 0);
+            """;
+
+
+
     public InputTemplate1() {
     }
+
 
     @Override
     public CodeSegment getTemplate() {
@@ -40,6 +52,17 @@ public class InputTemplate1 extends InputTemplate {
          *           this would require replacing conflicting variables e.g. $i with $i1 and $i2,
          *           and also replace \{init} from the inner CodeTemplate with a var $limit from outer CodeTemplate
         **/
+
+        String template_nes = """
+            int $a = \\{val};
+            long $b = j;
+            do {
+                $a--;
+                $b++;
+            } while ($a > 0);
+            """;
+        String imports= """
+                """;
 
         String statics = """
                 static long lFld;
@@ -60,6 +83,7 @@ public class InputTemplate1 extends InputTemplate {
                          for (long j = 0; j < limit; j+=2147483648L) {
                              a.i += 34; // NullCheck with trap on false path -> reason to peel
                              \\{thing}
+                             \\{template}
                              if (j > 0) { // After peeling: j > 0 always true -> loop folded away
                                  break;
                              }
@@ -67,8 +91,12 @@ public class InputTemplate1 extends InputTemplate {
                      }
                  }
                 """;
+        Map<String, String> replacements = Map.ofEntries(
+                Map.entry("template",template_nes ));
+        method=doReplacements(method,replacements);
 
-        return new CodeSegment(statics, call, method);
+
+        return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
@@ -76,17 +104,21 @@ public class InputTemplate1 extends InputTemplate {
         Map<String, String> replacements = new HashMap<>();
 
         String init = getRandomValueAsString(integerValues);
+        String val = getRandomValueAsString(integerValues);
         String limit = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
         String uniqueId = getUniqueId();
+        //String template=VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS;
 
         replacements.put("init", init);
+        replacements.put("val", val);
         replacements.put("limit", limit);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
         replacements.put("thing", thing);
+        //replacements.put("template", template);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -97,5 +129,9 @@ public class InputTemplate1 extends InputTemplate {
                 "-Xcomp",
                 "-XX:-CreateCoredumpOnCrash"
         };
+    }
+    @Override
+    public int getNumberOfTests(){
+        return 2;
     }
 }

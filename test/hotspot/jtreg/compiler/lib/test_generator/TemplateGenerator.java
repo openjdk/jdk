@@ -24,6 +24,7 @@
 package compiler.lib.test_generator;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +42,7 @@ public class TemplateGenerator {
     };
     static final int TIMEOUT = 60;
     static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
-    static final int TESTS_PER_TASK = 10;
+    //static final int TESTS_PER_TASK = 10;
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 2;
 
     static String[] TEMPLATE_FILES = {
@@ -64,9 +65,13 @@ public class TemplateGenerator {
         ThreadPoolExecutor threadPool = new ThreadPoolExecutor(NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE));
         for (String filePath : TEMPLATE_FILES) {
             try {
+                String out=OUTPUT_FOLDER+File.separator+"final3";
+                setOutputFolder(out);
+
                 Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
                 InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
                 runTestGen(inputTemplate, threadPool);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -76,7 +81,7 @@ public class TemplateGenerator {
 
     public static void runTestGen(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
         CodeSegment template = inputTemplate.getTemplate();
-        for (int i = 0; i < TESTS_PER_TASK; i++) {
+        for (int i = 0; i < inputTemplate.getNumberOfTests(); i++) {
             Map<String, String> replacements = inputTemplate.getRandomReplacements();
             String[] compileFlags = inputTemplate.getCompileFlags();
             long id = getID();
@@ -87,19 +92,37 @@ public class TemplateGenerator {
     public static void doWork(CodeSegment template, Map<String, String> replacements, String[] compileFlags, long num) {
         try {
             String javaCode = InputTemplate.getJavaCode(template, replacements, num);
-            String fileName = writeJavaCodeToFile(javaCode, num);
+            String fileName = writeJavaCodeToFile(javaCode, num,OUTPUT_FOLDER);
             ProcessOutput processOutput = executeJavaFile(fileName, compileFlags);
             processOutput.checkExecutionOutput();
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find test method: ", e);
         }
     }
+    public static String OUTPUT_FOLDER = System.getProperty("user.dir");
+    public static void setOutputFolder(String outputFolder) {
+        OUTPUT_FOLDER= outputFolder;
+    }
 
-    private static String writeJavaCodeToFile(String javaCode, long num) throws IOException {
+    private static String writeJavaCodeToFile(String javaCode, long num, String OUTPUT_FOLDER) throws IOException {
         String fileName = String.format("GeneratedTest%d.java", num);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+        File OutputFolder = new File(OUTPUT_FOLDER);
+        if (!OutputFolder.exists()) {
+            OutputFolder.mkdirs();
+        }
+        File file = new File(OUTPUT_FOLDER,fileName);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+
+            writer.write(javaCode);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        /*BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
         writer.write(javaCode);
         writer.close();
+
+         */
+
         return fileName;
     }
 

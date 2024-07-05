@@ -54,6 +54,20 @@ public abstract class InputTemplate {
             Long.MIN_VALUE - 2L, Long.MIN_VALUE - 1L, Long.MIN_VALUE, Long.MIN_VALUE + 1L, Long.MIN_VALUE + 2L,
             Long.MAX_VALUE - 2L, Long.MAX_VALUE - 1L, Long.MAX_VALUE, Long.MAX_VALUE + 1L, Long.MAX_VALUE + 2L
     };
+    public static Short[] shortValuesNonZero = {
+            -2, -1,0, 1, 2,
+            (short) (Integer.MIN_VALUE & 0xFFFF), (short) ((Integer.MIN_VALUE + 1) & 0xFFFF), (short) Integer.MIN_VALUE, (short) (Integer.MIN_VALUE + 1), (short) (Integer.MIN_VALUE + 2),
+            (short) (Integer.MAX_VALUE - 2), (short) (Integer.MAX_VALUE - 1), (short) Integer.MAX_VALUE, (short) (Integer.MAX_VALUE + 1), (short) (Integer.MAX_VALUE + 2),
+            (short) -32770, (short) -32769, (short) -32768, (short) -32767, (short) -32766,
+            (short) 32765, (short) 32766, (short) 32767, (short) 32768, (short) 32769
+    };
+    public static Short[] shortValues = {
+            -2, -1, 1, 2,
+            (short) (Integer.MIN_VALUE & 0xFFFF), (short) ((Integer.MIN_VALUE + 1) & 0xFFFF), (short) Integer.MIN_VALUE, (short) (Integer.MIN_VALUE + 1), (short) (Integer.MIN_VALUE + 2),
+            (short) (Integer.MAX_VALUE - 2), (short) (Integer.MAX_VALUE - 1), (short) Integer.MAX_VALUE, (short) (Integer.MAX_VALUE + 1), (short) (Integer.MAX_VALUE + 2),
+            (short) -32770, (short) -32769, (short) -32768, (short) -32767, (short) -32766,
+            (short) 32765, (short) 32766, (short) 32767, (short) 32768, (short) 32769
+    };
 
     public InputTemplate() {
     }
@@ -74,6 +88,7 @@ public abstract class InputTemplate {
     public static String getJavaCode(CodeSegment inputTemplate, Map<String, String> inputReplacements, long num) {
         String template = """
                 import java.util.Objects;
+                \\{imports}
 
                 public class GeneratedTest\\{num} {
                     \\{statics}
@@ -93,7 +108,10 @@ public abstract class InputTemplate {
                 Map.entry("num", String.valueOf(num)),
                 Map.entry("statics", CodeSegment.getStatics()),
                 Map.entry("calls", CodeSegment.getCalls()),
-                Map.entry("methods", CodeSegment.getMethods())
+                Map.entry("methods", CodeSegment.getMethods()),
+                Map.entry("imports", CodeSegment.getImports())
+
+
         );
 
         return doReplacements(template, replacements);
@@ -103,10 +121,14 @@ public abstract class InputTemplate {
         String statics = doReplacements(CodeSegment.getStatics(), replacements);
         String calls = doReplacements(CodeSegment.getCalls(), replacements);
         String methods = doReplacements(CodeSegment.getMethods(), replacements);
-        return new CodeSegment(statics, calls, methods);
+        String imports = doReplacements(CodeSegment.getImports(), replacements);
+        //String template_nes = doReplacements(CodeSegment.getTemplate_nes(), replacements);
+
+
+        return new CodeSegment(statics, calls, methods,imports);
     }
 
-    private static String doReplacements(String template, Map<String, String> replacements) {
+    public static String doReplacements(String template, Map<String, String> replacements) {
         for (Map.Entry<String, String> entry : replacements.entrySet()) {
             String pattern = "\\{%s}".formatted(entry.getKey());
             String replacement = entry.getValue();
@@ -132,4 +154,5 @@ public abstract class InputTemplate {
     public abstract Map<String, String> getRandomReplacements();
 
     public abstract String[] getCompileFlags();
+    public abstract int getNumberOfTests();
 }

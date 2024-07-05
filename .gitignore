@@ -24,3 +24,7 @@ NashornProfile.txt
 test/hotspot/jtreg/compiler/lib/test_generator/test_generator.iml
 /test/hotspot/jtreg/compiler/lib/test_generator/.idea
 test/hotspot/jtreg/compiler/lib/test_generator/GeneratedTest*.java
+test/hotspot/jtreg/compiler/lib/test_generator/final/GeneratedTest1.java
+test/hotspot/jtreg/compiler/lib/test_generator/final/GeneratedTest0.java
+/test/hotspot/jtreg/compiler/lib/test_generator/final
+/test/hotspot/jtreg/compiler/lib/test_generator/final3

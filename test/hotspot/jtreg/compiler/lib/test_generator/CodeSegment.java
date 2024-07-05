@@ -27,16 +27,23 @@ public class CodeSegment {
     private final String statics;
     private final String calls;
     private final String methods;
+    private final String imports;
+    //private final String template_nes;
 
-    public CodeSegment(String statics, String calls, String methods) {
+
+    public CodeSegment(String statics, String calls, String methods, String imports) {
         this.statics = statics;
         this.calls = calls;
         this.methods = methods;
+        this.imports = imports;
+        //this.template_nes = templateNes;
     }
 
     public String getStatics() {
         return statics;
     }
+   // public String getTemplate_nes(){return template_nes;}
+
 
     public String getCalls() {
         return calls;
@@ -45,4 +52,5 @@ public class CodeSegment {
     public String getMethods() {
         return methods;
     }
+    public String getImports() {return imports;}
 }
