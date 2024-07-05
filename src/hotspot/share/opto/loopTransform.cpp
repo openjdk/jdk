@@ -1189,7 +1189,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         continue;
       }
       if (!bol->is_Bool()) {
-        assert(bol->is_Opaque4() || bol->is_OpaqueStress() || bol->is_OpaqueInitializedAssertionPredicate(),
+        assert(bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate(),
                "Opaque node of non-null-check or of Initialized Assertion Predicate");
         continue;
       }

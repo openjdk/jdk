@@ -1371,9 +1371,17 @@ inline int Parse::repush_if_args() {
   return bc_depth;
 }
 
+static volatile int _stress_counter = 0;
+
 //----------------------------------do_ifnull----------------------------------
 void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   int target_bci = iter().get_dest();
+
+  // TODO guard with StressUnstableIfTraps
+  Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+  Node* counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  counter = _gvn.transform(new AddINode(counter, intcon(1)));
+  Node* incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
 
   Block* branch_block = successor_for_bci(target_bci);
   Block* next_block   = successor_for_bci(iter().next_bci());
@@ -1440,7 +1448,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 
-  stress_trap(iff);
+  stress_trap(iff, counter, incr_store);
 }
 
 //------------------------------------do_if------------------------------------
@@ -1469,6 +1477,12 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     }
     return;
   }
+
+  // TODO guard with StressUnstableIfTraps
+  Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+  Node* counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  counter = _gvn.transform(new AddINode(counter, intcon(1)));
+  Node* incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
 
   // Sanity check the probability value
   assert(0.0f < prob && prob < 1.0f,"Bad probability in Parser");
@@ -1553,10 +1567,11 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 
-  stress_trap(iff);
+  stress_trap(iff, counter, incr_store);
 }
 
-void Parse::stress_trap(IfNode* orig_iff) {
+void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
+// TODO Only emit this randomly
 //  if (!StressUnstableIfTraps || ((random() % 2) == 0)) {
 //    return;
 //  }
@@ -1564,23 +1579,31 @@ void Parse::stress_trap(IfNode* orig_iff) {
   // Search for an unstable if trap
   CallStaticJavaNode* trap = nullptr;
   for (int i = 0; i <= 1; ++i) {
-      Node* out = orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
-      if (out != nullptr && out->isa_CallStaticJava() && out->as_CallStaticJava()->is_uncommon_trap()) {
-          trap = out->as_CallStaticJava();
-          // TODO support more flavors (we need to be careful, Reason_null_check for example will replace the object by null in debug info)
-          if (!trap->jvms()->should_reexecute() || Deoptimization::trap_request_reason(trap->uncommon_trap_request()) != Deoptimization::Reason_unstable_if) {
-              trap = nullptr;
-              continue;
-          }
-          break;
+    Node* out = orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
+    if (out != nullptr && out->isa_CallStaticJava() && out->as_CallStaticJava()->is_uncommon_trap()) {
+      trap = out->as_CallStaticJava();
+      // TODO support more flavors (we need to be careful though, Reason_null_check for example will replace the object by null in debug info)
+      if (!trap->jvms()->should_reexecute() || Deoptimization::trap_request_reason(trap->uncommon_trap_request()) != Deoptimization::Reason_unstable_if) {
+        trap = nullptr;
+        continue;
       }
+      break;
+    }
   }
   if (trap == nullptr) {
-      return; // No trap found
+    // Remove unused counter increment (and load)
+    C->gvn_replace_by(incr_store, incr_store->in(MemNode::Memory));
+    return; // No trap found
   }
 
+  // Remove trap from optimization list
+  bool success = C->remove_unstable_if_trap(trap, true);
+  assert(success, "Trap already modified");
+
   // Add a check before the original if that will trap on true and execute the original if on false
-  Node* bol = _gvn.transform(new OpaqueStressNode(intcon(1)));
+  counter = _gvn.transform(new AndINode(counter, intcon(10)));
+  Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::mask::eq));
   IfNode* iff = _gvn.transform(new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt))->as_If();
   Node* if_true = _gvn.transform(new IfTrueNode(iff));
   Node* if_false = _gvn.transform(new IfFalseNode(iff));
@@ -1644,7 +1667,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
                   nullptr,
                   (is_fallthrough ? "taken always" : "taken never"));
 
-    if (call != nullptr && !StressUnstableIfTraps && false) {
+    if (call != nullptr) {
       C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
     }
     return;

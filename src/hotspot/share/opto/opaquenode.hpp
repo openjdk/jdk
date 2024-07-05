@@ -154,15 +154,4 @@ class ProfileBooleanNode : public Node {
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
 };
 
-class OpaqueStressNode : public Node {
-  virtual uint hash() const { return NO_HASH; }
-  virtual bool cmp(const Node &n) const { return (&n == this); }
-  public:
-  OpaqueStressNode(Node* n) : Node(0, n) {
-    init_class_id(Class_OpaqueStress);
-  }
-  virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-};
-
 #endif // SHARE_OPTO_OPAQUENODE_HPP

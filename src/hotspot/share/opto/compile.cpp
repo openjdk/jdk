@@ -3206,15 +3206,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
-  case Op_OpaqueStress:
-    {
-      // Trap on true, always trap
-      Node* zero = new ConINode(TypeInt::make(0));
-      Node* cmp = new CmpINode(zero, zero);
-      Node* bol = new BoolNode(cmp, BoolTest::mask::eq);
-      n->subsume_by(bol, this);
-    }
-    break;    
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
@@ -4065,7 +4056,6 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
-        print_method((CompilerPhaseType)0, 3);
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
