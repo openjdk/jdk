@@ -186,6 +186,21 @@ public:
   void visit_in_order(F f) const {
     _tree.visit_in_order(f);
   }
+
+  struct WalkedRegion {
+    position from;
+    position to;
+    RegionData data;
+  };
+
+  struct WalkedRegionClosure {
+    // Gets region info in (out).
+    // Should return true to continue walking, false to abort.
+    virtual bool do_region(const WalkedRegion* r) = 0;
+  };
+
+  void walk_all_reserved_regions(WalkedRegionClosure* closure) const;
+
 };
 
 #endif

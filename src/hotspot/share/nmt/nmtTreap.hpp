@@ -75,6 +75,7 @@ public:
 
     const K& key() const { return _key; }
     V& val() { return _value; }
+    const V& val() const { return _value; }
 
     TreapNode* left() const { return _left; }
     TreapNode* right() const { return _right; }

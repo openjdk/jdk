@@ -29,6 +29,8 @@
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
+#define LOG_PLEASE
+#include "testutils.hpp"
 
 using Tree = VMATree;
 using Node = Tree::TreapNode;
@@ -525,4 +527,54 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
       }
     }
   }
+}
+
+TEST_VM(NMTVMATreeTest2, TestWalkReservedRegions) {
+  Tree::RegionData rd1(NCS::StackIndex(), mtTest);
+  Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
+  Tree::RegionData rd3(NCS::StackIndex(), mtInternal);
+  Tree tree;
+  tree.reserve_mapping(0, 100, rd1); // A
+  tree.commit_mapping(0, 20, rd1);
+  tree.commit_mapping(40, 20, rd1);
+
+  tree.reserve_mapping(100, 100, rd2); // B direct neighbor
+  tree.commit_mapping(100, 100, rd2);
+
+  tree.reserve_mapping(1000, 1000, rd3); // C (after hole)
+  tree.commit_mapping(1010, 20, rd3);
+  tree.commit_mapping(1110, 20, rd3);
+  tree.commit_mapping(1500, 100, rd1); // XX committed with different data in the middle of another region
+
+  VMATree::WalkedRegion expected[] = {
+    { 0,    100,  rd1 }, // A
+    { 100,  200,  rd2 }, // B
+    { 1000, 1500, rd3 }, // C
+    { 1500, 1600, rd1 }, // XX
+    { 1600, 2000, rd3 }, // C
+  };
+  constexpr int num_expected = (int) sizeof(expected) / sizeof(expected[0]);
+
+  struct TestWalker : public VMATree::WalkedRegionClosure {
+    const VMATree::WalkedRegion* _expected;
+    int _num_expected;
+    int _pos;
+    bool do_region(const VMATree::WalkedRegion* r) {
+      LOG_HERE("%zu, %zu, %d, %d",
+          r->from, r->to, (int)r->data.flag, r->data.stack_idx.raw()
+      );
+      EXPECT_LT(_pos, _num_expected);
+      EXPECT_EQ(r->from, _expected[_pos].from);
+      EXPECT_EQ(r->to, _expected[_pos].to);
+      EXPECT_TRUE(VMATree::RegionData::equals(r->data, _expected[_pos].data));
+      _pos++;
+      return true;
+    }
+  };
+  TestWalker w;
+  w._expected = expected;
+  w._num_expected = num_expected;
+  w._pos = 0;
+  tree.walk_all_reserved_regions(&w);
+
 }
