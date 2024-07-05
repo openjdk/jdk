@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @run main/othervm
  * -Xbatch -XX:CompileCommand=quiet
+ * -XX:+IgnoreUnrecognizedVMOptions
  * -XX:TypeProfileLevel=222
  * -XX:+AlwaysIncrementalInline
  * -XX:+UnlockDiagnosticVMOptions
