@@ -114,4 +114,7 @@ serviceability/sa/sadebugd/PmapOnDebugdTest.java              8307393   generic-
 serviceability/sa/sadebugd/RunCommandOnServerTest.java        8307393   generic-all
 serviceability/sa/sadebugd/SADebugDTest.java                  8307393   generic-all
 
+serviceability/dcmd/vm/SystemMapTest.java                     8335643   generic-all
+serviceability/dcmd/vm/SystemDumpMapTest.java                 8335643   generic-all
+
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64

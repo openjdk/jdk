@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.g1;
-
-import java.io.PrintStream;
-import sun.jvm.hotspot.gc.g1.G1HeapRegion;
-
-public class PrintRegionClosure implements HeapRegionClosure {
-    private PrintStream tty;
-
-    public PrintRegionClosure(PrintStream tty) {
-        this.tty = tty;
-    }
-
-    public void doHeapRegion(G1HeapRegion hr) {
-        hr.printOn(tty);
-    }
-}
+/*
+ * @test
+ * @summary run CTW for all classes from jdk.internal.md module
+ *
+ * @library /test/lib / /testlibrary/ctw/src
+ * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.jimage
+ *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.reflect
+ * @modules jdk.internal.md
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.internal.md
+ */

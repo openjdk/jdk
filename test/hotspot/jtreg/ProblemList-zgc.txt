@@ -45,4 +45,7 @@ serviceability/sa/TestSysProps.java                           8302055   generic-
 
 serviceability/sa/TestHeapDumpForInvokeDynamic.java           8315646   generic-all
 
+serviceability/dcmd/vm/SystemMapTest.java                     8335643   generic-all
+serviceability/dcmd/vm/SystemDumpMapTest.java                 8335643   generic-all
+
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
