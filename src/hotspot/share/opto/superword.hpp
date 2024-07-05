@@ -367,6 +367,10 @@ public:
   Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
+  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+    return strided_pack_input_at_index_or_null(pack, index, 1, 0);
+  }
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -599,13 +603,6 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  bool schedule_and_apply();
-  bool apply(Node_List& memops_schedule);
-  void apply_memops_reordering_with_schedule(Node_List& memops_schedule);
-  bool apply_vectorization();
-  // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  Node* vector_opd(Node_List* p, int opd_idx);
-
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
@@ -630,7 +627,62 @@ private:
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
+  bool vtransform() const;
+};
+
+// Facility class that builds a VTransformGraph from a SuperWord PackSet.
+class SuperWordVTransformBuilder : public StackObj {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop& _vloop;
+  const PackSet& _packset;
+  VTransformGraph& _graph;
+
+  ResourceHashtable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
+
+public:
+  SuperWordVTransformBuilder(const PackSet& packset,
+                             VTransformGraph& graph) :
+      _vloop_analyzer(graph.vloop_analyzer()),
+      _vloop(_vloop_analyzer.vloop()),
+      _packset(packset),
+      _graph(graph)
+  {
+    build_vtransform();
+  }
+
+private:
+  void build_vtransform();
+  void build_vector_vtnodes_for_packed_nodes();
+  void build_scalar_vtnodes_for_non_packed_nodes();
+  void build_edges_for_vector_vtnodes(VectorSet& vtn_dependencies);
+  void build_edges_for_scalar_vtnodes(VectorSet& vtn_dependencies);
+
+  // Helper methods for building VTransformGraph.
+  VTransformNode* get_vtnode_or_null(Node* n) const {
+    VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
+    return (ptr == nullptr) ? nullptr : *ptr;
+  }
+
+  VTransformNode* get_vtnode(Node* n) const {
+    VTransformNode* vtn = get_vtnode_or_null(n);
+    assert(vtn != nullptr, "expect non-null vtnode");
+    return vtn;
+  }
+
+  void set_vtnode(Node* n, VTransformNode* vtn) {
+    assert(vtn != nullptr, "only set non-null vtnodes");
+    _idx_to_vtnode.put_when_absent(n->_idx, vtn);
+  }
+
+  VTransformVectorNode* make_vtnode_for_pack(const Node_List* pack) const;
+  VTransformNode* get_vtnode_vector_input_at_index(const Node_List* pack, const int index);
+  VTransformNode* get_vtnode_or_wrap_as_input_scalar(Node* n);
+  void set_req_with_scalar(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
+  void set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
+  void set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void add_dependencies_of_node_to_vtn(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
