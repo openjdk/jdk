@@ -5258,37 +5258,32 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
 
-        static final @Stable FormatString[] specifiers = new FormatString[128];
+        static final @Stable FormatString[] SPECIFIERS = new FormatString[128];
         static {
             for(char c : new char[] {
-                    BOOLEAN,
-                    BOOLEAN_UPPER,
-                    HASHCODE,
-                    HASHCODE_UPPER,
-                    CHARACTER,
-                    CHARACTER_UPPER,
+                    BOOLEAN, BOOLEAN_UPPER,
+                    HASHCODE, HASHCODE_UPPER,
+                    CHARACTER, CHARACTER_UPPER,
                     OCTAL_INTEGER,
-                    SCIENTIFIC,
-                    SCIENTIFIC_UPPER,
+                    SCIENTIFIC, SCIENTIFIC_UPPER,
                     GENERAL,
                     GENERAL_UPPER,
                     DECIMAL_FLOAT,
-                    HEXADECIMAL_FLOAT,
-                    HEXADECIMAL_FLOAT_UPPER
+                    HEXADECIMAL_FLOAT, HEXADECIMAL_FLOAT_UPPER
             }) {
-                specifiers[c] = new FormatSpecifier(c);
+                SPECIFIERS[c] = new FormatSpecifier(c);
             }
-            specifiers[DECIMAL_INTEGER] = new FormatDecimal1();
-            specifiers[HEXADECIMAL_INTEGER] = new FormatHex1(false);
-            specifiers[HEXADECIMAL_INTEGER_UPPER] = new FormatHex1(true);
-            specifiers[LINE_SEPARATOR] = new FormatText1(LINE_SEPARATOR);
-            specifiers[PERCENT_SIGN] = new FormatText1(PERCENT_SIGN);
-            specifiers[STRING] = new FormatString1(false);
-            specifiers[STRING_UPPER] = new FormatString1(true);
+            SPECIFIERS[DECIMAL_INTEGER          ] = new FormatDecimal1();
+            SPECIFIERS[HEXADECIMAL_INTEGER      ] = new FormatHex1(false);
+            SPECIFIERS[HEXADECIMAL_INTEGER_UPPER] = new FormatHex1(true);
+            SPECIFIERS[LINE_SEPARATOR           ] = new FormatText1(LINE_SEPARATOR);
+            SPECIFIERS[PERCENT_SIGN             ] = new FormatText1(PERCENT_SIGN);
+            SPECIFIERS[STRING                   ] = new FormatString1(false);
+            SPECIFIERS[STRING_UPPER             ] = new FormatString1(true);
         }
 
         static FormatString specifier(char c) {
-            return specifiers[c & 0x7f];
+            return SPECIFIERS[c & 0x7f];
         }
 
         static FormatString specifier(char c, int width) {
