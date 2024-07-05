@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,8 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop(Register d, Register s);
   void decode_heap_oop(Register r) { decode_heap_oop(r, r); }
+  void encode_heap_oop_not_null(Register r);
+  void encode_heap_oop_not_null(Register dst, Register src);
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1,
@@ -1288,6 +1290,15 @@ public:
   void compute_match_mask(Register src, Register pattern, Register match_mask,
                           Register mask1, Register mask2);
 
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
+  void kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
+        Register table0, Register table1, Register table2, Register table3,
+        bool upper);
+  void update_byte_crc32(Register crc, Register val, Register table);
+
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
@@ -1317,6 +1328,7 @@ public:
                        Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
+
 #endif
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);

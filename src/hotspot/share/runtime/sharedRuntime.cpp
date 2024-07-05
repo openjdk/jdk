@@ -1336,7 +1336,7 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_init_thread(current),
+           callee_method->method_holder()->is_reentrant_initialization(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call

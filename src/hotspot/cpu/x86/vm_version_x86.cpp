@@ -108,6 +108,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
+#if defined(_LP64)
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
@@ -115,7 +116,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // handling guarantees that preserved register values post signal handling were
     // re-instantiated by operating system and not because they were not modified externally.
 
-    /* FIXME Uncomment following code after OS enablement of
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -124,10 +124,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ mov64(r31, 0L);
     UseAPX = save_apx;
     VM_Version::clean_cpuFeatures();
-    */
     __ ret(0);
     return start;
   }
+#endif
 
   address generate_get_cpu_info() {
     // Flags to test CPU type.
@@ -419,7 +419,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-#ifndef PRODUCT
+#if defined(_LP64)
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports APX
@@ -437,26 +437,22 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
-    /* FIXME: Uncomment while integrating JDK-8329032
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
     __ mov64(r31, VM_Version::egpr_test_value());
-    */
     __ xorl(rsi, rsi);
     VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
     // Generate SEGV
     __ movl(rax, Address(rsi, 0));
 
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
-    /* FIXME: Uncomment after integration of JDK-8329032
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-    */
 #endif
     __ bind(vector_save_restore);
     //
@@ -2170,9 +2166,11 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+#if defined(_LP64)
 void VM_Version::clear_apx_test_state() {
   clear_apx_test_state_stub();
 }
+#endif
 
 static bool _vm_version_initialized = false;
 
@@ -2191,8 +2189,10 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
+#if defined(_LP64)
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
+#endif
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
@@ -3183,11 +3183,17 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
+  // Enable APX support for product builds after
+  // completion of planned features listed in JDK-8329030.
+#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
+#else
+  return false;
+#endif
 }
 
 uint VM_Version::cores_per_cpu() {

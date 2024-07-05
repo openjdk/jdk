@@ -1084,7 +1084,7 @@ public:
 
   uint _block_num;
 
-  labelOper() : _label(0), _block_num(0) {}
+  labelOper() : _label(nullptr), _block_num(0) {}
 
   labelOper(Label* label, uint block_num) : _label(label), _block_num(block_num) {}
 
