@@ -3101,10 +3101,10 @@ public final class Formatter implements Closeable, Flushable {
 
     private static record FormatString1(boolean ucase) implements FormatString {
         public void print(Formatter fmt, Object arg, Locale l) throws IOException {
-            if (arg instanceof Formattable) {
+            if (arg instanceof Formattable fmtArg) {
                 if (fmt.locale() != l)
                     fmt = new Formatter(fmt.out(), l);
-                ((Formattable)arg).formatTo(fmt, Flags.NONE, -1, -1);
+                fmtArg.formatTo(fmt, Flags.NONE, -1, -1);
             } else {
                 Appendable a = fmt.a;
                 String str = String.valueOf(arg);
@@ -3121,10 +3121,10 @@ public final class Formatter implements Closeable, Flushable {
 
     private static record FormatStringWidth(boolean ucase, int width) implements FormatString {
         public void print(Formatter fmt, Object arg, Locale l) throws IOException {
-            if (arg instanceof Formattable) {
+            if (arg instanceof Formattable fmtArg) {
                 if (fmt.locale() != l)
                     fmt = new Formatter(fmt.out(), l);
-                ((Formattable)arg).formatTo(fmt, ucase ? Flags.UPPERCASE : Flags.NONE, width, -1);
+                fmtArg.formatTo(fmt, ucase ? Flags.UPPERCASE : Flags.NONE, width, -1);
             } else {
                 Appendable a = fmt.a;
                 String str = String.valueOf(arg);
