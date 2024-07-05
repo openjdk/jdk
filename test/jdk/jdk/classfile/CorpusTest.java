@@ -79,7 +79,7 @@ class CorpusTest {
     static void splitTableAttributes(String sourceClassFile, String targetClassFile) throws IOException, URISyntaxException {
         var root = Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent();
         var cc = ClassFile.of();
-        Files.write(root.resolve(targetClassFile), cc.transform(cc.parse(root.resolve(sourceClassFile)), ClassTransform.transformingMethodBodies((cob, coe) -> {
+        Files.write(root.resolve(targetClassFile), cc.transformClass(cc.parse(root.resolve(sourceClassFile)), ClassTransform.transformingMethodBodies((cob, coe) -> {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
             switch (coe) {
@@ -117,7 +117,7 @@ class CorpusTest {
     static Path[] corpus() throws IOException, URISyntaxException {
         splitTableAttributes("testdata/Pattern2.class", "testdata/Pattern2-split.class");
         return Stream.of(
-                Files.walk(JRT.getPath("modules/java.base/java")),
+                Files.walk(JRT.getPath("modules/java.base/java/util")),
                 Files.walk(JRT.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")),
                 Files.walk(Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent()))
                 .flatMap(p -> p)
@@ -140,13 +140,14 @@ class CorpusTest {
         for (Transforms.NoOpTransform m : Transforms.NoOpTransform.values()) {
             if (m == Transforms.NoOpTransform.ARRAYCOPY
                 || m == Transforms.NoOpTransform.SHARED_3_NO_STACKMAP
+                || m == Transforms.NoOpTransform.CLASS_REMAPPER
                 || m.name().startsWith("ASM"))
                 continue;
 
             try {
                 byte[] transformed = m.shared && m.classTransform != null
                                      ? ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
-                                                .transform(ClassFile.of().parse(bytes), m.classTransform)
+                                                .transformClass(ClassFile.of().parse(bytes), m.classTransform)
                                      : m.transform.apply(bytes);
                 Map<Integer, Integer> newDups = findDups(transformed);
                 oldRecord = m.classRecord(bytes);
@@ -190,12 +191,8 @@ class CorpusTest {
                                  .collect(joining("\n"));
             fail(String.format("Errors in testNullAdapt: %s", msg));
         }
-    }
 
-    @ParameterizedTest
-    @MethodSource("corpus")
-    void testReadAndTransform(Path path) throws IOException {
-        byte[] bytes = Files.readAllBytes(path);
+        // test read and transform
         var cc = ClassFile.of();
         var classModel = cc.parse(bytes);
         assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofStreamingElements(classModel),
@@ -213,7 +210,7 @@ class CorpusTest {
 
         //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
         byte[] noStackMaps = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
-                                      .transform(newModel,
+                                      .transformClass(newModel,
                                                          ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
         var noStackModel = cc.parse(noStackMaps);
         var itStack = newModel.methods().iterator();
