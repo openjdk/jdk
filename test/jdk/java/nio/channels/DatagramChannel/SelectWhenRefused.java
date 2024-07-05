@@ -39,8 +39,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class SelectWhenRefused {
-    static final int MAX_TRIES = 3;
-    static final String GREETINGS_MESSAGE = "Greetings from SelectWhenRefused!";
+    static final int MAX_TRIES = 10;
+    static final String GREETINGS_MESSAGE = System.nanoTime() + ": Greetings from SelectWhenRefused!";
 
     @Test
     public void test() throws IOException {
@@ -49,9 +49,31 @@ public class SelectWhenRefused {
 
         // datagram sent to this address should be refused
         SocketAddress refuser = new InetSocketAddress(InetAddress.getLocalHost(), port);
+        System.out.println("Refuser is: " + refuser);
 
-        DatagramChannel dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+        DatagramChannel dc = null;
+        for (int i=0; i < MAX_TRIES; i++) {
+            dc = DatagramChannel.open();
+            try {
+                dc.bind(new InetSocketAddress(0));
+            } catch (Throwable t) {
+                dc.close();
+                throw t;
+            }
+            if (((InetSocketAddress)dc.getLocalAddress()).getPort() == port) {
+                if (i < MAX_TRIES - 1) {
+                    System.out.format("Refuser port has been reused by dc: %s, retrying...%n",
+                            dc.getLocalAddress());
+                    continue;
+                }
+                System.out.format("Skipping test: refuser port has been reused by dc: %s%n",
+                        dc.getLocalAddress());
+                return;
+            }
+            break;
+        }
         dc1.close();
+        assert dc != null;
 
         Selector sel = Selector.open();
         try {
@@ -119,7 +141,9 @@ public class SelectWhenRefused {
 
             // BindException will be thrown if another service is using
             // our expected refuser port, cannot run just exit.
-            DatagramChannel.open().bind(refuser).close();
+            try (DatagramChannel dc2 = DatagramChannel.open()) {
+                dc2.bind(refuser);
+            }
             throw new RuntimeException("Unexpected wakeup");
         }
         return true; // test passed
@@ -166,7 +190,9 @@ public class SelectWhenRefused {
 
                 // BindException will be thrown if another service is using
                 // our expected refuser port, cannot run just exit.
-                DatagramChannel.open().bind(refuser).close();
+                try (DatagramChannel dc2 = DatagramChannel.open()) {
+                    dc2.bind(refuser);
+                }
                 throw new RuntimeException("PortUnreachableException not raised");
             } catch (PortUnreachableException pue) {
                 System.out.println("Got expected PortUnreachableException " + pue);
