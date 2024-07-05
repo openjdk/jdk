@@ -2023,17 +2023,15 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  */
 public final class Formatter implements Closeable, Flushable {
     static {
-        SharedSecrets.setJavaUtilFormatterAccess(new JavaUtilFormatterAccessImpl());
-    }
+        SharedSecrets.setJavaUtilFormatterAccess(new JavaUtilFormatterAccess() {
+            public String format(Locale locale, String format, Object... args) {
+                return formatImpl(locale, format, args);
+            }
 
-    private static final class JavaUtilFormatterAccessImpl implements JavaUtilFormatterAccess {
-        public String format(Locale locale, String format, Object... args) {
-            return formatImpl(locale, format, args);
-        }
-
-        public String format(String format, Object... args) {
-            return formatImpl(Locale.getDefault(Locale.Category.FORMAT), format, args);
-        }
+            public String format(String format, Object... args) {
+                return formatImpl(Locale.getDefault(Locale.Category.FORMAT), format, args);
+            }
+        });
     }
 
     // Caching DecimalFormatSymbols. Non-volatile to avoid thread slamming.
