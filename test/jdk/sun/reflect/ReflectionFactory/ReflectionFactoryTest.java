@@ -810,6 +810,19 @@ public class ReflectionFactoryTest {
         void hello();
     }
 
+    static class SerialPersistentFields implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -4947917866973382882L;
+        @Serial
+        private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("array1", Object[].class),
+            new ObjectStreamField("nonExistent", String.class)
+        };
+
+        private int int1;
+        private Object[] array1;
+    }
+
     // Check our simple accessors
     @Test
     static void testAccessors() {
@@ -834,6 +847,133 @@ public class ReflectionFactoryTest {
         Assert.assertEquals(factory.serialVersionUID(Externalizable.class), 0);
     }
 
+    // Ensure that classes with serialPersistentFields do not get/set other fields
+    @Test
+    static void testDisallowed() throws Throwable {
+        // first check write
+        MethodHandle writeHandle = factory.defaultWriteObjectForSerialization(SerialPersistentFields.class);
+        SerialPersistentFields spf = new SerialPersistentFields();
+        spf.int1 = 123;
+        spf.array1 = new Object[] { "Hello", "world" };
+        writeHandle.invokeExact(spf, (ObjectOutputStream) new ObjectOutputStream() {
+            protected void writeObjectOverride(final Object obj) throws IOException {
+                throw new IOException("Wrong method called");
+            }
+
+            public PutField putFields() {
+                return new PutField() {
+                    public void put(final String name, final boolean val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final byte val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final char val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final short val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final int val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final long val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final float val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final double val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public void put(final String name, final Object val) {
+                        switch (name) {
+                            case "array1" -> Assert.assertEquals((Object[])val, new Object[] {
+                                "Hello", "world"
+                            });
+                            default -> throw new Error("Unexpected field " + name);
+                        }
+                    }
+
+                    @SuppressWarnings("removal")
+                    public void write(final ObjectOutput out) throws IOException {
+                        throw new IOException("Wrong method called");
+                    }
+                };
+            }
+
+            public void writeFields() {
+                // ignore
+            }
+        });
+        MethodHandle readHandle = factory.defaultReadObjectForSerialization(SerialPersistentFields.class);
+        readHandle.invokeExact(spf, (ObjectInputStream) new ObjectInputStream() {
+            protected Object readObjectOverride() throws IOException {
+                throw new IOException("Wrong method called");
+            }
+
+            public GetField readFields() {
+                return new GetField() {
+                    public ObjectStreamClass getObjectStreamClass() {
+                        throw new Error("Wrong method called");
+                    }
+
+                    public boolean defaulted(final String name) {
+                        return false;
+                    }
+
+                    public boolean get(final String name, final boolean val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public byte get(final String name, final byte val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public char get(final String name, final char val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public short get(final String name, final short val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public int get(final String name, final int val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public long get(final String name, final long val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public float get(final String name, final float val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public double get(final String name, final double val) {
+                        throw new Error("Unexpected field " + name);
+                    }
+
+                    public Object get(final String name, final Object val) {
+                        return switch (name) {
+                            case "array1" -> new Object[] { "Changed!" };
+                            default -> throw new Error("Unexpected field " + name);
+                        };
+                    }
+                };
+            }
+        });
+        Assert.assertEquals(spf.int1, 123);
+        Assert.assertEquals(spf.array1, new Object[] { "Changed!" });
+    }
 
     // Main can be used to run the tests from the command line with only testng.jar.
     @SuppressWarnings("raw_types")
