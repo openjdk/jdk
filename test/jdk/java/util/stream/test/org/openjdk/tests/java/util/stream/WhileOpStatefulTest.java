@@ -256,7 +256,7 @@ public class WhileOpStatefulTest extends OpTestCase {
                                                              EXECUTION_TIME_LIMIT);
             return s.peek(e -> {
                 if (!isWithinExecutionPeriod.getAsBoolean()) {
-                    throw new RuntimeException();
+                    throw new RuntimeException("Execution time limit exceeded!");
                 }
             });
         });
@@ -266,7 +266,7 @@ public class WhileOpStatefulTest extends OpTestCase {
             return s.parallel()
                     .peek(e -> {
                         if (!isWithinExecutionPeriod.getAsBoolean()) {
-                            throw new RuntimeException();
+                            throw new RuntimeException("Execution time limit exceeded!");
                         }
                     });
         });
