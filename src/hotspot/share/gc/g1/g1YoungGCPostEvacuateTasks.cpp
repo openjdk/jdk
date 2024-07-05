@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,7 +333,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
 }
 
-class G1FreeHumongousRegionClosure : public HeapRegionIndexClosure {
+class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
@@ -537,9 +537,9 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 
-  class ProcessEvacuationFailedRegionsClosure : public HeapRegionClosure {
+  class ProcessEvacuationFailedRegionsClosure : public G1HeapRegionClosure {
   public:
 
     bool do_heap_region(G1HeapRegion* r) override {
@@ -706,7 +706,7 @@ public:
 };
 
 // Closure applied to all regions in the collection set.
-class FreeCSetClosure : public HeapRegionClosure {
+class FreeCSetClosure : public G1HeapRegionClosure {
   // Helper to send JFR events for regions.
   class JFREventForRegion {
     EventGCPhaseParallel _event;
@@ -807,7 +807,7 @@ public:
                   uint worker_id,
                   FreeCSetStats* stats,
                   G1EvacFailureRegions* evac_failure_regions) :
-      HeapRegionClosure(),
+      G1HeapRegionClosure(),
       _g1h(G1CollectedHeap::heap()),
       _surviving_young_words(surviving_young_words),
       _worker_id(worker_id),
@@ -853,14 +853,14 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
-  G1CollectedHeap*  _g1h;
-  G1EvacInfo*       _evacuation_info;
-  FreeCSetStats*    _worker_stats;
-  HeapRegionClaimer _claimer;
-  const size_t*     _surviving_young_words;
-  uint              _active_workers;
+  G1CollectedHeap*    _g1h;
+  G1EvacInfo*         _evacuation_info;
+  FreeCSetStats*      _worker_stats;
+  G1HeapRegionClaimer _claimer;
+  const size_t*       _surviving_young_words;
+  uint                _active_workers;
   G1EvacFailureRegions* _evac_failure_regions;
-  volatile uint     _num_retained_regions;
+  volatile uint       _num_retained_regions;
 
   FreeCSetStats* worker_stats(uint worker) {
     return &_worker_stats[worker];
