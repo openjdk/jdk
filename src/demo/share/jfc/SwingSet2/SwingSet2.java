@@ -83,8 +83,8 @@ public class SwingSet2 extends JPanel {
     private ArrayList<DemoModule> demosList = new ArrayList<DemoModule>();
 
     // The preferred size of the demo
-    private static final int PREFERRED_WIDTH = 720;
-    private static final int PREFERRED_HEIGHT = 640;
+    private static final int PREFERRED_WIDTH = 1020;
+    private static final int PREFERRED_HEIGHT = 910;
 
     // Box spacers
     private Dimension HGAP = new Dimension(1,5);
