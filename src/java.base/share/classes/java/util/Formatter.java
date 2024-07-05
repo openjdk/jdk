@@ -66,6 +66,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.Stable;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -5257,7 +5258,7 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
 
-        static final FormatString[] specifiers = new FormatString[128];
+        static final @Stable FormatString[] specifiers = new FormatString[128];
         static {
             for(char c : new char[] {
                     BOOLEAN,
