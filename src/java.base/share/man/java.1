@@ -1710,10 +1710,12 @@ This prevents the JVM from exiting and keeps the process active so that
 you can attach a debugger to it to investigate the cause of the error.
 By default, this option is disabled.
 .TP
-\f[V]-XX:StartFlightRecording=\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
+\f[V]-XX:StartFlightRecording:\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 Starts a JFR recording for the Java application.
 This option is equivalent to the \f[V]JFR.start\f[R] diagnostic command
 that starts a recording during runtime.
+\f[V]-XX:StartFlightRecording:help\f[R] prints available options and
+example command lines.
 You can set the following \f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 entries when starting a JFR recording:
 .RS
@@ -1760,6 +1762,8 @@ written when the recording is stopped, for example:
 .PP
 If %p and/or %t is specified in the filename, it expands to the
 JVM\[aq]s PID and the current timestamp, respectively.
+The filename may also be a directory in which case, the filename is
+generated from the PID and the current date in the specified directory.
 .RE
 .TP
 \f[V]name=\f[R]\f[I]identifier\f[R]
@@ -1840,6 +1844,9 @@ The whitespace delimiter can be omitted for timespan values, i.e.
 20ms.
 For more information about the settings syntax, see Javadoc of the
 jdk.jfr package.
+.PP
+To only see warnings and errors from JFR during startup set
+-Xlog:jfr+startup=warning.
 .RE
 .TP
 \f[V]-XX:ThreadStackSize=\f[R]\f[I]size\f[R]
