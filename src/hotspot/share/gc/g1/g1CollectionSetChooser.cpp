@@ -116,7 +116,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // Per-region closure. In addition to determining whether a region should be
   // added to the candidates, and calculating those regions' gc efficiencies, also
   // gather additional statistics.
-  class G1BuildCandidateRegionsClosure : public HeapRegionClosure {
+  class G1BuildCandidateRegionsClosure : public G1HeapRegionClosure {
     G1BuildCandidateArray* _array;
 
     uint _cur_chunk_idx;
@@ -177,7 +177,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
   uint volatile _num_regions_added;
 
