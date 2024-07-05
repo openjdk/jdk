@@ -80,8 +80,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_objarray_chunk_size(ParGCArrayScanChunk),
-    _partial_array_stepper(num_workers),
+    _partial_array_stepper(num_workers, ParGCArrayScanChunk),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),
@@ -236,9 +235,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   objArrayOop to_array = objArrayOop(to_obj);
 
   PartialArrayTaskStepper::Step step
-    = _partial_array_stepper.next(objArrayOop(from_obj),
-                                  to_array,
-                                  _partial_objarray_chunk_size);
+    = _partial_array_stepper.next(objArrayOop(from_obj), to_array);
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
@@ -250,7 +247,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   // on start/end.
   to_array->oop_iterate_range(&_scanner,
                               step._index,
-                              step._index + _partial_objarray_chunk_size);
+                              step._index + _partial_array_stepper.chunk_size());
 }
 
 MAYBE_INLINE_EVACUATION
@@ -266,9 +263,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   objArrayOop to_array = objArrayOop(to_obj);
 
   PartialArrayTaskStepper::Step step
-    = _partial_array_stepper.start(objArrayOop(from_obj),
-                                   to_array,
-                                   _partial_objarray_chunk_size);
+    = _partial_array_stepper.start(objArrayOop(from_obj), to_array);
 
   // Push any needed partial scan tasks.  Pushed before processing the
   // initial chunk to allow other workers to steal while we're processing.

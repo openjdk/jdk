@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,14 @@ class PartialArrayTaskStepper::TestSupport : AllStatic {
 public:
   static Step start(const Stepper* stepper,
                     int length,
-                    int* to_length_addr,
-                    uint chunk_size) {
-    return stepper->start_impl(length, to_length_addr, chunk_size);
+                    int* to_length_addr) {
+    return stepper->start_impl(length, to_length_addr);
   }
 
   static Step next(const Stepper* stepper,
                    int length,
-                   int* to_length_addr,
-                   uint chunk_size) {
-    return stepper->next_impl(length, to_length_addr, chunk_size);
+                   int* to_length_addr) {
+    return stepper->next_impl(length, to_length_addr);
   }
 };
 
@@ -51,23 +49,22 @@ using StepperSupport = PartialArrayTaskStepper::TestSupport;
 
 static int simulate(const Stepper* stepper,
                     int length,
-                    int* to_length_addr,
-                    uint chunk_size) {
-  Step init = StepperSupport::start(stepper, length, to_length_addr, chunk_size);
+                    int* to_length_addr) {
+  Step init = StepperSupport::start(stepper, length, to_length_addr);
   uint queue_count = init._ncreate;
   int task = 0;
   for ( ; queue_count > 0; ++task) {
     --queue_count;
-    Step step = StepperSupport::next(stepper, length, to_length_addr, chunk_size);
+    Step step = StepperSupport::next(stepper, length, to_length_addr);
     queue_count += step._ncreate;
   }
   return task;
 }
 
 static void run_test(int length, int chunk_size, uint n_workers) {
-  const PartialArrayTaskStepper stepper(n_workers);
+  const PartialArrayTaskStepper stepper(n_workers, chunk_size);
   int to_length;
-  int tasks = simulate(&stepper, length, &to_length, chunk_size);
+  int tasks = simulate(&stepper, length, &to_length);
   ASSERT_EQ(length, to_length);
   ASSERT_EQ(tasks, length / chunk_size);
 }

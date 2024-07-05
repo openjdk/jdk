@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 // be processed.
 class PartialArrayTaskStepper {
 public:
-  PartialArrayTaskStepper(uint n_workers);
+  PartialArrayTaskStepper(uint n_workers, int chunk_size);
 
   struct Step {
     int _index;                 // Array index for the step.
@@ -55,17 +55,20 @@ public:
   // the first partial task if the array is large enough to need splitting.
   // Returns a Step with _index being that index and _ncreate being the
   // initial number of partial tasks to enqueue.
-  inline Step start(arrayOop from, arrayOop to, int chunk_size) const;
+  inline Step start(arrayOop from, arrayOop to) const;
 
-  // Increment to's length by chunk_size to claim the next chunk.  Returns a
+  // Increment to's length by chunk_size() to claim the next chunk.  Returns a
   // Step with _index being the starting index of the claimed chunk and
   // _ncreate being the number of additional partial tasks to enqueue.
-  // precondition: chunk_size must be the same as used to start the task sequence.
-  inline Step next(arrayOop from, arrayOop to, int chunk_size) const;
+  inline Step next(arrayOop from, arrayOop to) const;
+
+  inline int chunk_size() const;
 
   class TestSupport;            // For unit tests
 
 private:
+  // Size (number of elements) of a chunk to process.
+  int _chunk_size;
   // Limit on the number of partial array tasks to create for a given array.
   uint _task_limit;
   // Maximum number of new tasks to create when processing an existing task.
@@ -75,8 +78,8 @@ private:
   // impl dealing with lengths and pointers to lengths, for unit testing.
   // length is the actual length obtained from the from-space object.
   // to_length_addr is the address of the to-space object's length value.
-  inline Step start_impl(int length, int* to_length_addr, int chunk_size) const;
-  inline Step next_impl(int length, int* to_length_addr, int chunk_size) const;
+  inline Step start_impl(int length, int* to_length_addr) const;
+  inline Step next_impl(int length, int* to_length_addr) const;
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
