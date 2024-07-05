@@ -42,8 +42,8 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
 import sun.swing.MenuItemLayoutHelper;
-import sun.swing.SwingUtilities2;
 import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 /**
  * Wrapper for primitive graphics calls.

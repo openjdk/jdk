@@ -70,7 +70,7 @@ public final class MnemonicHandler {
         }
     }
 
-    /*
+    /**
      * Repaints all the components with the mnemonics in the given window and all its owned windows.
      */
     public static void repaintMnemonicsInWindow(final Window w) {
@@ -86,7 +86,7 @@ public final class MnemonicHandler {
         repaintMnemonicsInContainer(w);
     }
 
-    /*
+    /**
      * Repaints all the components with the mnemonics in container.
      * Recursively searches for all the subcomponents.
      */

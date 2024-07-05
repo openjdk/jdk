@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -35,7 +34,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.plaf.synth.SynthLookAndFeel;
 
 /*
  * @test

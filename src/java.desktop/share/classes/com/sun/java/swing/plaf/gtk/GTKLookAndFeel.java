@@ -36,13 +36,10 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.JComponent;
@@ -66,7 +63,6 @@ import javax.swing.text.DefaultEditorKit;
 
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.StateType;
-import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 import sun.security.action.GetPropertyAction;
