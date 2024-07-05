@@ -1402,10 +1402,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   // Generate real control flow
   Node   *tst = _gvn.transform( new BoolNode( c, btest ) );
 
-  bool taken_trap = false;
-  bool untaken_trap = false;
-  bool stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
-
   // Sanity check the probability value
   assert(prob > 0.0f,"Bad probability in Parser");
  // Need xform to put node in hash table
@@ -1423,7 +1419,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
         branch_block->next_path_num();
       }
     } else {                    // Path is live.
-      taken_trap = adjust_map_after_if(btest, c, prob, branch_block, stress_trap);
+      adjust_map_after_if(btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1441,20 +1437,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       next_block->next_path_num();
     }
   } else  {                     // Path is live.
-    untaken_trap = adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block, stress_trap);
-  }
-
-  if (stress_trap && (taken_trap || untaken_trap)) {
-    assert(!(taken_trap && untaken_trap), "sanity");
-    Node* thread = _gvn.transform(new ThreadLocalNode());
-    Node* thread_x = _gvn.transform(new CastP2XNode(nullptr, thread));
-    Node* cmp = _gvn.transform(new CmpXNode(thread_x, longcon(0)));
-    // If taken_trap, make sure the if is always taken
-    btest = taken_trap ? BoolTest::mask::ne : BoolTest::mask::eq;
-    Node* bol = _gvn.transform(new BoolNode(cmp, btest));
-    _gvn.hash_delete(iff);
-    iff->set_req(1, bol);
-    _gvn.transform(iff);
+    adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 }
 
@@ -1537,10 +1520,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     untaken_branch = tmp;
   }
 
-  bool taken_trap = false;
-  bool untaken_trap = false;
-  bool stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
-
   // Branch is taken:
   { PreserveJVMState pjvms(this);
     taken_branch = _gvn.transform(taken_branch);
@@ -1552,7 +1531,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
         branch_block->next_path_num();
       }
     } else {
-      taken_trap = adjust_map_after_if(taken_btest, c, prob, branch_block, stress_trap);
+      adjust_map_after_if(taken_btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1569,23 +1548,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       next_block->next_path_num();
     }
   } else {
-    untaken_trap = adjust_map_after_if(untaken_btest, c, untaken_prob, next_block, stress_trap);
-  }
-
-  if (stress_trap && (taken_trap || untaken_trap)) {
-    assert(!(taken_trap && untaken_trap), "sanity");
-    Node* thread = _gvn.transform(new ThreadLocalNode());
-    Node* thread_x = _gvn.transform(new CastP2XNode(nullptr, thread));
-    Node* cmp = _gvn.transform(new CmpXNode(thread_x, longcon(0)));
-    // If taken_trap, make sure the if is always taken
-    btest = taken_trap ? BoolTest::mask::ne : BoolTest::mask::eq;
-    if (!taken_if_true) {
-      btest = BoolTest(btest).negate();
-    }
-    Node* bol = _gvn.transform(new BoolNode(cmp, btest));
-    _gvn.hash_delete(iff);
-    iff->set_req(1, bol);
-    _gvn.transform(iff);
+    adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 }
 
@@ -1616,14 +1579,14 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
 // branch, seeing how it constrains a tested value, and then
 // deciding if it's worth our while to encode this constraint
 // as graph nodes in the current abstract interpretation map.
-bool Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path, bool stress_trap) {
+void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path) {
   if (!c->is_Cmp()) {
     maybe_add_predicate_after_if(path);
-    return false;
+    return;
   }
 
   if (stopped() || btest == BoolTest::illegal) {
-    return false;                       // nothing to do
+    return;                             // nothing to do
   }
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
@@ -1635,10 +1598,10 @@ bool Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
                   nullptr,
                   (is_fallthrough ? "taken always" : "taken never"));
 
-    if (call != nullptr && !stress_trap) {
+    if (call != nullptr) {
       C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
     }
-    return true;
+    return;
   }
 
   Node* val = c->in(1);
@@ -1662,12 +1625,11 @@ bool Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
   }
   if (!have_con) {                        // remaining adjustments need a con
     maybe_add_predicate_after_if(path);
-    return false;
+    return;
   }
 
   sharpen_type_after_if(btest, con, tcon, val, tval);
   maybe_add_predicate_after_if(path);
-  return false;
 }
 
 
