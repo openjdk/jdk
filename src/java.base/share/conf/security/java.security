@@ -44,10 +44,11 @@
 # expansion in the form of ${system.property}. If a system property does
 # not have a value, it expands to the empty string.
 #
-# An error will be thrown if a file cannot be included, either because it
-# does not exist, cannot be resolved, or is recursively included more than
-# once. For a secure JDK configuration, it is important to check OS
-# permissions assigned to any file included.
+# An error will be thrown if a file cannot be included. This may happen
+# if the file cannot be resolved, does not exist, is a directory, there are
+# insufficient permissions to read it, it is recursively included more than
+# once, or for any other reason. For a secure JDK configuration, it is
+# important to review OS write permissions assigned to any file included.
 #
 # Examples:
 #   1) include ${java.home}/conf/security/extra.security
