@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,11 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/*
+ * @test
+ * @bug 8333313
+ * @summary Verify references to local classes declared in early construction contexts
+ * @enablePreview
+ */
+import java.util.concurrent.atomic.AtomicReference;
 
-package sun.jvm.hotspot.gc.g1;
+public class EarlyLocalTest7 {
 
-public interface HeapRegionClosure {
-    public void doHeapRegion(G1HeapRegion hr);
+    int y;
+
+    class Test extends AtomicReference<Runnable> {
+        Test(int x) {
+            super(() -> System.out.println(x + y));
+        }
+    }
+
+    public static void main(String[] args) {
+        new EarlyLocalTest7().new Test(42);
+    }
 }

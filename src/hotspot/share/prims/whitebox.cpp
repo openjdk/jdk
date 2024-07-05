@@ -608,7 +608,7 @@ WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
   THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1MemoryNodeIds: G1 GC is not enabled");
 WB_END
 
-class OldRegionsLivenessClosure: public HeapRegionClosure {
+class OldRegionsLivenessClosure: public G1HeapRegionClosure {
 
  private:
   const int _liveness;
@@ -1113,6 +1113,10 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
     tty->print_cr("WB error: blocking compilation is still in queue!");
   }
   return false;
+}
+
+size_t WhiteBox::get_in_use_monitor_count() {
+  return ObjectSynchronizer::_in_use_list.count();
 }
 
 WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level, jint bci))
@@ -1848,6 +1852,10 @@ WB_END
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
   return (jboolean) obj_oop->mark().has_monitor();
+WB_END
+
+WB_ENTRY(jlong, WB_getInUseMonitorCount(JNIEnv* env, jobject wb))
+  return (jlong) WhiteBox::get_in_use_monitor_count();
 WB_END
 
 WB_ENTRY(jint, WB_getLockStackCapacity(JNIEnv* env))
@@ -2844,6 +2852,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExportsToAll },
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
+  {CC"getInUseMonitorCount", CC"()J", (void*)&WB_getInUseMonitorCount  },
   {CC"getLockStackCapacity", CC"()I",                 (void*)&WB_getLockStackCapacity },
   {CC"supportsRecursiveLightweightLocking", CC"()Z",  (void*)&WB_supportsRecursiveLightweightLocking },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },

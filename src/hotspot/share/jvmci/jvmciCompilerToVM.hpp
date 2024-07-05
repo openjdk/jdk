@@ -108,6 +108,10 @@ class CompilerToVM {
     static int sizeof_ZStoreBarrierEntry;
 #endif
 
+#ifdef X86
+    static int L1_line_size;
+#endif
+
     static address dsin;
     static address dcos;
     static address dtan;

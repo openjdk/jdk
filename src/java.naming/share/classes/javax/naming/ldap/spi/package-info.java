@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,22 +21,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.g1;
-
-import java.io.PrintStream;
-import sun.jvm.hotspot.gc.g1.G1HeapRegion;
-
-public class PrintRegionClosure implements HeapRegionClosure {
-    private PrintStream tty;
-
-    public PrintRegionClosure(PrintStream tty) {
-        this.tty = tty;
-    }
-
-    public void doHeapRegion(G1HeapRegion hr) {
-        hr.printOn(tty);
-    }
-}
+/**
+ *
+ * Provides the Service Provider Interface for DNS lookups when
+ * performing LDAP operations.
+ *
+ * @since 12
+ */
+package javax.naming.ldap.spi;
