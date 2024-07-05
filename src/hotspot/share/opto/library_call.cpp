@@ -2359,10 +2359,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   SafePointNode* old_map = clone_map();
 
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
-
-  //if (stopped()) {
-    //return true;
-  //}
+  if (stopped()) {
+    return true;
+  }
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
