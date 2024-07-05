@@ -21,9 +21,9 @@
  * questions.
  */
 
-package pkg1;
+package pkg;
 
-public class A {
-    public <T extends Runnable> A() {
+public class CtorTypeParam {
+    public <T extends Runnable> CtorTypeParam() {
     }
 }
