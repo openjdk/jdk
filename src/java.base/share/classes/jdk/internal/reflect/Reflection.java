@@ -53,13 +53,10 @@ public class Reflection {
     public static final Set<String> ALL_MEMBERS = Set.of(WILDCARD);
 
     static {
-        // Classes in this list should be already loaded before Reflection.class
-        // is initialized to reduce class-loading dependencies
-        // Classes that is only loaded before main but not initialized such as
-        // ConstantPool need special care; cannot registerXxxToFilter in
-        // their static initializer
+        // 3 filter scenarios:
+        // 1. Classes loaded before Reflection, may (System) or may not
+        //    (ConstantPool) be initialized before main call: below
         fieldFilterMap = Map.of(
-            // initialized in bootstrap by the end of this static block
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
             Class.class, Set.of("classLoader", "classData"),
@@ -69,12 +66,14 @@ public class Reflection {
             Method.class, ALL_MEMBERS,
             Module.class, ALL_MEMBERS,
             System.class, Set.of("security"),
-            // loaded in bootstrap before Reflection but not initialized
             ConstantPool.class, Set.of("constantPoolOop")
-            // additional:
-            // MethodHandles.Lookup: initialized in bootstrap later
         );
         methodFilterMap = Map.of();
+        // 2. Classes loaded after Reflection, but always initialized
+        //    before main call (MethodHandles.Lookup): register in static {}
+
+        // 3. Classes not always loaded or initialized before main call
+        //    (jdk.unsupported): need alternative handling in the future
     }
 
     /** Returns the class of the caller of the method calling this method,
@@ -285,8 +284,7 @@ public class Reflection {
         return false;
     }
 
-    // Caller class must be initialized before main;
-    // document new callers in static block.
+    // Only works for filter scenario #2
     // fieldNames must contain only interned Strings
     public static synchronized void registerFieldsToFilter(Class<?> containingClass,
                                                            Set<String> fieldNames) {
@@ -294,8 +292,7 @@ public class Reflection {
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
-    // Caller class must be initialized before main;
-    // document new callers in static block.
+    // Only works for filter scenario #2
     // methodNames must contain only interned Strings
     public static synchronized void registerMethodsToFilter(Class<?> containingClass,
                                                             Set<String> methodNames) {
