@@ -2423,7 +2423,14 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
     Symbol findIdentInternal(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
@@ -2495,7 +2502,14 @@ public class Resolve {
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
     private Symbol checkNonExistentType(Symbol symbol) {
