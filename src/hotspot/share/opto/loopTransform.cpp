@@ -1502,7 +1502,7 @@ Node* PhaseIdealLoop::clone_template_assertion_predicate(IfNode* iff, Node* new_
   other_proj->set_req(0, new_iff);
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   register_new_node(frame, C->start());
-  Node* halt = new HaltNode(other_proj, frame, "Template Assertion Predicate should never be executed");
+  Node* halt = new HaltNode(other_proj, frame, "Template Assertion Predicates are always removed before code generation");
   _igvn.add_input_to(C->root(), halt);
   new_iff->set_req(0, input_proj);
 
@@ -2022,9 +2022,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
   if (!predicate_block->has_parse_predicate()) {
     return;
   }
-  Node* control = outer_loop_head->in(LoopNode::EntryControl);
-  Node* input_proj = control;
-
+  Node* input_proj = outer_loop_head->in(LoopNode::EntryControl);
   const Node* parse_predicate_uncommon_trap = predicate_block->parse_predicate()->uncommon_trap();
   Node* next_regular_predicate_proj = predicate_block->skip_parse_predicate();
   while (next_regular_predicate_proj->is_IfProj()) {

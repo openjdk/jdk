@@ -397,7 +397,6 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
 // This class creates a new Initialized Assertion Predicate.
 class InitializedAssertionPredicate : public StackObj {
   IfNode* const _template_assertion_predicate;
-  NOT_PRODUCT(const AssertionPredicateType _assertion_predicate_type;)
   Node* const _new_init;
   Node* const _new_stride;
   PhaseIdealLoop* const _phase;
@@ -410,9 +409,9 @@ class InitializedAssertionPredicate : public StackObj {
   IfTrueNode* create(Node* control);
 
  private:
-  OpaqueInitializedAssertionPredicateNode* create_new_bool(Node* control);
-  IfNode* create_if_node(Node* control, OpaqueInitializedAssertionPredicateNode* new_opaque_bool, IdealLoopTree* loop);
-  void create_halt_path(IfNode* if_node, IdealLoopTree* loop);
+  OpaqueInitializedAssertionPredicateNode* create_assertion_expression(Node* control);
+  IfNode* create_if_node(Node* control, OpaqueInitializedAssertionPredicateNode* assertion_expression, IdealLoopTree* loop);
+  void create_fail_path(IfNode* if_node, IdealLoopTree* loop);
   void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop);
   IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
 };

@@ -385,12 +385,14 @@ bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(N
 InitializedAssertionPredicate::InitializedAssertionPredicate(IfNode* template_assertion_predicate, Node* new_init,
                                                              Node* new_stride, PhaseIdealLoop* phase)
     : _template_assertion_predicate(template_assertion_predicate),
-      NOT_PRODUCT(_assertion_predicate_type(template_assertion_predicate->assertion_predicate_type()) COMMA)
       _new_init(new_init),
       _new_stride(new_stride),
       _phase(phase) {}
 
-// Create an Initialized Assertion Predicate at the provided control from the _template_assertion_predicate:
+// Create an Initialized Assertion Predicate at the provided control from the _template_assertion_predicate.
+// We clone the Template Assertion Predicate Expression and replace:
+// - Opaque4 with OpaqueInitializedAssertionPredicate
+// - OpaqueLoop*Nodes with _new_init and _new_stride, respectively.
 //
 //          init                 stride
 //            |                    |
@@ -409,31 +411,32 @@ InitializedAssertionPredicate::InitializedAssertionPredicate(IfNode* template_as
 //
 IfTrueNode* InitializedAssertionPredicate::create(Node* control) {
   IdealLoopTree* loop = _phase->get_loop(control);
-  OpaqueInitializedAssertionPredicateNode* new_opaque_bool = create_new_bool(control);
-  IfNode* if_node = create_if_node(control, new_opaque_bool, loop);
-  create_halt_path(if_node, loop);
+  OpaqueInitializedAssertionPredicateNode* assertion_expression = create_assertion_expression(control);
+  IfNode* if_node = create_if_node(control, assertion_expression, loop);
+  create_fail_path(if_node, loop);
   return create_success_path(if_node, loop);
 }
 
-// Create a OpaqueInitializedAssertionPredicate with a new Assertion Predicate Expression.
-OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicate::create_new_bool(Node* control) {
-  Opaque4Node* template_opaque_bool = _template_assertion_predicate->in(1)->as_Opaque4();
-  TemplateAssertionPredicateExpression template_assertion_predicate_expression(template_opaque_bool);
-  Opaque4Node* new_opaque =
-      template_assertion_predicate_expression.clone_and_replace_init_and_stride(_new_init, _new_stride, control, _phase);
-  OpaqueInitializedAssertionPredicateNode* opaque_bool
-      = new OpaqueInitializedAssertionPredicateNode(new_opaque->in(1)->as_Bool(), _phase->C);
-  _phase->register_new_node(opaque_bool, control);
-  return opaque_bool;
+// Create a new Assertion Expression to be used as bool input for the Initialized Assertion Predicate IfNode.
+OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicate::create_assertion_expression(Node* control) {
+  Opaque4Node* template_opaque = _template_assertion_predicate->in(1)->as_Opaque4();
+  TemplateAssertionPredicateExpression assertion_expression(template_opaque);
+  Opaque4Node* tmp_opaque =
+      assertion_expression.clone_and_replace_init_and_stride(_new_init, _new_stride, control, _phase);
+  OpaqueInitializedAssertionPredicateNode* assertion_predicate_expression
+      = new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
+  _phase->register_new_node(assertion_predicate_expression, control);
+  return assertion_predicate_expression;
 }
 
 IfNode* InitializedAssertionPredicate::create_if_node(Node* control,
-                                                      OpaqueInitializedAssertionPredicateNode* new_opaque_bool,
+                                                      OpaqueInitializedAssertionPredicateNode* assertion_expression,
                                                       IdealLoopTree* loop) {
   const int if_opcode = _template_assertion_predicate->Opcode();
+  const AssertionPredicateType assertion_predicate_type = _template_assertion_predicate->assertion_predicate_type();
   IfNode* if_node = if_opcode == Op_If ?
-      new IfNode(control, new_opaque_bool, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA _assertion_predicate_type)) :
-      new RangeCheckNode(control, new_opaque_bool, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA _assertion_predicate_type));
+      new IfNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type)) :
+      new RangeCheckNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type));
   _phase->register_control(if_node, loop, control);
   return if_node;
 }
@@ -444,7 +447,7 @@ IfTrueNode* InitializedAssertionPredicate::create_success_path(IfNode* if_node, 
   return success_proj;
 }
 
-void InitializedAssertionPredicate::create_halt_path(IfNode* if_node, IdealLoopTree* loop) {
+void InitializedAssertionPredicate::create_fail_path(IfNode* if_node, IdealLoopTree* loop) {
   IfFalseNode* fail_proj = new IfFalseNode(if_node);
   _phase->register_control(fail_proj, loop, if_node);
   create_halt_node(fail_proj, loop);
@@ -454,7 +457,7 @@ void InitializedAssertionPredicate::create_halt_node(IfFalseNode* fail_proj, Ide
   StartNode* start_node = _phase->C->start();
   Node* frame = new ParmNode(start_node, TypeFunc::FramePtr);
   _phase->register_new_node(frame, start_node);
-  Node* halt = new HaltNode(fail_proj, frame, "Assertion Predicate cannot fail");
+  Node* halt = new HaltNode(fail_proj, frame, "Initialized Assertion Predicate cannot fail");
   _phase->igvn().add_input_to(_phase->C->root(), halt);
   _phase->register_control(halt, loop, fail_proj);
 }
