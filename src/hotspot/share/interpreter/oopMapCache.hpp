@@ -42,8 +42,8 @@
 // because these entries persist between garbage collections.
 // For InterpreterOopMap the bit_mask is allocated in the C heap
 // to avoid issues with allocations from the resource area that have
-// to live accross the oop closure (see 8335409). InterpreterOopMap
-// should only be created and deleted during same garbage collection.
+// to live accross the oop closure. InterpreterOopMap should only be
+// created and deleted during the same garbage collection.
 //
 // If ENABBLE_ZAP_DEAD_LOCALS is defined, two bits are used
 // per entry instead of one. In all cases,
@@ -131,11 +131,11 @@ class InterpreterOopMap: ResourceObj {
   InterpreterOopMap();
   ~InterpreterOopMap();
 
-  // Copy the OopMapCacheEntry in parameter "from" into this
-  // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
+  // Copy the OopMapCacheEntry in parameter "src" into this
+  // InterpreterOopMap.  If the _bit_mask[0] in "src" points to
   // allocated space (i.e., the bit mask was too large to hold
   // in-line), allocate the space from the C heap.
-  void resource_copy(OopMapCacheEntry* from);
+  void copy_from(OopMapCacheEntry* src);
 
   void iterate_oop(OffsetClosure* oop_closure) const;
   void print() const;

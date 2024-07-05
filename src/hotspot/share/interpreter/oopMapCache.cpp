@@ -402,26 +402,26 @@ void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
 
 // Implementation of OopMapCache
 
-void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
+void InterpreterOopMap::copy_from(OopMapCacheEntry* src) {
   // The expectation is that this InterpreterOopMap is recently created
   // and empty. It is used to get a copy of a cached entry.
   assert(!_used, "InterpreterOopMap object can only be filled once");
-  assert(from->has_valid_mask(), "Cannot copy entry with an invalid mask");
+  assert(src->has_valid_mask(), "Cannot copy entry with an invalid mask");
 
-  set_method(from->method());
-  set_bci(from->bci());
-  set_mask_size(from->mask_size());
-  set_expression_stack_size(from->expression_stack_size());
-  _num_oops = from->num_oops();
+  set_method(src->method());
+  set_bci(src->bci());
+  set_mask_size(src->mask_size());
+  set_expression_stack_size(src->expression_stack_size());
+  _num_oops = src->num_oops();
 
   // Is the bit mask contained in the entry?
-  if (from->mask_size() <= small_mask_limit) {
-    memcpy((void *)_bit_mask, (void *)from->_bit_mask,
+  if (src->mask_size() <= small_mask_limit) {
+    memcpy((void *)_bit_mask, (void *)src->_bit_mask,
       mask_word_size() * BytesPerWord);
   } else {
     _bit_mask[0] = (uintptr_t) NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
     assert(_bit_mask[0] != 0, "bit mask was not allocated");
-    memcpy((void*) _bit_mask[0], (void*) from->_bit_mask[0], mask_word_size() * BytesPerWord);
+    memcpy((void*) _bit_mask[0], (void*) src->_bit_mask[0], mask_word_size() * BytesPerWord);
   }
   DEBUG_ONLY(_used = true);
 }
@@ -505,7 +505,7 @@ void OopMapCache::lookup(const methodHandle& method,
     for (int i = 0; i < probe_depth; i++) {
       OopMapCacheEntry *entry = entry_at(probe + i);
       if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
-        entry_for->resource_copy(entry);
+        entry_for->copy_from(entry);
         assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
         log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
         return;
@@ -519,7 +519,7 @@ void OopMapCache::lookup(const methodHandle& method,
   OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
-  entry_for->resource_copy(tmp);
+  entry_for->copy_from(tmp);
 
   if (method->should_not_be_cached()) {
     // It is either not safe or not a good idea to cache this Method*
@@ -620,7 +620,7 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   tmp->initialize();
   tmp->fill(method, bci);
   if (tmp->has_valid_mask()) {
-    entry->resource_copy(tmp);
+    entry->copy_from(tmp);
   }
   OopMapCacheEntry::deallocate(tmp);
 }
