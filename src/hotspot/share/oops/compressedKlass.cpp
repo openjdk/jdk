@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
 char* CompressedKlassPointers::reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr) {
   alignment = MAX2(Metaspace::reserve_alignment(), alignment);
-  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr, mtMetaspace);
+  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr);
 }
 
 char* CompressedKlassPointers::reserve_address_space_for_unscaled_encoding(size_t size, bool aslr) {

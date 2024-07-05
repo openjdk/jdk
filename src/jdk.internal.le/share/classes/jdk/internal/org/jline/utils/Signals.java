@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -21,8 +21,7 @@ import java.util.Objects;
  */
 public final class Signals {
 
-    private Signals() {
-    }
+    private Signals() {}
 
     /**
      *
@@ -41,8 +40,8 @@ public final class Signals {
         try {
             Class<?> signalHandlerClass = Class.forName("sun.misc.SignalHandler");
             // Implement signal handler
-            Object signalHandler = Proxy.newProxyInstance(loader,
-                    new Class<?>[]{signalHandlerClass}, (proxy, method, args) -> {
+            Object signalHandler =
+                    Proxy.newProxyInstance(loader, new Class<?>[] {signalHandlerClass}, (proxy, method, args) -> {
                         // only method we are proxying is handle()
                         if (method.getDeclaringClass() == Object.class) {
                             if ("toString".equals(method.getName())) {
@@ -101,8 +100,7 @@ public final class Signals {
             return null;
         }
         Class<?> signalHandlerClass = Class.forName("sun.misc.SignalHandler");
-        return signalClass.getMethod("handle", signalClass, signalHandlerClass)
-                .invoke(null, signal, handler);
+        return signalClass.getMethod("handle", signalClass, signalHandlerClass).invoke(null, signal, handler);
     }
 
     @SuppressWarnings("")
@@ -120,5 +118,4 @@ public final class Signals {
         }
         return handler != null ? handler.toString() : "null";
     }
-
 }

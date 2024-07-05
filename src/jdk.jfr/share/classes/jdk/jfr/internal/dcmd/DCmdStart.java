@@ -321,6 +321,7 @@ final class DCmdStart extends AbstractDCmd {
     public String[] getStartupHelp() {
         Map<String, String> parameters = Map.of(
             "$SYNTAX", "-XX:StartFlightRecording:[options]",
+            "$SOURCE_NO_ARGUMENTS", "-XX:StartFlightRecording",
             "$SOURCE", "-XX:StartFlightRecording:",
             "$DELIMITER", ",",
             "$DELIMITER_NAME", "comma",
@@ -334,6 +335,7 @@ final class DCmdStart extends AbstractDCmd {
     public String[] getHelp() {
         Map<String, String> parameters = Map.of(
            "$SYNTAX", "JFR.start [options]",
+           "$SOURCE_NO_ARGUMENTS", "$ jcmd <pid> JFR.start",
            "$SOURCE", "$ jcmd <pid> JFR.start ",
            "$DELIMITER", " ",
            "$DELIMITER_NAME", "whitespace",
@@ -440,7 +442,7 @@ final class DCmdStart extends AbstractDCmd {
 
                Example usage:
 
-                $SOURCE
+                $SOURCE_NO_ARGUMENTS
                 $SOURCEfilename=dump.jfr
                 $SOURCEfilename=$DIRECTORY
                 $SOURCEdumponexit=true

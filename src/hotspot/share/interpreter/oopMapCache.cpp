@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/globalCounter.inline.hpp"
 
 class OopMapCacheEntry: private InterpreterOopMap {
   friend class InterpreterOopMap;
@@ -444,29 +445,25 @@ inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int 
 OopMapCacheEntry* volatile OopMapCache::_old_entries = nullptr;
 
 OopMapCache::OopMapCache() {
-  _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry*, _size, mtClass);
-  for(int i = 0; i < _size; i++) _array[i] = nullptr;
+  for(int i = 0; i < size; i++) _array[i] = nullptr;
 }
 
 
 OopMapCache::~OopMapCache() {
-  assert(_array != nullptr, "sanity check");
   // Deallocate oop maps that are allocated out-of-line
   flush();
-  // Deallocate array
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry*, _array);
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return Atomic::load_acquire(&(_array[i % _size]));
+  return Atomic::load_acquire(&(_array[i % size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(&_array[i % _size], old, entry) == old;
+  return Atomic::cmpxchg(&_array[i % size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr) {
       _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
@@ -477,7 +474,7 @@ void OopMapCache::flush() {
 
 void OopMapCache::flush_obsolete_entries() {
   assert(SafepointSynchronize::is_at_safepoint(), "called by RedefineClasses in a safepoint");
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr && !entry->is_empty() && entry->method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
@@ -494,15 +491,11 @@ void OopMapCache::flush_obsolete_entries() {
   }
 }
 
-// Called by GC for thread root scan during a safepoint only.  The other interpreted frame oopmaps
-// are generated locally and not cached.
+// Lookup or compute/cache the entry.
 void OopMapCache::lookup(const methodHandle& method,
                          int bci,
                          InterpreterOopMap* entry_for) {
-  assert(SafepointSynchronize::is_at_safepoint(), "called by GC in a safepoint");
   int probe = hash_value_for(method, bci);
-  int i;
-  OopMapCacheEntry* entry = nullptr;
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {
     static int count = 0;
@@ -512,14 +505,18 @@ void OopMapCache::lookup(const methodHandle& method,
            method()->name_and_sig_as_C_string(), probe);
   }
 
-  // Search hashtable for match
-  for(i = 0; i < _probe_depth; i++) {
-    entry = entry_at(probe + i);
-    if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
-      entry_for->resource_copy(entry);
-      assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
-      log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
-      return;
+  // Search hashtable for match.
+  // Need a critical section to avoid race against concurrent reclamation.
+  {
+    GlobalCounter::CriticalSection cs(Thread::current());
+    for (int i = 0; i < probe_depth; i++) {
+      OopMapCacheEntry *entry = entry_at(probe + i);
+      if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
+        entry_for->resource_copy(entry);
+        assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
+        log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
+        return;
+      }
     }
   }
 
@@ -541,8 +538,8 @@ void OopMapCache::lookup(const methodHandle& method,
   }
 
   // First search for an empty slot
-  for(i = 0; i < _probe_depth; i++) {
-    entry = entry_at(probe + i);
+  for (int i = 0; i < probe_depth; i++) {
+    OopMapCacheEntry* entry = entry_at(probe + i);
     if (entry == nullptr) {
       if (put_at(probe + i, tmp, nullptr)) {
         assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
@@ -557,6 +554,10 @@ void OopMapCache::lookup(const methodHandle& method,
   // where the first entry in the collision array is replaced with the new one.
   OopMapCacheEntry* old = entry_at(probe + 0);
   if (put_at(probe + 0, tmp, old)) {
+    // Cannot deallocate old entry on the spot: it can still be used by readers
+    // that got a reference to it before we were able to replace it in the map.
+    // Instead of synchronizing on GlobalCounter here and incurring heavy thread
+    // walk, we do this clean up out of band.
     enqueue_for_cleanup(old);
   } else {
     OopMapCacheEntry::deallocate(tmp);
@@ -567,13 +568,14 @@ void OopMapCache::lookup(const methodHandle& method,
 }
 
 void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
-  bool success = false;
-  OopMapCacheEntry* head;
-  do {
-    head = _old_entries;
+  while (true) {
+    OopMapCacheEntry* head = Atomic::load(&_old_entries);
     entry->_next = head;
-    success = Atomic::cmpxchg(&_old_entries, head, entry) == head;
-  } while (!success);
+    if (Atomic::cmpxchg(&_old_entries, head, entry) == head) {
+      // Enqueued successfully.
+      break;
+    }
+  }
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {
     ResourceMark rm;
@@ -582,11 +584,31 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
   }
 }
 
-// This is called after GC threads are done and nothing is accessing the old_entries
-// list, so no synchronization needed.
-void OopMapCache::cleanup_old_entries() {
-  OopMapCacheEntry* entry = _old_entries;
-  _old_entries = nullptr;
+bool OopMapCache::has_cleanup_work() {
+  return Atomic::load(&_old_entries) != nullptr;
+}
+
+void OopMapCache::try_trigger_cleanup() {
+  // See we can take the lock for the notification without blocking.
+  // This allows triggering the cleanup from GC paths, that can hold
+  // the service lock for e.g. oop iteration in service thread.
+  if (has_cleanup_work() && Service_lock->try_lock_without_rank_check()) {
+    Service_lock->notify_all();
+    Service_lock->unlock();
+  }
+}
+
+void OopMapCache::cleanup() {
+  OopMapCacheEntry* entry = Atomic::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
+  if (entry == nullptr) {
+    // No work.
+    return;
+  }
+
+  // About to delete the entries than might still be accessed by other threads
+  // on lookup path. Need to sync up with them before proceeding.
+  GlobalCounter::write_synchronize();
+
   while (entry != nullptr) {
     if (log_is_enabled(Debug, interpreter, oopmap)) {
       ResourceMark rm;

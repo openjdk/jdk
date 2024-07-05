@@ -26,6 +26,7 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
@@ -47,11 +48,8 @@ void VirtualMemory::update_peak(size_t size) {
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
-  // Only if thread stack is backed by virtual memory
-  if (ThreadStackTracker::track_as_vm()) {
-    // Snapshot current thread stacks
-    VirtualMemoryTracker::snapshot_thread_stacks();
-  }
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::snapshot_thread_stacks();
   as_snapshot()->copy_to(s);
 }
 
@@ -424,20 +422,20 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->flag() != flag) {
-      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\") wants to change to \"%s\"",
-             NMTUtil::flag_to_name(reserved_rgn->flag()), NMTUtil::flag_to_name(flag));
+      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
+             NMTUtil::flag_to_name(reserved_rgn->flag()));
       reserved_rgn->set_flag(flag);
     }
   }
 }
 
 bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
-  const NativeCallStack& stack, MEMFLAGS flag) {
+  const NativeCallStack& stack) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
 
-  ReservedMemoryRegion  rgn(addr, size, stack, flag);
+  ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
   if (reserved_rgn == nullptr) {
@@ -452,7 +450,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   return result;
 }
 
-bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size, MEMFLAGS flag) {
+bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -682,16 +680,17 @@ class PrintRegionWalker : public VirtualMemoryWalker {
 private:
   const address               _p;
   outputStream*               _st;
+  NativeCallStackPrinter      _stackprinter;
 public:
   PrintRegionWalker(const void* p, outputStream* st) :
-    _p((address)p), _st(st) { }
+    _p((address)p), _st(st), _stackprinter(st) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
       _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
         p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::flag_to_enum_name(rgn->flag()));
       if (MemTracker::tracking_level() == NMT_detail) {
-        rgn->call_stack()->print_on(_st);
+        _stackprinter.print_stack(rgn->call_stack());
         _st->cr();
       }
       return false;

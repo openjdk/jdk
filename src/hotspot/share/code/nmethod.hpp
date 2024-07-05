@@ -218,6 +218,8 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
+  int _skipped_instructions_size;
+
   int _stub_offset;
 
   // Offsets for different stubs section parts
@@ -232,7 +234,6 @@ class nmethod : public CodeBlob {
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
-  uint16_t _skipped_instructions_size;
 
   // Offsets in mutable data section
   // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
@@ -258,12 +259,6 @@ class nmethod : public CodeBlob {
   int          _compile_id;            // which compilation made this nmethod
   CompLevel    _comp_level;            // compilation level (s1)
   CompilerType _compiler_type;         // which compiler made this nmethod (u1)
-
-#if INCLUDE_RTM_OPT
-  // RTM state at compile time. Used during deoptimization to decide
-  // whether to restart collecting RTM locking abort statistic again.
-  RTMState _rtm_state;
-#endif
 
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
@@ -628,12 +623,6 @@ public:
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
 
-#if INCLUDE_RTM_OPT
-  // rtm state accessing and manipulating
-  RTMState  rtm_state() const          { return _rtm_state; }
-  void set_rtm_state(RTMState state)   { _rtm_state = state; }
-#endif
-
   bool make_in_use() {
     return try_transition(in_use);
   }
@@ -716,6 +705,7 @@ public:
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
+  void copy_values(GrowableArray<address>* metadata) {} // Nothing to do
 
   // Relocation support
 private:

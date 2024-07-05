@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 
 import vm.mlvm.hiddenloader.share.HiddenkTestee01;
 import vm.mlvm.share.MlvmTest;
-import vm.share.FileUtils;
+import vm.mlvm.share.FileUtils;
 
 public class Test extends MlvmTest {
     private static final Class<?> PARENT = HiddenkTestee01.class;

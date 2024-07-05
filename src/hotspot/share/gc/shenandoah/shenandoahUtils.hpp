@@ -132,7 +132,7 @@ private:
   ShenandoahHeap* const _heap;
   const GCIdMark                _gc_id_mark;
   const SvcGCMarker             _svc_gc_mark;
-  const IsGCActiveMark          _is_gc_active_mark;
+  const IsSTWGCActiveMark       _is_gc_active_mark;
   TraceMemoryManagerStats       _trace_pause;
 
 public:

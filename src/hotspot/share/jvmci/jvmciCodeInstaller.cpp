@@ -771,11 +771,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode object must be a HotSpotNmethod when installing a HotSpotCompiledNmethod", JVMCI::ok);
     }
 
-    // We would like to be strict about the nmethod entry barrier but there are various test
-    // configurations which generate assembly without being a full compiler. So for now we enforce
-    // that JIT compiled methods must have an nmethod barrier.
-    bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(installed_code) != 0;
-    if (_nmethod_entry_patch_offset == -1 && install_default) {
+    // Enforce that compiled methods have an nmethod barrier.
+    if (_nmethod_entry_patch_offset == -1) {
       JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is missing", JVMCI::ok);
     }
 
@@ -816,14 +813,12 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectivesStack::release(directive);
       }
 
-      if (_nmethod_entry_patch_offset != -1) {
-        BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-        // an empty error buffer for use by the verify_barrier code
-        err_msg msg("");
-        if (!bs_nm->verify_barrier(nm, msg)) {
-          JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
-        }
+      // an empty error buffer for use by the verify_barrier code
+      err_msg msg("");
+      if (!bs_nm->verify_barrier(nm, msg)) {
+        JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
       }
     }
   }
@@ -1302,6 +1297,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
   u1 id = stream->read_u1("mark:id");
   address pc = _instructions->start() + pc_offset;
 
+  if (pd_relocate(pc, id)) {
+    return;
+  }
+
   switch (id) {
     case UNVERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Entry, pc_offset);
@@ -1335,12 +1334,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       _next_call_type = (MarkId) id;
       _invoke_mark_pc = pc;
       break;
-    case POLL_NEAR:
-    case POLL_FAR:
-    case POLL_RETURN_NEAR:
-    case POLL_RETURN_FAR:
-      pd_relocate_poll(pc, id, JVMCI_CHECK);
-      break;
     case CARD_TABLE_SHIFT:
     case CARD_TABLE_ADDRESS:
     case HEAP_TOP_ADDRESS:
@@ -1355,6 +1348,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
       break;
+
     default:
       JVMCI_ERROR("invalid mark id: %d%s", id, stream->context());
       break;

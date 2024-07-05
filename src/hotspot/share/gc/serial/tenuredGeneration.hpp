@@ -135,28 +135,26 @@ public:
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void collect(bool full,
-                       bool clear_all_soft_refs,
-                       size_t size,
-                       bool is_tlab);
-
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   void gc_prologue();
   void gc_epilogue();
 
-  bool should_collect(bool   full,
-                      size_t word_size,
-                      bool   is_tlab);
+  bool should_allocate(size_t word_size, bool is_tlab) {
+    bool result = false;
+    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
+    if (!is_tlab) {
+      result = (word_size > 0) && (word_size < overflow_limit);
+    }
+    return result;
+  }
 
   // Performance Counter support
   void update_counters();
 
-  void record_spaces_top();
-
   // Statistics
 
-  void update_gc_stats(Generation* current_generation, bool full);
+  void update_promote_stats();
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.
@@ -165,12 +163,11 @@ public:
   bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   // "obj" is the address of an object in young-gen.  Allocate space for "obj"
-  // in the old-gen, and copy "obj" into the newly allocated space, if
-  // possible, returning the result (or null if the allocation failed).
+  // in the old-gen, returning the result (or null if the allocation failed).
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
-  oop promote(oop obj, size_t obj_size);
+  oop allocate_for_promotion(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

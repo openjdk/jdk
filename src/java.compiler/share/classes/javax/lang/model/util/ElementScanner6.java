@@ -250,6 +250,8 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      * @param e  {@inheritDoc ElementVisitor}
      * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
+     *
+     * @since 14
      */
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {

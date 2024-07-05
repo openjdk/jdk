@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class JavaBaseTest {
 
         ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
-        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.module()).orElseThrow();
         List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
         for (int i = 0; i < modAttr1.requires().size(); ++i) {
             ModuleRequireInfo e1 = modAttr1.requires().get(i);
@@ -237,7 +237,7 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = ClassFile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transformClass(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);

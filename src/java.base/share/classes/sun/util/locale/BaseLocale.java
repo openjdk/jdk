@@ -38,7 +38,7 @@ import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.UnaryOperator;
 
 public final class BaseLocale {
 
@@ -93,7 +93,7 @@ public final class BaseLocale {
 
     // Interned BaseLocale cache
     private static final ReferencedKeySet<BaseLocale> CACHE =
-            ReferencedKeySet.create(true, ConcurrentHashMap::new);
+            ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
 
     public static final String SEP = "_";
 
@@ -164,12 +164,20 @@ public final class BaseLocale {
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
         return CACHE.intern(new BaseLocale(language, script, region, variant),
-            (b) -> new BaseLocale(
-                LocaleUtils.toLowerString(b.language).intern(),
-                LocaleUtils.toTitleString(b.script).intern(),
-                LocaleUtils.toUpperString(b.region).intern(),
-                b.variant.intern()));
+                // Avoid lambdas since this may be on the bootstrap path in many locales
+                INTERNER);
     }
+
+    public static final UnaryOperator<BaseLocale> INTERNER = new UnaryOperator<>() {
+        @Override
+        public BaseLocale apply(BaseLocale b) {
+            return new BaseLocale(
+                    LocaleUtils.toLowerString(b.language).intern(),
+                    LocaleUtils.toTitleString(b.script).intern(),
+                    LocaleUtils.toUpperString(b.region).intern(),
+                    b.variant.intern());
+        }
+    };
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {

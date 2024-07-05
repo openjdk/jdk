@@ -501,9 +501,12 @@ else # $(HAS_SPEC)=true
   # Failure logs are only supported for "parallel" main targets, not the
   # (trivial) sequential make targets (such as clean and reconfigure),
   # since the failure-logs directory creation will conflict with clean.
+  # We also make sure the javatmp directory exists, which is needed if a java
+  # process (like javac) is using java.io.tmpdir.
   define PrepareFailureLogs
 	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null && \
 	$(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR)/failure-logs
+	$(MKDIR) -p $(JAVA_TMP_DIR)
 	$(RM) $(MAKESUPPORT_OUTPUTDIR)/exit-with-error 2> /dev/null
   endef
 

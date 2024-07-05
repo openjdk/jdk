@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ size_t XMarkStackSpace::expand_space() {
                          old_size / M, new_size / M);
 
   // Expand
-  os::commit_memory_or_exit((char*)_end, expand_size, !ExecMem, mtGC, "Mark stack space");
+  os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
 
   return expand_size;
 }
@@ -105,7 +105,7 @@ size_t XMarkStackSpace::shrink_space() {
                            old_size / M, new_size / M);
 
     const uintptr_t shrink_start = _end - shrink_size;
-    os::uncommit_memory((char*)shrink_start, shrink_size, !ExecMem, mtGC);
+    os::uncommit_memory((char*)shrink_start, shrink_size, false /* executable */);
   }
 
   return shrink_size;

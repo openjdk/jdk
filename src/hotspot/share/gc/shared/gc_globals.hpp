@@ -118,7 +118,7 @@
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
                                                                             \
-  product(bool, ZGenerational, false,                                       \
+  product(bool, ZGenerational, true,                                        \
           "Use the generational version of ZGC")                            \
                                                                             \
   product(bool, UseShenandoahGC, false,                                     \
@@ -539,10 +539,6 @@
   product(size_t, SoftMaxHeapSize, 0, MANAGEABLE,                           \
           "Soft limit for maximum heap size (in bytes)")                    \
           constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
-                                                                            \
-  product(size_t, OldSize, ScaleForWordSize(4*M),                           \
-          "Initial tenured generation size (in bytes)")                     \
-          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \

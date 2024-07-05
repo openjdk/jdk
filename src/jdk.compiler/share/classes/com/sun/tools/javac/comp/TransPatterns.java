@@ -458,7 +458,9 @@ public class TransPatterns extends TreeTranslator {
                 newCases.add(c.head);
                 appendBreakIfNeeded(tree, cases, c.head);
             }
-            cases = processCases(tree, newCases.toList());
+            cases = newCases.toList();
+            patchCompletingNormallyCases(cases);
+            cases = processCases(tree, cases);
             ListBuffer<JCStatement> statements = new ListBuffer<>();
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + variableIndex++ + target.syntheticNameChar() + "temp"),
@@ -522,8 +524,6 @@ public class TransPatterns extends TreeTranslator {
             int i = 0;
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
-
-            patchCompletingNormallyCases(cases);
 
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
@@ -685,7 +685,7 @@ public class TransPatterns extends TreeTranslator {
             if (currentCase.caseKind == CaseKind.STATEMENT &&
                 currentCase.completesNormally &&
                 cases.tail.nonEmpty() &&
-                cases.tail.head.guard != null) {
+                (cases.tail.head.guard != null || cases.tail.head.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null))) {
                 ListBuffer<JCStatement> newStatements = new ListBuffer<>();
                 List<JCCase> copyFrom = cases;
 
@@ -700,6 +700,7 @@ public class TransPatterns extends TreeTranslator {
                 };
 
                 currentCase.stats = newStatements.toList();
+                currentCase.completesNormally = false;
             }
 
             cases = cases.tail;
@@ -948,10 +949,12 @@ public class TransPatterns extends TreeTranslator {
         JCExpression commonNestedExpression = null;
         VarSymbol commonNestedBinding = null;
         boolean previousNullable = false;
+        boolean previousCompletesNormally = false;
 
         for (List<JCCase> c = inputCases; c.nonEmpty(); c = c.tail) {
             VarSymbol currentBinding = null;
             boolean currentNullable = false;
+            boolean currentCompletesNormally = c.head.completesNormally;
             JCExpression currentNestedExpression = null;
             VarSymbol currentNestedBinding = null;
 
@@ -986,6 +989,8 @@ public class TransPatterns extends TreeTranslator {
                        commonBinding.isUnnamedVariable() == currentBinding.isUnnamedVariable() &&
                        !previousNullable &&
                        !currentNullable &&
+                       !previousCompletesNormally &&
+                       !currentCompletesNormally &&
                        new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
@@ -1001,6 +1006,7 @@ public class TransPatterns extends TreeTranslator {
                 commonNestedBinding = currentNestedBinding;
             }
             previousNullable = currentNullable;
+            previousCompletesNormally = currentCompletesNormally;
         }
         resolveAccummulator.resolve(commonBinding, commonNestedExpression, commonNestedBinding);
         return result.toList();
@@ -1473,8 +1479,8 @@ public class TransPatterns extends TreeTranslator {
             ListBuffer<JCStatement> stats = new ListBuffer<>();
             for (Entry<BindingSymbol, VarSymbol> e : hoistedVarMap.entrySet()) {
                 JCVariableDecl decl = makeHoistedVarDecl(diagPos, e.getValue());
-                if (!e.getKey().isPreserved() ||
-                    !parent.tryPrepend(e.getKey(), decl)) {
+                if (!e.getValue().isUnnamedVariable() &&
+                        (!e.getKey().isPreserved() || !parent.tryPrepend(e.getKey(), decl))) {
                     stats.add(decl);
                 }
             }

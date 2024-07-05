@@ -2920,7 +2920,7 @@ public class JavacParser implements Parser {
                     case PLUS: case SUB: case STRINGLITERAL: case CHARLITERAL:
                     case STRINGFRAGMENT:
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
-                    case NULL: case IDENTIFIER: case TRUE: case FALSE:
+                    case NULL: case IDENTIFIER: case UNDERSCORE: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
                     case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
@@ -4118,7 +4118,7 @@ public class JavacParser implements Parser {
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
                 log.error(def.pos(), Errors.ImplicitClassShouldNotHavePackageDeclaration);
-            } else if (def.hasTag(Tag.IMPORT)) {
+            } else if (def.hasTag(Tag.IMPORT) || def.hasTag(Tag.MODULEIMPORT)) {
                 topDefs.append(def);
             } else if (!def.hasTag(Tag.SKIP)) {
                 defs.append(def);
@@ -4252,6 +4252,13 @@ public class JavacParser implements Parser {
         if (token.kind == STATIC) {
             importStatic = true;
             nextToken();
+        } else if (token.kind == IDENTIFIER && token.name() == names.module &&
+                   peekToken(TokenKind.IDENTIFIER)) {
+            checkSourceLevel(Feature.MODULE_IMPORTS);
+            nextToken();
+            JCExpression moduleName = qualident(false);
+            accept(SEMI);
+            return toP(F.at(pos).ModuleImport(moduleName));
         }
         JCExpression pid = toP(F.at(token.pos).Ident(ident()));
         do {

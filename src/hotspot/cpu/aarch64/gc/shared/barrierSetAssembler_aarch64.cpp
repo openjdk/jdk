@@ -269,21 +269,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   // verify_tlab();
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register t1) {
-  assert(t1->is_valid(), "need temp reg");
-
-  __ ldr(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    __ add(t1, t1, var_size_in_bytes);
-  } else {
-    __ add(t1, t1, con_size_in_bytes);
-  }
-  __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 static volatile uint32_t _patching_epoch = 0;
 
 address BarrierSetAssembler::patching_epoch_addr() {
@@ -476,7 +461,7 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   GrowableArray<RegisterData> registers;
   VMReg prev_vm_reg = VMRegImpl::Bad();
 
-  RegMaskIterator rmi(stub->live());
+  RegMaskIterator rmi(stub->preserve_set());
   while (rmi.has_next()) {
     OptoReg::Name opto_reg = rmi.next();
     VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
@@ -491,7 +476,7 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
         index = registers.append(reg_data);
       }
     } else if (vm_reg->is_FloatRegister()) {
-      // We have size encoding in OptoReg of stub->live()
+      // We have size encoding in OptoReg of stub->preserve_set()
       // After encoding, float/neon/sve register has only one slot in regmask
       // Decode it to get the actual size
       VMReg vm_reg_base = vm_reg->as_FloatRegister()->as_VMReg();
@@ -532,12 +517,8 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     }
   }
 
-  // Remove C-ABI SOE registers, scratch regs and _ref register that will be updated
-  if (stub->result() != noreg) {
-    _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9, stub->result());
-  } else {
-    _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9);
-  }
+  // Remove C-ABI SOE registers and scratch regs
+  _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9);
 
   // Remove C-ABI SOE fp registers
   _fp_regs -= FloatRegSet::range(v8, v15);
