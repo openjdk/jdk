@@ -174,9 +174,7 @@ class VerifyClosure : public OffsetClosure {
 
 InterpreterOopMap::InterpreterOopMap() {
   initialize();
-#ifdef ASSERT
-  _used = false;
-#endif
+  DEBUG_ONLY(_used = false;)
 }
 
 InterpreterOopMap::~InterpreterOopMap() {
@@ -405,7 +403,7 @@ void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
 // Implementation of OopMapCache
 
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
-  // The expectation is that this InterpreterOopMap is a recently created
+  // The expectation is that this InterpreterOopMap is recently created
   // and empty. It is used to get a copy of a cached entry.
   assert(!_used, "InterpreterOopMap object can only be filled once");
   assert(from->has_valid_mask(), "Cannot copy entry with an invalid mask");

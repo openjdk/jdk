@@ -133,7 +133,7 @@ class InterpreterOopMap: ResourceObj {
 
   // Copy the OopMapCacheEntry in parameter "from" into this
   // InterpreterOopMap.  If the _bit_mask[0] in "from" points to
-  // allocated space (i.e., the bit mask was to large to hold
+  // allocated space (i.e., the bit mask was too large to hold
   // in-line), allocate the space from the C heap.
   void resource_copy(OopMapCacheEntry* from);
 
