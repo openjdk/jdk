@@ -3170,8 +3170,8 @@ const Type* VLoopTypes::container_type(Node* n) const {
   }
   const Type* t = _vloop.phase()->igvn().type(n);
   if (t->basic_type() == T_INT) {
-    // Float to half float conversion may be succeded by a conversion from
-    // half float to float, in such a case backpropagation of narrow type (SHORT)
+    // Float to half float conversion may be succeeded by a conversion from
+    // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
     if (n->Opcode() == Op_ConvF2HF) {
       return TypeInt::SHORT;
