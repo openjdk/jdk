@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC (\u7121\u52B9)"},
         {"key.bit.eccurve.disabled", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u7121\u52B9)"},
         {"unknown.size", "\u4E0D\u660E\u30B5\u30A4\u30BA"},
-        {"extra.attributes.detected", "POSIX\u30D5\u30A1\u30A4\u30EB\u6A29\u9650\u307E\u305F\u306Fsymlink(\u3042\u308B\u3044\u306F\u305D\u306E\u4E21\u65B9)\u306E\u5C5E\u6027\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F\u3002\u7F72\u540D\u4E2D\u306F\u3053\u308C\u3089\u306E\u5C5E\u6027\u306F\u7121\u8996\u3055\u308C\u3001\u7F72\u540D\u306B\u3088\u3063\u3066\u4FDD\u8B77\u3055\u308C\u307E\u305B\u3093\u3002"},
+        {"external.file.attributes.detected", "POSIX\u30D5\u30A1\u30A4\u30EB\u6A29\u9650\u307E\u305F\u306Fsymlink(\u3042\u308B\u3044\u306F\u305D\u306E\u4E21\u65B9)\u306E\u5C5E\u6027\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F\u3002\u7F72\u540D\u4E2D\u306F\u3053\u308C\u3089\u306E\u5C5E\u6027\u306F\u7121\u8996\u3055\u308C\u3001\u7F72\u540D\u306B\u3088\u3063\u3066\u4FDD\u8B77\u3055\u308C\u307E\u305B\u3093\u3002"},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

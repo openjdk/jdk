@@ -318,7 +318,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   } else {
     return false;
   }
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
   _resize_lock_owner = locker;
   return true;
 }
@@ -345,14 +345,14 @@ inline void ConcurrentHashTable<CONFIG, F>::
     }
   } while(true);
   _resize_lock_owner = locker;
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
 }
 
 template <typename CONFIG, MEMFLAGS F>
 inline void ConcurrentHashTable<CONFIG, F>::
   unlock_resize_lock(Thread* locker)
 {
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
   assert(locker == _resize_lock_owner, "Not unlocked by locker.");
   _resize_lock_owner = nullptr;
   _resize_lock->unlock();
@@ -1016,7 +1016,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
     : _context(context), _new_table(nullptr), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(nullptr),
-      _invisible_epoch(0)
+      _invisible_epoch(nullptr)
 {
   if (enable_statistics) {
     _stats_rate = new TableRateStatistics();
