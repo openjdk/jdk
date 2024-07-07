@@ -2348,10 +2348,12 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(temp1, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
     __ vmv_v_x(vzero, zr);
+    // Note: the following function performs key += 4*16
     generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aescrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
 
+    // Note: the following function performs key += 4*16
     generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aescrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
@@ -2450,12 +2452,14 @@ class StubGenerator: public StubCodeGenerator {
     __ vmv_v_x(vzero, zr);
     __ vle32_v(vtemp, key);
     __ addi(key, key, 16);
+    // Note: the following function performs key += 4*16
     generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
 
     __ vrev8_v(vtemp, vtemp);
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
 
+    // Note: the following function performs key += 4*16
     generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
