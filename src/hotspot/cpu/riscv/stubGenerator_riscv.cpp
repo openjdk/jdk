@@ -2329,6 +2329,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
+    const Register x0          = c_rarg4;
 
     const VectorRegister res   = v16;
     const VectorRegister vtmp1 = v4;
@@ -2336,7 +2337,6 @@ class StubGenerator: public StubCodeGenerator {
     const VectorRegister vtmp3 = v6;
     const VectorRegister vtmp4 = v7;
 
-    const Register temp1       = c_rarg4;
     const Register temp2       = c_rarg5;
     const VectorRegister vzero = v17;
 
@@ -2345,7 +2345,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ vsetivli(temp1, 4, Assembler::e32, Assembler::m1);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
     __ vmv_v_x(vzero, zr);
     // Note: the following function performs key += 4*16
@@ -2430,6 +2430,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
+    const Register x0          = c_rarg4;
 
     const VectorRegister res   = v16;
     const VectorRegister vtmp1 = v4;
@@ -2437,7 +2438,6 @@ class StubGenerator: public StubCodeGenerator {
     const VectorRegister vtmp3 = v6;
     const VectorRegister vtmp4 = v7;
 
-    const Register temp1       = c_rarg4;
     const Register temp2       = c_rarg5;
     const VectorRegister vzero = v17;
     const VectorRegister vtemp = v18;
@@ -2447,7 +2447,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ vsetivli(temp1, 4, Assembler::e32, Assembler::m1);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
     __ vmv_v_x(vzero, zr);
     __ vle32_v(vtemp, key);
