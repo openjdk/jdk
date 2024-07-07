@@ -2337,7 +2337,6 @@ class StubGenerator: public StubCodeGenerator {
     const VectorRegister vtmp3 = v6;
     const VectorRegister vtmp4 = v7;
 
-    const Register temp2       = c_rarg5;
     const VectorRegister vzero = v17;
 
     address start = __ pc();
@@ -2361,8 +2360,8 @@ class StubGenerator: public StubCodeGenerator {
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
-    __ mv(temp2, 44);
-    __ beq(keylen, temp2, L_doLast);
+    __ mv(t2, 44);
+    __ beq(keylen, t2, L_doLast);
 
     __ vxor_vv(res, res, vtmp1);
     __ vaesem_vv(res, vtmp2);
@@ -2371,8 +2370,8 @@ class StubGenerator: public StubCodeGenerator {
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
-    __ mv(temp2, 52);
-    __ beq(keylen, temp2, L_doLast);
+    __ mv(t2, 52);
+    __ beq(keylen, t2, L_doLast);
 
     __ vxor_vv(res, res, vtmp1);
     __ vaesem_vv(res, vtmp2);
@@ -2438,7 +2437,6 @@ class StubGenerator: public StubCodeGenerator {
     const VectorRegister vtmp3 = v6;
     const VectorRegister vtmp4 = v7;
 
-    const Register temp2       = c_rarg5;
     const VectorRegister vzero = v17;
     const VectorRegister vtemp = v18;
 
@@ -2467,8 +2465,8 @@ class StubGenerator: public StubCodeGenerator {
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
-    __ mv(temp2, 44);
-    __ beq(keylen, temp2, L_doLast);
+    __ mv(t2, 44);
+    __ beq(keylen, t2, L_doLast);
 
     __ vxor_vv(res, res, vtmp1);
     __ vaesdm_vv(res, vzero);
@@ -2478,8 +2476,8 @@ class StubGenerator: public StubCodeGenerator {
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
-    __ mv(temp2, 52);
-    __ beq(keylen, temp2, L_doLast);
+    __ mv(t2, 52);
+    __ beq(keylen, t2, L_doLast);
 
     __ vxor_vv(res, res, vtmp1);
     __ vaesdm_vv(res, vzero);
