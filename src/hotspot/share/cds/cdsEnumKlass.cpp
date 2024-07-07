@@ -133,4 +133,4 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
   }
   return true;
 }
-#endif
+#endif // INCLUDE_CDS_JAVA_HEAP
