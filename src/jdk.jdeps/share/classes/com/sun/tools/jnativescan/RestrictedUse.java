@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.jnativescan;
 
-/**
- * Internal option processing API
- *
- * @since 9
- */
-module jdk.internal.opt {
-    exports jdk.internal.joptsimple to
-        jdk.jlink,
-        jdk.jshell,
-        jdk.jdeps;
-    exports jdk.internal.opt to
-        jdk.compiler,
-        jdk.jartool,
-        jdk.javadoc,
-        jdk.jlink,
-        jdk.jpackage,
-        jdk.jdeps;
+import java.util.SortedSet;
+
+sealed interface RestrictedUse {
+    record RestrictedMethodRefs(MethodRef referent, SortedSet<MethodRef> referees) implements RestrictedUse {}
+    record NativeMethodDecl(MethodRef decl) implements RestrictedUse {}
 }
