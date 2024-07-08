@@ -32,7 +32,6 @@
  * -XX:+IgnoreUnrecognizedVMOptions
  * -XX:TypeProfileLevel=222
  * -XX:+AlwaysIncrementalInline
- * -XX:+UnlockDiagnosticVMOptions
  * -XX:CompileCommand=compileonly,compiler.loopopts.UnsafeArrayAccess::test
  * -XX:-TieredCompilation compiler.loopopts.UnsafeArrayAccess
  */
