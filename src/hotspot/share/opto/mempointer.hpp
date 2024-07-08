@@ -38,7 +38,7 @@
 class MemPointerSummand : public StackObj {
 private:
   Node* _node;
-  jlong _scaleL;
+  jlong _scaleL; // TODO make jint
   jlong _scaleI;
 
 public:
@@ -53,6 +53,13 @@ public:
   Node* node() const { return _node; }
   jlong scaleL() const { return _scaleL; }
   jlong scaleI() const { return _scaleI; }
+
+#ifndef PRODUCT
+  void print() const {
+    tty->print("  MemPointerSummand: %d * %d * node: ", (int)_scaleL, (int)_scaleI);
+    _node->dump();
+  }
+#endif
 };
 
 // Simple form of the pointer sub-expression of "pointer".
@@ -63,14 +70,36 @@ class MemPointerSimpleForm : public StackObj {
 private:
   static const int SUMMANDS_SIZE = 10; // TODO good?
 
-  bool _is_valid; // the parsing succeeded
   Node* _pointer; // pointer node associated with this (sub)pointer
 
   MemPointerSummand _summands[SUMMANDS_SIZE];
-  jlong _con;
+  jlong _con; // TODO make jint
 
 public:
-  MemPointerSimpleForm() {}
+  // Empty
+  MemPointerSimpleForm() : _pointer(nullptr), _con(0) {}
+  // Default: pointer = node
+  MemPointerSimpleForm(Node* node) : _pointer(node), _con(0) {
+    _summands[0] = MemPointerSummand(node, 1, 1);
+  }
+
+#ifndef PRODUCT
+  void print() const {
+    if (_pointer == nullptr) {
+      tty->print_cr("MemPointerSimpleForm empty.");
+      return;
+    }
+    tty->print("MemPointerSimpleForm for ");
+    _pointer->dump();
+    tty->print("  con = %d", (int)_con);
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = _summands[i];
+      if (summand.node() != nullptr) {
+        summand.print();
+      }
+    }
+  }
+#endif
 };
 
 class MemPointerSimpleFormParser : public StackObj {
@@ -100,19 +129,18 @@ private:
 // TODO
 class MemPointer : public StackObj {
 private:
-  bool _is_valid; // TODO needed?
   const MemNode* _mem;
   MemPointerSimpleForm _simple_form;
 
 public:
   MemPointer(PhaseGVN* phase, const MemNode* mem) :
-    _is_valid(false),
     _mem(mem)
   {
     assert(_mem->is_Store(), "only stores are supported");
     ResourceMark rm;
     MemPointerSimpleFormParser parser(_mem);
     _simple_form = parser.simple_form();
+    _simple_form.print();
     assert(false, "TODO");
     // _mem->memory_size();
   }

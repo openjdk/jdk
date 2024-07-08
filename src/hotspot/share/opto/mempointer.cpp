@@ -38,6 +38,14 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     if (traversal_count++ > 1000) { return MemPointerSimpleForm(); } // TODO invalid?
     parse_sub_expression(_worklist.pop());
   }
+
+  for (int i = 0; i < _summands.length(); i++) {
+    MemPointerSummand summand = _summands.at(i);
+    summand.print();
+  }
+
+  tty->print_cr("con: %d", (int)_con);
+
   return MemPointerSimpleForm(); // TODO build from internals
 }
 
@@ -85,9 +93,8 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       switch (opc) {
         case Op_MulL: scale = in2->get_long(); break;
         case Op_MulI: scale = in2->get_int();  break;
-        case Op_LShiftL:
-        case Op_LShiftI:
-          assert(false, "shift");
+        case Op_LShiftL: scale = 1 << in2->get_long(); break; // TODO check overflow!
+        case Op_LShiftI: scale = 1 << in2->get_int();  break;
       }
       // Scale cannot be too large: TODO make this a special method, maybe better threshold?
       const jlong max_scale = 1 << 30;
@@ -113,7 +120,10 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     }
   }
 
-  assert(false, "default");
+  // Default: could not parse the "summand" further, take it as one of the
+  // "terminal" summands.
+  // TODO wording of "terminal summands"?
+  _summands.push(summand);
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
