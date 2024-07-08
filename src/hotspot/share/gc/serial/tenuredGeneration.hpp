@@ -124,8 +124,6 @@ public:
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t contiguous_available() const;
-
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
@@ -163,12 +161,11 @@ public:
   bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   // "obj" is the address of an object in young-gen.  Allocate space for "obj"
-  // in the old-gen, and copy "obj" into the newly allocated space, if
-  // possible, returning the result (or null if the allocation failed).
+  // in the old-gen, returning the result (or null if the allocation failed).
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
-  oop promote(oop obj, size_t obj_size);
+  oop allocate_for_promotion(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;
