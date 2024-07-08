@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
 import sun.swing.MenuItemLayoutHelper;
-import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -666,7 +665,6 @@ public class SynthGraphicsUtils {
                 g.setColor(lh.getStyle().getColor(
                         lh.getContext(), ColorType.TEXT_FOREGROUND));
                 g.setFont(lh.getStyle().getFont(lh.getContext()));
-
                 lh.getGraphicsUtils().paintText(lh.getContext(), g, lh.getText(),
                         lr.getTextRect().x, lr.getTextRect().y,
                         lh.getMenuItem().getDisplayedMnemonicIndex());
