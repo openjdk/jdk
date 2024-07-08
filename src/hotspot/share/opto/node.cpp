@@ -1249,7 +1249,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
+Node::DomResult Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1259,7 +1259,6 @@ bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
   Node* orig_sub = sub;
   Node* dom      = this;
   bool  met_dom  = false;
-  dead_code      = false;
   nlist.clear();
 
   // Walk 'sub' backward up the chain to 'dom', watching for regions.
@@ -1272,14 +1271,13 @@ bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
   while (sub != nullptr) {
     if (sub->is_top()) {
       // Conservative answer for dead code.
-      dead_code = true;
-      break;
+      return DomResult::EncounteredDeadCode;
     }
     if (sub == dom) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
-        return true;
+        return DomResult::Dominate;
       } else if (met_dom) {
         break;          // already met before: walk in a cycle
       } else {
@@ -1293,7 +1291,7 @@ bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
       // Success if we met 'dom' along a path to Start or Root.
       // We assume there are no alternative paths that avoid 'dom'.
       // (This assumption is up to the caller to ensure!)
-      return met_dom;
+      return met_dom ? DomResult::Dominate : DomResult::NotDominate;
     }
     Node* up = sub->in(0);
     // Normalize simple pass-through regions and projections:
@@ -1324,7 +1322,7 @@ bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
         if (visited == sub) {
           if (visited_twice_already) {
             // Visited 2 paths, but still stuck in loop body.  Give up.
-            return false;
+            return DomResult::NotDominate;
           }
           // The Region node was visited before only once.
           // (We will repush with the low bit set, below.)
@@ -1367,8 +1365,7 @@ bool Node::dominates(Node* sub, Node_List &nlist, bool &dead_code) {
   }
 
   // Did not meet Root or Start node in pred. chain.
-  // Conservative answer for dead code.
-  return false;
+  return DomResult::NotDominate;
 }
 
 //------------------------------remove_dead_region-----------------------------
