@@ -974,6 +974,24 @@ bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, Obje
   return false;
 }
 
+// Determine if there is a scalar replaced object description represented by 'ov'.
+bool PhaseOutput::contains_as_scalarized(JVMState* jvms, MachSafePointNode* sfn,
+                                         GrowableArray<ScopeValue*>* objs,
+                                         ObjectValue *ov) const {
+  for (int i = 0; i < jvms->scl_size(); i++) {
+    Node* n = sfn->scalarized(jvms, i);
+    if (!n->is_SafePointScalarObject()) {
+      continue;
+    }
+
+    ObjectValue* other = (ObjectValue*) sv_for_node_id(objs, n->_idx);
+    if (ov == other) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //--------------------------Process_OopMap_Node--------------------------------
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
@@ -1137,7 +1155,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
         for (int j = 0; j< merge->possible_objects()->length(); j++) {
           ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
-          bool is_root = locarray->contains(ov) || exparray->contains(ov) || contains_as_owner(monarray, ov);
+          bool is_root = locarray->contains(ov) ||
+                         exparray->contains(ov) ||
+                         contains_as_owner(monarray, ov) ||
+                         contains_as_scalarized(jvms, sfn, objs, ov);
           ov->set_root(is_root);
         }
       }
