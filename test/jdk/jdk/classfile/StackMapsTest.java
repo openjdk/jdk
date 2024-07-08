@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618
+ * @bug 8305990 8320222 8320618 8335475
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -36,6 +36,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
@@ -238,7 +242,7 @@ class StackMapsTest {
     @Test
     void testInvalidAALOADStack() {
         ClassFile.of().build(ClassDesc.of("Test"), clb
-                -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
+                -> clb.withMethodBody("test", MTD_void, 0, cob
                         -> cob.bipush(10)
                               .anewarray(ConstantDescs.CD_Object)
                               .lconst_1() //long on stack caused NPE, see 8320618
@@ -311,5 +315,29 @@ class StackMapsTest {
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testEmptyCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_void, ACC_STATIC, CodeBuilder::return_)
+            .withMethodBody("b", MTD_void, 0, CodeBuilder::return_)
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var name = method.methodName();
+            var code = method.code().orElseThrow();
+            if (name.equalsString("a")) {
+                assertEquals(0, code.maxLocals()); // static method
+                assertEquals(0, code.maxStack());
+            } else {
+                assertTrue(name.equalsString("b"));
+                assertEquals(1, code.maxLocals()); // instance method
+                assertEquals(0, code.maxStack());
+            }
+        }
     }
 }
