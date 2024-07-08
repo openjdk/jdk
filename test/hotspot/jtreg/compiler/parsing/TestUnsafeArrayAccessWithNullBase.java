@@ -36,12 +36,12 @@
  * -XX:-TieredCompilation compiler.loopopts.UnsafeArrayAccess
  */
 
-package compiler.loopopts;
+package compiler.parsing;
 
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
 
-public class UnsafeArrayAccess {
+public class TestUnsafeArrayAccessWithNullBase {
 
     /*
     Trigger bug when handling Unsafe.getShortUnaligned with null checks and inlined methods.
@@ -52,8 +52,7 @@ public class UnsafeArrayAccess {
         - insert CheckCastPP: speculative=byte[int:>=0] for argument `Object array` in helperSmall/helperLarge
     Trigger Phase: Calling test causes LibraryCallKit::inline_unsafe_access(..) for Unsafe::getShortUnaligned to fail:
         Reason: UNSAFE.getShortUnaligned(array, offset) is called with array=null,
-        but ConP null is now followed by two CheckCastPP with speculative=byte[int:>=0] in the graph
-        But since we only look one node level back, we conclude that base must be speculative=byte[int:>=0]
+        but ConP null is now hidden by two CheckCastPP with speculative=byte[int:>=0] in the graph
     */
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
