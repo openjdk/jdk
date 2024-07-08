@@ -97,7 +97,7 @@ public class Object {
      *
      * <p>This method should <em>not</em> throw any exceptions. The
      * implementation should not use excessive memory or time for its
-     * computations and should return a result for cyclic data
+     * computations and should return a result for cyclic/circular data
      * structures.
      *
      * @apiNote
@@ -273,7 +273,7 @@ public class Object {
      *
      * <p>This method should <em>not</em> throw any exceptions. The
      * implementation should not use excessive memory or time for its
-     * computations and should return a result for cyclic data
+     * computations and should return a result for cyclic/circular data
      * structures.
      */
     public String toString() {
