@@ -1377,11 +1377,14 @@ static volatile int _stress_counter = 0;
 void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   int target_bci = iter().get_dest();
 
-  // TODO guard with StressUnstableIfTraps
-  Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
-  Node* counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
-  counter = _gvn.transform(new AddINode(counter, intcon(1)));
-  Node* incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  Node* counter = nullptr;
+  Node* incr_store = nullptr;
+  if (StressUnstableIfTraps) {
+    Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+    counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+    counter = _gvn.transform(new AddINode(counter, intcon(1)));
+    incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  }
 
   Block* branch_block = successor_for_bci(target_bci);
   Block* next_block   = successor_for_bci(iter().next_bci());
@@ -1448,7 +1451,10 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 
-  stress_trap(iff, counter, incr_store);
+  // TODO Only emit this randomly
+  if (StressUnstableIfTraps /*&& ((random() % 2) == 0)*/) {
+    stress_trap(iff, counter, incr_store);
+  }
 }
 
 //------------------------------------do_if------------------------------------
@@ -1478,11 +1484,14 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     return;
   }
 
-  // TODO guard with StressUnstableIfTraps
-  Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
-  Node* counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
-  counter = _gvn.transform(new AddINode(counter, intcon(1)));
-  Node* incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  Node* counter = nullptr;
+  Node* incr_store = nullptr;
+  if (StressUnstableIfTraps) {
+    Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+    counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+    counter = _gvn.transform(new AddINode(counter, intcon(1)));
+    incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  }
 
   // Sanity check the probability value
   assert(0.0f < prob && prob < 1.0f,"Bad probability in Parser");
@@ -1567,15 +1576,13 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 
-  stress_trap(iff, counter, incr_store);
+  // TODO Only emit this randomly
+  if (StressUnstableIfTraps /*&& ((random() % 2) == 0)*/) {
+    stress_trap(iff, counter, incr_store);
+  }
 }
 
 void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
-// TODO Only emit this randomly
-//  if (!StressUnstableIfTraps || ((random() % 2) == 0)) {
-//    return;
-//  }
-
   // Search for an unstable if trap
   CallStaticJavaNode* trap = nullptr;
   for (int i = 0; i <= 1; ++i) {
