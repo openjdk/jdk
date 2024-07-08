@@ -1379,7 +1379,8 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  if (StressUnstableIfTraps) {
+  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  if (do_stress_trap) {
     Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
     counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
     counter = _gvn.transform(new AddINode(counter, intcon(1)));
@@ -1451,7 +1452,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (do_stress_trap) {
     stress_trap(iff, counter, incr_store);
   }
 }
@@ -1485,7 +1486,8 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  if (StressUnstableIfTraps) {
+  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  if (do_stress_trap) {
     Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
     counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
     counter = _gvn.transform(new AddINode(counter, intcon(1)));
@@ -1575,7 +1577,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (do_stress_trap) {
     stress_trap(iff, counter, incr_store);
   }
 }
