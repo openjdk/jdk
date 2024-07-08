@@ -101,7 +101,7 @@ class outputStream : public CHeapObjBase {
    void dec(int n) { _indentation -= n; };
    int  indentation() const    { return _indentation; }
    void set_indentation(int i) { _indentation = i;    }
-   void fill_to(int col);
+   int fill_to(int col);
    void move_to(int col, int slop = 6, int min_space = 2);
 
    // Automatic indentation:
@@ -267,6 +267,7 @@ class stringStream : public outputStream {
     return _buffer;
   };
   void  reset();
+  bool is_empty() const { return _buffer[0] == '\0'; }
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
 };
