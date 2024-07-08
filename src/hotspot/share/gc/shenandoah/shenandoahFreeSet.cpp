@@ -926,7 +926,7 @@ void ShenandoahFreeSet::recycle_trash() {
       try_recycle_trashed(trash_regions[i]);
     }
     const jlong time3 = os::javaTimeNanos();
-    log_info(gc)("Recycled %Iu regions in %Idns, break down: filtering -> %Id, taking heap lock -> %Id, recycling -> %Id.",
+    log_info(gc)("Recycled %li regions in %ldns, break down: filtering -> %ld, taking heap lock -> %ld, recycling -> %ld.",
       count, time3 - start, time1 - start, time2 - time1, time3 - time2 );
   }
 }
