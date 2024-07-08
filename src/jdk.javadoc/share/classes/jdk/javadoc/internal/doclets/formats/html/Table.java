@@ -34,14 +34,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.Content;
 
 /**
  * An HTML container used to display summary tables for various kinds of elements

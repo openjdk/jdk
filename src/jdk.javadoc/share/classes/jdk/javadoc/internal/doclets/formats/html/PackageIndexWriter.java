@@ -31,12 +31,12 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the package index page "index.html".

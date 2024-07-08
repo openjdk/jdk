@@ -102,10 +102,15 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 import jdk.javadoc.internal.html.HtmlAttr;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlAttr.AttrKind;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTag.ElemKind;
-import static jdk.javadoc.internal.doclint.Messages.Group.*;
+
+import static jdk.javadoc.internal.doclint.Messages.Group.ACCESSIBILITY;
+import static jdk.javadoc.internal.doclint.Messages.Group.HTML;
+import static jdk.javadoc.internal.doclint.Messages.Group.MISSING;
+import static jdk.javadoc.internal.doclint.Messages.Group.REFERENCE;
+import static jdk.javadoc.internal.doclint.Messages.Group.SYNTAX;
 
 
 /**

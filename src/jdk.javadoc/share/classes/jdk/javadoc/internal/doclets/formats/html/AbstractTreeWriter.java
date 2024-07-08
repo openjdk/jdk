@@ -25,18 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import javax.lang.model.element.TypeElement;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree.Hierarchy;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.html.Content;
-
-import javax.lang.model.element.TypeElement;
-import java.util.Collection;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
 
 
 /**

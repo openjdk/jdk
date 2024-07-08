@@ -94,20 +94,10 @@ import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererContext;
 import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererFactory;
 import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
 import jdk.internal.org.commonmark.renderer.html.HtmlWriter;
-
-import jdk.javadoc.internal.html.ContentBuilder;
-import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
-import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.html.RawHtml;
-import jdk.javadoc.internal.html.Script;
-import jdk.javadoc.internal.html.HtmlTag;
-import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
@@ -127,6 +117,15 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguag
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
+import jdk.javadoc.internal.html.Script;
+import jdk.javadoc.internal.html.Text;
+import jdk.javadoc.internal.html.TextBuilder;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
 import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;

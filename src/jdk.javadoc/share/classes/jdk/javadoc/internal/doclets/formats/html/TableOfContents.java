@@ -24,15 +24,15 @@
  */
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.ListBuilder;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.Content;
 
 /**
  * A class used by various {@link HtmlDocletWriter} subclasses to build tables of contents.

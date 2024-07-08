@@ -34,9 +34,9 @@ import com.sun.source.doctree.LiteralTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.Content;
 
 /**
  * An inline taglet used to denote literal text, possibly in monospace font.

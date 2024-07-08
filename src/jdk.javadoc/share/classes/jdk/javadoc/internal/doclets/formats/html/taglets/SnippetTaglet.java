@@ -49,21 +49,21 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.HtmlTag;
-import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A taglet that represents the {@code @snippet} tag.

@@ -36,11 +36,11 @@ import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
-import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.HtmlTag;
-import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate serialized form for serializable fields.

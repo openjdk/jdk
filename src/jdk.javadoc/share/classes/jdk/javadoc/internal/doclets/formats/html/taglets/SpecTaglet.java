@@ -41,16 +41,16 @@ import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.TextBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A taglet that represents the {@code @spec} tag.
