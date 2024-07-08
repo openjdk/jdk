@@ -768,25 +768,25 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == nullptr) {
-    obj = _old_gen->promote(old, s);
+    obj = _old_gen->allocate_for_promotion(old, s);
     if (obj == nullptr) {
       handle_promotion_failure(old);
       return old;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
-
     new_obj_is_tenured = true;
-  } else {
-    // Prefetch beyond obj
-    const intx interval = PrefetchCopyIntervalInBytes;
-    Prefetch::write(obj, interval);
+  }
 
-    // Copy obj
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+  // Prefetch beyond obj
+  const intx interval = PrefetchCopyIntervalInBytes;
+  Prefetch::write(obj, interval);
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+  // Copy obj
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
 
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (!new_obj_is_tenured) {
     // Increment age if obj still in new generation
     obj->incr_age();
     age_table()->add(obj, s);
