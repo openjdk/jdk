@@ -957,21 +957,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   a) We experienced a GC that had good progress, or
       //   b) We experienced at least one Full GC (whether or not it had good progress)
       //
-      // TODO: Rather than require a Full GC before throwing OOMError, it might be more appropriate for handle_alloc_failure()
-      //       to trigger a concurrent GLOBAL GC, and throw OOMError if we cannot allocate even after GLOBAL GC has finished.
-      //       There is no "perfect" solution here:
-      //
-      //        1. As currently implemented, there may be a race between multiple allocating threads, both attempting
-      //           to allocate very large objects.  The first thread to retry its allocation might succeed and the second
-      //           thread to retry its allocation might fail (because the first thread consumed the newly available memory).
-      //           So the second thread experiences OOMError even through another GC would have reclaimed the memory it wanted
-      //           to allocate.
-      //        2. A GLOBAL GC won't necessarily reclaim all garbage.  Following a concurrent Generational GLOBAL GC, we may
-      //           need to perform multiple concurrent mixed evacuations in order to reclaim all of the dead memory identified
-      //           by the GLOBAL GC mark.  However, the first evacuation performed by the GLOBAL GC will normally reclaim
-      //           a significant amount of garbage (as guided by garbage first heuristic).  If this is not enough memory
-      //           to satisfy the pending allocation request, we are in "dire straits", and a fail-fast OOMError is probably
-      //           the better remediation than repeated attempts to allocate following repeated GC cycles.
+      // TODO: Consider GLOBAL GC rather than Full GC to remediate OOM condition: https://bugs.openjdk.org/browse/JDK-8335910
 
       size_t original_count = shenandoah_policy()->full_gc_count();
       while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
