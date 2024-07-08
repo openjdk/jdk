@@ -27,10 +27,10 @@ package sun.jvm.hotspot.gc.g1;
 import java.io.PrintStream;
 import sun.jvm.hotspot.gc.g1.G1HeapRegion;
 
-public class PrintRegionClosure implements HeapRegionClosure {
+public class G1PrintRegionClosure implements G1HeapRegionClosure {
     private PrintStream tty;
 
-    public PrintRegionClosure(PrintStream tty) {
+    public G1PrintRegionClosure(PrintStream tty) {
         this.tty = tty;
     }
 

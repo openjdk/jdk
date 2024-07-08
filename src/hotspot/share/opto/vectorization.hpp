@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/node.hpp"
+#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"
@@ -763,9 +763,9 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(const Node_List* p) const {
-    for (uint k = 0; k < p->size(); k++) {
-      MemNode* mem = p->at(k)->as_Mem();
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
+    for (int i = 0; i < nodes.length(); i++) {
+      MemNode* mem = nodes.at(i)->as_Mem();
       VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
@@ -1321,14 +1321,6 @@ private:
                                   const int q,
                                   const int r) const;
 #endif
-};
-
-struct VTransformBoolTest {
-  const BoolTest::mask _mask;
-  const bool _is_negated;
-
-  VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
-    _mask(mask), _is_negated(is_negated) {}
 };
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP
