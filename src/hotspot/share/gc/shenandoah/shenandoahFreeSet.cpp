@@ -909,8 +909,7 @@ inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-  const size_t num_regions = _heap->num_regions();
-  ShenandoahHeapRegion *trash_regions[num_regions];
+  auto** trash_regions = NEW_RESOURCE_ARRAY(ShenandoahHeapRegion*, _heap->num_regions());
   size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -934,6 +933,7 @@ void ShenandoahFreeSet::recycle_trash() {
     }
     assert(j == count, "Must be");
   }
+  FREE_RESOURCE_ARRAY(ShenandoahHeapRegion*, trash_regions, _heap->num_regions());
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
