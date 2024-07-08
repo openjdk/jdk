@@ -209,9 +209,8 @@ class DefNewGeneration: public Generation {
     return result;
   }
 
-  HeapWord* allocate(size_t word_size, bool is_tlab);
-
-  HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  HeapWord* allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   void gc_epilogue(bool full);
 
@@ -227,7 +226,7 @@ class DefNewGeneration: public Generation {
 
   bool collect(bool clear_all_soft_refs);
 
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
+  HeapWord* expand_and_allocate(size_t size);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }

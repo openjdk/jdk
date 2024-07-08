@@ -130,10 +130,10 @@ public:
   void complete_loaded_archive_space(MemRegion archive_space);
   inline void update_for_block(HeapWord* start, HeapWord* end);
 
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  inline HeapWord* allocate(size_t word_size);
+  inline HeapWord* par_allocate(size_t word_size);
 
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
+  HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();
