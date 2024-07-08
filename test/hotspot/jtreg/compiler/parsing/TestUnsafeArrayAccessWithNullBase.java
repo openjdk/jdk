@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8320308
- * @summary C2 LibraryCallKit::inline_unsafe_access for Unsafe::getShortUnaligned with argument profile information
+ * @summary Unsafe::getShortUnaligned with base null hidden behind CheckCastPP nodes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/othervm
