@@ -909,7 +909,6 @@ inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-  const jlong start = os::javaTimeNanos();
   ShenandoahHeapRegion* trash_regions[_heap->num_regions()];
   size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
@@ -918,31 +917,20 @@ void ShenandoahFreeSet::recycle_trash() {
       trash_regions[count++] = r;
     }
   }
-  const jlong time1 = os::javaTimeNanos();
-  jlong recycling_ns = 0;
-  jlong yield_ns = 0;
   if (count > 0) {
     size_t i = 0, j = 0;
     while (i < count) {
       i += _free_set_recycle_batch_size;
-      jlong batch_start = os::javaTimeNanos();
       {
         ShenandoahHeapLocker locker(_heap->lock());
-        for ( ; j < i && j < count ; j++) {
+        for (; j < i && j < count; j++) {
           try_recycle_trashed(trash_regions[j]);
         }
       }
-      jlong batch_end = os::javaTimeNanos();
-      if (i< count) {
+      if (i < count) {
         os::naked_yield(); //Yield to allow allocators to take the lock
       }
-      jlong return_from_yield = os::javaTimeNanos();
-      recycling_ns += (batch_end - batch_start);
-      yield_ns += (return_from_yield - batch_end);
     }
-    const jlong time2 = os::javaTimeNanos();
-    log_info(gc)("Recycled %li regions in %ldns, break down: filtering -> %ld, recycling -> %ld, yields -> %ld.",
-      count, time2 - start, time1 - start, recycling_ns, yield_ns);
   }
 }
 
