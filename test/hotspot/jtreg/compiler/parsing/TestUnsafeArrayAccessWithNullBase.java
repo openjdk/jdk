@@ -32,8 +32,8 @@
  * -XX:+IgnoreUnrecognizedVMOptions
  * -XX:TypeProfileLevel=222
  * -XX:+AlwaysIncrementalInline
- * -XX:CompileCommand=compileonly,compiler.loopopts.UnsafeArrayAccess::test*
- * -XX:-TieredCompilation compiler.loopopts.UnsafeArrayAccess
+ * -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
+ * -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
  */
 
 package compiler.parsing;
