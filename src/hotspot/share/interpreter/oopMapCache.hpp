@@ -89,9 +89,8 @@ class InterpreterOopMap: ResourceObj {
   unsigned short _bci;            // the bci    for which the mask is valid
 
  protected:
-  DEBUG_ONLY(bool _used;)
-  int             _num_oops;
-  intptr_t        _bit_mask[N];   // the bit mask if
+  int            _num_oops;
+  intptr_t       _bit_mask[N];    // the bit mask if
                                   // mask_size <= small_mask_limit,
                                   // ptr to bit mask otherwise
                                   // "protected" so that sub classes can
@@ -133,7 +132,7 @@ class InterpreterOopMap: ResourceObj {
   // InterpreterOopMap.  If the _bit_mask[0] in "src" points to
   // allocated space (i.e., the bit mask was too large to hold
   // in-line), allocate the space from the C heap.
-  void copy_from(OopMapCacheEntry* src);
+  void copy_from(const OopMapCacheEntry* src);
 
   void iterate_oop(OffsetClosure* oop_closure) const;
   void print() const;

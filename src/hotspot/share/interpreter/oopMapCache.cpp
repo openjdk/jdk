@@ -174,13 +174,11 @@ class VerifyClosure : public OffsetClosure {
 
 InterpreterOopMap::InterpreterOopMap() {
   initialize();
-  DEBUG_ONLY(_used = false;)
 }
 
 InterpreterOopMap::~InterpreterOopMap() {
-  if (mask_size() > small_mask_limit) {
-    assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
-           "The bit mask should be allocated from the C heap");
+  if (has_valid_mask() && mask_size() > small_mask_limit) {
+    assert(_bit_mask[0] != 0, "should have pointer to C heap");
     FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
   }
 }
@@ -402,10 +400,10 @@ void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
 
 // Implementation of OopMapCache
 
-void InterpreterOopMap::copy_from(OopMapCacheEntry* src) {
+void InterpreterOopMap::copy_from(const OopMapCacheEntry* src) {
   // The expectation is that this InterpreterOopMap is recently created
   // and empty. It is used to get a copy of a cached entry.
-  assert(!_used, "InterpreterOopMap object can only be filled once");
+  assert(!has_valid_mask(), "InterpreterOopMap object can only be filled once");
   assert(src->has_valid_mask(), "Cannot copy entry with an invalid mask");
 
   set_method(src->method());
@@ -416,14 +414,11 @@ void InterpreterOopMap::copy_from(OopMapCacheEntry* src) {
 
   // Is the bit mask contained in the entry?
   if (src->mask_size() <= small_mask_limit) {
-    memcpy((void *)_bit_mask, (void *)src->_bit_mask,
-      mask_word_size() * BytesPerWord);
+    memcpy(_bit_mask, src->_bit_mask, mask_word_size() * BytesPerWord);
   } else {
     _bit_mask[0] = (uintptr_t) NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
-    assert(_bit_mask[0] != 0, "bit mask was not allocated");
     memcpy((void*) _bit_mask[0], (void*) src->_bit_mask[0], mask_word_size() * BytesPerWord);
   }
-  DEBUG_ONLY(_used = true);
 }
 
 inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int bci) const {
