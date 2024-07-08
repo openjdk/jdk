@@ -514,7 +514,7 @@ inline jlong BaseCountedLoopNode::stride_con() const {
 class LoopLimitNode : public Node {
   enum { Init=1, Limit=2, Stride=3 };
  public:
-  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(0,init,limit,stride) {
+  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(nullptr,init,limit,stride) {
     // Put it on the Macro nodes list to optimize during macro nodes expansion.
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -607,7 +607,7 @@ public:
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
-    : _parent(0), _next(0), _child(0),
+    : _parent(nullptr), _next(nullptr), _child(nullptr),
       _head(head), _tail(tail),
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
@@ -1339,9 +1339,10 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                          Deoptimization::DeoptReason reason, int opcode,
-                                          bool rewire_uncommon_proj_phi_inputs = false);
+  IfTrueNode* create_new_if_for_predicate(
+      ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
+      bool rewire_uncommon_proj_phi_inputs = false
+      NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1382,9 +1383,9 @@ public:
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
-  Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, int stride_con, Node* value,
-                                                        bool is_template);
+  Node* add_range_check_elimination_assertion_predicate(
+      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
+      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();

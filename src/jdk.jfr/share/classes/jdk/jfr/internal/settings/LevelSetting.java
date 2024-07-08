@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jfr.internal.Type;
 @MetadataDefinition
 @Label("Level")
 @Name(Type.SETTINGS_PREFIX + "Level")
-public class LevelSetting extends JDKSettingControl {
+public final class LevelSetting extends JDKSettingControl {
     private final PlatformEventType eventType;
     private final List<String> levels;
     private String value;

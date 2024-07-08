@@ -44,8 +44,6 @@ import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Name;
 import jdk.jfr.Period;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;

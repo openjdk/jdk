@@ -1733,7 +1733,7 @@ void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_compa
     }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func);
     }
     // Reset method ordering
     if (set_idnums) {
