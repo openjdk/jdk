@@ -2357,6 +2357,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aescrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
@@ -2367,6 +2368,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesem_vv(res, vtmp2);
     __ vaesem_vv(res, vzero);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
@@ -2377,6 +2379,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesem_vv(res, vtmp2);
     __ vaesem_vv(res, vzero);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
@@ -2462,6 +2465,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
     generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
@@ -2473,6 +2477,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vxor_vv(res, res, vtmp2);
     __ vaesdm_vv(res, vzero);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
@@ -2484,6 +2489,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vxor_vv(res, res, vtmp2);
     __ vaesdm_vv(res, vzero);
 
+    // Note: the following function performs key += 2*16
     generate_vle32_pack2(key, vtmp1, vtmp2);
     generate_rev8_pack2(vtmp1, vtmp2);
 
