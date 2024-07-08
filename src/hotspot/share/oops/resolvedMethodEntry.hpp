@@ -82,6 +82,21 @@ class ResolvedMethodEntry {
   bool _has_table_index;
 #endif
 
+  void copy_from(const ResolvedMethodEntry& other) {
+    _method = other._method;
+    _entry_specific = other._entry_specific;
+    _cpool_index = other._cpool_index;
+    _number_of_parameters = other._number_of_parameters;
+    _tos_state = other._tos_state;
+    _flags = other._flags;
+    _bytecode1 = other._bytecode1;
+    _bytecode2 = other._bytecode2;
+#ifdef ASSERT
+    _has_interface_klass = other._has_interface_klass;
+    _has_table_index = other._has_table_index;
+#endif
+  }
+
   // Constructors
   public:
     ResolvedMethodEntry(u2 cpi) :
@@ -98,6 +113,16 @@ class ResolvedMethodEntry {
       }
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
+
+    ResolvedMethodEntry(const ResolvedMethodEntry& other) {
+      copy_from(other);
+    }
+
+    ResolvedMethodEntry& operator=(const ResolvedMethodEntry& other) {
+      copy_from(other);
+      return *this;
+    }
+
 
   // Bit shift to get flags
   enum {

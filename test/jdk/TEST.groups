@@ -624,7 +624,6 @@ jdk_security_manual_no_input = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
-    com/sun/security/auth/callback/TextCallbackHandler/Default.java \
     com/sun/security/auth/callback/TextCallbackHandler/Password.java \
     com/sun/security/sasl/gsskerb/AuthOnly.java \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
