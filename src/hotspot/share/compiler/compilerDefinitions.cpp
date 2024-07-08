@@ -589,6 +589,11 @@ void CompilerConfig::ergo_initialize() {
 
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
+
+  if (EnableJVMCI && UseObjectMonitorTable) {
+    warning("EnableJVMCI and UseObjectMonitorTable are not compatible; disabling UseObjectMonitorTable");
+    FLAG_SET_ERGO(UseObjectMonitorTable, false);
+  }
 #endif
 
   if (UseOnStackReplacement && !UseLoopCounter) {
