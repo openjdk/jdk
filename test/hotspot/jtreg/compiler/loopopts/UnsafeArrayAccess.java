@@ -70,7 +70,7 @@ public class UnsafeArrayAccess {
 
     // use a helper to delay inlining of UNSAFE.getShortUnaligned
     public static int helperLarge(Object array, boolean run) {
-        // idea: offset >= os::vm_page_size() LibraryCallKit::classify_unsafe_addr => Type::AnyPtr
+        // offset >= os::vm_page_size(): LibraryCallKit::classify_unsafe_addr returns Type::AnyPtr
         return run ? UNSAFE.getShortUnaligned(array, 1_049_000) : 0; // after warmup CheckCastPP: speculative=byte[int:>=0]
     }
 
@@ -83,7 +83,7 @@ public class UnsafeArrayAccess {
     // use a helper to delay inlining of UNSAFE.getShortUnaligned
     // warmup adds argument profile information for array: CheckCastPP with type non null
     public static int helperSmall(Object array, boolean run) {
-        // idea: 0 <= offset < os::vm_page_size()  LibraryCallKit::classify_unsafe_addr => Type::OopPtr
+        // 0 <= offset < os::vm_page_size():  LibraryCallKit::classify_unsafe_addr returns Type::OopPtr
         return run ? UNSAFE.getShortUnaligned(array, 1) : 0; // after warmup CheckCastPP: speculative=byte[int:>=0]
     }
 
