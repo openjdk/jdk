@@ -26,7 +26,7 @@
  * @bug 8335269
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations
- * @modules java.base/java.lang:+open
+ * @library /test/lib
  * @run junit/othervm ThreadYield
  */
 
@@ -35,28 +35,29 @@
  * @bug 8335269
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations
- * @modules java.base/java.lang:+open
+ * @library /test/lib
  * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadYield
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadYield {
     static void foo(AtomicBoolean done) {
-        synchronized (done) {
-            while (!done.get()) {
-                Thread.yield();
-            }
+        while (!done.get()) {
+            Thread.yield();
         }
     }
 
     @Test
     void testThreadYieldPolls() throws Exception {
         AtomicBoolean done = new AtomicBoolean();
-        var vthread = Thread.ofVirtual().start(() -> foo(done));
+        var vthread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> foo(done));
+        });
         Thread.sleep(5000);
         done.set(true);
         vthread.join();
@@ -64,7 +65,9 @@ class ThreadYield {
         System.out.println("First vthread done");
 
         AtomicBoolean done2 = new AtomicBoolean();
-        vthread = Thread.ofVirtual().start(() -> foo(done2));
+        vthread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> foo(done2));
+        });
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < 5000) {
             Thread.sleep(250);
