@@ -899,7 +899,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
+inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
   if (r->is_trash()) {
     _heap->decrease_used(r->used());
     r->recycle();
@@ -909,14 +909,19 @@ void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-
+  ShenandoahHeapRegion* trash_regions[_heap->num_regions()];
+  size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_trash()) {
-      ShenandoahHeapLocker locker(_heap->lock());
-      try_recycle_trashed(r);
+      trash_regions[count++] = r;
     }
-    SpinPause(); // allow allocators to take the lock
+  }
+  if (count > 0) {
+    ShenandoahHeapLocker locker(_heap->lock());
+    for (size_t i = 0; i < count; i++) {
+      try_recycle_trashed(trash_regions[i]);
+    }
   }
 }
 
