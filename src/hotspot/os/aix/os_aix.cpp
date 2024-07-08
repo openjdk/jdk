@@ -1807,7 +1807,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory_without_uncommit(char *addr, size_t bytes) {
 }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
