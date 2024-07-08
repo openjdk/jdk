@@ -120,8 +120,6 @@ public:
 
   virtual void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
-    // FIXME: why would this not be true? Exception should be installed
-    // before initial handshake returns. This should be an assert (but it can fail)
     bool ignored;
     if (is_accessing_session(jt, _session.resolve(), ignored)) {
       // Throw exception to unwind out from the scoped access
