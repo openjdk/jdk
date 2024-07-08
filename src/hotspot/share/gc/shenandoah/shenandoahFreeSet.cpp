@@ -26,9 +26,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-
-#include <vector>
-
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -912,14 +909,15 @@ inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-  std::vector<ShenandoahHeapRegion*> trash_regions(_heap->num_regions());
+  const size_t num_regions = _heap->num_regions();
+  ShenandoahHeapRegion *trash_regions[num_regions];
+  size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_trash()) {
-      trash_regions.push_back(r);
+      trash_regions[count++] = r;
     }
   }
-  const size_t count = trash_regions.size();
   if (count != 0) {
     size_t i = 0, j = 0;
     while (i < count) {
