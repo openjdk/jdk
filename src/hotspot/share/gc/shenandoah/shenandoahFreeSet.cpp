@@ -919,15 +919,30 @@ void ShenandoahFreeSet::recycle_trash() {
     }
   }
   const jlong time1 = os::javaTimeNanos();
+  jlong recycling_ns = 0;
+  jlong yield_ns = 0;
   if (count > 0) {
-    ShenandoahHeapLocker locker(_heap->lock());
-    const jlong time2 = os::javaTimeNanos();
-    for (size_t i = 0; i < count; i++) {
-      try_recycle_trashed(trash_regions[i]);
+    size_t i = 0, j = 0;
+    while (i < count) {
+      i += _free_set_recycle_batch_size;
+      jlong batch_start = os::javaTimeNanos();
+      {
+        ShenandoahHeapLocker locker(_heap->lock());
+        for ( ; j < i && j < count ; j++) {
+          try_recycle_trashed(trash_regions[j]);
+        }
+      }
+      jlong batch_end = os::javaTimeNanos();
+      if (i< count) {
+        os::naked_yield(); //Yield to allow allocators to take the lock
+      }
+      jlong return_from_yield = os::javaTimeNanos();
+      recycling_ns += (batch_end - batch_start);
+      yield_ns += (return_from_yield - batch_end);
     }
-    const jlong time3 = os::javaTimeNanos();
-    log_info(gc)("Recycled %li regions in %ldns, break down: filtering -> %ld, taking heap lock -> %ld, recycling -> %ld.",
-      count, time3 - start, time1 - start, time2 - time1, time3 - time2 );
+    const jlong time2 = os::javaTimeNanos();
+    log_info(gc)("Recycled %li regions in %ldns, break down: filtering -> %ld, recycling -> %ld, yields -> %ld.",
+      count, time2 - start, time1 - start, recycling_ns, yield_ns);
   }
 }
 
