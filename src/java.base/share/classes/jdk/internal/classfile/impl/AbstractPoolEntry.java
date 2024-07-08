@@ -68,7 +68,7 @@ public abstract sealed class AbstractPoolEntry {
      */
 
     private static final int TAG_SMEAR = 0x13C4B2D1;
-    private static final int NON_ZERO = 0x40000000;
+    static final int NON_ZERO = 0x40000000;
 
     public static int hash1(int tag, int x1) {
         return (tag * TAG_SMEAR + x1) | NON_ZERO;
