@@ -235,7 +235,6 @@ bool PSScavenge::invoke() {
   assert(!ParallelScavengeHeap::heap()->is_stw_gc_active(), "not reentrant");
 
   ParallelScavengeHeap* const heap = ParallelScavengeHeap::heap();
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsSTWGCActiveMark mark;
 
   const bool scavenge_done = PSScavenge::invoke_no_policy();
@@ -250,8 +249,7 @@ bool PSScavenge::invoke() {
 
   if (need_full_gc) {
     GCCauseSetter gccs(heap, GCCause::_adaptive_size_policy);
-    SoftRefPolicy* srp = heap->soft_ref_policy();
-    const bool clear_all_softrefs = srp->should_clear_all_soft_refs();
+    const bool clear_all_softrefs = heap->soft_ref_policy()->should_clear_all_soft_refs();
 
     full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
   }

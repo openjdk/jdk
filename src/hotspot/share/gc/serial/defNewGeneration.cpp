@@ -834,17 +834,6 @@ void DefNewGeneration::reset_scratch() {
   }
 }
 
-bool DefNewGeneration::collection_attempt_is_safe() {
-  if (!to()->is_empty()) {
-    log_trace(gc)(":: to is not empty ::");
-    return false;
-  }
-  if (_old_gen == nullptr) {
-    _old_gen = SerialHeap::heap()->old_gen();
-  }
-  return _old_gen->promotion_attempt_is_safe(used());
-}
-
 void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters

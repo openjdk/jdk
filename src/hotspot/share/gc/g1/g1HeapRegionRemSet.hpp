@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 class G1CardSetMemoryManager;
 class outputStream;
 
-class HeapRegionRemSet : public CHeapObj<mtGC> {
+class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
 
   // A set of nmethods whose code contains pointers into
@@ -58,8 +58,8 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   void clear_fcc();
 
 public:
-  HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
-  ~HeapRegionRemSet() { delete _card_set;}
+  G1HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
+  ~G1HeapRegionRemSet() { delete _card_set;}
 
   bool cardset_is_empty() const {
     return _card_set->is_empty();
@@ -143,7 +143,7 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return _card_set->mem_size()
+    return _card_set.mem_size()
            + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
            + code_roots_mem_size();
   }

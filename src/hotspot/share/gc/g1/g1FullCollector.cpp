@@ -164,7 +164,7 @@ G1FullCollector::~G1FullCollector() {
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
-class PrepareRegionsClosure : public HeapRegionClosure {
+class PrepareRegionsClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
 
 public:
