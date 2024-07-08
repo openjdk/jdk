@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 import jdk.test.whitebox.WhiteBox;
 
 public final class Settings {
-
-    public boolean usesAllocationGuards = WhiteBox.getWhiteBox().getBooleanVMFlag("MetaspaceGuardAllocations");
 
     final static long rootChunkWordSize = 2048 * 1024;
 

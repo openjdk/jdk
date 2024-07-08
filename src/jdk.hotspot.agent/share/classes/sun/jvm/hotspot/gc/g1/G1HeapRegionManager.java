@@ -37,9 +37,9 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegionManager.
+// Mirror class for G1HeapRegionManager.
 
-public class HeapRegionManager extends VMObject {
+public class G1HeapRegionManager extends VMObject {
     // G1HeapRegionTable _regions
     private static long regionsFieldOffset;
 
@@ -52,7 +52,7 @@ public class HeapRegionManager extends VMObject {
     }
 
     private static synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("HeapRegionManager");
+        Type type = db.lookupType("G1HeapRegionManager");
 
         regionsFieldOffset = type.getField("_regions").getOffset();
     }
@@ -74,7 +74,7 @@ public class HeapRegionManager extends VMObject {
         return regions().heapRegionIterator(length());
     }
 
-    public HeapRegionManager(Address addr) {
+    public G1HeapRegionManager(Address addr) {
         super(addr);
     }
 
