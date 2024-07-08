@@ -111,8 +111,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     // Helper used by both humongous objects and when chunking an object larger than the
     // G1RebuildRemSetChunkSize. The heap region is needed check whether the region has
     // been reclaimed during yielding.
-    // Returns true if marking has been aborted or false if completed.
-    bool scan_large_object(G1HeapRegion* hr, const oop obj, MemRegion scan_range) {
+    void scan_object_in_chunks(G1HeapRegion* hr, const oop obj, MemRegion scan_range) {
       HeapWord* start = scan_range.start();
       HeapWord* limit = scan_range.end();
       do {
@@ -122,20 +121,14 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         // Update processed words and yield, for humongous objects we will yield
         // after each chunk.
         add_processed_words(mr.word_size());
-        bool mark_aborted = yield_if_necessary();
-        if (mark_aborted) {
-          return true;
-        } else if (!should_rebuild_or_scrub(hr)) {
-          // We need to check should_rebuild_or_scrub() again because the region might
-          // have been reclaimed during above yield/safepoint.
-          log_trace(gc, marking)("Rebuild aborted for reclaimed region: %u", hr->hrm_index());
-          return false;
+
+        if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+          return;
         }
 
         // Step to next chunk of the large object.
         start = mr.end();
       } while (start < limit);
-      return false;
     }
 
     // Scan for references into regions that need remembered set update for the given
@@ -147,19 +140,12 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       if (!_should_rebuild_remset) {
         // Not rebuilding, just step to next object.
         add_processed_words(obj_size);
-      } else if (obj_size > ProcessingYieldLimitInWords) {
-        // Large object, needs to be chunked to avoid stalling safepoints.
-        MemRegion mr(current, obj_size);
-        scan_large_object(hr, obj, mr);
-        // No need to add to _processed_words, this is all handled by the above call;
-        // we also ignore the marking abort result of scan_large_object - we will check
-        // again right afterwards.
       } else {
-        // Object smaller than yield limit, process it fully.
-        obj->oop_iterate(&_rebuild_closure);
-        // Update how much we have processed. Yield check in main loop
-        // will handle this case.
-        add_processed_words(obj_size);
+        MemRegion mr(current, obj_size);
+        scan_object_in_chunks(hr, obj, mr);
+        // No need to add to _processed_words, this is all handled by the above call;
+        // we also ignore the marking abort result of scan_object_in_chunks - we will check
+        // again right afterwards.
       }
 
       return obj_size;
@@ -176,91 +162,59 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       return scrub_end;
     }
 
-    // Scan the given region from bottom to parsable_bottom. Returns whether marking has
-    // been aborted.
-    bool scan_and_scrub_to_pb(G1HeapRegion* hr, HeapWord* start, HeapWord* const limit) {
-
-      while (start < limit) {
-        if (_bitmap->is_marked(start)) {
-          //  Live object, need to scan to rebuild remembered sets for this object.
-          start += scan_object(hr, start);
-        } else {
-          // Found dead object (which klass has potentially been unloaded). Scrub to next
-          // marked object and continue.
-          start = scrub_to_next_live(hr, start, limit);
-        }
-
-        bool mark_aborted = yield_if_necessary();
-        if (mark_aborted) {
-          return true;
-        } else if (!should_rebuild_or_scrub(hr)) {
-          // We need to check should_rebuild_or_scrub() again because the region might
-          // have been reclaimed during above yield/safepoint.
-          log_trace(gc, marking)("Scan and scrub aborted for reclaimed region: %u", hr->hrm_index());
-          return false;
-        }
-      }
-      return false;
-    }
-
-    // Scan the given region from parsable_bottom to tars. Returns whether marking has
-    // been aborted.
-    bool scan_from_pb_to_tars(G1HeapRegion* hr, HeapWord* start, HeapWord* const limit) {
-
-      while (start < limit) {
-        start += scan_object(hr, start);
-        // Avoid stalling safepoints and stop iteration if mark cycle has been aborted.
-        bool mark_aborted = yield_if_necessary();
-        if (mark_aborted) {
-          return true;
-        } else if (!should_rebuild_or_scrub(hr)) {
-          // We need to check should_rebuild_or_scrub() again because the region might
-          // have been reclaimed during above yield/safepoint.
-          log_trace(gc, marking)("Scan aborted for reclaimed region: %u", hr->hrm_index());
-          return false;
-        }
-      }
-      return false;
-    }
-
-    // Scan and scrub the given region to tars. Returns whether marking has
-    // been aborted.
-    bool scan_and_scrub_region(G1HeapRegion* hr, HeapWord* const pb) {
+    // Scan and scrub the given region to tars.
+    void scan_and_scrub_region(G1HeapRegion* hr, HeapWord* const pb) {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
                              HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(_cm->top_at_mark_start(hr)));
 
-      if (scan_and_scrub_to_pb(hr, hr->bottom(), pb)) {
-        log_trace(gc, marking)("Scan and scrub aborted for region: %u", hr->hrm_index());
-        return true;
+      {
+        // Step 1: Scan the given region from bottom to parsable_bottom.
+        HeapWord* start = hr->bottom();
+        HeapWord* limit = pb;
+        while (start < limit) {
+          if (_bitmap->is_marked(start)) {
+            //  Live object, need to scan to rebuild remembered sets for this object.
+            start += scan_object(hr, start);
+          } else {
+            // Found dead object (which klass has potentially been unloaded). Scrub to next
+            // marked object and continue.
+            start = scrub_to_next_live(hr, start, limit);
+          }
+
+          if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+            return;
+          }
+        }
       }
 
-      // Yielding during scrubbing and scanning might have reclaimed the region, so need to
-      // re-check after above.
-      if (!should_rebuild_or_scrub(hr)) {
-        return false;
-      }
       // Scrubbing completed for this region - notify that we are done with it, resetting
       // pb to bottom.
       hr->note_end_of_scrubbing();
 
-      // Rebuild from TAMS (= parsable_bottom) to TARS.
-      if (scan_from_pb_to_tars(hr, pb, _cm->top_at_rebuild_start(hr))) {
-        log_trace(gc, marking)("Rebuild aborted for region: %u (%s)", hr->hrm_index(), hr->get_short_type_str());
-        return true;
+      {
+        // Step 2: Rebuild from TAMS (= parsable_bottom) to TARS.
+        HeapWord* start = pb;
+        HeapWord* limit = _cm->top_at_rebuild_start(hr);
+        while (start < limit) {
+          start += scan_object(hr, start);
+
+          if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+            return;
+          }
+        }
       }
-      return false;
     }
 
     // Scan a humongous region for remembered set updates. Scans in chunks to avoid
-    // stalling safepoints. Returns whether the concurrent marking phase has been aborted.
-    bool scan_humongous_region(G1HeapRegion* hr, HeapWord* const pb) {
+    // stalling safepoints.
+    void scan_humongous_region(G1HeapRegion* hr, HeapWord* const pb) {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       if (!_should_rebuild_remset) {
         // When not rebuilding there is nothing to do for humongous objects.
-        return false;
+        return;
       }
 
       // At this point we should only have live humongous objects, that
@@ -278,12 +232,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       HeapWord* humongous_end = hr->humongous_start_region()->bottom() + humongous->size();
       MemRegion mr(hr->bottom(), MIN2(hr->top(), humongous_end));
 
-      bool mark_aborted = scan_large_object(hr, humongous, mr);
-      if (mark_aborted) {
-        log_trace(gc, marking)("Rebuild aborted for region: %u (%s)", hr->hrm_index(), hr->get_short_type_str());
-        return true;
-      }
-      return false;
+      scan_object_in_chunks(hr, humongous, mr);
     }
 
   public:
@@ -312,17 +261,16 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         return false;
       }
 
-      bool mark_aborted;
       if (hr->needs_scrubbing()) {
         // This is a region with potentially unparsable (dead) objects.
-        mark_aborted = scan_and_scrub_region(hr, pb);
+        scan_and_scrub_region(hr, pb);
       } else {
         assert(hr->is_humongous(), "must be, but %u is %s", hr->hrm_index(), hr->get_short_type_str());
         // No need to scrub humongous, but we should scan it to rebuild remsets.
-        mark_aborted = scan_humongous_region(hr, pb);
+        scan_humongous_region(hr, pb);
       }
 
-      return mark_aborted;
+      return _cm->has_aborted();
     }
   };
 
