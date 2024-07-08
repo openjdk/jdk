@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8320308
- * @summary C2 LibraryCallKit::inline_unsafe_access
+ * @summary C2 LibraryCallKit::inline_unsafe_access for Unsafe::getShortUnaligned with argument profile information
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/othervm
@@ -32,7 +32,7 @@
  * -XX:+IgnoreUnrecognizedVMOptions
  * -XX:TypeProfileLevel=222
  * -XX:+AlwaysIncrementalInline
- * -XX:CompileCommand=compileonly,compiler.loopopts.UnsafeArrayAccess::test
+ * -XX:CompileCommand=compileonly,compiler.loopopts.UnsafeArrayAccess::test*
  * -XX:-TieredCompilation compiler.loopopts.UnsafeArrayAccess
  */
 
@@ -43,35 +43,75 @@ import jdk.internal.misc.Unsafe;
 
 public class UnsafeArrayAccess {
 
+    /*
+    Trigger bug when handling Unsafe.getShortUnaligned with null checks and inlined methods.
+    The bug appears when the method is incrementally inlined and optimized based on the argument profile information.
+
+    Warmup Phase: By warming up with non-null values, the argument profile for the helper methods records non-null types.
+        - insert CheckCastPP: speculative=byte[int:>=0] for return of getSmall/getLarge
+        - insert CheckCastPP: speculative=byte[int:>=0] for argument `Object array` in helperSmall/helperLarge
+    Trigger Phase: Calling test causes LibraryCallKit::inline_unsafe_access(..) for Unsafe::getShortUnaligned to fail:
+        Reason: UNSAFE.getShortUnaligned(array, offset) is called with array=null,
+        but ConP null is now followed by two CheckCastPP with speculative=byte[int:>=0] in the graph
+        But since we only look one node level back, we conclude that base must be speculative=byte[int:>=0]
+    */
+
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    // Delay inlining
-    public static int helper(Object array, boolean run) {
-        return run ? UNSAFE.getShortUnaligned(array, 1) : 0;
+    private static final Object byteArray = new byte[1_050_000];
+
+    public static Object getLarge(boolean useNull) {
+        return useNull ? null : byteArray;
     }
 
-    public static int accessArray(boolean useNull, boolean run) {
-        Object array = get(useNull); // Make sure null is only visible after helper method was (incrementally) inlined and argument profile information was used (i.e., CheckCastPP nodes with spec type was added), see GraphKit::record_profiled_arguments_for_speculation/record_profiled_parameters_for_speculation -> GraphKit::record_profile_for_speculation
-        return helper(array, run);
+    public static Object getSmall(boolean useNull) {
+        return useNull ? null : new byte[10];
     }
 
-    public static Object get(boolean useNull) {
-        return useNull ? null : new byte[1];
+    // use a helper to delay inlining of UNSAFE.getShortUnaligned
+    public static int helperLarge(Object array, boolean run) {
+        // idea: offset >= os::vm_page_size() LibraryCallKit::classify_unsafe_addr => Type::AnyPtr
+        return run ? UNSAFE.getShortUnaligned(array, 1_049_000) : 0; // CheckCastPP: speculative=byte[int:>=0]
     }
 
-    public static int test(boolean run) {
-        return accessArray(true, run);
+    // warmup with useNull=false with argument profile helperLarge CheckCastPP with type non null
+    public static int accessLargeArray(boolean useNull, boolean run) {
+        Object array = getLarge(useNull); // CheckCastPP: speculative=byte[int:>=0]
+        // getLarge() ensures null is only visible after helperLarge was (incrementally) inlined
+        return helperLarge(array, run);
+    }
+
+    // use a helper to delay inlining of UNSAFE.getShortUnaligned
+    // warmup adds argument profile information for array: CheckCastPP with type non null
+    public static int helperSmall(Object array, boolean run) {
+        // idea: 0 <= offset < os::vm_page_size()  LibraryCallKit::classify_unsafe_addr => Type::OopPtr
+        return run ? UNSAFE.getShortUnaligned(array, 1) : 0; // CheckCastPP: speculative=byte[int:>=0]
+    }
+
+    public static int accessSmallArray(boolean useNull, boolean run) {
+        Object array = getSmall(useNull); // CheckCastPP: speculative=byte[int:>=0]
+        return helperSmall(array, run);
+    }
+
+    public static int test1(boolean run) {
+        return accessLargeArray(true, run);
+    }
+
+    public static int test2(boolean run) {
+        return accessSmallArray(true, run);
     }
 
     public static void main(String[] args) {
         // Warmup
         for (int i = 0; i < 100_000; i++) {
-            accessArray(false, true);
+            accessLargeArray(false, true);
+            accessSmallArray(false, true);
         }
 
         // Trigger compilation (we can't use -Xcomp because CompilationPolicy::is_mature will return false and we will not use profile info for arguments)
         for (int i = 0; i < 100_000; ++i) {
-            test(false); // Pass false here to *not* execute the unsafe access with null base (it's still compiled though)
+            //test1(false); // Pass false here to *not* execute the unsafe access with null base (it's still compiled though)
+            test2(false);
         }
     }
 }
