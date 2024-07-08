@@ -254,12 +254,11 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
 }
 
 class G1ConcurrentRefine::RemSetSamplingClosure : public G1HeapRegionClosure {
-  size_t _sampled_card_rs_length;
   size_t _sampled_code_root_rs_length;
 
 public:
-  explicit RemSetSamplingClosure(G1CollectionSet* cset) :
-    _cset(cset), _sampled_card_rs_length(0), _sampled_code_root_rs_length(0) {}
+  RemSetSamplingClosure() :
+    _sampled_code_root_rs_length(0) {}
 
   bool do_heap_region(G1HeapRegion* r) override {
     G1HeapRegionRemSet* rem_set = r->rem_set();
@@ -286,7 +285,7 @@ void G1ConcurrentRefine::adjust_young_list_target_length() {
   if (_policy->use_adaptive_young_list_length()) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1CollectionSet* cset = g1h->collection_set();
-    RemSetSamplingClosure cl{cset};
+    RemSetSamplingClosure cl;
     cset->iterate(&cl);
 
     size_t card_rs_length = g1h->young_regions_cardset()->occupied();

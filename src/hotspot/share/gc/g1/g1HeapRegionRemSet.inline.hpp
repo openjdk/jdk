@@ -108,7 +108,7 @@ public:
 
 template <class CardOrRangeVisitor>
 inline void G1HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
-  G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(&_card_set,
+  G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(_card_set,
                                                                                        cl,
                                                                                        _card_set->config()->log2_card_regions_per_heap_region(),
                                                                                        _card_set->config()->log2_cards_per_card_region());
@@ -136,12 +136,12 @@ void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
   _card_set->add_card(to_card(from));
 }
 
-bool HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
-  return _card_set.contains_card(to_card(from));
+bool G1HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
+  return _card_set->contains_card(to_card(from));
 }
 
-void HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
-  _card_set.print_info(st, to_card(from));
+void G1HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
+  _card_set->print_info(st, to_card(from));
 }
 
 #endif // SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP

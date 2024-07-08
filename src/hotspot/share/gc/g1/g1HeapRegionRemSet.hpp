@@ -143,8 +143,8 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return _card_set.mem_size()
-           + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
+    return _card_set->mem_size()
+           + (sizeof(G1HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
            + code_roots_mem_size();
   }
 
