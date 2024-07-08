@@ -1229,9 +1229,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _oops_do_mark_link          = nullptr;
   _compiled_ic_data           = nullptr;
 
-#if INCLUDE_RTM_OPT
-  _rtm_state                  = NoRTM;
-#endif
   _is_unloading_state         = 0;
   _state                      = not_installed;
 

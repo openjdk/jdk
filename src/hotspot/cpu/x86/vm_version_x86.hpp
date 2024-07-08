@@ -26,6 +26,7 @@
 #define CPU_X86_VM_VERSION_X86_HPP
 
 #include "runtime/abstract_vm_version.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
@@ -279,12 +280,21 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
-  union SefCpuid7Ecx1Eax {
+  union SefCpuid7SubLeaf1Eax {
     uint32_t value;
     struct {
       uint32_t             : 23,
                   avx_ifma : 1,
                            : 8;
+    } bits;
+  };
+
+  union SefCpuid7SubLeaf1Edx {
+    uint32_t value;
+    struct {
+      uint32_t       : 21,
+              apx_f  : 1,
+                     : 10;
     } bits;
   };
 
@@ -308,7 +318,9 @@ class VM_Version : public Abstract_VM_Version {
                opmask  : 1,
                zmm512  : 1,
                zmm32   : 1,
-                       : 24;
+                       : 11,
+               apx_f   : 1,
+                       : 12;
     } bits;
   };
 
@@ -319,8 +331,10 @@ protected:
 
   static bool _has_intel_jcc_erratum;
 
-  static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
-  static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
+  static address   _cpuinfo_segv_addr;     // address of instruction which causes SEGV
+  static address   _cpuinfo_cont_addr;     // address of instruction after the one which causes SEGV
+  static address   _cpuinfo_segv_addr_apx; // address of instruction which causes APX specific SEGV
+  static address   _cpuinfo_cont_addr_apx; // address of instruction after the one which causes APX specific SEGV
 
   /*
    * Update following files when declaring new flags:
@@ -400,7 +414,8 @@ protected:
     decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
     decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
-    decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/
+    decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
+    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -458,14 +473,17 @@ protected:
     uint32_t     dcp_cpuid4_ecx; // unused currently
     uint32_t     dcp_cpuid4_edx; // unused currently
 
-    // cpuid function 7 (structured extended features)
-    // ECX = 0 before calling cpuid()
+    // cpuid function 7 (structured extended features enumeration leaf)
+    // eax = 7, ecx = 0
     SefCpuid7Eax sef_cpuid7_eax;
     SefCpuid7Ebx sef_cpuid7_ebx;
     SefCpuid7Ecx sef_cpuid7_ecx;
     SefCpuid7Edx sef_cpuid7_edx;
-    // ECX = 1 before calling cpuid()
-    SefCpuid7Ecx1Eax sef_cpuid7_ecx1_eax;
+
+    // cpuid function 7 (structured extended features enumeration sub-leaf 1)
+    // eax = 7, ecx = 1
+    SefCpuid7SubLeaf1Eax sefsl1_cpuid7_eax;
+    SefCpuid7SubLeaf1Edx sefsl1_cpuid7_edx;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -537,6 +555,9 @@ protected:
     // Space to save zmm registers after signal handle
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
+    // Space to save apx registers after signal handle
+    jlong        apx_save[2]; // Save r16 and r31
+
     uint64_t feature_flags() const;
 
     // Asserts
@@ -576,6 +597,7 @@ private:
   static bool compute_has_intel_jcc_erratum();
 
   static bool os_supports_avx_vectors();
+  static bool os_supports_apx_egprs();
   static void get_processor_features();
 
 public:
@@ -584,7 +606,7 @@ public:
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
-  static ByteSize sef_cpuid7_ecx1_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_ecx1_eax); }
+  static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
   static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
@@ -596,9 +618,11 @@ public:
   static ByteSize xem_xcr0_offset() { return byte_offset_of(CpuidInfo, xem_xcr0_eax); }
   static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
   static ByteSize zmm_save_offset() { return byte_offset_of(CpuidInfo, zmm_save); }
+  static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
+  static jlong egpr_test_value()   { return 0xCAFEBABECAFEBABELL; }
 
   static void get_cpu_info_wrapper();
   static void set_cpuinfo_segv_addr(address pc) { _cpuinfo_segv_addr = pc; }
@@ -606,9 +630,17 @@ public:
   static void set_cpuinfo_cont_addr(address pc) { _cpuinfo_cont_addr = pc; }
   static address  cpuinfo_cont_addr()           { return _cpuinfo_cont_addr; }
 
+  static void set_cpuinfo_segv_addr_apx(address pc) { _cpuinfo_segv_addr_apx = pc; }
+  static bool  is_cpuinfo_segv_addr_apx(address pc) { return _cpuinfo_segv_addr_apx == pc; }
+  static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
+  static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
+
+  static void clear_apx_test_state();
+
   static void clean_cpuFeatures()   { _features = 0; }
   static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
   static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
+  static void set_apx_cpuFeatures() { _features |= CPU_APX_F; }
 
   // Initialization
   static void initialize();
@@ -705,6 +737,7 @@ public:
   static bool supports_avx512novl()   { return (supports_evex() && !supports_avx512vl()); }
   static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
+  static bool supports_apx_f()        { return (_features & CPU_APX_F) != 0; }
   static bool supports_avxonly()      { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()          { return (_features & CPU_SHA) != 0; }
   static bool supports_fma()          { return (_features & CPU_FMA) != 0 && supports_avx(); }

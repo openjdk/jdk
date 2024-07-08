@@ -2059,7 +2059,7 @@ WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
-  return UseSharedSpaces;
+  return CDSConfig::is_using_archive();
 WB_END
 
 WB_ENTRY(jint, WB_GetCDSGenericHeaderMinVersion(JNIEnv* env, jobject wb))

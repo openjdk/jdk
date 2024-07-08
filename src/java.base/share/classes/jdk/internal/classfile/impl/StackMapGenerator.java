@@ -26,14 +26,12 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.nio.ByteBuffer;
@@ -46,6 +44,8 @@ import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 
 import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.constant.ConstantUtils.binaryNameToDesc;
+
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
@@ -1045,7 +1045,9 @@ public final class StackMapGenerator {
         }
 
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
-            localsSize = 0;
+            int localsSize = 0;
+            // Pre-emptively create a locals array that encompass all parameter slots
+            checkLocal(methodDesc.parameterCount() + (isStatic ? 0 : -1));
             if (!isStatic) {
                 localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
@@ -1057,7 +1059,7 @@ public final class StackMapGenerator {
             }
             for (int i = 0; i < methodDesc.parameterCount(); i++) {
                 var desc = methodDesc.parameterType(i);
-                if (desc.isClassOrInterface() || desc.isArray()) {
+                if (!desc.isPrimitive()) {
                     setLocalRawInternal(localsSize++, Type.referenceType(desc));
                 } else switch (desc.descriptorString().charAt(0)) {
                     case 'J' -> {
@@ -1075,6 +1077,7 @@ public final class StackMapGenerator {
                     default -> throw new AssertionError("Should not reach here");
                 }
             }
+            this.localsSize = localsSize;
         }
 
         void copyFrom(Frame src) {
@@ -1318,8 +1321,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
-        private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
+        private static final ClassDesc CD_Cloneable = binaryNameToDesc("java.lang.Cloneable");
+        private static final ClassDesc CD_Serializable = binaryNameToDesc("java.io.Serializable");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {

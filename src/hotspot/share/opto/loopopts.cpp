@@ -2154,18 +2154,19 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 #endif
     if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {
 
-      // If the Data use is an IF, that means we have an IF outside of the
-      // loop that is switching on a condition that is set inside of the
+      // If the Data use is an IF, that means we have an IF outside the
+      // loop that is switching on a condition that is set inside the
       // loop.  Happens if people set a loop-exit flag; then test the flag
-      // in the loop to break the loop, then test is again outside of the
+      // in the loop to break the loop, then test is again outside the
       // loop to determine which way the loop exited.
-      // Loop predicate If node connects to Bool node through Opaque1 node.
       //
-      // If the use is an AllocateArray through its ValidLengthTest input,
-      // make sure the Bool/Cmp input is cloned down to avoid a Phi between
-      // the AllocateArray node and its ValidLengthTest input that could cause
+      // For several uses we need to make sure that there is no phi between,
+      // the use and the Bool/Cmp. We therefore clone the Bool/Cmp down here
+      // to avoid such a phi in between.
+      // For example, it is unexpected that there is a Phi between an
+      // AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->is_Opaque4() ||
+      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
@@ -2986,52 +2987,101 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
   return reg;
 }
 
-//------------------------------ insert_cmpi_loop_exit -------------------------------------
-// Clone a signed compare loop exit from an unsigned compare and
-// insert it before the unsigned cmp on the stay-in-loop path.
-// All new nodes inserted in the dominator tree between the original
-// if and it's projections.  The original if test is replaced with
-// a constant to force the stay-in-loop path.
+// Idea
+// ----
+// Partial Peeling tries to rotate the loop in such a way that it can later be turned into a counted loop. Counted loops
+// require a signed loop exit test. When calling this method, we've only found a suitable unsigned test to partial peel
+// with. Therefore, we try to split off a signed loop exit test from the unsigned test such that it can be used as new
+// loop exit while keeping the unsigned test unchanged and preserving the same behavior as if we've used the unsigned
+// test alone instead:
 //
-// This is done to make sure that the original if and it's projections
-// still dominate the same set of control nodes, that the ctrl() relation
-// from data nodes to them is preserved, and that their loop nesting is
-// preserved.
+// Before Partial Peeling:
+//   Loop:
+//     <peeled section>
+//     Split off signed loop exit test
+//     <-- CUT HERE -->
+//     Unchanged unsigned loop exit test
+//     <rest of unpeeled section>
+//     goto Loop
 //
-// before
-//          if(i <u limit)    unsigned compare loop exit
+// After Partial Peeling:
+//   <cloned peeled section>
+//   Cloned split off signed loop exit test
+//   Loop:
+//     Unchanged unsigned loop exit test
+//     <rest of unpeeled section>
+//     <peeled section>
+//     Split off signed loop exit test
+//     goto Loop
+//
+// Details
+// -------
+// Before:
+//          if (i <u limit)    Unsigned loop exit condition
 //         /       |
 //        v        v
 //   exit-proj   stay-in-loop-proj
 //
-// after
-//          if(stay-in-loop-const)  original if
-//         /       |
-//        /        v
-//       /  if(i <  limit)    new signed test
+// Split off a signed loop exit test (i.e. with CmpI) from an unsigned loop exit test (i.e. with CmpU) and insert it
+// before the CmpU on the stay-in-loop path and keep both tests:
+//
+//          if (i <u limit)    Signed loop exit test
+//        /        |
+//       /  if (i <u limit)    Unsigned loop exit test
 //      /  /       |
-//     /  /        v
-//    /  /  if(i <u limit)    new cloned unsigned test
-//   /  /   /      |
-//   v  v  v       |
-//    region       |
-//        |        |
-//      dum-if     |
-//     /  |        |
-// ether  |        |
-//        v        v
+//     v  v        v
+//  exit-region  stay-in-loop-proj
+//
+// Implementation
+// --------------
+// We need to make sure that the new signed loop exit test is properly inserted into the graph such that the unsigned
+// loop exit test still dominates the same set of control nodes, the ctrl() relation from data nodes to both loop
+// exit tests is preserved, and their loop nesting is correct.
+//
+// To achieve that, we clone the unsigned loop exit test completely (leave it unchanged), insert the signed loop exit
+// test above it and kill the original unsigned loop exit test by setting it's condition to a constant
+// (i.e. stay-in-loop-const in graph below) such that IGVN can fold it later:
+//
+//           if (stay-in-loop-const)  Killed original unsigned loop exit test
+//          /       |
+//         /        v
+//        /  if (i <  limit)          Split off signed loop exit test
+//       /  /       |
+//      /  /        v
+//     /  /  if (i <u limit)          Cloned unsigned loop exit test
+//    /  /   /      |
+//   v  v  v        |
+//  exit-region     |
+//        |         |
+//    dummy-if      |
+//     /  |         |
+// dead   |         |
+//        v         v
 //   exit-proj   stay-in-loop-proj
 //
-IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *loop) {
+// Note: The dummy-if is inserted to create a region to merge the loop exits between the original to be killed unsigned
+//       loop exit test and its exit projection while keeping the exit projection (also see insert_region_before_proj()).
+//
+// Requirements
+// ------------
+// Note that we can only split off a signed loop exit test from the unsigned loop exit test when the behavior is exactly
+// the same as before with only a single unsigned test. This is only possible if certain requirements are met.
+// Otherwise, we need to bail out (see comments in the code below).
+IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* loop) {
   const bool Signed   = true;
   const bool Unsigned = false;
 
   BoolNode* bol = if_cmpu->in(1)->as_Bool();
-  if (bol->_test._test != BoolTest::lt) return nullptr;
+  if (bol->_test._test != BoolTest::lt) {
+    return nullptr;
+  }
   CmpNode* cmpu = bol->in(1)->as_Cmp();
-  if (cmpu->Opcode() != Op_CmpU) return nullptr;
+  assert(cmpu->Opcode() == Op_CmpU, "must be unsigned comparison");
+
   int stride = stride_of_possible_iv(if_cmpu);
-  if (stride == 0) return nullptr;
+  if (stride == 0) {
+    return nullptr;
+  }
 
   Node* lp_proj = stay_in_loop(if_cmpu, loop);
   guarantee(lp_proj != nullptr, "null loop node");
@@ -3043,14 +3093,93 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
     // We therefore can't add a single exit condition.
     return nullptr;
   }
-  // The loop exit condition is !(i <u limit) ==> (i < 0 || i >= limit).
-  // Split out the exit condition (i < 0) for stride < 0 or (i >= limit) for stride > 0.
-  Node* limit = nullptr;
+  // The unsigned loop exit condition is
+  //   !(i <u  limit)
+  // =   i >=u limit
+  //
+  // First, we note that for any x for which
+  //   0 <= x <= INT_MAX
+  // we can convert x to an unsigned int and still get the same guarantee:
+  //   0 <=  (uint) x <=  INT_MAX = (uint) INT_MAX
+  //   0 <=u (uint) x <=u INT_MAX = (uint) INT_MAX   (LEMMA)
+  //
+  // With that in mind, if
+  //   limit >= 0             (COND)
+  // then the unsigned loop exit condition
+  //   i >=u limit            (ULE)
+  // is equivalent to
+  //   i < 0 || i >= limit    (SLE-full)
+  // because either i is negative and therefore always greater than MAX_INT when converting to unsigned
+  //   (uint) i >=u MAX_INT >= limit >= 0
+  // or otherwise
+  //   i >= limit >= 0
+  // holds due to (LEMMA).
+  //
+  // For completeness, a counterexample with limit < 0:
+  // Assume i = -3 and limit = -2:
+  //   i  < 0
+  //   -2 < 0
+  // is true and thus also "i < 0 || i >= limit". But
+  //   i  >=u limit
+  //   -3 >=u -2
+  // is false.
+  Node* limit = cmpu->in(2);
+  const TypeInt* type_limit = _igvn.type(limit)->is_int();
+  if (type_limit->_lo < 0) {
+    return nullptr;
+  }
+
+  // We prove below that we can extract a single signed loop exit condition from (SLE-full), depending on the stride:
+  //   stride < 0:
+  //     i < 0        (SLE = SLE-negative)
+  //   stride > 0:
+  //     i >= limit   (SLE = SLE-positive)
+  // such that we have the following graph before Partial Peeling with stride > 0 (similar for stride < 0):
+  //
+  // Loop:
+  //   <peeled section>
+  //   i >= limit    (SLE-positive)
+  //   <-- CUT HERE -->
+  //   i >=u limit   (ULE)
+  //   <rest of unpeeled section>
+  //   goto Loop
+  //
+  // We exit the loop if:
+  //   (SLE) is true OR (ULE) is true
+  // However, if (SLE) is true then (ULE) also needs to be true to ensure the exact same behavior. Otherwise, we wrongly
+  // exit a loop that should not have been exited if we did not apply Partial Peeling. More formally, we need to ensure:
+  //   (SLE) IMPLIES (ULE)
+  // This indeed holds when (COND) is given:
+  // - stride > 0:
+  //       i >=  limit             // (SLE = SLE-positive)
+  //       i >=  limit >= 0        // (COND)
+  //       i >=u limit >= 0        // (LEMMA)
+  //     which is the unsigned loop exit condition (ULE).
+  // - stride < 0:
+  //       i        <  0           // (SLE = SLE-negative)
+  //       (uint) i >u MAX_INT     // (NEG) all negative values are greater than MAX_INT when converted to unsigned
+  //       MAX_INT >= limit >= 0   // (COND)
+  //       MAX_INT >=u limit >= 0  // (LEMMA)
+  //     and thus from (NEG) and (LEMMA):
+  //       i >=u limit
+  //     which is the unsigned loop exit condition (ULE).
+  //
+  //
+  // After Partial Peeling, we have the following structure for stride > 0 (similar for stride < 0):
+  //   <cloned peeled section>
+  //   i >= limit (SLE-positive)
+  //   Loop:
+  //     i >=u limit (ULE)
+  //     <rest of unpeeled section>
+  //     <peeled section>
+  //     i >= limit (SLE-positive)
+  //     goto Loop
+  Node* rhs_cmpi;
   if (stride > 0) {
-    limit = cmpu->in(2);
+    rhs_cmpi = limit; // For i >= limit
   } else {
-    limit = _igvn.makecon(TypeInt::ZERO);
-    set_ctrl(limit, C->root());
+    rhs_cmpi = _igvn.makecon(TypeInt::ZERO); // For i < 0
+    set_ctrl(rhs_cmpi, C->root());
   }
   // Create a new region on the exit path
   RegionNode* reg = insert_region_before_proj(lp_exit);
@@ -3058,7 +3187,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
 
   // Clone the if-cmpu-true-false using a signed compare
   BoolTest::mask rel_i = stride > 0 ? bol->_test._test : BoolTest::ge;
-  ProjNode* cmpi_exit = insert_if_before_proj(cmpu->in(1), Signed, rel_i, limit, lp_continue);
+  ProjNode* cmpi_exit = insert_if_before_proj(cmpu->in(1), Signed, rel_i, rhs_cmpi, lp_continue);
   reg->add_req(cmpi_exit);
 
   // Clone the if-cmpu-true-false
@@ -4309,10 +4438,18 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
+// Returns true if the Reduction node is unordered.
+static bool is_unordered_reduction(Node* n) {
+  return n->is_Reduction() && !n->as_Reduction()->requires_strict_order();
+}
+
 // Having ReductionNodes in the loop is expensive. They need to recursively
 // fold together the vector values, for every vectorized loop iteration. If
 // we encounter the following pattern, we can vector accumulate the values
 // inside the loop, and only have a single UnorderedReduction after the loop.
+//
+// Note: UnorderedReduction represents a ReductionNode which does not require
+// calculating in strict order.
 //
 // CountedLoop     init
 //          |        |
@@ -4353,21 +4490,24 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // wise. This is a single operation per vector_accumulator, rather than many
 // for a UnorderedReduction. We can then reduce the last vector_accumulator
 // after the loop, and also reduce the init value into it.
+//
 // We can not do this with all reductions. Some reductions do not allow the
-// reordering of operations (for example float addition).
+// reordering of operations (for example float addition/multiplication require
+// strict order).
 void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
   assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
 
-  // Find all Phi nodes with UnorderedReduction on backedge.
+  // Find all Phi nodes with an unordered Reduction on backedge.
   CountedLoopNode* cl = loop->_head->as_CountedLoop();
   for (DUIterator_Fast jmax, j = cl->fast_outs(jmax); j < jmax; j++) {
     Node* phi = cl->fast_out(j);
-    // We have a phi with a single use, and a UnorderedReduction on the backedge.
-    if (!phi->is_Phi() || phi->outcnt() != 1 || !phi->in(2)->is_UnorderedReduction()) {
+    // We have a phi with a single use, and an unordered Reduction on the backedge.
+    if (!phi->is_Phi() || phi->outcnt() != 1 || !is_unordered_reduction(phi->in(2))) {
       continue;
     }
 
-    UnorderedReductionNode* last_ur = phi->in(2)->as_UnorderedReduction();
+    ReductionNode* last_ur = phi->in(2)->as_Reduction();
+    assert(!last_ur->requires_strict_order(), "must be");
 
     // Determine types
     const TypeVect* vec_t = last_ur->vect_type();
@@ -4384,14 +4524,14 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         continue; // not implemented -> fails
     }
 
-    // Traverse up the chain of UnorderedReductions, checking that it loops back to
-    // the phi. Check that all UnorderedReductions only have a single use, except for
+    // Traverse up the chain of unordered Reductions, checking that it loops back to
+    // the phi. Check that all unordered Reductions only have a single use, except for
     // the last (last_ur), which only has phi as a use in the loop, and all other uses
     // are outside the loop.
-    UnorderedReductionNode* current = last_ur;
-    UnorderedReductionNode* first_ur = nullptr;
+    ReductionNode* current = last_ur;
+    ReductionNode* first_ur = nullptr;
     while (true) {
-      assert(current->is_UnorderedReduction(), "sanity");
+      assert(!current->requires_strict_order(), "sanity");
 
       // Expect no ctrl and a vector_input from within the loop.
       Node* ctrl = current->in(0);
@@ -4408,7 +4548,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         break; // Chain traversal fails.
       }
 
-      // Expect single use of UnorderedReduction, except for last_ur.
+      // Expect single use of an unordered Reduction, except for last_ur.
       if (current == last_ur) {
         // Expect all uses to be outside the loop, except phi.
         for (DUIterator_Fast kmax, k = current->fast_outs(kmax); k < kmax; k++) {
@@ -4426,12 +4566,13 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         }
       }
 
-      // Expect another UnorderedReduction or phi as the scalar input.
+      // Expect another unordered Reduction or phi as the scalar input.
       Node* scalar_input = current->in(1);
-      if (scalar_input->is_UnorderedReduction() &&
+      if (is_unordered_reduction(scalar_input) &&
           scalar_input->Opcode() == current->Opcode()) {
-        // Move up the UnorderedReduction chain.
-        current = scalar_input->as_UnorderedReduction();
+        // Move up the unordered Reduction chain.
+        current = scalar_input->as_Reduction();
+        assert(!current->requires_strict_order(), "must be");
       } else if (scalar_input == phi) {
         // Chain terminates at phi.
         first_ur = current;
@@ -4455,7 +4596,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
-    VectorNode::trace_new_vector(identity_vector, "UnorderedReduction");
+    VectorNode::trace_new_vector(identity_vector, "Unordered Reduction");
 
     // Turn the scalar phi into a vector phi.
     _igvn.rehash_node_delayed(phi);
@@ -4464,7 +4605,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     phi->as_Type()->set_type(vec_t);
     _igvn.set_type(phi, vec_t);
 
-    // Traverse down the chain of UnorderedReductions, and replace them with vector_accumulators.
+    // Traverse down the chain of unordered Reductions, and replace them with vector_accumulators.
     current = first_ur;
     while (true) {
       // Create vector_accumulator to replace current.
@@ -4473,11 +4614,12 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       VectorNode* vector_accumulator = VectorNode::make(vopc, last_vector_accumulator, vector_input, vec_t);
       register_new_node(vector_accumulator, cl);
       _igvn.replace_node(current, vector_accumulator);
-      VectorNode::trace_new_vector(vector_accumulator, "UnorderedReduction");
+      VectorNode::trace_new_vector(vector_accumulator, "Unordered Reduction");
       if (current == last_ur) {
         break;
       }
-      current = vector_accumulator->unique_out()->as_UnorderedReduction();
+      current = vector_accumulator->unique_out()->as_Reduction();
+      assert(!current->requires_strict_order(), "must be");
     }
 
     // Create post-loop reduction.
@@ -4494,7 +4636,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       }
     }
     register_new_node(post_loop_reduction, get_late_ctrl(post_loop_reduction, cl));
-    VectorNode::trace_new_vector(post_loop_reduction, "UnorderedReduction");
+    VectorNode::trace_new_vector(post_loop_reduction, "Unordered Reduction");
 
     assert(last_accumulator->outcnt() == 2, "last_accumulator has 2 uses: phi and post_loop_reduction");
     assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
