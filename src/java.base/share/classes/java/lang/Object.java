@@ -99,6 +99,9 @@ public class Object {
      * implementation should not use excessive memory or time for its
      * computations and should return a result for cyclic/circular data
      * structures.
+     * The {@code hashCode} method may be called frequently, possibly
+     * in the context of {@linkplain java.util##CollectionsFramework
+     * collections}.
      *
      * @apiNote
      * The {@link java.util.Objects#hash(Object...) hash} and {@link
