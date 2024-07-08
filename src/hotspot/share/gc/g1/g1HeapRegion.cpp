@@ -119,6 +119,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
+  uninstall_group_cardset();
   set_free();
   reset_pre_dummy_top();
 
@@ -215,6 +216,9 @@ void G1HeapRegion::clear_humongous() {
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
+  if (is_young()) {
+    uninstall_group_cardset();
+  }
   _rem_set->reset_table_scanner();
 }
 

@@ -673,6 +673,10 @@ public:
 
     G1Policy *policy = g1h->policy();
     policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
+
+    // Add the cards from the group cardsets.
+    _card_rs_length += g1h->rs_estimate();
+
     policy->record_card_rs_length(_card_rs_length);
     policy->cset_regions_freed();
   }
@@ -911,6 +915,8 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
 
     _g1h->clear_collection_set();
+
+    _g1h->young_regions_cardset()->clear();
   }
 
   double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }

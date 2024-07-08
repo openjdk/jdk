@@ -1204,6 +1204,15 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
+template <class CardOrRangeVisitor>
+inline void cardset_iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl) {
+  G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(card_set,
+                                                                                       cl,
+                                                                                       card_set->config()->log2_card_regions_per_heap_region(),
+                                                                                       card_set->config()->log2_cards_per_card_region());
+  card_set->iterate_containers(&cl2, true /* at_safepoint */);
+}
+
   // Visitor for the log buffer entries to merge them into the card table.
   class G1MergeLogBufferCardsClosure : public G1CardTableEntryClosure {
 
@@ -1378,6 +1387,15 @@ public:
         G1MergeCardSetClosure merge(_scan_state);
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
+
+        if (_initial_evacuation) {
+          size_t young_occupied = g1h->young_regions_cardset()->occupied();
+          cardset_iterate_for_merge(g1h->young_regions_cardset(), merge);
+
+          if (worker_id == 0) {
+            g1h->set_rs_estimate(young_occupied);
+          }
+        }
 
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

@@ -55,11 +55,19 @@ void HeapRegionRemSet::initialize(MemRegion reserved) {
   _heap_base_address = reserved.start();
 }
 
+void HeapRegionRemSet::uninstall_group_cardset() {
+  if (_saved_card_set != nullptr) {
+    _card_set = _saved_card_set;
+    _saved_card_set = nullptr;
+  }
+}
+
 HeapRegionRemSet::HeapRegionRemSet(G1HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _code_roots(),
   _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
-  _card_set(config, &_card_set_mm),
+  _card_set(new G1CardSet(config, &_card_set_mm)),
+  _saved_card_set(nullptr),
   _hr(hr),
   _state(Untracked) { }
 
@@ -68,11 +76,12 @@ void HeapRegionRemSet::clear_fcc() {
 }
 
 void HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
+  assert(_saved_card_set == nullptr, "must be");
   if (!only_cardset) {
     _code_roots.clear();
   }
   clear_fcc();
-  _card_set.clear();
+  _card_set->clear();
   if (!keep_tracked) {
     set_state_untracked();
   } else {
@@ -83,7 +92,7 @@ void HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
 
 void HeapRegionRemSet::reset_table_scanner() {
   _code_roots.reset_table_scanner();
-  _card_set.reset_table_scanner();
+  _card_set->reset_table_scanner();
 }
 
 G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
