@@ -1451,8 +1451,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 
-  // TODO Only emit this randomly
-  if (StressUnstableIfTraps /*&& ((random() % 2) == 0)*/) {
+  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
     stress_trap(iff, counter, incr_store);
   }
 }
@@ -1576,8 +1575,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 
-  // TODO Only emit this randomly
-  if (StressUnstableIfTraps /*&& ((random() % 2) == 0)*/) {
+  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
     stress_trap(iff, counter, incr_store);
   }
 }
@@ -1589,7 +1587,6 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
     Node* out = orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
     if (out != nullptr && out->isa_CallStaticJava() && out->as_CallStaticJava()->is_uncommon_trap()) {
       trap = out->as_CallStaticJava();
-      // TODO support more flavors (we need to be careful though, Reason_null_check for example will replace the object by null in debug info)
       if (!trap->jvms()->should_reexecute() || Deoptimization::trap_request_reason(trap->uncommon_trap_request()) != Deoptimization::Reason_unstable_if) {
         trap = nullptr;
         continue;
@@ -1598,17 +1595,19 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
     }
   }
   if (trap == nullptr) {
-    // Remove unused counter increment (and load)
+    // No trap found. Remove unused counter load and increment.
     C->gvn_replace_by(incr_store, incr_store->in(MemNode::Memory));
-    return; // No trap found
+    return;
   }
 
-  // Remove trap from optimization list
+  // Remove trap from optimization list since we add another path to the trap.
   bool success = C->remove_unstable_if_trap(trap, true);
   assert(success, "Trap already modified");
 
-  // Add a check before the original if that will trap on true and execute the original if on false
-  counter = _gvn.transform(new AndINode(counter, intcon(10)));
+  // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
+  int freq_log = C->random() % 32; // Random logarithmic frequency in [0, 32), 0 = always
+  Node* mask = intcon(right_n_bits(freq_log));
+  counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
   Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::mask::eq));
   IfNode* iff = _gvn.transform(new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt))->as_If();
