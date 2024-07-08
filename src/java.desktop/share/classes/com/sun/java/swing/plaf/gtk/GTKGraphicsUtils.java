@@ -30,6 +30,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
+import sun.swing.MnemonicHandler;
+
 /**
  * @author Joshua Outwater
  */
@@ -49,6 +51,11 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
         int componentState = context.getComponentState();
 
         String themeName = GTKLookAndFeel.getGtkThemeName();
+
+        if (MnemonicHandler.isMnemonicHidden()) {
+            mnemonicIndex = -1;
+        }
+
         if (themeName != null && themeName.startsWith("blueprint") &&
             shouldShadowText(context.getRegion(), componentState)) {
 
@@ -115,7 +122,8 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
                 g.setColor(color);
             }
         }
-        super.paintText(context, g, text, bounds, mnemonicIndex);
+        super.paintText(context, g, text, bounds,
+                        MnemonicHandler.isMnemonicHidden() ? -1 : mnemonicIndex);
     }
 
     private static boolean shouldShadowText(Region id, int state) {

@@ -56,7 +56,7 @@ public class TestMenuMnemonicLinuxAndMac {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             if (laf.getName().contains("GTK") || laf.getName().contains("Aqua")) {
-                System.out.println("Testing: "+laf.getName());
+                System.out.println("Testing: " + laf.getName());
                 UIManager.setLookAndFeel(laf.getClassName());
                 break;
             }
