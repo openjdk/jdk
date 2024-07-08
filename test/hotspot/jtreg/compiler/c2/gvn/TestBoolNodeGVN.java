@@ -50,23 +50,70 @@ public class TestBoolNodeGVN {
     @IR(failOn = IRNode.CMP_U,
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
-    public static boolean testShouldReplaceCpmU(int x, int m) {
-        return !(Integer.compareUnsigned((x & m), m) > 0) & // assert in inversions to generates the pattern looking for
-               !(Integer.compareUnsigned((m & x), m) > 0) &
-               Integer.compareUnsigned((x & m), m + 1) < 0 &
-               Integer.compareUnsigned((m & x), m + 1) < 0;
+    public static boolean testShouldReplaceCpmUCase1(int x, int m) {
+        return !(Integer.compareUnsigned((x & m), m) > 0); // assert in inversions to generates the pattern looking for
+    }
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(failOn = IRNode.CMP_U,
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldReplaceCpmUCase2(int x, int m) {
+        return !(Integer.compareUnsigned((m & x), m) > 0);
     }
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(counts = {IRNode.CMP_U, "4"},
+    @IR(failOn = IRNode.CMP_U,
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldReplaceCpmUCase3(int x, int m) {
+        return Integer.compareUnsigned((x & m), m + 1) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(failOn = IRNode.CMP_U,
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldReplaceCpmUCase4(int x, int m) {
+        return Integer.compareUnsigned((m & x), m + 1) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, ">=1"},
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
-    public static boolean testShouldHaveCpmU(int x, int m) {
-        return !(Integer.compareUnsigned((x & m), m - 1) > 0) |
-                !(Integer.compareUnsigned((m & x), m - 1) > 0) |
-                Integer.compareUnsigned((x & m), m + 2) < 0 |
-                Integer.compareUnsigned((m & x), m + 2) < 0;
+    public static boolean testShouldHaveCpmUCase1(int x, int m) {
+        return !(Integer.compareUnsigned((x & m), m - 1) > 0);
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, ">=1"},
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldHaveCpmUCase2(int x, int m) {
+        return !(Integer.compareUnsigned((m & x), m - 1) > 0);
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, ">=1"},
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldHaveCpmUCase3(int x, int m) {
+        return Integer.compareUnsigned((x & m), m + 2) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, ">=1"},
+            phase = CompilePhase.AFTER_PARSING,
+            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldHaveCpmUCase4(int x, int m) {
+        return Integer.compareUnsigned((m & x), m + 2) < 0;
     }
 
     private static void testCorrectness() {
@@ -76,7 +123,10 @@ public class TestBoolNodeGVN {
 
         for (int x : values) {
             for (int m : values) {
-                if (!testShouldReplaceCpmU(x, m)) {
+                if (!testShouldReplaceCpmUCase1(x, m) |
+                    !testShouldReplaceCpmUCase2(x, m) |
+                    !testShouldReplaceCpmUCase3(x, m) |
+                    !testShouldReplaceCpmUCase4(x, m)) {
                     throw new RuntimeException("Bad result for x = " + x + " and m = " + m + ", expected always true");
                 }
             }
