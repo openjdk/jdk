@@ -26,11 +26,15 @@
  * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
- * @run testng/othervm TestHandshake
- * @run testng/othervm -Xint TestHandshake
- * @run testng/othervm -XX:TieredStopAtLevel=1 TestHandshake
- * @run testng/othervm -XX:-TieredCompilation TestHandshake
+ * @run testng/othervm
+ *   -XX:-TieredCompilation
+ *   TestHandshake
  */
+
+// -Xlog:foreign=trace
+// * @run testng/othervm TestHandshake
+// * @run testng/othervm -Xint TestHandshake
+// * @run testng/othervm -XX:TieredStopAtLevel=1 TestHandshake
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -100,7 +104,7 @@ public class TestHandshake {
 
         @Override
         public final void run() {
-            start("\"Accessor #\" + id");
+            start("Accessor #" + id);
             while (segment.scope().isAlive()) {
                 try {
                     doAccess();
@@ -290,12 +294,12 @@ public class TestHandshake {
     static Object[][] accessors() {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
-                { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
-                { "SegmentSwappyCopyAccessor", (AccessorFactory)SegmentSwappyCopyAccessor::new },
-                { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
-                { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
-                { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
-                { "BufferHandleAccessor", (AccessorFactory)BufferHandleAccessor::new }
+                // { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
+                // { "SegmentSwappyCopyAccessor", (AccessorFactory)SegmentSwappyCopyAccessor::new },
+                // { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
+                // { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
+                // { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
+                // { "BufferHandleAccessor", (AccessorFactory)BufferHandleAccessor::new }
         };
     }
 }

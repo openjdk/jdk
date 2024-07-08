@@ -26,6 +26,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"
@@ -37,15 +38,34 @@
 
 template<typename Func>
 static bool for_scoped_method(JavaThread* jt, const Func& func) {
+  ResourceMark rm;
+#ifdef ASSERT
+  LogMessage(foreign) msg;
+  NonInterleavingLogStream ls{LogLevelType::Trace, msg};
+  if (ls.is_enabled()) {
+    ls.print_cr("Walking thread: %s", jt->name());
+  }
+#endif
+
   const int max_critical_stack_depth = 10;
   int depth = 0;
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
-    if (m->is_scoped()) {
+    bool is_scoped = m->is_scoped();
+
+#ifdef ASSERT
+    if (ls.is_enabled()) {
+      stream.asJavaVFrame()->print_value(&ls);
+      ls.print_cr("    is_scoped=%s", is_scoped ? "true" : "false");
+    }
+#endif
+
+    if (is_scoped) {
       assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
       return func(stream);
     }
     depth++;
+
 #ifndef ASSERT
     // On debug builds, just keep searching the stack
     // in case we missed an @Scoped method further up
@@ -57,41 +77,9 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
   return false;
 }
 
-// static bool is_in_scoped_method(JavaThread* jt) {
-//   return for_scoped_method(jt, [](vframeStream& stream){ return true; });
-// }
-
-static void deoptimize_top_frame(JavaThread* jt) {
-  frame last_frame = jt->last_frame();
-  RegisterMap register_map(jt,
-                            RegisterMap::UpdateMap::include,
-                            RegisterMap::ProcessFrames::include,
-                            RegisterMap::WalkContinuation::skip);
-
-  if (last_frame.is_safepoint_blob_frame()) {
-    last_frame = last_frame.sender(&register_map);
-  }
-
-  if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-    Deoptimization::deoptimize(jt, last_frame);
-  }
-}
-
-static bool is_accessing_session(JavaThread* jt, oop session, bool should_deopt) {
-  // Quick check to see  if we are inside an @Scoped method, to avoid deoptimizing
-  // FIXME: this only seems to work correctly after deoptimizing
-  // if (!is_in_scoped_method(jt)) {
-  //   return;
-  // }
-
-  if (should_deopt) {
-    // FIXME: Reference.reachabilityFence doesn work, see JDK-8290892
-    // We deoptimize here so that we can accurately inspect locals.
-    deoptimize_top_frame(jt);
-  }
-
-  return for_scoped_method(jt, [&session = session](vframeStream& stream){
-    ResourceMark rm;
+static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
+  return for_scoped_method(jt, [&](vframeStream& stream){
+    in_scoped = true;
     StackValueCollection* locals = stream.asJavaVFrame()->locals();
     for (int i = 0; i < locals->size(); i++) {
       StackValue* var = locals->at(i);
@@ -103,6 +91,19 @@ static bool is_accessing_session(JavaThread* jt, oop session, bool should_deopt)
     }
     return false;
   });
+}
+
+static frame get_last_frame(JavaThread* jt) {
+  frame last_frame = jt->last_frame();
+  RegisterMap register_map(jt,
+                            RegisterMap::UpdateMap::include,
+                            RegisterMap::ProcessFrames::include,
+                            RegisterMap::WalkContinuation::skip);
+
+  if (last_frame.is_safepoint_blob_frame()) {
+    last_frame = last_frame.sender(&register_map);
+  }
+  return last_frame;
 }
 
 class ScopedAsyncExceptionHandshake : public AsyncExceptionHandshake {
@@ -121,7 +122,8 @@ public:
     JavaThread* jt = JavaThread::cast(thread);
     // FIXME: why would this not be true? Exception should be installed
     // before initial handshake returns. This should be an assert (but it can fail)
-    if (is_accessing_session(jt, _session.resolve(), false)) {
+    bool ignored;
+    if (is_accessing_session(jt, _session.resolve(), ignored)) {
       // Throw exception to unwind out from the scoped access
       AsyncExceptionHandshake::do_thread(thread);
     }
@@ -152,7 +154,8 @@ public:
       return;
     }
 
-    if (is_accessing_session(jt, JNIHandles::resolve(_session), true)) {
+    bool in_scoped = false;
+    if (is_accessing_session(jt, JNIHandles::resolve(_session), in_scoped)) {
       // We have found that the target thread is inside of a scoped access.
       // An asynchronous handshake is sent to the target thread, telling it
       // to throw an exception, which will unwind the target thread out from
@@ -160,6 +163,40 @@ public:
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
       jt->install_async_exception(new ScopedAsyncExceptionHandshake(session, error));
+    } else if (!in_scoped) {
+      frame last_frame = get_last_frame(jt);
+      if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+        // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
+        // moving code around/hoisting checks, we may be in a situation like this:
+        //
+        // liveness check (from @Scoped method)
+        // for (...) {
+        //    for (...) { // strip-mining inner loop
+        //        memory access (from @Scoped method)
+        //    }
+        //    safepoint <-- STOPPED HERE
+        // }
+        //
+        // The safepoint at which we're stopped may be in between the liveness check
+        // and actual memory access, but is itself 'outside' of @Scoped code
+        //
+        // However, we're not sure whether we are in this exact situation, and
+        // we're also not sure whether a memory access will actually occur after
+        // this safepoint. So, we can not just install an async exception here
+        //
+        // Instead, we deoptimize the frame to get back to code like this:
+        //
+        // for (...) {
+        //     call to ScopedMemoryAccess
+        //     safepoint <-- STOPPED HERE
+        // }
+        //
+        // This means that we will re-do the liveness check before attempting
+        // another memory access. If the scope has been closed at that point,
+        // the target thread will see it and throw an exception.
+
+        Deoptimization::deoptimize(jt, last_frame);
+      }
     }
   }
 };
