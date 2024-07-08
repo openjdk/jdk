@@ -25,6 +25,7 @@ import jdk.test.lib.apps.LingeredApp;
 
 
 public class LingeredAppWithLock extends LingeredApp {
+    private static Object lockObj = new Object();
 
     public static void lockMethod(Object lock) {
         synchronized (lock) {
@@ -36,10 +37,10 @@ public class LingeredAppWithLock extends LingeredApp {
         }
     }
 
-    public static void waitMethod(Object lock) {
-        synchronized (lock) {
+    public static void waitMethod() {
+        synchronized (lockObj) {
             try {
-                lock.wait(300000);
+                lockObj.wait(300000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -51,7 +52,7 @@ public class LingeredAppWithLock extends LingeredApp {
         Thread classLock2 = new Thread(() -> lockMethod(LingeredAppWithLock.class));
         Thread objectLock = new Thread(() -> lockMethod(classLock1));
         Thread primitiveLock = new Thread(() -> lockMethod(int.class));
-        Thread objectWait = new Thread(() -> waitMethod(new Object()));
+        Thread objectWait = new Thread(() -> waitMethod());
 
         classLock1.start();
         classLock2.start();
