@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485 8333456
+ * @bug 8327640 8331485 8333456 8335668
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -126,6 +126,27 @@ public class LenientParseTest {
         dFmt.setParseIntegerOnly(true);
         assertEquals(expectedValue, successParse(dFmt, toParse, expectedIndex));
         dFmt.setParseIntegerOnly(false);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test
+    public void integerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getIntegerInstance();
+        failParse(fmt, localizeText("."), 0);
+        failParse(fmt, localizeText(".0"), 0);
+        failParse(fmt, localizeText(".55"), 0);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test // Non-localized, run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void compactIntegerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getIntegerInstance();
+        failParse(fmt, ".K", 0);
+        failParse(fmt, ".0K", 0);
+        failParse(fmt, ".55K", 0);
     }
 
     @Test // Non-localized, only run once
