@@ -922,7 +922,7 @@ void ShenandoahFreeSet::recycle_trash() {
   }
 
   // Relinquish the lock after this much time passed.
-  static constexpr jlong deadline_ns = 10000; // 10 us
+  static constexpr jlong deadline_ns = 30000; // 30 us
 
   size_t idx = 0;
   while (idx < count) {
