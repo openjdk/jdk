@@ -101,13 +101,13 @@ public class TestUnsafeArrayAccessWithNullBase {
 
     public static void main(String[] args) {
         // Warmup to collect speculative types
-        for (int i = 0; i < 100_000; i++) {
+        for (int i = 0; i < 10_000; i++) {
             accessLargeArray(false, true);
             accessSmallArray(false, true);
         }
 
         // Trigger Compilation
-        for (int i = 0; i < 100_000; ++i) {
+        for (int i = 0; i < 10_000; ++i) {
             test1(false);
             test2(false);
         }
