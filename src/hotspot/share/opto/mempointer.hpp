@@ -30,34 +30,41 @@
 // TODO general description
 
 // Summand of a MemPointerSimpleForm.
-//   if node is a long (nodeL):
-//     s = scaleL * nodeL
-//   else, i.e. if node is a int (nodeI):
-//     s = scaleL * ConvI2L(scaleI * nodeI)
+//
+// On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
+//   s = scale * variable
+//
+//   if variable is a long (variableL):
+//     s = scaleL * variableL
+//   else, i.e. if variable is a int (variableI):
+//     s = scaleL * ConvI2L(scaleI * variableI)
+//
+// As a matter of simplicity, we only allow jint scales, and the absolute
+// value
 //
 class MemPointerSummand : public StackObj {
 private:
-  Node* _node;
-  jlong _scaleL; // TODO make jint
-  jlong _scaleI;
+  Node* _variable;
+  jint _scaleL; // TODO make jint
+  jint _scaleI;
 
 public:
-  MemPointerSummand() : _node(nullptr), _scaleL(0), _scaleI(0) {}
-  MemPointerSummand(Node* node, const jlong scaleL, const jlong scaleI)
-    : _node(node), _scaleL(scaleL), _scaleI(scaleI)
+  MemPointerSummand() : _variable(nullptr), _scaleL(0), _scaleI(0) {}
+  MemPointerSummand(Node* variable, const jlong scaleL, const jlong scaleI)
+    : _variable(variable), _scaleL(scaleL), _scaleI(scaleI)
   {
-    assert(_node != nullptr, "must have node");
+    assert(_variable != nullptr, "must have variable");
     assert(_scaleL != 0 && _scaleI != 0, "non-zero scale");
   }
 
-  Node* node() const { return _node; }
+  Node* variable() const { return _variable; }
   jlong scaleL() const { return _scaleL; }
   jlong scaleI() const { return _scaleI; }
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("  MemPointerSummand: %d * %d * node: ", (int)_scaleL, (int)_scaleI);
-    _node->dump();
+    tty->print("  MemPointerSummand: %d * %d * variable: ", (int)_scaleL, (int)_scaleI);
+    _variable->dump();
   }
 #endif
 };
@@ -78,14 +85,14 @@ private:
 public:
   // Empty
   MemPointerSimpleForm() : _pointer(nullptr), _con(0) {}
-  // Default: pointer = node
-  MemPointerSimpleForm(Node* node) : _pointer(node), _con(0) {
-    _summands[0] = MemPointerSummand(node, 1, 1);
+  // Default: pointer = variable
+  MemPointerSimpleForm(Node* variable) : _pointer(variable), _con(0) {
+    _summands[0] = MemPointerSummand(variable, 1, 1);
   }
 
 private:
-  MemPointerSimpleForm(Node* node, const GrowableArray<MemPointerSummand>& summands, const jlong con)
-    :_pointer(node), _con(con) {
+  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jlong con)
+    :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
       _summands[i] = summands.at(i);
@@ -93,11 +100,11 @@ private:
   }
 
 public:
-  static MemPointerSimpleForm make(Node* node, const GrowableArray<MemPointerSummand>& summands, const jlong con) {
+  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jlong con) {
     if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointerSimpleForm(node, summands, con);
+      return MemPointerSimpleForm(pointer, summands, con);
     } else {
-      return MemPointerSimpleForm(node);
+      return MemPointerSimpleForm(pointer);
     }
   }
 
@@ -112,7 +119,7 @@ public:
     tty->print_cr("  con = %d", (int)_con);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
-      if (summand.node() != nullptr) {
+      if (summand.variable() != nullptr) {
         summand.print();
       }
     }

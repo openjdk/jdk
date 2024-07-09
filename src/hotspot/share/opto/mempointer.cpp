@@ -50,7 +50,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 }
 
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
-  Node* n = summand.node();
+  Node* n = summand.variable();
   jlong scaleL = summand.scaleL();
   jlong scaleI = summand.scaleI();
 
