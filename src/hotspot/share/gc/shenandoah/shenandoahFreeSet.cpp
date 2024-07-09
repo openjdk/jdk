@@ -35,7 +35,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
-#include <algorithm>
 
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
@@ -921,22 +920,16 @@ void ShenandoahFreeSet::recycle_trash() {
     }
   }
 
-  if (count != 0) {
-    size_t i = 0, j = 0;
-    while (i < count) {
-      i += _free_set_recycle_batch_size;
-      {
-        ShenandoahHeapLocker locker(_heap->lock());
-        for (; j < i && j < count; j++) {
-          try_recycle_trashed(_trash_regions[j]);
-        }
-      }
-      if (i < count) {
-        os::naked_yield(); //Yield to allow allocators to take the lock
-      }
+  const size_t batch_size = _free_set_recycle_batch_size;
+  const size_t batches = (count / batch_size) + 1;
+  for (int b = 0; b < batches; b++) {
+    os::naked_yield(); // Yield to allow allocators to take the lock
+    const size_t left = MIN2(b * batch_size, count);
+    const size_t right = MIN2((b + 1) * batch_size, count);
+    ShenandoahHeapLocker locker(_heap->lock());
+    for (size_t r = left; r < right; r++) {
+      try_recycle_trashed(_trash_regions[r]);
     }
-    assert(j == count, "Must be");
-    std::fill_n(_trash_regions, count, nullptr);
   }
 }
 
