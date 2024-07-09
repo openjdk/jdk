@@ -27,37 +27,33 @@
  *          when System.exit(0) is invoked along with terminating java program.
  * @library ../helpers
  * @library /test/lib
- * @build jdk.test.lib.Utils
  * @requires os.family == "windows"
- * @build JpackageTest
+ * @build WinChildProcessTest
  * @build jdk.jpackage.test.*
- * @build JpackageTest
+ * @build WinChildProcessTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=JpackageTest
+ *  --jpt-run=WinChildProcessTest
+ *
  */
 
 import java.util.List;
 import java.util.Optional;
 
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
 
-public class JpackageTest {
-    private static final Logger logger = Logger
-            .getLogger(JpackageTest.class.getName());
+public class WinChildProcessTest {
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT
-            .resolve("apps/ThirdPartyAppLauncher.java");
+            .resolve("apps/ChildProcessAppLauncher.java");
 
     @Test
     public static void test() throws Throwable {
-        JpackageTest test = new JpackageTest();
-        long regeditPid = 0;
+        long calcPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
                     .helloAppImage(TEST_APP_JAVA + "*Hello");
@@ -65,40 +61,28 @@ public class JpackageTest {
             // Create the image of the third party application launcher
             cmd.executeAndAssertImageCreated();
 
-            /*
-             * Start the third party application launcher and dump and save the
-             * output of the application
-             */
+            // Start the third party application launcher and dump and save the
+            // output of the application
             List<String> output = new Executor().saveOutput().dumpOutput()
                     .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                     .execute(0).getOutput();
-            String pidStr = output.get(1);
+            String pidStr = output.get(0);
 
-            // parse to get regedit PID
-            regeditPid = Long.parseLong(pidStr.split("=", 2)[1]);
-            logger.info("Regedit PID is " + regeditPid);
+            // parse calculator PID
+            calcPid = Long.parseLong(pidStr.split("=", 2)[1]);
 
-            /*
-             * Check whether the termination of third party application launcher
-             * also terminating the launched third party application. If third
-             * party application is not terminated the test is successful else
-             * failure
-             */
-            Optional<ProcessHandle> processHandle = ProcessHandle
-                    .of(regeditPid);
+            // Check whether the termination of third party application launcher
+            // also terminating the launched third party application
+            // If third party application is not terminated the test is
+            // successful else failure
+            Optional<ProcessHandle> processHandle = ProcessHandle.of(calcPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            if (isAlive) {
-                logger.info("Test Successful");
-            } else {
-                logger.info("Test failed");
-                throw new RuntimeException(
-                        "Test failed: Third party software is terminated");
-            }
-
+            System.out.println("Is Alive " + isAlive);
+            TKit.assertTrue(isAlive, "Check is calculator process is alive");
         } finally {
-            // Kill only a specific regedit instance
-            Runtime.getRuntime().exec("taskkill /F /PID " + regeditPid);
+            // Kill only a specific calculator instance
+            Runtime.getRuntime().exec("taskkill /F /PID " + calcPid);
         }
     }
 }

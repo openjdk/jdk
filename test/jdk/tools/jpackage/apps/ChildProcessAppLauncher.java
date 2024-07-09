@@ -21,17 +21,21 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.IOException;
-import java.util.logging.Logger;
 
-public class ThirdPartyAppLauncher {
-    private static final Logger logger = Logger
-            .getLogger(ThirdPartyAppLauncher.class.getName());
+public class ChildProcessAppLauncher {
+
+    private static final String FS = File.separator;
 
     public static void main(String[] args) throws IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder("regedit");
-        Process process = processBuilder.start();
-        logger.info("RegEdit id=" + process.pid());
-        System.exit(0);
+        String systemPath = System.getenv("SystemRoot");
+        if (systemPath != null) {
+            String calcPath = systemPath + FS + "system32" + FS + "calc.exe";
+            ProcessBuilder processBuilder = new ProcessBuilder(calcPath);
+            Process process = processBuilder.start();
+            System.out.println("Calc id=" + process.pid());
+            System.exit(0);
+        }
     }
 }
