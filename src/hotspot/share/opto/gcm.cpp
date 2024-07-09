@@ -562,34 +562,106 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   return false;
 }
 
-static bool already_enqueued(const Node_List& worklist_mem, const Node_List& worklist_store, Node* mem, PhiNode* phi) {
-  // mem is one of the inputs of phi and at least one input of phi is
-  // not mem. It's however possible that phi has mem as input multiple
-  // times. If that happens, phi is recorded as a use of mem multiple
-  // times as well. When PhaseCFG::insert_anti_dependences() goes over
-  // uses of mem and enqueues them for processing, phi would then be
-  // enqueued for processing multiple times when it only needs to be
-  // processed once. The code below checks if phi as a use of mem was
-  // already enqueued to avoid redundant processing of phi.
-  uint j = worklist_mem.size();
-  // The pair worklist_mem/worklist_store is used as a queue of pairs
-  // (mem,store) where mem is pushed to worklist_mem and store is
-  // pushed to worklist_store and store is a use of mem. Anytime a mem
-  // is pushed/popped to/from worklist_mem, a store has to be
-  // pushed/popped to/from worklist_store.
-  // If there are any use of mem already enqueued, they were enqueued
-  // last (all use of mem are processed in one go).
-  for (; j > 0; j--) {
-    if (worklist_mem.at(j-1) != mem) {
-      // We're done with the uses of mem
-      return false;
+class MemStoreQueue : public StackObj {
+private:
+  class MemStorePair : public StackObj {
+  private:
+    Node* _mem; // memory state
+    Node* _store; // use of the memory state that also modifies the memory state
+
+  public:
+    MemStorePair(Node* mem, Node* store) :
+            _mem(mem), _store(store) {
     }
-    if (worklist_store.at(j-1) == phi) {
-      return true;
+
+    MemStorePair() :
+            _mem(nullptr), _store(nullptr) {
     }
+
+    Node* mem() const {
+      return _mem;
+    }
+
+    Node* store() const {
+      return _store;
+    }
+  };
+
+  GrowableArray<MemStorePair> _queue;
+  Node_List _worklist_visited; // visited mergemem nodes
+
+  bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
+    // def_mem is one of the inputs of use_phi and at least one input of use_phi is
+    // not def_mem. It's however possible that use_phi has def_mem as input multiple
+    // times. If that happens, use_phi is recorded as a use of def_mem multiple
+    // times as well. When PhaseCFG::insert_anti_dependences() goes over
+    // uses of def_mem and enqueues them for processing, use_phi would then be
+    // enqueued for processing multiple times when it only needs to be
+    // processed once. The code below checks if use_phi as a use of def_mem was
+    // already enqueued to avoid redundant processing of use_phi.
+    int j = _queue.length()-1;
+    // If there are any use of def_mem already enqueued, they were enqueued
+    // last (all use of def_mem are processed in one go).
+    for (; j >= 0; j--) {
+      const MemStorePair& mem_store_pair = _queue.at(j);
+      if (mem_store_pair.mem() != def_mem) {
+        // We're done with the uses of def_mem
+        break;
+      }
+      if (mem_store_pair.store() == use_phi) {
+        return true;
+      }
+    }
+#ifdef ASSERT
+    for (; j >= 0; j--) {
+      const MemStorePair& mem_store_pair = _queue.at(j);
+      assert(mem_store_pair.mem() != def_mem, "Should be done with the uses of def_mem");
+    }
+#endif
+    return false;
   }
-  return false;
-}
+
+public:
+  MemStoreQueue(ResourceArea* area) :
+          _worklist_visited((area)) {
+  }
+
+  void push(Node* mem, Node* store) {
+    if (store->is_MergeMem()) {
+      // Be sure we don't get into combinatorial problems.
+      // (Allow phis to be repeated; they can merge two relevant states.)
+      uint j = _worklist_visited.size();
+      for (; j > 0; j--) {
+        if (_worklist_visited.at(j-1) == store)  return; // already on work list; do not repeat
+      }
+      _worklist_visited.push(store);
+    } else if (store->is_Phi()) {
+      // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
+      // more than once.
+      if (already_enqueued(mem, store->as_Phi())) {
+        return;
+      }
+    }
+
+    _queue.push(MemStorePair(mem, store));
+  }
+
+  bool is_nonempty() const {
+    return _queue.is_nonempty();
+  }
+
+  Node* top_mem() const {
+    return _queue.top().mem();
+  }
+
+  Node* top_store() const {
+    return _queue.top().store();
+  }
+
+  void pop() {
+    _queue.pop();
+  }
+};
 
 //--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
@@ -655,10 +727,8 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     early = memory_early_block(load, early, this);
   }
 
-  ResourceArea *area = Thread::current()->resource_area();
-  Node_List worklist_mem(area);     // prior memory state to store
-  Node_List worklist_store(area);   // possible-def to explore
-  Node_List worklist_visited(area); // visited mergemem nodes
+  ResourceArea* area = Thread::current()->resource_area();
+  MemStoreQueue worklist_mem_store(area); // prior memory state to store and possible-def to explore
   Node_List non_early_stores(area); // all relevant stores outside of early
   bool must_raise_LCA = false;
 
@@ -678,13 +748,13 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // The anti-dependence constraints apply only to the fringe of this tree.
 
   Node* initial_mem = load->in(MemNode::Memory);
-  worklist_store.push(initial_mem);
-  worklist_visited.push(initial_mem);
-  worklist_mem.push(nullptr);
-  while (worklist_store.size() > 0) {
+  worklist_mem_store.push(nullptr, initial_mem);
+  while (worklist_mem_store.is_nonempty()) {
     // Examine a nearby store to see if it might interfere with our load.
-    Node* mem   = worklist_mem.pop();
-    Node* store = worklist_store.pop();
+    Node* mem   = worklist_mem_store.top_mem();
+    Node* store = worklist_mem_store.top_store();
+    worklist_mem_store.pop();
+
     uint op = store->Opcode();
     assert(!store->needs_anti_dependence_check(), "only stores");
 
@@ -704,24 +774,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         if (store->needs_anti_dependence_check()) {
           continue;
         }
-        if (store->is_MergeMem()) {
-          // Be sure we don't get into combinatorial problems.
-          // (Allow phis to be repeated; they can merge two relevant states.)
-          uint j = worklist_visited.size();
-          for (; j > 0; j--) {
-            if (worklist_visited.at(j-1) == store)  break;
-          }
-          if (j > 0)  continue; // already on work list; do not repeat
-          worklist_visited.push(store);
-        } else if (store->is_Phi()) {
-          // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
-          // more than once.
-          if (already_enqueued(worklist_mem, worklist_store, mem, store->as_Phi())) {
-            continue;
-          }
-        }
-        worklist_mem.push(mem);
-        worklist_store.push(store);
+        worklist_mem_store.push(mem, store);
       }
       continue;
     }
