@@ -390,7 +390,7 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 
 
 ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause, bool try_read) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert(UseObjectMonitorTable, "must be");
 
   EventJavaMonitorInflate event;
 
