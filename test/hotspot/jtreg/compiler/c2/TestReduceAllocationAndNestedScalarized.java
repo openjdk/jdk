@@ -58,21 +58,21 @@ public class TestReduceAllocationAndNestedScalarized {
 
     static int test(boolean cond) {
         Picture p = new Picture();
-		p.first = new Point();
-	    Point p2 = p.first;
+        p.first = new Point();
+        Point p2 = p.first;
 
         if (cond) p2 = new Point();
 
-	    p.second = p2;
+        p.second = p2;
 
-	    new Unloaded();
+        new Unloaded();
 
         return p.first.x;
     }
 
     public static void main(String[] args) {
         Picture pic = new Picture();
-	    Point pnt   = new Point();
+        Point pnt   = new Point();
         int res     = test(true);
         System.out.println("Result is: " + res);
     }
