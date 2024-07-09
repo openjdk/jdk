@@ -218,7 +218,8 @@ public class StrictParseTest {
     @Test // Non-localized, run once
     @EnabledIfSystemProperty(named = "user.language", matches = "en")
     public void compactIntegerParseOnlyFractionOnlyTest() {
-        var fmt = NumberFormat.getIntegerInstance();
+        var fmt = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+        fmt.setParseIntegerOnly(true);
         failParse(fmt, ".K", 0);
         failParse(fmt, ".0K", 0);
         failParse(fmt, ".55K", 0);
