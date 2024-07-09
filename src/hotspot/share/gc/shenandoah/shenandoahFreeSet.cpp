@@ -900,7 +900,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
+void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
   if (r->is_trash()) {
     _heap->decrease_used(r->used());
     r->recycle();
@@ -925,9 +925,11 @@ void ShenandoahFreeSet::recycle_trash() {
     os::naked_yield(); // Yield to allow allocators to take the lock
     const size_t left = MIN2(b * batch_size, count);
     const size_t right = MIN2((b + 1) * batch_size, count);
-    ShenandoahHeapLocker locker(_heap->lock());
-    for (size_t r = left; r < right; r++) {
-      try_recycle_trashed(_trash_regions[r]);
+    if (left < right) {
+      ShenandoahHeapLocker locker(_heap->lock());
+      for (size_t r = left; r < right; r++) {
+        try_recycle_trashed(_trash_regions[r]);
+      }
     }
   }
 }
