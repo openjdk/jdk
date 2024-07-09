@@ -35,7 +35,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
-    if (traversal_count++ > 1000) { return MemPointerSimpleForm(); } // TODO invalid?
+    if (traversal_count++ > 1000) { return MemPointerSimpleForm(pointer); }
     parse_sub_expression(_worklist.pop());
   }
 
@@ -46,7 +46,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
   tty->print_cr("con: %d", (int)_con);
 
-  return MemPointerSimpleForm(); // TODO build from internals
+  return MemPointerSimpleForm::make(pointer, _summands, _con);
 }
 
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {

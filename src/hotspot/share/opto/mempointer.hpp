@@ -83,6 +83,24 @@ public:
     _summands[0] = MemPointerSummand(node, 1, 1);
   }
 
+private:
+  MemPointerSimpleForm(Node* node, const GrowableArray<MemPointerSummand>& summands, const jlong con)
+    :_pointer(node), _con(con) {
+    assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+    for (int i = 0; i < summands.length(); i++) {
+      _summands[i] = summands.at(i);
+    }
+  }
+
+public:
+  static MemPointerSimpleForm make(Node* node, const GrowableArray<MemPointerSummand>& summands, const jlong con) {
+    if (summands.length() <= SUMMANDS_SIZE) {
+      return MemPointerSimpleForm(node, summands, con);
+    } else {
+      return MemPointerSimpleForm(node);
+    }
+  }
+
 #ifndef PRODUCT
   void print() const {
     if (_pointer == nullptr) {
@@ -91,7 +109,7 @@ public:
     }
     tty->print("MemPointerSimpleForm for ");
     _pointer->dump();
-    tty->print("  con = %d", (int)_con);
+    tty->print_cr("  con = %d", (int)_con);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
       if (summand.node() != nullptr) {
