@@ -336,7 +336,6 @@ public class resume001 {
                     break label1;
                 log2("       thread2 is at breakpoint");
 
-
                 log2("......checking up that thread2.resume() resumes thread2 suspended with VirtualMachine.suspend()");
 
                 log2("       enabling breakpRequest3");
@@ -353,6 +352,13 @@ public class resume001 {
                     expresult = returnCode1;
                     break label1;
                 }
+
+                // We need to resume the main thread because thread2 might be blocked on it,
+                // but we want to keep thread2 suspended.
+                log2("       allow main thead (and others) to run while keeping thread2 suspended");
+                thread2.suspend();
+                vm.resume();
+
                 log2("       second resuming the thread2 with thread2.resume()");
                 thread2.resume();
                 log2("       getting BreakpointEvent");
@@ -366,7 +372,6 @@ public class resume001 {
                 thread2.resume();
 
             }
-            vm.resume();
             vm.resume();  // for case error when both VirtualMachine and the thread2 were suspended
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -487,7 +492,7 @@ public class resume001 {
                 try {
                     eventSet = eventQueue.remove(waitTime*60000);
                     if (eventSet == null) {
-                        log3("ERROR:  timeout for waiting for a BreakpintEvent");
+                        log3("ERROR:  timeout for waiting for a BreakpointEvent");
                         returnCode = returnCode3;
                         break labelBP;
                     }
