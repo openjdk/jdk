@@ -82,12 +82,18 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
     _heap = ShenandoahHeap::heap();
     _heuristics = _heap->old_generation()->heuristics();
     _collection_set = _heap->collection_set();
-    ShenandoahHeapLocker locker(_heap->lock());
+    _heap->lock()->lock(false);
     ShenandoahResetRegions reset;
     _heap->heap_region_iterate(&reset);
-    _heap->old_generation()->set_evacuation_reserve(_heap->old_generation()->soft_max_capacity() / 4);
+    _heap->old_generation()->set_capacity(ShenandoahHeapRegion::region_size_bytes() * 10);
+    _heap->old_generation()->set_evacuation_reserve(ShenandoahHeapRegion::region_size_bytes() * 4);
     _heuristics->abandon_collection_candidates();
     _collection_set->clear();
+  }
+
+  ~ShenandoahOldHeuristicTest() override {
+    SKIP_IF_NOT_SHENANDOAH();
+    _heap->lock()->unlock();
   }
 
   ShenandoahOldGeneration::State old_generation_state() {
@@ -95,7 +101,6 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
   }
 
   size_t make_garbage(size_t region_idx, size_t garbage_bytes) {
-    ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahHeapRegion* region = _heap->get_region(region_idx);
     region->set_affiliation(OLD_GENERATION);
     region->make_regular_allocation(OLD_GENERATION);
@@ -106,7 +111,7 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
   }
 
   size_t create_too_much_garbage_for_one_mixed_evacuation() {
-    size_t garbage_target = _heap->old_generation()->soft_max_capacity() / 2;
+    size_t garbage_target = _heap->old_generation()->max_capacity() / 2;
     size_t garbage_total = 0;
     size_t region_idx = 0;
     while (garbage_total < garbage_target && region_idx < _heap->num_regions()) {
@@ -116,14 +121,12 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
   }
 
   void make_pinned(size_t region_idx) {
-    ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahHeapRegion* region = _heap->get_region(region_idx);
     region->record_pin();
     region->make_pinned();
   }
 
   void make_unpinned(size_t region_idx) {
-    ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahHeapRegion* region = _heap->get_region(region_idx);
     region->record_unpin();
     region->make_unpinned();
