@@ -251,11 +251,9 @@ inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
 }
 
 inline void JavaThread::om_clear_monitor_cache() {
-  if (!UseObjectMonitorTable) {
-    return;
+  if (UseObjectMonitorTable) {
+    _om_cache.clear();
   }
-
-  _om_cache.clear();
 }
 
 inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {
