@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires !vm.graal.enabled
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
