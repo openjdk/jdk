@@ -354,6 +354,9 @@ public class MOAT {
         testEmptyMap(Map.of());
         testMapMutatorsAlwaysThrow(Map.of());
         testEmptyMapMutatorsAlwaysThrow(Map.of());
+        testEmptyCollMutatorsAlwaysThrow(Map.of().entrySet());
+        testEmptyCollMutatorsAlwaysThrow(Map.of().keySet());
+        testEmptyCollMutatorsAlwaysThrow(Map.of().values());
         for (Map<Integer,Integer> map : Arrays.asList(
                 Map.<Integer,Integer>of(),
                 Map.of(1, 101),
@@ -370,6 +373,9 @@ public class MOAT {
             testMap(map);
             testImmutableMap(map);
             testMapMutatorsAlwaysThrow(map);
+            testCollMutatorsAlwaysThrow(map.entrySet(), Map.entry(42, 43));
+            testCollMutatorsAlwaysThrow(map.keySet());
+            testCollMutatorsAlwaysThrow(map.values());
         }
 
         Map<Integer,Integer> mapCopy = Map.copyOf(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303)));
@@ -532,9 +538,13 @@ public class MOAT {
      * @param c the collection instance to test
      */
     private static void testCollMutatorsAlwaysThrow(Collection<Integer> c) {
+      testCollMutatorsAlwaysThrow(c, ABSENT_VALUE);
+    }
+
+    private static <T> void testCollMutatorsAlwaysThrow(Collection<T> c, T t) {
         THROWS(UnsupportedOperationException.class,
                 () -> c.addAll(Collections.emptyList()),
-                () -> c.remove(ABSENT_VALUE),
+                () -> c.remove(t),
                 () -> c.removeAll(Collections.emptyList()),
                 () -> c.removeIf(x -> false),
                 () -> c.retainAll(c));
@@ -546,7 +556,7 @@ public class MOAT {
      *
      * @param c the collection instance to test, must be empty
      */
-    private static void testEmptyCollMutatorsAlwaysThrow(Collection<Integer> c) {
+    private static void testEmptyCollMutatorsAlwaysThrow(Collection<?> c) {
         if (! c.isEmpty()) {
             fail("collection is not empty");
         }
@@ -1328,6 +1338,7 @@ public class MOAT {
         }
         check(m.hashCode() == hashCode);
         check(m.hashCode() == m.entrySet().hashCode());
+        check(Set.copyOf(m.keySet()).hashCode() == m.keySet().hashCode());
 
         if (m instanceof ConcurrentMap)
             testConcurrentMap((ConcurrentMap<Integer,Integer>) m);
