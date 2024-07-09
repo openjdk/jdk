@@ -76,6 +76,7 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      * Apply a transform to a model, directing results to this builder.
      * @param model the model to transform
      * @param transform the transform to apply
+     * @return this builder
      */
     default B transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
         @SuppressWarnings("unchecked")
