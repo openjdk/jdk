@@ -179,7 +179,7 @@ public class StringConcatStartup {
             concat = "" + c + i + i + d + S + z + c + i + c + S + f + i + c + c;
             concat = "" + "S" + "S" + c + d + z + l + d + z + f + b + d + z + S + f;
             concat = "" + b + d + z + d + i + z + d + b + d + "S" + c + f + d;
-            concat = "" + d + s + f + c + i + "S" + b + b +  S + i + s + d + "S" + f;
+            concat = "" + d + s + f + c + i + "S" + b + b + S + i + s + d + "S" + f;
             concat = "" + l + S + d + b + S + s + "S" + s + s + l + S + "S" + c + d;
             concat = "" + c + s + z + c + S + S + "S" + l + S + f + f + c + S + f;
             concat = "" + d + i + s + c + z + "S" + d + f + "S" + S + c + b + "S" + c;
@@ -188,9 +188,9 @@ public class StringConcatStartup {
             concat = "" + S + s + "S" + d + s + z + "S" + i + i + z + S + b + f + i;
             concat = "" + z + S + S + "S" + S + S + z + b + S + z + b + f + s + l;
             concat = "" + s + z + d + "S" + z + l + f + z + s + z + d + l + s + l;
-            concat = "" + l + d + i + s + i + c + i + f +  b + f + s + b + s + s;
+            concat = "" + l + d + i + s + i + c + i + f + b + f + s + b + s + s;
             concat = "" + z + "S" + S + "S" + "S" + i + "S" + s + d + z + l;
-            concat = "" + i + S + S + "S" + f + "S" + "S" +  z + S + z + b + z + c + b;
+            concat = "" + i + S + S + "S" + f + "S" + "S" + z + S + z + b + z + c + b;
             concat = "" + i + f + f + d + z + f + z + b + "S" + c + l + l + z + s + S + s;
             concat = "" + b + b + z + "S" + f + s + "S" + l +c + S + i + i + b + "S" + S;
             concat = "" + i + "S" + d + d + d + "S" + f + "S" + b + s + S + i + "S" + d + b;
@@ -220,7 +220,7 @@ public class StringConcatStartup {
             concat = "" + "S" + b + l + z + c + f + l + S + "S" + l + i + z + z + l + S + "S" + z + S + z + c + "S";
             concat = "" + "S" + f + S + i + i + i + "S" + i + i + l + c + l + S + S + z + b + i + c + f + S;
             concat = "" + c + z + S + S + b + i + c;
-            concat = "" + S + s  + S + c;
+            concat = "" + S + s + S + c;
         }
     }
 
@@ -307,7 +307,7 @@ public class StringConcatStartup {
             concat = "" + c + i + i + d + S + z + c + i + c + S + f + i + c + c;
             concat = "" + "S" + "S" + c + d + z + l + d + z + f + b + d + z + S + f;
             concat = "" + b + d + z + d + i + z + d + b + d + "S" + c + f + d;
-            concat = "" + d + s + f + c + i + "S" + b + b +  S + i + s + d + "S" + f;
+            concat = "" + d + s + f + c + i + "S" + b + b + S + i + s + d + "S" + f;
             concat = "" + l + S + d + b + S + s + "S" + s + s + l + S + "S" + c + d;
             concat = "" + c + s + z + c + S + S + "S" + l + S + f + f + c + S + f;
             concat = "" + d + i + s + c + z + "S" + d + f + "S" + S + c + b + "S" + c;
@@ -316,9 +316,9 @@ public class StringConcatStartup {
             concat = "" + S + s + "S" + d + s + z + "S" + i + i + z + S + b + f + i;
             concat = "" + z + S + S + "S" + S + S + z + b + S + z + b + f + s + l;
             concat = "" + s + z + d + "S" + z + l + f + z + s + z + d + l + s + l;
-            concat = "" + l + d + i + s + i + c + i + f +  b + f + s + b + s + s;
+            concat = "" + l + d + i + s + i + c + i + f + b + f + s + b + s + s;
             concat = "" + z + "S" + S + "S" + "S" + i + "S" + s + d + z + l;
-            concat = "" + i + S + S + "S" + f + "S" + "S" +  z + S + z + b + z + c + b;
+            concat = "" + i + S + S + "S" + f + "S" + "S" + z + S + z + b + z + c + b;
             concat = "" + i + f + f + d + z + f + z + b + "S" + c + l + l + z + s + S + s;
             concat = "" + b + b + z + "S" + f + s + "S" + l +c + S + i + i + b + "S" + S;
             concat = "" + i + "S" + d + d + d + "S" + f + "S" + b + s + S + i + "S" + d + b;
@@ -348,7 +348,7 @@ public class StringConcatStartup {
             concat = "" + "S" + b + l + z + c + f + l + S + "S" + l + i + z + z + l + S + "S" + z + S + z + c + "S";
             concat = "" + "S" + f + S + i + i + i + "S" + i + i + l + c + l + S + S + z + b + i + c + f + S;
             concat = "" + c + z + S + S + b + i + c;
-            concat = "" + S + s  + S + c;
+            concat = "" + S + s + S + c;
         }
     }
 }
