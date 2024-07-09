@@ -924,9 +924,8 @@ void ShenandoahFreeSet::recycle_trash() {
   size_t idx = 0;
   while (idx < count) {
     os::naked_yield(); // Yield to allow allocators to take the lock
-
     ShenandoahHeapLocker locker(_heap->lock());
-    jlong deadline = os::javaTimeNanos() + deadline_ns;
+    const jlong deadline = os::javaTimeNanos() + deadline_ns;
     while (idx < count && os::javaTimeNanos() < deadline) {
       try_recycle_trashed(_trash_regions[idx++]);
     }
