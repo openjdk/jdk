@@ -1032,10 +1032,7 @@ public class MessageFormat extends Format {
 
     /**
      * Creates a MessageFormat with the given pattern and uses it
-     * to format the given arguments. This is equivalent to
-     * <blockquote>
-     *     <code>(new {@link #MessageFormat(String) MessageFormat}(pattern)).{@link #format(java.lang.Object[], java.lang.StringBuffer, java.text.FieldPosition) format}(arguments, new StringBuffer(), null).toString()</code>
-     * </blockquote>
+     * to format the given arguments.
      *
      * @param pattern   the pattern string
      * @param arguments object(s) to format
