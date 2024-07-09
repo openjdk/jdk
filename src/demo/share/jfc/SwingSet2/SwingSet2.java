@@ -83,8 +83,8 @@ public class SwingSet2 extends JPanel {
     private ArrayList<DemoModule> demosList = new ArrayList<DemoModule>();
 
     // The preferred size of the demo
-    private static final int PREFERRED_WIDTH = 1020;
-    private static final int PREFERRED_HEIGHT = 910;
+    private static final int PREFERRED_WIDTH = 720;
+    private static final int PREFERRED_HEIGHT = 640;
 
     // Box spacers
     private Dimension HGAP = new Dimension(1,5);
@@ -848,6 +848,11 @@ public class SwingSet2 extends JPanel {
         if (frame == null) {
             SwingUtilities.updateComponentTreeUI(this);
         } else {
+            if (currentLookAndFeel.name.contains("GTK")) {
+                frame.setSize(980, 870);
+            } else {
+                frame.setSize(PREFERRED_WIDTH, PREFERRED_HEIGHT);
+            }
             SwingUtilities.updateComponentTreeUI(frame);
         }
 
