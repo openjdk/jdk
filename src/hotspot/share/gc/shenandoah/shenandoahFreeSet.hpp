@@ -271,7 +271,6 @@ private:
   ssize_t _alloc_bias_weight;
 
   const ssize_t _InitialAllocBiasWeight = 256;
-  const size_t _free_set_recycle_batch_size = 128;
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 

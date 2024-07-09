@@ -919,9 +919,9 @@ void ShenandoahFreeSet::recycle_trash() {
     }
   }
 
-  const size_t batch_size = _free_set_recycle_batch_size;
+  static constexpr size_t batch_size = 128;
   const size_t batches = (count / batch_size) + 1;
-  for (int b = 0; b < batches; b++) {
+  for (size_t b = 0; b < batches; b++) {
     os::naked_yield(); // Yield to allow allocators to take the lock
     const size_t left = MIN2(b * batch_size, count);
     const size_t right = MIN2((b + 1) * batch_size, count);
