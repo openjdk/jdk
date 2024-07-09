@@ -2001,10 +2001,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     {
       __ block_comment("dtrace entry {");
       __ bind(dtrace_method_entry);
-  
+
       // We have all of the arguments setup at this point. We must not touch any register
       // argument registers at this point (what if we save/restore them there are no oop?
-  
+
       save_args(masm, total_c_args, c_arg, out_regs);
       __ mov_metadata(c_rarg1, method());
       __ call_VM_leaf(
@@ -2014,7 +2014,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ j(dtrace_method_entry_done);
       __ block_comment("} dtrace entry");
     }
-  
+
     {
       __ block_comment("dtrace exit {");
       __ bind(dtrace_method_exit);
