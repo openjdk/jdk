@@ -201,6 +201,7 @@ public final class SourceLauncher {
         try {
             ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
             firstClass = Class.forName(firstClassName, false, loader);
+            Thread.currentThread().setContextClassLoader(loader);
         } catch (ClassNotFoundException e) {
             throw new Fault(Errors.CantFindClass(firstClassName));
         }
