@@ -2012,6 +2012,12 @@ class MutableBigInteger {
         // Recursive step (len >= 3)
 
         // Normalize
+        /* For speed, the normalization is performed only "logically",
+         * which means that the contents of the input are not changed,
+         * but only its logical length, which is stored in the parameter len.
+         * The length is normalized to a mutiple of 4 because, in this way,
+         * the input can be always split in blocks of words without twiddling with bits.
+         */
         final int limit = len;
         final int excessInts = (-len) & 3;
         len += excessInts; // len must be a multiple of 4
