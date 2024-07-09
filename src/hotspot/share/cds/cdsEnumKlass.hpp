@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @key cgroups
- * @requires (os.family == "linux" & !vm.musl)
- * @requires vm.flagless
- * @library /test/lib
- * @build TestSystemSettings
- * @run main/othervm TestSystemSettings
- */
+#ifndef SHARE_CDS_CDSENUMKLASS_HPP
+#define SHARE_CDS_CDSENUMKLASS_HPP
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+#include "memory/allStatic.hpp"
+#include "oops/oop.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
-public class TestSystemSettings {
+class InstanceKlass;
+class JavaFieldStream;
+class KlassSubGraphInfo;
 
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+class CDSEnumKlass: AllStatic {
+public:
+  static bool is_enum_obj(oop orig_obj);
+  static void handle_enum_obj(int level,
+                              KlassSubGraphInfo* subgraph_info,
+                              oop orig_obj);
+  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-        output.shouldContain("System not containerized.");
-    }
-}
+private:
+  static void archive_static_field(int level, KlassSubGraphInfo* subgraph_info,
+                                   InstanceKlass* ik, oop mirror, JavaFieldStream& fs);
+};
+
+#endif // SHARE_CDS_CDSENUMKLASS_HPP
