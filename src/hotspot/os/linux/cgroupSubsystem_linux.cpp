@@ -28,6 +28,7 @@
 #include "cgroupSubsystem_linux.hpp"
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "os_linux.hpp"
@@ -41,7 +42,7 @@ static const char* cg_controller_name[] = { "cpu", "cpuset", "cpuacct", "memory"
 CgroupSubsystem* CgroupSubsystemFactory::create() {
   CgroupV1MemoryController* memory = nullptr;
   CgroupV1Controller* cpuset = nullptr;
-  CgroupV1Controller* cpu = nullptr;
+  CgroupV1CpuController* cpu = nullptr;
   CgroupV1Controller* cpuacct = nullptr;
   CgroupV1Controller* pids = nullptr;
   CgroupInfo cg_infos[CG_INFO_LENGTH];
@@ -61,14 +62,18 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   if (is_cgroup_v2(&cg_type_flags)) {
     // Cgroups v2 case, we have all the info we need.
     // Construct the subsystem, free resources and return
-    // Note: any index in cg_infos will do as the path is the same for
-    //       all controllers.
-    CgroupController* unified = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path,
-                                                       cg_infos[MEMORY_IDX]._cgroup_path,
-                                                       cg_infos[MEMORY_IDX]._read_only);
+    // Note: We use the memory for non-cpu non-memory controller look-ups.
+    //       Perhaps we ought to have separate controllers for all.
+    CgroupV2Controller mem_other = CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path,
+                                                      cg_infos[MEMORY_IDX]._cgroup_path,
+                                                      cg_infos[MEMORY_IDX]._read_only);
+    CgroupV2MemoryController* memory = new CgroupV2MemoryController(mem_other);
+    CgroupV2CpuController* cpu = new CgroupV2CpuController(CgroupV2Controller(cg_infos[CPU_IDX]._mount_path,
+                                                                              cg_infos[CPU_IDX]._cgroup_path,
+                                                                              cg_infos[CPU_IDX]._read_only));
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
     cleanup(cg_infos);
-    return new CgroupV2Subsystem(unified);
+    return new CgroupV2Subsystem(memory, cpu, mem_other);
   }
 
   /*
@@ -102,13 +107,13 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     CgroupInfo info = cg_infos[i];
     if (info._data_complete) { // pids controller might have incomplete data
       if (strcmp(info._name, "memory") == 0) {
-        memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path, info._read_only);
+        memory = new CgroupV1MemoryController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         memory->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuset") == 0) {
         cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
         cpuset->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpu") == 0) {
-        cpu = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
+        cpu = new CgroupV1CpuController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         cpu->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuacct") == 0) {
         cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
@@ -556,13 +561,13 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  */
 int CgroupSubsystem::active_processor_count() {
   int quota_count = 0;
-  int cpu_count, limit_count;
+  int cpu_count;
   int result;
 
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController* contrl = cpu_controller();
+  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
   CachedMetric* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
     int val = (int)cpu_limit->value();
@@ -570,23 +575,8 @@ int CgroupSubsystem::active_processor_count() {
     return val;
   }
 
-  cpu_count = limit_count = os::Linux::active_processor_count();
-  int quota  = cpu_quota();
-  int period = cpu_period();
-
-  if (quota > -1 && period > 0) {
-    quota_count = ceilf((float)quota / (float)period);
-    log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
-  }
-
-  // Use quotas
-  if (quota_count != 0) {
-    limit_count = quota_count;
-  }
-
-  result = MIN2(cpu_count, limit_count);
-  log_trace(os, container)("OSContainer::active_processor_count: %d", result);
-
+  cpu_count = os::Linux::active_processor_count();
+  result = CgroupUtil::processor_count(contrl->controller(), cpu_count);
   // Update cached metric to avoid re-reading container settings too often
   cpu_limit->set_value(result, OSCONTAINER_CACHE_TIMEOUT);
 
@@ -603,35 +593,14 @@ int CgroupSubsystem::active_processor_count() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupSubsystem::memory_limit_in_bytes() {
-  CachingCgroupController* contrl = memory_controller();
+  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
   CachedMetric* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }
   jlong phys_mem = os::Linux::physical_memory();
   log_trace(os, container)("total physical memory: " JLONG_FORMAT, phys_mem);
-  jlong mem_limit = read_memory_limit_in_bytes();
-
-  if (mem_limit <= 0 || mem_limit >= phys_mem) {
-    jlong read_mem_limit = mem_limit;
-    const char *reason;
-    if (mem_limit >= phys_mem) {
-      // Exceeding physical memory is treated as unlimited. Cg v1's implementation
-      // of read_memory_limit_in_bytes() caps this at phys_mem since Cg v1 has no
-      // value to represent 'max'. Cg v2 may return a value >= phys_mem if e.g. the
-      // container engine was started with a memory flag exceeding it.
-      reason = "ignored";
-      mem_limit = -1;
-    } else if (OSCONTAINER_ERROR == mem_limit) {
-      reason = "failed";
-    } else {
-      assert(mem_limit == -1, "Expected unlimited");
-      reason = "unlimited";
-    }
-    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
-                             reason, read_mem_limit, phys_mem);
-  }
-
+  jlong mem_limit = contrl->controller()->read_memory_limit_in_bytes(phys_mem);
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;
@@ -795,4 +764,56 @@ jlong CgroupController::limit_from_str(char* limit_str) {
     return OSCONTAINER_ERROR;
   }
   return (jlong)limit;
+}
+
+// CgroupSubsystem implementations
+
+jlong CgroupSubsystem::memory_and_swap_limit_in_bytes() {
+  julong phys_mem = os::Linux::physical_memory();
+  julong host_swap = os::Linux::host_swap();
+  return memory_controller()->controller()->memory_and_swap_limit_in_bytes(phys_mem, host_swap);
+}
+
+jlong CgroupSubsystem::memory_and_swap_usage_in_bytes() {
+  julong phys_mem = os::Linux::physical_memory();
+  julong host_swap = os::Linux::host_swap();
+  return memory_controller()->controller()->memory_and_swap_usage_in_bytes(phys_mem, host_swap);
+}
+
+jlong CgroupSubsystem::memory_soft_limit_in_bytes() {
+  julong phys_mem = os::Linux::physical_memory();
+  return memory_controller()->controller()->memory_soft_limit_in_bytes(phys_mem);
+}
+
+jlong CgroupSubsystem::memory_usage_in_bytes() {
+  return memory_controller()->controller()->memory_usage_in_bytes();
+}
+
+jlong CgroupSubsystem::memory_max_usage_in_bytes() {
+  return memory_controller()->controller()->memory_max_usage_in_bytes();
+}
+
+jlong CgroupSubsystem::rss_usage_in_bytes() {
+  return memory_controller()->controller()->rss_usage_in_bytes();
+}
+
+jlong CgroupSubsystem::cache_usage_in_bytes() {
+  return memory_controller()->controller()->cache_usage_in_bytes();
+}
+
+int CgroupSubsystem::cpu_quota() {
+  return cpu_controller()->controller()->cpu_quota();
+}
+
+int CgroupSubsystem::cpu_period() {
+  return cpu_controller()->controller()->cpu_period();
+}
+
+int CgroupSubsystem::cpu_shares() {
+  return cpu_controller()->controller()->cpu_shares();
+}
+
+void CgroupSubsystem::print_version_specific_info(outputStream* st) {
+  julong phys_mem = os::Linux::physical_memory();
+  memory_controller()->controller()->print_version_specific_info(st, phys_mem);
 }
