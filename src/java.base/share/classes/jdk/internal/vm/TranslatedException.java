@@ -48,7 +48,7 @@ import java.util.zip.GZIPOutputStream;
  * that arose during translation.
  */
 @SuppressWarnings("serial")
-final class TranslatedException extends Exception {
+public final class TranslatedException extends Exception {
 
     /**
      * The value returned by {@link #encodeThrowable(Throwable)} when encoding
