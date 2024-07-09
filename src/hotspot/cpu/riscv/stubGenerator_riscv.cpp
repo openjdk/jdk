@@ -5746,6 +5746,53 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
     }
 
+#ifdef COMPILER2
+    if (UseRVV) {
+      // Get native vector math stub routine addresses
+      void* libvectormath = nullptr;
+      char ebuf[1024];
+      char dll_name[JVM_MAXPATHLEN];
+      if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "vectormath")) {
+        libvectormath = os::dll_load(dll_name, ebuf, sizeof ebuf);
+      }
+      if (libvectormath != nullptr) {
+        // Method naming convention
+        //   All the methods are named as <OP><T>_<U><suffix>
+        //
+        //   Where:
+        //     <OP>     is the operation name, e.g. sin, cos
+        //     <T>      is to indicate float/double
+        //              "fx/dx" for vector float/double operation
+        //     <U>      is the precision level
+        //              "u10/u05" represents 1.0/0.5 ULP error bounds
+        //               We use "u10" for all operations by default
+        //               But for those functions do not have u10 support, we use "u05" instead
+        //     <suffix> rvv, indicates riscv vector extension
+        //
+        //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
+        //
+        log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "vectormath" JNI_LIB_SUFFIX, p2i(libvectormath));
+
+        for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+          int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+
+          // The native library does not support u10 level of "hypot".
+          const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+          snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
+          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvectormath, ebuf);
+
+          snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
+          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvectormath, ebuf);
+        }
+      } else {
+        log_info(library)("Failed to load native vector math library, %s!", ebuf);
+      }
+    } else {
+      log_info(library)("vector is not supported, skip loading vector math library!");
+    }
+#endif // COMPILER2
+
 #endif // COMPILER2_OR_JVMCI
   }
 

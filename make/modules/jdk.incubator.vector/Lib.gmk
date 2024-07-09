@@ -52,3 +52,17 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2
 
   TARGETS += $(BUILD_LIBVECTORMATH)
 endif
+
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, riscv64)+$(INCLUDE_COMPILER2), true+true+true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBVECTORMATH, \
+      NAME := vectormath, \
+      DISABLED_WARNINGS_gcc := unused-function, \
+      DISABLED_WARNINGS_clang := unused-function, \
+      CFLAGS := $(CFLAGS_JDKLIB) -O3 -march=rv64gcv, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := $(JDKLIB_LIBS) \
+  ))
+
+  TARGETS += $(BUILD_LIBVECTORMATH)
+endif
