@@ -23,19 +23,15 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class ChildProcessAppLauncher {
 
-    private static final String FS = File.separator;
-
     public static void main(String[] args) throws IOException {
-        String systemPath = System.getenv("SystemRoot");
-        if (systemPath != null) {
-            String calcPath = systemPath + FS + "system32" + FS + "calc.exe";
+            String calcPath = Path.of(System.getenv("SystemRoot"), "system32", "calc.exe").toString();
             ProcessBuilder processBuilder = new ProcessBuilder(calcPath);
             Process process = processBuilder.start();
             System.out.println("Calc id=" + process.pid());
             System.exit(0);
-        }
     }
 }
