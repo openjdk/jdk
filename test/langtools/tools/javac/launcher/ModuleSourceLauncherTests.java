@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304400 8332226
+ * @bug 8304400 8332226 8334761
  * @summary Test source launcher running Java programs contained in one module
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit ModuleSourceLauncherTests
@@ -217,6 +217,68 @@ class ModuleSourceLauncherTests {
                       """
                       Foo[]
                       """.lines(), out.stream()),
+                () -> assertTrue(err.isEmpty())
+        );
+    }
+
+    @Test
+    void testAutomaticModuleAlreadyInModuleGraph(@TempDir Path base) throws Exception {
+        Files.createDirectories(base.resolve("foo", "foo"));
+        Files.writeString(base.resolve("foo", "module-info.java"),
+                """
+                module foo {
+                  exports foo;
+                }
+                """);
+        Files.writeString(base.resolve("foo", "foo", "Foo.java"),
+                """
+                package foo;
+                public record Foo() {}
+                """);
+        var javac = ToolProvider.findFirst("javac").orElseThrow();
+        javac.run(System.out, System.err, "--module-source-path", base.toString(), "--module", "foo", "-d", base.toString());
+        var jar =  ToolProvider.findFirst("jar").orElseThrow();
+        jar.run(System.out, System.err, "--create", "--file", base.resolve("foo.jar").toString(), "-C", base.resolve("foo").toString(), "foo/Foo.class");
+
+        Files.createDirectories(base.resolve("bar", "bar"));
+        Files.writeString(base.resolve("bar", "module-info.java"),
+                """
+                module bar {
+                  requires foo;
+                }
+                """);
+        Files.writeString(base.resolve("bar", "bar","Prog1.java"),
+                """
+                package bar;
+                class Prog1 {
+                  public static void main(String... args) {
+                    System.out.println(new foo.Foo());
+                  }
+                }
+                """);
+
+        var command = List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-p", base.resolve("foo.jar").toString(),
+                "--add-modules", "foo", // JDK-8334761
+                "bar/bar/Prog1.java");
+        var redirectedOut = base.resolve("out.redirected");
+        var redirectedErr = base.resolve("err.redirected");
+        var process = new ProcessBuilder(command)
+                .directory(base.toFile())
+                .redirectOutput(redirectedOut.toFile())
+                .redirectError(redirectedErr.toFile())
+                .start();
+        var code = process.waitFor();
+        var out = Files.readAllLines(redirectedOut);
+        var err = Files.readAllLines(redirectedErr);
+
+        assertAll(
+                () -> assertEquals(0, code, out + "\n" + err),
+                () -> assertLinesMatch(
+                        """
+                        Foo[]
+                        """.lines(), out.stream()),
                 () -> assertTrue(err.isEmpty())
         );
     }
