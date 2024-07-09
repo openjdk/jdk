@@ -35,6 +35,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
+#include <algorithm>
+
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
     case ShenandoahFreeSetPartitionId::NotFree: return "NotFree";
@@ -578,7 +580,8 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
   _right_to_left_bias(false),
-  _alloc_bias_weight(0)
+  _alloc_bias_weight(0),
+  _trash_regions(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, max_regions, mtGC))
 {
   clear_internal();
 }
@@ -909,14 +912,15 @@ inline void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-  auto** trash_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC);
   size_t count = 0;
+
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_trash()) {
-      trash_regions[count++] = r;
+      _trash_regions[count++] = r;
     }
   }
+
   if (count != 0) {
     size_t i = 0, j = 0;
     while (i < count) {
@@ -924,7 +928,7 @@ void ShenandoahFreeSet::recycle_trash() {
       {
         ShenandoahHeapLocker locker(_heap->lock());
         for (; j < i && j < count; j++) {
-          try_recycle_trashed(trash_regions[j]);
+          try_recycle_trashed(_trash_regions[j]);
         }
       }
       if (i < count) {
@@ -932,8 +936,8 @@ void ShenandoahFreeSet::recycle_trash() {
       }
     }
     assert(j == count, "Must be");
+    std::fill_n(_trash_regions, count, nullptr);
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegion*, trash_regions);
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
