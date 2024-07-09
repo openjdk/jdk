@@ -334,7 +334,11 @@ public class LenientParseTest {
                 Arguments.of("10000", 10000d),
                 Arguments.of("100,000", 100000d),
                 Arguments.of("1,000,000", 1000000d),
-                Arguments.of("10,000,000", 10000000d))
+                Arguments.of("10,000,000", 10000000d),
+                // Smaller value cases (w/ decimal)
+                Arguments.of(".1", .1d),
+                Arguments.of("1.1", 1.1d),
+                Arguments.of("11.1", 11.1d))
                 .map(args -> Arguments.of(
                         localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }

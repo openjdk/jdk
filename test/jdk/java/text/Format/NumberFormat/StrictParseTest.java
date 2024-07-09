@@ -447,9 +447,9 @@ public class StrictParseTest {
                 Arguments.of("1,234a", 5),
                 Arguments.of("1,.a", 2),
                 Arguments.of("1.a", 2),
-                Arguments.of("1,234,a", 5),
                 Arguments.of("1.22a", 4),
                 Arguments.of("1.1a1", 3),
+                Arguments.of("1,234,a", 5),
                 // Double decimal
                 Arguments.of("1,234..5", 5))
                 .map(args -> Arguments.of(
@@ -460,8 +460,6 @@ public class StrictParseTest {
     // Given as Arguments<String, expectedParsedNumber>
     private static Stream<Arguments> validParseStrings() {
         return Stream.of(
-                Arguments.of(".22", .22d),
-                Arguments.of(".1", .1d),
                 Arguments.of("1,234.55", 1234.55d),
                 Arguments.of("1,234.5", 1234.5d),
                 Arguments.of("1,234.00", 1234d),
@@ -476,7 +474,11 @@ public class StrictParseTest {
                 Arguments.of("10000", 10000d),
                 Arguments.of("100,000", 100000d),
                 Arguments.of("1,000,000", 1000000d),
-                Arguments.of("10,000,000", 10000000d))
+                Arguments.of("10,000,000", 10000000d),
+                // Smaller value cases (w/ decimal)
+                Arguments.of(".1", .1d),
+                Arguments.of("1.1", 1.1d),
+                Arguments.of("11.1", 11.1d))
                 .map(args -> Arguments.of(
                         localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }
