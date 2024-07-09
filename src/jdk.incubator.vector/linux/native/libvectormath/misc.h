@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2024.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -158,6 +158,10 @@
 #define stringify(s) stringify_(s)
 #define stringify_(s) #s
 
+#if !defined(SLEEF_GENHEADER)
+typedef long double longdouble;
+#endif
+
 #if !defined(Sleef_double2_DEFINED) && !defined(SLEEF_GENHEADER)
 #define Sleef_double2_DEFINED
 typedef struct {
@@ -172,7 +176,12 @@ typedef struct {
 } Sleef_float2;
 #endif
 
-//
+#if !defined(Sleef_longdouble2_DEFINED) && !defined(SLEEF_GENHEADER)
+#define Sleef_longdouble2_DEFINED
+typedef struct {
+  long double x, y;
+} Sleef_longdouble2;
+#endif
 
 #if (defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)) && !defined(_MSC_VER)
 

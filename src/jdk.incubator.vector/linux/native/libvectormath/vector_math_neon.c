@@ -29,7 +29,6 @@
 #include "misc.h"
 #include "sleefinline_advsimd.h"
 
-#endif
 
 #include <jni.h>
 
@@ -89,3 +88,4 @@ DEFINE_VECTOR_MATH_BINARY(hypotd2_u05, float64x2_t)
 
 #undef DEFINE_VECTOR_MATH_BINARY
 
+#endif // defined(__ARM_NEON__) || defined(__ARM_NEON)

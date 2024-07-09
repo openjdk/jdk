@@ -29,7 +29,6 @@
 #include "misc.h"
 #include "sleefinline_sve.h"
 
-#endif // __ARM_FEATURE_SVE
 
 #include <jni.h>
 
@@ -45,7 +44,6 @@ type op##sve(type input1, type input2) {        \
   return Sleef_##op##sve(input1, input2);       \
 }
 
-#ifdef __ARM_FEATURE_SVE
 DEFINE_VECTOR_MATH_UNARY_SVE(tanfx_u10,   svfloat32_t)
 DEFINE_VECTOR_MATH_UNARY_SVE(sinfx_u10,   svfloat32_t)
 DEFINE_VECTOR_MATH_UNARY_SVE(sinhfx_u10,  svfloat32_t)
@@ -83,9 +81,9 @@ DEFINE_VECTOR_MATH_BINARY_SVE(hypotfx_u05, svfloat32_t)
 DEFINE_VECTOR_MATH_BINARY_SVE(atan2dx_u10, svfloat64_t)
 DEFINE_VECTOR_MATH_BINARY_SVE(powdx_u10,   svfloat64_t)
 DEFINE_VECTOR_MATH_BINARY_SVE(hypotdx_u05, svfloat64_t)
-#endif /* __ARM_FEATURE_SVE */
 
 #undef DEFINE_VECTOR_MATH_UNARY_SVE
 
 #undef DEFINE_VECTOR_MATH_BINARY_SVE
 
+#endif // __ARM_FEATURE_SVE
