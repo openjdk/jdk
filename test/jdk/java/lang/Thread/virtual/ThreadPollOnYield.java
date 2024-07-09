@@ -27,7 +27,7 @@
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm ThreadYield
+ * @run junit/othervm ThreadPollOnYield
  */
 
 /*
@@ -36,7 +36,7 @@
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadYield
+ * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,7 +45,7 @@ import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ThreadYield {
+class ThreadPollOnYield {
     static void foo(AtomicBoolean done) {
         while (!done.get()) {
             Thread.yield();
