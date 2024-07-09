@@ -27,6 +27,7 @@
  *
  * @requires vm.jvmci & vm.compMode == "Xmixed"
  * @requires vm.opt.final.EliminateAllocations == true
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  *
  * @comment no "-Xcomp -XX:-TieredCompilation" combination allowed until JDK-8140018 is resolved
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
