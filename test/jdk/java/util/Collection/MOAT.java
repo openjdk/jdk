@@ -538,7 +538,7 @@ public class MOAT {
      * @param c the collection instance to test
      */
     private static void testCollMutatorsAlwaysThrow(Collection<Integer> c) {
-      testCollMutatorsAlwaysThrow(c, ABSENT_VALUE);
+        testCollMutatorsAlwaysThrow(c, ABSENT_VALUE);
     }
 
     private static <T> void testCollMutatorsAlwaysThrow(Collection<T> c, T t) {
