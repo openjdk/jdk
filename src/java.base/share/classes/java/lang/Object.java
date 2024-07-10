@@ -33,6 +33,25 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
+ * @apiNote
+ * <h2><a id=objectOverrides>Guidance for overriding {@code Object}
+ * methods</a></h2>
+ *
+ * {@code java.lang.Object} includes three {@code public} methods
+ * overridable in subclasses, {@link #equals(Object)}, {@link
+ * #hashCode()}, and {@link #toString()}. Each of these methods can be
+ * called by any code that has access to an object of a
+ * class. Especially if an object can be used by code in a separate
+ * maintenance domain, any overrides of these methods should take care
+ * to provide reasonable implementations of these methods. In
+ * particular, the implementations should take care to avoid using
+ * excessive memory, computational time, or any other resources.
+ * Additionally, during typical operation these methods should
+ * <em>not</em> throw any exception or other throwable; as always, a
+ * {@link VirtualMachineError} is possible during the execution of a
+ * method, often due to factors outside of the method's direct
+ * control.
+ *
  * @see     java.lang.Class
  * @since   1.0
  */
@@ -95,6 +114,18 @@ public class Object {
      * As far as is reasonably practical, the {@code hashCode} method defined
      * by class {@code Object} returns distinct integers for distinct objects.
      *
+     * <p>This method should <em>not</em> throw any exceptions during
+     * typical operation. The implementation should not use excessive
+     * memory or time for its computations. 
+     *
+     * The {@code hashCode} method may be called frequently, possibly
+     * in the context of {@linkplain java.util##CollectionsFramework
+     * collections}.
+     *
+     * As as a quality of implementation concern, a particular
+     * implementation of this method may or may not support generating
+     * hash codes for cyclic data structures.
+     *
      * @apiNote
      * The {@link java.util.Objects#hash(Object...) hash} and {@link
      * java.util.Objects#hashCode(Object) hashCode} methods of {@link
@@ -102,6 +133,7 @@ public class Object {
      *
      * @see     java.lang.Object#equals(java.lang.Object)
      * @see     java.lang.System#identityHashCode
+     * @see     ##objectOverrides Guidance for overriding {@code Object} methods
      */
     @IntrinsicCandidate
     public native int hashCode();
@@ -152,6 +184,13 @@ public class Object {
      * In other words, under the reference equality equivalence
      * relation, each equivalence class only has a single element.
      *
+     * <p>This method should <em>not</em> throw any exceptions during
+     * typical operation. In particular, {@link ClassCastException}
+     * should not be thrown if the argument has an incomparable type
+     * to this object and {@link NullPointerException} should not be
+     * thrown if the argument is {@code null}.  The implementation
+     * should not use excessive memory or time for its computations.
+     *
      * @apiNote
      * It is generally necessary to override the {@link #hashCode() hashCode}
      * method whenever this method is overridden, so as to maintain the
@@ -166,6 +205,7 @@ public class Object {
      *          argument; {@code false} otherwise.
      * @see     #hashCode()
      * @see     java.util.HashMap
+     * @see     ##objectOverrides Guidance for overriding {@code Object} methods
      */
     public boolean equals(Object obj) {
         return (this == obj);
@@ -250,6 +290,7 @@ public class Object {
      * It is recommended that all subclasses override this method.
      * The string output is not necessarily stable over time or across
      * JVM invocations.
+     *
      * @implSpec
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the
@@ -265,6 +306,17 @@ public class Object {
      * object equal to the string that would be returned if neither
      * the {@code toString} nor {@code hashCode} methods were
      * overridden by the object's class.
+     *
+     * <p>This method should <em>not</em> throw any exceptions during
+     * typical operation. The implementation should not use excessive
+     * memory or time for its computations. In particular, string
+     * concatenation patterns that allocate an excessive number of
+     * intermediate objects should be avoided. As as a quality of
+     * implementation concern, a particular implementation of this
+     * method may or may not support generating strings for cyclic
+     * data structures.
+     *
+     * @see     ##objectOverrides Guidance for overriding {@code Object} methods
      */
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
