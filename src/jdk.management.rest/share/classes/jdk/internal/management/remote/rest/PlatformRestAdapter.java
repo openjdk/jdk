@@ -51,6 +51,8 @@ import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import sun.management.jmxremote.ConnectorBootstrap;
+
 /**
  * This is the root class that initializes the HTTPServer and
  * REST adapter for platform mBeanServer.
@@ -119,13 +121,13 @@ public final class PlatformRestAdapter {
         if (httpServer == null) {
             if (properties == null || properties.isEmpty()) {
                 properties = new Properties();
-                properties.setProperty("com.sun.management.jmxremote.ssl", "false");
-                properties.setProperty("com.sun.management.jmxremote.authenticate", "false");
-                properties.setProperty("com.sun.management.jmxremote.rest.port", "0");
+                properties.setProperty(ConnectorBootstrap.PropertyNames.USE_SSL, "false");
+                properties.setProperty(ConnectorBootstrap.PropertyNames.USE_AUTHENTICATION, "false");
+                properties.setProperty(ConnectorBootstrap.PropertyNames.REST_PORT, "0");
             }
             final int port;
             try {
-                port = Integer.parseInt(properties.getProperty(PropertyNames.PORT, DefaultValues.PORT));
+                port = Integer.parseInt(properties.getProperty(ConnectorBootstrap.PropertyNames.REST_PORT, DefaultValues.REST_PORT));
             } catch (NumberFormatException x) {
                 throw new IllegalArgumentException("Invalid string for port");
             }
@@ -133,7 +135,7 @@ public final class PlatformRestAdapter {
                 throw new IllegalArgumentException("Invalid string for port");
             }
 
-            String host = properties.getProperty(PropertyNames.HOST, DefaultValues.HOST);
+            String host = properties.getProperty(ConnectorBootstrap.PropertyNames.HOST, DefaultValues.HOST);
 
             boolean useSSL = Boolean.parseBoolean(properties.getProperty(
                     PropertyNames.USE_SSL, DefaultValues.USE_SSL));
@@ -328,7 +330,7 @@ public final class PlatformRestAdapter {
      */
     static interface DefaultValues {
 
-        public static final String PORT = "0";
+        public static final String REST_PORT = "0";
         public static final String HOST = "127.0.0.1";
         public static final String USE_SSL = "false";
         public static final String USE_AUTHENTICATION = "false";
@@ -340,10 +342,10 @@ public final class PlatformRestAdapter {
      */
     public static interface PropertyNames {
 
-        public static final String PORT
-                = "com.sun.management.jmxremote.rest.port";
-        public static final String HOST
-                = "com.sun.management.jmxremote.host";
+/*        public static final String PORT
+                = "com.sun.management.jmxremote.rest.port"; */
+/*        public static final String HOST
+                = "com.sun.management.jmxremote.host"; */
         public static final String USE_SSL
                 = "com.sun.management.jmxremote.ssl";
         public static final String SSL_CONFIG_FILE_NAME

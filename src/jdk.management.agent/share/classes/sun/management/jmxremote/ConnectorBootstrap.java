@@ -115,6 +115,8 @@ public final class ConnectorBootstrap {
                 "com.sun.management.jmxremote.host";
         public static final String RMI_PORT =
                 "com.sun.management.jmxremote.rmi.port";
+        public static final String REST_PORT =
+                "com.sun.management.jmxremote.rest.port";
         public static final String LOCAL_PORT =
                 "com.sun.management.jmxremote.local.port";
         public static final String CONFIG_FILE_NAME =

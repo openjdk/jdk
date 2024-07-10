@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,26 @@
  * questions.
  */
 
-/**
- * Defines the JMX management agent.
- *
- * <p> This module allows a Java Virtual Machine to be monitored and managed
- * via JMX API.  See more information from the
- * {@extLink monitoring_and_management_using_jmx_technology
- * Monitoring and Management Using JMX} guide.
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.management.agent {
-    requires java.management;
-    requires java.management.rmi;
-    requires jdk.httpserver;
+package com.sun.jmx.remote.protocol.http;
 
-    exports jdk.internal.agent to jdk.jconsole, jdk.management.rest;
-    exports jdk.internal.agent.spi to jdk.management.rest;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Map;
 
-    opens jdk.internal.agent to jdk.management.rest;
-    exports sun.management.jmxremote to jdk.management.rest;
+import javax.management.remote.JMXConnectorProvider;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.http.HttpRestConnector;
 
-    uses jdk.internal.agent.spi.AgentProvider;
+public class ClientProvider implements JMXConnectorProvider {
 
+    public JMXConnector newJMXConnector(JMXServiceURL serviceURL,
+                                        Map<String,?> environment)
+            throws IOException {
+        if (!serviceURL.getProtocol().equals("http")) {
+            throw new MalformedURLException("Protocol not http: " +
+                                            serviceURL.getProtocol());
+        }
+        return new HttpRestConnector(serviceURL, environment);
+    }
 }

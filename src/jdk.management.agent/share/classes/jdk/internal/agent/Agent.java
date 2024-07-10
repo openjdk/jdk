@@ -127,6 +127,9 @@ public class Agent {
             if (jmxServer != null) {
                 addConnection(true, jmxServer.getAddress());
             }
+            // HTTP/REST XXXX
+            // Access to jdk.internal.management.remote.rest.PlatformRestAdapter
+
             appendConnectionsFooter();
         }
 
