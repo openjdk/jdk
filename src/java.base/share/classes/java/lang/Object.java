@@ -116,7 +116,7 @@ public class Object {
      *
      * <p>This method should <em>not</em> throw any exceptions during
      * typical operation. The implementation should not use excessive
-     * memory or time for its computations. 
+     * memory or time for its computations.
      *
      * The {@code hashCode} method may be called frequently, possibly
      * in the context of {@linkplain java.util##CollectionsFramework
