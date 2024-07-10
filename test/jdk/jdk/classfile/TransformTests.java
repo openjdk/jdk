@@ -185,7 +185,7 @@ class TransformTests {
             cb.with(ce);
         };
 
-        cf.transformClass(cm, transform1.andThen(transform2));
+        cf.transform(cm, transform1.andThen(transform2));
 
         assertEquals(Set.of(INIT_NAME, "foo", "bar", "baz"), methodNames);
         assertEquals(Set.of("bar", "baz"), fieldNames);
@@ -218,7 +218,7 @@ class TransformTests {
             mb.with(me);
         };
 
-        cf.transformClass(cm, ClassTransform.transformingMethods(transform1.andThen(transform2)));
+        cf.transform(cm, ClassTransform.transformingMethods(transform1.andThen(transform2)));
 
         assertTrue(sawWithCode[0], "Code attribute generated not visible");
 
@@ -241,7 +241,7 @@ class TransformTests {
             mb.with(me);
         };
 
-        cf.transformClass(cm, ClassTransform.transformingMethods(transform3.andThen(transform4)));
+        cf.transform(cm, ClassTransform.transformingMethods(transform3.andThen(transform4)));
 
         assertTrue(sawTransformCode[0], "Code attribute transformed not visible");
     }
@@ -282,7 +282,7 @@ class TransformTests {
             cb.with(ce);
         };
 
-        cf.transformClass(cm, ClassTransform.transformingMethods(MethodTransform
+        cf.transform(cm, ClassTransform.transformingMethods(MethodTransform
             .transformingCode(transform1.andThen(transform2))));
 
         leaveLabels.removeIf(targetedLabels::contains);
