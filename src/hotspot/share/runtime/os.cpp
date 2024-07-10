@@ -959,7 +959,7 @@ static void print_ascii_form(stringStream& ascii_form, uint64_t value, int units
     uint8_t c[sizeof(v)];
   } u = { value };
   for (int i = 0; i < unitsize; i++) {
-    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
+    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - unitsize + i);
     const uint8_t c = u.c[idx];
     ascii_form.put(isprint(c) && isascii(c) ? c : '.');
   }
@@ -1958,8 +1958,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // This is not reflected by os_allocation_granularity().
   // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
   const size_t system_allocation_granularity =
-    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
-    NOT_AIX(os::vm_allocation_granularity());
+    AIX_ONLY((!os::Aix::supports_64K_mmap_pages() && os::vm_page_size() == 64*K) ? 256*M : ) os::vm_allocation_granularity();
 
   const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 

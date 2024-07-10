@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,11 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal;
+package missingsystem;
 
-/**
- * The HiddenWait class is used to exclude jdk.JavaMonitorWait events
- * from being generated when Object.wait() is called on an object of this type.
- */
-public final class HiddenWait {
+public class App {
+    public static void main(String[] args) {
+        // this class was present in Java 20, but removed in 21
+        // if we compile with --release 20, but run jnativescan
+        // with --release 21, we should get an error
+        java.lang.Compiler.enable();
+    }
 }

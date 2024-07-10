@@ -897,7 +897,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
     } else if (tag.is_symbol()) {
       symbol = cp->symbol_at(index);
     } else {
-      assert(cp->tag_at(index).is_unresolved_klass(), "wrong tag");
+      if (!tag.is_unresolved_klass()) {
+        JVMCI_THROW_MSG_NULL(InternalError, err_msg("Expected %d at index %d, got %d", JVM_CONSTANT_UnresolvedClassInError, index, tag.value()));
+      }
       symbol = cp->klass_name_at(index);
     }
   }
