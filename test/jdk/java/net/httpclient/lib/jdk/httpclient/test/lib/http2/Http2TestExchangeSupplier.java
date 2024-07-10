@@ -27,6 +27,8 @@ import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 /**

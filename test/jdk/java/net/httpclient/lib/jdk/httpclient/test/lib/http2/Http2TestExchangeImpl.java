@@ -142,12 +142,12 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
                 long clen = responseLength > 0 ? responseLength : 0;
             rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
         }
-
-        rspheadersBuilder.setHeader(":status", Integer.toString(rCode));
-        HttpHeaders headers = rspheadersBuilder.build();
-
+        final HttpHeadersBuilder pseudoHeadersBuilder = new HttpHeadersBuilder();
+        pseudoHeadersBuilder.setHeader(":status", Integer.toString(rCode));
+        final HttpHeaders pseudoHeaders = pseudoHeadersBuilder.build();
+        final HttpHeaders headers = rspheadersBuilder.build();
         ResponseHeaders response
-                = new ResponseHeaders(headers);
+                = new ResponseHeaders(pseudoHeaders, headers);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
@@ -170,6 +170,13 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
 
     public void sendResponseHeaders(ResponseHeaders response) throws IOException {
         conn.outputQ.put(response);
+    }
+
+    @Override
+    public void resetStream(long code) throws IOException {
+        // will close the os if not closed.
+        // reset will be sent only if the os is not closed.
+        os.sendReset((int) code);
     }
 
     @Override

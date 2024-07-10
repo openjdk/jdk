@@ -47,6 +47,9 @@ import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -67,8 +70,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters.AbstractHttpAuthFilter.HttpAuthMode;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import sun.net.www.HeaderParser;
 import java.net.http.HttpClient.Version;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -159,13 +164,19 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     final String               key;
 
     DigestEchoServer(String key,
-                             HttpTestServer server,
-                             DigestEchoServer target,
-                             HttpTestHandler delegate) {
+                     HttpTestServer server,
+                     DigestEchoServer target,
+                     HttpTestHandler delegate) {
         this.key = key;
         this.serverImpl = server;
         this.redirect = target;
         this.delegate = delegate;
+    }
+
+    public Version version() {
+        if (serverImpl.canHandle(Version.HTTP_3))
+            return Version.HTTP_3;
+        return serverImpl.getVersion();
     }
 
     public static void main(String[] args)
@@ -184,6 +195,17 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
             System.out.println("stopping server");
             server.stop();
         }
+    }
+
+    public Config serverConfig() {
+        // If the client request is HTTP_3, but the server
+        // doesn't support HTTP/3, we don't want the client
+        // to attempt a direct HTTP/3 connection - so use
+        // HTTP_3_ALT_SVC to prevent that
+        var config = serverImpl.serverConfig();
+        return config == null
+                ? H3DiscoveryConfig.HTTP_3_ALT_SVC
+                : config;
     }
 
     private static String toString(HttpTestRequestHeaders headers) {
@@ -249,6 +271,13 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         }
     }
 
+    private static String authority(InetSocketAddress address) {
+        String addressStr = address.getAddress().getHostAddress();
+        if (addressStr.indexOf(':') >= 0) {
+            addressStr = "[" + addressStr + "]";
+        }
+        return addressStr + ":" + address.getPort();
+    }
 
     /**
      * The SocketBindableFactory ensures that the local port used by an HttpServer
@@ -267,7 +296,8 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 for (int i = 1; i <= max; i++) {
                     B bindable = createBindable();
                     InetSocketAddress address = getAddress(bindable);
-                    String key = "localhost:" + address.getPort();
+
+                    String key = authority(address);
                     if (addresses.addIfAbsent(key)) {
                         System.out.println("Socket bound to: " + key
                                 + " after " + i + " attempt(s)");
@@ -461,6 +491,15 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 return HttpTestServer.of(createHttp1Server(protocol));
             case HTTP_2:
                 return HttpTestServer.of(createHttp2Server(protocol));
+            case HTTP_3:
+                try {
+                    if (!"https".equalsIgnoreCase(protocol)) {
+                        throw new UnsupportedProtocolVersionException("HTTP/3 requires https");
+                    }
+                    return HttpTestServer.create(Version.HTTP_3, SSLContext.getDefault());
+                } catch (NoSuchAlgorithmException e) {
+                    throw new IOException(e);
+                }
             default:
                 throw new InternalError("Unexpected version: " + version);
         }
@@ -481,7 +520,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     static HttpsServer configure(HttpsServer server) throws IOException {
         try {
             SSLContext ctx = SSLContext.getDefault();
-            server.setHttpsConfigurator(new Configurator(ctx));
+            server.setHttpsConfigurator(new Configurator(server.getAddress().getAddress(), ctx));
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex);
         }
@@ -516,6 +555,16 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         Objects.requireNonNull(authType);
         Objects.requireNonNull(auth);
 
+        if (version == Version.HTTP_3) {
+            if (!"https".equalsIgnoreCase(protocol)) {
+                throw new UnsupportedProtocolVersionException("HTTP/3 requires TLS");
+            }
+            switch (authType) {
+                case PROXY, PROXY305 ->
+                        throw new UnsupportedProtocolVersionException("proxying not supported for HTTP/3");
+                case SERVER, SERVER307 -> {}
+            }
+        }
         HttpTestServer impl = createHttpServer(version, protocol);
         String key = String.format("DigestEchoServer[PID=%s,PORT=%s]:%s:%s:%s:%s",
                 ProcessHandle.current().pid(),
@@ -544,6 +593,10 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         if (version == Version.HTTP_2 && protocol.equalsIgnoreCase("http")) {
             System.out.println("WARNING: can't use HTTP/1.1 proxy with unsecure HTTP/2 server");
             version = Version.HTTP_1_1;
+        }
+        if (version == Version.HTTP_3) {
+            System.out.println("WARNING: can't use HTTP/1.1 proxy with HTTP/3 server");
+            version = Version.HTTP_2;
         }
         HttpTestServer impl = createHttpServer(version, protocol);
         String key = String.format("DigestEchoServer[PID=%s,PORT=%s]:%s:%s:%s:%s",
@@ -932,15 +985,11 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         @Override
         protected void requestAuthentication(HttpTestExchange he)
                 throws IOException {
-            String separator;
             Version v = he.getExchangeVersion();
-            if (v == Version.HTTP_1_1) {
-                separator = "\r\n    ";
-            } else if (v == Version.HTTP_2) {
-                separator = " ";
-            } else {
-                throw new InternalError(String.valueOf(v));
-            }
+            String separator = switch (v) {
+                case HTTP_1_1 -> "\r\n    ";
+                case HTTP_2, HTTP_3 -> " ";
+            };
             String headerName = getAuthenticate();
             String headerValue = "Digest realm=\"" + auth.getRealm() + "\","
                     + separator + "qop=\"auth\","
@@ -1136,13 +1185,18 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
     }
 
     static class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) {
+        private final InetAddress serverAddr;
+
+        public Configurator(InetAddress serverAddr, SSLContext ctx) {
             super(ctx);
+            this.serverAddr = serverAddr;
         }
 
         @Override
         public void configure (HttpsParameters params) {
-            params.setSSLParameters (getSSLContext().getSupportedSSLParameters());
+            final SSLParameters parameters = getSSLContext().getSupportedSSLParameters();
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, parameters);
+            params.setSSLParameters(parameters);
         }
     }
 
@@ -1553,8 +1607,8 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                             port = port == -1 ? 443 : port;
                             targetAddress = new InetSocketAddress(uri.getHost(), port);
                             if (serverImpl != null) {
-                                assert targetAddress.getHostString()
-                                        .equalsIgnoreCase(serverImpl.getAddress().getHostString());
+                                assert targetAddress.getAddress().getHostAddress()
+                                        .equalsIgnoreCase(serverImpl.getAddress().getAddress().getHostAddress());
                                 assert targetAddress.getPort() == serverImpl.getAddress().getPort();
                             }
                         } catch (Throwable x) {
@@ -1716,15 +1770,16 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
 
     public static URL url(String protocol, InetSocketAddress address,
                           String path) throws MalformedURLException {
-        return new URL(protocol(protocol),
-                address.getHostString(),
-                address.getPort(), path);
+        try {
+            return uri(protocol, address, path).toURL();
+        } catch (URISyntaxException e) {
+           throw new MalformedURLException(e.getMessage());
+        }
     }
 
     public static URI uri(String protocol, InetSocketAddress address,
                           String path) throws URISyntaxException {
         return new URI(protocol(protocol) + "://" +
-                address.getHostString() + ":" +
-                address.getPort() + path);
+                authority(address) + path);
     }
 }

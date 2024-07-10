@@ -30,7 +30,19 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
+ *          java.base/jdk.internal.net.quic
+ *          java.net.http/jdk.internal.net.http.quic
+ *          java.net.http/jdk.internal.net.http.quic.packets
+ *          java.net.http/jdk.internal.net.http.quic.frames
+ *          java.net.http/jdk.internal.net.http.quic.streams
+ *          java.net.http/jdk.internal.net.http.http3.streams
+ *          java.net.http/jdk.internal.net.http.http3.frames
+ *          java.net.http/jdk.internal.net.http.http3
+ *          java.net.http/jdk.internal.net.http.qpack
+ *          java.net.http/jdk.internal.net.http.qpack.readers
+ *          java.net.http/jdk.internal.net.http.qpack.writers
  *          java.security.jgss
+ * @modules java.base/jdk.internal.util
  * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */

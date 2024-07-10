@@ -28,10 +28,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLSession;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.quic.VariableLengthEncoder;
 
 public interface Http2TestExchange {
 
@@ -63,12 +67,163 @@ public interface Http2TestExchange {
 
     boolean serverPushAllowed();
 
-    void serverPush(URI uri, HttpHeaders headers, InputStream content);
+    void serverPush(URI uri, HttpHeaders headers, InputStream content)
+            throws IOException;
+
+    // For HTTP/3 only: send push promise + push stream,  returns pushId
+    //
 
     /**
-     * Send a PING on this exchanges connection, and completes the returned CF
+     * For HTTP/3 only: send push promise + push stream,  returns pushId.
+     * The pushId can be promised again using {@link
+     * #sendPushId(long, URI, HttpHeaders)}
+     *
+     * @implSpec
+     * The default implementation of this method throws {@link
+     * UnsupportedOperationException}
+     *
+     * @param uri       the push promise URI
+     * @param headers   the push promise request headers
+     * @param content   the push response body
+     *
+     * @return          the pushId used to push the promise
+     *
+     * @throws IOException if an error occurs
+     * @throws UnsupportedOperationException if the exchange is not {@link
+     *         #getExchangeVersion() HTTP_3}
+     */
+    default long serverPushWithId(URI uri, HttpHeaders headers, InputStream content)
+            throws IOException {
+        throw new UnsupportedOperationException("serverPushWithId " + getExchangeVersion());
+    }
+
+    /**
+     * For HTTP/3 only: only sends a push promise frame. If a positive
+     * pushId is provided, uses the provided pushId and returns it.
+     * Otherwise, a new pushId will be allocated and returned.
+     * This allows to send an additional promise after {@linkplain
+     * #serverPushWithId(URI, HttpHeaders, InputStream) sending the first},
+     * or to send one or several push promise frames before {@linkplain
+     * #sendPushResponse(long, URI, HttpHeaders, InputStream) sending
+     * the response}.
+     *
+     * @implSpec
+     * The default implementation of this method throws {@link
+     * UnsupportedOperationException}
+     *
+     * @param pushId    the pushId to use, or {@code -1} if a new
+     *                  pushId should be allocated.
+     * @param uri       the push promise URI
+     * @param headers   the push promise request headers
+     *
+     * @return the given pushId, if positive, otherwise the new allocated pushId
+     *
+     * @throws IOException if an error occurs
+     * @throws UnsupportedOperationException if the exchange is not {@link
+     *         #getExchangeVersion() HTTP_3}
+     */
+    default long sendPushId(long pushId, URI uri, HttpHeaders headers) throws IOException {
+        throw new UnsupportedOperationException("sendPushId with " + getExchangeVersion());
+    }
+
+    /**
+     * For HTTP/3 only: sends an HTTP/3 CANCEL_PUSH frame to cancel
+     * a push that has been promised by either {@link
+     * #serverPushWithId(URI, HttpHeaders, InputStream)} or {@link
+     * #sendPushId(long, URI, HttpHeaders)}.
+     *
+     * This method just sends a CANCEL_PUSH frame.
+     * Note that if the push stream has already been opened this
+     * sending a CANCEL_PUSH frame may have no effect.
+     *
+     * @apiNote
+     * No check is performed on the provided pushId
+     *
+     * @implSpec
+     * The default implementation of this method throws {@link
+     * UnsupportedOperationException}
+     *
+     * @param pushId        the cancelled pushId
+     *
+     * @throws IOException  if an error occurs
+     * @throws UnsupportedOperationException if the exchange is not {@link
+     *         #getExchangeVersion() HTTP_3}
+     */
+    default void cancelPushId(long pushId) throws IOException {
+        throw new UnsupportedOperationException("cancelPush with " + getExchangeVersion());
+    }
+
+    /**
+     * For HTTP/3 only: opens an HTTP/3 PUSH_STREAM to send a
+     * push promise response headers and body.
+     *
+     * @apiNote
+     * No check is performed on the provided pushId
+     *
+     * @param pushId a positive pushId obtained from {@link
+     *               #sendPushId(long, URI, HttpHeaders)}
+     * @param uri      the push request URI
+     * @param headers  the push promise request headers
+     * @param content  the push response body
+     *
+     * @throws IOException if an error occurs
+     * @throws UnsupportedOperationException if the exchange is not {@link
+     */
+    default void sendPushResponse(long pushId, URI uri, HttpHeaders headers, InputStream content)
+        throws IOException {
+        throw new UnsupportedOperationException("sendPushResponse with " + getExchangeVersion());
+    }
+
+    default void requestStopSending(long errorCode) {
+        throw new UnsupportedOperationException("sendStopSendingFrame with " + getExchangeVersion());
+    }
+
+    /**
+     * For HTTP/3 only: aits until the given {@code pushId} is allowed by
+     * the HTTP/3 peer.
+     *
+     * @implSpec
+     * The default implementation of this method returns the larger
+     * possible variable length integer.
+     *
+     * @param pushId a pushId
+     *
+     * @return the upper bound pf the maximum pushId allowed (exclusive)
+     *
+     * @throws IOException if an error accurs
+     * @throws UnsupportedOperationException if the exchange is not {@link
+     *         #getExchangeVersion() HTTP_3}
+     */
+    default long waitForMaxPushId(long pushId) throws InterruptedException {
+        return VariableLengthEncoder.MAX_ENCODED_INTEGER;
+    }
+
+    /**
+     * {@return a string that identifies the underlying connection for this exchange}
+     * @apiNote
+     * This connection key can be useful to figure out whether two exchanges
+     * were performed on the same underlying connection.
+     */
+    default String getConnectionKey() {
+        return "{local=%s, remote=%s}".formatted(getLocalAddress(), getRemoteAddress());
+    }
+
+    /**
+     * Send a PING on this exchange connection, and completes the returned CF
      * with the number of milliseconds it took to get a valid response.
      * It may also complete exceptionally
      */
     CompletableFuture<Long> sendPing();
+
+    default void close(IOException closed) throws IOException {
+        close();
+    }
+
+    default Version getServerVersion() { return Version.HTTP_2; }
+
+    default Version getExchangeVersion() { return Version.HTTP_2; }
+
+    default void resetStream(long code) throws IOException {
+        throw new UnsupportedOperationException("resetStream with " + getExchangeVersion());
+    }
 }

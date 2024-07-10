@@ -33,6 +33,8 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +54,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
@@ -188,7 +192,11 @@ public class DigestEchoClient {
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     public HttpClient newHttpClient(DigestEchoServer server) {
         clientCount.incrementAndGet();
-        HttpClient.Builder builder = HttpClient.newBuilder();
+        HttpClient.Builder builder = switch (server.version()) {
+            case HTTP_3 -> HttpServerAdapters.createClientBuilderForH3()
+                    .version(Version.HTTP_3);
+            default -> HttpClient.newBuilder();
+        };
         builder = builder.proxy(ProxySelector.of(null));
         if (useSSL) {
             builder.sslContext(context);
@@ -222,11 +230,11 @@ public class DigestEchoClient {
     }
 
     public static List<Version> serverVersions(Version clientVersion) {
-        if (clientVersion == Version.HTTP_1_1) {
-            return List.of(clientVersion);
-        } else {
-            return List.of(Version.values());
-        }
+        return switch (clientVersion) {
+            case HTTP_1_1 -> List.of(clientVersion);
+            case HTTP_2 -> List.of(Version.HTTP_1_1, Version.HTTP_2);
+            case HTTP_3 -> List.of(Version.HTTP_2, Version.HTTP_3);
+        };
     }
 
     public static List<Version> clientVersions() {
@@ -271,6 +279,13 @@ public class DigestEchoClient {
                             authType);
                     for (Version clientVersion : clientVersions()) {
                         for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
                             for (boolean expectContinue : expectContinue(serverVersion)) {
                                 for (boolean async : BOOLEANS) {
                                     for (boolean preemptive : BOOLEANS) {
@@ -291,6 +306,13 @@ public class DigestEchoClient {
                             authType);
                     for (Version clientVersion : clientVersions()) {
                         for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
                             for (boolean expectContinue : expectContinue(serverVersion)) {
                                 for (boolean async : BOOLEANS) {
                                     dec.testDigest(clientVersion, serverVersion,
@@ -309,7 +331,7 @@ public class DigestEchoClient {
             throw t;
         } finally {
             Thread.sleep(100);
-            AssertionError trackFailed = TRACKER.check(500);
+            AssertionError trackFailed = TRACKER.check(Utils.adjustTimeout(1000));
             EchoServers.stop();
             System.out.println(" ---------------------------------------------------------- ");
             System.out.println(String.format("DigestEchoClient %s %s", useSSL ? "SSL" : "CLEAR", types));
@@ -365,6 +387,15 @@ public class DigestEchoClient {
                 .isPresent();
     }
 
+    static Config serverConfig(int step, DigestEchoServer server) {
+        var config = server.serverConfig();
+        if (!(config instanceof H3DiscoveryConfig c)) return config;
+        return switch (c) {
+            case HTTP_3_ONLY -> c;
+            default -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+        };
+    }
+
     final static AtomicLong basics = new AtomicLong();
     final static AtomicLong basicCount = new AtomicLong();
     // @Test
@@ -401,8 +432,11 @@ public class DigestEchoClient {
                 assert lines.size() == i + 1;
                 String body = lines.stream().collect(Collectors.joining("\r\n"));
                 BodyPublisher reqBody = BodyPublishers.ofString(body);
-                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).version(clientVersion)
-                        .POST(reqBody).expectContinue(expectContinue);
+                HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+                        .version(clientVersion)
+                        .configure(serverConfig(i, server))
+                        .POST(reqBody)
+                        .expectContinue(expectContinue);
                 boolean isTunnel = isProxy(authType) && useSSL;
                 if (addHeaders) {
                     // handle authentication ourselves
@@ -437,6 +471,16 @@ public class DigestEchoClient {
                     } else {
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
                 } catch (Throwable t) {
                     long stop = System.nanoTime();
                     synchronized (basicCount) {
@@ -463,11 +507,22 @@ public class DigestEchoClient {
                     System.out.println(String.format("%s received: adding header %s: %s",
                             resp.statusCode(), authorizationKey(authType), auth));
                     request = HttpRequest.newBuilder(uri).version(clientVersion)
+                            .configure(server.serverConfig())
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     if (async) {
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
                         resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
                     }
                 }
                 final List<String> respLines;
@@ -501,14 +556,17 @@ public class DigestEchoClient {
                 }
             }
         } finally {
-            client = null;
-            System.gc();
-            while (!ref.refersTo(null)) {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
                 System.gc();
-                if (queue.remove(100) == ref) break;
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(1000), false);
+                if (error != null) throw error;
             }
-            var error = TRACKER.checkShutdown(900);
-            if (error != null) throw error;
         }
         System.out.println("OK");
     }
@@ -541,6 +599,8 @@ public class DigestEchoClient {
                 server.getServerAddress(), "/foo/");
 
         HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         byte[] cnonce = new byte[16];
@@ -556,6 +616,7 @@ public class DigestEchoClient {
                 HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
                 HttpRequest.Builder reqBuilder = HttpRequest
                         .newBuilder(uri).version(clientVersion).POST(reqBody)
+                        .configure(serverConfig(i, server))
                         .expectContinue(expectContinue);
 
                 boolean isTunnel = isProxy(authType) && useSSL;
@@ -581,6 +642,16 @@ public class DigestEchoClient {
                     resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                 } else {
                     resp = client.send(request, BodyHandlers.ofLines());
+                }
+                if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                    out.println("Response version [" + i + "]: " + resp.version());
+                    int required = isRedirecting(authType) ? 1 : 0;
+                    if (i > required) {
+                        if (resp.version() != serverVersion) {
+                            throw new AssertionError("Expected HTTP/3, but got: "
+                                    + resp.version());
+                        }
+                    }
                 }
                 System.out.println(resp);
                 assert challenge != null || resp.statusCode() == 401 || resp.statusCode() == 407
@@ -611,6 +682,7 @@ public class DigestEchoClient {
                     String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
                     try {
                         request = HttpRequest.newBuilder(uri).version(clientVersion)
+                            .configure(serverConfig(i, server))
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     } catch (IllegalArgumentException x) {
                         throw x;
@@ -622,6 +694,16 @@ public class DigestEchoClient {
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
                     System.out.println(resp);
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
                 }
                 final List<String> respLines;
                 try {
@@ -650,11 +732,22 @@ public class DigestEchoClient {
                 }
             }
         } finally {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(1000), false);
+                if (error != null) throw error;
+            }
         }
         System.out.println("OK");
     }
 
-    // WARNING: This is not a full fledged implementation of DIGEST.
+    // WARNING: This is not a full-fledged implementation of DIGEST.
     // It does contain bugs and inaccuracy.
     static String digestResponse(URI uri, String method, DigestEchoServer.DigestResponse challenge, String cnonce)
             throws NoSuchAlgorithmException {
@@ -675,32 +768,34 @@ public class DigestEchoClient {
     }
 
     static String authenticateKey(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return "www-authenticate";
-            case SERVER307: return "www-authenticate";
-            case PROXY: return "proxy-authenticate";
-            case PROXY305: return "proxy-authenticate";
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER    -> "www-authenticate";
+            case SERVER307 -> "www-authenticate";
+            case PROXY     -> "proxy-authenticate";
+            case PROXY305  -> "proxy-authenticate";
+        };
     }
 
     static String authorizationKey(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return "authorization";
-            case SERVER307: return "Authorization";
-            case PROXY: return "Proxy-Authorization";
-            case PROXY305: return "proxy-Authorization";
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER    -> "authorization";
+            case SERVER307 -> "Authorization";
+            case PROXY     -> "Proxy-Authorization";
+            case PROXY305  -> "proxy-Authorization";
+        };
     }
 
     static boolean isProxy(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return false;
-            case SERVER307: return false;
-            case PROXY: return true;
-            case PROXY305: return true;
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER, SERVER307 -> false;
+            case PROXY,  PROXY305  -> true;
+        };
+    }
+
+    static boolean isRedirecting(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER307, PROXY305 -> true;
+            case SERVER,    PROXY    -> false;
+        };
     }
 }

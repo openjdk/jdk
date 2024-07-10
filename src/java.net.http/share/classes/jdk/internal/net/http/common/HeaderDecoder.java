@@ -31,6 +31,7 @@ public class HeaderDecoder extends ValidatingHeadersConsumer {
     private final HttpHeadersBuilder headersBuilder;
 
     public HeaderDecoder() {
+        super(Context.REQUEST);
         this.headersBuilder = new HttpHeadersBuilder();
     }
 

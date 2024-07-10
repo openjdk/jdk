@@ -1,0 +1,4 @@
+# meant to override the jdk.quic.tls.keyLimits security property
+# in the KeyUpdateTest
+jdk.quic.tls.keyLimits=AES/GCM/NoPadding 10, \
+                       ChaCha20-Poly1305 -1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,24 @@
  *   <li>ssl</li>
  *   <li>trace</li>
  *   <li>channel</li>
+ *   <li>quic</li>
  * </ul><br>
  * You can append the frames item with a colon-separated list of any of the following items:
  * <ul>
  *   <li>control</li>
  *   <li>data</li>
  *   <li>window</li>
+ *   <li>all</li>
+ * </ul><br>
+ * You can append the quic item with a colon-separated list of any of the following items:
+ * <ul>
+ *   <li>control</li>
+ *   <li>processed</li>
+ *   <li>retransmit</li>
+ *   <li>data</li>
+ *   <li>crypto</li>
+ *   <li>ack</li>
+ *   <li>ping</li>
  *   <li>all</li>
  * </ul><br>
  * Specifying an item adds it to the HTTP client's log. For example, if you specify the
@@ -156,6 +168,10 @@
  * are disallowed for use by the HTTP client implementation, for HTTP CONNECT tunneling.
  * </li>
  * </ul>
+ * <blockquote>
+ *     // TODO: Revisit - we also have a property for HTTP/3 idle timeout, as
+ *     //       well as for various HTTP/3 and Quic related settings
+ </blockquote>
  * @moduleGraph
  * @since 11
  */

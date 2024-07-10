@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ final class ImmutableHttpRequest extends HttpRequest {
     private final boolean expectContinue;
     private final Optional<Duration> timeout;
     private final Optional<Version> version;
+    private final Config config;
 
     /** Creates an ImmutableHttpRequest from the given builder. */
     ImmutableHttpRequest(HttpRequestBuilderImpl builder) {
@@ -53,6 +54,7 @@ final class ImmutableHttpRequest extends HttpRequest {
         this.expectContinue = builder.expectContinue();
         this.timeout = Optional.ofNullable(builder.timeout());
         this.version = Objects.requireNonNull(builder.version());
+        this.config = builder.config();
     }
 
     @Override
@@ -77,6 +79,11 @@ final class ImmutableHttpRequest extends HttpRequest {
 
     @Override
     public Optional<Version> version() { return version; }
+
+    @Override
+    public Optional<Config> configuration() {
+        return Optional.ofNullable(config);
+    }
 
     @Override
     public String toString() {

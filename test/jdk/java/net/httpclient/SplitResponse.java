@@ -24,11 +24,9 @@
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
-import java.util.ArrayList;
+import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import javax.net.ServerSocketFactory;
@@ -212,7 +210,10 @@ public class SplitResponse {
 
 
         HttpClient client = newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder(uri).version(version).build();
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .version(version)
+                .configure(H3DiscoveryConfig.HTTP_3_ALT_SVC)
+                .build();
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
 

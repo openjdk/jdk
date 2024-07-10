@@ -27,6 +27,9 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
+ * @summary This test verifies the behaviour of the HttpClient when presented
+ *          with a HEADERS frame followed by CONTINUATION frames, and when presented
+ *          with bad header fields.
  */
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -76,6 +79,7 @@ public class BadHeadersTest {
         of(entry(":status", "200"),  entry("hell o", "value")),                    // Space in the name
         of(entry(":status", "200"),  entry("hello", "line1\r\n  line2\r\n")),      // Multiline value
         of(entry(":status", "200"),  entry("hello", "DE" + ((char) 0x7F) + "L")),  // Bad byte in value
+        of(entry(":status", "200"),  entry("connection", "close")),                // Prohibited connection-specific header
         of(entry("hello", "world!"), entry(":status", "200"))                      // Pseudo header is not the first one
     );
 
@@ -86,7 +90,7 @@ public class BadHeadersTest {
     String https2URI;
 
     /**
-     * A function that returns a list of 1) a HEADERS frame ( with an empty
+     * A function that returns a list of 1) one HEADERS frame ( with an empty
      * payload ), and 2) a CONTINUATION frame with the actual headers.
      */
     static BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> oneContinuation =
@@ -100,7 +104,7 @@ public class BadHeadersTest {
             };
 
     /**
-     * A function that returns a list of a HEADERS frame followed by a number of
+     * A function that returns a list of one HEADERS frame followed by a number of
      * CONTINUATION frames. Each frame contains just a single byte of payload.
      */
     static BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> byteAtATime =
@@ -212,7 +216,10 @@ public class BadHeadersTest {
             if (iterationIndex == 0) { // unknown
                 assertTrue(throwable.getMessage().contains("Unknown pseudo-header"),
                         "Expected \"Unknown pseudo-header\" in: " + throwable.getMessage());
-            } else if (iterationIndex == 4) { // unexpected
+            } else if (iterationIndex == 4) { // prohibited
+                assertTrue(throwable.getMessage().contains("Prohibited header name"),
+                        "Expected \"Prohibited header name\" in: " + throwable.getMessage());
+            } else if (iterationIndex == 5) { // unexpected
                 assertTrue(throwable.getMessage().contains(" Unexpected pseudo-header"),
                         "Expected \" Unexpected pseudo-header\" in: " + throwable.getMessage());
             } else {

@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -49,6 +50,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static org.testng.Assert.assertEquals;
 
 public abstract class AbstractNoBody implements HttpServerAdapters {
@@ -58,6 +60,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI_fixed;
     String httpURI_chunk;
     String httpsURI_fixed;
@@ -66,12 +69,16 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     String http2URI_chunk;
     String https2URI_fixed;
     String https2URI_chunk;
+    String http3URI_fixed;
+    String http3URI_chunk;
+    String http3URI_head;
 
     static final String SIMPLE_STRING = "Hello world. Goodbye world";
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final ExecutorService executor = Executors.newFixedThreadPool(ITERATION_COUNT * 2);
     static final ExecutorService serverExecutor = Executors.newFixedThreadPool(ITERATION_COUNT * 4);
+    static final AtomicLong serverCount = new AtomicLong();
     static final AtomicLong clientCount = new AtomicLong();
     static final long start = System.nanoTime();
     public static String now() {
@@ -85,6 +92,11 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     @DataProvider(name = "variants")
     public Object[][] variants() {
         return new Object[][]{
+                { http3URI_fixed,   false,},
+                { http3URI_chunk,   false },
+                { http3URI_fixed,   true,},
+                { http3URI_chunk,   true },
+
                 { httpURI_fixed,    false },
                 { httpURI_chunk,    false },
                 { httpsURI_fixed,   false },
@@ -112,17 +124,39 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
             return HTTP_1_1;
         if (uri.contains("/http2/") || uri.contains("/https2/"))
             return HTTP_2;
+        if (uri.contains("/http3/"))
+            return HTTP_3;
         return null;
     }
 
     HttpRequest.Builder newRequestBuilder(String uri) {
         var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (version(uri) == HTTP_3) {
+            builder.version(HTTP_3);
+            builder.configure(http3TestServer.serverConfig());
+        }
         return builder;
+    }
+
+    HttpResponse<String> headRequest(HttpClient client)
+            throws IOException, InterruptedException
+    {
+        out.println("\n" + now() + "--- Sending HEAD request ----\n");
+        err.println("\n" + now() + "--- Sending HEAD request ----\n");
+
+        var request = newRequestBuilder(http3URI_head)
+                .HEAD().version(HTTP_2).build();
+        var response = client.send(request, BodyHandlers.ofString());
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.version(), HTTP_2);
+        out.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        err.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        return response;
     }
 
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return HttpClient.newBuilder()
+        return newClientBuilderForH3()
                 .executor(executor)
                 .proxy(NO_PROXY)
                 .sslContext(sslContext)
@@ -190,10 +224,22 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/noBodyFixed";
         https2URI_chunk = "https://" + https2TestServer.serverAuthority() + "/https2/noBodyChunk";
 
+        // HTTP/3
+        HttpTestHandler h3_fixedLengthHandler = new FixedLengthNoBodyHandler();
+        HttpTestHandler h3_chunkedHandler = new ChunkedNoBodyHandler();
+        http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/noBodyFixed");
+        http3TestServer.addHandler(h3_chunkedHandler, "/http3/noBodyChunk");
+        http3TestServer.addHandler(new HttpHeadHandler(), "/http3/noBodyHead");
+        http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyFixed";
+        http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyChunk";
+        http3URI_head = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyHead";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
 
         var shared = newHttpClient(true);
 
@@ -201,8 +247,12 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         out.println("HTTP/1.1 server       (TLS)  listening at: " + httpsTestServer.serverAuthority());
         out.println("HTTP/2   server       (h2c)  listening at: " + http2TestServer.serverAuthority());
         out.println("HTTP/2   server       (h2)   listening at: " + https2TestServer.serverAuthority());
-
+        out.println("HTTP/3   server       (h2)   listening at: " + http3TestServer.serverAuthority());
+        out.println(" + alt endpoint       (h3)   listening at: " + http3TestServer.getH3AltService()
+                .map(Http3TestServer::getAddress));
         out.println("Shared client is: " + shared);
+
+        headRequest(shared);
 
         printStamp(END,"setup");
     }
@@ -215,6 +265,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         executor.close();
         serverExecutor.close();
         printStamp(END, "teardown");
@@ -269,27 +320,5 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
                 t.getResponseBody().close();  // write nothing
             }
         }
-    }
-
-    /*
-     * Converts a ByteBuffer containing bytes encoded using
-     * the given charset into a string.
-     * This method does not throw but will replace
-     * unrecognized sequences with the replacement character.
-     */
-    public static String asString(ByteBuffer buffer, Charset charset) {
-        var decoded = charset.decode(buffer);
-        char[] chars = new char[decoded.length()];
-        decoded.get(chars);
-        return new String(chars);
-    }
-
-    /*
-     * Converts a ByteBuffer containing UTF-8 bytes into a
-     * string. This method does not throw but will replace
-     * unrecognized sequences with the replacement character.
-     */
-    public static String asString(ByteBuffer buffer) {
-        return asString(buffer, StandardCharsets.UTF_8);
     }
 }

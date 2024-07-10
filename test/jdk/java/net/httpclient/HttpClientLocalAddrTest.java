@@ -70,6 +70,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
+ *      -Dsun.net.maxDatagramSockets=32000
  *      -Dsun.net.httpserver.idleInterval=50000
  *      -Djdk.tracePinnedThreads=full
  *      HttpClientLocalAddrTest

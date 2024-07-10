@@ -490,7 +490,7 @@ public class SSLFlowDelegate {
                             } finally {
                                 readBufferLock.unlock();
                             }
-                            // request more data and return.
+                            // request more data if needed and return.
                             requestMoreDataIfNeeded();
                             return;
                         }

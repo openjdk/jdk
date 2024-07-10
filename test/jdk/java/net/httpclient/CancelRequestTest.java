@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import static java.lang.System.out;
 import static java.lang.System.err;
-import static java.net.http.HttpClient.Version.HTTP_1_1;
-import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.*;
+import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -95,10 +95,15 @@ public class CancelRequestTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
+    HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String h2h3URI;
+    String h2h3Head;
+    String h3URI;
 
     static final long SERVER_LATENCY = 75;
     static final int MAX_CLIENT_DELAY = 75;
@@ -200,6 +205,8 @@ public class CancelRequestTest implements HttpServerAdapters {
                 httpsURI,
                 http2URI,
                 https2URI,
+                h2h3URI,
+                h3URI,
         };
     }
 
@@ -245,10 +252,11 @@ public class CancelRequestTest implements HttpServerAdapters {
 
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
+                .version(HTTP_3)
                 .build());
     }
 
@@ -273,8 +281,12 @@ public class CancelRequestTest implements HttpServerAdapters {
     //     rewrap in "Request Cancelled" when the multi exchange was aborted...
     private static boolean isCancelled(Throwable t) {
         while (t instanceof ExecutionException) t = t.getCause();
-        if (t instanceof CancellationException) return true;
-        if (t instanceof IOException) return String.valueOf(t).contains("Request cancelled");
+        Throwable cause = t;
+        while (cause != null) {
+            if (cause instanceof CancellationException) return true;
+            if (cause instanceof IOException && String.valueOf(t).contains("Request cancelled")) return true;
+            cause = cause.getCause();
+        }
         out.println("Not a cancellation exception: " + t);
         t.printStackTrace(out);
         return false;
@@ -290,6 +302,15 @@ public class CancelRequestTest implements HttpServerAdapters {
         }
     }
 
+    void headRequest(HttpClient client) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(h2h3Head))
+                .version(HTTP_2)
+                .HEAD()
+                .build();
+        var resp = client.send(request, BodyHandlers.discarding());
+        assertEquals(resp.statusCode(), 200);
+    }
+
     @Test(dataProvider = "asyncurls")
     public void testGetSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
@@ -302,14 +323,19 @@ public class CancelRequestTest implements HttpServerAdapters {
                 client = newHttpClient(sameClient);
             Tracker tracker = TRACKER.getTracker(client);
 
+            // Populate alt-svc registry with h3 service
+            if (uri.contains("h2h3")) headRequest(client);
+            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
+                    .configure(config)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
             CompletableFuture<HttpResponse<String>> response = client.sendAsync(req, handler);
             var cf1 = response.whenComplete((r,t) -> System.out.println(t));
             CompletableFuture<HttpResponse<String>> cf2 = cf1.whenComplete((r,t) -> latch.countDown());
+            out.println("iteration: " + i + ", req: " + req.uri());
             out.println("response: " + response);
             out.println("cf1: " + cf1);
             out.println("cf2: " + cf2);
@@ -426,8 +452,12 @@ public class CancelRequestTest implements HttpServerAdapters {
                 }
             };
 
+            // Populate alt-svc registry with h3 service
+            if (uri.contains("h2h3")) headRequest(client);
+            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
+                    .configure(config)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
@@ -536,8 +566,12 @@ public class CancelRequestTest implements HttpServerAdapters {
                 return List.of(BODY.getBytes(UTF_8)).iterator();
             };
 
+            // Populate alt-svc registry with h3 service
+            if (uri.contains("h2h3")) headRequest(client);
+            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uriStr))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
+                    .configure(config)
                     .build();
             String body = null;
             Exception failed = null;
@@ -613,11 +647,24 @@ public class CancelRequestTest implements HttpServerAdapters {
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 
-        serverCount.addAndGet(4);
+        HttpTestHandler h3_chunkedHandler = new HTTPSlowHandler();
+        h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        h2h3TestServer.addHandler(h3_chunkedHandler, "/h2h3/exec/");
+        h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
+        h2h3TestServer.addHandler(new HttpHeadHandler(), "/h2h3/head/");
+        h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
+
+        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer.addHandler(h3_chunkedHandler, "/h3-only/exec/");
+        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
+
+        serverCount.addAndGet(6);
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        h2h3TestServer.start();
+        h3TestServer.start();
     }
 
     @AfterTest
@@ -632,6 +679,8 @@ public class CancelRequestTest implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            h2h3TestServer.stop();
+            h3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {

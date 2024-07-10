@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLPermission;
+import java.net.http.HttpClient.Version;
 import java.security.AccessControlContext;
 import java.time.Duration;
 import java.util.List;
@@ -45,6 +46,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 
+import jdk.internal.net.http.AltServicesRegistry.AltService;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
@@ -74,6 +76,7 @@ final class Exchange<T> {
     volatile ExchangeImpl<T> exchImpl;
     volatile CompletableFuture<? extends ExchangeImpl<T>> exchangeCF;
     volatile CompletableFuture<Void> bodyIgnored;
+    volatile Version streamLimitReached;
 
     // used to record possible cancellation raised before the exchImpl
     // has been established.
@@ -81,7 +84,7 @@ final class Exchange<T> {
     @SuppressWarnings("removal")
     final AccessControlContext acc;
     final MultiExchange<T> multi;
-    final Executor parentExecutor;
+    final HttpClientImpl.DelegatingExecutor parentExecutor;
     volatile boolean upgrading; // to HTTP/2
     volatile boolean upgraded;  // to HTTP/2
     final PushGroup<T> pushGroup;
@@ -139,8 +142,12 @@ final class Exchange<T> {
 
     // Keeps track of the underlying connection when establishing an HTTP/2
     // exchange so that it can be aborted/timed out mid setup.
-    static final class ConnectionAborter {
+    final class ConnectionAborter {
+        // In case of HTTP/3 direct connection we may have
+        // two connections in parallel: a regular TCP connection
+        // and a quicConnection.
         private volatile HttpConnection connection;
+        private volatile HttpQuicConnection quicConnection;
         private volatile boolean closeRequested;
         private volatile Throwable cause;
 
@@ -151,7 +158,11 @@ final class Exchange<T> {
                 // closed
                 closeRequested = this.closeRequested;
                 if (!closeRequested) {
-                    this.connection = connection;
+                    if (connection instanceof HttpQuicConnection quicConnection) {
+                        this.quicConnection = quicConnection;
+                    } else {
+                        this.connection = connection;
+                    }
                 } else {
                     // assert this.connection == null
                     this.closeRequested = false;
@@ -162,6 +173,7 @@ final class Exchange<T> {
 
         void closeConnection(Throwable error) {
             HttpConnection connection;
+            HttpQuicConnection quicConnection;
             Throwable cause;
             synchronized (this) {
                 cause = this.cause;
@@ -169,38 +181,63 @@ final class Exchange<T> {
                     cause = error;
                 }
                 connection = this.connection;
-                if (connection == null) {
+                quicConnection = this.quicConnection;
+                if (connection == null || quicConnection == null) {
                     closeRequested = true;
                     this.cause = cause;
                 } else {
+                    this.quicConnection = null;
                     this.connection = null;
                     this.cause = null;
                 }
             }
             closeConnection(connection, cause);
+            closeConnection(quicConnection, cause);
         }
 
+        // Called by HTTP/2 after an upgrade.
+        // There is no upgrade for HTTP/3
         HttpConnection disable() {
             HttpConnection connection;
             synchronized (this) {
                 connection = this.connection;
                 this.connection = null;
+                this.quicConnection = null;
                 this.closeRequested = false;
                 this.cause = null;
             }
             return connection;
         }
 
-        private static void closeConnection(HttpConnection connection, Throwable cause) {
-            if (connection != null) {
-                try {
-                    connection.close(cause);
-                } catch (Throwable t) {
-                    // ignore
+        void clear(HttpConnection connection) {
+            synchronized (this) {
+                var c = this.connection;
+                if (connection == c) this.connection = null;
+                var qc = this.quicConnection;
+                if (connection == qc) this.quicConnection = null;
+            }
+        }
+
+        private void closeConnection(HttpConnection connection, Throwable cause) {
+            if (connection == null) {
+                return;
+            }
+            try {
+                connection.close(cause);
+            } catch (Throwable t) {
+                // ignore
+                if (debug.on()) {
+                    debug.log("ignoring exception that occurred during closing of connection: "
+                            + connection, t);
                 }
             }
         }
     }
+
+    // true if previous attempt resulted in streamLimitReached
+    public boolean hasReachedStreamLimit(Version version) { return streamLimitReached == version; }
+    // can be used to set or clear streamLimitReached (for instance clear it after retrying)
+    void streamLimitReached(Version version) { streamLimitReached = version; }
 
     // Called for 204 response - when no body is permitted
     // This is actually only needed for HTTP/1.1 in order
@@ -311,12 +348,17 @@ final class Exchange<T> {
                 cf = exchangeCF;
             }
         }
+        if (multi.requestCancelled() && impl != null && cause == null) {
+            cause = new IOException("Request cancelled");
+        }
         if (cause == null) return;
         if (impl != null) {
             // The exception is raised by propagating it to the impl.
             if (debug.on()) debug.log("Cancelling exchImpl: %s", impl);
             impl.cancel(cause);
-            failed = null;
+            synchronized (this) {
+                failed = null;
+            }
         } else {
             Log.logTrace("Exchange: request [{0}/timeout={1}ms] no impl is set."
                          + "\n\tCan''t cancel yet with {2}",
@@ -338,7 +380,7 @@ final class Exchange<T> {
                     // if upgraded, we don't close the connection.
                     // cancelling will be handled by the HTTP/2 exchange
                     // in its own time.
-                    if (!upgraded) {
+                    if (!upgraded && !(connection instanceof HttpQuicConnection)) {
                         t = getCancelCause();
                         if (t == null) t = new IOException("Request cancelled");
                         if (debug.on()) debug.log("exchange cancelled during connect: " + t);
@@ -369,8 +411,8 @@ final class Exchange<T> {
     private CompletableFuture<? extends ExchangeImpl<T>>
     establishExchange(HttpConnection connection) {
         if (debug.on()) {
-            debug.log("establishing exchange for %s,%n\t proxy=%s",
-                      request, request.proxy());
+            debug.log("establishing exchange for %s #%s,%n\t proxy=%s",
+                      request, multi.id, request.proxy());
         }
         // check if we have been cancelled first.
         Throwable t = getCancelCause();
@@ -383,7 +425,16 @@ final class Exchange<T> {
         }
 
         CompletableFuture<? extends ExchangeImpl<T>> cf, res;
-        cf = ExchangeImpl.get(this, connection);
+
+        cf = ExchangeImpl.get(this, connection)
+                // set exchImpl and call checkCancelled to make  sure exchImpl
+                // gets cancelled even if the exchangeCf was completed exceptionally
+                // before the CF returned by ExchangeImpl.get completed. This deals
+                // with issues when the request is cancelled while the exchange impl
+                // is being created.
+                .thenApply((eimpl) -> {synchronized (Exchange.this) {exchImpl = eimpl;}
+                    checkCancelled(); return eimpl; })
+                .thenApply(Function.identity());
         // We should probably use a VarHandle to get/set exchangeCF
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
@@ -409,7 +460,7 @@ final class Exchange<T> {
     }
 
     // Completed HttpResponse will be null if response succeeded
-    // will be a non null responseAsync if expect continue returns an error
+    // will be a non-null responseAsync if expect continue returns an error
 
     public CompletableFuture<Response> responseAsync() {
         return responseAsyncImpl(null);
@@ -785,6 +836,55 @@ final class Exchange<T> {
                     } catch (SecurityException e) {
                         return e;
                     }
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean isPermitted(AltService service) {
+        var exception = checkPermission(service);
+        if (exception != null) {
+            Log.logRequest("skipping ALT-SVC endpoint: %s", exception.getMessage());
+        }
+        return exception == null;
+    }
+
+    @SuppressWarnings("removal")
+    private SecurityException checkPermission(AltService service) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) return null;
+        assert acc != null;
+        assert request.secure();
+
+        var altSvcAuthority = service.authority(); // host:port
+        var uri = request.uri();
+        var perm = permissionForServer(replaceHostInURI(uri, altSvcAuthority),
+                request.method(),
+                request.getUserHeaders().map());
+        if (perm != null) {
+            try {
+                sm.checkPermission(perm, acc);
+            } catch (SecurityException x) {
+                // add some logging here?
+                return x;
+            }
+        }
+
+        var host = altSvcAuthority.substring(0, altSvcAuthority.lastIndexOf(':'));
+        assert !host.contains(":") ||
+                host.indexOf('[') == 0 && host.lastIndexOf(']') == host.length() - 1;
+
+        if (!host.equalsIgnoreCase(uri.getHost())) {
+            // if it's not the same host - check the CONNECT permission too
+            perm = Utils.permissionForAltService(altSvcAuthority);
+            if (perm != null) {
+                try {
+                    sm.checkPermission(perm, acc);
+                } catch (SecurityException x) {
+                    // add some logging here?
+                    Log.logRequest("skipping ALT-SVC endpoint: %s", x.getMessage());
+                    return x;
                 }
             }
         }

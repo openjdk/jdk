@@ -19,11 +19,16 @@ grant codeBase "jrt:/java.net.http" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.quic";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.ref";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util";
     permission java.lang.RuntimePermission "modifyThread";
     permission java.net.SocketPermission "*","connect,resolve";
     // required if the HTTPClient is configured to use a local bind address
     permission java.net.SocketPermission "localhost:*","listen,resolve";
+    // required for HTTP/3 to receive datagram from any host/port(s) that the application
+    // might communicate with when using the HttpClient
+    permission java.net.SocketPermission "*:*", "accept,resolve";
     permission java.net.URLPermission "http:*","*:*";
     permission java.net.URLPermission "https:*","*:*";
     permission java.net.URLPermission "ws:*","*:*";

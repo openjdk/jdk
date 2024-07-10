@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -65,6 +66,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
+import jdk.internal.net.http.frame.AltSvcFrame;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -85,6 +87,7 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_WINDOW_SIZE;
@@ -462,6 +465,7 @@ class Http2Connection  {
         AbstractAsyncSSLConnection connection = (AbstractAsyncSSLConnection)
         HttpConnection.getConnection(request.getAddress(),
                                      h2client.client(),
+                                     exchange,
                                      request,
                                      HttpClient.Version.HTTP_2);
 
@@ -874,7 +878,7 @@ class Http2Connection  {
                 if (frame instanceof HeaderFrame) {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
-                    DecodingCallback decoder = new ValidatingHeadersConsumer()::onDecoded;
+                    DecodingCallback decoder = new ValidatingHeadersConsumer(ValidatingHeadersConsumer.Context.RESPONSE)::onDecoded;
                     try {
                         decodeHeaders((HeaderFrame) frame, decoder);
                     } catch (UncheckedIOException e) {
@@ -1026,6 +1030,8 @@ class Http2Connection  {
             case PingFrame.TYPE         -> handlePing((PingFrame) frame);
             case GoAwayFrame.TYPE       -> handleGoAway((GoAwayFrame) frame);
             case WindowUpdateFrame.TYPE -> handleWindowUpdate((WindowUpdateFrame) frame);
+            case AltSvcFrame.TYPE -> processAltSvcFrame(0, (AltSvcFrame) frame,
+                    connection, connection.client());
 
             default -> protocolError(ErrorFrame.PROTOCOL_ERROR);
         }
@@ -1131,7 +1137,8 @@ class Http2Connection  {
             try {
                 // idleConnectionTimeoutEvent is always accessed within a lock protected block
                 if (streams.isEmpty() && idleConnectionTimeoutEvent == null) {
-                    idleConnectionTimeoutEvent = client().idleConnectionTimeout()
+                    final HttpClient.Version version = Version.HTTP_2;
+                    idleConnectionTimeoutEvent = client().idleConnectionTimeout(version)
                             .map(IdleConnectionTimeoutEvent::new)
                             .orElse(null);
                     if (idleConnectionTimeoutEvent != null) {
@@ -1318,7 +1325,8 @@ class Http2Connection  {
 
     <T> Stream.PushedStream<T> createPushStream(Stream<T> parent, Exchange<T> pushEx) {
         PushGroup<T> pg = parent.exchange.getPushGroup();
-        return new Stream.PushedStream<>(pg, this, pushEx);
+        return new Stream.PushedStream<>(pg, this, pushEx)
+                .visit(parent);
     }
 
     /**
@@ -1609,8 +1617,16 @@ class Http2Connection  {
             } finally {
                 Throwable x = error;
                 if (x != null) {
-                    if (debug.on()) debug.log("Stopping scheduler", x);
                     scheduler.stop();
+                    if (client2.stopping()) {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler");
+                        }
+                    } else {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler", x);
+                        }
+                    }
                     Http2Connection.this.shutdown(x);
                 }
             }

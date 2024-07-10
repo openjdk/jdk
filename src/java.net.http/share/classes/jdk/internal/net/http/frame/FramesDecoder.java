@@ -28,9 +28,12 @@ package jdk.internal.net.http.frame;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
@@ -344,6 +347,8 @@ public class FramesDecoder {
                 return parseWindowUpdateFrame(frameLength, frameStreamid, frameFlags);
             case ContinuationFrame.TYPE:
                 return parseContinuationFrame(frameLength, frameStreamid, frameFlags);
+            case AltSvcFrame.TYPE:
+                return parseAltSvcFrame(frameLength, frameStreamid, frameFlags);
             default:
                 // RFC 7540 4.1
                 // Implementations MUST ignore and discard any frame that has a type that is unknown.
@@ -540,6 +545,23 @@ public class FramesDecoder {
                     "zero streamId for ContinuationFrame");
         }
         return new ContinuationFrame(streamid, flags, getBuffers(false, frameLength));
+    }
+
+    private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {
+        var len = getShort();
+        byte[] origin;
+        Optional<String> originUri = Optional.empty();
+        if (len > 0) {
+            origin = getBytes(len);
+            // TODO:
+            // if the charset is really US_ASCII then maybe the bytes should be checked
+            // here, and any byte such that origin[i] & 0x80 != 0 should be rejected
+            // => an exception thrown causing the frame to be discarded?
+            originUri = Optional.of(new String(origin, StandardCharsets.US_ASCII));
+        }
+        // TODO: same as above...
+        String altSvc = new String(getBytes(frameLength - 2 - len), StandardCharsets.US_ASCII);
+        return new AltSvcFrame(frameStreamid, 0, len, originUri, altSvc);
     }
 
 }

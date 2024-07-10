@@ -23,7 +23,43 @@
 
 package jdk.httpclient.test.lib.http2;
 
+import javax.net.ssl.SNIMatcher;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.frame.AltSvcFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
 import jdk.internal.net.http.frame.FramesDecoder;
@@ -42,43 +78,6 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import sun.net.www.http.ChunkedInputStream;
 import sun.net.www.http.HttpClient;
-
-import javax.net.ssl.SNIHostName;
-import javax.net.ssl.SNIMatcher;
-import javax.net.ssl.SNIServerName;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.StandardConstants;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpHeaders;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -112,7 +111,6 @@ public class Http2TestServerConnection {
     ConcurrentLinkedQueue<PingRequest> pings = new ConcurrentLinkedQueue<>();
 
     final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-    final static byte[] EMPTY_BARRAY = new byte[0];
     final Random random;
 
     final static byte[] clientPreface = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes();
@@ -162,7 +160,7 @@ public class Http2TestServerConnection {
 
         if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)socket;
-            handshake(server.serverName(), sslSocket);
+            handshake(server.getSniMatcher(), sslSocket);
             if (!server.supportsHTTP11 && !"h2".equals(sslSocket.getApplicationProtocol())) {
                 throw new IOException("Unexpected ALPN: [" + sslSocket.getApplicationProtocol() + "]");
             }
@@ -281,39 +279,12 @@ public class Http2TestServerConnection {
         outputQ.put(frame);
     }
 
-    private static boolean compareIPAddrs(InetAddress addr1, String host) {
-        try {
-            InetAddress addr2 = InetAddress.getByName(host);
-            return addr1.equals(addr2);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    private static void handshake(final SNIMatcher sniMatcher, final SSLSocket sock) throws IOException {
+        if (sniMatcher != null) {
+            final SSLParameters params = sock.getSSLParameters();
+            params.setSNIMatchers(List.of(sniMatcher));
+            sock.setSSLParameters(params);
         }
-    }
-
-    private static void handshake(String name, SSLSocket sock) throws IOException {
-        if (name == null) {
-            sock.startHandshake(); // blocks until handshake done
-            return;
-        } else if (name.equals("localhost")) {
-            name = "localhost";
-        }
-        final String fname = name;
-        final InetAddress addr1 = InetAddress.getByName(name);
-        SSLParameters params = sock.getSSLParameters();
-        SNIMatcher matcher = new SNIMatcher(StandardConstants.SNI_HOST_NAME) {
-            public boolean matches (SNIServerName n) {
-                String host = ((SNIHostName)n).getAsciiName();
-                if (host.equals("localhost"))
-                    host = "localhost";
-                boolean cmp = host.equalsIgnoreCase(fname);
-                if (cmp)
-                    return true;
-                return compareIPAddrs(addr1, host);
-            }
-        };
-        List<SNIMatcher> list = List.of(matcher);
-        params.setSNIMatchers(list);
-        sock.setSSLParameters(params);
         sock.startHandshake(); // blocks until handshake done
     }
 
@@ -325,8 +296,9 @@ public class Http2TestServerConnection {
         if (stopping)
             return;
         stopping = true;
-        System.err.printf("Server connection to %s stopping. %d streams\n",
-            socket.getRemoteSocketAddress().toString(), streams.size());
+        System.err.printf("Server connection to %s stopping (%s). %d streams\n",
+                socket.getRemoteSocketAddress().toString(),
+                (error == -1 ? "no error" : ("error="+error)), streams.size());
         streams.forEach((i, q) -> {
             q.orderlyClose();
         });
@@ -342,11 +314,16 @@ public class Http2TestServerConnection {
     private void readPreface() throws IOException {
         int len = clientPreface.length;
         byte[] bytes = new byte[len];
+        System.err.println("reading preface");
         int n = is.readNBytes(bytes, 0, len);
-        if (Arrays.compare(clientPreface, bytes) != 0) {
-            System.err.printf("Invalid preface: read %d/%d bytes%n", n, len);
-            throw new IOException("Invalid preface: " +
-                    new String(bytes, 0, len, ISO_8859_1));
+        if (n >= 0) {
+            if (Arrays.compare(clientPreface, bytes) != 0) {
+                System.err.printf("Invalid preface: read %d/%d bytes%n", n, len);
+                throw new IOException("Invalid preface: " +
+                        new String(bytes, 0, n, ISO_8859_1));
+            }
+        } else {
+            throw new IOException("EOF while reading preface");
         }
     }
 
@@ -627,7 +604,7 @@ public class Http2TestServerConnection {
 
     // all other streams created here
     @SuppressWarnings({"rawtypes","unchecked"})
-    void createStream(HeaderFrame frame) throws IOException {
+    private boolean createStream(HeaderFrame frame, Http2TestServer.AltSvcAddr altSvcAddr) throws IOException {
         List<HeaderFrame> frames = new LinkedList<>();
         frames.add(frame);
         int streamid = frame.streamid();
@@ -666,12 +643,23 @@ public class Http2TestServerConnection {
         if (disallowedHeader.isPresent())
             throw new IOException("Unexpected HTTP2-Settings in headers:" + headers);
 
-
         Queue q = new Queue(sentinel);
         streams.put(streamid, q);
+
+        boolean altSvcSent = false;
+        if (altSvcAddr != null) {
+            String originHost = headers.firstValue("host")
+                    .or(() -> headers.firstValue(":authority"))
+                    .orElse(null);
+            if (originHost != null) {
+                altSvcSent = sendAltSvc(originHost, altSvcAddr);
+            }
+        }
+
         exec.submit(() -> {
             handleRequest(headers, q, streamid, endStreamReceived);
         });
+        return altSvcSent;
     }
 
     // runs in own thread. Handles request from start to finish. Incoming frames
@@ -760,6 +748,7 @@ public class Http2TestServerConnection {
     @SuppressWarnings({"rawtypes","unchecked"})
     void readLoop() {
         try {
+            boolean altSvcSent = false;
             while (!stopping) {
                 Http2Frame frame = readFrameImpl();
                 if (frame == null) {
@@ -786,7 +775,9 @@ public class Http2TestServerConnection {
                             // TODO: close connection
                             continue;
                         } else {
-                            createStream((HeadersFrame) frame);
+                            final Http2TestServer.AltSvcAddr altSvcAddr = server.h3AltSvcAddr;
+                            final boolean sendAltSvc = secure && !altSvcSent && altSvcAddr != null;
+                            altSvcSent = createStream((HeadersFrame) frame, sendAltSvc ? altSvcAddr : null);
                         }
                     } else {
                         if (q == null && !pushStreams.contains(stream)) {
@@ -797,9 +788,12 @@ public class Http2TestServerConnection {
                         }
                         if (frame.type() == WindowUpdateFrame.TYPE) {
                             WindowUpdateFrame wup = (WindowUpdateFrame) frame;
-                            synchronized (updaters) {
+                            updatersLock.lock();
+                            try {
                                 Consumer<Integer> r = updaters.get(stream);
                                 r.accept(wup.getUpdate());
+                            } finally {
+                                updatersLock.unlock();
                             }
                         } else if (frame.type() == ResetFrame.TYPE) {
                             // do orderly close on input q
@@ -848,6 +842,28 @@ public class Http2TestServerConnection {
             }
             close(ErrorFrame.PROTOCOL_ERROR);
         }
+    }
+
+    boolean sendAltSvc(final String originHost, final Http2TestServer.AltSvcAddr altSvcAddr) {
+        Objects.requireNonNull(originHost);
+        System.err.printf("TestServer: AltSvcFrame for: %s%n", originHost);
+        try {
+            URI url = new URI("https://" + originHost);
+            String origin = url.toASCIIString();
+            String svc = "h3=\"" + altSvcAddr.host() + ":" + altSvcAddr.port() + "\"";
+            svc = "fooh2=\":443\"; ma=2592000; persist=1, " + svc;
+            svc = svc + ", bar3=\":446\"; ma=2592000; persist=1";
+            svc = svc + ", h3-34=\"" + altSvcAddr.host() + ":" + altSvcAddr.port()
+                    +"\"; ma=2592000; persist=1";
+            AltSvcFrame frame = new AltSvcFrame(0, 0, origin.length(), Optional.of(origin), svc);
+            System.err.printf("TestServer: Sending AltSvcFrame for: %s [%s]%n", origin, svc);
+            outputQ.put(frame);
+            return true;
+        } catch (IOException | URISyntaxException x) {
+            System.err.println("TestServer: Failed to send AltSvcFrame: " + x);
+            x.printStackTrace();
+        }
+        return false;
     }
 
     static boolean isClientStreamId(int streamid) {
@@ -930,7 +946,10 @@ public class Http2TestServerConnection {
                 }
                 if (frame instanceof ResponseHeaders) {
                     ResponseHeaders rh = (ResponseHeaders)frame;
-                    HeadersFrame hf = new HeadersFrame(rh.streamid(), rh.getFlags(), encodeHeaders(rh.headers));
+                    // order of headers matters - pseudo headers first followed by rest of the headers
+                    final List<ByteBuffer> encodedHeaders = new ArrayList(encodeHeaders(rh.pseudoHeaders));
+                    encodedHeaders.addAll(encodeHeaders(rh.headers));
+                    HeadersFrame hf = new HeadersFrame(rh.streamid(), rh.getFlags(), encodedHeaders);
                     writeFrame(hf);
                 } else if (frame instanceof OutgoingPushPromise) {
                     handlePush((OutgoingPushPromise)frame);
@@ -1007,9 +1026,10 @@ public class Http2TestServerConnection {
     // returns a minimal response with status 200
     // that is the response to the push promise just sent
     private ResponseHeaders getPushResponse(int streamid) {
-        HttpHeadersBuilder hb = createNewHeadersBuilder();
-        hb.addHeader(":status", "200");
-        ResponseHeaders oh = new ResponseHeaders(hb.build());
+        HttpHeadersBuilder pseudoHeaders = createNewHeadersBuilder();
+        pseudoHeaders.addHeader(":status", "200");
+        ResponseHeaders oh = new ResponseHeaders(pseudoHeaders.build(),
+                HttpHeaders.of(Map.of(), (k, v) -> true));
         oh.streamid(streamid);
         oh.setFlag(HeaderFrame.END_HEADERS);
         return oh;
@@ -1031,7 +1051,9 @@ public class Http2TestServerConnection {
         try {
             byte[] buf = new byte[9];
             int ret;
+            // System.err.println("TestServer: reading frame headers");
             ret=is.readNBytes(buf, 0, 9);
+            // System.err.println("TestServer: got frame headers");
             if (ret == 0) {
                 return null;
             } else if (ret != 9) {
@@ -1044,6 +1066,7 @@ public class Http2TestServerConnection {
                 len = (len << 8) + n;
             }
             byte[] rest = new byte[len];
+            // System.err.println("TestServer: reading frame body");
             int n = is.readNBytes(rest, 0, len);
             if (n != len)
                 throw new IOException("Error reading frame");
@@ -1208,44 +1231,44 @@ public class Http2TestServerConnection {
     // window updates done in main reader thread because they may
     // be used to unblock BodyOutputStreams waiting for WUPs
 
-    HashMap<Integer,Consumer<Integer>> updaters = new HashMap<>();
+    final HashMap<Integer,Consumer<Integer>> updaters = new HashMap<>();
+    final ReentrantLock updatersLock = new ReentrantLock();
 
     void registerStreamWindowUpdater(int streamid, Consumer<Integer> r) {
-        synchronized(updaters) {
+        updatersLock.lock();
+        try {
             updaters.put(streamid, r);
+        } finally {
+            updatersLock.unlock();
         }
     }
 
-    int sendWindow = 64 * 1024 - 1; // connection level send window
+    // connection level send window, permits = bytes
+    final Semaphore sendWindow = new Semaphore(64 * 1024 - 1);
 
     /**
      * BodyOutputStreams call this to get the connection window first.
      *
      * @param amount
      */
-    synchronized void obtainConnectionWindow(int amount) throws InterruptedException {
-        while (amount > 0) {
-            int n = Math.min(amount, sendWindow);
-            amount -= n;
-            sendWindow -= n;
-            if (amount > 0)
-                wait();
-        }
+    void obtainConnectionWindow(int amount) throws InterruptedException {
+        sendWindow.acquire(amount);
     }
 
-    synchronized void updateConnectionWindow(int amount) {
-        sendWindow += amount;
-        notifyAll();
+    void updateConnectionWindow(int amount) {
+        sendWindow.release(amount);
     }
 
     // simplified output headers class. really just a type safe container
     // for the hashmap.
 
     public static class ResponseHeaders extends Http2Frame {
+        HttpHeaders pseudoHeaders;
         HttpHeaders headers;
 
-        public ResponseHeaders(HttpHeaders headers) {
+        public ResponseHeaders(HttpHeaders pseudoHeaders, HttpHeaders headers) {
             super(0, 0);
+            this.pseudoHeaders = pseudoHeaders;
             this.headers = headers;
         }
 

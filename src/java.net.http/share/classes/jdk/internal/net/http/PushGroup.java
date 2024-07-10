@@ -25,6 +25,8 @@
 
 package jdk.internal.net.http;
 
+import java.net.http.HttpResponse.PushPromiseHandler.PushId;
+import java.net.http.HttpResponse.PushPromiseHandler.PushId.Http3PushId;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.net.http.HttpRequest;
@@ -105,9 +107,21 @@ class PushGroup<T> {
     }
 
     Acceptor<T> acceptPushRequest(HttpRequest pushRequest) {
+        return doAcceptPushRequest(pushRequest, null);
+    }
+
+    Acceptor<T> acceptPushRequest(HttpRequest pushRequest, PushId pushId) {
+        return doAcceptPushRequest(pushRequest, Objects.requireNonNull(pushId));
+    }
+
+    private Acceptor<T> doAcceptPushRequest(HttpRequest pushRequest, PushId pushId) {
         AcceptorImpl<T> acceptor = new AcceptorImpl<>(executor);
         try {
-            pushPromiseHandler.applyPushPromise(initiatingRequest, pushRequest, acceptor::accept);
+            if (pushId == null) {
+                pushPromiseHandler.applyPushPromise(initiatingRequest, pushRequest, acceptor::accept);
+            } else {
+                pushPromiseHandler.applyPushPromise(initiatingRequest, pushRequest, pushId, acceptor::accept);
+            }
         } catch (Throwable t) {
             if (acceptor.accepted()) {
                 CompletableFuture<?> cf = acceptor.cf();
@@ -126,6 +140,10 @@ class PushGroup<T> {
         } finally {
             stateLock.unlock();
         }
+    }
+
+    void acceptPushPromiseId(PushId pushId) {
+        pushPromiseHandler.notifyAdditionalPromise(initiatingRequest, pushId);
     }
 
     void pushCompleted() {

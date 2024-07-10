@@ -55,6 +55,8 @@ public final class OperationTrackers {
         long getOutstandingHttpOperations();
         // The number of active HTTP/2 streams
         long getOutstandingHttp2Streams();
+        // The number of active HTTP/3 streams
+        long getOutstandingHttp3Streams();
         // The number of active WebSockets
         long getOutstandingWebSocketOperations();
         // number of TCP connections still opened

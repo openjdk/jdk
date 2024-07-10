@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.net.ssl.*;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
@@ -242,6 +243,56 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     null, checkClientTrusted ? null : authType);
         }
 
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
+        }
+    }
+
+    void checkServerTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        // TODO: review the necessity of using ExtendedSSLSession for
+        // algorithm constraints
+//        if (isExtSession &&
+//                ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
+//            ExtendedSSLSession extSession = (ExtendedSSLSession)session;
+//            String[] localSupportedSignAlgs =
+//                    extSession.getLocalSupportedSignatureAlgorithms();
+//
+//            constraints = SSLAlgorithmConstraints.forEngine(
+//                    engine, localSupportedSignAlgs, false);
+//        } else {
+//            constraints = SSLAlgorithmConstraints.forEngine(engine, false);
+//        }
+
+        // TODO: review if any of this is needed/applicable for QUIC TLS
+        // Grab any stapled OCSP responses for use in validation
+        // SSLSession session;
+        // try {
+        //      session = quicTLSEngine.getHandshakeSession();
+        // } catch (IllegalStateException ise) {
+        //      throw new CertificateException("No handshake session");
+        // }
+        // boolean isExtSession = (session instanceof ExtendedSSLSession);
+        // List<byte[]> responseList = Collections.emptyList();
+        // if (isExtSession) {
+        //  responseList = ((ExtendedSSLSession)session).getStatusResponses();
+        // }
+
+        SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
+        Validator v = checkTrustedInit(chain, authType, false);
+        X509Certificate[] trustedChain = v.validate(chain, null,
+                Collections.emptyList(),
+                sslParameters.getAlgorithmConstraints(), authType);
+        SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
+        if (sslParameters != null && handshakeSession != null) {
+            // check endpoint identity
+            String identityAlg =
+                    sslParameters.getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && !identityAlg.isEmpty()) {
+                checkIdentity(handshakeSession, trustedChain, identityAlg, false);
+            }
+        }
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);

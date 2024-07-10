@@ -64,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.common.Utils.addSuppressed;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.permissionForProxy;
 import static jdk.internal.net.http.common.Utils.stringOf;
@@ -236,7 +237,7 @@ public class OpeningHandshake {
             // or the connection, if not.
             ((RawChannel.Provider) response).closeRawChannel();
         } catch (IOException e) {
-            exception.addSuppressed(e);
+            addSuppressed(exception, e);
         }
         return MinimalFuture.failedFuture(exception);
     }

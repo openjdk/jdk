@@ -21,6 +21,38 @@
 // questions.
 //
 
+// for debugging purposes:
+// grant { permission java.security.AllPermission; };
+
+// This shouldn't be needed, it is a workaround to grant
+// jrt://java.net.http permissions that it should already
+// have. See JDK-8305530
+grant codeBase "jrt:/java.net.http"{
+    // HTTP
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
+
+    // HTTP/2
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
+
+    // quic
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.packets";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.streams";
+
+    // HTTP/3
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.streams";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.readers";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.writers";
+};
+
 // for JTwork/classes/0/test/lib/jdk/test/lib/net/SimpleSSLContext.class
 grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.util.PropertyPermission "test.src.path", "read";
@@ -29,14 +61,39 @@ grant codeBase "file:${test.classes}/../../../../test/lib/-" {
 
 // for jdk/httpclient/test/lib/* classes
 grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/lib/-" {
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "os.version", "read";
+    permission java.util.PropertyPermission "jdk.internal.httpclient.debug", "read";
+    permission java.util.PropertyPermission "jdk.internal.httpclient.test.quic.incoming", "read";
+    permission java.util.PropertyPermission "jdk.internal.httpclient.test.quic.outgoing", "read";
+    permission java.util.PropertyPermission "seed", "read";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
 
+    // quic
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.packets";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.streams";
+
+    // HTTP/3
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.streams";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.readers";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.writers";
+
+    // TestUtil uses jdk.internal.util.OperatingSystem
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util";
+
     permission java.net.SocketPermission "127.0.0.1:*", "listen,accept,resolve";
     permission java.net.SocketPermission "[::1]:*", "listen,accept,resolve";
     permission java.lang.RuntimePermission "modifyThread";
+
 };
 
 grant codeBase "file:${test.classes}/*" {
@@ -47,17 +104,38 @@ grant codeBase "file:${test.classes}/*" {
     permission java.net.URLPermission "https://127.0.0.1:*/https1/-", "GET,POST";
     permission java.net.URLPermission "http://127.0.0.1:*/http2/-",   "GET,POST";
     permission java.net.URLPermission "https://127.0.0.1:*/https2/-", "GET,POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/http3/-",  "GET,POST,HEAD";
     // ipv6
     permission java.net.URLPermission "http://[::1]:*/http1/-",   "GET,POST";
     permission java.net.URLPermission "https://[::1]:*/https1/-", "GET,POST";
     permission java.net.URLPermission "http://[::1]:*/http2/-",   "GET,POST";
     permission java.net.URLPermission "https://[::1]:*/https2/-", "GET,POST";
+    permission java.net.URLPermission "https://[::1]:*/http3/-",  "GET,POST,HEAD";
+
 
     // needed to grant permission to the HTTP/2 server
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
+
+    // quic
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.packets";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.quic.streams";
+
+    // HTTP/3
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.frames";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3.streams";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.http3";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.readers";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.qpack.writers";
+
+    // TestUtil uses jdk.internal.util.OperatingSystem
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util";
 
     // for HTTP/1.1 server logging
     permission java.util.logging.LoggingPermission "control";
@@ -71,4 +149,5 @@ grant codeBase "file:${test.classes}/*" {
 
     // Permission for DependentActionsTest
     permission java.lang.RuntimePermission "getStackWalkerWithClassReference";
+
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.internal.net.http;
 
 import java.net.URI;
+import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpRequest.Config;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
@@ -49,6 +51,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     private BodyPublisher bodyPublisher;
     private volatile Optional<HttpClient.Version> version;
     private Duration duration;
+    private Config config;
 
     public HttpRequestBuilderImpl(URI uri) {
         requireNonNull(uri, "uri must be non-null");
@@ -97,6 +100,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         b.uri = uri;
         b.duration = duration;
         b.version = version;
+        b.config = config;
         return b;
     }
 
@@ -155,6 +159,12 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         return this;
     }
 
+    @Override
+    public Builder configure(Config config) {
+        this.config = config;
+        return this;
+    }
+
     HttpHeadersBuilder headersBuilder() {  return headersBuilder; }
 
     URI uri() { return uri; }
@@ -166,6 +176,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     BodyPublisher bodyPublisher() { return bodyPublisher; }
 
     Optional<HttpClient.Version> version() { return version; }
+
+    Config config() { return config; }
 
     @Override
     public HttpRequest.Builder GET() {

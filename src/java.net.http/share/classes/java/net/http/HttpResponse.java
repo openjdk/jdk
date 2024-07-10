@@ -98,6 +98,18 @@ public interface HttpResponse<T> {
      */
     public int statusCode();
 
+
+    /**
+     * {@return if present, a label identifying the connection on which the
+     * response was received. The format of the string is opaque, but should
+     * be unique for the life of the {@link HttpClient} instance}
+     */
+    // TODO: decide if we keep that in the internal API or if we only expose
+    //       it in HttpResponseImpl
+    public default Optional<String> connectionLabel() {
+        return Optional.empty();
+    }
+
     /**
      * Returns the {@link HttpRequest} corresponding to this response.
      *
@@ -792,23 +804,55 @@ public interface HttpResponse<T> {
     /**
      * A handler for push promises.
      *
-     * <p> A <i>push promise</i> is a synthetic request sent by an HTTP/2 server
+     * <p> A <i>push promise</i> is a synthetic request sent by an HTTP/2 or HTTP/3 server
      * when retrieving an initiating client-sent request. The server has
      * determined, possibly through inspection of the initiating request, that
      * the client will likely need the promised resource, and hence pushes a
      * synthetic push request, in the form of a push promise, to the client. The
      * client can choose to accept or reject the push promise request.
      *
-     * <p> A push promise request may be received up to the point where the
+     * <p>For HTTP/2, a push promise request may be received up to the point where the
      * response body of the initiating client-sent request has been fully
      * received. The delivery of a push promise response, however, is not
      * coordinated with the delivery of the response to the initiating
-     * client-sent request.
+     * client-sent request. These are delivered with the
+     * {@link #applyPushPromise(HttpRequest, HttpRequest, Function)} method
+     * <p>
+     * For HTTP/3, push promises are handled in a similar way, except that promises
+     * of the same resource (request URI, request headers and response body) can be
+     * promised multiple times, but are only delivered by the server (and this API)
+     * once though the method {@link #applyPushPromise(HttpRequest, HttpRequest, PushId, Function)}.
+     * Subsequent promises of the same resource, receive a notification only
+     * of the promise by the method {@link #notifyAdditionalPromise(HttpRequest, PushId)}.
+     * The same {@link PushPromiseHandler.PushId} is supplied for each of these
+     * notifications. Additionally, HTTP/3 push promises are not restricted to a context
+     * of a single initiating request. The same push promise can be delivered and then notified
+     * across multiple client initiated requests within the same HTTP/3 (QUIC) connection.
      *
      * @param <T> the push promise response body type
      * @since 11
      */
     public interface PushPromiseHandler<T> {
+
+        /**
+         * Represents a HTTP/3 PushID. PushIds can be shared across
+         * multiple client initiated requests on the same QUIC connection.
+         */
+        public sealed interface PushId {
+            // TODO: should we expose this type?
+
+            /**
+             * Represents an HTTP/3 PushId
+             * @param pushId the pushId as a long
+             * @param connectionId an hexadecimal string representing the underlying
+             *                     connection
+             * @apiNote
+             * The {@code connectionId} should be considered opaque, and ensures that
+             * two long pushId emitted by different connections correspond to distinct
+             * instances of {@code PushId}.
+             */
+            record Http3PushId(long pushId, String connectionId) implements PushId { }
+        }
 
         /**
          * Notification of an incoming push promise.
@@ -827,6 +871,12 @@ public interface HttpResponse<T> {
          * then the push promise is rejected. The {@code acceptor} function will
          * throw an {@code IllegalStateException} if invoked more than once.
          *
+         * <p> This method is invoked for all HTTP/2 push promises and also
+         * by default for the first promise of all HTTP/3 push promises.
+         * If {@link #applyPushPromise(HttpRequest, HttpRequest, PushId, Function)}
+         * is overridden, then this method is not directly invoked for HTTP/3
+         * push promises.
+         *
          * @param initiatingRequest the initiating client-send request
          * @param pushPromiseRequest the synthetic push request
          * @param acceptor the acceptor function that must be successfully
@@ -838,6 +888,61 @@ public interface HttpResponse<T> {
             Function<HttpResponse.BodyHandler<T>,CompletableFuture<HttpResponse<T>>> acceptor
         );
 
+        /**
+         * Notification of the first occurrence of a HTTP/3 incoming push promise.
+         *
+         * Subsequent promises of the same resource (with the same PushId) are notified
+         * using {@link #notifyAdditionalPromise(HttpRequest, PushId)}.
+         *
+         * <p> This method is invoked once for each push promise received, up
+         * to the point where the response body of the initiating client-sent
+         * request has been fully received.
+         *
+         * <p> A push promise is accepted by invoking the given {@code acceptor}
+         * function. The {@code acceptor} function must be passed a non-null
+         * {@code BodyHandler}, that is to be used to handle the promise's
+         * response body. The acceptor function will return a {@code
+         * CompletableFuture} that completes with the promise's response.
+         *
+         * <p> If the {@code acceptor} function is not successfully invoked,
+         * then the push promise is rejected. The {@code acceptor} function will
+         * throw an {@code IllegalStateException} if invoked more than once.
+         *
+         * @implSpec the default implementation invokes
+         * {@link #applyPushPromise(HttpRequest, HttpRequest, Function)}. This allows
+         * {@code PushPromiseHandlers} from previous releases to handle HTTP/3 push
+         * promise in a reasonable way.
+         *
+         * @param initiatingRequest the client request that resulted in the promise
+         * @param pushPromiseRequest the promised HttpRequest from the server
+         * @param pushid the PushId which can be linked to subsequent notifications
+         * @param acceptor the acceptor function that must be successfully
+         *                 invoked to accept the push promise
+         */
+        public default void applyPushPromise(
+                HttpRequest initiatingRequest,
+                HttpRequest pushPromiseRequest,
+                PushId pushid,
+                Function<HttpResponse.BodyHandler<T>,CompletableFuture<HttpResponse<T>>> acceptor
+        ) {
+            applyPushPromise(initiatingRequest, pushPromiseRequest, acceptor);
+        }
+
+        /**
+         * Invoked for each additional HTTP/3 Push Promise. The {@code pushid} links the promise to the
+         * original promised {@link HttpRequest} and {@link HttpResponse}. Additional promises
+         * generally result from different client initiated requests.
+         * <p>
+         * The default implementation of this method does nothing.
+         *
+         * @param initiatingRequest the client initiated request which resulted in the push
+         * @param pushid the pushid which may have been notified previously
+         */
+        public default void notifyAdditionalPromise(
+                HttpRequest initiatingRequest,
+                PushId pushid
+        ) {
+        }
 
         /**
          * Returns a push promise handler that accumulates push promises, and

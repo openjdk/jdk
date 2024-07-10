@@ -84,6 +84,7 @@ final class SSLConfiguration implements Cloneable {
 
     boolean                     noSniExtension;
     boolean                     noSniMatcher;
+    boolean                     isQuic;
 
     // To switch off the extended_master_secret extension.
     static final boolean useExtendedMasterSecret;
@@ -97,7 +98,7 @@ final class SSLConfiguration implements Cloneable {
         Utilities.getBooleanProperty("jdk.tls.allowLegacyMasterSecret", true);
 
     // Use TLS1.3 middlebox compatibility mode.
-    static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
+    private static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
             "jdk.tls.client.useCompatibilityMode", true);
 
     // Respond a close_notify alert if receiving close_notify alert.
@@ -499,6 +500,18 @@ final class SSLConfiguration implements Cloneable {
         }
     }
 
+    public boolean isUseCompatibilityMode() {
+        return useCompatibilityMode && !isQuic;
+    }
+
+    public boolean isQuic() {
+        return isQuic;
+    }
+
+    public void setQuic(boolean quic) {
+        isQuic = quic;
+    }
+
     @Override
     @SuppressWarnings({"removal","unchecked", "CloneDeclaresCloneNotSupported"})
     public Object clone() {
@@ -542,7 +555,10 @@ final class SSLConfiguration implements Cloneable {
      */
     private static String[] getCustomizedSignatureScheme(String propertyName) {
         String property = GetPropertyAction.privilegedGetProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        // this method is called from class initializer; logging here
+        // will occasionally pin threads and deadlock if called from a virtual thread
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+                && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                             property + "'");
@@ -570,7 +586,8 @@ final class SSLConfiguration implements Cloneable {
                 if (scheme != null && scheme.isAvailable) {
                     signatureSchemes.add(schemeName);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+                            && !Thread.currentThread().isVirtual()) {
                         SSLLogger.fine(
                         "The current installed providers do not " +
                               "support signature scheme: " + schemeName);

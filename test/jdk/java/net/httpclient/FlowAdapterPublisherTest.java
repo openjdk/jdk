@@ -27,9 +27,11 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,20 +63,22 @@ import static org.testng.Assert.fail;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm FlowAdapterPublisherTest
+ * @run testng/othervm -Djdk.internal.httpclient.debug=err FlowAdapterPublisherTest
  */
 
 public class FlowAdapterPublisherTest implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpTestServer httpTestServer;     // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpTestServer;     // HTTP/1.1    [ 5 servers ]
     HttpTestServer httpsTestServer;    // HTTPS/1.1
     HttpTestServer http2TestServer;    // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;   // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;    // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     @DataProvider(name = "uris")
     public Object[][] variants() {
@@ -83,6 +87,7 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
                 { httpsURI  },
                 { http2URI  },
                 { https2URI },
+                { http3URI  },
         };
     }
 
@@ -94,16 +99,26 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         if (uri.contains("/https1/")) return Version.HTTP_1_1;
         if (uri.contains("/http2/")) return Version.HTTP_2;
         if (uri.contains("/https2/")) return Version.HTTP_2;
+        if (uri.contains("/http3/")) return Version.HTTP_3;
         return null;
     }
 
     private HttpClient newHttpClient(String uri) {
-        var builder = HttpClient.newBuilder();
+        var version = Optional.ofNullable(version(uri));
+        var builder = version.isEmpty() || version.get() != Version.HTTP_3
+                ? HttpClient.newBuilder()
+                : HttpServerAdapters.createClientBuilderForH3().version(Version.HTTP_3);
         return builder.sslContext(sslContext).proxy(Builder.NO_PROXY).build();
     }
 
     private HttpRequest.Builder newRequestBuilder(String uri) {
-        return HttpRequest.newBuilder(URI.create(uri));
+        var version = Optional.ofNullable(version(uri));
+        var builder = version.isEmpty() || version.get() != Version.HTTP_3
+                ? HttpRequest.newBuilder(URI.create(uri))
+                : HttpRequest.newBuilder(URI.create(uri))
+                     .version(Version.HTTP_3)
+                     .configure(http3TestServer.serverConfig());
+        return builder;
     }
 
     @Test
@@ -374,10 +389,15 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -386,6 +406,7 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
     }
 
     static class HttpEchoHandler implements HttpTestHandler {

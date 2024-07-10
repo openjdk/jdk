@@ -62,13 +62,15 @@ public class BasicAuthTest implements HttpServerAdapters {
         test(Version.HTTP_2, false);
         test(Version.HTTP_1_1, true);
         test(Version.HTTP_2, true);
+        test(Version.HTTP_3, true);
     }
 
     public static void test(Version version, boolean secure) throws Exception {
 
         ExecutorService e = Executors.newCachedThreadPool();
         Handler h = new Handler();
-        SSLContext sslContext = secure ? new SimpleSSLContext().get() : null;
+        SSLContext sslContext = secure || version == Version.HTTP_3
+                ? new SimpleSSLContext().get() : null;
         HttpTestServer server = HttpTestServer.create(version, sslContext, e);
         HttpTestContext serverContext = server.addHandler(h,"/test/");
         ServerAuth sa = new ServerAuth("foo realm");
@@ -77,7 +79,7 @@ public class BasicAuthTest implements HttpServerAdapters {
         System.out.println("Server auth = " + server.serverAuthority());
 
         ClientAuth ca = new ClientAuth();
-        var clientBuilder = HttpClient.newBuilder();
+        var clientBuilder = HttpServerAdapters.createClientBuilderForH3();
         if (sslContext != null) clientBuilder.sslContext(sslContext);
         HttpClient client = clientBuilder.authenticator(ca).build();
 
@@ -85,6 +87,11 @@ public class BasicAuthTest implements HttpServerAdapters {
             String scheme = sslContext == null ? "http" : "https";
             URI uri = new URI(scheme + "://" + server.serverAuthority() + "/test/foo/"+version);
             var builder = HttpRequest.newBuilder(uri);
+            if (version == Version.HTTP_3) {
+                builder.version(version);
+                var config = server.serverConfig();
+                builder.configure(server.serverConfig());
+            }
             HttpRequest req = builder.copy().GET().build();
 
             System.out.println("\n\nSending request: " + req);

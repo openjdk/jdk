@@ -109,6 +109,18 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         return super.cancel(mayInterruptIfRunning) || result;
     }
 
+    /**
+     * Completes this completable future with the given {@code result}
+     * if {@code throwable} is {@code null}: otherwise completes
+     * this completable future exceptionally with the given
+     * {@code throwable}.
+     * @param result      a result (may be null)
+     * @param throwable   a throwable (may be null)
+     */
+    public void complete(T result, Throwable throwable) {
+        complete(this, result, throwable);
+    }
+
     private Cancelable cancelable() {
         return cancelable;
     }

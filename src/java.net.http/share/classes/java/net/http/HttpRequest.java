@@ -28,6 +28,7 @@ package java.net.http;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -92,6 +93,63 @@ public abstract class HttpRequest {
     protected HttpRequest() {}
 
     /**
+     * An interface that can be used to provide additional configuration
+     * hints on how an HTTP exchange should be carried out by the
+     * {@link HttpClient} implementation.
+     *
+     * <p> The {@link H3DiscoveryConfig} enum defines three
+     * pre-defined instances of such configuration, that can be
+     * used to help the {@link HttpClient} decide how an HTTP/3 exchange
+     * should be established.
+     *
+     * <p> Concrete instances of this class and its subclasses are immutable.
+     *
+     * @since TBD
+     */
+    public sealed interface Config permits H3DiscoveryConfig {
+    }
+
+    /**
+     * An enumeration of three pre-defined instances of {@link Config}
+     * that can be used to help the {@link HttpClient} decide how an HTTP/3 exchange
+     * should be established.
+     *
+     * @since TBD
+     */
+    public enum H3DiscoveryConfig implements Config {
+        /**
+         * This instructs the {@link HttpClient} to use its own implementation
+         * specific algorithm to find or establish a connection for the exchange.
+         * Typically, if no connection was previously established with the origin
+         * server defined by the request URI, the {@link HttpClient} implementation
+         * may attempt to establish both an HTTP/3-Quic connection and an HTTP
+         * connection through TCP at the authority present in the request URI,
+         * and use the first that succeeds. The exchange may then be carried out with
+         * any of the {@linkplain java.net.http.HttpClient.Version
+         * three HTTP protocol versions}, depending on which method succeeded first.
+         */
+        HTTP_3_ANY,
+        /**
+         * This instructs the {@link HttpClient} to only use the
+         * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
+         * to find or establish an HTTP/3 connection with the origin server.
+         * The exchange may then be carried out with any of the {@linkplain
+         * java.net.http.HttpClient.Version three HTTP protocol versions}, depending on
+         * whether an Alternate Service record for HTTP/3 could be found, and which HTTP version
+         * was negotiated with the origin server, if no such record could be found.
+         */
+        HTTP_3_ALT_SVC,
+        /**
+         * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
+         * with the origin server. The connection will only succeed if the origin server
+         * is listening for incoming HTTP/3 Quic connection at the same authority (host, port)
+         * as defined in the request URI.
+         */
+        // TODO: may need to define what happens in case of redirects.
+        HTTP_3_ONLY
+    }
+
+    /**
      * A builder of {@linkplain HttpRequest HTTP requests}.
      *
      * <p> Instances of {@code HttpRequest.Builder} are created by calling
@@ -151,6 +209,46 @@ public abstract class HttpRequest {
          * @return this builder
          */
         public Builder version(HttpClient.Version version);
+
+        /**
+         * Provides configuration hints to help an {@link HttpClient} implementation
+         * decide how the request/response exchange should be established or carried out.
+         *
+         * <p> An {@link HttpClient} implementation may decide to ignore hints, or
+         * fail the request, if provided with any hints that it does not understand.
+         * If {@code null} is supplied, any hints previously provided to this builder
+         * are discarded.
+         *
+         * @implSpec
+         * The default implementation of this method discards the provided hints
+         * and does nothing.
+         *
+         * @implNote
+         * The JDK built-in implementation of the {@link HttpClient} understands the
+         * {@link H3DiscoveryConfig} hints.<br>
+         * If no configuration hint is provided, the JDK built-in implementation of
+         * the {@link HttpClient} will select one:
+         * <ul>
+         *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
+         *          explicitly set to {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
+         *          the exchange will be established as per {@link
+         *          H3DiscoveryConfig#HTTP_3_ANY}.</li>
+         *     <li> Otherwise, if no request preferred version is explicitly provided
+         *          and the {@linkplain HttpClient.Builder#version(Version)  HttpClient
+         *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
+         *          the exchange will be established as per {@link
+         *          H3DiscoveryConfig#HTTP_3_ALT_SVC}.</li>
+         * </ul>
+         *
+         * @param config some configuration hints, can be {@code null}.
+         *
+         * @return this builder
+         *
+         * @see HttpRequest#configuration()
+         *
+         * @since TBD
+         */
+        public default Builder configure(Config config) { return this; }
 
         /**
          * Adds the given name value pair to the set of headers for this request.
@@ -458,6 +556,24 @@ public abstract class HttpRequest {
      * @return HTTP protocol version
      */
     public abstract Optional<HttpClient.Version> version();
+
+    /**
+     * Returns an {@code Optional} containing the {@linkplain
+     * Builder#configure(Config) hints configured on this request}
+     * that can help the {@link HttpClient} decide how to establish or
+     * carry out the HTTP exchange for this request.
+     *
+     * @implSpec
+     * The default implementation of this method returns {@link
+     * Optional#empty() Optional.empty()}.
+     *
+     * @return an optional configuration hint
+     *
+     * @see Builder#configure(Config)
+     *
+     * @since TBD
+     */
+    public Optional<Config> configuration()  { return Optional.empty(); }
 
     /**
      * The (user-accessible) request headers that this request was (or will be)

@@ -41,6 +41,8 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
+import javax.security.auth.x500.X500Principal;
+
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.validator.Validator;
 import sun.security.util.KnownOIDs;
@@ -359,6 +361,21 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
         return chooseAlias(keyTypeList, issuers,
                                     checkType, constraints, null, null);
+    }
+
+    public String chooseServerAlias(String keyType,
+            X500Principal[] x500Principals,
+            AlgorithmConstraints algorithmConstraints,
+            List<SNIServerName> requestedServerNames) {
+        return chooseAlias(getKeyTypes(keyType), x500Principals,
+                CheckType.SERVER, algorithmConstraints, requestedServerNames,
+                "HTTPS");
+    }
+
+    public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
+            AlgorithmConstraints algorithmConstraints) {
+        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
+                algorithmConstraints);
     }
 
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,

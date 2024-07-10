@@ -66,7 +66,7 @@ public class EmptyAuthenticate {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             boolean ok = !response.headers().firstValue("WWW-Authenticate").isEmpty();
             if (!ok) {
-                throw new RuntimeException("WWW-Authenicate missing");
+                throw new RuntimeException("WWW-Authenticate missing");
             }
         } catch (IOException e) {
             e.printStackTrace();

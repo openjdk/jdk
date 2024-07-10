@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.ByteBuffer;
@@ -47,7 +47,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
-import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -55,6 +54,8 @@ import java.net.http.HttpResponse.BodySubscriber;
 import jdk.internal.net.http.common.*;
 import jdk.internal.net.http.frame.*;
 import jdk.internal.net.http.hpack.DecodingCallback;
+
+import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 
 /**
  * Http/2 Stream handling.
@@ -91,8 +92,8 @@ import jdk.internal.net.http.hpack.DecodingCallback;
  *               placed on the stream's inputQ which is consumed by the stream's
  *               reader thread.
  *
- * PushedStream sub class
- * ======================
+ * PushedStream subclass
+ * =====================
  * Sending side methods are not used because the request comes from a PUSH_PROMISE
  * frame sent by the server. When a PUSH_PROMISE is received the PushedStream
  * is created. PushedStream does not use responseCF list as there can be only
@@ -143,7 +144,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // Indicates the first reason that was invoked when sending a ResetFrame
     // to the server. A streamState of 0 indicates that no reset was sent.
     // (see markStream(int code)
-    private volatile int streamState; // assigned using STREAM_STATE varhandle.
+    private volatile int streamState; // assigned while holding the sendLock.
     private volatile boolean deRegistered; // assigned using DEREGISTERED varhandle.
 
     // state flags
@@ -163,6 +164,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
+
+    Version version() {
+        return Version.HTTP_2;
+    }
 
     @Override
     HttpConnection connection() {
@@ -206,7 +211,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
                 List<ByteBuffer> buffers = df.getData();
                 List<ByteBuffer> dsts = Collections.unmodifiableList(buffers);
-                int size = Utils.remaining(dsts, Integer.MAX_VALUE);
+                long size = Utils.remaining(dsts, Long.MAX_VALUE);
                 if (size == 0 && finished) {
                     inputQ.remove();
                     connection.ensureWindowUpdated(df); // must update connection window
@@ -405,7 +410,9 @@ class Stream<T> extends ExchangeImpl<T> {
         if (code == 0) return streamState;
         sendLock.lock();
         try {
-            return (int) STREAM_STATE.compareAndExchange(this, 0, code);
+            var state = streamState;
+            if (state == 0) streamState = code;
+            return state;
         } finally {
             sendLock.unlock();
         }
@@ -461,7 +468,7 @@ class Stream<T> extends ExchangeImpl<T> {
         this.requestPublisher = request.requestPublisher;  // may be null
         this.responseHeadersBuilder = new HttpHeadersBuilder();
         this.rspHeadersConsumer = new HeadersConsumer();
-        this.requestPseudoHeaders = createPseudoHeaders(request);
+        this.requestPseudoHeaders = Utils.createPseudoHeaders(request);
         this.windowUpdater = new StreamWindowUpdateSender(connection);
     }
 
@@ -512,6 +519,7 @@ class Stream<T> extends ExchangeImpl<T> {
             case WindowUpdateFrame.TYPE ->  incoming_windowUpdate((WindowUpdateFrame) frame);
             case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
             case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
+            case AltSvcFrame.TYPE       ->  handleAltSvcFrame(streamid, (AltSvcFrame) frame);
 
             default -> throw new IOException("Unexpected frame: " + frame);
         }
@@ -520,7 +528,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // The Hpack decoder decodes into one of these consumers of name,value pairs
 
     DecodingCallback rspHeadersConsumer() {
-        return rspHeadersConsumer::onDecoded;
+        return rspHeadersConsumer;
     }
 
     protected void handleResponse(HeaderFrame hf) throws IOException {
@@ -548,7 +556,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
             response = new Response(
                     request, exchange, responseHeaders, connection(),
-                    responseCode, HttpClient.Version.HTTP_2);
+                    responseCode, version());
 
         /* TODO: review if needs to be removed
            the value is not used, but in case `content-length` doesn't parse as
@@ -627,6 +635,10 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
+    void handleAltSvcFrame(int streamid, AltSvcFrame asf) {
+        processAltSvcFrame(streamid, asf, connection.connection, connection.client());
+    }
+
     void handleReset(ResetFrame frame, Flow.Subscriber<?> subscriber) {
         Log.logTrace("Handling RST_STREAM on stream {0}", streamid);
         if (!closed) {
@@ -651,7 +663,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
                 completeResponseExceptionally(e);
                 if (!requestBodyCF.isDone()) {
-                    requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
+                    requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body...
                 }
                 if (responseBodyCF != null) {
                     responseBodyCF.completeExceptionally(errorRef.get());
@@ -820,36 +832,6 @@ class Stream<T> extends ExchangeImpl<T> {
             return HttpHeaders.of(headers.map(), filter);
         }
         return headers;
-    }
-
-    private static HttpHeaders createPseudoHeaders(HttpRequest request) {
-        HttpHeadersBuilder hdrs = new HttpHeadersBuilder();
-        String method = request.method();
-        hdrs.setHeader(":method", method);
-        URI uri = request.uri();
-        hdrs.setHeader(":scheme", uri.getScheme());
-        String host = uri.getHost();
-        int port = uri.getPort();
-        assert host != null;
-        if (port != -1) {
-            hdrs.setHeader(":authority", host + ":" + port);
-        } else {
-            hdrs.setHeader(":authority", host);
-        }
-        String query = uri.getRawQuery();
-        String path = uri.getRawPath();
-        if (path == null || path.isEmpty()) {
-            if (method.equalsIgnoreCase("OPTIONS")) {
-                path = "*";
-            } else {
-                path = "/";
-            }
-        }
-        if (query != null) {
-            path += "?" + query;
-        }
-        hdrs.setHeader(":path", Utils.encode(path));
-        return hdrs.build();
     }
 
     HttpHeaders getRequestPseudoHeaders() {
@@ -1078,6 +1060,7 @@ class Stream<T> extends ExchangeImpl<T> {
                             assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if ((state = streamState) != 0) {
+                            t = errorRef.get();
                             if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));
                             break;
                         }
@@ -1363,7 +1346,7 @@ class Stream<T> extends ExchangeImpl<T> {
         } else cancelImpl(cause);
     }
 
-    // This method sends a RST_STREAM frame
+    // This method sends an RST_STREAM frame
     void cancelImpl(Throwable e) {
         cancelImpl(e, ResetFrame.CANCEL);
     }
@@ -1496,7 +1479,13 @@ class Stream<T> extends ExchangeImpl<T> {
             this.pushReq = pushReq.request();
             this.pushCF = new MinimalFuture<>();
             this.responseCF = new MinimalFuture<>();
+        }
 
+        // Called to associate a push stream with its
+        // parent request/response exchange.
+        PushedStream<T> visit(Stream<?> parent) {
+            // TODO: do we need this?
+            return this;
         }
 
         CompletableFuture<HttpResponse<T>> responseCF() {
@@ -1591,7 +1580,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
                 this.response = new Response(
                         pushReq, exchange, responseHeaders, connection(),
-                        responseCode, HttpClient.Version.HTTP_2);
+                        responseCode, version());
 
                 /* TODO: review if needs to be removed
                    the value is not used, but in case `content-length` doesn't parse
@@ -1666,7 +1655,12 @@ class Stream<T> extends ExchangeImpl<T> {
         return connection.dbgString() + "/Stream("+streamid+")";
     }
 
-    private class HeadersConsumer extends ValidatingHeadersConsumer {
+    private final class HeadersConsumer extends ValidatingHeadersConsumer
+        implements DecodingCallback {
+
+        private HeadersConsumer() {
+            super(Context.RESPONSE);
+        }
 
         @Override
         public void reset() {
@@ -1689,7 +1683,7 @@ class Stream<T> extends ExchangeImpl<T> {
                             streamid, n, v);
                 }
             } catch (UncheckedIOException uio) {
-                // reset stream: From RFC 9113, section 8.1
+                // reset stream: From RFC 7540, section-8.1.2.6
                 // Malformed requests or responses that are detected MUST be
                 // treated as a stream error (Section 5.4.2) of type
                 // PROTOCOL_ERROR.
@@ -1720,13 +1714,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     }
 
-    private static final VarHandle STREAM_STATE;
     private static final VarHandle DEREGISTERED;
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
-            STREAM_STATE = lookup
-                    .findVarHandle(Stream.class, "streamState", int.class);
             DEREGISTERED = lookup
                     .findVarHandle(Stream.class, "deRegistered", boolean.class);
         } catch (Exception x) {

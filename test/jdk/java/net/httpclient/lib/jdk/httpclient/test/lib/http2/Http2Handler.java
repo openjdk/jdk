@@ -25,11 +25,13 @@ package jdk.httpclient.test.lib.http2;
 
 import java.io.IOException;
 
+import jdk.httpclient.test.lib.common.ThrowingConsumer;
+
 /**
  * A handler which is invoked to process HTTP exchanges. Each
  * HTTP exchange is handled by one of these handlers.
  */
-public interface Http2Handler {
+public interface Http2Handler extends ThrowingConsumer<Http2TestExchange, IOException> {
     /**
      * Handles the given request and generate an appropriate response.
      *
@@ -37,6 +39,9 @@ public interface Http2Handler {
      *      client and used to send the response
      * @throws NullPointerException if exchange is <code>null</code>
      */
-    void handle (Http2TestExchange exchange) throws IOException;
-}
+    void handle(Http2TestExchange exchange) throws IOException;
 
+    default void accept(Http2TestExchange exchange) throws IOException {
+        handle(exchange);
+    }
+}

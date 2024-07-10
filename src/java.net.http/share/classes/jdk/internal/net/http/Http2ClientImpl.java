@@ -138,6 +138,7 @@ class Http2ClientImpl {
                         if (conn != null) {
                             try {
                                 conn.reserveStream(true);
+                                exchange.connectionAborter.clear(conn.connection);
                             } catch (IOException e) {
                                 throw new UncheckedIOException(e); // shouldn't happen
                             }

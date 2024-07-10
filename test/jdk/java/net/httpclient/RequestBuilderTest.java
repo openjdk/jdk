@@ -42,6 +42,7 @@ import static java.time.Duration.ofSeconds;
 import static java.time.Duration.ZERO;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
 import static java.net.http.HttpRequest.newBuilder;
 import static org.testng.Assert.*;
 
@@ -402,6 +403,7 @@ public class RequestBuilderTest {
                                                      .header("A", "B")
                                                      .POST(BodyPublishers.ofString(""))
                                                      .timeout(ofSeconds(30))
+                                                     .configure(HTTP_3_ONLY)
                                                      .version(HTTP_1_1);
         HttpRequest.Builder copy = builder.copy();
         assertTrue(builder != copy);
@@ -418,6 +420,8 @@ public class RequestBuilderTest {
         assertEquals(copyRequest.timeout().get(), ofSeconds(30));
         assertTrue(copyRequest.version().isPresent());
         assertEquals(copyRequest.version().get(), HTTP_1_1);
+        assertTrue(copyRequest.configuration().isPresent());
+        assertEquals(copyRequest.configuration().get(), HTTP_3_ONLY);
 
         // lazy set URI ( maybe builder as a template )
         copyRequest = newBuilder().copy().uri(uri).build();

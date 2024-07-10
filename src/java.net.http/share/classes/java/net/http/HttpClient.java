@@ -31,6 +31,9 @@ import java.net.InetAddress;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
+import java.net.URI;
+import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpRequest.Config;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -62,7 +65,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The {@link #newBuilder() newBuilder} method returns a builder that creates
  * instances of the default {@code HttpClient} implementation.
  * The builder can be used to configure per-client state, like: the preferred
- * protocol version ( HTTP/1.1 or HTTP/2 ), whether to follow redirects, a
+ * protocol version ( HTTP/1.1 or HTTP/2 or HTTP/3), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
  *
@@ -187,6 +190,34 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * WebSocket.Listener WebSocket Listeners}, if executing operations that require
  * privileges, should do so within an appropriate {@linkplain
  * AccessController#doPrivileged(PrivilegedAction) privileged context}.
+ * <p>
+ * The default implementation of the {@code HttpClient} supports HTTP/1.1,
+ * HTTP/2, and HTTP/3. Which version of the protocol is actually used when sending
+ * a request can depend on multiple factors. In the case of HTTP/2, it may depend
+ * on an initial upgrade to succeed (when using a plain connection), or on HTTP/2
+ * being successfully negotiated during the Transport Layer Security (TLS) handshake.
+ * <p>
+ * The HTTP/3 protocol is not selected by default, but can be enabled by setting
+ * the {@linkplain Builder#version(Version) HttpClient preferred version} or the
+ * {@linkplain HttpRequest.Builder#version(Version) HttpRequest version} to
+ * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
+ * actually used when HTTP/3 is enabled may depend on several factors.
+ * {@linkplain HttpRequest.Builder#configure(Config) Configuration hints} can
+ * be provided to help the {@code HttpClient} implementation decide how to establish
+ * and carry out the HTTP exchange when the HTTP/3 protocol is enabled. Note that a
+ * request whose {@linkplain URI#getScheme() URI scheme} is not {@code "https"} will
+ * never be sent over HTTP/3. In this implementation, HTTP/3 is not used if a proxy
+ * is selected.
+ * <p>
+ * If a concrete instance of {@link HttpClient} doesn't support sending a
+ * request through HTTP/3, an {@link UnsupportedProtocolVersionException} may be
+ * thrown, either when {@linkplain Builder#build() building} the client or when
+ * attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
+ * HTTP/3 enabled}.
+ *
+ * @see UnsupportedProtocolVersionException
+ * @see Builder#version(Version)
+ * @see HttpRequest.Builder#configure(Config)
  *
  * @since 11
  */
@@ -588,7 +619,12 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * HTTP version 2
          */
-        HTTP_2
+        HTTP_2,
+
+        /**
+         * HTTP version 3
+         */
+        HTTP_3
     }
 
     /**

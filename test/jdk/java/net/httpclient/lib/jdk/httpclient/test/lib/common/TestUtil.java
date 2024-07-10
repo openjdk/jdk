@@ -23,9 +23,18 @@
 
 package jdk.httpclient.test.lib.common;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Optional;
+
+import jdk.internal.util.OperatingSystem;
 
 public class TestUtil {
 
@@ -38,7 +47,7 @@ public class TestUtil {
         int len = fileContent.length();
         int iterations = size / len;
         int remainder = size - (iterations * len);
-        for (int i=0; i<iterations; i++)
+        for (int i = 0; i < iterations; i++)
             writer.write(fileContent, 0, len);
         writer.write(fileContent, 0, remainder);
         writer.close();
@@ -75,11 +84,40 @@ public class TestUtil {
         try {
             byte[] b1 = Files.readAllBytes(path1);
             byte[] b2 = Files.readAllBytes(path2);
-            if (!Arrays.equals(b1, b2))
-                throw new RuntimeException ("Files do not match");
+            var mismatch = Arrays.mismatch(b1, b2);
+            if (mismatch >= 0) {
+                int bb1 = b1[mismatch] & 0xFF;
+                int bb2 = b2[mismatch] & 0xFF;
+                String msg = "File mismatch at byte[%s]: %s (%s) != %s (%s)"
+                        .formatted(mismatch,
+                                bb1, Character.toString(bb1),
+                                bb2, Character.toString(bb2));
+                throw new RuntimeException(msg);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
+    public static final boolean sysPortsMayConflict() {
+        if (OperatingSystem.isMacOS()) {
+            // syslogd udp_in module may be dynamically started and opens an udp4 port
+            // on the wildcard address. In addition, macOS will allow different processes
+            // to bind to the same port on the wildcard, if one uses udp4 and the other
+            // binds using udp46 (dual IPv4 IPv6 socket).
+            // Binding to the loopback (or a specific interface) instead of binding
+            // to the wildcard can prevent such conflicts.
+            return true;
+        }
+        return false;
+    }
+
+    public static Optional<InetSocketAddress> chooseClientBindAddress() {
+        if (!TestUtil.sysPortsMayConflict()) {
+            return Optional.empty();
+        }
+        final InetSocketAddress address = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
+        return Optional.of(address);
+    }
 }

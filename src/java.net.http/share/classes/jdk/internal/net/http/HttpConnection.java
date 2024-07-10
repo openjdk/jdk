@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -45,6 +46,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 
 import jdk.internal.net.http.common.Alpns;
@@ -55,7 +57,10 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
@@ -72,7 +77,7 @@ abstract class HttpConnection implements Closeable {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
-            () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
+            () -> "HttpConnection", Utils.DEBUG);
     public static final Comparator<HttpConnection> COMPARE_BY_ID
             = Comparator.comparing(HttpConnection::id);
 
@@ -96,6 +101,28 @@ abstract class HttpConnection implements Closeable {
 
     private long id() {
         return id;
+    }
+
+    /**
+     * {@return a label identifying the connection on which the
+     * response was received. The format of the string is opaque, but should
+     * be unique for the life of the {@link HttpClient} instance}.
+     * May return {@code null} if not available.
+     */
+    public String connectionLabel() {
+        // TODO: ideally should be something that makes some kind of sense to
+        //       the user. Something that would be used in the logs to
+        //       identify the connection, or that can at least be related
+        //       to what appears in the logs.
+        //       We may want to sanitize logging at some point - ans find
+        //       a way to identify connections with maybe a less verbose
+        //       tag... e.g: client-1-connection-2 - but then we would
+        //       need to make sure that such connection also uses socket-2
+        //       (for socket tube)
+        //       For HTTP/3 we may also include the connectionId
+        //       hex string, as it is also exposed in the Http3PushID record.
+        //       e.g. client-1-connection-2[connectionId=0xff3e5678....]
+        return dbgString();
     }
 
     private static final class TrailingOperations {
@@ -163,9 +190,17 @@ abstract class HttpConnection implements Closeable {
     abstract InetSocketAddress proxy();
 
     /** Tells whether, or not, this connection is open. */
-    final boolean isOpen() {
+    boolean isOpen() {
         return channel().isOpen() &&
-                (connected() ? !getConnectionFlow().isFinished() : true);
+                (connected() ? !isFlowFinished() : true);
+    }
+
+    /**
+     * {@return {@code true} if the {@linkplain #getConnectionFlow()
+     * connection flow} is {@linkplain FlowTube#isFinished() finished}.
+     */
+    boolean isFlowFinished() {
+        return getConnectionFlow().isFinished();
     }
 
     /**
@@ -197,13 +232,17 @@ abstract class HttpConnection implements Closeable {
      * still open, and the method returns true.
      * @return true if the channel appears to be still open.
      */
-    final boolean checkOpen() {
+     boolean checkOpen() {
         if (isOpen()) {
             try {
                 // channel is non blocking
-                int read = channel().read(ByteBuffer.allocate(1));
-                if (read == 0) return true;
-                close();
+                if (channel() instanceof SocketChannel channel) {
+                    int read = channel.read(ByteBuffer.allocate(1));
+                    if (read == 0) return true;
+                    close();
+                } else {
+                    return channel().isOpen();
+                }
             } catch (IOException x) {
                 debug.log("Pooled connection is no longer operational: %s",
                         x.toString());
@@ -251,6 +290,7 @@ abstract class HttpConnection implements Closeable {
      * is one of the following:
      *      {@link PlainHttpConnection}
      *      {@link PlainTunnelingConnection}
+     *      {@link HttpQuicConnection}
      *
      * The returned connection, if not from the connection pool, must have its,
      * connect() or connectAsync() method invoked, which ( when it completes
@@ -258,6 +298,7 @@ abstract class HttpConnection implements Closeable {
      */
     public static HttpConnection getConnection(InetSocketAddress addr,
                                                HttpClientImpl client,
+                                               Exchange<?> exchange,
                                                HttpRequestImpl request,
                                                Version version) {
         // The default proxy selector may select a proxy whose  address is
@@ -279,18 +320,24 @@ abstract class HttpConnection implements Closeable {
                 return getPlainConnection(addr, proxy, request, client);
             }
         } else {  // secure
-            if (version != HTTP_2) { // only HTTP/1.1 connections are in the pool
+            if (version == HTTP_1_1) { // only HTTP/1.1 connections are in the pool
                 c = pool.getConnection(true, addr, proxy);
             }
             if (c != null && c.isOpen()) {
-                final HttpConnection conn = c;
-                if (DEBUG_LOGGER.on())
-                    DEBUG_LOGGER.log(conn.getConnectionFlow()
-                                     + ": SSL connection retrieved from HTTP/1.1 pool");
+                if (DEBUG_LOGGER.on()) {
+                        DEBUG_LOGGER.log(c.getConnectionFlow()
+                                + ": SSL connection retrieved from HTTP/1.1 pool");
+                }
                 return c;
+            } else if (version == HTTP_3) {
+                // We only come here after we have checked the HTTP/3 connection pool.
+                if (DEBUG_LOGGER.on())
+                    DEBUG_LOGGER.log("Attempting to get an HTTP/3 connection");
+                return HttpQuicConnection.getHttpQuicConnection(addr, proxy, request, exchange, client);
             } else {
                 String[] alpn = null;
                 if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
+                    // We only come here after we have checked the HTTP/2 connection pool.
                     alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);
@@ -422,7 +469,7 @@ abstract class HttpConnection implements Closeable {
     /* Tells whether or not this connection is a tunnel through a proxy */
     boolean isTunnel() { return false; }
 
-    abstract SocketChannel channel();
+    abstract NetworkChannel channel();
 
     final InetSocketAddress address() {
         return address;
@@ -455,6 +502,19 @@ abstract class HttpConnection implements Closeable {
         close();
     }
 
+    /**
+     * {@return the underlying connection flow, if applicable}
+     *
+     * @apiNote
+     * TCP based protocols like HTTP/1.1 and HTTP/2 are built on
+     * top of a {@linkplain FlowTube bidirectional connection flow}.
+     * On the other hand, Quic based protocol like HTTP/3 are
+     * multiplexed at the Quic level, and therefore do not have
+     * a connection flow.
+     *
+     * @throws IllegalStateException if the underlying transport
+     * does not expose a single connection flow.
+     */
     abstract FlowTube getConnectionFlow();
 
     /**

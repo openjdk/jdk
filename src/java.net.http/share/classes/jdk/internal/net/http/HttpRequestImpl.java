@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -66,6 +67,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
+    private final Config config;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
@@ -93,6 +95,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.requestPublisher = builder.bodyPublisher();  // may be null
         this.timeout = builder.timeout();
         this.version = builder.version();
+        this.config = builder.config();
         this.authority = null;
     }
 
@@ -111,12 +114,13 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                 "uri must be non null");
         Duration timeout = request.timeout().orElse(null);
         this.method = method == null ? "GET" : method;
+        this.config = request.configuration().orElse(null);
         this.userHeaders = HttpHeaders.of(request.headers().map(), Utils.VALIDATE_USER_HEADER);
-        if (request instanceof HttpRequestImpl) {
+        if (request instanceof HttpRequestImpl impl) {
             // all cases exception WebSocket should have a new system headers
-            this.isWebSocket = ((HttpRequestImpl) request).isWebSocket;
+            this.isWebSocket = impl.isWebSocket;
             if (isWebSocket) {
-                this.systemHeadersBuilder = ((HttpRequestImpl)request).systemHeadersBuilder;
+                this.systemHeadersBuilder = impl.systemHeadersBuilder;
             } else {
                 this.systemHeadersBuilder = new HttpHeadersBuilder();
             }
@@ -195,6 +199,15 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = other.timeout;
         this.version = other.version();
         this.authority = null;
+        this.config = other.configFor(this.uri);
+    }
+
+    private Config configFor(URI uri) {
+        if (this.uri == uri || Objects.equals(this.uri.getRawAuthority(), uri.getRawAuthority())) {
+            return config;
+        }
+        // preserve config if version is HTTP/3
+        return version.orElse(null) == Version.HTTP_3 ? config : null;
     }
 
     private BodyPublisher publisher(HttpRequestImpl other) {
@@ -230,10 +243,25 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         // What we want to possibly upgrade is the tunneled connection to the
         // target server (so not the CONNECT request itself)
         this.version = Optional.of(HttpClient.Version.HTTP_1_1);
+        this.config = null;
     }
 
     final boolean isConnect() {
         return "CONNECT".equalsIgnoreCase(method);
+    }
+
+    final boolean isHttp3Only(Version version) {
+        return version == Version.HTTP_3 && config == H3DiscoveryConfig.HTTP_3_ONLY;
+    }
+
+    H3DiscoveryConfig http3Discovery() {
+        if (config instanceof H3DiscoveryConfig discoveryConfig) {
+            return discoveryConfig;
+        }
+        var version = this.version.orElse(null);
+        return version == null
+                ? H3DiscoveryConfig.HTTP_3_ALT_SVC
+                : H3DiscoveryConfig.HTTP_3_ANY;
     }
 
     /**
@@ -273,6 +301,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = parent.timeout;
         this.version = parent.version;
         this.authority = null;
+        this.config = parent.configuration().orElse(null);
     }
 
     @Override
@@ -360,6 +389,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     @Override
     public Optional<HttpClient.Version> version() { return version; }
+
+    @Override
+    public Optional<Config> configuration() {
+        return Optional.ofNullable(config);
+    }
 
     @Override
     public void setSystemHeader(String name, String value) {

@@ -311,7 +311,7 @@ public class TrailingHeadersTest {
 
         static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
 
-        private void pushPromise(Http2TestExchange exchange) {
+        private void pushPromise(Http2TestExchange exchange) throws IOException {
             URI requestURI = exchange.getRequestURI();
             URI uri = requestURI.resolve("/promise");
             InputStream is = new ByteArrayInputStream("Sample_Push_Data".getBytes(UTF_8));

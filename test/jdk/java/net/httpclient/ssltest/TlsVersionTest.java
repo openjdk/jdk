@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,9 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 /*
  * @test
  * @bug 8239594 8239595
- * @library /test/lib
- * @build Server TlsVersionTest
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build Server TlsVersionTest jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
  *       TlsVersionTest false
@@ -121,6 +122,7 @@ public class TlsVersionTest {
         System.out.println("Making request to " + serverURI.getPath());
         SSLContext ctx = getClientSSLContext(cert);
         HttpClient client = HttpClient.newBuilder()
+                                      .version(HttpClient.Version.HTTP_2)
                                       .proxy(NO_PROXY)
                                       .sslContext(ctx)
                                       .build();

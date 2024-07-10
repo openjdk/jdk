@@ -29,6 +29,6 @@
  * @compile/module=java.net.http jdk/internal/net/http/hpack/SpecHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/TestHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/BuffersTestingKit.java
- * @run testng/othervm java.net.http/jdk.internal.net.http.hpack.HuffmanTest
+ * @run testng/othervm/timeout=300 java.net.http/jdk.internal.net.http.hpack.HuffmanTest
  */
 public class HpackHuffmanDriver { }

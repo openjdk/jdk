@@ -41,16 +41,17 @@ import jdk.internal.net.http.websocket.RawChannel;
 /**
  * The implementation class for HttpResponse
  */
-class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
+final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
     final HttpRequest initialRequest;
-    final Optional<HttpResponse<T>> previousResponse;
+    final HttpResponse<T> previousResponse; // may be null;
     final HttpHeaders headers;
-    final Optional<SSLSession> sslSession;
+    final SSLSession sslSession; // may be null
     final URI uri;
     final HttpClient.Version version;
     final RawChannelProvider rawChannelProvider;
+    final String connectionLabel;
     final T body;
 
     public HttpResponseImpl(HttpRequest initialRequest,
@@ -60,14 +61,29 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
         this.initialRequest = initialRequest;
-        this.previousResponse = Optional.ofNullable(previousResponse);
+        this.previousResponse = previousResponse;
         this.headers = response.headers();
         //this.trailers = trailers;
-        this.sslSession = Optional.ofNullable(response.getSSLSession());
+        this.sslSession = response.getSSLSession();
         this.uri = response.request().uri();
         this.version = response.version();
         this.rawChannelProvider = RawChannelProvider.create(response, exch);
         this.body = body;
+        this.connectionLabel = connectionLabel(exch);
+    }
+
+    private static String connectionLabel(Exchange<?> exchange) {
+        if (exchange == null) return null;
+        var exchImpl = exchange.exchImpl;
+        if (exchImpl == null) return null;
+        var connection = exchImpl.connection();
+        if (connection == null) return null;
+        return connection.connectionLabel();
+    }
+
+    @Override
+    public Optional<String> connectionLabel() {
+        return Optional.ofNullable(connectionLabel);
     }
 
     @Override
@@ -82,7 +98,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     @Override
     public Optional<HttpResponse<T>> previousResponse() {
-        return previousResponse;
+        return Optional.ofNullable(previousResponse);
     }
 
     @Override
@@ -97,7 +113,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     @Override
     public Optional<SSLSession> sslSession() {
-        return sslSession;
+        return Optional.ofNullable(sslSession);
     }
 
     @Override

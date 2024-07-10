@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 package jdk.internal.net.http;
 
 import java.net.URI;
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.InetSocketAddress;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
+
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -71,17 +73,14 @@ class Response {
         this.statusCode = statusCode;
         this.isConnectResponse = isConnectResponse;
         if (connection != null) {
-            InetSocketAddress a;
-            try {
-                a = (InetSocketAddress)connection.channel().getLocalAddress();
-            } catch (IOException e) {
-                a = null;
-            }
-            this.localAddress = a;
-            if (connection instanceof AbstractAsyncSSLConnection) {
-                AbstractAsyncSSLConnection cc = (AbstractAsyncSSLConnection)connection;
+            this.localAddress = revealedLocalSocketAddress(connection);
+            if (connection instanceof AbstractAsyncSSLConnection cc) {
                 SSLEngine engine = cc.getEngine();
                 sslSession = Utils.immutableSession(engine.getSession());
+            } else if (connection instanceof HttpQuicConnection qc) {
+                // TODO: consider adding Optional<SSLSession> getSession() to HttpConnection?
+                var session = qc.quicConnection().getTLSEngine().getSession();
+                sslSession = Utils.immutableSession(session);
             } else {
                 sslSession = null;
             }
@@ -127,5 +126,23 @@ class Response {
         if (localAddress != null)
             sb.append(" Local port:  ").append(localAddress.getPort());
         return sb.toString();
+    }
+
+    @SuppressWarnings("removal")
+    private static InetSocketAddress revealedLocalSocketAddress(HttpConnection connection) {
+        InetSocketAddress a;
+        var sm = System.getSecurityManager();
+        try {
+            try {
+                return (InetSocketAddress) connection.channel().getLocalAddress();
+            } catch (SecurityException se) {
+                PrivilegedExceptionAction<InetSocketAddress> action =
+                        () -> (InetSocketAddress) connection.channel().getLocalAddress();
+                a = AccessController.doPrivileged(action);
+                return new InetSocketAddress(a.getPort());
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

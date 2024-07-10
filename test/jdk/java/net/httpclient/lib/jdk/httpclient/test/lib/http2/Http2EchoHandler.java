@@ -27,12 +27,25 @@ import java.net.http.HttpHeaders;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public class Http2EchoHandler implements Http2Handler {
     static final Path CWD = Paths.get(".");
 
     public Http2EchoHandler() {}
+
+    private long transferTo(InputStream is, OutputStream os) throws IOException {
+        long count = 0;
+        byte[] b = new byte[1024];
+        while (true) {
+            int len = is.read(b);
+            if (len < 0) return count;
+            os.write(b, 0, len);
+            count += len;
+        }
+    }
 
     @Override
     public void handle(Http2TestExchange t)
@@ -49,27 +62,42 @@ public class Http2EchoHandler implements Http2Handler {
             File outfile = Files.createTempFile(CWD, "foo", "bar").toFile();
             //System.err.println ("QQQ = " + outfile.toString());
             FileOutputStream fos = new FileOutputStream(outfile);
-            int count = (int) is.transferTo(fos);
-            System.err.printf("EchoHandler read %d bytes\n", count);
+            long count = is.transferTo(fos);
+            System.err.printf("EchoHandler read %s bytes\n", count);
             is.close();
             fos.close();
             InputStream is1 = new FileInputStream(outfile);
             OutputStream os = null;
+
+            Path check = map.firstValue("X-Compare").map((String s) -> Path.of(s)).orElse(null);
+            if (check != null) {
+                System.err.println("EchoHandler checking file match: " + check);
+                try {
+                    TestUtil.compareFiles(check, outfile.toPath());
+                } catch (Throwable x) {
+                    System.err.println("Files do not match: " + x);
+                    t.sendResponseHeaders(500, -1);
+                    outfile.delete();
+                    os.close();
+                    return;
+                }
+            }
+
             // return the number of bytes received (no echo)
             String summary = map.firstValue("XSummary").orElse(null);
             if (fixedrequest != null && summary == null) {
                 t.sendResponseHeaders(200, count);
                 os = t.getResponseBody();
-                int count1 = (int)is1.transferTo(os);
-                System.err.printf("EchoHandler wrote %d bytes\n", count1);
+                long count1 = is1.transferTo(os);
+                System.err.printf("EchoHandler wrote %s bytes\n", count1);
             } else {
                 t.sendResponseHeaders(200, 0);
                 os = t.getResponseBody();
-                int count1 = (int)is1.transferTo(os);
-                System.err.printf("EchoHandler wrote %d bytes\n", count1);
+                long count1 = is1.transferTo(os);
+                System.err.printf("EchoHandler wrote %s bytes\n", count1);
 
                 if (summary != null) {
-                    String s = Integer.toString(count);
+                    String s = Long.toString(count);
                     os.write(s.getBytes());
                 }
             }

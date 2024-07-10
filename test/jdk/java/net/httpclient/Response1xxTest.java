@@ -55,7 +55,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
- * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
+ *                    -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */
 public class Response1xxTest implements HttpServerAdapters {
     private static final String EXPECTED_RSP_BODY = "Hello World";

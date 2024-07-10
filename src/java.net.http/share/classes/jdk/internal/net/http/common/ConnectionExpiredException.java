@@ -29,7 +29,9 @@ import java.io.IOException;
 
 /**
  * Signals that an end of file or end of stream has been reached
- * unexpectedly before any protocol specific data has been received.
+ * unexpectedly before any protocol specific data has been received,
+ * or that a new stream creation was rejected because the underlying
+ * connection was closed.
  */
 public final class ConnectionExpiredException extends IOException {
     private static final long serialVersionUID = 0;

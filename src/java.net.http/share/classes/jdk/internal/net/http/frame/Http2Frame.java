@@ -81,18 +81,19 @@ public abstract class Http2Frame {
 
     public static String asString(int type) {
         return switch (type) {
-            case DataFrame.TYPE         -> "DATA";
-            case HeadersFrame.TYPE      -> "HEADERS";
-            case ContinuationFrame.TYPE -> "CONTINUATION";
-            case ResetFrame.TYPE        -> "RESET";
-            case PriorityFrame.TYPE     -> "PRIORITY";
-            case SettingsFrame.TYPE     -> "SETTINGS";
-            case GoAwayFrame.TYPE       -> "GOAWAY";
-            case PingFrame.TYPE         -> "PING";
-            case PushPromiseFrame.TYPE  -> "PUSH_PROMISE";
-            case WindowUpdateFrame.TYPE -> "WINDOW_UPDATE";
+          case DataFrame.TYPE         -> "DATA";
+          case HeadersFrame.TYPE      -> "HEADERS";
+          case ContinuationFrame.TYPE -> "CONTINUATION";
+          case ResetFrame.TYPE        -> "RESET";
+          case PriorityFrame.TYPE     -> "PRIORITY";
+          case SettingsFrame.TYPE     -> "SETTINGS";
+          case GoAwayFrame.TYPE       -> "GOAWAY";
+          case PingFrame.TYPE         -> "PING";
+          case PushPromiseFrame.TYPE  -> "PUSH_PROMISE";
+          case WindowUpdateFrame.TYPE -> "WINDOW_UPDATE";
+          case AltSvcFrame.TYPE       -> "ALTSVC";
 
-            default -> "UNKNOWN";
+          default                     -> "UNKNOWN";
         };
     }
 

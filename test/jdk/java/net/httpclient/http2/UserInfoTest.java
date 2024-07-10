@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -46,13 +47,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @test
  * @bug 8292876
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ * @compile ../ReferenceTracker.java
  * @run junit UserInfoTest
  */
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UserInfoTest {
 
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     Http2TestServer server;
     int port;
     SSLContext sslContext;
@@ -96,6 +101,7 @@ public class UserInfoTest {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
+        TRACKER.track(client);
 
         URI uri = URIBuilder.newBuilder()
                 .scheme("https")
@@ -112,5 +118,10 @@ public class UserInfoTest {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         assertEquals(200, response.statusCode(), "Test Failed : " + response.uri().getAuthority());
+
+        client = null;
+        System.gc();
+        var error = TRACKER.check(500);
+        if (error != null) throw error;
     }
 }

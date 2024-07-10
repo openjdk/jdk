@@ -25,7 +25,9 @@
  * @test
  * @bug 8156514
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2EchoHandler
  *        jdk.httpclient.test.lib.http2.Http2RedirectHandler
  * @run testng/othervm

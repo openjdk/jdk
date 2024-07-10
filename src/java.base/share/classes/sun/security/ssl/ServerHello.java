@@ -233,7 +233,8 @@ final class ServerHello {
                 serverVersion.name,
                 Utilities.toHexString(serverRandom.randomBytes),
                 sessionId.toString(),
-                cipherSuite.name + "(" + Utilities.byte16HexString(cipherSuite.id) + ")",
+                cipherSuite.name +
+                        "(" + Utilities.byte16HexString(cipherSuite.id) + ")",
                 HexFormat.of().toHexDigits(compressionMethod),
                 Utilities.indent(extensions.toString(), "    ")
             };
@@ -543,8 +544,9 @@ final class ServerHello {
 
                 // consider the handshake extension impact
                 SSLExtension[] enabledExtensions =
-                shc.sslConfig.getEnabledExtensions(
-                SSLHandshake.CLIENT_HELLO, shc.negotiatedProtocol);
+                        shc.sslConfig.getEnabledExtensions(
+                                SSLHandshake.CLIENT_HELLO,
+                                shc.negotiatedProtocol);
                 clientHello.extensions.consumeOnTrade(shc, enabledExtensions);
 
                 shc.negotiatedProtocol =
@@ -685,6 +687,11 @@ final class ServerHello {
             // Update the context for master key derivation.
             shc.handshakeKeyDerivation = kd;
 
+            if (shc.sslConfig.isQuic) {
+                QuicTLSEngineImpl engine =
+                        (QuicTLSEngineImpl) shc.conContext.transport;
+                engine.deriveHandshakeKeys();
+            }
             // Check if the server supports stateless resumption
             if (sessionCache.statelessEnabled()) {
                 shc.statelessResumption = true;
@@ -799,9 +806,9 @@ final class ServerHello {
             // first handshake message. This may either be after
             // a ServerHello or a HelloRetryRequest.
             // (RFC 8446, Appendix D.4)
-            shc.conContext.outputRecord.changeWriteCiphers(
-                SSLWriteCipher.nullTlsWriteCipher(),
-                    (clientHello.sessionId.length() != 0));
+            if (clientHello.sessionId.length() != 0) {
+                shc.conContext.outputRecord.encodeChangeCipherSpec();
+            }
 
             // Stateless, shall we clean up the handshake context as well?
             shc.handshakeHash.finish();     // forgot about the handshake hash
@@ -1375,9 +1382,14 @@ final class ServerHello {
 
             // Should use resumption_master_secret for TLS 1.3.
             // chc.handshakeSession.setMasterSecret(masterSecret);
-
             // Update the context for master key derivation.
             chc.handshakeKeyDerivation = secretKD;
+
+            if (chc.sslConfig.isQuic) {
+                QuicTLSEngineImpl engine =
+                        (QuicTLSEngineImpl) chc.conContext.transport;
+                engine.deriveHandshakeKeys();
+            }
 
             // update the consumers and producers
             //

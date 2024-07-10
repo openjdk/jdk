@@ -491,6 +491,10 @@ final class TransportContext implements ConnectionContext {
         isUnsureMode = false;
     }
 
+    public void setQuic(boolean quic) {
+        sslConfig.setQuic(quic);
+    }
+
     // The OutputRecord is closed and not buffered output record.
     boolean isOutboundDone() {
         return outputRecord.isClosed() && outputRecord.isEmpty();
