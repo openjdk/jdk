@@ -56,6 +56,8 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
 
   n->dump();
 
+  // TODO make all get_long calls safe!
+
   int opc = n->Opcode();
   switch (opc) {
     case Op_ConI:
