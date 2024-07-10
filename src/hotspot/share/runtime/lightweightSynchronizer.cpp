@@ -969,12 +969,19 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   // Fetch the monitor from the table
     monitor = get_or_insert_monitor(object, current, cause, true /* try_read */);
 
+    // ObjectMonitors are always inserted as anonymously owned, this thread is
+    // the current holder of the monitor. So unless the entry is stale and
+    // contains a deflating monitor it must be anonymously owned.
     if (monitor->is_owner_anonymous()) {
+      // The monitor must be anonymously owned if it was added
       assert(monitor == get_monitor_from_table(current, object), "The monitor must be found");
       // New fresh monitor
       break;
     }
 
+    // If the monitor was not anonymously owned then we got a deflating monitor
+    // from the table. We need to let the deflator make progress and remove this
+    // entry before we are allowed to add a new one.
     os::naked_yield();
     assert(monitor->is_being_async_deflated(), "Should be the reason");
   }
@@ -991,6 +998,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   monitor->set_recursions(locking_thread->lock_stack().remove(object) - 1);
 
   if (locking_thread == current) {
+    // Only change the thread local state of the current thread.
     locking_thread->om_set_monitor_cache(monitor);
   }
 
