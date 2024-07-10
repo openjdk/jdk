@@ -32,38 +32,49 @@
 // Summand of a MemPointerSimpleForm.
 //
 // On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
-//   s = scale * variable
 //
-//   if variable is a long (variableL):
-//     s = scaleL * variableL
-//   else, i.e. if variable is a int (variableI):
-//     s = scaleL * ConvI2L(scaleI * variableI)
+//   s = scaleI * variable                    // 32-bit variable
+//   scale = scaleI
 //
-// As a matter of simplicity, we only allow jint scales, and the absolute
-// value
+// On 64-bit platforms, we have a mix of 64-bit jlong and 32-bit jint values for the
+// address computation:
 //
+//   s = scaleL * ConvI2L(scaleI * variable)  // 32-bit variable
+//   scale = scaleL * scaleI
+//
+//   s = scaleL * variable                    // 64-bit variable
+//   scale = scaleL
+//
+// For simplicity, we only allow 32-bit jint scales, where:
+//
+//   abs(scale) < (1 << 30)
+//
+// This allows very high scales, but allows calculations with scale to
+// avoid overflows.
+//
+// TODO generalization: final product only needs to use scale, not scaleL
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
-  jint _scaleL; // TODO make jint
-  jint _scaleI;
+  jint _scaleL; // TODO make jint, only available on 64-bit???
+  jint _scale;
 
 public:
-  MemPointerSummand() : _variable(nullptr), _scaleL(0), _scaleI(0) {}
-  MemPointerSummand(Node* variable, const jlong scaleL, const jlong scaleI)
-    : _variable(variable), _scaleL(scaleL), _scaleI(scaleI)
+  MemPointerSummand() : _variable(nullptr), _scaleL(0), _scale(0) {}
+  MemPointerSummand(Node* variable, const jlong scaleL, const jlong scale)
+    : _variable(variable), _scaleL(scaleL), _scale(scale)
   {
     assert(_variable != nullptr, "must have variable");
-    assert(_scaleL != 0 && _scaleI != 0, "non-zero scale");
+    assert(_scaleL != 0 && _scale != 0, "non-zero scale");
   }
 
   Node* variable() const { return _variable; }
   jlong scaleL() const { return _scaleL; }
-  jlong scaleI() const { return _scaleI; }
+  jlong scale() const { return _scale; }
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("  MemPointerSummand: %d * %d * variable: ", (int)_scaleL, (int)_scaleI);
+    tty->print("  MemPointerSummand: %d * %d * variable: ", (int)_scaleL, (int)_scale);
     _variable->dump();
   }
 #endif

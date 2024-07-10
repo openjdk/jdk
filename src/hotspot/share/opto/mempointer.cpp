@@ -52,7 +52,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
   jlong scaleL = summand.scaleL();
-  jlong scaleI = summand.scaleI();
+  jlong scale = summand.scale();
 
   n->dump();
 
@@ -62,7 +62,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_ConL:
     {
       jlong con = (opc == Op_ConI) ? n->get_int() : n->get_long();
-      _con += scaleL * scaleI * con;
+      _con += scaleL * scale * con;
       // TODO problematic: int con and int scale could overflow??? or irrelevant?
       return;
     }
@@ -75,9 +75,9 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       // TODO check if we should decompose or not
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-      _worklist.push(MemPointerSummand(a, scaleL, scaleI));
+      _worklist.push(MemPointerSummand(a, scaleL, scale));
       // TODO figure out how to do subtraction, which scale to negate
-      _worklist.push(MemPointerSummand(b, scaleL, scaleI));
+      _worklist.push(MemPointerSummand(b, scaleL, scale));
       return;
     }
     case Op_MulL:
@@ -102,7 +102,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
 
       Node* a = n->in(1);
       // TODO figure out which scale to change, check for total overflow???
-      _worklist.push(MemPointerSummand(a, scaleL * scale, scaleI));
+      _worklist.push(MemPointerSummand(a, scaleL * scale, scale));
       return;
     }
     case Op_CastII:
@@ -115,7 +115,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_ConvI2L:
     {
       Node* a = n->in(1);
-      _worklist.push(MemPointerSummand(a, scaleL, scaleI));
+      _worklist.push(MemPointerSummand(a, scaleL, scale));
       return;
     }
   }
