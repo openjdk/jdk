@@ -145,7 +145,7 @@ public class TestAlwaysPreTouchBehavior {
     // In the testee JVM, if RSS is lower than expected, how much memory should *still* be available now to
     // count the low RSS as a real error - an indication for a misfunctioning pretouch, not just a low-memory
     // condition on the system.
-    final static  long requiredAvailableDuring = expectedMaxNonHeapRSS;
+    final static long requiredAvailableDuring = expectedMaxNonHeapRSS;
 
     private static String[] prepareOptions(String[] extraVMOptions) {
         List<String> allOptions = new ArrayList<String>();
