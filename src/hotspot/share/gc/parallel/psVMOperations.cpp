@@ -65,5 +65,5 @@ void VM_ParallelGCCollect::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  heap->try_collect_at_safepoint(is_cause_full(_gc_cause));
+  heap->try_collect_at_safepoint(_full);
 }
