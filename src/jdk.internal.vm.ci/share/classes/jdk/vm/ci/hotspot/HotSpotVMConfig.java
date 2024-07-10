@@ -342,6 +342,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vmIntrinsicLinkToStatic = getConstant("vmIntrinsics::_linkToStatic", Integer.class);
     final int vmIntrinsicLinkToSpecial = getConstant("vmIntrinsics::_linkToSpecial", Integer.class);
     final int vmIntrinsicLinkToInterface = getConstant("vmIntrinsics::_linkToInterface", Integer.class);
+    final int vmIntrinsicLinkToNative = getConstant("vmIntrinsics::_linkToNative", Integer.class);
 
     final int codeInstallResultOk = getConstant("JVMCI::ok", Integer.class);
     final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);

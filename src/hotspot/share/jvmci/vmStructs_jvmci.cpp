@@ -778,6 +778,7 @@
   declare_constant(vmIntrinsics::_linkToStatic)                           \
   declare_constant(vmIntrinsics::_linkToSpecial)                          \
   declare_constant(vmIntrinsics::_linkToInterface)                        \
+  declare_constant(vmIntrinsics::_linkToNative)                           \
                                                                           \
   declare_constant(vmSymbols::FIRST_SID)                                  \
   declare_constant(vmSymbols::SID_LIMIT)                                  \
