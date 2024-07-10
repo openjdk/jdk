@@ -95,14 +95,6 @@ public class Object {
      * As far as is reasonably practical, the {@code hashCode} method defined
      * by class {@code Object} returns distinct integers for distinct objects.
      *
-     * <p>This method should <em>not</em> throw any exceptions. The
-     * implementation should not use excessive memory or time for its
-     * computations and should return a result for cyclic/circular data
-     * structures.
-     * The {@code hashCode} method may be called frequently, possibly
-     * in the context of {@linkplain java.util##CollectionsFramework
-     * collections}.
-     *
      * @apiNote
      * The {@link java.util.Objects#hash(Object...) hash} and {@link
      * java.util.Objects#hashCode(Object) hashCode} methods of {@link
@@ -273,11 +265,6 @@ public class Object {
      * object equal to the string that would be returned if neither
      * the {@code toString} nor {@code hashCode} methods were
      * overridden by the object's class.
-     *
-     * <p>This method should <em>not</em> throw any exceptions. The
-     * implementation should not use excessive memory or time for its
-     * computations and should return a result for cyclic/circular data
-     * structures.
      */
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
