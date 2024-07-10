@@ -39,7 +39,14 @@ inline void BasicLock::set_displaced_header(markWord header) {
 
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");
+#if defined(X86) || defined(AARCH64)
   return reinterpret_cast<ObjectMonitor*>(get_metadata());
+#else
+  // Other platforms does not make use of the cache yet,
+  // and are not as careful with maintaining the invariant
+  // that the metadata either is nullptr or ObjectMonitor*.
+  return nullptr;
+#endif
 }
 
 inline void BasicLock::clear_object_monitor_cache() {
