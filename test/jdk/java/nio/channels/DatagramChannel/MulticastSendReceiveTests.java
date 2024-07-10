@@ -112,7 +112,7 @@ public class MulticastSendReceiveTests {
                 // no datagram received
                 if (sa == null) {
                     if (expectedSender != null) {
-                        if (elapsed  > 4800) {
+                        if (elapsed > 4800) {
                             throw new RuntimeException("Expected message not received");
                         } else {
                             sel.selectedKeys().clear();

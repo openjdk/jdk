@@ -112,10 +112,11 @@ public class Promiscuous {
                 // no datagram received
                 if (sa == null) {
                     if (datagramExpected) {
-                        if (elapsed  > 4800) {
+                        if (elapsed > 4800) {
                             throw new RuntimeException("Expected message not received");
                         } else {
                             sel.selectedKeys().clear();
+                            // We haven't waited long enough,
                             continue;
                         }
                     }

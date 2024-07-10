@@ -24,11 +24,7 @@
 /* @test
  * @bug 4512723 6621689
  * @summary Test that connect/send/receive with unbound DatagramChannel causes
- *     the channel's socket to be bound to a local address. This test may fail
- *     intermittently on macOS if other datagram channel tests are running
- *     concurrently on the same host.
- * @library /test/lib
- * @build jdk.test.lib.Platform NotBound
+ *     the channel's socket to be bound to a local address.
  * @run main/othervm NotBound
  */
 
@@ -39,9 +35,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import jdk.test.lib.Platform;
 
 public class NotBound {
 
@@ -85,13 +78,19 @@ public class NotBound {
                                     target, sender.getLocalAddress());
                             localPort = ((InetSocketAddress)sender.getLocalAddress()).getPort();
                         }
-                        if (received.await(250, TimeUnit.MILLISECONDS)) break;
+                        if (received.await(250, TimeUnit.MILLISECONDS)) {
+                            // The datagram has been received: no need to continue
+                            // sending
+                            break;
+                        }
                         // if sender port and destination port were identical, which
                         // could happen on some systems, the receiver might not receive
                         // the datagram. So in that case we try again, bailing out if
                         // we had to retry too many times
                         if (localPort == local.getPort()) {
                             System.out.println("Local port and peer port are identical. Retrying...");
+                        } else {
+                            System.out.println("Datagram not received after 250ms. Retrying...");
                         }
                     }
                     if (localPort == local.getPort()) {

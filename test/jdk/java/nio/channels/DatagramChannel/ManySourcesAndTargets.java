@@ -24,8 +24,7 @@
 /* @test
  * @bug 8234805 8235193
  * @summary Test DatagramChannel send/receive and that receive returns the expected
- *     sender address. This test may fail intermittently on macOS if other datagram
- *     channel tests are running concurrently on the same host.
+ *     sender address.
  * @run main/othervm ManySourcesAndTargets
  * @run main/othervm -Djava.net.preferIPv4Stack=true ManySourcesAndTargets
  */
