@@ -5288,6 +5288,12 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_by1);
     __ add(len, len, 15);
     __ bltz(len, L_do_mod);
+    __ mv(count, step_16);
+    __ blt(len, count, L_by1_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, count,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+    __ sub(len, len, step_16);
 
   __ bind(L_by1_loop);
     __ lbu(temp0, Address(buff, 0));
