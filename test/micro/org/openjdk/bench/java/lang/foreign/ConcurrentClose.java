@@ -32,11 +32,11 @@ import org.openjdk.jmh.annotations.*;
 import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
-@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@State(org.openjdk.jmh.annotations.Scope.Thread)
+@Warmup(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
+@State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(3)
+@Fork(1)
 @Threads(Threads.MAX)
 public class ConcurrentClose {
 
