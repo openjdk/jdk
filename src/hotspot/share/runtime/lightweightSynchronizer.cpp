@@ -699,7 +699,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
     // Fast-lock spinning to avoid inflating for short critical sections.
     // The goal is to only inflate when the extra cost of using ObjectMonitors
     // is worth it.
-    // If deflation has been observed we also spin while deflation is onging.
+    // If deflation has been observed we also spin while deflation is ongoing.
     if (fast_lock_try_enter(obj(), lock_stack, current)) {
       return;
     } else if (UseObjectMonitorTable && fast_lock_spin_enter(obj(), lock_stack, current, observed_deflation)) {
@@ -1140,7 +1140,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, JavaThread
       return monitor;
     }
 
-    // Monitor is contended, take the time befor entering to fix the lock stack.
+    // Monitor is contended, take the time before entering to fix the lock stack.
     LockStackInflateContendedLocks().inflate(current);
   }
 
