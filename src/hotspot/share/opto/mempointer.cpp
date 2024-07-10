@@ -92,6 +92,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_SubL:
     case Op_SubI:
     {
+      // TODO check if we should decompose or not: int-overflow!!!
       // TODO check if we should decompose or not
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
@@ -105,6 +106,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_LShiftL:
     case Op_LShiftI:
     {
+      // TODO check if we should decompose or not: int-overflow!!!
       // Form must be linear: only multiplication with constants is allowed.
       Node* in1 = n->in(1);
       Node* in2 = n->in(2);

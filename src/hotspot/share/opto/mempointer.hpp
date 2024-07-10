@@ -254,9 +254,7 @@ public:
     ResourceMark rm;
     MemPointerSimpleFormParser parser(_mem);
     _simple_form = parser.simple_form();
-    _simple_form.print();
-    assert(false, "TODO");
-    // _mem->memory_size();
+    _simple_form.print(); // TODO tracing???
   }
 
   bool is_adjacent_to_and_before(const MemPointer& other) const;
