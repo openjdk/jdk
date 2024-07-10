@@ -1585,7 +1585,7 @@ public class MessageFormat extends Format {
 
     /**
      * Convenience method to append all the characters in
-     * {@code iterator} to the StringBuffer {@code result}.
+     * {@code iterator} to the StringBuf {@code result}.
      */
     private void append(StringBuf result, CharacterIterator iterator) {
         if (iterator.first() != CharacterIterator.DONE) {
