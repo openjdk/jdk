@@ -155,7 +155,7 @@ import java.security.ProtectionDomain;
  * logging or debugging of format corruptions.
  *
  * <P>
- * Note the term <i>class file</i> is used as defined in section {@jvms 4} The
+ * Note the term <i>class file</i> is used as defined in chapter {@jvms 4} The
  * {@code class} File Format of <cite>The Java Virtual Machine Specification</cite>,
  * to mean a sequence of bytes in class file format, whether or not they reside in a
  * file.
@@ -163,8 +163,7 @@ import java.security.ProtectionDomain;
  * @apiNote
  * Great care must be taken when transforming core JDK classes which are at the
  * same time required during the transformation process as this can lead to class
- * circularity or linkage errors. Using bytecode transformation libraries which depend
- * on core JDK class can increase the risk of such errors.
+ * circularity or linkage errors.
  *
  * <P>
  * If for example the invocation of {@link #transform transform()} for a class
