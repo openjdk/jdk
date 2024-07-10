@@ -27,8 +27,6 @@
 
 #include "opto/memnode.hpp"
 
-// TODO general description
-
 // Summand of a MemPointerSimpleForm.
 //
 // On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
@@ -64,7 +62,7 @@ public:
       _variable(nullptr),
       _scale(0)
       LP64_ONLY( COMMA _scaleL(0) ) {}
-  MemPointerSummand(Node* variable, const jlong scale LP64_ONLY( COMMA const jlong scaleL )) :
+  MemPointerSummand(Node* variable, const jint scale LP64_ONLY( COMMA const jint scaleL )) :
       _variable(variable),
       _scale(scale)
       LP64_ONLY( COMMA _scaleL(scaleL) )
@@ -75,14 +73,14 @@ public:
   }
 
   Node* variable() const { return _variable; }
-  jlong scale() const { return _scale; }
-  LP64_ONLY( jlong scaleL() const { return _scaleL; } )
+  jint scale() const { return _scale; }
+  LP64_ONLY( jint scaleL() const { return _scaleL; } )
 
 #ifndef PRODUCT
   void print() const {
     tty->print("  MemPointerSummand: ");
     LP64_ONLY( tty->print("(scaleL = %d) ", _scaleL); )
-    tty->print("  MemPointerSummand: %d * variable: ", _scale);
+    tty->print("%d * variable: ", _scale);
     _variable->dump();
   }
 #endif
@@ -99,7 +97,7 @@ private:
   Node* _pointer; // pointer node associated with this (sub)pointer
 
   MemPointerSummand _summands[SUMMANDS_SIZE];
-  jlong _con; // TODO make jint
+  jint _con;
 
 public:
   // Empty
@@ -110,7 +108,7 @@ public:
   }
 
 private:
-  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jlong con)
+  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jint con)
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
@@ -119,7 +117,7 @@ private:
   }
 
 public:
-  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jlong con) {
+  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jint con) {
     if (summands.length() <= SUMMANDS_SIZE) {
       return MemPointerSimpleForm(pointer, summands, con);
     } else {
@@ -153,7 +151,7 @@ private:
   // Internal data-structures for parsing.
   GrowableArray<MemPointerSummand> _worklist;
   GrowableArray<MemPointerSummand> _summands;
-  jlong _con;
+  jint _con;
 
   // Resulting simple-form.
   MemPointerSimpleForm _simple_form;

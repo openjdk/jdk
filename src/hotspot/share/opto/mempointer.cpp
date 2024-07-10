@@ -51,8 +51,8 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
-  LP64_ONLY( const jlong scaleL = summand.scaleL(); )
-  const jlong scale = summand.scale();
+  LP64_ONLY( const jint scaleL = summand.scaleL(); )
+  const jint scale = summand.scale();
 
   n->dump();
 
@@ -61,7 +61,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_ConI:
     case Op_ConL:
     {
-      jlong con = (opc == Op_ConI) ? n->get_int() : n->get_long();
+      jint con = (opc == Op_ConI) ? n->get_int() : n->get_long();
       _con += scale * con;
       // TODO problematic: int con and int scale could overflow??? or irrelevant?
       return;
@@ -89,8 +89,8 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       // Form must be linear: only multiplication with constants is allowed.
       Node* in2 = n->in(2);
       if (!in2->is_Con()) { break; }
-      jlong factor;
-      LP64_ONLY( jlong factorL; )
+      jint factor;
+      LP64_ONLY( jint factorL; )
       switch (opc) {
         case Op_MulL:
           factor = in2->get_long();
@@ -110,7 +110,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
           break;
       }
       // Scale cannot be too large: TODO make this a special method, maybe better threshold?
-      const jlong max_factor = 1 << 30;
+      const jint max_factor = 1 << 30;
       if (factor > max_factor || factor < -max_factor) { break; }
 
       Node* a = n->in(1);
