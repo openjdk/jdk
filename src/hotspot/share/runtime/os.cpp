@@ -2235,8 +2235,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory_without_uncommit(char *addr, size_t bytes) {
-  pd_free_memory_without_uncommit(addr, bytes);
+void os::disclaim_memory(char *addr, size_t bytes) {
+  pd_disclaim_memory(addr, bytes);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

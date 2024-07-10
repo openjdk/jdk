@@ -3035,7 +3035,7 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::pd_free_memory_without_uncommit(char *addr, size_t bytes) {
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
    ::madvise(addr, bytes, MADV_DONTNEED);
 }
 

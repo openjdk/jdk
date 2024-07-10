@@ -985,7 +985,7 @@ TEST_VM(os, free_without_uncommit) {
   const size_t pages = 64;
   const size_t size = pages * page_sz;
 
-  char *base = os::reserve_memory(size, false, mtTest);
+  char* base = os::reserve_memory(size, false, mtTest);
   ASSERT_NE(base, (char*) nullptr);
   ASSERT_TRUE(os::commit_memory(base, size, false));
 
@@ -993,14 +993,7 @@ TEST_VM(os, free_without_uncommit) {
     base[index * page_sz] = 'a';
   }
 
-  os::free_memory_without_uncommit(base, size);
-
-#ifdef __linux__
-  // Check that memory has been freed. Skip on BSD since MADV_DONTNEED doesn't free memory.
-  size_t committed_size;
-  address committed_start;
-  ASSERT_FALSE(os::committed_in_range((address) base, size, committed_start, committed_size));
-#endif
+  os::disclaim_memory(base, size);
 
   // Ensure we can still use the memory without having to recommit.
   for (size_t index = 0; index < pages; index++) {
