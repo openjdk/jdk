@@ -30,11 +30,11 @@
 #include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
+inline ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
   return mark.monitor();
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
+inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
   if (!UseObjectMonitorTable) {
     return read_monitor(mark);
   } else {
@@ -42,7 +42,7 @@ ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWo
   }
 }
 
-void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
+inline void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
   assert(current == Thread::current(), "must be");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
@@ -52,7 +52,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
   }
 }
 
-bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
+inline bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
                                      BasicLock * lock) {
   assert(current->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
@@ -69,7 +69,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
   }
 }
 
-void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
+inline void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
   current->dec_held_monitor_count();
 
   if (LockingMode == LM_LIGHTWEIGHT) {
