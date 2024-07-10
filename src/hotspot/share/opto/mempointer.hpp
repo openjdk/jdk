@@ -56,25 +56,33 @@
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
-  jint _scaleL; // TODO make jint, only available on 64-bit???
   jint _scale;
+  LP64_ONLY( jint _scaleL; )
 
 public:
-  MemPointerSummand() : _variable(nullptr), _scaleL(0), _scale(0) {}
-  MemPointerSummand(Node* variable, const jlong scaleL, const jlong scale)
-    : _variable(variable), _scaleL(scaleL), _scale(scale)
+  MemPointerSummand() :
+      _variable(nullptr),
+      _scale(0)
+      LP64_ONLY( COMMA _scaleL(0) ) {}
+  MemPointerSummand(Node* variable, const jlong scale LP64_ONLY( COMMA const jlong scaleL )) :
+      _variable(variable),
+      _scale(scale)
+      LP64_ONLY( COMMA _scaleL(scaleL) )
   {
     assert(_variable != nullptr, "must have variable");
-    assert(_scaleL != 0 && _scale != 0, "non-zero scale");
+    assert(_scale != 0, "non-zero scale");
+    LP64_ONLY( assert(_scaleL != 0, "non-zero scale") );
   }
 
   Node* variable() const { return _variable; }
-  jlong scaleL() const { return _scaleL; }
   jlong scale() const { return _scale; }
+  LP64_ONLY( jlong scaleL() const { return _scaleL; } )
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("  MemPointerSummand: %d * %d * variable: ", (int)_scaleL, (int)_scale);
+    tty->print("  MemPointerSummand: ");
+    LP64_ONLY( tty->print("(scaleL = %d) ", _scaleL); )
+    tty->print("  MemPointerSummand: %d * variable: ", _scale);
     _variable->dump();
   }
 #endif
@@ -98,7 +106,7 @@ public:
   MemPointerSimpleForm() : _pointer(nullptr), _con(0) {}
   // Default: pointer = variable
   MemPointerSimpleForm(Node* variable) : _pointer(variable), _con(0) {
-    _summands[0] = MemPointerSummand(variable, 1, 1);
+    _summands[0] = MemPointerSummand(variable, 1 LP64_ONLY( COMMA 1 ));
   }
 
 private:

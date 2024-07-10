@@ -31,7 +31,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
   assert(_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
-  _worklist.push(MemPointerSummand(pointer, 1, 1));
+  _worklist.push(MemPointerSummand(pointer, 1 LP64_ONLY( COMMA 1 )));
 
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
@@ -51,8 +51,8 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
-  jlong scaleL = summand.scaleL();
-  jlong scale = summand.scale();
+  LP64_ONLY( const jlong scaleL = summand.scaleL(); )
+  const jlong scale = summand.scale();
 
   n->dump();
 
@@ -62,7 +62,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_ConL:
     {
       jlong con = (opc == Op_ConI) ? n->get_int() : n->get_long();
-      _con += scaleL * scale * con;
+      _con += scale * con;
       // TODO problematic: int con and int scale could overflow??? or irrelevant?
       return;
     }
@@ -75,9 +75,9 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       // TODO check if we should decompose or not
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-      _worklist.push(MemPointerSummand(a, scaleL, scale));
+      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
       // TODO figure out how to do subtraction, which scale to negate
-      _worklist.push(MemPointerSummand(b, scaleL, scale));
+      _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
       return;
     }
     case Op_MulL:
@@ -89,20 +89,35 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       // Form must be linear: only multiplication with constants is allowed.
       Node* in2 = n->in(2);
       if (!in2->is_Con()) { break; }
-      jlong scale;
+      jlong factor;
+      LP64_ONLY( jlong factorL; )
       switch (opc) {
-        case Op_MulL: scale = in2->get_long(); break;
-        case Op_MulI: scale = in2->get_int();  break;
-        case Op_LShiftL: scale = 1 << in2->get_long(); break; // TODO check overflow!
-        case Op_LShiftI: scale = 1 << in2->get_int();  break;
+        case Op_MulL:
+          factor = in2->get_long();
+          LP64_ONLY( factorL = factor; )
+          break;
+        case Op_MulI:
+          factor = in2->get_int();
+          LP64_ONLY( factorL = 1; )
+          break;
+        case Op_LShiftL:
+          factor = 1LL << in2->get_long();
+          LP64_ONLY( factorL = factor; )
+          break; // TODO check overflow!
+        case Op_LShiftI:
+          factor = 1LL << in2->get_int();
+          LP64_ONLY( factorL = 1; )
+          break;
       }
       // Scale cannot be too large: TODO make this a special method, maybe better threshold?
-      const jlong max_scale = 1 << 30;
-      if (scale > max_scale || scale < -max_scale) { break; }
+      const jlong max_factor = 1 << 30;
+      if (factor > max_factor || factor < -max_factor) { break; }
 
       Node* a = n->in(1);
       // TODO figure out which scale to change, check for total overflow???
-      _worklist.push(MemPointerSummand(a, scaleL * scale, scale));
+      const jint new_scale = scale * factor; // TODO check overflow
+      LP64_ONLY( const jint new_scaleL = scaleL * factorL; )
+      _worklist.push(MemPointerSummand(a, new_scale LP64_ONLY( COMMA new_scaleL )));
       return;
     }
     case Op_CastII:
@@ -115,7 +130,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_ConvI2L:
     {
       Node* a = n->in(1);
-      _worklist.push(MemPointerSummand(a, scaleL, scale));
+      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
       return;
     }
   }
