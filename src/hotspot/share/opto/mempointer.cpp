@@ -31,7 +31,9 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
   assert(_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
-  _worklist.push(MemPointerSummand(pointer, 1 LP64_ONLY( COMMA 1 )));
+
+  const NoOverflowInt one(1);
+  _worklist.push(MemPointerSummand(pointer, one LP64_ONLY( COMMA one )));
 
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
@@ -44,27 +46,43 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     summand.print();
   }
 
-  tty->print_cr("con: %d", (int)_con);
+  tty->print("con: ");
+  _con.print();
+  tty->cr();
+
+  // TODO gtest???
+  // NoOverflowInt a(1 << 20);
+  // a.print(); tty->cr();
+  // NoOverflowInt b(1LL << 33);
+  // b.print(); tty->cr();
+  // NoOverflowInt c(55);
+  // NoOverflowInt d(22);
+  // NoOverflowInt e = c + d;
+  // e.print(); tty->cr();
+  // NoOverflowInt f(max_jint);
+  // NoOverflowInt g(max_jint);
+  // NoOverflowInt h = f + g;
+  // h.print(); tty->cr();
 
   return MemPointerSimpleForm::make(pointer, _summands, _con);
 }
 
 void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
-  LP64_ONLY( const jint scaleL = summand.scaleL(); )
-  const jint scale = summand.scale();
+  const NoOverflowInt scale = summand.scale();
+  LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
+  const NoOverflowInt one(1);
 
   n->dump();
-
-  // TODO make all get_long calls safe!
 
   int opc = n->Opcode();
   switch (opc) {
     case Op_ConI:
     case Op_ConL:
     {
-      jint con = (opc == Op_ConI) ? n->get_int() : n->get_long();
-      _con += scale * con;
+      NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
+                                           : NoOverflowInt(n->get_long());
+      _con = _con + scale * con;
       // TODO problematic: int con and int scale could overflow??? or irrelevant?
       return;
     }
@@ -87,39 +105,44 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_LShiftL:
     case Op_LShiftI:
     {
-      // TODO check if we should decompose or not
       // Form must be linear: only multiplication with constants is allowed.
+      Node* in1 = n->in(1);
       Node* in2 = n->in(2);
       if (!in2->is_Con()) { break; }
-      jint factor;
-      LP64_ONLY( jint factorL; )
+      NoOverflowInt factor;
+      LP64_ONLY( NoOverflowInt factorL; )
       switch (opc) {
         case Op_MulL:
-          factor = in2->get_long();
+          factor = NoOverflowInt(in2->get_long());
           LP64_ONLY( factorL = factor; )
           break;
         case Op_MulI:
-          factor = in2->get_int();
-          LP64_ONLY( factorL = 1; )
+          factor = NoOverflowInt(in2->get_int());
+          LP64_ONLY( factorL = one; )
           break;
         case Op_LShiftL:
-          factor = 1LL << in2->get_long();
+          factor = one << NoOverflowInt(in2->get_long());
           LP64_ONLY( factorL = factor; )
-          break; // TODO check overflow!
+          break;
         case Op_LShiftI:
-          factor = 1LL << in2->get_int();
-          LP64_ONLY( factorL = 1; )
+          factor = one << NoOverflowInt(in2->get_int());
+          LP64_ONLY( factorL = one; )
           break;
       }
-      // Scale cannot be too large: TODO make this a special method, maybe better threshold?
-      const jint max_factor = 1 << 30;
-      if (factor > max_factor || factor < -max_factor) { break; }
 
-      Node* a = n->in(1);
-      // TODO figure out which scale to change, check for total overflow???
-      const jint new_scale = scale * factor; // TODO check overflow
-      LP64_ONLY( const jint new_scaleL = scaleL * factorL; )
-      _worklist.push(MemPointerSummand(a, new_scale LP64_ONLY( COMMA new_scaleL )));
+      // Accumulate scale.
+      NoOverflowInt new_scale = scale * factor;
+      LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
+
+      // Make sure abs(scale) is not larger than "1 << 30".
+      new_scale = new_scale.truncate_to_30_bits();
+      LP64_ONLY( new_scaleL = new_scaleL.truncate_to_30_bits(); )
+
+      // If anything went wrong with the scale computation: bailout.
+      if (new_scale.is_NaN()) { break; }
+      LP64_ONLY( if (new_scaleL.is_NaN()) { break; } )
+
+      _worklist.push(MemPointerSummand(in1, new_scale LP64_ONLY( COMMA new_scaleL )));
       return;
     }
     case Op_CastII:

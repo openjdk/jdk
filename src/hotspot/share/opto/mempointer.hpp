@@ -27,6 +27,70 @@
 
 #include "opto/memnode.hpp"
 
+// Wrapper around jint, which detects overflow.
+// TODO consider moving to separate file, and have GTests?
+class NoOverflowInt {
+private:
+  bool _is_NaN; // overflow, uninitialized, etc.
+  jint _value;
+
+public:
+  // Default: NaN.
+  NoOverflowInt() : _is_NaN(true), _value(0) {}
+
+  // Create from jlong (or jint) -> NaN if overflows jint.
+  explicit NoOverflowInt(jlong value) : _is_NaN(true), _value(0) {
+    jint trunc = (jint)value;
+    if ((jlong)trunc == value) {
+      _is_NaN = false;
+      _value = trunc;
+    }
+  }
+
+  static NoOverflowInt make_NaN() { return NoOverflowInt(); }
+
+  bool is_NaN() const { return _is_NaN; }
+  jint value() const { assert(!is_NaN(), "NaN not allowed"); return _value; }
+  bool is_zero() const { return !is_NaN() && value() == 0; }
+
+  friend NoOverflowInt operator+(const NoOverflowInt a, const NoOverflowInt b) {
+    if (a.is_NaN()) { return make_NaN(); }
+    if (b.is_NaN()) { return make_NaN(); }
+    return NoOverflowInt(java_add((jlong)a.value(), (jlong)b.value()));
+  }
+
+  friend NoOverflowInt operator*(const NoOverflowInt a, const NoOverflowInt b) {
+    if (a.is_NaN()) { return make_NaN(); }
+    if (b.is_NaN()) { return make_NaN(); }
+    return NoOverflowInt(java_multiply((jlong)a.value(), (jlong)b.value()));
+  }
+
+  friend NoOverflowInt operator<<(const NoOverflowInt a, const NoOverflowInt b) {
+    if (a.is_NaN()) { return make_NaN(); }
+    if (b.is_NaN()) { return make_NaN(); }
+    jint shift = b.value();
+    if (shift < 0 || shift > 31) { return make_NaN(); }
+    return NoOverflowInt(java_shift_left((jlong)a.value(), shift));
+  }
+
+  NoOverflowInt truncate_to_30_bits() const {
+    if (is_NaN()) { return make_NaN(); }
+    const jint max_value = 1 << 30;
+    if (value() > max_value || value() < -max_value) { return make_NaN(); }
+    return *this;
+  }
+
+#ifndef PRODUCT
+  void print() const {
+    if (is_NaN()) {
+      tty->print("NaN");
+    } else {
+      tty->print("%d", value());
+    }
+  }
+#endif
+};
+
 // Summand of a MemPointerSimpleForm.
 //
 // On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
@@ -43,7 +107,7 @@
 //   s = scaleL * variable                    // 64-bit variable
 //   scale = scaleL
 //
-// For simplicity, we only allow 32-bit jint scales, where:
+// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:
 //
 //   abs(scale) < (1 << 30)
 //
@@ -54,33 +118,38 @@
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
-  jint _scale;
-  LP64_ONLY( jint _scaleL; )
+  NoOverflowInt _scale;
+  LP64_ONLY( NoOverflowInt _scaleL; )
 
 public:
   MemPointerSummand() :
       _variable(nullptr),
-      _scale(0)
-      LP64_ONLY( COMMA _scaleL(0) ) {}
-  MemPointerSummand(Node* variable, const jint scale LP64_ONLY( COMMA const jint scaleL )) :
+      _scale(NoOverflowInt::make_NaN())
+      LP64_ONLY( COMMA _scaleL(NoOverflowInt::make_NaN()) ) {}
+  MemPointerSummand(Node* variable, const NoOverflowInt scale LP64_ONLY( COMMA const NoOverflowInt scaleL )) :
       _variable(variable),
       _scale(scale)
       LP64_ONLY( COMMA _scaleL(scaleL) )
   {
     assert(_variable != nullptr, "must have variable");
-    assert(_scale != 0, "non-zero scale");
-    LP64_ONLY( assert(_scaleL != 0, "non-zero scale") );
+    assert(!_scale.is_zero(), "non-zero scale");
+    LP64_ONLY( assert(!_scaleL.is_zero(), "non-zero scale") );
   }
 
   Node* variable() const { return _variable; }
-  jint scale() const { return _scale; }
-  LP64_ONLY( jint scaleL() const { return _scaleL; } )
+  NoOverflowInt scale() const { return _scale; }
+  LP64_ONLY( NoOverflowInt scaleL() const { return _scaleL; } )
 
 #ifndef PRODUCT
   void print() const {
     tty->print("  MemPointerSummand: ");
-    LP64_ONLY( tty->print("(scaleL = %d) ", _scaleL); )
-    tty->print("%d * variable: ", _scale);
+#ifdef _LP64
+    tty->print("(scaleL = ");
+    _scaleL.print();
+    tty->print(") ");
+#endif
+    _scale.print();
+    tty->print(" * variable: ");
     _variable->dump();
   }
 #endif
@@ -97,18 +166,19 @@ private:
   Node* _pointer; // pointer node associated with this (sub)pointer
 
   MemPointerSummand _summands[SUMMANDS_SIZE];
-  jint _con;
+  NoOverflowInt _con;
 
 public:
   // Empty
-  MemPointerSimpleForm() : _pointer(nullptr), _con(0) {}
+  MemPointerSimpleForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
   // Default: pointer = variable
-  MemPointerSimpleForm(Node* variable) : _pointer(variable), _con(0) {
-    _summands[0] = MemPointerSummand(variable, 1 LP64_ONLY( COMMA 1 ));
+  MemPointerSimpleForm(Node* variable) : _pointer(variable), _con(NoOverflowInt(0)) {
+    const NoOverflowInt one(1);
+    _summands[0] = MemPointerSummand(variable, one LP64_ONLY( COMMA one ));
   }
 
 private:
-  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jint con)
+  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
@@ -117,7 +187,7 @@ private:
   }
 
 public:
-  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const jint con) {
+  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
     if (summands.length() <= SUMMANDS_SIZE) {
       return MemPointerSimpleForm(pointer, summands, con);
     } else {
@@ -133,7 +203,9 @@ public:
     }
     tty->print("MemPointerSimpleForm for ");
     _pointer->dump();
-    tty->print_cr("  con = %d", (int)_con);
+    tty->print("  con = ");
+    _con.print();
+    tty->cr();
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
       if (summand.variable() != nullptr) {
@@ -151,13 +223,13 @@ private:
   // Internal data-structures for parsing.
   GrowableArray<MemPointerSummand> _worklist;
   GrowableArray<MemPointerSummand> _summands;
-  jint _con;
+  NoOverflowInt _con;
 
   // Resulting simple-form.
   MemPointerSimpleForm _simple_form;
 
 public:
-  MemPointerSimpleFormParser(const MemNode* mem) : _mem(mem), _con(0) {
+  MemPointerSimpleFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
     _simple_form = parse_simple_form();
   }
 
