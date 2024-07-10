@@ -76,7 +76,7 @@ void G1HeapRegionRemSet::clear_fcc() {
 }
 
 void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
-  assert(_saved_card_set == nullptr, "must be");
+  assert(_saved_card_set == nullptr, "pre-condition");
   if (!only_cardset) {
     _code_roots.clear();
   }

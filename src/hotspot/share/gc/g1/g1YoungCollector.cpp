@@ -295,9 +295,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
     G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(G1HeapRegion* hr) {
-      // Sample card set sizes for humongous before GC: this makes the policy to
-      // give back memory to the OS keep the most recent amount of memory for
-      // these regions.
+      // Sample card set sizes for humongous before GC: this makes the policy to give
+      // back memory to the OS keep the most recent amount of memory for these regions.
       if (hr->is_starts_humongous()) {
         _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }

@@ -1161,7 +1161,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
   _card_set_mm(card_set_config(), card_set_freelist_pool()),
   _young_regions_cardset(card_set_config(), &_card_set_mm),
-  _rs_estimate(0),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),

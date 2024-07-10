@@ -675,7 +675,7 @@ public:
     policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
 
     // Add the cards from the group cardsets.
-    _card_rs_length += g1h->rs_estimate();
+    _card_rs_length += g1h->young_regions_cardset()->occupied();
 
     policy->record_card_rs_length(_card_rs_length);
     policy->cset_regions_freed();
@@ -826,9 +826,10 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    stats()->account_card_rs_length(r);
 
     if (r->is_young()) {
+      // We only use card_rs_length statistics to estimate young regions length.
+      stats()->account_card_rs_length(r);
       assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }

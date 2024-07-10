@@ -59,7 +59,7 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
 
 public:
   G1HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
-  ~G1HeapRegionRemSet() { delete _card_set;}
+  ~G1HeapRegionRemSet() { delete _card_set; }
 
   bool cardset_is_empty() const {
     return _card_set->is_empty();
@@ -92,6 +92,9 @@ public:
   // to pass it in to facilitate inlining as much as possible.
   template <class CardOrRangeVisitor>
   inline void iterate_for_merge(CardOrRangeVisitor& cl);
+
+  template <class CardOrRangeVisitor>
+  inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
 
   size_t occupied() {
     return _card_set->occupied();

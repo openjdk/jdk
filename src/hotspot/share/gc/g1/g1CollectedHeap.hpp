@@ -784,10 +784,9 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
-  // Group cardsets.
+  // Group cardsets
   G1CardSetMemoryManager _card_set_mm;
   G1CardSet _young_regions_cardset;
-  size_t _rs_estimate;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
@@ -798,9 +797,6 @@ public:
 
   void prepare_group_cardsets_for_scan();
 
-  void set_rs_estimate(size_t estimate) { _rs_estimate = estimate; }
-
-  size_t rs_estimate() { return _rs_estimate; }
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
   void clear_collection_set();

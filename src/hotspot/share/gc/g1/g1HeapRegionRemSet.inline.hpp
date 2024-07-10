@@ -108,13 +108,17 @@ public:
 
 template <class CardOrRangeVisitor>
 inline void G1HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
-  G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(_card_set,
-                                                                                       cl,
-                                                                                       _card_set->config()->log2_card_regions_per_heap_region(),
-                                                                                       _card_set->config()->log2_cards_per_card_region());
-  _card_set->iterate_containers(&cl2, true /* at_safepoint */);
+  iterate_for_merge(_card_set, cl);
 }
 
+template <class CardOrRangeVisitor>
+void G1HeapRegionRemSet::iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl) {
+  G1HeapRegionRemSetMergeCardClosure<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(card_set,
+                                                                                       cl,
+                                                                                       card_set->config()->log2_card_regions_per_heap_region(),
+                                                                                       card_set->config()->log2_cards_per_card_region());
+  card_set->iterate_containers(&cl2, true /* at_safepoint */);
+}
 
 uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
