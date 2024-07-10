@@ -3035,6 +3035,8 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
+// Hints to the OS that the memory is no longer needed and may be reclaimed by the OS when convenient.
+// The memory will be re-acquired on touch without needing explicit recommitting.
 void os::pd_disclaim_memory(char *addr, size_t bytes) {
    ::madvise(addr, bytes, MADV_DONTNEED);
 }

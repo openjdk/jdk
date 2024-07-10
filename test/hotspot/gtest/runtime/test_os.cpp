@@ -38,10 +38,6 @@
 #include "os_windows.hpp"
 #endif
 
-#if !defined(_WINDOWS) && !defined(_AIX)
-#include <sys/mman.h>
-#endif
-
 using testing::HasSubstr;
 
 static size_t small_page_size() {
