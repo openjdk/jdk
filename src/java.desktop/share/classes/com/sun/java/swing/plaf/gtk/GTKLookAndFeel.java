@@ -548,7 +548,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "CheckBoxMenuItem.alignAcceleratorText", Boolean.FALSE,
 
 
-            "ColorChooser.showPreviewPanelText", Boolean.FALSE,
+            "ColorChooser.showPreviewPanelText", Boolean.TRUE,
             "ColorChooser.panels", new UIDefaults.ActiveValue() {
                 public Object createValue(UIDefaults table) {
                     return new AbstractColorChooserPanel[] {
