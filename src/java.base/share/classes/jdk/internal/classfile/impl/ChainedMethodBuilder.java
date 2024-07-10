@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,11 @@ import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public final class ChainedMethodBuilder implements MethodBuilder {
-    final MethodBuilder downstream;
     final TerminalMethodBuilder terminal;
     final Consumer<MethodElement> consumer;
 
     public ChainedMethodBuilder(MethodBuilder downstream,
                                 Consumer<MethodElement> consumer) {
-        this.downstream = downstream;
         this.consumer = consumer;
         this.terminal = switch (downstream) {
             case ChainedMethodBuilder cb -> cb.terminal;
@@ -58,16 +56,18 @@ public final class ChainedMethodBuilder implements MethodBuilder {
 
     @Override
     public MethodBuilder withCode(Consumer<? super CodeBuilder> handler) {
-        return downstream.with(terminal.bufferedCodeBuilder(null)
+        consumer.accept(terminal.bufferedCodeBuilder(null)
                                        .run(handler)
                                        .toModel());
+        return this;
     }
 
     @Override
     public MethodBuilder transformCode(CodeModel code, CodeTransform transform) {
         BufferedCodeBuilder builder = terminal.bufferedCodeBuilder(code);
         builder.transform(code, transform);
-        return downstream.with(builder.toModel());
+        consumer.accept(builder.toModel());
+        return this;
     }
 
     @Override
