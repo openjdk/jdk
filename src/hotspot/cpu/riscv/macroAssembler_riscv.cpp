@@ -983,9 +983,9 @@ void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert_cond(source != nullptr);
   int64_t distance = source - pc();
   assert(is_simm32(distance), "Must be");
-  Assembler::auipc(temp, (int32_t)distance + 0x800);
-  Assembler::ld(temp, temp, ((int32_t)distance << 20) >> 20);
-  Assembler::jalr(x1, temp, 0);
+  auipc(temp, (int32_t)distance + 0x800);
+  ld(temp, Address(temp, ((int32_t)distance << 20) >> 20));
+  jalr(temp);
 }
 
 void MacroAssembler::jump_link(const address dest, Register temp) {
@@ -994,7 +994,7 @@ void MacroAssembler::jump_link(const address dest, Register temp) {
   int64_t distance = dest - pc();
   assert(is_simm21(distance), "Must be");
   assert((distance % 2) == 0, "Must be");
-  Assembler::jal(x1, distance);
+  jal(x1, distance);
 }
 
 void MacroAssembler::j(const address dest, Register temp) {
