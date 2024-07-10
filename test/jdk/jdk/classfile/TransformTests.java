@@ -23,9 +23,22 @@
 
 /*
  * @test
+ * @bug 8336010
  * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LabelTarget;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,8 +52,13 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.instruction.ConstantInstruction;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -124,6 +142,151 @@ class TransformTests {
         assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
         assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
         assertEquals(invoke(cc.transformClass(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+    }
+
+    /**
+     * Test to ensure class elements, such as field and
+     * methods defined with transform/with, are visible
+     * to next transforms.
+     */
+    @Test
+    void testClassChaining() throws Exception {
+        var bytes = Files.readAllBytes(testClassPath);
+        var cf = ClassFile.of();
+        var cm = cf.parse(bytes);
+        var otherCm = cf.parse(cf.build(ClassDesc.of("Temp"), clb -> clb
+            .withMethodBody("baz", MTD_void, ACC_STATIC, CodeBuilder::return_)
+            .withField("baz", CD_long, ACC_STATIC)));
+
+        var methodBaz = otherCm.methods().getFirst();
+        var fieldBaz = otherCm.fields().getFirst();
+
+        ClassTransform transform1 = ClassTransform.endHandler(cb -> {
+            ClassBuilder ret;
+            ret = cb.withMethodBody("bar", MTD_void, ACC_STATIC, CodeBuilder::return_);
+            assertSame(cb, ret);
+            ret = cb.transformMethod(methodBaz, MethodTransform.ACCEPT_ALL);
+            assertSame(cb, ret);
+            ret = cb.withField("bar", CD_int, ACC_STATIC);
+            assertSame(cb, ret);
+            ret = cb.transformField(fieldBaz, FieldTransform.ACCEPT_ALL);
+            assertSame(cb, ret);
+        });
+
+        Set<String> methodNames = new HashSet<>();
+        Set<String> fieldNames = new HashSet<>();
+        ClassTransform transform2 = (cb, ce) -> {
+            if (ce instanceof MethodModel mm) {
+                methodNames.add(mm.methodName().stringValue());
+            }
+            if (ce instanceof FieldModel fm) {
+                fieldNames.add(fm.fieldName().stringValue());
+            }
+            cb.with(ce);
+        };
+
+        cf.transformClass(cm, transform1.andThen(transform2));
+
+        assertEquals(Set.of(INIT_NAME, "foo", "bar", "baz"), methodNames);
+        assertEquals(Set.of("bar", "baz"), fieldNames);
+    }
+
+    /**
+     * Test to ensure method elements, such as generated
+     * or transformed code, are visible to transforms.
+     */
+    @Test
+    void testMethodChaining() throws Exception {
+        var mtd = MethodTypeDesc.of(CD_String);
+
+        var cf = ClassFile.of();
+
+        // withCode
+        var cm = cf.parse(cf.build(ClassDesc.of("Temp"), clb -> clb
+            .withMethod("baz", mtd, ACC_STATIC | ACC_NATIVE, _ -> {})));
+
+        MethodTransform transform1 = MethodTransform.endHandler(mb -> {
+            var ret = mb.withCode(cob -> cob.loadConstant("foo").areturn());
+            assertSame(mb, ret);
+        });
+
+        boolean[] sawWithCode = { false };
+        MethodTransform transform2 = (mb, me) -> {
+            if (me instanceof CodeModel) {
+                sawWithCode[0] = true;
+            }
+            mb.with(me);
+        };
+
+        cf.transformClass(cm, ClassTransform.transformingMethods(transform1.andThen(transform2)));
+
+        assertTrue(sawWithCode[0], "Code attribute generated not visible");
+
+        // transformCode
+        var outerCm = cf.parse(testClassPath);
+        var foo = outerCm.methods().stream()
+            .filter(m -> m.flags().has(AccessFlag.STATIC))
+            .findFirst().orElseThrow();
+
+        MethodTransform transform3 = MethodTransform.endHandler(mb -> {
+            var ret = mb.transformCode(foo.code().orElseThrow(), CodeTransform.ACCEPT_ALL);
+            assertSame(mb, ret);
+        });
+
+        boolean[] sawTransformCode = { false };
+        MethodTransform transform4 = (mb, me) -> {
+            if (me instanceof CodeModel) {
+                sawTransformCode[0] = true;
+            }
+            mb.with(me);
+        };
+
+        cf.transformClass(cm, ClassTransform.transformingMethods(transform3.andThen(transform4)));
+
+        assertTrue(sawTransformCode[0], "Code attribute transformed not visible");
+    }
+
+    /**
+     * Test to ensure code elements, such as code block
+     * begin and end labels, are visible to transforms.
+     */
+    @Test
+    void testCodeChaining() throws Exception {
+        var bytes = Files.readAllBytes(testClassPath);
+        var cf = ClassFile.of();
+        var cm = cf.parse(bytes);
+
+        CodeTransform transform1 = new CodeTransform() {
+            @Override
+            public void atStart(CodeBuilder builder) {
+                builder.block(bcb -> {
+                    bcb.loadConstant(9876L);
+                    bcb.goto_(bcb.endLabel());
+                });
+            }
+
+            @Override
+            public void accept(CodeBuilder builder, CodeElement element) {
+                builder.with(element);
+            }
+        };
+        Set<Label> leaveLabels = new HashSet<>();
+        Set<Label> targetedLabels = new HashSet<>();
+        CodeTransform transform2 = (cb, ce) -> {
+            if (ce instanceof BranchInstruction bi) {
+                leaveLabels.add(bi.target());
+            }
+            if (ce instanceof LabelTarget lt) {
+                targetedLabels.add(lt.label());
+            }
+            cb.with(ce);
+        };
+
+        cf.transformClass(cm, ClassTransform.transformingMethods(MethodTransform
+            .transformingCode(transform1.andThen(transform2))));
+
+        leaveLabels.removeIf(targetedLabels::contains);
+        assertTrue(leaveLabels.isEmpty(), () -> "Some labels are not bounded: " + leaveLabels);
     }
 
     public static class TestClass {
