@@ -770,6 +770,16 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
   monitor->exit(current);
 }
 
+// LightweightSynchronizer::inflate_locked_or_imse is used to to get an inflated
+// ObjectMonitor* with LM_LIGHTWEIGHT. It is used from contexts which requires
+// an inflated ObjectMonitor* for a monitor, and expects to throw a
+// java.lang.IllegalMonitorStateException if it is not held by the current
+// thread. Such as notify/wait and jni_exit. LM_LIGHTWEIGHT keeps it invariant
+// that it only inflates if it is already locked by the current thread or the
+// current thread is in the process of entering. To maintain this invariant we
+// need to throw a java.lang.IllegalMonitorStateException before inflating if
+// the current thread is not the owner.
+// LightweightSynchronizer::inflate_locked_or_imse facilitates this.
 ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, const ObjectSynchronizer::InflateCause cause, TRAPS) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   JavaThread* current = THREAD;
