@@ -238,7 +238,7 @@ public class TestRecordTypes extends JavadocTester {
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
                     equal. All components in this record class are compared with the <code>compare</\
-                    code> method on their corresponding wrapper classes.""",
+                    code> method from their corresponding wrapper classes.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -301,8 +301,8 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record class are compared with compared with the <\
-                    code>compare</code> method on their corresponding wrapper classes.""",
+                    equal. All components in this record class are compared with the <code>compare</\
+                    code> method from their corresponding wrapper classes.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -314,7 +314,7 @@ public class TestRecordTypes extends JavadocTester {
     public void testGeneratedEqualsPrimitive(Path base) throws IOException {
         testGeneratedEquals(base, "int a, int b",
              "All components in this record class are compared with the <code>compare</code> method " +
-                     "on their corresponding wrapper classes.");
+                     "from their corresponding wrapper classes.");
     }
 
     @Test
@@ -327,8 +327,8 @@ public class TestRecordTypes extends JavadocTester {
     public void testGeneratedEqualsMixed(Path base) throws IOException {
         testGeneratedEquals(base, "int a, Object b",
              "Reference components are compared with <code>Objects::equals(Object,Object)</code>; "
-             + "primitive components are compared with the <code>compare</code> method on their correspond"
-             + "ing wrapper classes.");
+             + "primitive components are compared with the <code>compare</code> method from their "
+             + "corresponding wrapper classes.");
     }
 
     private void testGeneratedEquals(Path base, String comps, String expect) throws IOException {
