@@ -124,9 +124,7 @@ public class AfterDisconnect {
             } catch (Throwable t) {
                 if (i < max -1 && retryOn.test(t)) {
                     System.out.println("Got " + t + "; will retry");
-                    continue;
-                }
-                throw t;
+                } else throw t;
             }
         }
     }
