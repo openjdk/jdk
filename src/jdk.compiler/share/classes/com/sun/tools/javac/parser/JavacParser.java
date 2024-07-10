@@ -3436,7 +3436,15 @@ public class JavacParser implements Parser {
                                 : PatternResult.PATTERN;
                     }
                     parenDepth++; break;
-                case RPAREN: parenDepth--; break;
+                case RPAREN:
+                    parenDepth--;
+                    if (parenDepth == 0 &&
+                        typeDepth == 0 &&
+                        peekToken(lookahead, TokenKind.IDENTIFIER) &&
+                        S.token(lookahead + 1).name() == names.when) {
+                        return PatternResult.PATTERN;
+                    }
+                    break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
                 case FINAL:
