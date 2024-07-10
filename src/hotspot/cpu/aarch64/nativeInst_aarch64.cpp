@@ -54,6 +54,11 @@ address NativeCall::destination() const {
   address addr = instruction_address();
   address destination = addr + displacement();
 
+  // Performance optimization: no need to call find_blob() if it is a self-call
+  if (destination == addr) {
+    return destination;
+  }
+
   // Do we use a trampoline stub for this call?
   CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
