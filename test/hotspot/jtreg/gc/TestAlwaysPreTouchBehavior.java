@@ -141,7 +141,7 @@ public class TestAlwaysPreTouchBehavior {
     // maximum size of non-heap memory we expect the testee JVM to have.
     final static long expectedMaxNonHeapRSS = M * 256;
     // How much memory we require the host to have available before even starting the test
-    final static  long requiredAvailableBefore = heapsize * 2 + expectedMaxNonHeapRSS;
+    final static long requiredAvailableBefore = heapsize * 2 + expectedMaxNonHeapRSS;
     // In the testee JVM, if RSS is lower than expected, how much memory should *still* be available now to
     // count the low RSS as a real error - an indication for a misfunctioning pretouch, not just a low-memory
     // condition on the system.
