@@ -977,7 +977,7 @@ bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, Obje
 // Determine if there is a scalar replaced object description represented by 'ov'.
 bool PhaseOutput::contains_as_scalarized(JVMState* jvms, MachSafePointNode* sfn,
                                          GrowableArray<ScopeValue*>* objs,
-                                         ObjectValue *ov) const {
+                                         ObjectValue* ov) const {
   for (int i = 0; i < jvms->scl_size(); i++) {
     Node* n = sfn->scalarized(jvms, i);
     if (!n->is_SafePointScalarObject()) {
