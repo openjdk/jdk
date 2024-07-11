@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1687,6 +1687,15 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // Identify which input register matches the input register.
     uint  matching_input = instr->two_address(_globalNames);
+
+#if defined(AARCH64)
+    // Allocate the same register for src and dst, then we can remove
+    // the instructions in the final assembly.
+    if (strcmp("CastX2P", instr->ideal_Opcode(_globalNames)) == 0 ||
+        strcmp("CastP2X", instr->ideal_Opcode(_globalNames)) == 0) {
+      matching_input = 1;
+    }
+#endif
 
     // Generate the method if it returns != 0 otherwise use MachNode::two_adr()
     if( matching_input != 0 ) {

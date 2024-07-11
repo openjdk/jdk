@@ -7906,31 +7906,31 @@ instruct membar_volatile() %{
 instruct castX2P(iRegPNoSp dst, iRegL src) %{
   match(Set dst (CastX2P src));
 
+  // We still assign cost here because two-address instructions may bring
+  // side impact, i.e., spilling.
   ins_cost(INSN_COST);
-  format %{ "mov $dst, $src\t# long -> ptr" %}
-
+  format %{ "castX2P $src\t# long -> ptr" %}
+  size(0);
   ins_encode %{
-    if ($dst$$reg != $src$$reg) {
-      __ mov(as_Register($dst$$reg), as_Register($src$$reg));
-    }
+    /* empty encoding */
+    assert($dst$$reg == $src$$reg, "We can't remove it when dst != src");
   %}
-
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_empty);
 %}
 
 instruct castP2X(iRegLNoSp dst, iRegP src) %{
   match(Set dst (CastP2X src));
 
+  // We still assign cost here because two-address instructions may bring
+  // side impact, i.e., spilling.
   ins_cost(INSN_COST);
-  format %{ "mov $dst, $src\t# ptr -> long" %}
-
+  format %{ "castP2X $src\t# ptr -> long" %}
+  size(0);
   ins_encode %{
-    if ($dst$$reg != $src$$reg) {
-      __ mov(as_Register($dst$$reg), as_Register($src$$reg));
-    }
+    /* empty encoding */
+    assert($dst$$reg == $src$$reg, "We can't remove it when dst != src");
   %}
-
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_empty);
 %}
 
 // Convert oop into int for vectors alignment masking
