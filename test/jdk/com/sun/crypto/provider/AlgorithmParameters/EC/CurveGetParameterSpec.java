@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8322133
- * @summary Make sure getParamterSpec returns std name for EC AlgorithmParameters
+ * @summary Make sure getParameterSpec returns std name for EC AlgorithmParameters
  * @modules java.base/sun.security.util
  */
 
