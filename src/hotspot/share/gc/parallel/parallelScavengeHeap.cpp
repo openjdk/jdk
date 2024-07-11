@@ -426,12 +426,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   if (GCLocker::check_active_before_gc()) {
     return;
   }
-  do_full_collection_no_gc_locker(clear_all_soft_refs);
-}
-
-void ParallelScavengeHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
-  bool maximum_compaction = clear_all_soft_refs;
-  PSParallelCompact::invoke(maximum_compaction);
+  PSParallelCompact::invoke(clear_all_soft_refs);
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
@@ -475,7 +470,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
     HeapMaximumCompactionInterval = 0;
 
     const bool clear_all_soft_refs = true;
-    do_full_collection_no_gc_locker(clear_all_soft_refs);
+    PSParallelCompact::invoke(clear_all_soft_refs);
 
     // Restore
     HeapMaximumCompactionInterval = old_interval;
@@ -598,7 +593,7 @@ void ParallelScavengeHeap::collect_at_safepoint(bool full) {
     }
     // Upgrade to Full-GC if young-gc fails
   }
-  do_full_collection_no_gc_locker(clear_soft_refs);
+  PSParallelCompact::invoke(clear_soft_refs);
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {

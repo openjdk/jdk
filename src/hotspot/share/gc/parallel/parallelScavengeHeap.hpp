@@ -110,12 +110,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
-  // Perform a full collection
   void do_full_collection(bool clear_all_soft_refs) override;
 
-  void do_full_collection_no_gc_locker(bool clear_all_soft_refs);
-
- public:
+public:
   ParallelScavengeHeap() :
     CollectedHeap(),
     _young_manager(nullptr),
