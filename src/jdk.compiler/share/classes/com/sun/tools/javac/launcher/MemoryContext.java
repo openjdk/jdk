@@ -187,11 +187,11 @@ final class MemoryContext {
      * @throws ClassNotFoundException if the class cannot be located
      * @throws Fault if a modular application class is in the unnamed package
      */
-    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws ClassNotFoundException, Fault {
+    ClassLoader newClassLoaderFor(ClassLoader parentLoader, String mainClassName) throws ClassNotFoundException, Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
             // Trivial case: no compiled module descriptor available, no extra module layer required
-            return new MemoryClassLoader(inMemoryClasses, parent, null, descriptor, this::compileJavaFileByName);
+            return new MemoryClassLoader(inMemoryClasses, parentLoader, null, descriptor, this::compileJavaFileByName);
         }
 
         // Ensure main class resides in a named package.
@@ -200,30 +200,13 @@ final class MemoryContext {
             throw new Fault(Errors.UnnamedPkgNotAllowedNamedModules);
         }
 
-        var bootLayer = ModuleLayer.boot();
-        var parentLayer = bootLayer;
-        var parentLoader = parent;
-
-        // Optionally create module layer with all missing modules from the module path.
-        var modulePathFinder = createModuleFinderFromModulePath();
-        var modulePathModules = modulePathFinder.findAll().stream()
-                .map(ModuleReference::descriptor)
-                .map(ModuleDescriptor::name)
-                .filter(name -> bootLayer.findModule(name).isEmpty())
-                .toList();
-        if (!modulePathModules.isEmpty()) {
-            var modulePathConfiguration = bootLayer.configuration().resolve(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
-            var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
-            parentLayer = modulePathLayer;
-            parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
-        }
-
         // Create in-memory module layer for the modular application.
+        var bootLayer = ModuleLayer.boot();
         var applicationModule = ModuleDescriptor.read(ByteBuffer.wrap(moduleInfoBytes), descriptor::computePackageNames);
         var memoryFinder = new MemoryModuleFinder(inMemoryClasses, applicationModule, descriptor);
-        var memoryConfig = parentLayer.configuration().resolveAndBind(memoryFinder, ModuleFinder.of(), Set.of(applicationModule.name()));
+        var memoryConfig = bootLayer.configuration().resolveAndBind(memoryFinder, ModuleFinder.of(), Set.of(applicationModule.name()));
         var memoryClassLoader = new MemoryClassLoader(inMemoryClasses, parentLoader, applicationModule, descriptor, this::compileJavaFileByName);
-        var memoryController = ModuleLayer.defineModules(memoryConfig, List.of(parentLayer), __ -> memoryClassLoader);
+        var memoryController = ModuleLayer.defineModules(memoryConfig, List.of(bootLayer), __ -> memoryClassLoader);
         var memoryLayer = memoryController.layer();
 
         // Make application class accessible from the calling (unnamed) module, that loaded this class.
@@ -232,15 +215,6 @@ final class MemoryContext {
         memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
         return memoryLayer.findLoader(applicationModule.name());
-    }
-
-    private static ModuleFinder createModuleFinderFromModulePath() {
-        var elements = System.getProperty("jdk.module.path");
-        if (elements == null) {
-            return ModuleFinder.of();
-        }
-        var paths = Arrays.stream(elements.split(File.pathSeparator)).map(Path::of);
-        return ModuleFinder.of(paths.toArray(Path[]::new));
     }
 
     static class MemoryPreview extends Preview {

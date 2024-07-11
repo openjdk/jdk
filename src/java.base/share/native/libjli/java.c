@@ -1542,7 +1542,7 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
-        AddOption("--add-modules=ALL-DEFAULT", NULL);
+        AddOption("--add-modules=ALL-DEFAULT,ALL-MODULE-PATH", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
         // is included in the args passed to the source launcher
