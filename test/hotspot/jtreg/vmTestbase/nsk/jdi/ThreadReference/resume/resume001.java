@@ -370,10 +370,9 @@ public class resume001 {
                         break label1;
                 log2("       thread2 is at breakpoint");
 
-
                 log2("       resuming the thread2");
                 thread2.resume();
-                
+
                 log2("       undo the vm.suspend() with vm.resume()");
                 vm.resume();
             }
