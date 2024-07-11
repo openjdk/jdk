@@ -182,7 +182,8 @@ public:
         // we're also not sure whether a memory access will actually occur after
         // this safepoint. So, we can not just install an async exception here
         //
-        // Instead, we deoptimize the frame to get back to code like this:
+        // Instead, we mark the frame for deoptimization (which happens immediately
+        // when execution continues) to get back to code like this:
         //
         // for (...) {
         //     call to ScopedMemoryAccess
