@@ -510,6 +510,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();

@@ -36,7 +36,7 @@ static void _log(const char* format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
-    fflush(0);
+    fflush(nullptr);
 }
 
 static bool isTestClass(const char* name) {

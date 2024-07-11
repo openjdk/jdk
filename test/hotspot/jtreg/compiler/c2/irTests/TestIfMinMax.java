@@ -181,19 +181,19 @@ public class TestIfMinMax {
         int[] a = new int[512];
         int[] b = new int[512];
 
-        // Fill from 1 to 50
-        for (int i = 0; i < 50; i++) {
+        // Fill from 1 to 125
+        for (int i = 0; i < 125; i++) {
             a[i] = i + 1;
             b[i] = 1;
         }
 
-        // Fill from -1 to -50
-        for (int i = 50; i < 100; i++) {
-            a[i] = -(i - 49);
+        // Fill from -1 to -125
+        for (int i = 125; i < 250; i++) {
+            a[i] = -(i - 124);
             b[i] = 1;
         }
 
-        for (int i = 100; i < 512; i++) {
+        for (int i = 250; i < 512; i++) {
             a[i] = RANDOM.nextInt();
             b[i] = 1;
         }
@@ -206,19 +206,19 @@ public class TestIfMinMax {
         long[] a = new long[512];
         long[] b = new long[512];
 
-        // Fill from 1 to 50
-        for (int i = 0; i < 50; i++) {
+        // Fill from 1 to 125
+        for (int i = 0; i < 125; i++) {
             a[i] = i + 1;
             b[i] = 1;
         }
 
-        // Fill from -1 to -50
-        for (int i = 50; i < 100; i++) {
-            a[i] = -(i - 49);
+        // Fill from -1 to -125
+        for (int i = 125; i < 250; i++) {
+            a[i] = -(i - 124);
             b[i] = 1;
         }
 
-        for (int i = 100; i < 512; i++) {
+        for (int i = 250; i < 512; i++) {
             a[i] = RANDOM.nextLong();
             b[i] = 1;
         }

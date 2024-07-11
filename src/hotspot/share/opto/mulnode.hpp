@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 // Upper 64 bits of a 64 bit by 64 bit multiply
 class MulHiLNode : public Node {
 public:
-  MulHiLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  MulHiLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
@@ -178,7 +178,7 @@ public:
 // Upper 64 bits of a 64 bit by 64 bit unsigned multiply
 class UMulHiLNode : public Node {
 public:
-  UMulHiLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  UMulHiLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
@@ -291,7 +291,7 @@ class RotateRightNode : public TypeNode {
 // Signed shift right
 class RShiftINode : public Node {
 public:
-  RShiftINode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  RShiftINode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -304,7 +304,7 @@ public:
 // Signed shift right
 class RShiftLNode : public Node {
 public:
-  RShiftLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  RShiftLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -316,7 +316,7 @@ public:
 // Logical shift right
 class URShiftBNode : public Node {
 public:
-  URShiftBNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+  URShiftBNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -326,7 +326,7 @@ public:
 // Logical shift right
 class URShiftSNode : public Node {
 public:
-  URShiftSNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+  URShiftSNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -336,7 +336,7 @@ public:
 // Logical shift right
 class URShiftINode : public Node {
 public:
-  URShiftINode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  URShiftINode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -349,7 +349,7 @@ public:
 // Logical shift right
 class URShiftLNode : public Node {
 public:
-  URShiftLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  URShiftLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -396,7 +396,7 @@ public:
 class MulAddS2INode : public Node {
   virtual uint hash() const;
 public:
-  MulAddS2INode(Node* in1, Node *in2, Node *in3, Node* in4) : Node(0, in1, in2, in3, in4) {}
+  MulAddS2INode(Node* in1, Node *in2, Node *in3, Node* in4) : Node(nullptr, in1, in2, in3, in4) {}
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }

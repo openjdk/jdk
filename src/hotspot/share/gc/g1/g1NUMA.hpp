@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public:
   uint index_of_current_thread() const;
 
   // Returns the preferred index for the given G1HeapRegion index.
-  // This assumes that HeapRegions are evenly spit, so we can decide preferred index
+  // This assumes that heap regions are evenly spit, so we can decide preferred index
   // with the given G1HeapRegion index.
   // Result is less than num_active_nodes().
   uint preferred_node_index_for_index(uint region_index) const;
@@ -127,7 +127,7 @@ public:
   void print_statistics() const;
 };
 
-class G1NodeIndexCheckClosure : public HeapRegionClosure {
+class G1NodeIndexCheckClosure : public G1HeapRegionClosure {
   const char* _desc;
   G1NUMA* _numa;
   // Records matched count of each node.
