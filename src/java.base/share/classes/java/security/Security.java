@@ -111,6 +111,10 @@ public final class Security {
             loadExtra();
         }
 
+        static boolean isInclude(String key) {
+            return "include".equals(key);
+        }
+
         private static void loadMaster() {
             try {
                 loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
@@ -215,7 +219,7 @@ public final class Security {
                     public synchronized Object put(Object key, Object val) {
                         if (key instanceof String strKey &&
                                 val instanceof String strVal &&
-                                "include".equals(strKey)) {
+                                isInclude(strKey)) {
                             loadInclude(strVal);
                             return null;
                         }
@@ -892,6 +896,9 @@ public final class Security {
      * @see java.security.SecurityPermission
      */
     public static void setProperty(String key, String datum) {
+        if (SecPropLoader.isInclude(key)) {
+            return;
+        }
         check("setProperty." + key);
         props.put(key, datum);
         invalidateSMCache(key);  /* See below. */

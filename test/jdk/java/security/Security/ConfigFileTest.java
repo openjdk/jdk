@@ -87,6 +87,7 @@ public class ConfigFileTest {
             Security.setProperty("postInitTest", "shouldNotRecord");
             System.out.println(FilesManager.LAST_FILE_PROP_NAME + ": " +
                     Security.getProperty(FilesManager.LAST_FILE_PROP_NAME));
+            assertTestSecuritySetPropertyShouldNotInclude();
         } else {
             // Executed by the test JVM.
             try (FilesManager filesMgr = new FilesManager()) {
@@ -323,6 +324,34 @@ public class ConfigFileTest {
         ex.setMasterFile(masterFile);
         ex.setIgnoredExtraFile(file0.path.toString(), true);
         ex.assertSuccess();
+    }
+
+    static final String SECURITY_SET_PROP_FILE_PATH =
+            "testSecuritySetPropertyShouldNotInclude.propsFilePath";
+
+    static void testSecuritySetPropertyShouldNotInclude(Executor ex,
+            FilesManager filesMgr) throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+
+        ex.addSystemProp(SECURITY_SET_PROP_FILE_PATH, file0.path.toString());
+        ex.setMasterFile(masterFile);
+        ex.assertSuccess();
+    }
+
+    static void assertTestSecuritySetPropertyShouldNotInclude() {
+        // This check is executed by the launched JVM.
+        String propsFilePath = System.getProperty(SECURITY_SET_PROP_FILE_PATH);
+        if (propsFilePath != null) {
+            String name = Path.of(propsFilePath).getFileName().toString();
+            Security.setProperty("include", propsFilePath);
+            if (FilesManager.APPLIED_PROP_VALUE.equals(
+                    Security.getProperty(name))) {
+                throw new RuntimeException("Security.setProperty" +
+                        "(\"include\", \"" + propsFilePath + "\") " +
+                        "has issued a file inclusion");
+            }
+        }
     }
 
     /*
@@ -761,8 +790,12 @@ final class Executor {
         }
     }
 
+    void addSystemProp(String key, String value) {
+        systemProps.put(key, value);
+    }
+
     private void setRawExtraFile(String extraFile, boolean overrideAll) {
-        systemProps.put(JAVA_SEC_PROPS, (overrideAll ? "=" : "") + extraFile);
+        addSystemProp(JAVA_SEC_PROPS, (overrideAll ? "=" : "") + extraFile);
     }
 
     void setMasterFile(PropsFile masterPropsFile) {
