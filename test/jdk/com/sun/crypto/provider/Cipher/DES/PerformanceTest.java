@@ -186,7 +186,7 @@ public class PerformanceTest {
         end = System.currentTimeMillis();
 
         // To avoid diving by zero if end is equal to start
-        long executionTime = end > start ? end - start : 1;
+        long executionTime = end > start ? end - start : 1L;
         int speed = (int) ((data.length * count) / executionTime);
         sum += speed;
         col.append(speed);
