@@ -1650,8 +1650,8 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
     assert (ac > 0, "Membership in free set implies has capacity");
     assert (!r->is_old() || r->is_trash(), "Except for trash, mutator_is_free regions should not be affiliated OLD");
 
-    bool move_to_old_collector = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector) < to_reserve_old;
-    bool move_to_collector = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector) < to_reserve;
+    bool move_to_old_collector = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector) < to_reserve_old;
+    bool move_to_collector = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector) < to_reserve;
 
     if (!move_to_collector && !move_to_old_collector) {
       // We've satisfied both to_reserve and to_reserved_old
