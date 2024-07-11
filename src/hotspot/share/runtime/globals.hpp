@@ -1304,6 +1304,11 @@ const int ObjectAlignmentInBytes = 8;
   develop(int, MaxElementPrintSize, 256,                                    \
           "maximum number of elements to print")                            \
                                                                             \
+  develop(int, MaxStringPrintSize, 256,                                     \
+          "maximum number of characters to print when printing a String "   \
+          "in the VM. The middle of the string is elided.")                 \
+          range(2, O_BUFLEN)                                                \
+                                                                            \
   develop(intx, MaxSubklassPrintSize, 4,                                    \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
