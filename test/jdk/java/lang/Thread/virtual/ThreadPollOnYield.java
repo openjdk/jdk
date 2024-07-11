@@ -34,7 +34,7 @@
  * @test id=c2
  * @bug 8335269
  * @summary Test that Thread.yield loop polls for safepoints
- * @requires vm.continuations
+ * @requires vm.continuations & vm.compMode != "Xcomp"
  * @library /test/lib
  * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
  */
