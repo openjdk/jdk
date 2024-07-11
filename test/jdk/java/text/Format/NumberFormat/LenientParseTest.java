@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485 8333456
+ * @bug 8327640 8331485 8333456 8335668
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -126,6 +126,28 @@ public class LenientParseTest {
         dFmt.setParseIntegerOnly(true);
         assertEquals(expectedValue, successParse(dFmt, toParse, expectedIndex));
         dFmt.setParseIntegerOnly(false);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test
+    public void integerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getIntegerInstance();
+        failParse(fmt, localizeText("."), 0);
+        failParse(fmt, localizeText(".0"), 0);
+        failParse(fmt, localizeText(".55"), 0);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test // Non-localized, run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void compactIntegerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+        fmt.setParseIntegerOnly(true);
+        failParse(fmt, ".K", 0);
+        failParse(fmt, ".0K", 0);
+        failParse(fmt, ".55K", 0);
     }
 
     @Test // Non-localized, only run once
@@ -313,7 +335,11 @@ public class LenientParseTest {
                 Arguments.of("10000", 10000d),
                 Arguments.of("100,000", 100000d),
                 Arguments.of("1,000,000", 1000000d),
-                Arguments.of("10,000,000", 10000000d))
+                Arguments.of("10,000,000", 10000000d),
+                // Smaller value cases (w/ decimal)
+                Arguments.of(".1", .1d),
+                Arguments.of("1.1", 1.1d),
+                Arguments.of("11.1", 11.1d))
                 .map(args -> Arguments.of(
                         localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }
