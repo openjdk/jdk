@@ -979,7 +979,10 @@ bool PhaseOutput::contains_as_scalarized(JVMState* jvms, MachSafePointNode* sfn,
                                          GrowableArray<ScopeValue*>* objs,
                                          ObjectValue* ov) const {
   for (int i = 0; i < jvms->scl_size(); i++) {
-    Node* n = sfn->scalarized(jvms, i);
+    Node* n = sfn->scalarized_obj(jvms, i);
+    // Other kinds of nodes that we may encounter here, for instance constants
+    // representing values of fields of objects scalarized, aren't relevant for
+    // us, since they don't map to ObjectValue.
     if (!n->is_SafePointScalarObject()) {
       continue;
     }

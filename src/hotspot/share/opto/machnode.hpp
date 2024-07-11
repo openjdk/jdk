@@ -867,7 +867,7 @@ public:
     assert(verify_jvms(jvms), "jvms must match");
     return in(_jvmadj + jvms->monitor_box_offset(idx));
   }
-  Node* scalarized(const JVMState* jvms, uint idx) const {
+  Node* scalarized_obj(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     return in(_jvmadj + jvms->scloff() + idx);
   }

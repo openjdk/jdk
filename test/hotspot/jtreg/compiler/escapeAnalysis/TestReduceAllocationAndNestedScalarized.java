@@ -28,17 +28,19 @@
  *          of the Phi is not the _current_ output of the Phi but said input
  *          needs to be rematerialized because it's used regardless of the
  *          Phi output.
- * @requires vm.bits == 64 & vm.flagless & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=dontinline,*TestReduceAllocationAndNestedScalarized*::test
  *                   -XX:CompileCommand=compileonly,*TestReduceAllocationAndNestedScalarized*::test
  *                   -XX:CompileCommand=compileonly,*Picture*::*init*
  *                   -XX:CompileCommand=compileonly,*Point*::*init*
  *                   -XX:CompileCommand=exclude,*Unloaded*::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-TieredCompilation
  *                   -XX:-UseCompressedOops
  *                   -Xcomp
  *                   -server
  *                   compiler.c2.TestReduceAllocationAndNestedScalarized
+ * @run main/othervm compiler.c2.TestReduceAllocationAndNestedScalarized
  */
 
 package compiler.c2;
