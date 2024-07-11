@@ -104,7 +104,7 @@ public class TestMenuMnemonicLinuxAndMac {
 
     private static void createAndShowUI() {
         frame = new JFrame("Test Menu Mnemonic Show/Hide");
-        JMenuBar menuBar  = new JMenuBar();
+        JMenuBar menuBar = new JMenuBar();
         fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         JMenuItem item1 = new JMenuItem("Item-1");

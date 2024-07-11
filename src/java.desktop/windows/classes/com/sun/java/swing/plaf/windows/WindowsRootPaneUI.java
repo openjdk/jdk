@@ -153,7 +153,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
                     path[0] = mbar;
                     path[1] = menu;
                     msm.setSelectedPath(path);
-                } else if(!MnemonicHandler.isMnemonicHidden()) {
+                } else if (!MnemonicHandler.isMnemonicHidden()) {
                     MnemonicHandler.setMnemonicHidden(true);
                     MnemonicHandler.repaintMnemonicsInWindow(winAncestor);
                 }
