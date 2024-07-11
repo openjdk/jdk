@@ -183,7 +183,7 @@ WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_
   ResourceMark rm(THREAD);
   stringStream sb;
   java_lang_String::print(JNIHandles::resolve(str), &sb, max_length);
-oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
+  oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
   return (jstring) JNIHandles::make_local(THREAD, result);
 WB_END
 
