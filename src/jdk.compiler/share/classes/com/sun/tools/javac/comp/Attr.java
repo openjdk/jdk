@@ -1139,7 +1139,8 @@ public class Attr extends JCTree.Visitor {
                         for (JCVariableDecl param: tree.params) {
                             boolean paramIsVarArgs = (param.sym.flags_field & VARARGS) != 0;
                             if (!types.isSameType(param.type, recordFieldTypes.head) ||
-                                    (recordComponents.head.isVarargs() != paramIsVarArgs)) {
+                                    (recordComponents.head != null &&
+                                            recordComponents.head.isVarargs() != paramIsVarArgs)) {
                                 log.error(param, Errors.InvalidCanonicalConstructorInRecord(
                                         Fragments.Canonical, env.enclClass.sym.name,
                                         Fragments.TypeMustBeIdenticalToCorrespondingRecordComponentType));

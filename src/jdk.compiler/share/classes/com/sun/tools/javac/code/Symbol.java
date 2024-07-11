@@ -1551,12 +1551,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public RecordComponent findRecordComponentToRemove(JCVariableDecl var) {
             RecordComponent toRemove = null;
             for (RecordComponent rc : recordComponents) {
-                /* it could be that a record erroneously declares two record components with the same name, in that
-                 * case we need to use the position to disambiguate, but if we loaded the record from a class file
-                 * all positions will be -1, in that case we have to ignore the position and match only based on the
-                 * name
-                 */
-                if (rc.name == var.name && (var.pos == rc.pos || rc.pos == -1)) {
+                if (rc.name == var.name) {
                     toRemove = rc;
                 }
             }

@@ -1063,7 +1063,7 @@ public class TypeEnter implements Completer {
                      *  copying the original annotations from the record component to the corresponding field, again this applies
                      *  only if APs are present.
                      *
-                     *  First, we find the record component by comparing its name and position with current field,
+                     *  First, we find the record component by comparing its name with current field,
                      *  if any, and we mark it. Then we copy the annotations to the field so that annotations applicable only to the record component
                      *  can be attributed, as if declared in the field, and then stored in the metadata associated to the record
                      *  component. The invariance we need to keep here is that record components must be scheduled for
