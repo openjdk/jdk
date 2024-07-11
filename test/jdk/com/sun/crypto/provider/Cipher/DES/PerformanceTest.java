@@ -28,9 +28,7 @@
  * @author Jan Luehe
  * @run main/manual PerformanceTest
  */
-import java.security.*;
 import java.security.spec.*;
-import java.io.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
