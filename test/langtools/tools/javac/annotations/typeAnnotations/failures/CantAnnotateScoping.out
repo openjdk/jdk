@@ -1,13 +1,12 @@
-CantAnnotateScoping.java:68:18: compiler.err.doesnt.exist: java.XXX
+CantAnnotateScoping.java:63:9: compiler.err.cant.resolve.location: kindname.class, lang, , , (compiler.misc.location: kindname.package, java, null)
+CantAnnotateScoping.java:68:9: compiler.err.cant.resolve.location: kindname.class, XXX, , , (compiler.misc.location: kindname.package, java, null)
+CantAnnotateScoping.java:71:9: compiler.err.cant.resolve.location: kindname.class, lang, , , (compiler.misc.location: kindname.package, java, null)
 CantAnnotateScoping.java:38:14: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), Test.Outer, @TA Test.Outer.SInner
 CantAnnotateScoping.java:51:18: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
 CantAnnotateScoping.java:60:37: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation: @TA,@TA2), java.lang, @DTA @TA @TA2 java.lang.Object
 CantAnnotateScoping.java:40:14: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), Test.Outer, @TA Test.Outer.SInner
-CantAnnotateScoping.java:63:11: compiler.err.annotation.type.not.applicable.to.type: DA
-CantAnnotateScoping.java:68:11: compiler.err.annotation.type.not.applicable.to.type: DA
-CantAnnotateScoping.java:71:9: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
 CantAnnotateScoping.java:44:34: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation: @TA,@TA2), Test.Outer, @TA @TA2 Test.Outer.SInner
 CantAnnotateScoping.java:44:25: compiler.err.annotation.type.not.applicable.to.type: DA
 CantAnnotateScoping.java:48:38: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), Test.Outer, @TA Test.Outer.SInner
 CantAnnotateScoping.java:48:34: compiler.err.annotation.type.not.applicable.to.type: DA
-12 errors
+11 errors
