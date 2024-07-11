@@ -348,7 +348,6 @@ public class JMXStartStopTest {
                     }
                     pid = p.pid();
                     jcmd = new ManagementAgentJcmd(p, verbose);
-
                 } catch (TimeoutException e) {
                     if (p != null) {
                         p.destroy();
