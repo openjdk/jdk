@@ -374,6 +374,9 @@ public sealed interface ClassDesc
      */
     String descriptorString();
 
+    /**
+     * @since 21
+     */
     @Override
     Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 

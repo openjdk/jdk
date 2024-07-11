@@ -54,12 +54,13 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
-    private static final Object flushObject = new Object();
+    private static final HiddenWait flushObject = new HiddenWait();
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     /**
@@ -350,14 +351,6 @@ public final class Utils {
         return Type.isValidJavaFieldType(type.getName());
     }
 
-    public static void takeNap(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            // ok
-        }
-    }
-
     public static void notifyFlush() {
         synchronized (flushObject) {
             flushObject.notifyAll();
@@ -365,13 +358,7 @@ public final class Utils {
     }
 
     public static void waitFlush(long timeOut) {
-        synchronized (flushObject) {
-            try {
-                flushObject.wait(timeOut);
-            } catch (InterruptedException e) {
-                // OK
-            }
-        }
+        flushObject.takeNap(timeOut);
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {

@@ -110,6 +110,7 @@ class outputStream;
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
+  LOG_TAG(link) \
   LOG_TAG(liveness) \
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \

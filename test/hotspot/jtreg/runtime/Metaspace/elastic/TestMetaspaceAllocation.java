@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,30 +27,22 @@
  * @test id=debug
  * @bug 8251158
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox
  * @requires (vm.debug == true)
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10                                        TestMetaspaceAllocation
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -XX:VerifyMetaspaceInterval=10  -XX:+MetaspaceGuardAllocations        TestMetaspaceAllocation
- *
  */
 
 /*
  * @test id=ndebug
  * @bug 8251158
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox
  * @requires (vm.debug == false)
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI                                        TestMetaspaceAllocation
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestMetaspaceAllocation
  */
 
 public class TestMetaspaceAllocation {

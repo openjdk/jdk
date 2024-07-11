@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #define hrt_assert_is_valid(tag) \
   assert(is_valid((tag)), "invalid HR type: %u", (uint) (tag))
 
-class HeapRegionType {
+class G1HeapRegionType {
 friend class VMStructs;
 
 private:
@@ -101,7 +101,7 @@ private:
   }
 
   // Private constructor used for static constants
-  HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(_tag); }
+  G1HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(_tag); }
 
 public:
   // Queries
@@ -159,12 +159,12 @@ public:
   const char* get_short_str() const;
   G1HeapRegionTraceType::Type get_trace_type();
 
-  HeapRegionType() : _tag(FreeTag) { hrt_assert_is_valid(_tag); }
+  G1HeapRegionType() : _tag(FreeTag) { hrt_assert_is_valid(_tag); }
 
-  static const HeapRegionType Eden;
-  static const HeapRegionType Survivor;
-  static const HeapRegionType Old;
-  static const HeapRegionType Humongous;
+  static const G1HeapRegionType Eden;
+  static const G1HeapRegionType Survivor;
+  static const G1HeapRegionType Old;
+  static const G1HeapRegionType Humongous;
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGIONTYPE_HPP
