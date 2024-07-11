@@ -975,9 +975,9 @@ bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, Obje
 }
 
 // Determine if there is a scalar replaced object description represented by 'ov'.
-bool PhaseOutput::contains_as_scalarized(JVMState* jvms, MachSafePointNode* sfn,
-                                         GrowableArray<ScopeValue*>* objs,
-                                         ObjectValue* ov) const {
+bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                             GrowableArray<ScopeValue*>* objs,
+                                             ObjectValue* ov) const {
   for (int i = 0; i < jvms->scl_size(); i++) {
     Node* n = sfn->scalarized_obj(jvms, i);
     // Other kinds of nodes that we may encounter here, for instance constants
@@ -1161,7 +1161,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           bool is_root = locarray->contains(ov) ||
                          exparray->contains(ov) ||
                          contains_as_owner(monarray, ov) ||
-                         contains_as_scalarized(jvms, sfn, objs, ov);
+                         contains_as_scalarized_obj(jvms, sfn, objs, ov);
           ov->set_root(is_root);
         }
       }
