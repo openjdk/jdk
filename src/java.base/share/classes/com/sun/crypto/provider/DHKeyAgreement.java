@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,15 @@
 
 package com.sun.crypto.provider;
 
-import java.util.*;
-import java.lang.*;
 import java.math.BigInteger;
-import java.security.AccessController;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.PrivilegedAction;
-import java.security.ProviderException;
+import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.KeyAgreementSpi;
-import javax.crypto.ShortBufferException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.*;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import sun.security.util.KeyUtil;
 
@@ -180,7 +172,7 @@ extends KeyAgreementSpi {
      * @param key the key for this phase. For example, in the case of
      * Diffie-Hellman between 2 parties, this would be the other party's
      * Diffie-Hellman public key.
-     * @param lastPhase flag which indicates whether or not this is the last
+     * @param lastPhase flag which indicates if this is the last
      * phase of this key agreement.
      *
      * @return the (intermediate) key resulting from this phase, or null if
@@ -227,7 +219,7 @@ extends KeyAgreementSpi {
         // intermediate secret, in which case we wrap it into a
         // Diffie-Hellman public key object and return it.
         generateSecret = true;
-        if (lastPhase == false) {
+        if (!lastPhase) {
             byte[] intermediate = engineGenerateSecret();
             return new DHPublicKey(new BigInteger(1, intermediate),
                                    init_p, init_g);
@@ -293,7 +285,7 @@ extends KeyAgreementSpi {
     protected int engineGenerateSecret(byte[] sharedSecret, int offset)
         throws IllegalStateException, ShortBufferException
     {
-        if (generateSecret == false) {
+        if (!generateSecret) {
             throw new IllegalStateException
                 ("Key agreement has not been completed yet");
         }
@@ -413,9 +405,7 @@ extends KeyAgreementSpi {
             int keysize = secret.length;
             if (keysize >= BlowfishConstants.BLOWFISH_MAX_KEYSIZE)
                 keysize = BlowfishConstants.BLOWFISH_MAX_KEYSIZE;
-            SecretKeySpec skey = new SecretKeySpec(secret, 0, keysize,
-                                                   "Blowfish");
-            return skey;
+            return new SecretKeySpec(secret, 0, keysize, "Blowfish");
         } else if (algorithm.equalsIgnoreCase("AES")) {
             // AES
             int keysize = secret.length;

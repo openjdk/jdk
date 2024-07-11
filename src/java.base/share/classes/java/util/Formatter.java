@@ -4249,8 +4249,8 @@ public final class Formatter implements Closeable, Flushable {
 
         // Add trailing zeros
         private void trailingZeros(StringBuilder sb, int nzeros) {
-            for (int i = 0; i < nzeros; i++) {
-                sb.append('0');
+            if (nzeros > 0) {
+                sb.repeat('0', nzeros);
             }
         }
 
