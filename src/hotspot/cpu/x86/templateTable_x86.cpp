@@ -4123,8 +4123,7 @@ void TemplateTable::_new() {
 #endif
     __ store_klass(rax, rcx, rscratch1);  // klass
 
-    {
-      SkipIfEqual skip_if(_masm, &DTraceAllocProbes, 0, rscratch1);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos);
       __ call_VM_leaf(
